@@ -362,6 +362,10 @@ private:
   bool m_connectionModeEnabled = false;
   NMGraphNodeItem *m_connectionStartNode = nullptr;
   QPointF m_connectionEndPoint;
+  // Drag tracking to prevent double-click conflict
+  QPoint m_dragStartPos;
+  bool m_possibleDrag = false;
+  bool m_isDragging = false;
 };
 
 /**

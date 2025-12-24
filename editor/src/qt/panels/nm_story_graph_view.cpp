@@ -6,6 +6,7 @@
 #include "NovelMind/editor/project_manager.hpp"
 
 #include <QAction>
+#include <QApplication>
 #include <QFrame>
 #include <QFile>
 #include <QFileInfo>
@@ -111,6 +112,11 @@ void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
   }
 
   if (event->button() == Qt::LeftButton) {
+    // Track potential drag start position
+    m_dragStartPos = event->pos();
+    m_possibleDrag = true;
+    m_isDragging = false;
+
     QPointF scenePos = mapToScene(event->pos());
     auto *item = scene()->itemAt(scenePos, transform());
     if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
@@ -134,6 +140,12 @@ void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
 }
 
 void NMStoryGraphView::mouseDoubleClickEvent(QMouseEvent *event) {
+  // Ignore double-click if user is dragging nodes
+  if (m_isDragging) {
+    event->ignore();
+    return;
+  }
+
   if (event->button() == Qt::LeftButton) {
     QPointF scenePos = mapToScene(event->pos());
     auto *item = scene()->itemAt(scenePos, transform());
@@ -164,6 +176,14 @@ void NMStoryGraphView::mouseMoveEvent(QMouseEvent *event) {
     viewport()->update();
     event->accept();
     return;
+  }
+
+  // Track if user is dragging (moved beyond Qt's drag threshold)
+  if (m_possibleDrag) {
+    if ((event->pos() - m_dragStartPos).manhattanLength() >= QApplication::startDragDistance()) {
+      m_isDragging = true;
+      m_possibleDrag = false;
+    }
   }
 
   QGraphicsView::mouseMoveEvent(event);
@@ -200,6 +220,12 @@ void NMStoryGraphView::mouseReleaseEvent(QMouseEvent *event) {
     viewport()->update();
     event->accept();
     return;
+  }
+
+  // Reset drag tracking
+  if (event->button() == Qt::LeftButton) {
+    m_isDragging = false;
+    m_possibleDrag = false;
   }
 
   QGraphicsView::mouseReleaseEvent(event);
