@@ -428,6 +428,12 @@ signals:
   void editSceneLayoutRequested(const QString &sceneId);
   void editDialogueFlowRequested(const QString &sceneId);
   void openSceneScriptRequested(const QString &sceneId, const QString &scriptPath);
+  // Voice-over specific signals (for Dialogue nodes)
+  void voiceClipAssignRequested(const QString &nodeIdString, const QString &currentPath);
+  void voiceClipPreviewRequested(const QString &nodeIdString, const QString &voicePath);
+  void voiceRecordingRequested(const QString &nodeIdString, const QString &dialogueText, const QString &speaker);
+  void voiceAutoDetectRequested(const QString &nodeIdString, const QString &localizationKey);
+  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath, int bindingStatus);
 
 private slots:
   void onZoomIn();
