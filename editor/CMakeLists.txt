@@ -117,6 +117,7 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_story_graph_scene.cpp
     src/qt/panels/nm_story_graph_view.cpp
     src/qt/panels/nm_story_graph_minimap.cpp
+    src/qt/panels/nm_story_graph_voice_integration.cpp
     src/qt/panels/nm_inspector_panel.cpp
     src/qt/panels/nm_inspector_panel_group.cpp
     src/qt/panels/nm_console_panel.cpp

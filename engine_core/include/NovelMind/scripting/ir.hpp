@@ -114,6 +114,33 @@ enum class DevelopmentWorkflow : u8 {
 };
 
 /**
+ * @brief Voice-over binding status for dialogue nodes
+ */
+enum class VoiceBindingStatus : u8 {
+  Unbound,     // No voice file assigned
+  Bound,       // Voice file assigned and verified
+  MissingFile, // Voice file assigned but file not found
+  AutoMapped,  // Automatically mapped by pattern matching
+  Pending      // Waiting for import
+};
+
+/**
+ * @brief Voice clip data for dialogue nodes
+ */
+struct VoiceClipData {
+  std::string voiceFilePath;           // Path to voice audio file
+  std::string localizationKey;         // Localization key for auto-detection
+  VoiceBindingStatus bindingStatus;    // Status of voice binding
+  f32 voiceDuration;                   // Cached duration in seconds
+  bool autoDetected;                   // Whether this was auto-detected
+
+  VoiceClipData()
+      : bindingStatus(VoiceBindingStatus::Unbound),
+        voiceDuration(0.0f),
+        autoDetected(false) {}
+};
+
+/**
  * @brief Data structure for Scene Node properties
  *
  * Represents a complete scene with visual layout and embedded dialogue.

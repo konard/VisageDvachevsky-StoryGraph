@@ -25,6 +25,8 @@ const char *IRNode::getTypeName() const {
     return "SceneEnd";
   case IRNodeType::Comment:
     return "Comment";
+  case IRNodeType::Scene:
+    return "Scene";
   case IRNodeType::Sequence:
     return "Sequence";
   case IRNodeType::Branch:
