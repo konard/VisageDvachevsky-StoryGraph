@@ -70,6 +70,21 @@ public:
   void setChoiceOptions(const QStringList &choices) { m_choiceOptions = choices; }
   [[nodiscard]] QStringList choiceOptions() const { return m_choiceOptions; }
 
+  // Voice-over properties for dialogue nodes
+  void setVoiceClipPath(const QString &path) { m_voiceClipPath = path; }
+  [[nodiscard]] QString voiceClipPath() const { return m_voiceClipPath; }
+
+  void setVoiceBindingStatus(int status) { m_voiceBindingStatus = status; }
+  [[nodiscard]] int voiceBindingStatus() const { return m_voiceBindingStatus; }
+
+  void setLocalizationKey(const QString &key) { m_localizationKey = key; }
+  [[nodiscard]] QString localizationKey() const { return m_localizationKey; }
+
+  [[nodiscard]] bool hasVoiceClip() const { return !m_voiceClipPath.isEmpty(); }
+  [[nodiscard]] bool isDialogueNode() const {
+    return m_nodeType.compare("Dialogue", Qt::CaseInsensitive) == 0;
+  }
+
   // Scene Node specific properties
   void setSceneId(const QString &id) { m_sceneId = id; }
   [[nodiscard]] QString sceneId() const { return m_sceneId; }
@@ -120,6 +135,11 @@ private:
   bool m_hasBreakpoint = false;
   bool m_isCurrentlyExecuting = false;
   bool m_isEntry = false;
+
+  // Voice-over properties (for Dialogue nodes)
+  QString m_voiceClipPath;
+  int m_voiceBindingStatus = 0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
+  QString m_localizationKey;
 
   // Scene Node specific properties
   QString m_sceneId;

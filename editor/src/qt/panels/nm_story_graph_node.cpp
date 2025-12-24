@@ -260,6 +260,64 @@ void NMGraphNodeItem::paint(QPainter *painter,
                       indicatorRect.center() + QPointF(1, 1));
   }
 
+  // Dialogue-specific: Draw voice-over indicators
+  if (isDialogueNode()) {
+    const qreal bottomY = nodeHeight - 24;
+    const qreal iconSize = 16;
+
+    // Voice clip status indicator
+    if (hasVoiceClip()) {
+      // Show play button for preview
+      QRectF playButtonRect(NODE_WIDTH - 44, bottomY, iconSize, iconSize);
+      QColor playColor;
+
+      // Color based on binding status
+      switch (m_voiceBindingStatus) {
+        case 1: // Bound
+          playColor = QColor(100, 220, 150); // Green
+          break;
+        case 2: // MissingFile
+          playColor = QColor(220, 100, 100); // Red
+          break;
+        case 3: // AutoMapped
+          playColor = QColor(100, 180, 255); // Blue
+          break;
+        default: // Unbound/Pending
+          playColor = QColor(180, 180, 180); // Gray
+          break;
+      }
+
+      // Draw play icon (triangle)
+      painter->setBrush(playColor);
+      painter->setPen(QPen(playColor.darker(120), 1));
+      QPolygonF playTriangle;
+      const QPointF playCenter = playButtonRect.center();
+      playTriangle << playCenter + QPointF(-4, -5)
+                   << playCenter + QPointF(-4, 5)
+                   << playCenter + QPointF(5, 0);
+      painter->drawPolygon(playTriangle);
+    }
+
+    // Show record button (always visible for dialogue nodes)
+    QRectF recordButtonRect(NODE_WIDTH - 22, bottomY, iconSize, iconSize);
+    QColor recordColor = hasVoiceClip() ? QColor(220, 100, 100) : QColor(255, 140, 140);
+
+    // Draw record icon (circle)
+    painter->setBrush(recordColor);
+    painter->setPen(QPen(recordColor.darker(120), 1));
+    painter->drawEllipse(recordButtonRect.center(), 6, 6);
+
+    // Small waveform indicator if voice is present
+    if (hasVoiceClip() && m_voiceBindingStatus == 1) {
+      QFont tinyFont = NMStyleManager::instance().defaultFont();
+      tinyFont.setPointSize(7);
+      painter->setFont(tinyFont);
+      painter->setPen(QColor(150, 220, 180));
+      painter->drawText(QRectF(8, bottomY, 60, 16),
+                        Qt::AlignVCenter | Qt::AlignLeft, "Voice");
+    }
+  }
+
   // Input/output ports
   const QPointF inputPort(0, nodeHeight / 2);
   const QPointF outputPort(NODE_WIDTH, nodeHeight / 2);
@@ -350,6 +408,7 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   auto &iconMgr = NMIconManager::instance();
 
   const bool isScene = isSceneNode();
+  const bool isDialogue = isDialogueNode();
 
   // Scene-specific actions
   QAction *editLayoutAction = nullptr;
@@ -370,6 +429,39 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
       openScriptAction->setIcon(iconMgr.getIcon("panel-script-editor", 16));
       openScriptAction->setToolTip("Open .nms script file");
     }
+
+    menu.addSeparator();
+  }
+
+  // Dialogue-specific voice-over actions
+  QAction *assignVoiceAction = nullptr;
+  QAction *previewVoiceAction = nullptr;
+  QAction *recordVoiceAction = nullptr;
+  QAction *clearVoiceAction = nullptr;
+  QAction *autoDetectVoiceAction = nullptr;
+
+  if (isDialogue) {
+    assignVoiceAction = menu.addAction("Assign Voice Clip...");
+    assignVoiceAction->setIcon(iconMgr.getIcon("audio-file", 16));
+    assignVoiceAction->setToolTip("Drag-drop or browse for voice audio file");
+
+    autoDetectVoiceAction = menu.addAction("Auto-Detect Voice");
+    autoDetectVoiceAction->setIcon(iconMgr.getIcon("search", 16));
+    autoDetectVoiceAction->setToolTip("Auto-detect voice file based on localization key");
+
+    if (hasVoiceClip()) {
+      previewVoiceAction = menu.addAction("Preview Voice");
+      previewVoiceAction->setIcon(iconMgr.getIcon("play", 16));
+      previewVoiceAction->setToolTip("Play voice clip preview");
+
+      clearVoiceAction = menu.addAction("Clear Voice Clip");
+      clearVoiceAction->setIcon(iconMgr.getIcon("edit-delete", 16));
+      clearVoiceAction->setToolTip("Remove voice clip assignment");
+    }
+
+    recordVoiceAction = menu.addAction(hasVoiceClip() ? "Re-record Voice..." : "Record Voice...");
+    recordVoiceAction->setIcon(iconMgr.getIcon("record", 16));
+    recordVoiceAction->setToolTip("Open Recording Studio to record voice");
 
     menu.addSeparator();
   }
@@ -460,6 +552,24 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   } else if (isScene && renameAction && selectedAction == renameAction) {
     // TODO: Implement scene renaming
     qDebug() << "[StoryGraph] Rename scene:" << m_sceneId;
+  } else if (isDialogue && assignVoiceAction && selectedAction == assignVoiceAction) {
+    // TODO: Open file dialog to assign voice clip
+    qDebug() << "[StoryGraph] Assign voice clip to dialogue node:" << m_nodeIdString;
+  } else if (isDialogue && autoDetectVoiceAction && selectedAction == autoDetectVoiceAction) {
+    // TODO: Auto-detect voice file based on localization key
+    qDebug() << "[StoryGraph] Auto-detect voice for dialogue node:" << m_nodeIdString;
+  } else if (isDialogue && previewVoiceAction && selectedAction == previewVoiceAction) {
+    // TODO: Preview voice clip
+    qDebug() << "[StoryGraph] Preview voice:" << m_voiceClipPath;
+  } else if (isDialogue && recordVoiceAction && selectedAction == recordVoiceAction) {
+    // TODO: Open Recording Studio panel with this dialogue line
+    qDebug() << "[StoryGraph] Record voice for dialogue node:" << m_nodeIdString;
+  } else if (isDialogue && clearVoiceAction && selectedAction == clearVoiceAction) {
+    // Clear voice clip assignment
+    setVoiceClipPath("");
+    setVoiceBindingStatus(0); // Unbound
+    qDebug() << "[StoryGraph] Cleared voice clip for dialogue node:" << m_nodeIdString;
+    update();
   }
 
   event->accept();
