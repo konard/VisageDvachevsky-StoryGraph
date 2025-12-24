@@ -18,6 +18,11 @@ NMDockPanel::NMDockPanel(const QString& title, QWidget* parent)
     // Enable focus tracking
     setFocusPolicy(Qt::StrongFocus);
 
+    // Set default minimum size to prevent UI overlap when docked
+    // This ensures panels cannot be resized too small, preventing
+    // text fields from overlapping buttons, headers from covering content, etc.
+    setMinimumPanelSize(defaultMinimumSize());
+
     // Ensure every panel has a concrete content widget by default.
     setContentWidget(new QWidget(this));
 }
@@ -94,6 +99,23 @@ void NMDockPanel::showEvent(QShowEvent* event)
     {
         m_initialized = true;
         onInitialize();
+    }
+}
+
+void NMDockPanel::setMinimumPanelSize(int width, int height)
+{
+    setMinimumPanelSize(QSize(width, height));
+}
+
+void NMDockPanel::setMinimumPanelSize(const QSize& size)
+{
+    // Set minimum size on the dock widget itself
+    setMinimumSize(size);
+
+    // Also set minimum size on the content widget if it exists
+    // This provides a hint to the layout system
+    if (m_contentWidget) {
+        m_contentWidget->setMinimumSize(size.width() - 4, size.height() - 4);
     }
 }
 

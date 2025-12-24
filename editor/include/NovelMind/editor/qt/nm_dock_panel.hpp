@@ -15,6 +15,7 @@
 #include <QDockWidget>
 #include <QString>
 #include <QIcon>
+#include <QSize>
 
 namespace NovelMind::editor::qt {
 
@@ -81,6 +82,28 @@ public:
      * @brief Called when the panel is resized
      */
     virtual void onResize(int width, int height);
+
+    /**
+     * @brief Set the minimum size for this panel
+     * @param width Minimum width in pixels
+     * @param height Minimum height in pixels
+     *
+     * This helps prevent UI element overlap when panels are docked.
+     * Qt's docking system respects these minimum sizes.
+     */
+    void setMinimumPanelSize(int width, int height);
+
+    /**
+     * @brief Set the minimum size for this panel
+     * @param size Minimum size
+     */
+    void setMinimumPanelSize(const QSize& size);
+
+    /**
+     * @brief Get the default minimum size for panels
+     * @return Default minimum size (200x150)
+     */
+    static QSize defaultMinimumSize() { return QSize(200, 150); }
 
 signals:
     /**

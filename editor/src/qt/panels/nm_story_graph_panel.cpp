@@ -28,6 +28,11 @@ namespace NovelMind::editor::qt {
 NMStoryGraphPanel::NMStoryGraphPanel(QWidget *parent)
     : NMDockPanel(tr("Story Graph"), parent) {
   setPanelId("StoryGraph");
+
+  // Story Graph needs enough space to display nodes with their labels,
+  // the toolbar, node palette, and minimap without cramping
+  setMinimumPanelSize(400, 300);
+
   setupContent();
   setupToolBar();
   setupNodePalette();
