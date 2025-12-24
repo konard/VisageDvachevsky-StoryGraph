@@ -69,6 +69,7 @@ enum class IRNodeType : u8 {
   SceneStart, // Entry point for a scene
   SceneEnd,   // Exit point
   Comment,    // Documentation node
+  Scene,      // Complete scene node (Visual-First workflow)
 
   // Flow control
   Sequence, // Sequential execution
@@ -101,6 +102,33 @@ enum class IRNodeType : u8 {
   Expression,   // Expression evaluation
   FunctionCall, // Call a function
   Custom        // User-defined node
+};
+
+/**
+ * @brief Development workflow modes for scene creation
+ */
+enum class DevelopmentWorkflow : u8 {
+  VisualFirst, // Use embedded dialogue graphs in scene nodes
+  CodeFirst,   // Use NMScript files for dialogue logic
+  Hybrid       // Allow both approaches per scene
+};
+
+/**
+ * @brief Data structure for Scene Node properties
+ *
+ * Represents a complete scene with visual layout and embedded dialogue.
+ */
+struct SceneNodeData {
+  std::string sceneId;            // Unique identifier for the scene
+  std::string displayName;        // User-friendly name
+  std::string scriptPath;         // Path to .nms file (Code-First workflow)
+  bool hasEmbeddedDialogue;       // Uses embedded dialogue graph (Visual-First)
+  std::vector<NodeId> embeddedDialogueNodes; // Node IDs of embedded dialogue graph
+  std::string thumbnailPath;      // Optional scene preview thumbnail
+  u32 dialogueCount;              // Number of dialogue nodes in scene
+
+  SceneNodeData()
+      : hasEmbeddedDialogue(false), dialogueCount(0) {}
 };
 
 /**

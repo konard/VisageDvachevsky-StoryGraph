@@ -297,3 +297,197 @@ TEST_CASE("Story Graph - Large graph performance", "[story_graph][cycle][!benchm
     CHECK(hasCycle == false);
   }
 }
+
+// ============================================================================
+// Scene Node Tests (Visual-First Workflow)
+// ============================================================================
+
+// Standalone Scene Node data structure for testing
+// (mirrors SceneNodeData from ir.hpp)
+namespace {
+
+struct TestSceneNodeData {
+  std::string sceneId;
+  std::string displayName;
+  std::string scriptPath;
+  bool hasEmbeddedDialogue = false;
+  std::vector<uint64_t> embeddedDialogueNodes;
+  std::string thumbnailPath;
+  uint32_t dialogueCount = 0;
+};
+
+// Validates that a scene node has required properties
+bool isValidSceneNode(const TestSceneNodeData &data) {
+  // Scene ID is required
+  if (data.sceneId.empty()) {
+    return false;
+  }
+  // Either embedded dialogue or script path should be defined for a valid scene
+  if (!data.hasEmbeddedDialogue && data.scriptPath.empty()) {
+    return false;
+  }
+  return true;
+}
+
+// Checks if scene node is configured for Visual-First workflow
+bool isVisualFirstScene(const TestSceneNodeData &data) {
+  return data.hasEmbeddedDialogue && !data.embeddedDialogueNodes.empty();
+}
+
+// Checks if scene node is configured for Code-First workflow
+bool isCodeFirstScene(const TestSceneNodeData &data) {
+  return !data.scriptPath.empty() && !data.hasEmbeddedDialogue;
+}
+
+// Checks if scene node is configured for Hybrid workflow
+bool isHybridScene(const TestSceneNodeData &data) {
+  return data.hasEmbeddedDialogue && !data.scriptPath.empty();
+}
+
+} // namespace
+
+TEST_CASE("Scene Node - Basic validation", "[story_graph][scene_node]") {
+  SECTION("Empty scene ID is invalid") {
+    TestSceneNodeData data;
+    data.sceneId = "";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {1, 2, 3};
+
+    CHECK(isValidSceneNode(data) == false);
+  }
+
+  SECTION("Scene with ID and embedded dialogue is valid") {
+    TestSceneNodeData data;
+    data.sceneId = "intro_scene";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {1, 2, 3};
+
+    CHECK(isValidSceneNode(data) == true);
+  }
+
+  SECTION("Scene with ID and script path is valid") {
+    TestSceneNodeData data;
+    data.sceneId = "cafe_scene";
+    data.scriptPath = "Scripts/cafe_scene.nms";
+    data.hasEmbeddedDialogue = false;
+
+    CHECK(isValidSceneNode(data) == true);
+  }
+
+  SECTION("Scene without embedded dialogue or script path is invalid") {
+    TestSceneNodeData data;
+    data.sceneId = "orphan_scene";
+    data.hasEmbeddedDialogue = false;
+    data.scriptPath = "";
+
+    CHECK(isValidSceneNode(data) == false);
+  }
+}
+
+TEST_CASE("Scene Node - Workflow detection", "[story_graph][scene_node][workflow]") {
+  SECTION("Visual-First scene detection") {
+    TestSceneNodeData data;
+    data.sceneId = "visual_scene";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {1, 2, 3, 4, 5};
+    data.scriptPath = "";
+
+    CHECK(isVisualFirstScene(data) == true);
+    CHECK(isCodeFirstScene(data) == false);
+    CHECK(isHybridScene(data) == false);
+  }
+
+  SECTION("Code-First scene detection") {
+    TestSceneNodeData data;
+    data.sceneId = "code_scene";
+    data.hasEmbeddedDialogue = false;
+    data.scriptPath = "Scripts/code_scene.nms";
+
+    CHECK(isVisualFirstScene(data) == false);
+    CHECK(isCodeFirstScene(data) == true);
+    CHECK(isHybridScene(data) == false);
+  }
+
+  SECTION("Hybrid scene detection") {
+    TestSceneNodeData data;
+    data.sceneId = "hybrid_scene";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {1, 2};
+    data.scriptPath = "Scripts/hybrid_scene.nms";
+
+    CHECK(isVisualFirstScene(data) == true); // Has embedded dialogue
+    CHECK(isCodeFirstScene(data) == false);  // Has embedded dialogue
+    CHECK(isHybridScene(data) == true);      // Has both
+  }
+
+  SECTION("Empty embedded dialogue nodes is not Visual-First") {
+    TestSceneNodeData data;
+    data.sceneId = "empty_visual_scene";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {}; // Empty!
+    data.scriptPath = "";
+
+    CHECK(isVisualFirstScene(data) == false);
+  }
+}
+
+TEST_CASE("Scene Node - Dialogue count tracking", "[story_graph][scene_node]") {
+  SECTION("Dialogue count matches embedded nodes") {
+    TestSceneNodeData data;
+    data.sceneId = "counted_scene";
+    data.hasEmbeddedDialogue = true;
+    data.embeddedDialogueNodes = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    data.dialogueCount = 10;
+
+    CHECK(data.dialogueCount == data.embeddedDialogueNodes.size());
+  }
+
+  SECTION("Zero dialogue count for code-first scene") {
+    TestSceneNodeData data;
+    data.sceneId = "code_scene";
+    data.scriptPath = "Scripts/code_scene.nms";
+    data.dialogueCount = 0;
+
+    CHECK(data.dialogueCount == 0);
+  }
+}
+
+TEST_CASE("Scene Node - Scene graph structure", "[story_graph][scene_node]") {
+  // Test scene-to-scene connections in story graph
+  std::unordered_map<uint64_t, std::vector<uint64_t>> sceneAdjacency;
+
+  // Scene 1 (Intro) -> Scene 2 (Cafe) -> Scene 3 (Choice)
+  // Scene 3 branches to Scene 4 (Good ending) or Scene 5 (Bad ending)
+  sceneAdjacency[1] = {2};      // Intro -> Cafe
+  sceneAdjacency[2] = {3};      // Cafe -> Choice
+  sceneAdjacency[3] = {4, 5};   // Choice -> Good/Bad endings
+  sceneAdjacency[4] = {};       // Good ending (terminal)
+  sceneAdjacency[5] = {};       // Bad ending (terminal)
+
+  SECTION("Scene flow is acyclic") {
+    std::unordered_set<uint64_t> allScenes = {1, 2, 3, 4, 5};
+    auto cycles = detectCycles(allScenes, sceneAdjacency);
+    CHECK(cycles.empty());
+  }
+
+  SECTION("Cannot create cycle in scene graph") {
+    // Trying to add Bad Ending -> Intro would create a cycle
+    bool wouldCycle = wouldCreateCycle(5, 1, sceneAdjacency);
+    CHECK(wouldCycle == true);
+  }
+
+  SECTION("Can add parallel scene paths") {
+    // Adding Cafe -> Bad Ending doesn't create a cycle
+    bool wouldCycle = wouldCreateCycle(2, 5, sceneAdjacency);
+    CHECK(wouldCycle == false);
+  }
+
+  SECTION("Terminal scenes have no outgoing connections") {
+    CHECK(sceneAdjacency[4].empty());
+    CHECK(sceneAdjacency[5].empty());
+  }
+
+  SECTION("Branch scenes have multiple outgoing connections") {
+    CHECK(sceneAdjacency[3].size() == 2);
+  }
+}

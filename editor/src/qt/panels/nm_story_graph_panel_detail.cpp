@@ -116,6 +116,13 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
         node.choices.push_back(choice);
       }
     }
+
+    // Scene Node specific properties
+    node.sceneId = obj.value("sceneId").toString();
+    node.hasEmbeddedDialogue = obj.value("hasEmbeddedDialogue").toBool(false);
+    node.dialogueCount = obj.value("dialogueCount").toInt(0);
+    node.thumbnailPath = obj.value("thumbnailPath").toString();
+
     nodes.insert(id, node);
   }
 
@@ -164,6 +171,21 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
       }
       obj.insert("choices", choicesArray);
     }
+
+    // Scene Node specific properties
+    if (!it.value().sceneId.isEmpty()) {
+      obj.insert("sceneId", it.value().sceneId);
+    }
+    if (it.value().hasEmbeddedDialogue) {
+      obj.insert("hasEmbeddedDialogue", it.value().hasEmbeddedDialogue);
+    }
+    if (it.value().dialogueCount > 0) {
+      obj.insert("dialogueCount", it.value().dialogueCount);
+    }
+    if (!it.value().thumbnailPath.isEmpty()) {
+      obj.insert("thumbnailPath", it.value().thumbnailPath);
+    }
+
     nodeArray.push_back(obj);
   }
   root.insert("nodes", nodeArray);
@@ -348,6 +370,13 @@ buildLayoutFromNode(const NMGraphNodeItem *node) {
   layout.speaker = node->dialogueSpeaker();
   layout.dialogueText = node->dialogueText();
   layout.choices = node->choiceOptions();
+
+  // Scene Node specific properties
+  layout.sceneId = node->sceneId();
+  layout.hasEmbeddedDialogue = node->hasEmbeddedDialogue();
+  layout.dialogueCount = node->dialogueCount();
+  layout.thumbnailPath = node->thumbnailPath();
+
   return layout;
 }
 

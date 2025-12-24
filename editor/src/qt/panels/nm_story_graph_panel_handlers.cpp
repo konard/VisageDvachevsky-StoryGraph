@@ -211,6 +211,16 @@ void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
 
   emit nodeSelected(node->nodeIdString());
   emit nodeActivated(node->nodeIdString());
+
+  // Scene Node specific: emit signal to open Scene View
+  if (node->isSceneNode()) {
+    const QString sceneId = node->sceneId().isEmpty()
+                                ? node->nodeIdString()
+                                : node->sceneId();
+    qDebug() << "[StoryGraph] Scene node double-clicked, emitting sceneNodeDoubleClicked:"
+             << sceneId;
+    emit sceneNodeDoubleClicked(sceneId);
+  }
 }
 
 void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId,

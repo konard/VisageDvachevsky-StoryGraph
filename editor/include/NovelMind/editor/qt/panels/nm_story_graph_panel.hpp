@@ -70,6 +70,23 @@ public:
   void setChoiceOptions(const QStringList &choices) { m_choiceOptions = choices; }
   [[nodiscard]] QStringList choiceOptions() const { return m_choiceOptions; }
 
+  // Scene Node specific properties
+  void setSceneId(const QString &id) { m_sceneId = id; }
+  [[nodiscard]] QString sceneId() const { return m_sceneId; }
+
+  void setHasEmbeddedDialogue(bool embedded) { m_hasEmbeddedDialogue = embedded; }
+  [[nodiscard]] bool hasEmbeddedDialogue() const { return m_hasEmbeddedDialogue; }
+
+  void setDialogueCount(int count) { m_dialogueCount = count; }
+  [[nodiscard]] int dialogueCount() const { return m_dialogueCount; }
+
+  void setThumbnailPath(const QString &path) { m_thumbnailPath = path; }
+  [[nodiscard]] QString thumbnailPath() const { return m_thumbnailPath; }
+
+  [[nodiscard]] bool isSceneNode() const {
+    return m_nodeType.compare("Scene", Qt::CaseInsensitive) == 0;
+  }
+
   [[nodiscard]] bool hasBreakpoint() const { return m_hasBreakpoint; }
   [[nodiscard]] bool isCurrentlyExecuting() const {
     return m_isCurrentlyExecuting;
@@ -104,8 +121,15 @@ private:
   bool m_isCurrentlyExecuting = false;
   bool m_isEntry = false;
 
+  // Scene Node specific properties
+  QString m_sceneId;
+  bool m_hasEmbeddedDialogue = false;
+  int m_dialogueCount = 0;
+  QString m_thumbnailPath;
+
   static constexpr qreal NODE_WIDTH = 200;
   static constexpr qreal NODE_HEIGHT = 80;
+  static constexpr qreal SCENE_NODE_HEIGHT = 100; // Larger for scene nodes
   static constexpr qreal CORNER_RADIUS = 8;
   static constexpr qreal PORT_RADIUS = 6;
 };
@@ -338,6 +362,11 @@ public:
     QString speaker;
     QString dialogueText;
     QStringList choices;
+    // Scene Node specific properties
+    QString sceneId;
+    bool hasEmbeddedDialogue = false;
+    int dialogueCount = 0;
+    QString thumbnailPath;
   };
 
   void onInitialize() override;
@@ -374,6 +403,11 @@ signals:
   void nodeSelected(const QString &nodeIdString);
   void nodeActivated(const QString &nodeIdString);
   void scriptNodeRequested(const QString &scriptPath);
+  // Scene Node specific signals
+  void sceneNodeDoubleClicked(const QString &sceneId);
+  void editSceneLayoutRequested(const QString &sceneId);
+  void editDialogueFlowRequested(const QString &sceneId);
+  void openSceneScriptRequested(const QString &sceneId, const QString &scriptPath);
 
 private slots:
   void onZoomIn();

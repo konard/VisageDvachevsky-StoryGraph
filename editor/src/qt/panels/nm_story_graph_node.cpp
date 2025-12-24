@@ -88,11 +88,13 @@ void NMGraphNodeItem::setEntry(bool isEntry) {
 }
 
 QPointF NMGraphNodeItem::inputPortPosition() const {
-  return mapToScene(QPointF(0, NODE_HEIGHT / 2));
+  const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+  return mapToScene(QPointF(0, height / 2));
 }
 
 QPointF NMGraphNodeItem::outputPortPosition() const {
-  return mapToScene(QPointF(NODE_WIDTH, NODE_HEIGHT / 2));
+  const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+  return mapToScene(QPointF(NODE_WIDTH, height / 2));
 }
 
 bool NMGraphNodeItem::hitTestInputPort(const QPointF &scenePos) const {
@@ -104,7 +106,8 @@ bool NMGraphNodeItem::hitTestInputPort(const QPointF &scenePos) const {
 
   const QPointF localPos = mapFromScene(scenePos);
   const qreal zoneWidth = 16.0;
-  const QRectF inputZone(0.0, 0.0, zoneWidth, NODE_HEIGHT);
+  const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+  const QRectF inputZone(0.0, 0.0, zoneWidth, height);
   return inputZone.contains(localPos);
 }
 
@@ -117,12 +120,14 @@ bool NMGraphNodeItem::hitTestOutputPort(const QPointF &scenePos) const {
 
   const QPointF localPos = mapFromScene(scenePos);
   const qreal zoneWidth = 16.0;
-  const QRectF outputZone(NODE_WIDTH - zoneWidth, 0.0, zoneWidth, NODE_HEIGHT);
+  const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+  const QRectF outputZone(NODE_WIDTH - zoneWidth, 0.0, zoneWidth, height);
   return outputZone.contains(localPos);
 }
 
 QRectF NMGraphNodeItem::boundingRect() const {
-  return QRectF(0, 0, NODE_WIDTH, NODE_HEIGHT);
+  const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+  return QRectF(0, 0, NODE_WIDTH, height);
 }
 
 void NMGraphNodeItem::paint(QPainter *painter,
@@ -132,15 +137,27 @@ void NMGraphNodeItem::paint(QPainter *painter,
 
   painter->setRenderHint(QPainter::Antialiasing);
 
-  // Node background
+  const bool isScene = isSceneNode();
+  const qreal nodeHeight = isScene ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
+
+  // Node background - Scene nodes get a distinct gradient
   QColor bgColor = m_isSelected ? palette.nodeSelected : palette.nodeDefault;
-  painter->setBrush(bgColor);
-  painter->setPen(QPen(palette.borderLight, 1));
-  painter->drawRoundedRect(boundingRect(), CORNER_RADIUS, CORNER_RADIUS);
+  if (isScene) {
+    // Scene nodes have a gradient background
+    QLinearGradient gradient(0, 0, 0, nodeHeight);
+    gradient.setColorAt(0, bgColor);
+    gradient.setColorAt(1, bgColor.darker(110));
+    painter->setBrush(gradient);
+    painter->setPen(QPen(QColor(100, 200, 150), 2)); // Green border for scenes
+  } else {
+    painter->setBrush(bgColor);
+    painter->setPen(QPen(palette.borderLight, 1));
+  }
+  painter->drawRoundedRect(QRectF(0, 0, NODE_WIDTH, nodeHeight), CORNER_RADIUS, CORNER_RADIUS);
 
   // Header bar with icon
   QRectF headerRect(0, 0, NODE_WIDTH, 28);
-  painter->setBrush(palette.bgDark);
+  painter->setBrush(isScene ? QColor(45, 65, 55) : palette.bgDark); // Greenish header for scenes
   painter->setPen(Qt::NoPen);
   QPainterPath headerPath;
   headerPath.addRoundedRect(headerRect, CORNER_RADIUS, CORNER_RADIUS);
@@ -155,7 +172,10 @@ void NMGraphNodeItem::paint(QPainter *painter,
   QColor iconColor = palette.textSecondary;
 
   // Map node types to icons and colors
-  if (m_nodeType.contains("Dialogue", Qt::CaseInsensitive)) {
+  if (isScene) {
+    iconName = "panel-scene-view"; // Use scene view icon
+    iconColor = QColor(100, 220, 150); // Green
+  } else if (m_nodeType.contains("Dialogue", Qt::CaseInsensitive)) {
     iconName = "node-dialogue";
     iconColor = QColor(100, 180, 255); // Blue
   } else if (m_nodeType.contains("Choice", Qt::CaseInsensitive)) {
@@ -191,7 +211,7 @@ void NMGraphNodeItem::paint(QPainter *painter,
   }
 
   // Draw node type text
-  painter->setPen(palette.textSecondary);
+  painter->setPen(isScene ? QColor(100, 220, 150) : palette.textSecondary);
   painter->setFont(NMStyleManager::instance().defaultFont());
   painter->drawText(headerRect.adjusted(28, 0, -8, 0),
                     Qt::AlignVCenter | Qt::AlignLeft, m_nodeType);
@@ -207,7 +227,7 @@ void NMGraphNodeItem::paint(QPainter *painter,
   }
 
   // Node title (body)
-  QRectF titleRect(8, 34, NODE_WIDTH - 16, NODE_HEIGHT - 42);
+  QRectF titleRect(8, 34, NODE_WIDTH - 16, nodeHeight - 42);
   painter->setPen(palette.textPrimary);
   QFont boldFont = NMStyleManager::instance().defaultFont();
   boldFont.setBold(true);
@@ -215,9 +235,34 @@ void NMGraphNodeItem::paint(QPainter *painter,
   painter->drawText(titleRect, Qt::AlignTop | Qt::AlignLeft | Qt::TextWordWrap,
                     m_title);
 
+  // Scene-specific: Draw dialogue count badge
+  if (isScene && m_dialogueCount > 0) {
+    const QString countText = QString("[%1 dialogues]").arg(m_dialogueCount);
+    QFont smallFont = NMStyleManager::instance().defaultFont();
+    smallFont.setPointSize(smallFont.pointSize() - 1);
+    painter->setFont(smallFont);
+    painter->setPen(QColor(150, 200, 180));
+    painter->drawText(QRectF(8, nodeHeight - 22, NODE_WIDTH - 16, 18),
+                      Qt::AlignBottom | Qt::AlignLeft, countText);
+  }
+
+  // Scene-specific: Draw embedded dialogue indicator
+  if (isScene && m_hasEmbeddedDialogue) {
+    // Small graph icon in bottom-right corner
+    QRectF indicatorRect(NODE_WIDTH - 24, nodeHeight - 22, 16, 16);
+    painter->setPen(QColor(100, 180, 255));
+    painter->setBrush(Qt::NoBrush);
+    painter->drawRect(indicatorRect.adjusted(2, 2, -2, -2));
+    // Draw mini node icons
+    painter->drawEllipse(indicatorRect.center() - QPointF(3, 3), 2, 2);
+    painter->drawEllipse(indicatorRect.center() + QPointF(3, 3), 2, 2);
+    painter->drawLine(indicatorRect.center() - QPointF(1, 1),
+                      indicatorRect.center() + QPointF(1, 1));
+  }
+
   // Input/output ports
-  const QPointF inputPort(0, NODE_HEIGHT / 2);
-  const QPointF outputPort(NODE_WIDTH, NODE_HEIGHT / 2);
+  const QPointF inputPort(0, nodeHeight / 2);
+  const QPointF outputPort(NODE_WIDTH, nodeHeight / 2);
   painter->setBrush(palette.bgDark);
   painter->setPen(QPen(palette.borderLight, 1));
   painter->drawEllipse(inputPort, PORT_RADIUS, PORT_RADIUS);
@@ -304,6 +349,31 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   QMenu menu;
   auto &iconMgr = NMIconManager::instance();
 
+  const bool isScene = isSceneNode();
+
+  // Scene-specific actions
+  QAction *editLayoutAction = nullptr;
+  QAction *editDialogueFlowAction = nullptr;
+  QAction *openScriptAction = nullptr;
+
+  if (isScene) {
+    editLayoutAction = menu.addAction("Edit Scene Layout");
+    editLayoutAction->setIcon(iconMgr.getIcon("panel-scene-view", 16));
+    editLayoutAction->setToolTip("Open Scene View to edit visual layout");
+
+    editDialogueFlowAction = menu.addAction("Edit Dialogue Flow");
+    editDialogueFlowAction->setIcon(iconMgr.getIcon("node-dialogue", 16));
+    editDialogueFlowAction->setToolTip("Edit embedded dialogue graph");
+
+    if (!m_scriptPath.isEmpty()) {
+      openScriptAction = menu.addAction("Open Script");
+      openScriptAction->setIcon(iconMgr.getIcon("panel-script-editor", 16));
+      openScriptAction->setToolTip("Open .nms script file");
+    }
+
+    menu.addSeparator();
+  }
+
   // Toggle Breakpoint action
   QAction *breakpointAction =
       menu.addAction(m_hasBreakpoint ? "Remove Breakpoint" : "Add Breakpoint");
@@ -316,11 +386,27 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   QAction *editAction = menu.addAction("Edit Node Properties");
   editAction->setIcon(iconMgr.getIcon("panel-inspector", 16));
 
+  // Rename Scene action (Scene nodes only)
+  QAction *renameAction = nullptr;
+  if (isScene) {
+    renameAction = menu.addAction("Rename Scene");
+    renameAction->setIcon(iconMgr.getIcon("edit-rename", 16));
+  }
+
   // Set as Entry action
   QAction *entryAction = menu.addAction("Set as Entry");
   entryAction->setIcon(iconMgr.getIcon("node-start", 16));
   if (m_isEntry) {
     entryAction->setEnabled(false);
+  }
+
+  menu.addSeparator();
+
+  // Duplicate Scene action (Scene nodes only)
+  QAction *duplicateAction = nullptr;
+  if (isScene) {
+    duplicateAction = menu.addAction("Duplicate Scene");
+    duplicateAction->setIcon(iconMgr.getIcon("edit-copy", 16));
   }
 
   // Delete Node action
@@ -354,6 +440,26 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
         view->emitNodeClicked(nodeId());
       }
     }
+  } else if (isScene && selectedAction == editLayoutAction) {
+    // Emit signal to open Scene View for this scene
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *view =
+              qobject_cast<NMStoryGraphView *>(scene()->views().first())) {
+        emit view->nodeDoubleClicked(nodeId()); // Reuse double-click signal
+      }
+    }
+  } else if (isScene && selectedAction == editDialogueFlowAction) {
+    // TODO: Emit signal to open embedded dialogue graph editor
+    qDebug() << "[StoryGraph] Edit dialogue flow for scene:" << m_sceneId;
+  } else if (isScene && openScriptAction && selectedAction == openScriptAction) {
+    // TODO: Emit signal to open script editor
+    qDebug() << "[StoryGraph] Open script:" << m_scriptPath;
+  } else if (isScene && duplicateAction && selectedAction == duplicateAction) {
+    // TODO: Implement scene duplication
+    qDebug() << "[StoryGraph] Duplicate scene:" << m_sceneId;
+  } else if (isScene && renameAction && selectedAction == renameAction) {
+    // TODO: Implement scene renaming
+    qDebug() << "[StoryGraph] Rename scene:" << m_sceneId;
   }
 
   event->accept();

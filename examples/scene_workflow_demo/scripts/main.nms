@@ -1,0 +1,188 @@
+// Scene Workflow Demo - Main Script Entry Point
+// Demonstrates Scene Node based story structure (Code-First Workflow)
+// Version: 1.0
+//
+// This example shows how to organize a visual novel using Scene Nodes
+// in the Story Graph, with each scene having its own .nms script file.
+
+// ============================================================================
+// CHARACTER DEFINITIONS
+// ============================================================================
+
+character Alice(name="Alice", color="#64DC96")
+character Bob(name="Bob", color="#6496DC")
+character Narrator(name="", color="#A0A0A0")
+
+// ============================================================================
+// GLOBAL VARIABLES
+// Track player choices across scenes
+// ============================================================================
+
+var trust_level = 0
+var visited_cafe = false
+var good_ending = false
+
+// ============================================================================
+// SCENE: intro
+// Entry point - The beginning of the story
+// ============================================================================
+
+scene intro {
+    background "backgrounds/street_morning.png"
+
+    Narrator "A new day begins in the city..."
+
+    show Alice at center_left
+    Alice "Good morning! Ready for today?"
+
+    menu {
+        "Yes, let's go!" -> {
+            trust_level = trust_level + 1
+            Alice "Great enthusiasm!"
+            goto cafe_meeting
+        }
+        "I need more coffee first..." -> {
+            Alice "Ha! Same here."
+            goto cafe_meeting
+        }
+    }
+}
+
+// ============================================================================
+// SCENE: cafe_meeting
+// Second scene - Meeting at the cafe
+// ============================================================================
+
+scene cafe_meeting {
+    background "backgrounds/cafe_interior.png"
+    visited_cafe = true
+
+    show Alice at center_left
+    show Bob at center_right
+
+    Alice "Welcome to my favorite cafe!"
+    Bob "Nice place. I like the atmosphere."
+
+    Narrator "Bob looks around curiously."
+
+    menu {
+        "Order coffee for everyone" -> {
+            trust_level = trust_level + 2
+            Bob "Thanks! That's very kind."
+            Alice "Bob, tell us about your project."
+            goto project_discussion
+        }
+        "Let's get straight to business" -> {
+            Bob "Alright, down to business then."
+            goto project_discussion
+        }
+        "Actually, I should leave" -> {
+            Alice "Oh... okay. See you later?"
+            goto early_ending
+        }
+    }
+}
+
+// ============================================================================
+// SCENE: project_discussion
+// Third scene - Discussing the project
+// ============================================================================
+
+scene project_discussion {
+    background "backgrounds/cafe_interior.png"
+
+    show Alice at center_left
+    show Bob at center_right
+
+    Bob "So here's what I've been working on..."
+
+    Narrator "Bob explains his innovative project idea."
+
+    Alice "This sounds amazing!"
+
+    if trust_level >= 2 {
+        Bob "I'd love your help on this."
+
+        menu {
+            "I'm in! Let's do it." -> {
+                good_ending = true
+                goto good_ending
+            }
+            "I need to think about it." -> {
+                goto neutral_ending
+            }
+        }
+    } else {
+        Bob "Well, that's the general idea."
+        goto neutral_ending
+    }
+}
+
+// ============================================================================
+// SCENE: good_ending
+// Good ending - Partnership formed
+// ============================================================================
+
+scene good_ending {
+    background "backgrounds/sunset.png"
+
+    show Alice at center_left
+    show Bob at center_right
+
+    Narrator "And so began a wonderful partnership..."
+
+    Bob "Thanks for believing in this project."
+    Alice "I knew you two would hit it off!"
+
+    Narrator "THE END - Good Ending"
+    Narrator "Trust Level: {trust_level}"
+
+    // @graph-begin
+    // Auto-generated transitions from Story Graph
+    // (no outgoing transitions)
+    // @graph-end
+}
+
+// ============================================================================
+// SCENE: neutral_ending
+// Neutral ending - Maybe next time
+// ============================================================================
+
+scene neutral_ending {
+    background "backgrounds/cafe_interior.png"
+
+    show Alice at center_left
+    show Bob at center_right
+
+    Bob "Well, maybe we can talk again sometime."
+    Alice "Yeah, let's keep in touch."
+
+    Narrator "THE END - Neutral Ending"
+    Narrator "Trust Level: {trust_level}"
+
+    // @graph-begin
+    // Auto-generated transitions from Story Graph
+    // (no outgoing transitions)
+    // @graph-end
+}
+
+// ============================================================================
+// SCENE: early_ending
+// Early ending - Left the cafe
+// ============================================================================
+
+scene early_ending {
+    background "backgrounds/street_morning.png"
+
+    show Alice at center
+
+    Alice "I wonder what that was about..."
+
+    Narrator "THE END - Early Ending"
+    Narrator "You left before hearing Bob's proposal."
+
+    // @graph-begin
+    // Auto-generated transitions from Story Graph
+    // (no outgoing transitions)
+    // @graph-end
+}
