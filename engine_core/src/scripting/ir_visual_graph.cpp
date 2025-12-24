@@ -79,13 +79,17 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
       {"SceneStart", IRNodeType::SceneStart},
       {"SceneEnd", IRNodeType::SceneEnd},
       {"Comment", IRNodeType::Comment},
+      {"Scene", IRNodeType::Scene},  // Scene node type for Visual-First/Code-First workflows
       {"Sequence", IRNodeType::Sequence},
       {"Branch", IRNodeType::Branch},
+      {"Switch", IRNodeType::Switch},
+      {"Loop", IRNodeType::Loop},
       {"ShowCharacter", IRNodeType::ShowCharacter},
       {"HideCharacter", IRNodeType::HideCharacter},
       {"ShowBackground", IRNodeType::ShowBackground},
       {"Dialogue", IRNodeType::Dialogue},
       {"Choice", IRNodeType::Choice},
+      {"ChoiceOption", IRNodeType::ChoiceOption},
       {"PlayMusic", IRNodeType::PlayMusic},
       {"StopMusic", IRNodeType::StopMusic},
       {"PlaySound", IRNodeType::PlaySound},
@@ -94,7 +98,10 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
       {"SetVariable", IRNodeType::SetVariable},
       {"GetVariable", IRNodeType::GetVariable},
       {"Goto", IRNodeType::Goto},
-      {"Label", IRNodeType::Label}};
+      {"Label", IRNodeType::Label},
+      {"Expression", IRNodeType::Expression},
+      {"FunctionCall", IRNodeType::FunctionCall},
+      {"Custom", IRNodeType::Custom}};
 
   std::unordered_map<NodeId, NodeId> idMap;
   for (const auto &vnode : m_nodes) {

@@ -5,6 +5,7 @@
  * @brief Project Settings panel for configuring project-wide settings
  *
  * This panel provides access to:
+ * - Workflow settings (Visual-First, Code-First, Hybrid)
  * - Display settings (resolution, safe area, fullscreen)
  * - Text/dialogue settings (font theme, text speed, auto-advance)
  * - Localization settings (default locale, available locales)
@@ -54,14 +55,21 @@ private slots:
 
 private:
   void setupUI();
+  void setupWorkflowTab(QWidget *parent);
   void setupDisplayTab(QWidget *parent);
   void setupTextTab(QWidget *parent);
   void setupLocalizationTab(QWidget *parent);
   void setupBuildProfilesTab(QWidget *parent);
   void connectSignals();
   void updateApplyButton();
+  void updateWorkflowDescription();
 
   QTabWidget *m_tabWidget = nullptr;
+
+  // Workflow settings (Scene Node development approach)
+  QComboBox *m_workflowCombo = nullptr;         // Visual-First, Code-First, Hybrid
+  QCheckBox *m_allowMixedWorkflows = nullptr;   // Allow per-scene workflow override
+  QLabel *m_workflowDescription = nullptr;      // Description of selected workflow
 
   // Display settings
   QComboBox *m_resolutionCombo = nullptr;

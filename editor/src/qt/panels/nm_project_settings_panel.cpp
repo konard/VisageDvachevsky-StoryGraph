@@ -42,6 +42,11 @@ void NMProjectSettingsPanel::setupUI() {
   // Tab widget for different settings categories
   m_tabWidget = new QTabWidget(mainWidget);
 
+  // Workflow tab first - most important for scene development approach
+  auto *workflowTab = new QWidget();
+  setupWorkflowTab(workflowTab);
+  m_tabWidget->addTab(workflowTab, tr("Workflow"));
+
   auto *displayTab = new QWidget();
   setupDisplayTab(displayTab);
   m_tabWidget->addTab(displayTab, tr("Display"));
@@ -340,6 +345,96 @@ void NMProjectSettingsPanel::setupBuildProfilesTab(QWidget *parent) {
   layout->addStretch();
 }
 
+void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
+  auto *layout = new QVBoxLayout(parent);
+  layout->setContentsMargins(12, 12, 12, 12);
+  layout->setSpacing(12);
+
+  // Development Workflow group
+  auto *workflowGroup = new QGroupBox(tr("Development Workflow"), parent);
+  auto *workflowLayout = new QFormLayout(workflowGroup);
+
+  m_workflowCombo = new QComboBox(workflowGroup);
+  m_workflowCombo->addItems({
+      tr("Visual-First"),
+      tr("Code-First"),
+      tr("Hybrid")
+  });
+  m_workflowCombo->setToolTip(
+      tr("Choose the primary development approach for scene creation"));
+  workflowLayout->addRow(tr("Default Workflow:"), m_workflowCombo);
+
+  m_allowMixedWorkflows = new QCheckBox(
+      tr("Allow per-scene workflow override"), workflowGroup);
+  m_allowMixedWorkflows->setChecked(true);
+  m_allowMixedWorkflows->setToolTip(
+      tr("When enabled, individual scenes can use a different workflow than the default"));
+  workflowLayout->addRow("", m_allowMixedWorkflows);
+
+  layout->addWidget(workflowGroup);
+
+  // Workflow description
+  m_workflowDescription = new QLabel(parent);
+  m_workflowDescription->setWordWrap(true);
+  m_workflowDescription->setStyleSheet("color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
+  updateWorkflowDescription();
+  layout->addWidget(m_workflowDescription);
+
+  // Connect workflow combo to update description
+  connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this]() {
+    updateWorkflowDescription();
+    onSettingChanged();
+  });
+
+  // Workflow help section
+  auto *helpGroup = new QGroupBox(tr("Workflow Comparison"), parent);
+  auto *helpLayout = new QVBoxLayout(helpGroup);
+
+  auto *helpLabel = new QLabel(
+      tr("<b>Visual-First:</b> Create scenes visually with embedded dialogue graphs. "
+         "Best for rapid prototyping and non-programmers.<br><br>"
+         "<b>Code-First:</b> Define scenes in NMScript with optional visual layout. "
+         "Best for version control and complex logic.<br><br>"
+         "<b>Hybrid:</b> Mix both approaches per scene. "
+         "Best for team collaboration and flexibility."),
+      helpGroup);
+  helpLabel->setWordWrap(true);
+  helpLabel->setTextFormat(Qt::RichText);
+  helpLayout->addWidget(helpLabel);
+
+  layout->addWidget(helpGroup);
+  layout->addStretch();
+}
+
+void NMProjectSettingsPanel::updateWorkflowDescription() {
+  if (!m_workflowDescription || !m_workflowCombo) return;
+
+  int idx = m_workflowCombo->currentIndex();
+  QString desc;
+  switch (idx) {
+    case 0: // Visual-First
+      desc = tr("Visual-First: Create scenes visually using the Scene View and "
+                "embedded dialogue graphs. Double-click a Scene Node to edit its "
+                "visual layout, or right-click and choose 'Edit Dialogue Flow' to "
+                "add dialogue sequences. No coding required.");
+      break;
+    case 1: // Code-First
+      desc = tr("Code-First: Define dialogue and game logic in NMScript (.nms) files. "
+                "Create Scene Nodes in the Story Graph to define structure, then "
+                "right-click and choose 'Open Script' to write the scene logic. "
+                "Optionally configure visual layout in Scene View.");
+      break;
+    case 2: // Hybrid
+      desc = tr("Hybrid: Use both Visual-First and Code-First approaches as needed. "
+                "Simple scenes can use embedded dialogue graphs, while complex "
+                "scenes with branching logic can use NMScript. Each scene can "
+                "choose its own workflow.");
+      break;
+  }
+  m_workflowDescription->setText(desc);
+}
+
 void NMProjectSettingsPanel::connectSignals() {
   // Connect all setting widgets to onSettingChanged
   auto connectCombo = [this](QComboBox *combo) {
@@ -369,6 +464,9 @@ void NMProjectSettingsPanel::connectSignals() {
               &NMProjectSettingsPanel::onSettingChanged);
     }
   };
+
+  // Workflow (note: m_workflowCombo is connected in setupWorkflowTab with description update)
+  connectCheck(m_allowMixedWorkflows);
 
   // Display
   connectCombo(m_resolutionCombo);
