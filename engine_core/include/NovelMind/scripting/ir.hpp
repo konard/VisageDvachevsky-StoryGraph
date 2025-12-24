@@ -216,8 +216,14 @@ struct SceneNodeData {
   std::string thumbnailPath;      // Optional scene preview thumbnail
   u32 dialogueCount;              // Number of dialogue nodes in scene
 
+  // Animation data integration
+  std::string animationDataPath;  // Path to animation timeline data file
+  bool hasAnimationData;          // Whether scene has associated animations
+  u32 animationTrackCount;        // Number of animation tracks in scene
+
   SceneNodeData()
-      : hasEmbeddedDialogue(false), dialogueCount(0) {}
+      : hasEmbeddedDialogue(false), dialogueCount(0),
+        hasAnimationData(false), animationTrackCount(0) {}
 };
 
 /**

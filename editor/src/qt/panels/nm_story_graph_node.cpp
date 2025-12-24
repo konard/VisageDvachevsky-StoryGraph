@@ -469,6 +469,8 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   QAction *editDialogueFlowAction = nullptr;
   QAction *openScriptAction = nullptr;
 
+  QAction *editAnimationsAction = nullptr;
+
   if (isScene) {
     editLayoutAction = menu.addAction("Edit Scene Layout");
     editLayoutAction->setIcon(iconMgr.getIcon("panel-scene-view", 16));
@@ -477,6 +479,10 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     editDialogueFlowAction = menu.addAction("Edit Dialogue Flow");
     editDialogueFlowAction->setIcon(iconMgr.getIcon("node-dialogue", 16));
     editDialogueFlowAction->setToolTip("Edit embedded dialogue graph");
+
+    editAnimationsAction = menu.addAction("Edit Animations");
+    editAnimationsAction->setIcon(iconMgr.getIcon("panel-timeline", 16));
+    editAnimationsAction->setToolTip("Open Timeline to edit scene animations");
 
     if (!m_scriptPath.isEmpty()) {
       openScriptAction = menu.addAction("Open Script");
@@ -597,6 +603,14 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
   } else if (isScene && selectedAction == editDialogueFlowAction) {
     // TODO: Emit signal to open embedded dialogue graph editor
     qDebug() << "[StoryGraph] Edit dialogue flow for scene:" << m_sceneId;
+  } else if (isScene && editAnimationsAction && selectedAction == editAnimationsAction) {
+    // Emit signal to open Timeline and Scene View for animation editing
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *view =
+              qobject_cast<NMStoryGraphView *>(scene()->views().first())) {
+        emit view->nodeDoubleClicked(nodeId()); // Reuse double-click signal
+      }
+    }
   } else if (isScene && openScriptAction && selectedAction == openScriptAction) {
     // TODO: Emit signal to open script editor
     qDebug() << "[StoryGraph] Open script:" << m_scriptPath;

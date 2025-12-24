@@ -805,6 +805,34 @@ void NMMainWindow::setupConnections() {
             m_scriptEditorPanel->setFocus();
           });
 
+  // Scene Node → Timeline Panel integration
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::sceneNodeDoubleClicked, this,
+          [this](const QString &sceneId) {
+            if (!m_sceneViewPanel || !m_timelinePanel) {
+              return;
+            }
+            qDebug() << "[MainWindow] Scene node double-clicked, opening Scene View and Timeline for:" << sceneId;
+
+            // Load scene in Scene View
+            auto &playControllerRef = NMPlayModeController::instance();
+            if (!playControllerRef.isPlaying() && !playControllerRef.isPaused()) {
+              m_sceneViewPanel->loadSceneDocument(sceneId);
+            }
+
+            // Show Scene View panel
+            m_sceneViewPanel->show();
+            m_sceneViewPanel->raise();
+
+            // Show Timeline panel
+            m_timelinePanel->show();
+            m_timelinePanel->raise();
+
+            // Enable animation preview mode in Scene View
+            m_sceneViewPanel->setAnimationPreviewMode(true);
+
+            setStatusMessage(tr("Editing scene: %1 (Timeline and Scene View)").arg(sceneId), 3000);
+          });
+
   connect(m_scriptEditorPanel, &NMScriptEditorPanel::docHtmlChanged,
           m_scriptDocPanel, &NMScriptDocPanel::setDocHtml);
   connect(m_assetBrowserPanel, &NMAssetBrowserPanel::assetSelected, this,
@@ -1168,6 +1196,32 @@ void NMMainWindow::setupConnections() {
               // Could update timeline or other panels that use curves
               // Curve editing triggers document modification tracking
               // through the undo system when connected to property changes
+            });
+  }
+
+  // Timeline Panel ↔ Scene View Panel synchronization
+  if (m_timelinePanel && m_sceneViewPanel) {
+    // When Timeline frame changes, update Scene View preview
+    connect(m_timelinePanel, &NMTimelinePanel::frameChanged, this,
+            [this](int frame) {
+              if (!m_sceneViewPanel || !m_sceneViewPanel->isAnimationPreviewMode()) {
+                return;
+              }
+              // Note: Animation adapter would apply interpolated values to scene objects
+              // For now, we just trigger a viewport update to redraw with current state
+              if (auto *view = m_sceneViewPanel->graphicsView()) {
+                view->viewport()->update();
+              }
+            });
+
+    // When Timeline playback state changes, update UI
+    connect(m_timelinePanel, &NMTimelinePanel::playbackStateChanged, this,
+            [this](bool playing) {
+              if (playing) {
+                setStatusMessage(tr("Animation preview playing..."));
+              } else {
+                setStatusMessage(tr("Animation preview stopped"), 2000);
+              }
             });
   }
 }

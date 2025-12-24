@@ -403,6 +403,10 @@ public:
     bool hasEmbeddedDialogue = false;
     int dialogueCount = 0;
     QString thumbnailPath;
+    // Animation data integration (for Scene Nodes)
+    QString animationDataPath;
+    bool hasAnimationData = false;
+    int animationTrackCount = 0;
   };
 
   void onInitialize() override;

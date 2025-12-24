@@ -122,6 +122,10 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     node.hasEmbeddedDialogue = obj.value("hasEmbeddedDialogue").toBool(false);
     node.dialogueCount = obj.value("dialogueCount").toInt(0);
     node.thumbnailPath = obj.value("thumbnailPath").toString();
+    // Animation data integration
+    node.animationDataPath = obj.value("animationDataPath").toString();
+    node.hasAnimationData = obj.value("hasAnimationData").toBool(false);
+    node.animationTrackCount = obj.value("animationTrackCount").toInt(0);
 
     nodes.insert(id, node);
   }
@@ -184,6 +188,16 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     }
     if (!it.value().thumbnailPath.isEmpty()) {
       obj.insert("thumbnailPath", it.value().thumbnailPath);
+    }
+    // Animation data integration
+    if (!it.value().animationDataPath.isEmpty()) {
+      obj.insert("animationDataPath", it.value().animationDataPath);
+    }
+    if (it.value().hasAnimationData) {
+      obj.insert("hasAnimationData", it.value().hasAnimationData);
+    }
+    if (it.value().animationTrackCount > 0) {
+      obj.insert("animationTrackCount", it.value().animationTrackCount);
     }
 
     nodeArray.push_back(obj);
