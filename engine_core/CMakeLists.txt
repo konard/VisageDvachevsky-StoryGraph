@@ -50,6 +50,7 @@ add_library(engine_core STATIC
     src/scripting/ir_conversion.cpp
     src/scripting/ir_visual_graph.cpp
     src/scripting/ir_round_trip.cpp
+    src/scripting/dialogue_localization.cpp
 
     # Renderer (Text)
     src/renderer/text_layout.cpp

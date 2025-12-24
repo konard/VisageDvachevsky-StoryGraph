@@ -141,6 +141,68 @@ struct VoiceClipData {
 };
 
 /**
+ * @brief Translation status for localized dialogue
+ */
+enum class TranslationStatus : u8 {
+  NotLocalizable,   // Text is not meant to be localized (e.g., system text)
+  Untranslated,     // No translation exists for the current locale
+  Translated,       // Translation exists and is complete
+  NeedsReview,      // Translation exists but may be outdated
+  Missing           // Key exists but translation is empty
+};
+
+/**
+ * @brief Localization data for dialogue nodes
+ *
+ * Stores localization key and translation status for dialogue text.
+ * Keys follow the format: scene.{sceneId}.dialogue.{nodeId}
+ */
+struct DialogueLocalizationData {
+  std::string localizationKey;       // Auto-generated or custom key
+  std::string customKeyOverride;     // Optional manual key override
+  TranslationStatus status;          // Current translation status
+  bool useCustomKey;                 // Whether to use custom key instead of auto-generated
+
+  DialogueLocalizationData()
+      : status(TranslationStatus::Untranslated),
+        useCustomKey(false) {}
+
+  /**
+   * @brief Get the effective localization key
+   * @return Custom key if set, otherwise the auto-generated key
+   */
+  [[nodiscard]] const std::string& getEffectiveKey() const {
+    return useCustomKey && !customKeyOverride.empty()
+           ? customKeyOverride
+           : localizationKey;
+  }
+
+  /**
+   * @brief Generate a localization key for a dialogue node
+   * @param sceneId The scene identifier
+   * @param nodeId The node identifier
+   * @return Generated key in format scene.{sceneId}.dialogue.{nodeId}
+   */
+  static std::string generateKey(const std::string& sceneId, NodeId nodeId) {
+    return "scene." + sceneId + ".dialogue." + std::to_string(nodeId);
+  }
+
+  /**
+   * @brief Generate a localization key for a choice option
+   * @param sceneId The scene identifier
+   * @param nodeId The choice node identifier
+   * @param optionIndex The option index (0-based)
+   * @return Generated key in format scene.{sceneId}.choice.{nodeId}.{optionIndex}
+   */
+  static std::string generateChoiceKey(const std::string& sceneId,
+                                        NodeId nodeId,
+                                        size_t optionIndex) {
+    return "scene." + sceneId + ".choice." + std::to_string(nodeId) +
+           "." + std::to_string(optionIndex);
+  }
+};
+
+/**
  * @brief Data structure for Scene Node properties
  *
  * Represents a complete scene with visual layout and embedded dialogue.
@@ -702,6 +764,105 @@ private:
   std::unique_ptr<RoundTripConverter> m_converter;
   std::unique_ptr<GraphDiffer> m_differ;
   std::unique_ptr<IDNormalizer> m_normalizer;
+};
+
+/**
+ * @brief Dialogue localization entry for export/import
+ */
+struct DialogueLocalizationEntry {
+  std::string key;           // Localization key
+  std::string sourceText;    // Original dialogue text (default locale)
+  std::string speaker;       // Speaker/character name
+  NodeId nodeId;             // Node ID for reference
+  std::string sceneId;       // Parent scene ID
+  TranslationStatus status;  // Translation status
+
+  DialogueLocalizationEntry()
+      : nodeId(0), status(TranslationStatus::Untranslated) {}
+};
+
+/**
+ * @brief Helper class for dialogue localization operations
+ *
+ * Provides functionality to:
+ * - Extract all localizable dialogue from an IR graph
+ * - Generate localization keys for dialogue nodes
+ * - Check translation status for dialogue nodes
+ * - Collect dialogue entries for export to localization files
+ */
+class DialogueLocalizationHelper {
+public:
+  DialogueLocalizationHelper() = default;
+  ~DialogueLocalizationHelper() = default;
+
+  /**
+   * @brief Collect all dialogue entries from a scene's embedded graph
+   * @param graph The IR graph containing dialogue nodes
+   * @param sceneId The scene identifier for key generation
+   * @return Vector of dialogue localization entries
+   */
+  [[nodiscard]] std::vector<DialogueLocalizationEntry>
+  collectDialogueEntries(const IRGraph& graph, const std::string& sceneId) const;
+
+  /**
+   * @brief Collect all choice option entries from a scene
+   * @param graph The IR graph containing choice nodes
+   * @param sceneId The scene identifier for key generation
+   * @return Vector of dialogue localization entries for choice options
+   */
+  [[nodiscard]] std::vector<DialogueLocalizationEntry>
+  collectChoiceEntries(const IRGraph& graph, const std::string& sceneId) const;
+
+  /**
+   * @brief Generate localization keys for all dialogue nodes in a graph
+   * @param graph The IR graph to process (modified in place)
+   * @param sceneId The scene identifier for key generation
+   * @return Number of keys generated
+   */
+  size_t generateLocalizationKeys(IRGraph& graph, const std::string& sceneId);
+
+  /**
+   * @brief Check if a dialogue node has a localization key
+   * @param node The dialogue node to check
+   * @return True if the node has a localization key property
+   */
+  [[nodiscard]] bool hasLocalizationKey(const IRNode& node) const;
+
+  /**
+   * @brief Get the localization key for a dialogue node
+   * @param node The dialogue node
+   * @return The localization key, or empty string if not set
+   */
+  [[nodiscard]] std::string getLocalizationKey(const IRNode& node) const;
+
+  /**
+   * @brief Set the localization key for a dialogue node
+   * @param node The dialogue node
+   * @param key The localization key to set
+   */
+  void setLocalizationKey(IRNode& node, const std::string& key);
+
+  /**
+   * @brief Get all nodes that need localization (dialogues and choices)
+   * @param graph The IR graph to scan
+   * @return Vector of node IDs that require localization
+   */
+  [[nodiscard]] std::vector<NodeId>
+  getLocalizableNodes(const IRGraph& graph) const;
+
+  /**
+   * @brief Find dialogue nodes missing localization keys
+   * @param graph The IR graph to scan
+   * @return Vector of node IDs without localization keys
+   */
+  [[nodiscard]] std::vector<NodeId>
+  findMissingKeys(const IRGraph& graph) const;
+
+  // Property name constants for dialogue localization
+  static constexpr const char* PROP_LOCALIZATION_KEY = "localization_key";
+  static constexpr const char* PROP_LOCALIZATION_KEY_CUSTOM = "localization_key_custom";
+  static constexpr const char* PROP_USE_CUSTOM_KEY = "use_custom_localization_key";
+  static constexpr const char* PROP_TRANSLATION_STATUS = "translation_status";
 };
 
 } // namespace NovelMind::scripting

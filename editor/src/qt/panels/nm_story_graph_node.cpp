@@ -316,6 +316,60 @@ void NMGraphNodeItem::paint(QPainter *painter,
       painter->drawText(QRectF(8, bottomY, 60, 16),
                         Qt::AlignVCenter | Qt::AlignLeft, "Voice");
     }
+
+    // Localization status indicator
+    if (!m_localizationKey.isEmpty()) {
+      const qreal locIndicatorX = 8;
+      const qreal locIndicatorY = nodeHeight - 8;
+      const qreal indicatorSize = 6;
+
+      QColor locColor;
+      QString locTooltip;
+
+      switch (m_translationStatus) {
+        case 0: // NotLocalizable
+          // No indicator for non-localizable content
+          break;
+        case 1: // Untranslated
+          locColor = QColor(255, 180, 100); // Orange warning
+          locTooltip = "Untranslated";
+          break;
+        case 2: // Translated
+          locColor = QColor(100, 220, 150); // Green success
+          locTooltip = "Translated";
+          break;
+        case 3: // NeedsReview
+          locColor = QColor(180, 180, 255); // Light blue
+          locTooltip = "Needs Review";
+          break;
+        case 4: // Missing
+          locColor = QColor(255, 100, 100); // Red error
+          locTooltip = "Missing Translation";
+          break;
+        default:
+          locColor = QColor(180, 180, 180); // Gray
+          break;
+      }
+
+      if (m_translationStatus > 0) {
+        // Draw localization status dot
+        painter->setBrush(locColor);
+        painter->setPen(QPen(locColor.darker(120), 1));
+        painter->drawEllipse(QPointF(locIndicatorX, locIndicatorY), indicatorSize / 2, indicatorSize / 2);
+
+        // Draw localization key text (abbreviated)
+        QFont keyFont = NMStyleManager::instance().defaultFont();
+        keyFont.setPointSize(6);
+        painter->setFont(keyFont);
+        painter->setPen(palette.textMuted);
+        QString displayKey = m_localizationKey;
+        if (displayKey.length() > 20) {
+          displayKey = "..." + displayKey.right(17);
+        }
+        painter->drawText(QRectF(locIndicatorX + 8, locIndicatorY - 6, NODE_WIDTH - 80, 12),
+                          Qt::AlignVCenter | Qt::AlignLeft, displayKey);
+      }
+    }
   }
 
   // Input/output ports

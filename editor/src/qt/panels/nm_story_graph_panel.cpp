@@ -4,10 +4,13 @@
 #include "NovelMind/editor/project_manager.hpp"
 
 #include <QAction>
+#include <QComboBox>
 #include <QFile>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QList>
 #include <QPair>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -294,6 +297,35 @@ void NMStoryGraphPanel::setupToolBar() {
   actionAutoLayout->setToolTip(tr("Automatically arrange nodes (hierarchical layout)"));
   connect(actionAutoLayout, &QAction::triggered, this,
           &NMStoryGraphPanel::onAutoLayout);
+
+  // Localization controls section
+  m_toolBar->addSeparator();
+
+  // Locale preview selector
+  QLabel *localeLabel = new QLabel(tr("Preview:"), m_toolBar);
+  m_toolBar->addWidget(localeLabel);
+
+  m_localePreviewSelector = new QComboBox(m_toolBar);
+  m_localePreviewSelector->setMinimumWidth(80);
+  m_localePreviewSelector->addItem(tr("Source"), "");
+  m_localePreviewSelector->setToolTip(tr("Preview dialogue text in selected locale"));
+  connect(m_localePreviewSelector, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &NMStoryGraphPanel::onLocalePreviewChanged);
+  m_toolBar->addWidget(m_localePreviewSelector);
+
+  // Generate localization keys button
+  m_generateKeysBtn = new QPushButton(tr("Gen Keys"), m_toolBar);
+  m_generateKeysBtn->setToolTip(tr("Generate localization keys for all dialogue nodes"));
+  connect(m_generateKeysBtn, &QPushButton::clicked, this,
+          &NMStoryGraphPanel::onGenerateLocalizationKeysClicked);
+  m_toolBar->addWidget(m_generateKeysBtn);
+
+  // Export dialogue button
+  m_exportDialogueBtn = new QPushButton(tr("Export"), m_toolBar);
+  m_exportDialogueBtn->setToolTip(tr("Export all dialogue to localization files"));
+  connect(m_exportDialogueBtn, &QPushButton::clicked, this,
+          &NMStoryGraphPanel::onExportDialogueClicked);
+  m_toolBar->addWidget(m_exportDialogueBtn);
 
   if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_toolBar);

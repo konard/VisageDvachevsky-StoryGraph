@@ -115,6 +115,37 @@ public:
    */
   bool saveChanges();
 
+  /**
+   * @brief Import dialogue entries from story graph
+   * @param entries List of dialogue entries (key, sourceText pairs)
+   * @return Number of entries imported
+   */
+  int importDialogueEntries(const QList<QPair<QString, QString>> &entries);
+
+  /**
+   * @brief Check if a translation exists for a key in the current locale
+   * @param key The localization key to check
+   * @return true if translation exists, false otherwise
+   */
+  bool hasTranslation(const QString &key) const;
+
+  /**
+   * @brief Get the translation for a key in the current locale
+   * @param key The localization key
+   * @return The translated text, or empty string if not found
+   */
+  QString getTranslation(const QString &key) const;
+
+  /**
+   * @brief Get the list of available locales
+   */
+  QStringList availableLocales() const { return m_availableLocales; }
+
+  /**
+   * @brief Get the current locale code
+   */
+  QString currentLocale() const { return m_currentLocale; }
+
 signals:
   void keySelected(const QString &key);
   void navigateToFile(const QString &filePath, int lineNumber);

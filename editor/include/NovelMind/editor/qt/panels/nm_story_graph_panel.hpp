@@ -12,10 +12,12 @@
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include <QComboBox>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QHash>
+#include <QPushButton>
 #include <QStringList>
 #include <QVector>
 #include <QToolBar>
@@ -80,6 +82,16 @@ public:
   void setLocalizationKey(const QString &key) { m_localizationKey = key; }
   [[nodiscard]] QString localizationKey() const { return m_localizationKey; }
 
+  // Dialogue localization properties
+  void setTranslationStatus(int status) { m_translationStatus = status; }
+  [[nodiscard]] int translationStatus() const { return m_translationStatus; }
+
+  void setLocalizedText(const QString &text) { m_localizedText = text; }
+  [[nodiscard]] QString localizedText() const { return m_localizedText; }
+
+  [[nodiscard]] bool hasTranslation() const { return m_translationStatus == 2; } // Translated
+  [[nodiscard]] bool isMissingTranslation() const { return m_translationStatus == 4; } // Missing
+
   [[nodiscard]] bool hasVoiceClip() const { return !m_voiceClipPath.isEmpty(); }
   [[nodiscard]] bool isDialogueNode() const {
     return m_nodeType.compare("Dialogue", Qt::CaseInsensitive) == 0;
@@ -140,6 +152,10 @@ private:
   QString m_voiceClipPath;
   int m_voiceBindingStatus = 0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
   QString m_localizationKey;
+
+  // Dialogue localization properties
+  int m_translationStatus = 1; // 0=NotLocalizable, 1=Untranslated, 2=Translated, 3=NeedsReview, 4=Missing
+  QString m_localizedText;     // Translated text for current locale preview
 
   // Scene Node specific properties
   QString m_sceneId;
@@ -434,6 +450,11 @@ signals:
   void voiceRecordingRequested(const QString &nodeIdString, const QString &dialogueText, const QString &speaker);
   void voiceAutoDetectRequested(const QString &nodeIdString, const QString &localizationKey);
   void voiceClipChanged(const QString &nodeIdString, const QString &voicePath, int bindingStatus);
+  // Dialogue localization signals
+  void localePreviewChanged(const QString &localeCode);
+  void dialogueExportRequested(const QString &sceneId);
+  void localizationKeyClicked(const QString &nodeIdString, const QString &localizationKey);
+  void missingTranslationHighlighted(const QString &nodeIdString);
 
 private slots:
   void onZoomIn();
@@ -455,6 +476,9 @@ private slots:
   void onDeleteSelected();
   void onNodesMoved(const QVector<GraphNodeMove> &moves);
   void onEntryNodeRequested(const QString &nodeIdString);
+  void onLocalePreviewChanged(int index);
+  void onExportDialogueClicked();
+  void onGenerateLocalizationKeysClicked();
 
 private:
   void setupToolBar();
@@ -476,6 +500,12 @@ private:
   QString m_layoutEntryScene;
   bool m_isRebuilding = false;
   bool m_markNextNodeAsEntry = false;
+
+  // Localization controls
+  QComboBox *m_localePreviewSelector = nullptr;
+  QPushButton *m_exportDialogueBtn = nullptr;
+  QPushButton *m_generateKeysBtn = nullptr;
+  QString m_currentPreviewLocale;
 };
 
 } // namespace NovelMind::editor::qt

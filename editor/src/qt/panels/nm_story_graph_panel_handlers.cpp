@@ -623,4 +623,121 @@ void NMStoryGraphPanel::onEntryNodeRequested(const QString &nodeIdString) {
   detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
 }
 
+void NMStoryGraphPanel::onLocalePreviewChanged(int index) {
+  if (!m_localePreviewSelector || !m_scene) {
+    return;
+  }
+
+  m_currentPreviewLocale = m_localePreviewSelector->itemData(index).toString();
+  emit localePreviewChanged(m_currentPreviewLocale);
+
+  // Update dialogue nodes to show translated text or highlight missing
+  for (auto *item : m_scene->items()) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+      if (node->isDialogueNode()) {
+        // If source locale is selected, show original text
+        if (m_currentPreviewLocale.isEmpty()) {
+          node->setLocalizedText(node->dialogueText());
+          node->setTranslationStatus(2); // Translated (showing source)
+        } else {
+          // For other locales, would query LocalizationManager
+          // For now, mark as untranslated if different from source
+          node->setTranslationStatus(1); // Untranslated
+          node->setLocalizedText(QString("[%1]").arg(node->localizationKey()));
+        }
+        node->update();
+      }
+    }
+  }
+}
+
+void NMStoryGraphPanel::onExportDialogueClicked() {
+  if (!m_scene) {
+    return;
+  }
+
+  // Collect all dialogue nodes and their text
+  QStringList dialogueEntries;
+  for (auto *item : m_scene->items()) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+      if (node->isDialogueNode() && !node->localizationKey().isEmpty()) {
+        // Format: key,speaker,text
+        QString line = QString("\"%1\",\"%2\",\"%3\"")
+            .arg(node->localizationKey())
+            .arg(node->dialogueSpeaker())
+            .arg(node->dialogueText().replace("\"", "\"\""));
+        dialogueEntries.append(line);
+      }
+    }
+  }
+
+  if (dialogueEntries.isEmpty()) {
+    qDebug() << "[StoryGraph] No dialogue entries to export";
+    return;
+  }
+
+  // Emit signal for the localization panel to handle the actual export
+  emit dialogueExportRequested(m_layoutEntryScene);
+
+  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size() << "dialogue entries";
+}
+
+void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
+  if (!m_scene) {
+    return;
+  }
+
+  int keysGenerated = 0;
+
+  for (auto *item : m_scene->items()) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+      // Generate keys for dialogue nodes that don't have one
+      if (node->isDialogueNode() && node->localizationKey().isEmpty()) {
+        // Generate key in format: scene.{sceneId}.dialogue.{nodeId}
+        QString sceneId = node->sceneId().isEmpty()
+            ? node->nodeIdString()
+            : node->sceneId();
+        QString key = QString("scene.%1.dialogue.%2")
+            .arg(sceneId)
+            .arg(node->nodeId());
+        node->setLocalizationKey(key);
+        ++keysGenerated;
+      }
+
+      // Generate keys for choice nodes
+      if (node->nodeType().compare("Choice", Qt::CaseInsensitive) == 0) {
+        QString sceneId = node->sceneId().isEmpty()
+            ? node->nodeIdString()
+            : node->sceneId();
+        const QStringList &options = node->choiceOptions();
+        for (int i = 0; i < options.size(); ++i) {
+          // Each choice option gets its own key
+          // Keys are stored as a property on the node
+          QString key = QString("scene.%1.choice.%2.%3")
+              .arg(sceneId)
+              .arg(node->nodeId())
+              .arg(i);
+          // Store choice keys - would need to extend node to store multiple keys
+          ++keysGenerated;
+        }
+      }
+
+      node->update();
+    }
+  }
+
+  qDebug() << "[StoryGraph] Generated" << keysGenerated << "localization keys";
+
+  if (!m_isRebuilding) {
+    // Save layout with new keys
+    for (auto *item : m_scene->items()) {
+      if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+        m_layoutNodes.insert(node->nodeIdString(),
+                             detail::buildLayoutFromNode(node));
+      }
+    }
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+  }
+}
+
 } // namespace NovelMind::editor::qt

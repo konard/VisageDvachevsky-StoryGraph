@@ -1556,4 +1556,89 @@ void NMLocalizationPanel::updatePreview() {
   m_previewOutput->setText(QString::fromStdString(interpolated));
 }
 
+int NMLocalizationPanel::importDialogueEntries(
+    const QList<QPair<QString, QString>> &entries) {
+  if (entries.isEmpty()) {
+    return 0;
+  }
+
+  int imported = 0;
+  for (const auto &entry : entries) {
+    const QString &key = entry.first;
+    const QString &sourceText = entry.second;
+
+    // Skip if key already exists and has a value
+    if (m_entries.contains(key) && !m_entries[key].isDeleted) {
+      // Update source text if different
+      if (m_entries[key].translations.value(m_defaultLocale) != sourceText) {
+        m_entries[key].translations[m_defaultLocale] = sourceText;
+        m_entries[key].isModified = true;
+        ++imported;
+      }
+      continue;
+    }
+
+    // Add new entry
+    LocalizationEntry newEntry;
+    newEntry.key = key;
+    newEntry.translations[m_defaultLocale] = sourceText;
+    newEntry.isNew = true;
+    newEntry.isMissing = (m_currentLocale != m_defaultLocale);
+
+    m_entries[key] = newEntry;
+
+    // Add to localization manager
+    NovelMind::localization::LocaleId locale;
+    locale.language = m_defaultLocale.toStdString();
+    m_localization.setString(locale, key.toStdString(), sourceText.toStdString());
+
+    ++imported;
+  }
+
+  if (imported > 0) {
+    setDirty(true);
+    rebuildTable();
+  }
+
+  return imported;
+}
+
+bool NMLocalizationPanel::hasTranslation(const QString &key) const {
+  if (!m_entries.contains(key)) {
+    return false;
+  }
+
+  const LocalizationEntry &entry = m_entries.value(key);
+  if (entry.isDeleted) {
+    return false;
+  }
+
+  // Check if translation exists for current locale
+  if (m_currentLocale == m_defaultLocale) {
+    return entry.translations.contains(m_defaultLocale) &&
+           !entry.translations.value(m_defaultLocale).isEmpty();
+  }
+
+  return entry.translations.contains(m_currentLocale) &&
+         !entry.translations.value(m_currentLocale).isEmpty();
+}
+
+QString NMLocalizationPanel::getTranslation(const QString &key) const {
+  if (!m_entries.contains(key)) {
+    return QString();
+  }
+
+  const LocalizationEntry &entry = m_entries.value(key);
+  if (entry.isDeleted) {
+    return QString();
+  }
+
+  // Return translation for current locale, fallback to default
+  if (entry.translations.contains(m_currentLocale)) {
+    return entry.translations.value(m_currentLocale);
+  }
+
+  return entry.translations.value(m_defaultLocale);
+}
+
 } // namespace NovelMind::editor::qt
