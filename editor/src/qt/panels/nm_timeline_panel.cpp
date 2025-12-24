@@ -135,6 +135,9 @@ void TimelineTrack::clearSelection() {
 
 NMTimelinePanel::NMTimelinePanel(QWidget *parent)
     : NMDockPanel("Timeline", parent) {
+  // Timeline needs width for multiple tracks and height for playback controls
+  setMinimumPanelSize(350, 180);
+
   // Initialize render cache with proper config
   TimelineRenderCacheConfig cacheConfig;
   cacheConfig.maxMemoryBytes = 32 * 1024 * 1024;  // 32 MB

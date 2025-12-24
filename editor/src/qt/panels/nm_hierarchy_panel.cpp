@@ -405,6 +405,10 @@ bool NMHierarchyTree::canDropOn(QTreeWidgetItem *dragItem,
 NMHierarchyPanel::NMHierarchyPanel(QWidget *parent)
     : NMDockPanel(tr("Hierarchy"), parent) {
   setPanelId("Hierarchy");
+
+  // Hierarchy needs width for tree item names and icons, height to show tree
+  setMinimumPanelSize(220, 180);
+
   setupContent();
   setupToolBar();
 }

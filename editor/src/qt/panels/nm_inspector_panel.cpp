@@ -41,6 +41,11 @@ namespace NovelMind::editor::qt {
 NMInspectorPanel::NMInspectorPanel(QWidget *parent)
     : NMDockPanel(tr("Inspector"), parent) {
   setPanelId("Inspector");
+
+  // Inspector needs adequate width for property labels and edit controls
+  // and height to show at least a few property groups without excessive scrolling
+  setMinimumPanelSize(280, 200);
+
   setupContent();
 }
 

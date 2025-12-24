@@ -167,6 +167,10 @@ void NMConsoleOutput::refreshDisplay() {
 NMConsolePanel::NMConsolePanel(QWidget *parent)
     : NMDockPanel(tr("Console"), parent) {
   setPanelId("Console");
+
+  // Console needs width for log messages and height to show several log entries
+  setMinimumPanelSize(300, 150);
+
   setupContent();
   setupToolBar();
 }

@@ -9,6 +9,11 @@ namespace NovelMind::editor::qt {
 NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
     : NMDockPanel(tr("Scene View"), parent) {
   setPanelId("SceneView");
+
+  // Scene View is a central panel that needs sufficient space for
+  // the visual canvas, toolbar, and status overlays
+  setMinimumPanelSize(400, 300);
+
   setupContent();
   setupToolBar();
 }

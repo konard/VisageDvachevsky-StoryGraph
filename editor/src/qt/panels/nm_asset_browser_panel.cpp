@@ -200,6 +200,10 @@ NMAssetBrowserPanel::NMAssetBrowserPanel(QWidget *parent)
     : NMDockPanel(tr("Asset Browser"), parent) {
   setPanelId("AssetBrowser");
 
+  // Asset Browser needs width for thumbnails grid and tree view,
+  // height to show multiple rows of assets
+  setMinimumPanelSize(300, 200);
+
   // Initialize thumbnail cache (max 50MB)
   m_thumbnailCache.setMaxCost(50 * 1024);
 
