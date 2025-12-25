@@ -442,11 +442,9 @@ void NMSceneViewPanel::applyEditorPreview() {
   if (m_editorPreviewActive) {
     m_playOverlay->setDialogueImmediate(m_editorPreviewSpeaker,
                                         m_editorPreviewText);
-    if (m_editorPreviewChoices.isEmpty()) {
-      m_playOverlay->clearChoices();
-    } else {
-      m_playOverlay->setChoices(m_editorPreviewChoices);
-    }
+    // In editor preview mode, do not show choices
+    // Choices should only appear during actual play mode
+    m_playOverlay->clearChoices();
     m_playOverlay->setInteractionEnabled(false);
   } else {
     m_playOverlay->clearDialogue();
