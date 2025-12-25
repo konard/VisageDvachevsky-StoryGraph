@@ -357,6 +357,10 @@ void NMMainWindow::setupConnections() {
               QSignalBlocker blocker(m_actionToggleStoryGraph);
               m_actionToggleStoryGraph->setChecked(visible);
             }
+            // Clear story preview when leaving the story graph panel
+            if (!visible && m_sceneViewPanel) {
+              m_sceneViewPanel->clearStoryPreview();
+            }
           });
   connect(m_inspectorPanel, &QDockWidget::visibilityChanged, this,
           [this](bool visible) {
