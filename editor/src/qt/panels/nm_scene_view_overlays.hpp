@@ -61,6 +61,16 @@ public:
     layout->setContentsMargins(24, 24, 24, 18);
     layout->addStretch();
 
+    // Preview mode indicator badge
+    m_previewBadge = new QLabel(this);
+    m_previewBadge->setObjectName("PreviewBadge");
+    m_previewBadge->setText(tr("PREVIEW"));
+    m_previewBadge->setAlignment(Qt::AlignCenter);
+    m_previewBadge->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    m_previewBadge->setMinimumSize(90, 28);
+    m_previewBadge->hide(); // Hidden by default
+    layout->addWidget(m_previewBadge, 0, Qt::AlignHCenter);
+
     m_dialogueBox = new QFrame(this);
     m_dialogueBox->setObjectName("DialogueBox");
     m_dialogueBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -128,6 +138,16 @@ public:
                 "}"
                 "QLabel#TextLabel {"
                 "  color: %3;"
+                "}"
+                "QLabel#PreviewBadge {"
+                "  background-color: rgba(255, 165, 0, 200);"
+                "  color: rgba(20, 20, 20, 255);"
+                "  border: 1px solid rgba(255, 200, 100, 255);"
+                "  border-radius: 6px;"
+                "  padding: 4px 12px;"
+                "  font-weight: bold;"
+                "  font-size: 11px;"
+                "  letter-spacing: 0.8px;"
                 "}"
                 "QPushButton#ChoiceButton {"
                 "  background-color: rgba(18, 18, 24, 225);"
@@ -237,6 +257,12 @@ public:
     setFocusPolicy(enabled ? Qt::StrongFocus : Qt::NoFocus);
   }
 
+  void setPreviewMode(bool isPreview) {
+    if (m_previewBadge) {
+      m_previewBadge->setVisible(isPreview);
+    }
+  }
+
 signals:
   void choiceSelected(int index);
   void advanceRequested();
@@ -274,6 +300,7 @@ protected:
   }
 
 private:
+  QLabel *m_previewBadge = nullptr;
   QFrame *m_dialogueBox = nullptr;
   QFrame *m_namePlate = nullptr;
   QLabel *m_nameLabel = nullptr;

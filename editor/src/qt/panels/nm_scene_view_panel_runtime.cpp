@@ -460,6 +460,9 @@ void NMSceneViewPanel::updatePreviewOverlayVisibility() {
   }
   const bool visible = m_playModeActive || m_editorPreviewActive;
   m_playOverlay->setVisible(visible);
+
+  // Show preview badge only in editor preview mode, not in actual play mode
+  m_playOverlay->setPreviewMode(m_editorPreviewActive && !m_playModeActive);
 }
 
 } // namespace NovelMind::editor::qt
