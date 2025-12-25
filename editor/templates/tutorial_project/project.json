@@ -1,20 +1,20 @@
 {
   "fileVersion": 2,
   "metadata": {
-    "name": "Branching Story",
+    "name": "Interactive Tutorial",
     "version": "1.0.0",
     "author": "",
-    "description": "An interactive narrative with player choices leading to multiple endings",
-    "genre": "Visual Novel",
+    "description": "Learn NovelMind step-by-step with this interactive tutorial project",
+    "genre": "Tutorial",
     "rating": "Everyone",
-    "tags": ["branching", "choices", "multiple-endings", "interactive"]
+    "tags": ["tutorial", "learning", "beginner", "guide"]
   },
   "engine": {
     "minVersion": "1.0.0",
     "targetPlatforms": ["windows", "linux", "web"]
   },
   "runtime": {
-    "startScene": "prologue",
+    "startScene": "welcome",
     "defaultResolution": {
       "width": 1920,
       "height": 1080
@@ -30,26 +30,22 @@
   "audio": {
     "voiceActingEnabled": false,
     "masterVolume": 1.0,
-    "musicVolume": 0.8,
+    "musicVolume": 0.6,
     "voiceVolume": 1.0,
     "sfxVolume": 0.7
   },
   "ui": {
     "theme": "default",
     "font": "OpenSans",
-    "dialogueBoxStyle": "classic",
-    "choiceStyle": "vertical"
+    "dialogueBoxStyle": "classic"
   },
   "build": {
     "outputDirectory": "dist",
     "compression": true,
     "encryptScripts": false
   },
-  "variables": {
-    "globals": {
-      "affinity_a": 0,
-      "affinity_b": 0,
-      "secret_found": false
-    }
+  "tutorial": {
+    "showHints": true,
+    "highlightNewFeatures": true
   }
 }

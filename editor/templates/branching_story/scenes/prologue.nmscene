@@ -1,0 +1,26 @@
+{
+  "sceneId": "prologue",
+  "version": "1.0",
+  "name": "Prologue",
+  "description": "The story begins at the mysterious crossroads",
+  "timeline": {
+    "duration": 60.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_crossroads",
+            "name": "Mysterious Crossroads",
+            "startTime": 0.0,
+            "duration": 60.0,
+            "assetPath": "assets/backgrounds/mysterious_crossroads.jpg"
+          }
+        ]
+      }
+    ]
+  }
+}

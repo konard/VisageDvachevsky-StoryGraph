@@ -1,109 +1,449 @@
-// Branching Story Template
-// Features multiple paths and endings
+// =============================================================================
+// Branching Story Template - Main Script
+// =============================================================================
+// An interactive visual novel demonstrating:
+// - Player choices affecting story progression
+// - Variable tracking for decisions
+// - Multiple endings based on choices
+// - Conditional story branches
+//
+// Story Structure:
+//   prologue
+//      |
+//   act1_scene1
+//      |
+//   act1_choice1 --> [Choice A] --> act2_route_a --> ending_good
+//         |                              |
+//         +--> [Choice B] --> act2_route_b --> ending_neutral
+//         |
+//         +--> [Choice C] --> act2_route_c --> ending_bad
+//
+// See CHOICES_FLOWCHART.md for visual diagram
+// =============================================================================
 
-character Protagonist(name="Protagonist", color="#4A90D9")
+// =============================================================================
+// Variable Definitions
+// =============================================================================
+// These variables track player choices and affect the story
+var affinity_a = 0      // Affinity with Path A
+var affinity_b = 0      // Affinity with Path B
+var secret_found = false // Whether the player found the secret
+
+// =============================================================================
+// Character Definitions
+// =============================================================================
+character Protagonist(name="Alex", color="#4A90D9")
+character Guide(name="The Guide", color="#F5A623")
+character Rival(name="Shadow", color="#D0021B")
+character Mentor(name="Sage", color="#7ED321")
 character Narrator(name="", color="#AAAAAA")
 
-// Introduction
-scene intro {
-    show background "bg_start"
-    transition fade 1.0
+// =============================================================================
+// Prologue - The Beginning
+// =============================================================================
+scene prologue {
+    show background "mysterious_crossroads"
+    play music "ambient_mystery" fadeIn 2.0
 
-    say Narrator "Your story begins here..."
+    transition fade 1.5
+
+    say Narrator "In a world where choices shape destiny..."
+    say Narrator "Every path leads to a different future."
+
+    wait 0.5
+
+    show Protagonist at center
+    transition dissolve 0.5
+
+    say Protagonist "Where... am I?"
+
+    show Guide at right
+    play sfx "magical_appear"
+
+    say Guide "Welcome, traveler."
+    say Guide "You stand at the crossroads of fate."
+
+    say Protagonist "Who are you?"
+
+    say Guide "I am merely a guide. The choices are yours to make."
+
+    say Narrator "And so, the journey begins..."
+
+    goto act1_scene1
+}
+
+// =============================================================================
+// Act 1, Scene 1 - Introduction to the World
+// =============================================================================
+scene act1_scene1 {
+    show background "enchanted_forest"
+    transition dissolve 0.8
+
+    play music "adventure_theme" crossfade 1.5
+
+    say Narrator "Act 1: The Awakening"
+
+    show Protagonist at left
+    show Guide at right
+
+    say Guide "Before you lie three paths."
+    say Guide "Each leads to a different truth."
+
+    say Protagonist "How do I know which is the right one?"
+
+    say Guide "There is no 'right' path. Only your path."
+    say Guide "Trust your instincts."
+
+    // Minor choice that affects affinity
+    say Guide "But first, tell me... what drives you?"
+
+    choice {
+        "I seek knowledge and wisdom." -> {
+            set affinity_a = affinity_a + 1
+            say Protagonist "I want to understand the mysteries of this world."
+            say Guide "A seeker of truth. Interesting."
+        }
+        "I want to help others." -> {
+            set affinity_b = affinity_b + 1
+            say Protagonist "If I can make a difference, that's what matters."
+            say Guide "A noble heart. Admirable."
+        }
+        "I just want to survive." -> {
+            say Protagonist "I'll do whatever it takes to make it through."
+            say Guide "Pragmatic. That may serve you well... or not."
+        }
+    }
+
+    say Guide "Very well. Now, choose your path."
+
+    goto act1_choice1
+}
+
+// =============================================================================
+// Act 1, Choice 1 - The Branching Point
+// =============================================================================
+scene act1_choice1 {
+    show background "three_paths"
+    transition fade 0.5
 
     show Protagonist at center
 
-    say Protagonist "Where should I go?"
+    say Narrator "Three paths stretched before you."
+    say Narrator "To the left, a sunlit meadow. To the right, a dark forest."
+    say Narrator "And straight ahead, a mountain shrouded in mist."
 
     choice {
-        "Path A" -> goto path_a
-        "Path B" -> goto path_b
-        "Path C" -> goto path_c
+        "Take the Path of Light (Meadow)" -> {
+            set affinity_a = affinity_a + 2
+            say Protagonist "The light calls to me."
+            goto act2_route_a
+        }
+        "Enter the Path of Shadows (Forest)" -> {
+            set affinity_b = affinity_b + 2
+            say Protagonist "Sometimes truth hides in darkness."
+            goto act2_route_b
+        }
+        "Climb the Path of Mystery (Mountain)" -> {
+            say Protagonist "The unknown beckons."
+            goto act2_route_c
+        }
     }
 }
 
-// Path A branch
-scene path_a {
-    set path = "a"
-    say Narrator "You chose Path A."
+// =============================================================================
+// Act 2, Route A - Path of Light
+// =============================================================================
+scene act2_route_a {
+    show background "sunlit_meadow"
+    transition fade 1.0
+
+    play music "peaceful_theme" crossfade 2.0
+
+    say Narrator "Act 2: Path of Light"
+
+    show Protagonist at left
+
+    say Narrator "Warm sunlight bathed the meadow in gold."
+    say Narrator "Flowers swayed gently in the breeze."
+
+    say Protagonist "It's beautiful here..."
+
+    show Mentor at right
+    transition dissolve 0.3
+
+    say Mentor "Welcome, young one."
+    say Mentor "You chose the path of illumination."
+
+    say Protagonist "Are you another guide?"
+
+    say Mentor "I am called the Sage. I dwell where light prevails."
+    say Mentor "But know this - light without shadow is blinding."
+
+    // Choice that affects ending
+    say Mentor "Will you accept both light and shadow?"
 
     choice {
-        "Continue forward" -> goto path_a_1
-        "Turn back" -> goto intro
+        "Yes, I understand balance is important." -> {
+            set affinity_a = affinity_a + 1
+            set affinity_b = affinity_b + 1
+            say Protagonist "True wisdom comes from understanding both."
+            say Mentor "You have learned well."
+        }
+        "No, I reject the darkness." -> {
+            say Protagonist "The light is all I need."
+            say Mentor "Conviction can be strength... or weakness."
+        }
     }
-}
 
-scene path_a_1 {
-    say Narrator "Path A continues..."
-
-    // Add more content here
+    say Narrator "With newfound understanding, you continued forward."
 
     goto ending_check
 }
 
-// Path B branch
-scene path_b {
-    set path = "b"
-    say Narrator "You chose Path B."
+// =============================================================================
+// Act 2, Route B - Path of Shadows
+// =============================================================================
+scene act2_route_b {
+    show background "dark_forest"
+    transition fade 1.0
+
+    play music "tension_theme" crossfade 2.0
+
+    say Narrator "Act 2: Path of Shadows"
+
+    show Protagonist at left
+
+    say Narrator "Twisted trees blocked out the sky."
+    say Narrator "Strange sounds echoed in the darkness."
+
+    say Protagonist "This place... it's unsettling."
+
+    show Rival at right
+    play sfx "footsteps_slow"
+    transition dissolve 0.3
+
+    say Rival "So, you chose the shadows."
+    say Rival "Not many dare to walk this path."
+
+    say Protagonist "Who are you?"
+
+    say Rival "I am what lurks in every heart. Call me Shadow."
+    say Rival "I know your fears. Your doubts."
+
+    // Choice that affects ending
+    say Rival "Face your darkness, or flee?"
 
     choice {
-        "Explore further" -> goto path_b_1
-        "Return to start" -> goto intro
+        "I'll face whatever comes." -> {
+            set affinity_b = affinity_b + 1
+            set secret_found = true
+            say Protagonist "I'm not afraid of myself."
+            say Rival "Hmph. Perhaps you have potential after all."
+        }
+        "Show me what you know." -> {
+            set affinity_a = affinity_a + 1
+            say Protagonist "Knowledge is power, even dark knowledge."
+            say Rival "Clever. But knowledge has its price."
+        }
     }
-}
 
-scene path_b_1 {
-    say Narrator "Path B continues..."
-
-    // Add more content here
+    say Narrator "The shadows parted, revealing the way forward."
 
     goto ending_check
 }
 
-// Path C branch
-scene path_c {
-    set path = "c"
-    say Narrator "You chose Path C."
+// =============================================================================
+// Act 2, Route C - Path of Mystery
+// =============================================================================
+scene act2_route_c {
+    show background "misty_mountain"
+    transition fade 1.0
 
+    play music "mysterious_theme" crossfade 2.0
+
+    say Narrator "Act 2: Path of Mystery"
+
+    show Protagonist at center
+
+    say Narrator "The mountain loomed before you."
+    say Narrator "Each step forward revealed less, not more."
+
+    say Protagonist "I can barely see anything..."
+
+    say Narrator "A voice echoed from everywhere and nowhere."
+
+    say Guide "(voice) The path of mystery asks the hardest question:"
+    say Guide "(voice) What do you truly seek?"
+
+    // Choice that affects ending
     choice {
-        "Press on" -> goto path_c_1
-        "Go back" -> goto intro
+        "I seek to understand myself." -> {
+            set secret_found = true
+            say Protagonist "Before I can understand the world, I must understand me."
+            say Guide "(voice) Self-knowledge is the greatest treasure."
+        }
+        "I seek power to change things." -> {
+            say Protagonist "With power, I can make a real difference."
+            say Guide "(voice) Power is a tool. It serves the wielder's heart."
+        }
+        "I seek the way home." -> {
+            set affinity_a = affinity_a + 1
+            set affinity_b = affinity_b + 1
+            say Protagonist "I just want to return to where I belong."
+            say Guide "(voice) Home is not always a place. Sometimes it's a state of being."
+        }
     }
-}
 
-scene path_c_1 {
-    say Narrator "Path C continues..."
-
-    // Add more content here
+    say Narrator "The mist began to clear, showing the path ahead."
 
     goto ending_check
 }
 
-// Ending determination
+// =============================================================================
+// Ending Determination
+// =============================================================================
 scene ending_check {
-    if path == "a" {
-        goto ending_a
-    } else if path == "b" {
-        goto ending_b
+    // Determine ending based on accumulated choices
+    if secret_found == true && affinity_a >= 2 && affinity_b >= 2 {
+        goto ending_good
+    } else if affinity_a > affinity_b {
+        goto ending_neutral_light
+    } else if affinity_b > affinity_a {
+        goto ending_neutral_shadow
     } else {
-        goto ending_c
+        goto ending_bad
     }
 }
 
-scene ending_a {
-    say Narrator "Ending A - Path of Adventure"
+// =============================================================================
+// Ending - Good (True Ending)
+// =============================================================================
+scene ending_good {
+    show background "sunrise_vista"
     transition fade 2.0
+
+    play music "triumphant_theme" fadeIn 1.5
+
+    say Narrator "THE GOOD ENDING"
+    say Narrator "Balance of Light and Shadow"
+
+    wait 1.0
+
+    show Protagonist at center
+
+    say Narrator "Having embraced both light and shadow..."
+    say Narrator "You discovered the truth that transcends all paths."
+
+    show Guide at left
+    show Mentor at right
+    transition dissolve 0.5
+
+    say Guide "You have walked all paths in spirit."
+
+    say Mentor "And found that they all lead to the same destination."
+
+    say Protagonist "They lead to understanding."
+
+    say Narrator "The crossroads faded, and a new world opened before you."
+    say Narrator "A world where you were both the traveler and the guide."
+
+    transition fade 2.0
+
     say Narrator "THE END"
+    say Narrator "Congratulations! You achieved the True Ending."
+
+    stop music fadeOut 3.0
 }
 
-scene ending_b {
-    say Narrator "Ending B - Path of Mystery"
+// =============================================================================
+// Ending - Neutral (Light Path)
+// =============================================================================
+scene ending_neutral_light {
+    show background "peaceful_ending"
     transition fade 2.0
+
+    play music "gentle_theme" fadeIn 1.5
+
+    say Narrator "ENDING: Path of Light"
+
+    wait 1.0
+
+    show Protagonist at center
+
+    say Narrator "You chose the way of light and clarity."
+    say Narrator "Peace surrounded you, but questions remained unanswered."
+
+    say Protagonist "This feels right... but incomplete."
+
+    say Narrator "Perhaps another journey would reveal what was missing."
+
+    transition fade 2.0
+
     say Narrator "THE END"
+    say Narrator "You achieved the Light Ending."
+    say Narrator "Try different choices to discover other paths!"
+
+    stop music fadeOut 3.0
 }
 
-scene ending_c {
-    say Narrator "Ending C - Path of Discovery"
+// =============================================================================
+// Ending - Neutral (Shadow Path)
+// =============================================================================
+scene ending_neutral_shadow {
+    show background "twilight_ending"
     transition fade 2.0
+
+    play music "melancholic_theme" fadeIn 1.5
+
+    say Narrator "ENDING: Path of Shadow"
+
+    wait 1.0
+
+    show Protagonist at center
+
+    say Narrator "You chose to embrace the darkness within."
+    say Narrator "Power was yours, but at what cost?"
+
+    say Protagonist "I have strength now... but something feels hollow."
+
+    say Narrator "The shadows whispered of other possibilities."
+
+    transition fade 2.0
+
     say Narrator "THE END"
+    say Narrator "You achieved the Shadow Ending."
+    say Narrator "Try different choices to discover other paths!"
+
+    stop music fadeOut 3.0
+}
+
+// =============================================================================
+// Ending - Bad
+// =============================================================================
+scene ending_bad {
+    show background "empty_void"
+    transition fade 2.0
+
+    play music "somber_theme" fadeIn 1.5
+
+    say Narrator "ENDING: Lost in the Mist"
+
+    wait 1.0
+
+    show Protagonist at center
+
+    say Narrator "Without conviction or understanding..."
+    say Narrator "The paths faded, leaving only uncertainty."
+
+    say Protagonist "Where do I go from here?"
+
+    say Narrator "The crossroads would wait for you to return."
+    say Narrator "Perhaps next time, the way would be clearer."
+
+    transition fade 2.0
+
+    say Narrator "THE END"
+    say Narrator "Try exploring different choices to find better outcomes!"
+
+    stop music fadeOut 3.0
 }

@@ -1,0 +1,16 @@
+{
+  "sceneId": "main",
+  "version": "1.0",
+  "name": "Main Scene",
+  "description": "Entry point scene",
+  "timeline": {
+    "duration": 10.0,
+    "frameRate": 30.0,
+    "tracks": []
+  },
+  "metadata": {
+    "author": "",
+    "created": "",
+    "modified": ""
+  }
+}

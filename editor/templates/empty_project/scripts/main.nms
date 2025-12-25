@@ -1,11 +1,38 @@
-// Empty Project Template
-// Add your characters and scenes below
+// =============================================================================
+// Empty Project Template - Main Script
+// =============================================================================
+// This is your starting point for a new visual novel project.
+//
+// Quick Start:
+// 1. Add character sprites to assets/characters/
+// 2. Add background images to assets/backgrounds/
+// 3. Define your characters below
+// 4. Write your scenes and dialogues
+//
+// For more information, see the NovelMind documentation.
+// =============================================================================
 
-// Example character (uncomment and modify):
-// character Protagonist(name="Name", color="#FFFFFF")
+// Example character definition (uncomment and modify):
+// character Protagonist(name="Name", color="#4A90D9")
+// character Friend(name="Friend", color="#7ED321")
 
-// Main scene
+// Define the narrator for non-character dialogue
+character Narrator(name="", color="#AAAAAA")
+
+// =============================================================================
+// Main Scene - Entry Point
+// =============================================================================
 scene main {
-    // Add your content here
+    // Your story starts here
+    //
+    // Example commands:
+    // show background "bg_classroom"
+    // show Protagonist at center
+    // say Protagonist "Hello, world!"
+    // transition fade 1.0
+    // wait 0.5
+    // goto next_scene
+
     say Narrator "Welcome to your new visual novel!"
+    say Narrator "Edit this script to begin your story."
 }

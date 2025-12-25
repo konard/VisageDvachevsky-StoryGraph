@@ -1,0 +1,21 @@
+{
+  "id": "empty_project",
+  "name": "Empty Project",
+  "description": "A minimal starting point for experienced users. Contains only the essential structure with no demo content.",
+  "category": "Basic",
+  "difficulty": "Any",
+  "features": [
+    "Minimal Configuration",
+    "Clean Project Structure",
+    "Quick Start"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "2.0.0",
+  "tags": ["empty", "minimal", "starter", "blank"],
+  "estimatedSetupTime": "1 minute",
+  "targetAudience": "Experienced developers who want full control",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  }
+}

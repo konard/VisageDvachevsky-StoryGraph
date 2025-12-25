@@ -1,61 +1,231 @@
-// Kinetic Novel Template
-// A linear story without player choices
+// =============================================================================
+// Kinetic Novel Template - Main Script
+// =============================================================================
+// A linear visual novel demonstrating narrative flow without player choices.
+// This template shows:
+// - Sequential scene progression
+// - Character definitions and dialogue
+// - Background transitions
+// - Timeline animations
+// - Music and sound integration
+//
+// Scenes flow: intro -> chapter1_part1 -> chapter1_part2 -> chapter2 -> epilogue
+// =============================================================================
 
-character Protagonist(name="Protagonist", color="#4A90D9")
+// Character Definitions
+// ---------------------
+// Define your characters with display name and dialogue color
+character Protagonist(name="Alex", color="#4A90D9")
+character Friend(name="Sam", color="#7ED321")
+character Mentor(name="Professor Chen", color="#9B59B6")
 character Narrator(name="", color="#AAAAAA")
 
-// Chapter 1
-scene chapter_1 {
-    show background "bg_chapter_1"
+// =============================================================================
+// Introduction Scene
+// =============================================================================
+scene intro {
+    // Set the initial background
+    show background "school_entrance"
+    play music "main_theme" fadeIn 2.0
+
+    // Fade in from black
     transition fade 1.5
 
-    say Narrator "Chapter 1: The Beginning"
+    say Narrator "It was the first day of a new semester..."
+    say Narrator "The morning sun cast long shadows across the campus grounds."
+
+    wait 0.5
+
+    // Show the protagonist
+    show Protagonist at center
+    transition dissolve 0.5
+
+    say Protagonist "Finally, I made it."
+    say Protagonist "This is where everything changes."
+
+    say Narrator "Little did Alex know how right that statement would prove to be."
+
+    // Transition to next scene
+    goto chapter1_part1
+}
+
+// =============================================================================
+// Chapter 1, Part 1 - Meeting a Friend
+// =============================================================================
+scene chapter1_part1 {
+    show background "school_hallway"
+    transition dissolve 0.8
+
+    play music "casual_theme" crossfade 1.5
+
+    say Narrator "Chapter 1: New Beginnings"
+
+    wait 0.5
+
+    show Protagonist at left
+
+    say Protagonist "Now, where was that classroom again..."
+
+    // Friend enters
+    show Friend at right
+    transition slide_in 0.5
+
+    play sfx "footsteps"
+
+    say Friend "Hey there! You look a bit lost."
+
+    say Protagonist "Oh! Yeah, I'm trying to find room 204."
+
+    say Friend "204? That's the advanced literature class!"
+    say Friend "I'm heading there too. I'm Sam, by the way."
+
+    say Protagonist "I'm Alex. Nice to meet you!"
+
+    say Friend "Come on, I'll show you the way."
+
+    say Narrator "And with that chance encounter, a friendship was born."
+
+    goto chapter1_part2
+}
+
+// =============================================================================
+// Chapter 1, Part 2 - The Classroom
+// =============================================================================
+scene chapter1_part2 {
+    show background "classroom"
+    transition fade 0.5
+
+    show Protagonist at left
+    show Friend at right
+
+    say Narrator "The classroom buzzed with quiet conversations."
+
+    say Friend "Here we are! Let's grab seats near the window."
+
+    say Protagonist "Good idea. The view is nice from here."
+
+    // Mentor enters
+    show Mentor at center
+    transition dissolve 0.3
+    play sfx "door_open"
+
+    say Narrator "The door opened, and silence fell over the room."
+
+    say Mentor "Good morning, everyone."
+    say Mentor "I'm Professor Chen, and this semester, we'll be exploring the art of storytelling."
+
+    say Protagonist "(This is going to be interesting...)"
+
+    say Mentor "Stories have the power to change how we see the world."
+    say Mentor "By the end of this course, each of you will have created something meaningful."
+
+    say Friend "(whisper) This sounds challenging, but exciting!"
+
+    say Protagonist "(whisper) Yeah, I can't wait to get started."
+
+    say Narrator "The lesson continued, laying the foundation for the journey ahead."
+
+    goto chapter2
+}
+
+// =============================================================================
+// Chapter 2 - Growth
+// =============================================================================
+scene chapter2 {
+    show background "library"
+    transition fade 1.0
+
+    play music "contemplative_theme" crossfade 2.0
+
+    say Narrator "Chapter 2: Finding Your Voice"
+    say Narrator "Weeks passed. The leaves outside turned golden."
+
+    wait 0.5
+
+    show Protagonist at center
+
+    say Protagonist "I've been working on this story for days..."
+    say Protagonist "But something still feels missing."
+
+    show Friend at right
+    transition dissolve 0.3
+
+    say Friend "Hey, how's the project going?"
+
+    say Protagonist "It's... getting there. I think."
+
+    say Friend "You know what Professor Chen always says?"
+
+    say Protagonist "Write what you know?"
+
+    say Friend "Exactly. Maybe you're overthinking it."
+    say Friend "The best stories come from the heart."
+
+    say Protagonist "..."
+    say Protagonist "You might be right."
+
+    say Narrator "Sometimes the simplest advice is the most profound."
+
+    hide Friend
+    transition dissolve 0.5
+
+    say Protagonist "I know what I need to do now."
+
+    say Narrator "With renewed determination, Alex began to write."
+
+    goto epilogue
+}
+
+// =============================================================================
+// Epilogue - Conclusion
+// =============================================================================
+scene epilogue {
+    show background "sunset_campus"
+    transition fade 2.0
+
+    play music "emotional_theme" crossfade 1.5
+
+    say Narrator "Epilogue"
 
     wait 1.0
 
     show Protagonist at center
 
-    say Protagonist "This is where our story starts."
-    say Protagonist "Follow along as events unfold."
+    say Narrator "The semester came to an end."
+    say Narrator "Stories were shared, friendships were forged."
 
-    say Narrator "The tale continues..."
+    say Protagonist "It's strange..."
+    say Protagonist "When I started this journey, I didn't know what to expect."
+    say Protagonist "But now I understand."
 
-    goto chapter_2
-}
-
-// Chapter 2
-scene chapter_2 {
+    show Friend at right
+    show Mentor at left
     transition dissolve 0.5
-    show background "bg_chapter_2"
 
-    say Narrator "Chapter 2: The Journey"
+    say Friend "So, how does it feel to have finished your first story?"
 
-    say Protagonist "The plot thickens here."
+    say Protagonist "Like the beginning of something new."
 
-    say Narrator "More events occur..."
+    say Mentor "That's the beauty of storytelling."
+    say Mentor "Every ending is just another beginning in disguise."
 
-    goto chapter_3
-}
+    say Narrator "And so, one chapter closes..."
 
-// Chapter 3
-scene chapter_3 {
-    transition dissolve 0.5
-    show background "bg_chapter_3"
-
-    say Narrator "Chapter 3: The Conclusion"
-
-    say Protagonist "And so we reach the end."
-
-    say Narrator "The story concludes."
-
-    goto ending
-}
-
-// Ending
-scene ending {
     hide Protagonist
+    hide Friend
+    hide Mentor
     transition fade 2.0
 
+    say Narrator "...while countless others wait to be written."
+
+    stop music fadeOut 3.0
+
+    wait 1.0
+
     say Narrator "THE END"
-    say Narrator "Thank you for reading."
+
+    wait 1.0
+
+    say Narrator "Thank you for reading this demo."
+    say Narrator "Now it's your turn to create your own story!"
 }

@@ -1,0 +1,26 @@
+{
+  "sceneId": "chapter1_part2",
+  "version": "1.0",
+  "name": "Chapter 1 Part 2",
+  "description": "The first class with Professor Chen",
+  "timeline": {
+    "duration": 60.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_classroom",
+            "name": "Classroom",
+            "startTime": 0.0,
+            "duration": 60.0,
+            "assetPath": "assets/backgrounds/classroom.jpg"
+          }
+        ]
+      }
+    ]
+  }
+}

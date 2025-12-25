@@ -1,0 +1,49 @@
+{
+  "sceneId": "intro",
+  "version": "1.0",
+  "name": "Introduction",
+  "description": "The story begins - first day at school",
+  "timeline": {
+    "duration": 30.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_entrance",
+            "name": "School Entrance",
+            "startTime": 0.0,
+            "duration": 30.0,
+            "assetPath": "assets/backgrounds/school_entrance.jpg"
+          }
+        ]
+      },
+      {
+        "id": "track_protagonist",
+        "name": "Protagonist",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_protagonist",
+            "name": "Alex",
+            "startTime": 5.0,
+            "duration": 25.0,
+            "assetPath": "assets/characters/protagonist_silhouette.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  { "time": 0.0, "value": 0.0, "easing": "linear" },
+                  { "time": 0.5, "value": 1.0, "easing": "easeOut" }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

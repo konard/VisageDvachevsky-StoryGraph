@@ -1,0 +1,26 @@
+{
+  "sceneId": "chapter2",
+  "version": "1.0",
+  "name": "Chapter 2",
+  "description": "Finding your voice in the library",
+  "timeline": {
+    "duration": 45.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_library",
+            "name": "Library",
+            "startTime": 0.0,
+            "duration": 45.0,
+            "assetPath": "assets/backgrounds/library.jpg"
+          }
+        ]
+      }
+    ]
+  }
+}

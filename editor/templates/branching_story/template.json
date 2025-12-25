@@ -1,0 +1,32 @@
+{
+  "id": "branching_story",
+  "name": "Branching Story",
+  "description": "An interactive narrative with player choices leading to multiple endings. Demonstrates the full power of the choice system and variable tracking.",
+  "category": "Intermediate",
+  "difficulty": "Medium",
+  "features": [
+    "Branching Story Graph",
+    "Multiple Endings (4)",
+    "Choice System Demo",
+    "Variable Tracking",
+    "Conditional Branches",
+    "Sample Characters (4)",
+    "Demo Backgrounds (10)",
+    "Choice Flowchart Documentation"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "2.0.0",
+  "tags": ["branching", "choices", "multiple-endings", "interactive", "intermediate"],
+  "estimatedSetupTime": "10 minutes",
+  "targetAudience": "Developers wanting to create interactive stories with meaningful choices",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  },
+  "demoContent": {
+    "scenes": 11,
+    "characters": 4,
+    "endings": 4,
+    "choicePoints": 5
+  }
+}

@@ -1,0 +1,105 @@
+// =============================================================================
+// Mobile Optimized Template - Main Script
+// =============================================================================
+// A visual novel template designed for mobile devices.
+//
+// Mobile-Specific Considerations:
+// - Vertical (portrait) orientation (9:16 aspect ratio)
+// - Touch-friendly UI with larger tap targets
+// - Optimized asset sizes for smaller screens
+// - Bottom dialogue box for thumb-friendly interaction
+// - Shorter text lines for mobile readability
+//
+// Resolution: 1080x1920 (Full HD Portrait)
+// =============================================================================
+
+// Character Definitions
+character Protagonist(name="You", color="#4A90D9")
+character Guide(name="Guide", color="#7ED321")
+character Narrator(name="", color="#AAAAAA")
+
+// =============================================================================
+// Main Scene
+// =============================================================================
+scene main {
+    show background "mobile_bg"
+    transition fade 1.0
+
+    play music "ambient" fadeIn 1.5
+
+    say Narrator "Welcome to your mobile visual novel!"
+
+    wait 0.5
+
+    show Guide at center
+
+    say Guide "This template is optimized for mobile devices."
+
+    say Guide "Here are some tips:"
+    say Guide "• Keep dialogue short and readable"
+    say Guide "• Use large touch targets"
+    say Guide "• Optimize image sizes"
+    say Guide "• Test on actual devices"
+
+    // Mobile-friendly choice with clear tap areas
+    choice {
+        "Learn More" -> goto tips
+        "Start Creating" -> goto create
+    }
+}
+
+// =============================================================================
+// Tips Scene
+// =============================================================================
+scene tips {
+    show background "mobile_bg"
+    show Guide at center
+
+    say Guide "Mobile Development Tips:"
+
+    say Guide "1. Images:"
+    say Guide "   Max 1024x1024 for textures"
+    say Guide "   Use compressed formats"
+
+    say Guide "2. Audio:"
+    say Guide "   Use compressed OGG"
+    say Guide "   Keep files small"
+
+    say Guide "3. UI:"
+    say Guide "   48px minimum touch targets"
+    say Guide "   High contrast text"
+
+    say Guide "4. Testing:"
+    say Guide "   Test on real devices"
+    say Guide "   Check different screen sizes"
+
+    goto ending
+}
+
+// =============================================================================
+// Create Scene
+// =============================================================================
+scene create {
+    show background "mobile_bg"
+    show Guide at center
+
+    say Guide "Ready to create?"
+
+    say Guide "Replace this content with your story."
+    say Guide "Remember to keep mobile users in mind!"
+
+    goto ending
+}
+
+// =============================================================================
+// Ending
+// =============================================================================
+scene ending {
+    hide Guide
+    transition fade 1.0
+
+    say Narrator "Good luck with your mobile project!"
+    say Narrator "Happy creating!"
+
+    stop music fadeOut 2.0
+}

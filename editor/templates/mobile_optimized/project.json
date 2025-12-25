@@ -1,0 +1,64 @@
+{
+  "fileVersion": 2,
+  "metadata": {
+    "name": "Mobile Visual Novel",
+    "version": "1.0.0",
+    "author": "",
+    "description": "A visual novel optimized for mobile devices with vertical orientation and touch-friendly UI",
+    "genre": "Visual Novel",
+    "rating": "Everyone",
+    "tags": ["mobile", "portrait", "touch", "optimized"]
+  },
+  "engine": {
+    "minVersion": "1.0.0",
+    "targetPlatforms": ["android", "ios", "web"]
+  },
+  "runtime": {
+    "startScene": "main",
+    "defaultResolution": {
+      "width": 1080,
+      "height": 1920
+    },
+    "aspectRatio": "9:16",
+    "fullscreenByDefault": true,
+    "orientation": "portrait"
+  },
+  "localization": {
+    "locales": ["en"],
+    "defaultLocale": "en",
+    "fallbackLocale": "en"
+  },
+  "audio": {
+    "voiceActingEnabled": false,
+    "masterVolume": 1.0,
+    "musicVolume": 0.7,
+    "voiceVolume": 1.0,
+    "sfxVolume": 0.6
+  },
+  "ui": {
+    "theme": "mobile",
+    "font": "OpenSans",
+    "dialogueBoxStyle": "bottom-third",
+    "touchTargetMinSize": 48,
+    "buttonPadding": 16
+  },
+  "build": {
+    "outputDirectory": "dist",
+    "compression": true,
+    "encryptScripts": false,
+    "assetOptimization": {
+      "maxTextureSize": 1024,
+      "imageQuality": 0.8,
+      "audioQuality": "medium"
+    }
+  },
+  "mobile": {
+    "supportedOrientations": ["portrait"],
+    "minOSVersion": {
+      "android": "8.0",
+      "ios": "13.0"
+    },
+    "permissions": [],
+    "hapticFeedback": true
+  }
+}

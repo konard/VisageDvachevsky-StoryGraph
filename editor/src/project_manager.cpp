@@ -668,7 +668,15 @@ bool ProjectManager::isValidProjectPath(const std::string &path) {
 }
 
 std::vector<std::string> ProjectManager::getAvailableTemplates() {
-  return {"empty", "kinetic_novel", "branching_story"};
+  // Returns all available project templates
+  // Templates are located in editor/templates/ directory
+  return {
+    "empty",            // Minimal starting point
+    "kinetic_novel",    // Linear story without choices
+    "branching_story",  // Interactive story with multiple endings
+    "mobile_optimized", // Optimized for mobile devices (portrait)
+    "tutorial_project"  // Interactive learning tutorial
+  };
 }
 
 // ============================================================================
@@ -899,6 +907,35 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
     file << "    say \"This is the end of the demo. Expand it with your own scenes!\"\n";
     file << "}\n";
     m_metadata.startScene = "main";
+  } else if (templateName == "mobile_optimized") {
+    file << "// NovelMind Script - Mobile Optimized Template\n";
+    file << "// Portrait orientation (1080x1920) for mobile devices\n\n";
+    file << "character Hero(name=\"Hero\", color=\"#4A90D9\")\n";
+    file << "character Narrator(name=\"\", color=\"#AAAAAA\")\n\n";
+    file << "scene main {\n";
+    file << "    show background \"mobile_bg.png\"\n";
+    file << "    transition fade 1.0\n";
+    file << "    say Narrator \"Welcome to your mobile visual novel!\"\n";
+    file << "    say Narrator \"This template is optimized for mobile devices.\"\n";
+    file << "    show Hero at center\n";
+    file << "    Hero \"Let's create something amazing!\"\n";
+    file << "}\n";
+    m_metadata.startScene = "main";
+    m_metadata.targetResolution = "1080x1920";
+  } else if (templateName == "tutorial_project") {
+    file << "// NovelMind Script - Interactive Tutorial\n";
+    file << "// Learn NovelMind step-by-step!\n\n";
+    file << "character Teacher(name=\"Prof. Tutorial\", color=\"#4A90D9\")\n";
+    file << "character Narrator(name=\"\", color=\"#AAAAAA\")\n\n";
+    file << "scene main {\n";
+    file << "    show background \"tutorial_bg.png\"\n";
+    file << "    transition fade 1.0\n";
+    file << "    say Narrator \"Welcome to the NovelMind Tutorial!\"\n";
+    file << "    show Teacher at center\n";
+    file << "    Teacher \"I'll teach you how to create visual novels.\"\n";
+    file << "    Teacher \"Check the README.md for detailed lessons.\"\n";
+    file << "}\n";
+    m_metadata.startScene = "main";
   } else {
     file << "// NovelMind Script\n\n";
     file << "scene main {\n";
@@ -948,6 +985,10 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
     createSceneDoc("ending", "", false);
   } else if (templateName == "kinetic_novel") {
     createSceneDoc("main", "title.png", true);
+  } else if (templateName == "mobile_optimized") {
+    createSceneDoc("main", "mobile_bg.png", true);
+  } else if (templateName == "tutorial_project") {
+    createSceneDoc("main", "tutorial_bg.png", true);
   } else {
     createSceneDoc("main", "", false);
   }

@@ -1,0 +1,26 @@
+{
+  "sceneId": "chapter1_part1",
+  "version": "1.0",
+  "name": "Chapter 1 Part 1",
+  "description": "Meeting Sam in the hallway",
+  "timeline": {
+    "duration": 45.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_hallway",
+            "name": "School Hallway",
+            "startTime": 0.0,
+            "duration": 45.0,
+            "assetPath": "assets/backgrounds/school_hallway.jpg"
+          }
+        ]
+      }
+    ]
+  }
+}

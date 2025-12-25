@@ -1,0 +1,162 @@
+{
+  "version": "1.0",
+  "name": "Branching Story Graph",
+  "description": "Interactive story with multiple paths and endings",
+  "nodes": [
+    {
+      "id": "node_prologue",
+      "type": "scene",
+      "label": "Prologue",
+      "sceneId": "prologue",
+      "position": { "x": 400, "y": 50 },
+      "isStartNode": true
+    },
+    {
+      "id": "node_act1_scene1",
+      "type": "scene",
+      "label": "Act 1 Scene 1",
+      "sceneId": "act1_scene1",
+      "position": { "x": 400, "y": 150 }
+    },
+    {
+      "id": "node_act1_choice1",
+      "type": "choice",
+      "label": "Choose Your Path",
+      "sceneId": "act1_choice1",
+      "position": { "x": 400, "y": 250 }
+    },
+    {
+      "id": "node_act2_route_a",
+      "type": "scene",
+      "label": "Path of Light",
+      "sceneId": "act2_route_a",
+      "position": { "x": 150, "y": 350 }
+    },
+    {
+      "id": "node_act2_route_b",
+      "type": "scene",
+      "label": "Path of Shadows",
+      "sceneId": "act2_route_b",
+      "position": { "x": 400, "y": 350 }
+    },
+    {
+      "id": "node_act2_route_c",
+      "type": "scene",
+      "label": "Path of Mystery",
+      "sceneId": "act2_route_c",
+      "position": { "x": 650, "y": 350 }
+    },
+    {
+      "id": "node_ending_check",
+      "type": "condition",
+      "label": "Ending Check",
+      "sceneId": "ending_check",
+      "position": { "x": 400, "y": 450 }
+    },
+    {
+      "id": "node_ending_good",
+      "type": "ending",
+      "label": "Good Ending",
+      "sceneId": "ending_good",
+      "position": { "x": 150, "y": 550 },
+      "isEndNode": true,
+      "endingType": "good"
+    },
+    {
+      "id": "node_ending_neutral_light",
+      "type": "ending",
+      "label": "Light Ending",
+      "sceneId": "ending_neutral_light",
+      "position": { "x": 300, "y": 550 },
+      "isEndNode": true,
+      "endingType": "neutral"
+    },
+    {
+      "id": "node_ending_neutral_shadow",
+      "type": "ending",
+      "label": "Shadow Ending",
+      "sceneId": "ending_neutral_shadow",
+      "position": { "x": 500, "y": 550 },
+      "isEndNode": true,
+      "endingType": "neutral"
+    },
+    {
+      "id": "node_ending_bad",
+      "type": "ending",
+      "label": "Bad Ending",
+      "sceneId": "ending_bad",
+      "position": { "x": 650, "y": 550 },
+      "isEndNode": true,
+      "endingType": "bad"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_prologue_act1",
+      "from": "node_prologue",
+      "to": "node_act1_scene1"
+    },
+    {
+      "id": "conn_act1_choice",
+      "from": "node_act1_scene1",
+      "to": "node_act1_choice1"
+    },
+    {
+      "id": "conn_choice_light",
+      "from": "node_act1_choice1",
+      "to": "node_act2_route_a",
+      "label": "Path of Light"
+    },
+    {
+      "id": "conn_choice_shadow",
+      "from": "node_act1_choice1",
+      "to": "node_act2_route_b",
+      "label": "Path of Shadows"
+    },
+    {
+      "id": "conn_choice_mystery",
+      "from": "node_act1_choice1",
+      "to": "node_act2_route_c",
+      "label": "Path of Mystery"
+    },
+    {
+      "id": "conn_routea_check",
+      "from": "node_act2_route_a",
+      "to": "node_ending_check"
+    },
+    {
+      "id": "conn_routeb_check",
+      "from": "node_act2_route_b",
+      "to": "node_ending_check"
+    },
+    {
+      "id": "conn_routec_check",
+      "from": "node_act2_route_c",
+      "to": "node_ending_check"
+    },
+    {
+      "id": "conn_check_good",
+      "from": "node_ending_check",
+      "to": "node_ending_good",
+      "condition": "secret && affinity_a >= 2 && affinity_b >= 2"
+    },
+    {
+      "id": "conn_check_light",
+      "from": "node_ending_check",
+      "to": "node_ending_neutral_light",
+      "condition": "affinity_a > affinity_b"
+    },
+    {
+      "id": "conn_check_shadow",
+      "from": "node_ending_check",
+      "to": "node_ending_neutral_shadow",
+      "condition": "affinity_b > affinity_a"
+    },
+    {
+      "id": "conn_check_bad",
+      "from": "node_ending_check",
+      "to": "node_ending_bad",
+      "condition": "default"
+    }
+  ]
+}

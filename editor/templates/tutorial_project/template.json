@@ -1,0 +1,33 @@
+{
+  "id": "tutorial_project",
+  "name": "Interactive Tutorial",
+  "description": "Learn NovelMind step-by-step with comprehensive examples and detailed comments explaining every feature.",
+  "category": "Learning",
+  "difficulty": "Beginner",
+  "features": [
+    "Step-by-Step Instructions",
+    "Commented Code Examples",
+    "Feature Demonstrations",
+    "Progressive Lessons",
+    "Practice Exercises",
+    "All Core Features Covered"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "2.0.0",
+  "tags": ["tutorial", "learning", "beginner", "educational", "guide"],
+  "estimatedSetupTime": "2 minutes",
+  "targetAudience": "Complete beginners to visual novel development",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  },
+  "lessons": [
+    "Characters & Dialogue",
+    "Scenes & Transitions",
+    "Backgrounds & Sprites",
+    "Choices & Branching",
+    "Variables & Conditions",
+    "Audio & Music",
+    "Timeline Animations"
+  ]
+}

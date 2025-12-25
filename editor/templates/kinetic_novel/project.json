@@ -1,15 +1,47 @@
 {
-
-    "fileVersion": 1,
+  "fileVersion": 2,
+  "metadata": {
     "name": "Kinetic Novel",
     "version": "1.0.0",
     "author": "",
-    "description": "A linear story without branching paths",
-    "startScene": "chapter_1",
+    "description": "A linear story without branching paths - perfect for narrative-driven experiences",
+    "genre": "Visual Novel",
+    "rating": "Everyone",
+    "tags": ["linear", "kinetic", "narrative"]
+  },
+  "engine": {
+    "minVersion": "1.0.0",
+    "targetPlatforms": ["windows", "linux", "web"]
+  },
+  "runtime": {
+    "startScene": "intro",
     "defaultResolution": {
-        "width": 1920,
-        "height": 1080
+      "width": 1920,
+      "height": 1080
     },
+    "aspectRatio": "16:9",
+    "fullscreenByDefault": false
+  },
+  "localization": {
     "locales": ["en"],
-    "defaultLocale": "en"
+    "defaultLocale": "en",
+    "fallbackLocale": "en"
+  },
+  "audio": {
+    "voiceActingEnabled": false,
+    "masterVolume": 1.0,
+    "musicVolume": 0.8,
+    "voiceVolume": 1.0,
+    "sfxVolume": 0.7
+  },
+  "ui": {
+    "theme": "default",
+    "font": "OpenSans",
+    "dialogueBoxStyle": "classic"
+  },
+  "build": {
+    "outputDirectory": "dist",
+    "compression": true,
+    "encryptScripts": false
+  }
 }

@@ -1,0 +1,370 @@
+// =============================================================================
+// INTERACTIVE TUTORIAL - Main Script
+// =============================================================================
+// Welcome to NovelMind! This tutorial will teach you everything you need
+// to create your own visual novel.
+//
+// HOW TO USE THIS TUTORIAL:
+// 1. Read the comments (lines starting with //)
+// 2. Study the code examples
+// 3. Modify and experiment
+// 4. Check the README.md for more details
+//
+// TABLE OF CONTENTS:
+// - Lesson 1: Characters & Dialogue
+// - Lesson 2: Scenes & Navigation
+// - Lesson 3: Backgrounds & Sprites
+// - Lesson 4: Choices & Branching
+// - Lesson 5: Variables & Conditions
+// - Lesson 6: Audio & Music
+// - Lesson 7: Transitions & Timing
+// =============================================================================
+
+// =============================================================================
+// LESSON 1: CHARACTER DEFINITIONS
+// =============================================================================
+// Characters are defined at the top of your script.
+// Syntax: character Name(name="Display Name", color="#HexColor")
+//
+// - Name: Used in the script (no spaces)
+// - name: What appears in the dialogue box
+// - color: Hex color for the character's name
+
+character Teacher(name="Prof. Tutorial", color="#4A90D9")
+character Student(name="You", color="#7ED321")
+character Narrator(name="", color="#AAAAAA")
+
+// TIP: The Narrator has an empty name, so no name shows in dialogue
+
+// Tutorial tracking variable
+var lessons_completed = 0
+
+// =============================================================================
+// WELCOME SCENE
+// =============================================================================
+scene welcome {
+    // LESSON 2: BACKGROUNDS
+    // Use 'show background' to set the scene's background image
+    show background "tutorial_bg"
+
+    // LESSON 7: TRANSITIONS
+    // 'transition' creates smooth visual effects
+    // Types: fade, dissolve, slide, wipe
+    // The number is duration in seconds
+    transition fade 1.0
+
+    // LESSON 6: AUDIO
+    // 'play music' starts background music
+    // 'fadeIn' gradually increases volume
+    play music "tutorial_music" fadeIn 2.0
+
+    // LESSON 1: DIALOGUE
+    // Basic dialogue uses: say CharacterName "Text"
+    say Narrator "Welcome to the NovelMind Tutorial!"
+    say Narrator "This interactive guide will teach you how to create visual novels."
+
+    // LESSON 7: TIMING
+    // 'wait' pauses execution for specified seconds
+    wait 0.5
+
+    // LESSON 3: SHOWING CHARACTERS
+    // 'show' displays a character sprite
+    // 'at' specifies position: left, center, right
+    show Teacher at center
+    transition dissolve 0.5
+
+    say Teacher "Hello! I'm Professor Tutorial."
+    say Teacher "I'll guide you through each feature of NovelMind."
+
+    // LESSON 4: CHOICES
+    // 'choice' creates a menu for player decisions
+    // Each option uses: "Text" -> action
+    say Teacher "What would you like to learn first?"
+
+    choice {
+        "Characters & Dialogue" -> goto lesson_dialogue
+        "Backgrounds & Scenes" -> goto lesson_backgrounds
+        "Choices & Branching" -> goto lesson_choices
+        "Show me everything!" -> goto lesson_dialogue
+    }
+}
+
+// =============================================================================
+// LESSON: DIALOGUE BASICS
+// =============================================================================
+scene lesson_dialogue {
+    show background "tutorial_bg"
+    show Teacher at right
+
+    say Teacher "Let's learn about dialogue!"
+
+    // BASIC DIALOGUE
+    // The simplest form of dialogue
+    say Teacher "This is basic dialogue with a character name."
+
+    // NARRATOR DIALOGUE
+    // When Narrator has no name, just text appears
+    say Narrator "This is narration without a character name."
+
+    // EXPRESSIONS IN DIALOGUE
+    // You can show emotions in parentheses
+    say Teacher "(smiling) You can indicate expressions like this."
+    say Teacher "(thinking) Or internal thoughts..."
+
+    // SPECIAL CHARACTERS
+    // Use backslash to escape special characters
+    say Teacher "You can use \"quotes\" inside dialogue!"
+
+    // Track progress
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "Great job! You learned about dialogue."
+
+    choice {
+        "Continue to next lesson" -> goto lesson_backgrounds
+        "Return to menu" -> goto welcome
+    }
+}
+
+// =============================================================================
+// LESSON: BACKGROUNDS AND SPRITES
+// =============================================================================
+scene lesson_backgrounds {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    say Teacher "Now let's learn about visuals!"
+
+    // SHOWING BACKGROUNDS
+    say Teacher "Use 'show background' to change the scene."
+
+    // Example of changing background
+    // show background "new_background"
+
+    // CHARACTER POSITIONS
+    say Teacher "Characters can be positioned at different spots."
+
+    hide Teacher
+    show Teacher at left
+    say Teacher "I'm on the left..."
+
+    hide Teacher
+    show Teacher at center
+    say Teacher "...now in the center..."
+
+    hide Teacher
+    show Teacher at right
+    say Teacher "...and now on the right!"
+
+    // MULTIPLE CHARACTERS
+    say Teacher "You can show multiple characters:"
+
+    show Student at left
+    say Student "Hi! I appeared on the left."
+    say Teacher "And we can both be on screen!"
+
+    // HIDING CHARACTERS
+    hide Student
+    say Teacher "Use 'hide' to remove characters."
+
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "Excellent! You learned about visuals."
+
+    choice {
+        "Continue to next lesson" -> goto lesson_choices
+        "Return to menu" -> goto welcome
+    }
+}
+
+// =============================================================================
+// LESSON: CHOICES AND BRANCHING
+// =============================================================================
+scene lesson_choices {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    say Teacher "Choices are the heart of interactive stories!"
+
+    // SIMPLE CHOICES
+    say Teacher "Here's a simple choice example:"
+
+    choice {
+        "Option A" -> {
+            say Teacher "You chose Option A!"
+            say Teacher "Choices can lead to different dialogue."
+        }
+        "Option B" -> {
+            say Teacher "You chose Option B!"
+            say Teacher "Each choice can have unique responses."
+        }
+    }
+
+    // CHOICES WITH GOTO
+    say Teacher "Choices can also send you to different scenes."
+    say Teacher "That's how you create branching stories!"
+
+    say Teacher "Example syntax:"
+    say Narrator "choice {"
+    say Narrator "    \"Go left\" -> goto left_path"
+    say Narrator "    \"Go right\" -> goto right_path"
+    say Narrator "}"
+
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "You're doing great!"
+
+    choice {
+        "Continue to variables" -> goto lesson_variables
+        "Return to menu" -> goto welcome
+    }
+}
+
+// =============================================================================
+// LESSON: VARIABLES AND CONDITIONS
+// =============================================================================
+scene lesson_variables {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    say Teacher "Variables let you track player decisions!"
+
+    // VARIABLE TYPES
+    say Teacher "You can store numbers, text, and true/false values."
+
+    say Narrator "Examples:"
+    say Narrator "var score = 0"
+    say Narrator "var player_name = \"Alex\""
+    say Narrator "var has_key = false"
+
+    // MODIFYING VARIABLES
+    say Teacher "Use 'set' to change variables:"
+
+    say Narrator "set score = score + 10"
+    say Narrator "set has_key = true"
+
+    // CONDITIONAL LOGIC
+    say Teacher "Use 'if' to check conditions:"
+
+    say Narrator "if score >= 100 {"
+    say Narrator "    goto good_ending"
+    say Narrator "} else {"
+    say Narrator "    goto bad_ending"
+    say Narrator "}"
+
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "Variables unlock complex storytelling!"
+
+    choice {
+        "Continue to audio" -> goto lesson_audio
+        "Return to menu" -> goto welcome
+    }
+}
+
+// =============================================================================
+// LESSON: AUDIO AND MUSIC
+// =============================================================================
+scene lesson_audio {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    say Teacher "Audio brings your story to life!"
+
+    // BACKGROUND MUSIC
+    say Teacher "Background music sets the mood:"
+    say Narrator "play music \"happy_theme\" fadeIn 2.0"
+
+    // SOUND EFFECTS
+    say Teacher "Sound effects add impact:"
+    say Narrator "play sfx \"door_open\""
+
+    // STOPPING MUSIC
+    say Teacher "Stop music when needed:"
+    say Narrator "stop music fadeOut 1.0"
+
+    // CROSSFADE
+    say Teacher "Crossfade smoothly between tracks:"
+    say Narrator "play music \"new_theme\" crossfade 1.5"
+
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "Audio makes everything more immersive!"
+
+    choice {
+        "Continue to transitions" -> goto lesson_transitions
+        "Return to menu" -> goto welcome
+    }
+}
+
+// =============================================================================
+// LESSON: TRANSITIONS AND TIMING
+// =============================================================================
+scene lesson_transitions {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    say Teacher "Transitions make your story flow smoothly!"
+
+    // TRANSITION TYPES
+    say Teacher "Common transition types:"
+    say Narrator "transition fade 1.0    // Fade to black and back"
+    say Narrator "transition dissolve 0.5 // Cross-dissolve"
+
+    // Example transitions
+    say Teacher "Watch this fade:"
+    transition fade 0.5
+
+    say Teacher "And this dissolve:"
+    transition dissolve 0.5
+
+    // WAIT COMMAND
+    say Teacher "Use 'wait' for dramatic pauses:"
+    say Narrator "wait 1.0  // Pause for 1 second"
+
+    say Teacher "Like..."
+    wait 1.0
+    say Teacher "...this!"
+
+    set lessons_completed = lessons_completed + 1
+
+    say Teacher "Timing is everything in storytelling!"
+
+    goto tutorial_complete
+}
+
+// =============================================================================
+// TUTORIAL COMPLETE
+// =============================================================================
+scene tutorial_complete {
+    show background "tutorial_bg"
+    show Teacher at center
+
+    transition fade 1.0
+
+    say Teacher "Congratulations!"
+    say Teacher "You've completed the NovelMind tutorial!"
+
+    // Display progress
+    say Teacher "You completed {lessons_completed} lessons."
+
+    say Teacher "What you learned:"
+    say Narrator "• Character definitions and dialogue"
+    say Narrator "• Backgrounds and character sprites"
+    say Narrator "• Player choices and branching"
+    say Narrator "• Variables and conditions"
+    say Narrator "• Audio and music"
+    say Narrator "• Transitions and timing"
+
+    say Teacher "Now you're ready to create your own visual novel!"
+    say Teacher "Check the README.md for more resources."
+
+    say Narrator "Good luck with your creative journey!"
+
+    hide Teacher
+    transition fade 2.0
+    stop music fadeOut 2.0
+
+    say Narrator "THE END"
+    say Narrator "Thank you for learning with NovelMind!"
+}

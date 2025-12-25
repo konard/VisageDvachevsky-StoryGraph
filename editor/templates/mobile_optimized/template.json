@@ -1,0 +1,24 @@
+{
+  "id": "mobile_optimized",
+  "name": "Mobile Optimized",
+  "description": "A template optimized for mobile devices with portrait orientation, touch-friendly UI, and compressed assets.",
+  "category": "Platform-Specific",
+  "difficulty": "Medium",
+  "features": [
+    "Portrait Orientation (9:16)",
+    "Touch-Optimized UI",
+    "Compressed Assets",
+    "Mobile Build Settings",
+    "Haptic Feedback Support",
+    "Minimal Resource Usage"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "2.0.0",
+  "tags": ["mobile", "portrait", "touch", "android", "ios", "optimized"],
+  "estimatedSetupTime": "5 minutes",
+  "targetAudience": "Developers targeting mobile platforms",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  }
+}

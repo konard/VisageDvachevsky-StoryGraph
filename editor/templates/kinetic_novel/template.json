@@ -1,0 +1,29 @@
+{
+  "id": "kinetic_novel",
+  "name": "Kinetic Novel",
+  "description": "A linear story without player choices. Perfect for visual novels with a single storyline that focuses on narrative and character development.",
+  "category": "Beginner-Friendly",
+  "difficulty": "Easy",
+  "features": [
+    "Linear Story Graph",
+    "Sample Characters (3)",
+    "Demo Backgrounds (5)",
+    "Background Music Placeholders",
+    "Timeline Animation Examples",
+    "Scene Transitions"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "2.0.0",
+  "tags": ["linear", "beginner", "simple", "kinetic", "narrative"],
+  "estimatedSetupTime": "5 minutes",
+  "targetAudience": "Beginners and storytellers focused on linear narratives",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  },
+  "demoContent": {
+    "scenes": 5,
+    "characters": 3,
+    "chapters": 2
+  }
+}
