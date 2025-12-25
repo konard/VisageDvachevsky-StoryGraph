@@ -14,6 +14,7 @@ class QListView;
 class QLabel;
 class QPushButton;
 class QSpinBox;
+class QTextEdit;
 class QTreeView;
 class QFileSystemModel;
 class QSortFilterProxyModel;
@@ -122,7 +123,7 @@ private:
   QSpinBox *m_intSpin = nullptr;
   QDoubleSpinBox *m_doubleSpin = nullptr;
   QComboBox *m_comboBox = nullptr;
-  class QTextEdit *m_multiLineEdit = nullptr;
+  ::QTextEdit *m_multiLineEdit = nullptr;
   QPushButton *m_okButton = nullptr;
   QPushButton *m_cancelButton = nullptr;
   InputType m_type = InputType::Text;
