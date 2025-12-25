@@ -636,7 +636,8 @@ void NMSceneDialogueGraphPanel::onAutoLayout() {
   for (int layer : layers.keys()) {
     const QList<NMGraphNodeItem *> &nodesInLayer = layers[layer];
     const qreal layerY = START_Y + layer * LAYER_SPACING;
-    const qreal totalWidth = (nodesInLayer.size() - 1) * NODE_SPACING;
+    const qreal totalWidth =
+        (static_cast<qreal>(nodesInLayer.size()) - 1.0) * NODE_SPACING;
     const qreal startX = START_X - totalWidth / 2.0;
 
     for (int i = 0; i < nodesInLayer.size(); ++i) {
