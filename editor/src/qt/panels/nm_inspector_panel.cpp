@@ -26,8 +26,10 @@
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QTextCursor>
 #include <QTimer>
 #include <QVBoxLayout>
 
@@ -612,7 +614,29 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
     comboBox->setCurrentText(newValue);
   } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    textEdit->setPlainText(newValue);
+    // Only update if the content actually changed to avoid cursor jump
+    if (textEdit->toPlainText() != newValue) {
+      // Save cursor position if this widget has focus
+      QTextCursor cursor = textEdit->textCursor();
+      int cursorPosition = cursor.position();
+      int scrollPosition = textEdit->verticalScrollBar()
+                               ? textEdit->verticalScrollBar()->value()
+                               : 0;
+
+      textEdit->setPlainText(newValue);
+
+      // Restore cursor position if widget still has focus
+      if (textEdit->hasFocus()) {
+        cursor = textEdit->textCursor();
+        cursor.setPosition(qMin(cursorPosition, newValue.length()));
+        textEdit->setTextCursor(cursor);
+
+        // Restore scroll position
+        if (textEdit->verticalScrollBar()) {
+          textEdit->verticalScrollBar()->setValue(scrollPosition);
+        }
+      }
+    }
   } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
     // Check if this is a curve button or asset button
     if (button->text() == tr("Edit Curve...")) {
