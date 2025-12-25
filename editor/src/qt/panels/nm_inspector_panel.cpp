@@ -26,8 +26,10 @@
 #include <QPixmap>
 #include <QPlainTextEdit>
 #include <QPushButton>
+#include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSpinBox>
+#include <QTextCursor>
 #include <QTimer>
 #include <QVBoxLayout>
 
