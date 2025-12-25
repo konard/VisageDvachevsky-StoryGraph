@@ -543,7 +543,7 @@ void NMMainWindow::setupConnections() {
   connect(m_actionAbout, &QAction::triggered, this,
           &NMMainWindow::showAboutDialog);
   connect(m_actionDocumentation, &QAction::triggered, []() {
-    QDesktopServices::openUrl(QUrl("https://github.com/VisageDvachevsky/NM-"));
+    QDesktopServices::openUrl(QUrl("https://github.com/VisageDvachevsky/StoryGraph"));
   });
   connect(m_actionHotkeys, &QAction::triggered, this, [this]() {
     auto shortcutText = [](QAction *action) {

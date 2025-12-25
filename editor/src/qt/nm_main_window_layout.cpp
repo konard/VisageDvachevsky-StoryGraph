@@ -823,9 +823,6 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     if (m_buildSettingsPanel) {
       addDockWidget(Qt::BottomDockWidgetArea, m_buildSettingsPanel);
     }
-    if (m_buildSettingsPanel) {
-      addDockWidget(Qt::BottomDockWidgetArea, m_buildSettingsPanel);
-    }
     if (m_consolePanel && m_issuesPanel) {
       tabifyDockWidget(m_consolePanel, m_issuesPanel);
     }
@@ -840,9 +837,6 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     }
     if (m_consolePanel && m_curveEditorPanel) {
       tabifyDockWidget(m_consolePanel, m_curveEditorPanel);
-    }
-    if (m_consolePanel && m_buildSettingsPanel) {
-      tabifyDockWidget(m_consolePanel, m_buildSettingsPanel);
     }
     if (m_consolePanel && m_buildSettingsPanel) {
       tabifyDockWidget(m_consolePanel, m_buildSettingsPanel);

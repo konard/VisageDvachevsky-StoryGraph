@@ -185,9 +185,9 @@ void NMAnimationAdapter::onKeyframeModified(const QString &trackName, int frame)
                       trackName.toStdString() + "' frame " + std::to_string(frame));
 
   // Rebuild animations for this track
-  // For now, we'll just update the current frame
+  // Update the animation at the modified frame position
   if (m_timeline) {
-    onTimelineFrameChanged(m_timeline->getFPS());
+    onTimelineFrameChanged(frame);
   }
 }
 

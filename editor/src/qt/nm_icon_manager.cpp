@@ -210,9 +210,29 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["zoom-fit"] = ":/icons/lucide/maximize.svg";
   m_iconFilePaths["zoom-in"] = ":/icons/lucide/zoom-in.svg";
   m_iconFilePaths["zoom-out"] = ":/icons/lucide/zoom-out.svg";
+  m_iconFilePaths["zoom-reset"] = ":/icons/lucide/scan.svg";
 
+  // Additional Panel Icons
+  m_iconFilePaths["panel-assets"] = ":/icons/lucide/folder.svg";
+  m_iconFilePaths["panel-asset"] = ":/icons/lucide/folder.svg";
+  m_iconFilePaths["panel-scene-view"] = ":/icons/lucide/image.svg";
+  m_iconFilePaths["panel-script-editor"] = ":/icons/lucide/file-code.svg";
 
-// Total icons mapped: 139
+  // Audio and Recording Icons
+  m_iconFilePaths["audio-file"] = ":/icons/lucide/file-audio.svg";
+  m_iconFilePaths["record"] = ":/icons/lucide/circle.svg";
+
+  // Graph and Connection Icons
+  m_iconFilePaths["connection"] = ":/icons/lucide/link.svg";
+  m_iconFilePaths["layout-auto"] = ":/icons/lucide/layout-grid.svg";
+
+  // Media Control Icons
+  m_iconFilePaths["fast-forward"] = ":/icons/lucide/fast-forward.svg";
+
+  // Edit Actions
+  m_iconFilePaths["edit-rename"] = ":/icons/lucide/pencil.svg";
+
+// Total icons mapped: 150
 }
 
 QIcon NMIconManager::getIcon(const QString &iconName, int size,

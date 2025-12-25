@@ -162,6 +162,29 @@ signals:
    */
   void navigationRequested(const QString &locationString);
 
+  /**
+   * @brief Emitted when a graph node is added
+   */
+  void graphNodeAdded(const QString &nodeId, const QString &nodeType,
+                      const QVariantMap &nodeData);
+
+  /**
+   * @brief Emitted when a graph node is removed
+   */
+  void graphNodeRemoved(const QString &nodeId);
+
+  /**
+   * @brief Emitted when a graph connection is added
+   */
+  void graphConnectionAdded(const QString &connectionId,
+                            const QString &sourceNodeId,
+                            const QString &targetNodeId);
+
+  /**
+   * @brief Emitted when a graph connection is removed
+   */
+  void graphConnectionRemoved(const QString &connectionId);
+
 private:
   QtEventBus();
   ~QtEventBus() override = default;

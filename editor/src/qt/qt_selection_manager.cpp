@@ -36,11 +36,17 @@ void QtSelectionManager::addToSelection(const QString &id, SelectionType type) {
   if (!m_selectedIds.isEmpty() && m_currentType != type) {
     // Clear and start new selection of this type
     m_selectedIds.clear();
+    m_currentType = type;
   }
 
   if (!m_selectedIds.contains(id)) {
     m_selectedIds.append(id);
     m_currentType = type;
+    notifySelectionChanged();
+  } else if (m_selectedIds.isEmpty()) {
+    // We just cleared due to type mismatch, so we need to notify
+    // even though the id wasn't in the old list
+    m_selectedIds.append(id);
     notifySelectionChanged();
   }
 }

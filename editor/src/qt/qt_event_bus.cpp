@@ -65,6 +65,26 @@ void QtEventBus::publish(const QtEditorEvent &event) {
                        event.data.value("details").toString());
     break;
 
+  case QtEditorEventType::GraphNodeAdded:
+    emit graphNodeAdded(event.data.value("nodeId").toString(),
+                        event.data.value("nodeType").toString(),
+                        event.data.value("nodeData").toMap());
+    break;
+
+  case QtEditorEventType::GraphNodeRemoved:
+    emit graphNodeRemoved(event.data.value("nodeId").toString());
+    break;
+
+  case QtEditorEventType::GraphConnectionAdded:
+    emit graphConnectionAdded(event.data.value("connectionId").toString(),
+                              event.data.value("sourceNodeId").toString(),
+                              event.data.value("targetNodeId").toString());
+    break;
+
+  case QtEditorEventType::GraphConnectionRemoved:
+    emit graphConnectionRemoved(event.data.value("connectionId").toString());
+    break;
+
   default:
     break;
   }
