@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 
 #include <QFocusEvent>
 #include <QResizeEvent>
@@ -6,6 +7,8 @@
 #include <QWidget>
 
 namespace NovelMind::editor::qt {
+
+using guided_learning::ScopedAnchorRegistration;
 
 NMDockPanel::NMDockPanel(const QString &title, QWidget *parent)
     : QDockWidget(title, parent) {
@@ -25,7 +28,39 @@ NMDockPanel::NMDockPanel(const QString &title, QWidget *parent)
   setContentWidget(new QWidget(this));
 }
 
-NMDockPanel::~NMDockPanel() { onShutdown(); }
+NMDockPanel::~NMDockPanel() {
+  // Clean up anchor registrations before shutdown
+  m_elementAnchors.clear();
+  m_panelAnchor.reset();
+  onShutdown();
+}
+
+void NMDockPanel::setPanelId(const QString &id) {
+  m_panelId = id;
+
+  // Register this panel with the guided learning anchor registry.
+  // This allows the tutorial system to show hints attached to this panel.
+  if (!id.isEmpty()) {
+    std::string anchorId = id.toStdString() + ".panel";
+    std::string description = windowTitle().toStdString() + " panel";
+    m_panelAnchor = std::make_unique<ScopedAnchorRegistration>(
+        anchorId, this, description, id.toStdString());
+  }
+}
+
+void NMDockPanel::registerAnchor(const std::string &elementId, QWidget *widget,
+                                 const std::string &description) {
+  if (m_panelId.isEmpty() || !widget) {
+    return;
+  }
+
+  std::string anchorId = m_panelId.toStdString() + "." + elementId;
+  std::string desc =
+      description.empty() ? (elementId + " element") : description;
+
+  m_elementAnchors.push_back(std::make_unique<ScopedAnchorRegistration>(
+      anchorId, widget, desc, m_panelId.toStdString()));
+}
 
 void NMDockPanel::onUpdate(double /*deltaTime*/) {
   // Default implementation does nothing

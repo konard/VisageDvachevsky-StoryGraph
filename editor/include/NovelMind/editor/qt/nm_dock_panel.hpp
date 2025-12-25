@@ -17,6 +17,13 @@
 #include <QIcon>
 #include <QSize>
 #include <QString>
+#include <memory>
+#include <string>
+
+// Forward declaration for guided learning integration
+namespace NovelMind::editor::guided_learning {
+class ScopedAnchorRegistration;
+}
 
 namespace NovelMind::editor::qt {
 
@@ -49,8 +56,11 @@ public:
 
   /**
    * @brief Set the panel's unique identifier
+   *
+   * This also registers the panel with the guided learning anchor registry,
+   * allowing the tutorial system to show hints attached to this panel.
    */
-  void setPanelId(const QString &id) { m_panelId = id; }
+  void setPanelId(const QString &id);
 
   /**
    * @brief Called when the panel should update its contents
@@ -139,10 +149,27 @@ protected:
   void resizeEvent(QResizeEvent *event) override;
   void showEvent(QShowEvent *event) override;
 
+  /**
+   * @brief Register a UI element as an anchor for the tutorial system
+   * @param elementId Local element ID (e.g., "canvas", "toolbar")
+   * @param widget The widget to register
+   * @param description Human-readable description of the element
+   *
+   * The full anchor ID will be "{panelId}.{elementId}".
+   * Use this to make specific UI elements targetable by tutorials.
+   */
+  void registerAnchor(const std::string &elementId, QWidget *widget,
+                      const std::string &description = "");
+
 private:
   QString m_panelId;
   QWidget *m_contentWidget = nullptr;
   bool m_initialized = false;
+
+  // Anchor registration for guided learning system
+  std::unique_ptr<guided_learning::ScopedAnchorRegistration> m_panelAnchor;
+  std::vector<std::unique_ptr<guided_learning::ScopedAnchorRegistration>>
+      m_elementAnchors;
 };
 
 } // namespace NovelMind::editor::qt

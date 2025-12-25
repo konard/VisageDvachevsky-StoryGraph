@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
@@ -74,6 +75,13 @@ bool NMMainWindow::initialize() {
   // Initialize the guided learning / tutorial subsystem
   {
     using namespace NovelMind::editor::guided_learning;
+
+    // Register the main window center anchor for tutorials that target
+    // the overall window (e.g., welcome dialogs)
+    NMAnchorRegistry::instance().registerAnchor(
+        "main_window.center", centralWidget() ? centralWidget() : this,
+        "Main editor window center", "main_window");
+
     TutorialSubsystemConfig tutorialConfig;
     tutorialConfig.tutorialDefinitionsPath = ":/tutorials"; // Qt resources
     tutorialConfig.enabledByDefault = true;
