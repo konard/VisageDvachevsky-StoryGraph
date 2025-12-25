@@ -1,0 +1,100 @@
+{
+  "sceneId": "ending_normal",
+  "version": "1.0",
+  "name": "Normal Ending - Rooftop Evening",
+  "description": "A neutral ending with promise for the future",
+  "timeline": {
+    "duration": 45.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_rooftop",
+            "name": "Rooftop at Evening",
+            "startTime": 0.0,
+            "duration": 45.0,
+            "assetPath": "assets/backgrounds/rooftop_sunset.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 2.0,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_alex",
+        "name": "Alex",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_alex_normal",
+            "name": "Alex Neutral",
+            "startTime": 3.0,
+            "duration": 42.0,
+            "assetPath": "assets/characters/alex_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "left",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_sam",
+        "name": "Sam",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_sam_normal",
+            "name": "Sam Neutral",
+            "startTime": 3.0,
+            "duration": 42.0,
+            "assetPath": "assets/characters/sam_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "right",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "author": "NovelMind Team",
+    "created": "2024-01-01",
+    "modified": "2024-01-01"
+  }
+}

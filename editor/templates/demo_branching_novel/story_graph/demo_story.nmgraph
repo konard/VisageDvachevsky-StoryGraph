@@ -1,0 +1,144 @@
+{
+  "version": "1.0",
+  "name": "First Day at Academy - Story Graph",
+  "description": "Interactive visual novel with branching paths and multiple endings",
+  "nodes": [
+    {
+      "id": "node_intro",
+      "type": "scene",
+      "label": "Intro: School Hallway",
+      "sceneId": "intro_hallway",
+      "position": { "x": 400, "y": 50 },
+      "isStartNode": true
+    },
+    {
+      "id": "node_choice_destination",
+      "type": "choice",
+      "label": "Choose Destination",
+      "sceneId": "choice_destination",
+      "position": { "x": 400, "y": 150 }
+    },
+    {
+      "id": "node_cafeteria",
+      "type": "scene",
+      "label": "Cafeteria (Social)",
+      "sceneId": "cafeteria_social",
+      "position": { "x": 200, "y": 250 }
+    },
+    {
+      "id": "node_library",
+      "type": "scene",
+      "label": "Library (Study)",
+      "sceneId": "library_study",
+      "position": { "x": 600, "y": 250 }
+    },
+    {
+      "id": "node_choice_social",
+      "type": "choice",
+      "label": "Social Path Choice",
+      "sceneId": "choice_social",
+      "position": { "x": 200, "y": 350 }
+    },
+    {
+      "id": "node_choice_study",
+      "type": "choice",
+      "label": "Study Path Choice",
+      "sceneId": "choice_study",
+      "position": { "x": 600, "y": 350 }
+    },
+    {
+      "id": "node_ending_good",
+      "type": "ending",
+      "label": "Good Ending",
+      "sceneId": "ending_good",
+      "position": { "x": 100, "y": 500 },
+      "isEndNode": true,
+      "endingType": "good"
+    },
+    {
+      "id": "node_ending_normal",
+      "type": "ending",
+      "label": "Normal Ending",
+      "sceneId": "ending_normal",
+      "position": { "x": 400, "y": 500 },
+      "isEndNode": true,
+      "endingType": "neutral"
+    },
+    {
+      "id": "node_ending_lonely",
+      "type": "ending",
+      "label": "Lonely Ending",
+      "sceneId": "ending_lonely",
+      "position": { "x": 700, "y": 500 },
+      "isEndNode": true,
+      "endingType": "bad"
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_intro_choice",
+      "from": "node_intro",
+      "to": "node_choice_destination"
+    },
+    {
+      "id": "conn_choice_cafeteria",
+      "from": "node_choice_destination",
+      "to": "node_cafeteria",
+      "label": "Cafeteria"
+    },
+    {
+      "id": "conn_choice_library",
+      "from": "node_choice_destination",
+      "to": "node_library",
+      "label": "Library"
+    },
+    {
+      "id": "conn_cafeteria_social",
+      "from": "node_cafeteria",
+      "to": "node_choice_social"
+    },
+    {
+      "id": "conn_library_study",
+      "from": "node_library",
+      "to": "node_choice_study"
+    },
+    {
+      "id": "conn_social_good",
+      "from": "node_choice_social",
+      "to": "node_ending_good",
+      "label": "Play games",
+      "condition": "friendship_points >= 20"
+    },
+    {
+      "id": "conn_social_normal",
+      "from": "node_choice_social",
+      "to": "node_ending_normal",
+      "label": "Study together"
+    },
+    {
+      "id": "conn_social_lonely",
+      "from": "node_choice_social",
+      "to": "node_ending_lonely",
+      "label": "Go home"
+    },
+    {
+      "id": "conn_study_good",
+      "from": "node_choice_study",
+      "to": "node_ending_good",
+      "label": "Take a break",
+      "condition": "friendship_points >= 10 && intelligence_points >= 10"
+    },
+    {
+      "id": "conn_study_normal",
+      "from": "node_choice_study",
+      "to": "node_ending_normal",
+      "label": "Study more"
+    },
+    {
+      "id": "conn_study_lonely",
+      "from": "node_choice_study",
+      "to": "node_ending_lonely",
+      "label": "Focus alone"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "sceneId": "ending_lonely",
+  "version": "1.0",
+  "name": "Lonely Ending - Empty Classroom",
+  "description": "A bittersweet ending where Alex missed the opportunity to connect",
+  "timeline": {
+    "duration": 45.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_classroom",
+            "name": "Empty Classroom",
+            "startTime": 0.0,
+            "duration": 45.0,
+            "assetPath": "assets/backgrounds/classroom_empty.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 2.0,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_alex",
+        "name": "Alex",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_alex_sad",
+            "name": "Alex Sad",
+            "startTime": 3.0,
+            "duration": 42.0,
+            "assetPath": "assets/characters/alex_sad.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.5,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              },
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "center",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "author": "NovelMind Team",
+    "created": "2024-01-01",
+    "modified": "2024-01-01"
+  }
+}

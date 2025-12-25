@@ -1,0 +1,130 @@
+{
+  "sceneId": "intro_hallway",
+  "version": "1.0",
+  "name": "School Hallway - Introduction",
+  "description": "The story begins in the school hallway where Alex meets Sam",
+  "timeline": {
+    "duration": 120.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_hallway",
+            "name": "School Hallway",
+            "startTime": 0.0,
+            "duration": 120.0,
+            "assetPath": "assets/backgrounds/school_hallway.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 1.5,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_alex",
+        "name": "Alex",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_alex_intro",
+            "name": "Alex Appears",
+            "startTime": 3.0,
+            "duration": 117.0,
+            "assetPath": "assets/characters/alex_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.5,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              },
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "center",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_sam",
+        "name": "Sam",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_sam_intro",
+            "name": "Sam Enters",
+            "startTime": 8.0,
+            "duration": 112.0,
+            "assetPath": "assets/characters/sam_happy.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.3,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              },
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "right",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "author": "NovelMind Team",
+    "created": "2024-01-01",
+    "modified": "2024-01-01"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "sceneId": "library_study",
+  "version": "1.0",
+  "name": "Library - Study Path",
+  "description": "Alex and Sam visit the library for a more studious approach",
+  "timeline": {
+    "duration": 90.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_library",
+            "name": "Library",
+            "startTime": 0.0,
+            "duration": 90.0,
+            "assetPath": "assets/backgrounds/library.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.8,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_alex",
+        "name": "Alex",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_alex_library",
+            "name": "Alex in Library",
+            "startTime": 1.0,
+            "duration": 89.0,
+            "assetPath": "assets/characters/alex_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "left",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_sam",
+        "name": "Sam",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_sam_library",
+            "name": "Sam in Library",
+            "startTime": 1.0,
+            "duration": 89.0,
+            "assetPath": "assets/characters/sam_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "right",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_professor",
+        "name": "Professor",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_professor_library",
+            "name": "Professor Enters",
+            "startTime": 15.0,
+            "duration": 30.0,
+            "assetPath": "assets/characters/professor_happy.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.3,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              },
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "center",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "author": "NovelMind Team",
+    "created": "2024-01-01",
+    "modified": "2024-01-01"
+  }
+}

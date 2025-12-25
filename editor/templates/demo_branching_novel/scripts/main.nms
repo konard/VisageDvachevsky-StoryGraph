@@ -1,0 +1,376 @@
+// =============================================================================
+// First Day at Academy - Demo Visual Novel
+// =============================================================================
+// An interactive visual novel demonstrating NovelMind engine capabilities:
+// - Branching story with player choices
+// - Multiple endings (Good, Normal, Lonely)
+// - Character sprites with expressions
+// - Background transitions and animations
+// - Sound effects and background music
+// - Variable tracking for choices
+//
+// Story Structure:
+//   intro_hallway (Prologue)
+//        |
+//   choice_destination --> [Cafeteria] --> cafeteria_social --> choice_social
+//        |                                                          |
+//        +--> [Library] --> library_study --> choice_study         |
+//                                                |                  |
+//                         +---------------------+-------------------+
+//                         |                     |                   |
+//                    ending_good          ending_normal       ending_lonely
+//
+// =============================================================================
+
+// =============================================================================
+// Variable Definitions
+// =============================================================================
+var social_route = false      // Chose cafeteria path
+var study_route = false       // Chose library path
+var friendship_points = 0     // Accumulated through social choices
+var intelligence_points = 0   // Accumulated through study choices
+
+// =============================================================================
+// Character Definitions
+// =============================================================================
+character Alex(name="Alex", color="#4A90D9")
+character Sam(name="Sam", color="#F5A623")
+character Professor(name="Prof. White", color="#7ED321")
+character Narrator(name="", color="#AAAAAA")
+
+// =============================================================================
+// Scene 1: Intro - School Hallway (Prologue)
+// =============================================================================
+scene intro_hallway {
+    show background "school_hallway"
+    play music "main_theme" fadeIn 2.0
+
+    transition fade 1.5
+
+    say Narrator "First day at the academy. The hallways are filled with chatter and excitement."
+
+    wait 0.5
+
+    show Alex at center
+    transition dissolve 0.5
+
+    say Alex "This place is huge... I hope I don't get lost."
+
+    say Narrator "As Alex walks nervously through the corridor, a friendly voice calls out."
+
+    show Sam at right
+    play sfx "footsteps"
+    transition dissolve 0.3
+
+    say Sam "Hey! You look new here!"
+
+    say Alex "Oh, hi! Yeah, it's my first day. I'm Alex."
+
+    say Sam "Nice to meet you, Alex! I'm Sam. Welcome to the academy!"
+
+    say Sam "You look a bit lost. Want me to show you around?"
+
+    say Alex "That would be great, thanks!"
+
+    say Sam "Perfect! We have some free time before the next class."
+    say Sam "Where would you like to go?"
+
+    goto choice_destination
+}
+
+// =============================================================================
+// First Choice - Choose Destination
+// =============================================================================
+scene choice_destination {
+    show background "school_hallway"
+    show Alex at left
+    show Sam at right
+
+    say Narrator "Sam waits for Alex to decide."
+
+    choice {
+        "Let's go to the cafeteria!" -> {
+            set social_route = true
+            set friendship_points = friendship_points + 5
+            say Alex "I could use a snack. Let's check out the cafeteria!"
+            say Sam "Great choice! The food here is actually pretty good."
+            goto cafeteria_social
+        }
+        "Maybe the library? I should prepare for classes." -> {
+            set study_route = true
+            set intelligence_points = intelligence_points + 5
+            say Alex "I think I should check out the library. I want to be ready for classes."
+            say Sam "Responsible! I respect that. Follow me."
+            goto library_study
+        }
+    }
+}
+
+// =============================================================================
+// Path A: Cafeteria (Social Route)
+// =============================================================================
+scene cafeteria_social {
+    show background "cafeteria"
+    transition dissolve 0.8
+
+    play music "main_theme" crossfade 1.5
+
+    say Narrator "The cafeteria is warm and inviting, filled with the aroma of fresh food."
+
+    show Alex at left
+    show Sam at right
+
+    say Sam "See? Told you it's nice here!"
+
+    say Alex "It's cozy! And something smells delicious."
+
+    say Sam "The cooks here are amazing. Oh, look who's here..."
+
+    show Professor at center
+    play sfx "door_open"
+    transition dissolve 0.3
+
+    say Professor "Ah, Sam. And who is this?"
+
+    say Sam "Professor White! This is Alex, a new student!"
+
+    say Professor "Welcome to the academy, Alex."
+    say Professor "I see you're already making friends. That's a good sign."
+
+    say Alex "Thank you, Professor."
+
+    set friendship_points = friendship_points + 10
+
+    say Professor "Social connections are important for success here."
+    say Professor "Don't neglect your studies, but don't forget to enjoy your time either."
+
+    hide Professor
+    transition dissolve 0.3
+
+    say Sam "Professor White is strict but fair. You'll like the classes."
+
+    say Alex "Seems like a good teacher."
+
+    say Sam "So, what do you want to do now? We still have a bit of time."
+
+    goto choice_social
+}
+
+// =============================================================================
+// Path A: Second Choice (Social Route)
+// =============================================================================
+scene choice_social {
+    show background "cafeteria"
+    show Alex at left
+    show Sam at right
+
+    choice {
+        "Let's play some games together!" -> {
+            set friendship_points = friendship_points + 15
+            say Alex "Do you know any games we could play?"
+            say Sam "I know tons! This is going to be fun!"
+            goto ending_good
+        }
+        "Maybe we should study a bit too?" -> {
+            set friendship_points = friendship_points + 5
+            set intelligence_points = intelligence_points + 5
+            say Alex "It's been fun, but maybe we should review something for class?"
+            say Sam "A balanced approach. Smart thinking!"
+            goto ending_normal
+        }
+        "I think I'll head home early today." -> {
+            say Alex "Actually, I'm feeling a bit tired. I might head home."
+            say Sam "Oh... okay. See you tomorrow then."
+            goto ending_lonely
+        }
+    }
+}
+
+// =============================================================================
+// Path B: Library (Study Route)
+// =============================================================================
+scene library_study {
+    show background "library"
+    transition dissolve 0.8
+
+    play music "emotional_theme" crossfade 2.0
+
+    say Narrator "The library is quiet and peaceful, filled with the smell of old books."
+
+    show Alex at left
+    show Sam at right
+
+    say Sam "Welcome to the best study spot in the academy!"
+
+    say Alex "It's so calm here. I love it."
+
+    say Sam "Right? Perfect for focusing."
+
+    show Professor at center
+    play sfx "footsteps"
+    transition dissolve 0.3
+
+    say Professor "Well, well. New students in the library on day one?"
+
+    say Sam "Professor! This is Alex. We're exploring the school."
+
+    say Professor "Alex, was it? I appreciate students who value learning."
+    say Professor "The library is a treasure trove. Use it wisely."
+
+    say Alex "I will, Professor. Thank you."
+
+    set intelligence_points = intelligence_points + 10
+
+    say Professor "If you ever need guidance, my office is always open."
+
+    hide Professor
+    transition dissolve 0.3
+
+    say Sam "You made a good impression! Professor White rarely says that to new students."
+
+    say Alex "Really? That's encouraging."
+
+    say Sam "So, what now? We have some time left."
+
+    goto choice_study
+}
+
+// =============================================================================
+// Path B: Second Choice (Study Route)
+// =============================================================================
+scene choice_study {
+    show background "library"
+    show Alex at left
+    show Sam at right
+
+    choice {
+        "Let's take a break and hang out!" -> {
+            set friendship_points = friendship_points + 10
+            set intelligence_points = intelligence_points + 5
+            say Alex "I think we've studied enough. Let's take a break and chat!"
+            say Sam "Balance is key! I like the way you think."
+            goto ending_good
+        }
+        "A little more studying wouldn't hurt." -> {
+            set intelligence_points = intelligence_points + 10
+            say Alex "Let's review a bit more. I want to be prepared."
+            say Sam "Dedicated! That's a good quality."
+            goto ending_normal
+        }
+        "I need to focus alone. Sorry." -> {
+            say Alex "Actually, I think I need to concentrate by myself for now."
+            say Sam "Oh... I understand. Good luck with your studies."
+            goto ending_lonely
+        }
+    }
+}
+
+// =============================================================================
+// Ending 1: Good Ending (Best Friends)
+// =============================================================================
+scene ending_good {
+    show background "rooftop_sunset"
+    transition fade 2.0
+
+    play music "emotional_theme" crossfade 1.5
+
+    say Narrator "Later that evening, on the school rooftop..."
+
+    wait 1.0
+
+    show Alex at left
+    show Sam at right
+
+    say Sam "You know, Alex... I'm really glad we met today."
+
+    say Alex "Me too, Sam. You made my first day so much better."
+
+    say Sam "We should do this more often! Hang out, explore..."
+
+    say Alex "I'd like that. A lot."
+
+    say Narrator "The sunset painted the sky in shades of orange and pink."
+    say Narrator "Two new friends watched as the day came to an end."
+
+    say Sam "Here's to a great year ahead!"
+
+    say Alex "To new beginnings!"
+
+    transition fade 2.0
+
+    say Narrator "THE END"
+    say Narrator "Good Ending: New Best Friend"
+    say Narrator "You balanced social connections and personal growth perfectly!"
+
+    stop music fadeOut 3.0
+}
+
+// =============================================================================
+// Ending 2: Normal Ending (Balanced Path)
+// =============================================================================
+scene ending_normal {
+    show background "rooftop_sunset"
+    transition fade 2.0
+
+    play music "emotional_theme" crossfade 1.5
+
+    say Narrator "As the day draws to a close..."
+
+    wait 1.0
+
+    show Alex at left
+    show Sam at right
+
+    say Sam "Not a bad first day, right?"
+
+    say Alex "It was good. I think I'll do okay here."
+
+    say Sam "See you tomorrow then?"
+
+    say Alex "Definitely. Thanks for showing me around."
+
+    say Narrator "A promising start. Not extraordinary, but solid."
+    say Narrator "The foundation for something good has been laid."
+
+    transition fade 2.0
+
+    say Narrator "THE END"
+    say Narrator "Normal Ending: A Good Start"
+    say Narrator "You found a balance, but perhaps missed some opportunities."
+    say Narrator "Try different choices to discover the best ending!"
+
+    stop music fadeOut 3.0
+}
+
+// =============================================================================
+// Ending 3: Lonely Ending (Missed Opportunity)
+// =============================================================================
+scene ending_lonely {
+    show background "classroom_empty"
+    transition fade 2.0
+
+    play music "emotional_theme" crossfade 1.5
+
+    say Narrator "Evening falls. The classroom stands empty."
+
+    wait 1.0
+
+    show Alex at center
+
+    say Alex "Maybe I should have been more open..."
+
+    say Narrator "Sam's invitation was genuine, but the chance slipped away."
+
+    say Alex "Tomorrow... I'll try to be braver tomorrow."
+
+    say Narrator "The first day ended quietly, with a lingering sense of what could have been."
+
+    transition fade 2.0
+
+    say Narrator "THE END"
+    say Narrator "Lonely Ending: Missed Opportunity"
+    say Narrator "Sometimes being too reserved means missing out on friendship."
+    say Narrator "Hint: Try being more open to new experiences!"
+
+    stop music fadeOut 3.0
+}

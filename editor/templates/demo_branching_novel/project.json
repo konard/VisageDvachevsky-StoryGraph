@@ -1,0 +1,98 @@
+{
+  "fileVersion": 2,
+  "metadata": {
+    "name": "First Day at Academy - Demo",
+    "version": "1.0.0",
+    "author": "NovelMind Team",
+    "description": "Interactive demo showcasing branching narrative, character interactions, and multiple endings. A slice-of-life story about a new student's first day at the academy.",
+    "genre": "Slice of Life",
+    "rating": "Everyone",
+    "tags": ["demo", "branching", "choices", "multiple-endings", "slice-of-life"]
+  },
+  "engine": {
+    "minVersion": "1.0.0",
+    "targetPlatforms": ["windows", "linux", "web"]
+  },
+  "runtime": {
+    "startScene": "intro_hallway",
+    "defaultResolution": {
+      "width": 1920,
+      "height": 1080
+    },
+    "aspectRatio": "16:9",
+    "fullscreenByDefault": false
+  },
+  "characters": [
+    {
+      "id": "alex",
+      "name": "Alex",
+      "displayName": "Alex",
+      "description": "The protagonist - new student at the academy",
+      "sprites": {
+        "neutral": "assets/characters/alex_neutral.png",
+        "happy": "assets/characters/alex_happy.png",
+        "sad": "assets/characters/alex_sad.png"
+      }
+    },
+    {
+      "id": "sam",
+      "name": "Sam",
+      "displayName": "Sam",
+      "description": "Friendly classmate who helps Alex on the first day",
+      "sprites": {
+        "neutral": "assets/characters/sam_neutral.png",
+        "happy": "assets/characters/sam_happy.png",
+        "surprised": "assets/characters/sam_surprised.png"
+      }
+    },
+    {
+      "id": "professor",
+      "name": "Professor White",
+      "displayName": "Prof. White",
+      "description": "A strict but fair teacher at the academy",
+      "sprites": {
+        "neutral": "assets/characters/professor_neutral.png",
+        "happy": "assets/characters/professor_happy.png"
+      }
+    }
+  ],
+  "variables": {
+    "globals": {
+      "social_route": false,
+      "study_route": false,
+      "friendship_points": 0,
+      "intelligence_points": 0,
+      "choice_cafeteria": false,
+      "choice_library": false
+    }
+  },
+  "audio": {
+    "voiceActingEnabled": false,
+    "masterVolume": 1.0,
+    "musicVolume": 0.7,
+    "voiceVolume": 1.0,
+    "sfxVolume": 0.8,
+    "tracks": {
+      "main_theme": "assets/music/main_theme.wav",
+      "emotional": "assets/music/emotional_theme.wav"
+    }
+  },
+  "localization": {
+    "locales": ["en", "ru"],
+    "defaultLocale": "en",
+    "fallbackLocale": "en"
+  },
+  "ui": {
+    "theme": "default",
+    "font": "OpenSans",
+    "dialogueBoxStyle": "classic",
+    "choiceStyle": "vertical",
+    "textSpeed": 50,
+    "autoAdvanceDelay": 3000
+  },
+  "build": {
+    "outputDirectory": "dist",
+    "compression": true,
+    "encryptScripts": false
+  }
+}

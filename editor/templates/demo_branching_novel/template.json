@@ -1,0 +1,37 @@
+{
+  "id": "demo_branching_novel",
+  "name": "First Day at Academy (Interactive Demo)",
+  "description": "Complete playable demo with branching story, multiple choices, and 3 different endings. A slice-of-life visual novel showcasing NovelMind's capabilities including Story Graph, character sprites, backgrounds, animations, sound effects, and the choice system.",
+  "category": "Demo & Tutorial",
+  "difficulty": "Beginner",
+  "features": [
+    "Story Graph with branching paths",
+    "3 unique endings (Good, Normal, Lonely)",
+    "3 characters with expressions",
+    "5 backgrounds",
+    "Background music",
+    "Sound effects",
+    "Timeline animations (fade, slide)",
+    "Choice system demonstration",
+    "Variables & conditions",
+    "Save/Load ready"
+  ],
+  "preview": "preview.png",
+  "author": "NovelMind Team",
+  "version": "1.0.0",
+  "tags": ["demo", "interactive", "branching", "tutorial", "showcase", "slice-of-life", "beginner-friendly"],
+  "estimatedSetupTime": "0 minutes - ready to play!",
+  "estimatedPlaytime": "3-5 minutes",
+  "targetAudience": "New users wanting to see the engine in action, developers looking for a reference implementation",
+  "requirements": {
+    "minEngineVersion": "1.0.0"
+  },
+  "demoContent": {
+    "scenes": 6,
+    "characters": 3,
+    "endings": 3,
+    "choicePoints": 4,
+    "backgrounds": 5
+  },
+  "license": "CC0 / MIT"
+}

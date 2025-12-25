@@ -1,0 +1,141 @@
+{
+  "sceneId": "cafeteria_social",
+  "version": "1.0",
+  "name": "Cafeteria - Social Path",
+  "description": "Alex and Sam visit the cafeteria and meet Professor White",
+  "timeline": {
+    "duration": 90.0,
+    "frameRate": 30.0,
+    "tracks": [
+      {
+        "id": "track_bg",
+        "name": "Background",
+        "type": "Background",
+        "clips": [
+          {
+            "id": "clip_bg_cafeteria",
+            "name": "Cafeteria",
+            "startTime": 0.0,
+            "duration": 90.0,
+            "assetPath": "assets/backgrounds/cafeteria.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.8,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_alex",
+        "name": "Alex",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_alex_cafe",
+            "name": "Alex in Cafeteria",
+            "startTime": 1.0,
+            "duration": 89.0,
+            "assetPath": "assets/characters/alex_happy.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "left",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_sam",
+        "name": "Sam",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_sam_cafe",
+            "name": "Sam in Cafeteria",
+            "startTime": 1.0,
+            "duration": 89.0,
+            "assetPath": "assets/characters/sam_happy.png",
+            "propertyTracks": [
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "right",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "track_char_professor",
+        "name": "Professor",
+        "type": "Character",
+        "clips": [
+          {
+            "id": "clip_professor_cafe",
+            "name": "Professor Enters",
+            "startTime": 15.0,
+            "duration": 30.0,
+            "assetPath": "assets/characters/professor_neutral.png",
+            "propertyTracks": [
+              {
+                "propertyName": "opacity",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": 0.0,
+                    "easing": "linear"
+                  },
+                  {
+                    "time": 0.3,
+                    "value": 1.0,
+                    "easing": "easeOut"
+                  }
+                ]
+              },
+              {
+                "propertyName": "position",
+                "keyframes": [
+                  {
+                    "time": 0.0,
+                    "value": "center",
+                    "easing": "linear"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "author": "NovelMind Team",
+    "created": "2024-01-01",
+    "modified": "2024-01-01"
+  }
+}
