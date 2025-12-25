@@ -1252,7 +1252,7 @@ void NMMainWindow::setupConnections() {
   if (m_timelinePanel && m_sceneViewPanel) {
     // When Timeline frame changes, update Scene View preview
     connect(m_timelinePanel, &NMTimelinePanel::frameChanged, this,
-            [this](int frame) {
+            [this]([[maybe_unused]] int frame) {
               if (!m_sceneViewPanel || !m_sceneViewPanel->isAnimationPreviewMode()) {
                 return;
               }

@@ -56,6 +56,8 @@ public:
 private:
   void refreshDisplay();
 
+  static constexpr int MAX_ENTRIES = 10000;
+
   QList<LogEntry> m_entries;
   bool m_showDebug = true;
   bool m_showInfo = true;

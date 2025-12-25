@@ -26,6 +26,9 @@
 
 namespace NovelMind::editor::qt {
 
+// Forward declaration for easing function
+static float applyEasingFunction(float t, EasingType easing);
+
 // =============================================================================
 // TimelineTrack Implementation
 // =============================================================================
@@ -149,35 +152,35 @@ Keyframe TimelineTrack::interpolate(int frame) const {
             static_cast<float>(nextKf->frame - prevKf->frame);
 
   // Apply easing function to t
-  float easedT = applyEasingFunction(t, prevKf->easing);
+  double easedT = static_cast<double>(applyEasingFunction(t, prevKf->easing));
 
   // Interpolate value based on type
-  QVariant::Type valueType = prevKf->value.type();
+  int typeId = prevKf->value.typeId();
 
-  if (valueType == QVariant::Double || valueType == QVariant::Int) {
+  if (typeId == QMetaType::Double || typeId == QMetaType::Int) {
     // Numeric interpolation
     double startVal = prevKf->value.toDouble();
     double endVal = nextKf->value.toDouble();
     result.value = startVal + (endVal - startVal) * easedT;
-  } else if (valueType == QVariant::PointF) {
+  } else if (typeId == QMetaType::QPointF) {
     // Point interpolation
     QPointF startPt = prevKf->value.toPointF();
     QPointF endPt = nextKf->value.toPointF();
     result.value = QPointF(startPt.x() + (endPt.x() - startPt.x()) * easedT,
                            startPt.y() + (endPt.y() - startPt.y()) * easedT);
-  } else if (valueType == QVariant::Color) {
+  } else if (typeId == QMetaType::QColor) {
     // Color interpolation
     QColor startColor = prevKf->value.value<QColor>();
     QColor endColor = nextKf->value.value<QColor>();
     result.value = QColor(
-        static_cast<int>(startColor.red() +
-                         (endColor.red() - startColor.red()) * easedT),
-        static_cast<int>(startColor.green() +
-                         (endColor.green() - startColor.green()) * easedT),
-        static_cast<int>(startColor.blue() +
-                         (endColor.blue() - startColor.blue()) * easedT),
-        static_cast<int>(startColor.alpha() +
-                         (endColor.alpha() - startColor.alpha()) * easedT));
+        static_cast<int>(static_cast<double>(startColor.red()) +
+                         static_cast<double>(endColor.red() - startColor.red()) * easedT),
+        static_cast<int>(static_cast<double>(startColor.green()) +
+                         static_cast<double>(endColor.green() - startColor.green()) * easedT),
+        static_cast<int>(static_cast<double>(startColor.blue()) +
+                         static_cast<double>(endColor.blue() - startColor.blue()) * easedT),
+        static_cast<int>(static_cast<double>(startColor.alpha()) +
+                         static_cast<double>(endColor.alpha() - startColor.alpha()) * easedT));
   } else {
     // For unsupported types, use step interpolation (use prev value)
     result.value = prevKf->value;

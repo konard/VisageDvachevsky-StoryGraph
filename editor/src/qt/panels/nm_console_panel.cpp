@@ -26,6 +26,11 @@ NMConsoleOutput::NMConsoleOutput(QWidget *parent) : QPlainTextEdit(parent) {
 void NMConsoleOutput::appendLog(const LogEntry &entry) {
   m_entries.append(entry);
 
+  // Enforce maximum entry limit to prevent unbounded memory growth
+  while (m_entries.size() > MAX_ENTRIES) {
+    m_entries.removeFirst();
+  }
+
   // Check if this entry should be visible
   bool visible = false;
   switch (entry.level) {
@@ -129,6 +134,8 @@ void NMConsoleOutput::setAutoScroll(bool autoScroll) {
 void NMConsoleOutput::refreshDisplay() {
   QPlainTextEdit::clear();
 
+  const auto &palette = NMStyleManager::instance().palette();
+
   for (const auto &entry : m_entries) {
     bool visible = false;
     switch (entry.level) {
@@ -147,16 +154,46 @@ void NMConsoleOutput::refreshDisplay() {
     }
 
     if (visible) {
-      // Temporarily disable auto-scroll during refresh
-      bool wasAutoScroll = m_autoScroll;
-      m_autoScroll = false;
+      // Format and display entry directly (don't call appendLog to avoid re-adding to m_entries)
+      QString color;
+      QString levelStr;
+      switch (entry.level) {
+      case LogLevel::Debug:
+        color = NMStyleManager::colorToStyleString(palette.textSecondary);
+        levelStr = "DBG";
+        break;
+      case LogLevel::Info:
+        color = NMStyleManager::colorToStyleString(palette.info);
+        levelStr = "INF";
+        break;
+      case LogLevel::Warning:
+        color = NMStyleManager::colorToStyleString(palette.warning);
+        levelStr = "WRN";
+        break;
+      case LogLevel::Error:
+        color = NMStyleManager::colorToStyleString(palette.error);
+        levelStr = "ERR";
+        break;
+      }
 
-      // Create a temporary copy to avoid modifying the original
-      LogEntry tempEntry = entry;
-      appendLog(tempEntry);
+      QString timestamp = entry.timestamp.toString("hh:mm:ss.zzz");
+      QString source =
+          entry.source.isEmpty() ? "" : QString(" [%1]").arg(entry.source);
 
-      m_autoScroll = wasAutoScroll;
+      QString html = QString("<span style='color: %1'>[%2] %3%4: %5</span><br>")
+                         .arg(color)
+                         .arg(timestamp)
+                         .arg(levelStr)
+                         .arg(source)
+                         .arg(entry.message.toHtmlEscaped());
+
+      appendHtml(html);
     }
+  }
+
+  // Restore auto-scroll position if enabled
+  if (m_autoScroll && verticalScrollBar()) {
+    verticalScrollBar()->setValue(verticalScrollBar()->maximum());
   }
 }
 

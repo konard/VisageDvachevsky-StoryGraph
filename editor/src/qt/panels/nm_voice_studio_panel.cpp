@@ -23,6 +23,7 @@
 #include <QAudioOutput>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDir>
 #include <QDoubleSpinBox>
 #include <QGridLayout>
 #include <QGroupBox>

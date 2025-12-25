@@ -12,7 +12,7 @@ namespace NovelMind::editor::qt {
 NMAnimationAdapter::NMAnimationAdapter(scene::SceneManager *sceneManager,
                                        QObject *parent)
     : QObject(parent), m_sceneManager(sceneManager) {
-  LOG_INFO("[AnimationAdapter] Created");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Created");
 }
 
 NMAnimationAdapter::~NMAnimationAdapter() {
@@ -21,7 +21,7 @@ NMAnimationAdapter::~NMAnimationAdapter() {
 
 void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
   if (!timeline) {
-    LOG_ERROR("[AnimationAdapter] Cannot connect null timeline");
+    NOVELMIND_LOG_ERROR("[AnimationAdapter] Cannot connect null timeline");
     return;
   }
 
@@ -38,12 +38,12 @@ void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
   // Sync FPS
   m_fps = m_timeline->getFPS();
 
-  LOG_INFO("[AnimationAdapter] Connected to Timeline (FPS: {})", m_fps);
+  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Connected to Timeline (FPS: ") + std::to_string(m_fps) + ")");
 }
 
 void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
   if (!sceneView) {
-    LOG_ERROR("[AnimationAdapter] Cannot connect null scene view");
+    NOVELMIND_LOG_ERROR("[AnimationAdapter] Cannot connect null scene view");
     return;
   }
 
@@ -57,14 +57,14 @@ void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
             }
           });
 
-  LOG_INFO("[AnimationAdapter] Connected to Scene View");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Connected to Scene View");
 }
 
 bool NMAnimationAdapter::createBinding(const QString &trackId,
                                        const QString &objectId,
                                        AnimatedProperty property) {
   if (trackId.isEmpty() || objectId.isEmpty()) {
-    LOG_WARNING("[AnimationAdapter] Cannot create binding with empty IDs");
+    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot create binding with empty IDs");
     return false;
   }
 
@@ -75,9 +75,8 @@ bool NMAnimationAdapter::createBinding(const QString &trackId,
 
   m_bindings[trackId] = binding;
 
-  LOG_INFO("[AnimationAdapter] Created binding: track '{}' -> object '{}' property {}",
-           trackId.toStdString(), objectId.toStdString(),
-           static_cast<int>(property));
+  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Created binding: track '") + trackId.toStdString() +
+                     "' -> object '" + objectId.toStdString() + "' property " + std::to_string(static_cast<int>(property)));
 
   return true;
 }
@@ -86,8 +85,7 @@ void NMAnimationAdapter::removeBinding(const QString &trackId) {
   auto it = m_bindings.find(trackId);
   if (it != m_bindings.end()) {
     m_bindings.erase(it);
-    LOG_INFO("[AnimationAdapter] Removed binding for track '{}'",
-             trackId.toStdString());
+    NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Removed binding for track '") + trackId.toStdString() + "'");
   }
 }
 
@@ -101,12 +99,12 @@ QList<AnimationBinding> NMAnimationAdapter::getBindings() const {
 
 void NMAnimationAdapter::startPreview() {
   if (m_isPreviewActive) {
-    LOG_WARNING("[AnimationAdapter] Preview already active");
+    NOVELMIND_LOG_WARN("[AnimationAdapter] Preview already active");
     return;
   }
 
   m_isPreviewActive = true;
-  LOG_INFO("[AnimationAdapter] Preview started");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Preview started");
   emit previewStarted();
 }
 
@@ -116,7 +114,7 @@ void NMAnimationAdapter::stopPreview() {
   }
 
   m_isPreviewActive = false;
-  LOG_INFO("[AnimationAdapter] Preview stopped");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Preview stopped");
   emit previewStopped();
 }
 
@@ -183,8 +181,8 @@ void NMAnimationAdapter::onTimelinePlaybackStateChanged(bool playing) {
 }
 
 void NMAnimationAdapter::onKeyframeModified(const QString &trackName, int frame) {
-  LOG_DEBUG("[AnimationAdapter] Keyframe modified: track '{}' frame {}",
-            trackName.toStdString(), frame);
+  NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Keyframe modified: track '") +
+                      trackName.toStdString() + "' frame " + std::to_string(frame));
 
   // Rebuild animations for this track
   // For now, we'll just update the current frame
@@ -195,18 +193,21 @@ void NMAnimationAdapter::onKeyframeModified(const QString &trackName, int frame)
 
 void NMAnimationAdapter::rebuildAnimations() {
   if (!m_timeline) {
-    LOG_WARNING("[AnimationAdapter] Cannot rebuild animations without timeline");
+    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot rebuild animations without timeline");
     return;
   }
 
-  LOG_INFO("[AnimationAdapter] Rebuilding animations");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Rebuilding animations");
 
   // Clear existing animation states
   m_animationStates.clear();
 
   // Build animations for each bound track
   const auto &tracks = m_timeline->getTracks();
-  for (const auto &[trackName, track] : tracks) {
+  for (auto it = tracks.constBegin(); it != tracks.constEnd(); ++it) {
+    const QString &trackName = it.key();
+    TimelineTrack *track = it.value();
+
     // Check if this track has a binding
     auto bindingIt = m_bindings.find(trackName);
     if (bindingIt == m_bindings.end()) {
@@ -216,10 +217,10 @@ void NMAnimationAdapter::rebuildAnimations() {
     const AnimationBinding &binding = bindingIt->second;
 
     // Build animation timeline from track
-    auto timeline = buildAnimationFromTrack(track, binding);
-    if (timeline) {
+    auto animTimeline = buildAnimationFromTrack(track, binding);
+    if (animTimeline) {
       AnimationPlaybackState state;
-      state.timeline = std::move(timeline);
+      state.timeline = std::move(animTimeline);
       state.binding = binding;
       state.duration = static_cast<f64>(track->keyframes.size() > 0
                                             ? track->keyframes.last().frame
@@ -228,15 +229,14 @@ void NMAnimationAdapter::rebuildAnimations() {
 
       m_animationStates[trackName] = std::move(state);
 
-      LOG_INFO("[AnimationAdapter] Built animation for track '{}'",
-               trackName.toStdString());
+      NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Built animation for track '") + trackName.toStdString() + "'");
     }
   }
 }
 
 std::unique_ptr<scene::AnimationTimeline>
 NMAnimationAdapter::buildAnimationFromTrack(TimelineTrack *track,
-                                            const AnimationBinding &binding) {
+                                            [[maybe_unused]] const AnimationBinding &binding) {
   if (!track || track->keyframes.isEmpty()) {
     return nullptr;
   }
@@ -248,9 +248,10 @@ NMAnimationAdapter::buildAnimationFromTrack(TimelineTrack *track,
 }
 
 std::unique_ptr<scene::Tween>
-NMAnimationAdapter::createTweenForProperty(const AnimationBinding &binding,
-                                          const Keyframe &kf1,
-                                          const Keyframe &kf2, f32 duration) {
+NMAnimationAdapter::createTweenForProperty([[maybe_unused]] const AnimationBinding &binding,
+                                          [[maybe_unused]] const Keyframe &kf1,
+                                          [[maybe_unused]] const Keyframe &kf2,
+                                          [[maybe_unused]] f32 duration) {
   // Simplified: we handle tweening directly in interpolation
   return nullptr;
 }
@@ -278,9 +279,10 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
   // For now, we'll log the values. Full implementation would need
   // NMSceneViewPanel to expose its scene management methods
 
-  LOG_DEBUG("[AnimationAdapter] Applying animation: object '{}' property {} = {}",
-            binding.objectId.toStdString(), static_cast<int>(binding.property),
-            value.toString().toStdString());
+  NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Applying animation: object '") +
+                      binding.objectId.toStdString() + "' property " +
+                      std::to_string(static_cast<int>(binding.property)) + " = " +
+                      value.toString().toStdString());
 
   // TODO: Once NMSceneViewPanel exposes scene object setters, apply values here
   // Example:
@@ -318,7 +320,7 @@ void NMAnimationAdapter::cleanupAnimations() {
   m_animationStates.clear();
   m_bindings.clear();
   m_propertyStorage.clear();
-  LOG_INFO("[AnimationAdapter] Cleaned up animations");
+  NOVELMIND_LOG_INFO("[AnimationAdapter] Cleaned up animations");
 }
 
 } // namespace NovelMind::editor::qt
