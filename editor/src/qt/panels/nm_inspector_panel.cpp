@@ -602,7 +602,14 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   QWidget *widget = it.value();
   QSignalBlocker blocker(widget);
   if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
-    lineEdit->setText(newValue);
+    // Only update if value has changed and widget doesn't have focus
+    // to preserve undo history and cursor position during user editing
+    if (lineEdit->text() != newValue && !lineEdit->hasFocus()) {
+      int cursorPos = lineEdit->cursorPosition();
+      lineEdit->setText(newValue);
+      // Restore cursor position if still valid
+      lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
+    }
   } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
     spinBox->setValue(newValue.toInt());
   } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
@@ -612,7 +619,24 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
   } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
     comboBox->setCurrentText(newValue);
   } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    textEdit->setPlainText(newValue);
+    // Only update if value has changed and widget doesn't have focus
+    // to preserve undo history and cursor position during user editing
+    if (textEdit->toPlainText() != newValue && !textEdit->hasFocus()) {
+      // Save cursor position and selection
+      QTextCursor cursor = textEdit->textCursor();
+      int cursorPos = cursor.position();
+      int anchorPos = cursor.anchor();
+
+      textEdit->setPlainText(newValue);
+
+      // Restore cursor position if still valid
+      if (cursorPos <= newValue.length()) {
+        cursor.setPosition(qMin(anchorPos, newValue.length()));
+        cursor.setPosition(qMin(cursorPos, newValue.length()),
+                          QTextCursor::KeepAnchor);
+        textEdit->setTextCursor(cursor);
+      }
+    }
   } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
     // Check if this is a curve button or asset button
     if (button->text() == tr("Edit Curve...")) {
