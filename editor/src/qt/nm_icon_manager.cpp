@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include <QBuffer>
+#include <QFile>
 #include <QPainter>
 #include <QSvgRenderer>
 
@@ -17,1018 +18,201 @@ NMIconManager::NMIconManager()
 }
 
 void NMIconManager::initializeIcons() {
-  // =========================================================================
-  // FILE OPERATIONS
-  // =========================================================================
-  m_iconSvgData["file-new"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 3h-2V1c0-.55-.45-1-1-1H1C.45 0 0 .45 0 "
-      "1v14c0 .55.45 1 1 1h10c.55 0 1-.45 1-1v-2h2c.55 0 1-.45 "
-      "1-1V4c0-.55-.45-1-1-1zM11 15H1V1h10v14zm3-3h-2V4h2v8z'/>"
-      "<path fill='%COLOR%' d='M3 6h6v1H3zm0 2h6v1H3zm0 2h6v1H3z'/>"
-      "</svg>";
-
-  m_iconSvgData["file-open"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 4h-4.38l-1.3-1.3c-.2-.2-.45-.7-.7-.7H1c-.55 "
-      "0-1 .45-1 1v10c0 .55.45 1 1 1h13c.55 0 1-.45 1-1V5c0-.55-.45-1-1-1zm0 "
-      "9H1V3h5l2 2h6v8z'/>"
-      "</svg>";
-
-  m_iconSvgData["file-save"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 0H2C.9 0 0 .9 0 2v12c0 1.1.9 2 2 2h12c1.1 0 "
-      "2-.9 2-2V2c0-1.1-.9-2-2-2zM5 2h6v3H5V2zm9 12H2V2h1v4h10V2h1v12z'/>"
-      "<rect fill='%COLOR%' x='4' y='9' width='8' height='1'/>"
-      "<rect fill='%COLOR%' x='4' y='11' width='8' height='1'/>"
-      "<rect fill='%COLOR%' x='4' y='13' width='8' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["file-close"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 3h-2V1c0-.55-.45-1-1-1H1C.45 0 0 .45 0 "
-      "1v14c0 .55.45 1 1 1h10c.55 0 1-.45 1-1v-2h2c.55 0 1-.45 "
-      "1-1V4c0-.55-.45-1-1-1zM11 15H1V1h10v14z'/>"
-      "<path fill='%COLOR%' d='M10.3 4.7l-1.4-1.4L8 4.2 7.1 3.3 5.7 4.7 6.6 "
-      "5.6 5.7 6.5l1.4 1.4.9-.9.9.9 1.4-1.4-.9-.9z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // EDIT OPERATIONS
-  // =========================================================================
-  m_iconSvgData["edit-undo"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1c-1.7 0-3.3.6-4.6 1.7L1 1v5h5L3.5 3.5C4.5 "
-      "2.6 6.2 2 8 2c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H1c0 3.9 3.1 7 7 "
-      "7s7-3.1 7-7-3.1-7-7-7z'/>"
-      "</svg>";
-
-  m_iconSvgData["edit-redo"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1c1.7 0 3.3.6 4.6 1.7L15 1v5h-5l2.5-2.5C11.5 "
-      "2.6 9.8 2 8 2 4.7 2 2 4.7 2 8s2.7 6 6 6 6-2.7 6-6h1c0 3.9-3.1 7-7 "
-      "7s-7-3.1-7-7 3.1-7 7-7z'/>"
-      "</svg>";
-
-  m_iconSvgData["edit-cut"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13.5 3l-6 6-2-2L3 9.5c-.8.8-.8 2.1 0 2.8.8.8 "
-      "2.1.8 2.8 0L8.5 9.7l2 2 5-5-2-3.7zM4.5 11c-.3 "
-      "0-.5-.2-.5-.5s.2-.5.5-.5.5.2.5.5-.2.5-.5.5z'/>"
-      "<circle fill='%COLOR%' cx='4.5' cy='3.5' r='1.5'/>"
-      "</svg>";
-
-  m_iconSvgData["edit-copy"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13 0H3C2.4 0 2 .4 2 1v2H0v11c0 .6.4 1 1 "
-      "1h10c.6 0 1-.4 1-1v-2h2c.6 0 1-.4 1-1V1c0-.6-.4-1-1-1zm-2 "
-      "14H1V4h10v10zm2-3h-1V4c0-.6-.4-1-1-1H4V1h9v10z'/>"
-      "</svg>";
-
-  m_iconSvgData["edit-paste"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M11 2h1c.6 0 1 .4 1 1v11c0 .6-.4 1-1 1H4c-.6 "
-      "0-1-.4-1-1V3c0-.6.4-1 1-1h1V1h6v1zM5 4v10h6V4H5z'/>"
-      "<rect fill='%COLOR%' x='6' y='0' width='4' height='2' rx='1'/>"
-      "</svg>";
-
-  m_iconSvgData["edit-delete"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13 3h-2V1c0-.55-.45-1-1-1H6c-.55 0-1 .45-1 "
-      "1v2H3c-.55 0-1 .45-1 1v1h12V4c0-.55-.45-1-1-1zM6 1h4v2H6V1z'/>"
-      "<path fill='%COLOR%' d='M4 6v9c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V6H4zm2 "
-      "8H5V8h1v6zm2 0H7V8h1v6zm2 0H9V8h1v6z'/>"
-      "</svg>";
-
-  m_iconSvgData["copy"] = m_iconSvgData["edit-copy"];
-  m_iconSvgData["delete"] = m_iconSvgData["edit-delete"];
-
-  // =========================================================================
-  // PLAYBACK CONTROLS
-  // =========================================================================
-  m_iconSvgData["play"] = "<svg viewBox='0 0 16 16'>"
-                          "<path fill='%COLOR%' d='M3 2v12l10-6z'/>"
-                          "</svg>";
-
-  m_iconSvgData["pause"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='3' y='2' width='3' height='12'/>"
-      "<rect fill='%COLOR%' x='10' y='2' width='3' height='12'/>"
-      "</svg>";
-
-  m_iconSvgData["stop"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='3' y='3' width='10' height='10'/>"
-      "</svg>";
-
-  m_iconSvgData["step-forward"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M2 2v12l9-6z'/>"
-      "<rect fill='%COLOR%' x='12' y='2' width='2' height='12'/>"
-      "</svg>";
-
-  m_iconSvgData["step-backward"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 2v12L5 8z'/>"
-      "<rect fill='%COLOR%' x='2' y='2' width='2' height='12'/>"
-      "</svg>";
-
-  // =========================================================================
-  // PANEL ICONS
-  // =========================================================================
-  m_iconSvgData["panel-scene"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='12' height='12' rx='1' "
-      "fill='none' stroke='%COLOR%' stroke-width='1.5'/>"
-      "<circle fill='%COLOR%' cx='8' cy='6' r='2'/>"
-      "<path fill='%COLOR%' d='M4 14l3-4 2 2 3-4 2 2v4z'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-graph"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='3' cy='8' r='2'/>"
-      "<circle fill='%COLOR%' cx='13' cy='8' r='2'/>"
-      "<circle fill='%COLOR%' cx='8' cy='4' r='2'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M5 8h6M5 "
-      "7l3-2M11 7l-3-2'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-inspector"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='12' height='2'/>"
-      "<rect fill='%COLOR%' x='2' y='6' width='12' height='2'/>"
-      "<rect fill='%COLOR%' x='2' y='10' width='12' height='2'/>"
-      "<circle fill='%COLOR%' cx='12' cy='3' r='1.5'/>"
-      "<circle fill='%COLOR%' cx='12' cy='7' r='1.5'/>"
-      "<circle fill='%COLOR%' cx='12' cy='11' r='1.5'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-console"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='1' width='14' height='14' rx='1' "
-      "fill='none' stroke='%COLOR%' stroke-width='1.5'/>"
-      "<path fill='%COLOR%' d='M3 5l3 2-3 2v-4z'/>"
-      "<rect fill='%COLOR%' x='8' y='8' width='5' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-hierarchy"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='4' y='6' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='4' y='10' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='10' y='6' width='4' height='2'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1' d='M4 4h2M6 4v3M6 "
-      "7h2M6 7v4M6 11h2M8 7h2'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-assets"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='1' width='6' height='6' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='9' y='1' width='6' height='6' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='1' y='9' width='6' height='6' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='9' y='9' width='6' height='6' rx='0.5'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-timeline"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='3' width='14' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='7' width='14' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='11' width='14' height='2'/>"
-      "<rect fill='%COLOR%' x='3' y='3' width='1' height='10'/>"
-      "<circle fill='%COLOR%' cx='6' cy='4' r='1'/>"
-      "<circle fill='%COLOR%' cx='9' cy='8' r='1'/>"
-      "<circle fill='%COLOR%' cx='12' cy='12' r='1'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-curve"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M2 14Q5 2 8 "
-      "8T14 2'/>"
-      "<circle fill='%COLOR%' cx='2' cy='14' r='1.5'/>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='1.5'/>"
-      "<circle fill='%COLOR%' cx='14' cy='2' r='1.5'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-voice"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='7' y='2' width='2' height='7' rx='1'/>"
-      "<path fill='%COLOR%' d='M4 7v1c0 2.2 1.8 4 4 4s4-1.8 4-4V7h1v1c0 "
-      "2.5-1.8 4.6-4.2 4.9V15h2v1H5v-1h2v-2.1C4.8 12.6 3 10.5 3 8V7h1z'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-localization"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' "
-      "r='6'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M2 8h12M8 "
-      "2c-1.5 0-3 2.7-3 6s1.5 6 3 6 3-2.7 3-6-1.5-6-3-6z'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-diagnostics"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' "
-      "r='6'/>"
-      "<path fill='%COLOR%' d='M7.5 4h1v5h-1z'/>"
-      "<circle fill='%COLOR%' cx='8' cy='11' r='0.8'/>"
-      "</svg>";
-
-  m_iconSvgData["panel-build"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13.8 6.2l-4-4c-.3-.3-.7-.2-1 0l-1 1c-.3.3-.3.7 "
-      "0 1l1.3 1.3-5.4 5.4-1.3-1.3c-.3-.3-.7-.3-1 0l-1 1c-.3.3-.3.7 0 1l4 "
-      "4c.3.3.7.3 1 0l1-1c.3-.3.3-.7 0-1l-1.3-1.3 5.4-5.4 1.3 1.3c.3.3.7.3 1 "
-      "0l1-1c.3-.3.3-.7 0-1z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // ZOOM AND VIEW CONTROLS
-  // =========================================================================
-  m_iconSvgData["zoom-in"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='6.5' "
-      "cy='6.5' r='4.5'/>"
-      "<path fill='%COLOR%' d='M9.5 11l4.5 4.5-1 1L8.5 12z'/>"
-      "<path fill='%COLOR%' d='M6 4v2h2v1H6v2H5V7H3V6h2V4z'/>"
-      "</svg>";
-
-  m_iconSvgData["zoom-out"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='6.5' "
-      "cy='6.5' r='4.5'/>"
-      "<path fill='%COLOR%' d='M9.5 11l4.5 4.5-1 1L8.5 12z'/>"
-      "<rect fill='%COLOR%' x='3' y='6' width='7' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["zoom-fit"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='2' "
-      "width='12' height='12'/>"
-      "<path fill='%COLOR%' d='M5 5h2V4H4v3h1zM11 5h-2V4h3v3h-1zM11 "
-      "11h-2v1h3v-3h-1zM5 11h2v1H4v-3h1z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // UTILITY ICONS
-  // =========================================================================
-  m_iconSvgData["settings"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14.5 "
-      "6.6l-1.4-.4c-.1-.3-.2-.6-.4-.9l.7-1.3c.2-.4.1-.8-.2-1.1l-.8-.8c-.3-.3-."
-      "7-.4-1.1-.2l-1.3.7c-.3-.2-.6-.3-.9-.4L8.7 1c-.1-.5-.5-.8-1-.8h-1.1c-.5 "
-      "0-.9.3-1 .8l-.4 1.4c-.3.1-.6.2-.9.4L3 "
-      "2.1c-.4-.2-.8-.1-1.1.2l-.8.8c-.3.3-.4.7-.2 1.1l.7 "
-      "1.3c-.2.3-.3.6-.4.9L.2 6.8c-.5.1-.8.5-.8 1v1.1c0 .5.3.9.8 "
-      "1l1.4.4c.1.3.2.6.4.9l-.7 1.3c-.2.4-.1.8.2 1.1l.8.8c.3.3.7.4 "
-      "1.1.2l1.3-.7c.3.2.6.3.9.4l.4 1.4c.1.5.5.8 1 .8h1.1c.5 0 .9-.3 "
-      "1-.8l.4-1.4c.3-.1.6-.2.9-.4l1.3.7c.4.2.8.1 "
-      "1.1-.2l.8-.8c.3-.3.4-.7.2-1.1l-.7-1.3c.2-.3.3-.6.4-.9l1.4-.4c.5-.1.8-.5."
-      "8-1V7.6c0-.5-.3-.9-.8-1zM8 11c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 "
-      "3-3 3z'/>"
-      "</svg>";
-
-  m_iconSvgData["help"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' "
-      "r='6'/>"
-      "<path fill='%COLOR%' d='M8 6c-.8 0-1.5.7-1.5 1.5h-1C5.5 6.1 6.6 5 8 "
-      "5s2.5 1.1 2.5 2.5c0 1-.6 1.8-1.5 2.2v.8h-1v-1.2c0-.3.2-.5.5-.5.8 0 "
-      "1.5-.7 1.5-1.5S8.8 5.8 8 5.8z'/>"
-      "<circle fill='%COLOR%' cx='8' cy='12' r='0.8'/>"
-      "</svg>";
-
-  m_iconSvgData["search"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='6.5' "
-      "cy='6.5' r='4.5'/>"
-      "<path fill='%COLOR%' d='M9.5 11l4.5 4.5-1 1L8.5 12z'/>"
-      "</svg>";
-
-  m_iconSvgData["filter"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M1 2h14l-5.5 6.5v4.3l-3 1.5V8.5z'/>"
-      "</svg>";
-
-  m_iconSvgData["refresh"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 2v5h-5l2-2C9.7 3.7 8 3 8 3 4.7 3 2 5.7 2 "
-      "9s2.7 6 6 6c2.8 0 5.2-2 5.8-4.6h1.1C14.3 13.6 11.4 16 8 16c-3.9 "
-      "0-7-3.1-7-7s3.1-7 7-7c1.9 0 3.6.8 4.9 2l2-2z'/>"
-      "</svg>";
-
-  m_iconSvgData["add"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 7H9V2H7v5H2v2h5v5h2V9h5z'/>"
-      "</svg>";
-
-  m_iconSvgData["remove"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='7' width='12' height='2'/>"
-      "</svg>";
-
-  m_iconSvgData["warning"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1L1 14h14L8 1zm0 4h1v5H8V5zm.5 7c-.3 "
-      "0-.5-.2-.5-.5s.2-.5.5-.5.5.2.5.5-.2.5-.5.5z'/>"
-      "</svg>";
-
-  m_iconSvgData["error"] = "<svg viewBox='0 0 16 16'>"
-                           "<circle fill='%COLOR%' cx='8' cy='8' r='7'/>"
-                           "<path fill='#2d2d2d' d='M7.5 4h1v5h-1z'/>"
-                           "<circle fill='#2d2d2d' cx='8' cy='11' r='0.8'/>"
-                           "</svg>";
-
-  m_iconSvgData["info"] = "<svg viewBox='0 0 16 16'>"
-                          "<circle fill='none' stroke='%COLOR%' "
-                          "stroke-width='1.5' cx='8' cy='8' r='6'/>"
-                          "<circle fill='%COLOR%' cx='8' cy='5' r='0.8'/>"
-                          "<path fill='%COLOR%' d='M7.5 7h1v5h-1z'/>"
-                          "</svg>";
-
-  // =========================================================================
-  // ARROW AND NAVIGATION
-  // =========================================================================
-  m_iconSvgData["arrow-up"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 3L3 8l1.4 1.4L7 6.8V13h2V6.8l2.6 2.6L13 8z'/>"
-      "</svg>";
-
-  m_iconSvgData["arrow-down"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 13l5-5-1.4-1.4L9 9.2V3H7v6.2L4.4 6.6 3 8z'/>"
-      "</svg>";
-
-  m_iconSvgData["arrow-left"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M3 8l5-5 1.4 1.4L6.8 7H13v2H6.8l2.6 2.6L8 13z'/>"
-      "</svg>";
-
-  m_iconSvgData["arrow-right"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13 8l-5 5-1.4-1.4L9.2 9H3V7h6.2L6.6 4.4 8 3z'/>"
-      "</svg>";
-
-  m_iconSvgData["chevron-up"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 5l6 6-1 1-5-5-5 5-1-1z'/>"
-      "</svg>";
-
-  m_iconSvgData["chevron-down"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 11L2 5l1-1 5 5 5-5 1 1z'/>"
-      "</svg>";
-
-  m_iconSvgData["chevron-left"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M5 8l6-6 1 1-5 5 5 5-1 1z'/>"
-      "</svg>";
-
-  m_iconSvgData["chevron-right"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M11 8L5 2 4 3l5 5-5 5 1 1z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // NODE TYPE ICONS (for Story Graph)
-  // =========================================================================
-  m_iconSvgData["node-dialogue"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='4' width='12' height='8' rx='2'/>"
-      "<path fill='%COLOR%' d='M6 12l2 2 2-2z'/>"
-      "<rect fill='#2d2d2d' x='4' y='6' width='8' height='1'/>"
-      "<rect fill='#2d2d2d' x='4' y='8' width='6' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["node-choice"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l6 5-2 0v7h-2V7H6v7H4V7H2z'/>"
-      "</svg>";
-
-  m_iconSvgData["node-event"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l2 6h5l-4 3 2 5-5-3-5 3 2-5-4-3h5z'/>"
-      "</svg>";
-
-  m_iconSvgData["node-condition"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1l7 7-7 7-7-7z'/>"
-      "<path fill='#2d2d2d' d='M6 6h4v1H6zm0 3h4v1H6z'/>"
-      "</svg>";
-
-  m_iconSvgData["node-random"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='5' height='5' rx='1'/>"
-      "<rect fill='%COLOR%' x='9' y='2' width='5' height='5' rx='1'/>"
-      "<rect fill='%COLOR%' x='2' y='9' width='5' height='5' rx='1'/>"
-      "<rect fill='%COLOR%' x='9' y='9' width='5' height='5' rx='1'/>"
-      "<circle fill='#2d2d2d' cx='4.5' cy='4.5' r='1'/>"
-      "<circle fill='#2d2d2d' cx='11.5' cy='4.5' r='1'/>"
-      "<circle fill='#2d2d2d' cx='4.5' cy='11.5' r='1'/>"
-      "<circle fill='#2d2d2d' cx='11.5' cy='11.5' r='1'/>"
-      "</svg>";
-
-  m_iconSvgData["node-start"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "<path fill='#2d2d2d' d='M6 5v6l5-3z'/>"
-      "</svg>";
-
-  m_iconSvgData["node-end"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "<rect fill='#2d2d2d' x='5' y='5' width='6' height='6'/>"
-      "</svg>";
-
-  m_iconSvgData["node-jump"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l5 5-3 0v4l3 0-5 5-5-5 3 0V7l-3 0z'/>"
-      "</svg>";
-
-  m_iconSvgData["node-variable"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='12' height='12' rx='2'/>"
-      "<text fill='#2d2d2d' x='8' y='11' text-anchor='middle' "
-      "font-size='10' font-family='monospace' font-weight='bold'>x</text>"
-      "</svg>";
-
-  // =========================================================================
-  // SCENE OBJECT TYPE ICONS
-  // =========================================================================
-  m_iconSvgData["object-character"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='4' r='3'/>"
-      "<path fill='%COLOR%' d='M8 8c-3 0-5 2-5 4v2h10v-2c0-2-2-4-5-4z'/>"
-      "</svg>";
-
-  m_iconSvgData["object-background"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='1' width='14' height='14' rx='1'/>"
-      "<circle fill='#2d2d2d' cx='5' cy='5' r='2'/>"
-      "<path fill='#2d2d2d' d='M2 14l4-5 3 3 5-6v8z'/>"
-      "</svg>";
-
-  m_iconSvgData["object-prop"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='3' y='3' width='10' height='10' rx='1'/>"
-      "<rect fill='#2d2d2d' x='5' y='5' width='6' height='6' rx='0.5'/>"
-      "</svg>";
-
-  m_iconSvgData["object-effect"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l1.5 4.5H14l-3.5 2.5 1.5 4.5L8 11l-4 "
-      "2.5 1.5-4.5L2 6.5h4.5z'/>"
-      "</svg>";
-
-  m_iconSvgData["object-ui"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='2' "
-      "width='12' height='12' rx='1'/>"
-      "<rect fill='%COLOR%' x='4' y='4' width='8' height='2'/>"
-      "<rect fill='%COLOR%' x='4' y='7' width='6' height='1'/>"
-      "<rect fill='%COLOR%' x='4' y='9' width='6' height='1'/>"
-      "</svg>";
-
-  // =========================================================================
-  // TRANSFORM AND MANIPULATION ICONS
-  // =========================================================================
-  m_iconSvgData["transform-move"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1L6 3h4zM15 8l-2-2v4zM8 15l2-2H6zM1 8l2 "
-      "2V6z'/>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='2'/>"
-      "</svg>";
-
-  m_iconSvgData["transform-rotate"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' "
-      "d='M14,8 A6,6 0 1,1 8,2'/>"
-      "<path fill='%COLOR%' d='M14 4V2h-2l2 2z'/>"
-      "<path fill='%COLOR%' d='M12 2l2 2 2-2z'/>"
-      "</svg>";
-
-  m_iconSvgData["transform-scale"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='3' y='3' "
-      "width='10' height='10'/>"
-      "<path fill='%COLOR%' d='M2 2h2v2H2zM12 2h2v2h-2zM2 12h2v2H2zM12 "
-      "12h2v2h-2z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // ASSET TYPE ICONS
-  // =========================================================================
-  m_iconSvgData["asset-image"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='1' y='1' "
-      "width='14' height='14' rx='1'/>"
-      "<circle fill='%COLOR%' cx='5' cy='5' r='2'/>"
-      "<path fill='%COLOR%' d='M2 14l4-5 2 2 4-5 2 2v6z'/>"
-      "</svg>";
-
-  m_iconSvgData["asset-audio"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M6 4v8H4c-1 0-2-1-2-2V6c0-1 1-2 2-2z'/>"
-      "<path fill='%COLOR%' d='M7 3l7-2v10l-7 2z'/>"
-      "</svg>";
-
-  m_iconSvgData["asset-video"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='3' width='10' height='10' rx='1'/>"
-      "<path fill='%COLOR%' d='M12 5l3-2v10l-3-2z'/>"
-      "<path fill='#2d2d2d' d='M5 6v4l3-2z'/>"
-      "</svg>";
-
-  m_iconSvgData["asset-font"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<text fill='%COLOR%' x='8' y='13' text-anchor='middle' "
-      "font-size='12' font-weight='bold'>A</text>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='2' "
-      "width='12' height='12' rx='1'/>"
-      "</svg>";
-
-  m_iconSvgData["asset-script"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='1' width='12' height='14' rx='1'/>"
-      "<rect fill='#2d2d2d' x='4' y='3' width='8' height='1'/>"
-      "<rect fill='#2d2d2d' x='4' y='5' width='6' height='1'/>"
-      "<rect fill='#2d2d2d' x='4' y='7' width='7' height='1'/>"
-      "<rect fill='#2d2d2d' x='4' y='9' width='5' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["asset-folder"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 4h-6L6 2H2C1 2 0 3 0 4v8c0 1 1 2 2 "
-      "2h12c1 0 2-1 2-2V6c0-1-1-2-2-2z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // ACTION AND TOOL ICONS
-  // =========================================================================
-  m_iconSvgData["tool-select"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M2 1v12l4-4 2 4 2-1-2-4 4-1z'/>"
-      "</svg>";
-
-  m_iconSvgData["tool-hand"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M9 1v5h1V2c0-.6.4-1 1-1s1 .4 1 1v4h1V3c0-.6.4-1 "
-      "1-1s1 .4 1 1v6c0 2.2-1.8 4-4 4H8c-2.2 0-4-1.8-4-4V6c0-.6.4-1 "
-      "1-1s1 .4 1 1v3h1V3c0-.6.4-1 1-1s1 .4 1 1v3z'/>"
-      "</svg>";
-
-  m_iconSvgData["tool-zoom"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='6' "
-      "cy='6' r='4'/>"
-      "<path fill='%COLOR%' d='M9 9l5 5-1 1-5-5z'/>"
-      "</svg>";
-
-  m_iconSvgData["tool-frame"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='2' "
-      "width='12' height='12'/>"
-      "<path fill='%COLOR%' d='M4 4h2v2H4zM10 4h2v2h-2zM4 10h2v2H4zM10 "
-      "10h2v2h-2z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // STATUS AND INDICATOR ICONS
-  // =========================================================================
-  m_iconSvgData["status-success"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='7'/>"
-      "<path fill='#2d2d2d' d='M6 8l2 2 4-4-1-1-3 3-1-1z'/>"
-      "</svg>";
-
-  m_iconSvgData["status-warning"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1L1 14h14L8 1z'/>"
-      "<path fill='#2d2d2d' d='M7.5 5h1v4h-1z'/>"
-      "<circle fill='#2d2d2d' cx='8' cy='11' r='0.7'/>"
-      "</svg>";
-
-  m_iconSvgData["status-error"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='7'/>"
-      "<path fill='#2d2d2d' d='M5 5l6 6M11 5l-6 6'/>"
-      "</svg>";
-
-  m_iconSvgData["status-info"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='7'/>"
-      "<circle fill='#2d2d2d' cx='8' cy='5' r='0.8'/>"
-      "<rect fill='#2d2d2d' x='7.5' y='7' width='1' height='5'/>"
-      "</svg>";
-
-  m_iconSvgData["breakpoint"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "<circle fill='#ff6b6b' cx='8' cy='8' r='4'/>"
-      "</svg>";
-
-  m_iconSvgData["execute"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "<path fill='#2d2d2d' d='M6 5v6l5-3z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // GRID AND LAYOUT ICONS
-  // =========================================================================
-  m_iconSvgData["layout-grid"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='1' width='6' height='6'/>"
-      "<rect fill='%COLOR%' x='9' y='1' width='6' height='6'/>"
-      "<rect fill='%COLOR%' x='1' y='9' width='6' height='6'/>"
-      "<rect fill='%COLOR%' x='9' y='9' width='6' height='6'/>"
-      "</svg>";
-
-  m_iconSvgData["layout-list"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='2' width='14' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='7' width='14' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='12' width='14' height='2'/>"
-      "</svg>";
-
-  m_iconSvgData["layout-tree"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='6' y='1' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='7' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='11' y='7' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='1' y='13' width='4' height='2'/>"
-      "<rect fill='%COLOR%' x='11' y='13' width='4' height='2'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1' d='M8 3v4M8 "
-      "7H3v6M8 7h5v6'/>"
-      "</svg>";
-
-  // =========================================================================
-  // VISIBILITY AND LOCK ICONS
-  // =========================================================================
-  m_iconSvgData["visible"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 3C3 3 1 8 1 8s2 5 7 5 7-5 7-5-2-5-7-5z'/>"
-      "<circle fill='#2d2d2d' cx='8' cy='8' r='2'/>"
-      "</svg>";
-
-  m_iconSvgData["hidden"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 3C3 3 1 8 1 8s2 5 7 5 7-5 7-5-2-5-7-5z'/>"
-      "<path fill='#dc3545' d='M2 2l12 12-1 1L1 3z'/>"
-      "</svg>";
-
-  m_iconSvgData["locked"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='4' y='7' width='8' height='7' rx='1'/>"
-      "<path fill='%COLOR%' d='M5 7V5c0-1.7 1.3-3 3-3s3 1.3 3 3v2h1V5c0-2.2-1.8-4-4-4S4 "
-      "2.8 4 5v2z'/>"
-      "<circle fill='#2d2d2d' cx='8' cy='10.5' r='1'/>"
-      "</svg>";
-
-  m_iconSvgData["unlocked"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='4' y='7' width='8' height='7' rx='1'/>"
-      "<path fill='%COLOR%' d='M5 7V5c0-1.7 1.3-3 3-3s3 1.3 3 3h1c0-2.2-1.8-4-4-4S4 "
-      "2.8 4 5v2z'/>"
-      "<circle fill='#2d2d2d' cx='8' cy='10.5' r='1'/>"
-      "</svg>";
-
-  // =========================================================================
-  // AUDIO ICONS (Voice Manager, Recording, Playback)
-  // =========================================================================
-  m_iconSvgData["audio-record"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "</svg>";
-
-  m_iconSvgData["audio-waveform"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='6' width='2' height='4' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='4' y='4' width='2' height='8' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='7' y='2' width='2' height='12' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='10' y='5' width='2' height='6' rx='0.5'/>"
-      "<rect fill='%COLOR%' x='13' y='6' width='2' height='4' rx='0.5'/>"
-      "</svg>";
-
-  m_iconSvgData["audio-mute"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M9 2L5 6H2v4h3l4 4V2z'/>"
-      "<path fill='%COLOR%' stroke='%COLOR%' stroke-width='1.5' d='M12 5l4 6M16 5l-4 6'/>"
-      "</svg>";
-
-  m_iconSvgData["audio-unmute"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M9 2L5 6H2v4h3l4 4V2z'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M11 5c1 1 1 5 0 6'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M13 3c2 2.5 2 7.5 0 10'/>"
-      "</svg>";
-
-  m_iconSvgData["audio-volume-low"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M9 2L5 6H2v4h3l4 4V2z'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M11 5c1 1 1 5 0 6'/>"
-      "</svg>";
-
-  m_iconSvgData["audio-volume-high"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M9 2L5 6H2v4h3l4 4V2z'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M11 5c1 1 1 5 0 6'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M13 3c2 2.5 2 7.5 0 10'/>"
-      "</svg>";
-
-  m_iconSvgData["microphone"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='6' y='1' width='4' height='8' rx='2'/>"
-      "<path fill='%COLOR%' d='M3 6v2c0 2.8 2.2 5 5 5s5-2.2 5-5V6h-1v2c0 2.2-1.8 4-4 "
-      "4s-4-1.8-4-4V6H3z'/>"
-      "<rect fill='%COLOR%' x='7.5' y='13' width='1' height='2'/>"
-      "<rect fill='%COLOR%' x='5' y='14' width='6' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["microphone-off"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='6' y='1' width='4' height='8' rx='2'/>"
-      "<path fill='%COLOR%' d='M3 6v2c0 2.8 2.2 5 5 5s5-2.2 5-5V6h-1v2c0 2.2-1.8 4-4 "
-      "4s-4-1.8-4-4V6H3z'/>"
-      "<path fill='#e54d42' stroke='#e54d42' stroke-width='1.5' d='M2 2l12 12'/>"
-      "</svg>";
-
-  // =========================================================================
-  // LOCALIZATION ICONS (Languages, Translation, Keys)
-  // =========================================================================
-  m_iconSvgData["language"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' r='6'/>"
-      "<ellipse fill='none' stroke='%COLOR%' stroke-width='1' cx='8' cy='8' rx='3' ry='6'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1' d='M2 8h12'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1' d='M3 5h10M3 11h10'/>"
-      "</svg>";
-
-  m_iconSvgData["translate"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<text fill='%COLOR%' x='3' y='10' font-size='8' font-weight='bold'>A</text>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M7 8l2 0'/>"
-      "<text fill='%COLOR%' x='9' y='12' font-size='6'>文</text>"
-      "</svg>";
-
-  m_iconSvgData["locale-missing"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' r='6'/>"
-      "<path fill='%COLOR%' d='M7.5 4h1v5h-1z'/>"
-      "<circle fill='%COLOR%' cx='8' cy='11' r='0.8'/>"
-      "</svg>";
-
-  m_iconSvgData["locale-key"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='4' width='12' height='8' rx='1'/>"
-      "<rect fill='#1c2129' x='4' y='6' width='8' height='4' rx='0.5'/>"
-      "<text fill='%COLOR%' x='8' y='9.5' font-size='5' text-anchor='middle' "
-      "font-family='monospace'>key</text>"
-      "</svg>";
-
-  m_iconSvgData["locale-add"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='7' cy='7' r='5'/>"
-      "<path fill='%COLOR%' d='M12 10h2v2h2v2h-2v2h-2v-2h-2v-2h2z'/>"
-      "</svg>";
-
-  // =========================================================================
-  // TIMELINE ICONS (Keyframes, Playback, Snapping)
-  // =========================================================================
-  m_iconSvgData["keyframe"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l6 6-6 6-6-6z'/>"
-      "</svg>";
-
-  m_iconSvgData["keyframe-add"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l5 5-5 5-5-5z'/>"
-      "<path fill='%COLOR%' d='M12 10h2v2h2v2h-2v2h-2v-2h-2v-2h2z'/>"
-      "</svg>";
-
-  m_iconSvgData["keyframe-remove"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2l5 5-5 5-5-5z'/>"
-      "<rect fill='%COLOR%' x='10' y='12' width='6' height='2'/>"
-      "</svg>";
-
-  m_iconSvgData["snap"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1v3M8 12v3M1 8h3M12 8h3'/>"
-      "<rect fill='%COLOR%' x='5' y='5' width='6' height='6' rx='1'/>"
-      "</svg>";
-
-  m_iconSvgData["snap-off"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='5' y='5' width='6' height='6' rx='1'/>"
-      "<path fill='#e54d42' stroke='#e54d42' stroke-width='1.5' d='M3 3l10 10'/>"
-      "</svg>";
-
-  m_iconSvgData["loop"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' "
-      "d='M12 4H5c-2 0-3 1-3 3v2c0 2 1 3 3 3h6'/>"
-      "<path fill='%COLOR%' d='M10 9l3 3 3-3z'/>"
-      "</svg>";
-
-  m_iconSvgData["easing-linear"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1' x='2' y='2' width='12' height='12' rx='1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M4 12L12 4'/>"
-      "</svg>";
-
-  m_iconSvgData["easing-ease-in"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1' x='2' y='2' width='12' height='12' rx='1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M4 12Q4 4 12 4'/>"
-      "</svg>";
-
-  m_iconSvgData["easing-ease-out"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1' x='2' y='2' width='12' height='12' rx='1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M4 12Q12 12 12 4'/>"
-      "</svg>";
-
-  m_iconSvgData["easing-ease-in-out"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1' x='2' y='2' width='12' height='12' rx='1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M4 12Q4 8 8 8T12 4'/>"
-      "</svg>";
-
-  // =========================================================================
-  // INSPECTOR ICONS (Properties, Types, Actions)
-  // =========================================================================
-  m_iconSvgData["property-vector"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M2 14L14 2'/>"
-      "<path fill='%COLOR%' d='M12 2l2 0 0 2-2 2-2-2z'/>"
-      "</svg>";
-
-  m_iconSvgData["property-color"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='6' cy='6' r='4'/>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='10' cy='10' r='4'/>"
-      "</svg>";
-
-  m_iconSvgData["property-number"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<text fill='%COLOR%' x='8' y='12' font-size='10' text-anchor='middle' "
-      "font-weight='bold'>#</text>"
-      "</svg>";
-
-  m_iconSvgData["property-text"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<text fill='%COLOR%' x='8' y='12' font-size='10' text-anchor='middle' "
-      "font-weight='bold'>T</text>"
-      "</svg>";
-
-  m_iconSvgData["property-bool"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='5' width='12' height='6' rx='3'/>"
-      "<circle fill='%COLOR%' cx='11' cy='8' r='2'/>"
-      "</svg>";
-
-  m_iconSvgData["property-link"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' "
-      "d='M6 10l-1 1c-1.5 1.5-4 1.5-5.5 0s-1.5-4 0-5.5l1-1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' "
-      "d='M10 6l1-1c1.5-1.5 4-1.5 5.5 0s1.5 4 0 5.5l-1 1'/>"
-      "<path fill='none' stroke='%COLOR%' stroke-width='1.5' d='M6 10L10 6'/>"
-      "</svg>";
-
-  m_iconSvgData["property-reset"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 2C5.2 2 3 4.2 3 7h2l-3 4-3-4h2c0-3.9 3.1-7 7-7v2z'/>"
-      "<path fill='%COLOR%' d='M8 14c2.8 0 5-2.2 5-5h-2l3-4 3 4h-2c0 3.9-3.1 7-7 7v-2z'/>"
-      "</svg>";
-
-  m_iconSvgData["property-override"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='3'/>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='2' cx='8' cy='8' r='6'/>"
-      "</svg>";
-
-  // =========================================================================
-  // EXTERNAL/SYSTEM ICONS
-  // =========================================================================
-  m_iconSvgData["external-link"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 1h-5v2h2.6l-5.3 5.3 1.4 1.4L13 4.4V7h2V1z'/>"
-      "<path fill='%COLOR%' d='M13 14H2V3h5V1H1v14h13v-6h-1z'/>"
-      "</svg>";
-
-  m_iconSvgData["folder-open"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 5H7l-2-2H1v10h2l2-6h11l-2 6z'/>"
-      "</svg>";
-
-  m_iconSvgData["import"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1l5 5-1.4 1.4L9 4.8V11H7V4.8L4.4 7.4 3 6z'/>"
-      "<rect fill='%COLOR%' x='2' y='13' width='12' height='2'/>"
-      "</svg>";
-
-  m_iconSvgData["export"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 10L3 5l1.4-1.4L7 6.2V0h2v6.2l2.6-2.6L13 5z'/>"
-      "<rect fill='%COLOR%' x='2' y='13' width='12' height='2'/>"
-      "</svg>";
-
-  m_iconSvgData["pin"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M10 1L6 5l-4-1-1 1 4 4-3 5 5-3 4 4 1-1-1-4 4-4z'/>"
-      "</svg>";
-
-  m_iconSvgData["unpin"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M10 1L6 5l-4-1-1 1 4 4-3 5 5-3 4 4 1-1-1-4 4-4z'/>"
-      "<path fill='#e54d42' stroke='#e54d42' stroke-width='1.5' d='M2 2l12 12'/>"
-      "</svg>";
-
-  // =========================================================================
-  // WELCOME PAGE ICONS
-  // =========================================================================
-  m_iconSvgData["welcome-new"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='2' y='2' width='12' height='12' rx='2'/>"
-      "<path fill='#1c2129' d='M8 5v6M5 8h6'/>"
-      "</svg>";
-
-  m_iconSvgData["welcome-open"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M14 4h-4.4l-1.3-1.3c-.2-.2-.5-.7-.7-.7H2c-.6 0-1 .4-1 "
-      "1v10c0 .6.4 1 1 1h12c.6 0 1-.4 1-1V5c0-.6-.4-1-1-1z'/>"
-      "<path fill='#1c2129' d='M3 8l4 4 4-4'/>"
-      "</svg>";
-
-  m_iconSvgData["welcome-examples"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='1' width='6' height='6' rx='1'/>"
-      "<rect fill='%COLOR%' x='9' y='1' width='6' height='6' rx='1'/>"
-      "<rect fill='%COLOR%' x='1' y='9' width='6' height='6' rx='1'/>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='9' y='9' width='6' height='6' rx='1'/>"
-      "</svg>";
-
-  m_iconSvgData["welcome-docs"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M13 1H5c-.6 0-1 .4-1 1v1H3c-.6 0-1 .4-1 1v10c0 .6.4 1 "
-      "1 1h8c.6 0 1-.4 1-1v-1h1c.6 0 1-.4 1-1V2c0-.6-.4-1-1-1zM11 14H3V4h1v8c0 .6.4 "
-      "1 1 1h6v1zm2-2H5V2h8v10z'/>"
-      "<rect fill='#1c2129' x='6' y='4' width='6' height='1'/>"
-      "<rect fill='#1c2129' x='6' y='6' width='4' height='1'/>"
-      "<rect fill='#1c2129' x='6' y='8' width='5' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["welcome-recent"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='8' cy='8' r='6'/>"
-      "<path fill='%COLOR%' d='M8 4v4l3 2'/>"
-      "</svg>";
-
-  // =========================================================================
-  // PROJECT TEMPLATE ICONS
-  // =========================================================================
-  m_iconSvgData["template-blank"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='none' stroke='%COLOR%' stroke-width='1.5' x='2' y='2' width='12' height='12' rx='1'/>"
-      "</svg>";
-
-  m_iconSvgData["template-visual-novel"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<rect fill='%COLOR%' x='1' y='3' width='14' height='10' rx='1'/>"
-      "<circle fill='#1c2129' cx='5' cy='7' r='2'/>"
-      "<rect fill='#1c2129' x='3' y='10' width='4' height='2' rx='0.5'/>"
-      "<rect fill='#1c2129' x='9' y='5' width='4' height='1'/>"
-      "<rect fill='#1c2129' x='9' y='7' width='3' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["template-dating-sim"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 14l-5.5-5.5C1 7 1 5 2.5 3.5S6 2 7.5 3.5L8 4l.5-.5C10 "
-      "2 12 2 13.5 3.5S15 7 13.5 8.5L8 14z'/>"
-      "</svg>";
-
-  m_iconSvgData["template-mystery"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='none' stroke='%COLOR%' stroke-width='1.5' cx='7' cy='7' r='5'/>"
-      "<path fill='%COLOR%' d='M11 11l4 4-1 1-4-4z'/>"
-      "<circle fill='%COLOR%' cx='7' cy='5' r='1'/>"
-      "<rect fill='%COLOR%' x='6.5' y='6.5' width='1' height='3'/>"
-      "</svg>";
-
-  m_iconSvgData["template-rpg"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<path fill='%COLOR%' d='M8 1l1 3h3l-2.5 2 1 3L8 7l-2.5 2 1-3L4 4h3z'/>"
-      "<rect fill='%COLOR%' x='3' y='11' width='10' height='3' rx='0.5'/>"
-      "<rect fill='#1c2129' x='4' y='12' width='3' height='1'/>"
-      "</svg>";
-
-  m_iconSvgData["template-horror"] =
-      "<svg viewBox='0 0 16 16'>"
-      "<circle fill='%COLOR%' cx='8' cy='8' r='6'/>"
-      "<circle fill='#1c2129' cx='6' cy='7' r='1.5'/>"
-      "<circle fill='#1c2129' cx='10' cy='7' r='1.5'/>"
-      "<path fill='#1c2129' d='M5 10c0 0 1.5 2 3 2s3-2 3-2H5z'/>"
-      "</svg>";
+  // Initialize icon mapping from current icon names to Lucide icon file paths
+  // This allows the codebase to continue using existing icon names while
+  // loading professional Lucide icons from the Qt resource system.
+  //
+  // Icon Pack: Lucide (https://lucide.dev)
+  // License: ISC License
+  // Total Icons: 138 mapped icons
+
+  // Icon name mapping to Lucide icon files
+  // Format: m_iconFilePaths["icon-name"] = ":/icons/lucide/icon-file.svg";
+
+  // Arrow and Navigation
+  m_iconFilePaths["arrow-down"] = ":/icons/lucide/arrow-down.svg";
+  m_iconFilePaths["arrow-left"] = ":/icons/lucide/arrow-left.svg";
+  m_iconFilePaths["arrow-right"] = ":/icons/lucide/arrow-right.svg";
+  m_iconFilePaths["arrow-up"] = ":/icons/lucide/arrow-up.svg";
+  m_iconFilePaths["chevron-down"] = ":/icons/lucide/chevron-down.svg";
+  m_iconFilePaths["chevron-left"] = ":/icons/lucide/chevron-left.svg";
+  m_iconFilePaths["chevron-right"] = ":/icons/lucide/chevron-right.svg";
+  m_iconFilePaths["chevron-up"] = ":/icons/lucide/chevron-up.svg";
+
+  // Asset Type Icons
+  m_iconFilePaths["asset-audio"] = ":/icons/lucide/music.svg";
+  m_iconFilePaths["asset-folder"] = ":/icons/lucide/folder.svg";
+  m_iconFilePaths["asset-font"] = ":/icons/lucide/type.svg";
+  m_iconFilePaths["asset-image"] = ":/icons/lucide/image.svg";
+  m_iconFilePaths["asset-script"] = ":/icons/lucide/file-code.svg";
+  m_iconFilePaths["asset-video"] = ":/icons/lucide/video.svg";
+
+  // Audio Icons
+  m_iconFilePaths["audio-mute"] = ":/icons/lucide/volume-x.svg";
+  m_iconFilePaths["audio-record"] = ":/icons/lucide/circle.svg";
+  m_iconFilePaths["audio-unmute"] = ":/icons/lucide/volume-2.svg";
+  m_iconFilePaths["audio-volume-high"] = ":/icons/lucide/volume-2.svg";
+  m_iconFilePaths["audio-volume-low"] = ":/icons/lucide/volume-1.svg";
+  m_iconFilePaths["audio-waveform"] = ":/icons/lucide/audio-waveform.svg";
+  m_iconFilePaths["microphone"] = ":/icons/lucide/mic.svg";
+  m_iconFilePaths["microphone-off"] = ":/icons/lucide/mic-off.svg";
+
+  // Edit Operations
+  m_iconFilePaths["copy"] = ":/icons/lucide/copy.svg";
+  m_iconFilePaths["delete"] = ":/icons/lucide/trash-2.svg";
+  m_iconFilePaths["edit-copy"] = ":/icons/lucide/copy.svg";
+  m_iconFilePaths["edit-cut"] = ":/icons/lucide/scissors.svg";
+  m_iconFilePaths["edit-delete"] = ":/icons/lucide/trash-2.svg";
+  m_iconFilePaths["edit-paste"] = ":/icons/lucide/clipboard.svg";
+  m_iconFilePaths["edit-redo"] = ":/icons/lucide/redo.svg";
+  m_iconFilePaths["edit-undo"] = ":/icons/lucide/undo.svg";
+
+  // File Operations
+  m_iconFilePaths["file-close"] = ":/icons/lucide/x.svg";
+  m_iconFilePaths["file-new"] = ":/icons/lucide/file-plus.svg";
+  m_iconFilePaths["file-open"] = ":/icons/lucide/folder-open.svg";
+  m_iconFilePaths["file-save"] = ":/icons/lucide/save.svg";
+
+  // Inspector Icons
+  m_iconFilePaths["property-bool"] = ":/icons/lucide/toggle-right.svg";
+  m_iconFilePaths["property-color"] = ":/icons/lucide/palette.svg";
+  m_iconFilePaths["property-link"] = ":/icons/lucide/link.svg";
+  m_iconFilePaths["property-number"] = ":/icons/lucide/hash.svg";
+  m_iconFilePaths["property-override"] = ":/icons/lucide/circle-dot.svg";
+  m_iconFilePaths["property-reset"] = ":/icons/lucide/rotate-ccw.svg";
+  m_iconFilePaths["property-text"] = ":/icons/lucide/type.svg";
+  m_iconFilePaths["property-vector"] = ":/icons/lucide/arrow-up-right.svg";
+
+  // Layout Icons
+  m_iconFilePaths["layout-grid"] = ":/icons/lucide/grid-3x3.svg";
+  m_iconFilePaths["layout-list"] = ":/icons/lucide/list.svg";
+  m_iconFilePaths["layout-tree"] = ":/icons/lucide/list-tree.svg";
+
+  // Localization Icons
+  m_iconFilePaths["language"] = ":/icons/lucide/languages.svg";
+  m_iconFilePaths["locale-add"] = ":/icons/lucide/circle-plus.svg";
+  m_iconFilePaths["locale-key"] = ":/icons/lucide/key.svg";
+  m_iconFilePaths["locale-missing"] = ":/icons/lucide/circle-alert.svg";
+  m_iconFilePaths["translate"] = ":/icons/lucide/languages.svg";
+
+  // Node Type Icons
+  m_iconFilePaths["node-choice"] = ":/icons/lucide/git-branch.svg";
+  m_iconFilePaths["node-condition"] = ":/icons/lucide/diamond.svg";
+  m_iconFilePaths["node-dialogue"] = ":/icons/lucide/message-square.svg";
+  m_iconFilePaths["node-end"] = ":/icons/lucide/circle-stop.svg";
+  m_iconFilePaths["node-event"] = ":/icons/lucide/zap.svg";
+  m_iconFilePaths["node-jump"] = ":/icons/lucide/corner-down-right.svg";
+  m_iconFilePaths["node-random"] = ":/icons/lucide/shuffle.svg";
+  m_iconFilePaths["node-start"] = ":/icons/lucide/circle-play.svg";
+  m_iconFilePaths["node-variable"] = ":/icons/lucide/variable.svg";
+
+  // Panel Icons
+  m_iconFilePaths["panel-assets"] = ":/icons/lucide/folder.svg";
+  m_iconFilePaths["panel-build"] = ":/icons/lucide/hammer.svg";
+  m_iconFilePaths["panel-console"] = ":/icons/lucide/terminal.svg";
+  m_iconFilePaths["panel-curve"] = ":/icons/lucide/trending-up.svg";
+  m_iconFilePaths["panel-diagnostics"] = ":/icons/lucide/activity.svg";
+  m_iconFilePaths["panel-graph"] = ":/icons/lucide/git-graph.svg";
+  m_iconFilePaths["panel-hierarchy"] = ":/icons/lucide/list-tree.svg";
+  m_iconFilePaths["panel-inspector"] = ":/icons/lucide/sliders-horizontal.svg";
+  m_iconFilePaths["panel-localization"] = ":/icons/lucide/globe.svg";
+  m_iconFilePaths["panel-scene"] = ":/icons/lucide/image.svg";
+  m_iconFilePaths["panel-timeline"] = ":/icons/lucide/film.svg";
+  m_iconFilePaths["panel-voice"] = ":/icons/lucide/mic.svg";
+
+  // Playback Controls
+  m_iconFilePaths["pause"] = ":/icons/lucide/pause.svg";
+  m_iconFilePaths["play"] = ":/icons/lucide/play.svg";
+  m_iconFilePaths["step-backward"] = ":/icons/lucide/step-back.svg";
+  m_iconFilePaths["step-forward"] = ":/icons/lucide/step-forward.svg";
+  m_iconFilePaths["stop"] = ":/icons/lucide/square.svg";
+
+  // Scene Object Icons
+  m_iconFilePaths["object-background"] = ":/icons/lucide/image.svg";
+  m_iconFilePaths["object-character"] = ":/icons/lucide/user.svg";
+  m_iconFilePaths["object-effect"] = ":/icons/lucide/sparkles.svg";
+  m_iconFilePaths["object-prop"] = ":/icons/lucide/box.svg";
+  m_iconFilePaths["object-ui"] = ":/icons/lucide/layout-dashboard.svg";
+
+  // Status Icons
+  m_iconFilePaths["breakpoint"] = ":/icons/lucide/circle-dot.svg";
+  m_iconFilePaths["execute"] = ":/icons/lucide/circle-play.svg";
+  m_iconFilePaths["status-error"] = ":/icons/lucide/circle-x.svg";
+  m_iconFilePaths["status-info"] = ":/icons/lucide/info.svg";
+  m_iconFilePaths["status-success"] = ":/icons/lucide/circle-check.svg";
+  m_iconFilePaths["status-warning"] = ":/icons/lucide/triangle-alert.svg";
+
+  // System Icons
+  m_iconFilePaths["export"] = ":/icons/lucide/upload.svg";
+  m_iconFilePaths["external-link"] = ":/icons/lucide/external-link.svg";
+  m_iconFilePaths["folder-open"] = ":/icons/lucide/folder-open.svg";
+  m_iconFilePaths["import"] = ":/icons/lucide/download.svg";
+  m_iconFilePaths["pin"] = ":/icons/lucide/pin.svg";
+  m_iconFilePaths["unpin"] = ":/icons/lucide/pin-off.svg";
+
+  // Template Icons
+  m_iconFilePaths["template-blank"] = ":/icons/lucide/file.svg";
+  m_iconFilePaths["template-dating-sim"] = ":/icons/lucide/heart.svg";
+  m_iconFilePaths["template-horror"] = ":/icons/lucide/skull.svg";
+  m_iconFilePaths["template-mystery"] = ":/icons/lucide/search.svg";
+  m_iconFilePaths["template-rpg"] = ":/icons/lucide/swords.svg";
+  m_iconFilePaths["template-visual-novel"] = ":/icons/lucide/book-open.svg";
+
+  // Timeline Icons
+  m_iconFilePaths["easing-ease-in"] = ":/icons/lucide/trending-up.svg";
+  m_iconFilePaths["easing-ease-in-out"] = ":/icons/lucide/trending-up.svg";
+  m_iconFilePaths["easing-ease-out"] = ":/icons/lucide/trending-up.svg";
+  m_iconFilePaths["easing-linear"] = ":/icons/lucide/trending-up.svg";
+  m_iconFilePaths["keyframe"] = ":/icons/lucide/diamond.svg";
+  m_iconFilePaths["keyframe-add"] = ":/icons/lucide/square-plus.svg";
+  m_iconFilePaths["keyframe-remove"] = ":/icons/lucide/square-minus.svg";
+  m_iconFilePaths["loop"] = ":/icons/lucide/repeat.svg";
+  m_iconFilePaths["snap"] = ":/icons/lucide/magnet.svg";
+  m_iconFilePaths["snap-off"] = ":/icons/lucide/magnet.svg";
+
+  // Tool Icons
+  m_iconFilePaths["tool-frame"] = ":/icons/lucide/frame.svg";
+  m_iconFilePaths["tool-hand"] = ":/icons/lucide/hand.svg";
+  m_iconFilePaths["tool-select"] = ":/icons/lucide/mouse-pointer.svg";
+  m_iconFilePaths["tool-zoom"] = ":/icons/lucide/zoom-in.svg";
+
+  // Transform Icons
+  m_iconFilePaths["transform-move"] = ":/icons/lucide/move.svg";
+  m_iconFilePaths["transform-rotate"] = ":/icons/lucide/rotate-cw.svg";
+  m_iconFilePaths["transform-scale"] = ":/icons/lucide/maximize-2.svg";
+
+  // Utility Icons
+  m_iconFilePaths["add"] = ":/icons/lucide/plus.svg";
+  m_iconFilePaths["error"] = ":/icons/lucide/circle-x.svg";
+  m_iconFilePaths["filter"] = ":/icons/lucide/list-filter.svg";
+  m_iconFilePaths["help"] = ":/icons/lucide/circle-question-mark.svg";
+  m_iconFilePaths["info"] = ":/icons/lucide/info.svg";
+  m_iconFilePaths["refresh"] = ":/icons/lucide/refresh-cw.svg";
+  m_iconFilePaths["remove"] = ":/icons/lucide/minus.svg";
+  m_iconFilePaths["search"] = ":/icons/lucide/search.svg";
+  m_iconFilePaths["settings"] = ":/icons/lucide/settings.svg";
+  m_iconFilePaths["warning"] = ":/icons/lucide/triangle-alert.svg";
+
+  // Visibility and Lock Icons
+  m_iconFilePaths["hidden"] = ":/icons/lucide/eye-off.svg";
+  m_iconFilePaths["locked"] = ":/icons/lucide/lock.svg";
+  m_iconFilePaths["unlocked"] = ":/icons/lucide/lock-open.svg";
+  m_iconFilePaths["visible"] = ":/icons/lucide/eye.svg";
+
+  // Welcome Icons
+  m_iconFilePaths["welcome-docs"] = ":/icons/lucide/book-open.svg";
+  m_iconFilePaths["welcome-examples"] = ":/icons/lucide/layout-grid.svg";
+  m_iconFilePaths["welcome-new"] = ":/icons/lucide/file-plus.svg";
+  m_iconFilePaths["welcome-open"] = ":/icons/lucide/folder-open.svg";
+  m_iconFilePaths["welcome-recent"] = ":/icons/lucide/clock.svg";
+
+  // Zoom and View Controls
+  m_iconFilePaths["zoom-fit"] = ":/icons/lucide/maximize.svg";
+  m_iconFilePaths["zoom-in"] = ":/icons/lucide/zoom-in.svg";
+  m_iconFilePaths["zoom-out"] = ":/icons/lucide/zoom-out.svg";
+
+
+// Total icons mapped: 139
 }
 
 QIcon NMIconManager::getIcon(const QString &iconName, int size,
@@ -1071,13 +255,45 @@ void NMIconManager::setDefaultColor(const QColor &color) {
 }
 
 QString NMIconManager::getSvgData(const QString &iconName) {
+  // First, try to load from resource file (Lucide icons)
+  if (m_iconFilePaths.contains(iconName)) {
+    QString resourcePath = m_iconFilePaths[iconName];
+    QString svgData = loadSvgFromResource(resourcePath);
+    if (!svgData.isEmpty()) {
+      return svgData;
+    }
+  }
+
+  // Fallback to old hardcoded SVG data (for compatibility)
   return m_iconSvgData.value(iconName, QString());
+}
+
+QString NMIconManager::loadSvgFromResource(const QString &resourcePath) {
+  QFile file(resourcePath);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return QString();
+  }
+
+  QString svgData = QString::fromUtf8(file.readAll());
+  file.close();
+
+  return svgData;
 }
 
 QPixmap NMIconManager::renderSvg(const QString &svgData, int size,
                                  const QColor &color) {
-  // Replace color token with the requested color.
+  // For Lucide icons, we need to modify the SVG to set the stroke color
   QString coloredSvg = svgData;
+
+  // Replace stroke and fill attributes with the requested color
+  // Lucide icons use 'currentColor' or explicit stroke colors
+  coloredSvg.replace("currentColor", color.name());
+  coloredSvg.replace("stroke=\"#000\"", QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke=\"#000000\"", QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke='#000'", QString("stroke='%1'").arg(color.name()));
+  coloredSvg.replace("stroke='#000000'", QString("stroke='%1'").arg(color.name()));
+
+  // Also handle the old %COLOR% placeholder for backward compatibility
   coloredSvg.replace("%COLOR%", color.name());
 
   // Create SVG renderer

@@ -64,9 +64,15 @@ private:
   NMIconManager &operator=(const NMIconManager &) = delete;
 
   QString getSvgData(const QString &iconName);
+  QString loadSvgFromResource(const QString &resourcePath);
   QPixmap renderSvg(const QString &svgData, int size, const QColor &color);
 
+  // DEPRECATED: Old hardcoded SVG data (kept for fallback compatibility)
   QMap<QString, QString> m_iconSvgData;
+
+  // Icon name to resource file path mapping (Lucide icons)
+  QMap<QString, QString> m_iconFilePaths;
+
   QMap<QString, QIcon> m_iconCache;
   QColor m_defaultColor;
 
