@@ -5,6 +5,7 @@
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 
 #include <QBrush>
+#include <cmath>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QElapsedTimer>
@@ -91,18 +92,180 @@ Keyframe *TimelineTrack::getKeyframe(int frame) {
 }
 
 Keyframe TimelineTrack::interpolate(int frame) const {
-  // Simple implementation - return nearest keyframe
-  // Full interpolation would consider easing functions
   if (keyframes.isEmpty()) {
     return Keyframe();
   }
 
+  // If only one keyframe, return it
+  if (keyframes.size() == 1) {
+    return keyframes.first();
+  }
+
+  // Find exact match first
   for (const auto &kf : keyframes) {
     if (kf.frame == frame)
       return kf;
   }
 
-  return keyframes.first();
+  // Find surrounding keyframes for interpolation
+  const Keyframe *prevKf = nullptr;
+  const Keyframe *nextKf = nullptr;
+
+  for (int i = 0; i < keyframes.size(); ++i) {
+    if (keyframes[i].frame <= frame) {
+      prevKf = &keyframes[i];
+    }
+    if (keyframes[i].frame >= frame && !nextKf) {
+      nextKf = &keyframes[i];
+      break;
+    }
+  }
+
+  // Before first keyframe - return first
+  if (!prevKf) {
+    return keyframes.first();
+  }
+
+  // After last keyframe - return last
+  if (!nextKf) {
+    return keyframes.last();
+  }
+
+  // At exact keyframe position
+  if (prevKf->frame == frame) {
+    return *prevKf;
+  }
+  if (nextKf->frame == frame) {
+    return *nextKf;
+  }
+
+  // Interpolate between prevKf and nextKf
+  Keyframe result;
+  result.frame = frame;
+  result.easing = prevKf->easing;
+
+  // Calculate interpolation factor (0 to 1)
+  float t = static_cast<float>(frame - prevKf->frame) /
+            static_cast<float>(nextKf->frame - prevKf->frame);
+
+  // Apply easing function to t
+  float easedT = applyEasingFunction(t, prevKf->easing);
+
+  // Interpolate value based on type
+  QVariant::Type valueType = prevKf->value.type();
+
+  if (valueType == QVariant::Double || valueType == QVariant::Int) {
+    // Numeric interpolation
+    double startVal = prevKf->value.toDouble();
+    double endVal = nextKf->value.toDouble();
+    result.value = startVal + (endVal - startVal) * easedT;
+  } else if (valueType == QVariant::PointF) {
+    // Point interpolation
+    QPointF startPt = prevKf->value.toPointF();
+    QPointF endPt = nextKf->value.toPointF();
+    result.value = QPointF(startPt.x() + (endPt.x() - startPt.x()) * easedT,
+                           startPt.y() + (endPt.y() - startPt.y()) * easedT);
+  } else if (valueType == QVariant::Color) {
+    // Color interpolation
+    QColor startColor = prevKf->value.value<QColor>();
+    QColor endColor = nextKf->value.value<QColor>();
+    result.value = QColor(
+        static_cast<int>(startColor.red() +
+                         (endColor.red() - startColor.red()) * easedT),
+        static_cast<int>(startColor.green() +
+                         (endColor.green() - startColor.green()) * easedT),
+        static_cast<int>(startColor.blue() +
+                         (endColor.blue() - startColor.blue()) * easedT),
+        static_cast<int>(startColor.alpha() +
+                         (endColor.alpha() - startColor.alpha()) * easedT));
+  } else {
+    // For unsupported types, use step interpolation (use prev value)
+    result.value = prevKf->value;
+  }
+
+  return result;
+}
+
+// Helper function to apply easing
+static float applyEasingFunction(float t, EasingType easing) {
+  // Clamp t to [0, 1]
+  t = std::max(0.0f, std::min(1.0f, t));
+
+  switch (easing) {
+  case EasingType::Linear:
+    return t;
+
+  case EasingType::EaseIn:
+  case EasingType::EaseInQuad:
+    return t * t;
+
+  case EasingType::EaseOut:
+  case EasingType::EaseOutQuad:
+    return t * (2.0f - t);
+
+  case EasingType::EaseInOut:
+  case EasingType::EaseInOutQuad:
+    return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
+
+  case EasingType::EaseInCubic:
+    return t * t * t;
+
+  case EasingType::EaseOutCubic: {
+    float f = t - 1.0f;
+    return f * f * f + 1.0f;
+  }
+
+  case EasingType::EaseInOutCubic:
+    return t < 0.5f ? 4.0f * t * t * t
+                    : 1.0f + (t - 1.0f) * (2.0f * (t - 1.0f)) *
+                                 (2.0f * (t - 1.0f));
+
+  case EasingType::EaseInElastic: {
+    if (t == 0.0f || t == 1.0f)
+      return t;
+    float p = 0.3f;
+    return -std::pow(2.0f, 10.0f * (t - 1.0f)) *
+           std::sin((t - 1.0f - p / 4.0f) * (2.0f * 3.14159f) / p);
+  }
+
+  case EasingType::EaseOutElastic: {
+    if (t == 0.0f || t == 1.0f)
+      return t;
+    float p = 0.3f;
+    return std::pow(2.0f, -10.0f * t) *
+               std::sin((t - p / 4.0f) * (2.0f * 3.14159f) / p) +
+           1.0f;
+  }
+
+  case EasingType::EaseInBounce:
+    return 1.0f - applyEasingFunction(1.0f - t, EasingType::EaseOutBounce);
+
+  case EasingType::EaseOutBounce: {
+    if (t < (1.0f / 2.75f)) {
+      return 7.5625f * t * t;
+    } else if (t < (2.0f / 2.75f)) {
+      t -= 1.5f / 2.75f;
+      return 7.5625f * t * t + 0.75f;
+    } else if (t < (2.5f / 2.75f)) {
+      t -= 2.25f / 2.75f;
+      return 7.5625f * t * t + 0.9375f;
+    } else {
+      t -= 2.625f / 2.75f;
+      return 7.5625f * t * t + 0.984375f;
+    }
+  }
+
+  case EasingType::Step:
+    return t < 1.0f ? 0.0f : 1.0f;
+
+  case EasingType::Custom:
+    // TODO: Use Bezier curve data from keyframe handles
+    // For now, fallback to ease in-out
+    return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
+
+  default:
+    return t;
+  }
 }
 
 QList<Keyframe *> TimelineTrack::selectedKeyframes() {
