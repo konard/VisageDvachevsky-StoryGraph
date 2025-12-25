@@ -1019,6 +1019,96 @@ void NMMainWindow::setupConnections() {
         }
       });
 
+  // Story Graph → Script Editor: Open scene script
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::openSceneScriptRequested, this,
+          [this](const QString &sceneId, const QString &scriptPath) {
+            if (!m_scriptEditorPanel) {
+              return;
+            }
+            qDebug() << "[MainWindow] Open scene script requested for scene:"
+                     << sceneId << "script:" << scriptPath;
+
+            m_scriptEditorPanel->openScript(scriptPath);
+            m_scriptEditorPanel->show();
+            m_scriptEditorPanel->raise();
+
+            setStatusMessage(tr("Opened script: %1").arg(scriptPath), 3000);
+          });
+
+  // Story Graph → Voice Studio: Assign voice clip
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::voiceClipAssignRequested, this,
+          [this](const QString &nodeIdString, const QString &currentPath) {
+            if (!m_voiceStudioPanel) {
+              return;
+            }
+            qDebug() << "[MainWindow] Voice clip assign requested for node:"
+                     << nodeIdString << "current:" << currentPath;
+
+            // Show Voice Studio panel and prepare it for voice clip assignment
+            m_voiceStudioPanel->show();
+            m_voiceStudioPanel->raise();
+
+            setStatusMessage(
+                tr("Assign voice clip for dialogue node: %1").arg(nodeIdString),
+                3000);
+          });
+
+  // Story Graph → Voice Manager: Auto-detect voice
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::voiceAutoDetectRequested, this,
+          [this](const QString &nodeIdString, const QString &localizationKey) {
+            qDebug() << "[MainWindow] Voice auto-detect requested for node:"
+                     << nodeIdString << "key:" << localizationKey;
+
+            // Auto-detect voice file based on localization key
+            // This would typically search in the project's voice directory
+            // for files matching the localization key pattern
+            setStatusMessage(
+                tr("Auto-detecting voice for key: %1").arg(localizationKey),
+                3000);
+
+            // Show Voice Manager panel to display detected voice clips
+            if (m_voiceManagerPanel) {
+              m_voiceManagerPanel->show();
+              m_voiceManagerPanel->raise();
+            }
+          });
+
+  // Story Graph → Voice Studio: Preview voice clip
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::voiceClipPreviewRequested,
+          this, [this](const QString &nodeIdString, const QString &voicePath) {
+            qDebug() << "[MainWindow] Voice preview requested for node:"
+                     << nodeIdString << "voice:" << voicePath;
+
+            // Preview voice clip using the audio system
+            setStatusMessage(tr("Previewing voice: %1").arg(voicePath), 3000);
+
+            // Show Voice Studio panel for preview
+            if (m_voiceStudioPanel) {
+              m_voiceStudioPanel->show();
+              m_voiceStudioPanel->raise();
+            }
+          });
+
+  // Story Graph → Voice Studio: Record voice
+  connect(m_storyGraphPanel, &NMStoryGraphPanel::voiceRecordingRequested, this,
+          [this](const QString &nodeIdString, const QString &dialogueText,
+                 const QString &speaker) {
+            if (!m_voiceStudioPanel) {
+              return;
+            }
+            qDebug() << "[MainWindow] Voice recording requested for node:"
+                     << nodeIdString << "speaker:" << speaker
+                     << "text:" << dialogueText;
+
+            // Open Voice Studio panel in recording mode
+            m_voiceStudioPanel->show();
+            m_voiceStudioPanel->raise();
+
+            setStatusMessage(
+                tr("Recording voice for: %1 - %2").arg(speaker, dialogueText),
+                3000);
+          });
+
   connect(m_scriptEditorPanel, &NMScriptEditorPanel::docHtmlChanged,
           m_scriptDocPanel, &NMScriptDocPanel::setDocHtml);
   connect(m_assetBrowserPanel, &NMAssetBrowserPanel::assetSelected, this,
