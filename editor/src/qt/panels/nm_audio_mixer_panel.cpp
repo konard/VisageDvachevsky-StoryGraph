@@ -646,6 +646,7 @@ void NMAudioMixerPanel::setupCrossfadeControls(QWidget *parent) {
 
   layout->addStretch();
 
+  auto &iconMgr = NMIconManager::instance();
   m_crossfadeBtn = new QPushButton(tr("Crossfade To..."), m_crossfadeGroup);
   m_crossfadeBtn->setIcon(iconMgr.getIcon("refresh", 16));
   m_crossfadeBtn->setToolTip(tr("Start crossfade to another track"));
