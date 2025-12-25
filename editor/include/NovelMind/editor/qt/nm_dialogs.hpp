@@ -8,6 +8,7 @@
 #include <QStringList>
 
 class QComboBox;
+class QListWidget;
 class QDoubleSpinBox;
 class QFrame;
 class QListView;
@@ -231,6 +232,74 @@ private:
   QPushButton *m_browseButton = nullptr;
   QPushButton *m_createButton = nullptr;
   QPushButton *m_cancelButton = nullptr;
+};
+
+/**
+ * @brief Dialog for editing voice line metadata (tags, notes, speaker, scene)
+ *
+ * Provides a comprehensive interface for editing voice line metadata
+ * including tags, notes, speaker assignment, and scene information.
+ */
+class NMVoiceMetadataDialog final : public QDialog {
+  Q_OBJECT
+
+public:
+  struct MetadataResult {
+    QStringList tags;
+    QString notes;
+    QString speaker;
+    QString scene;
+  };
+
+  explicit NMVoiceMetadataDialog(QWidget *parent, const QString &lineId,
+                                 const QStringList &currentTags,
+                                 const QString &currentNotes,
+                                 const QString &currentSpeaker,
+                                 const QString &currentScene,
+                                 const QStringList &availableSpeakers = {},
+                                 const QStringList &availableScenes = {},
+                                 const QStringList &suggestedTags = {});
+
+  [[nodiscard]] MetadataResult result() const { return m_result; }
+
+  /**
+   * @brief Static convenience method to show the dialog and get results
+   * @return true if user accepted, false if cancelled
+   */
+  static bool getMetadata(QWidget *parent, const QString &lineId,
+                          const QStringList &currentTags,
+                          const QString &currentNotes,
+                          const QString &currentSpeaker,
+                          const QString &currentScene,
+                          MetadataResult &outResult,
+                          const QStringList &availableSpeakers = {},
+                          const QStringList &availableScenes = {},
+                          const QStringList &suggestedTags = {});
+
+private:
+  void buildUi(const QString &lineId, const QStringList &currentTags,
+               const QString &currentNotes, const QString &currentSpeaker,
+               const QString &currentScene,
+               const QStringList &availableSpeakers,
+               const QStringList &availableScenes,
+               const QStringList &suggestedTags);
+  void onAddTag();
+  void onRemoveTag();
+  void onTagSuggestionClicked(const QString &tag);
+  void updateResult();
+
+  QLineEdit *m_tagInput = nullptr;
+  QListWidget *m_tagList = nullptr;
+  ::QTextEdit *m_notesEdit = nullptr;
+  QComboBox *m_speakerCombo = nullptr;
+  QComboBox *m_sceneCombo = nullptr;
+  QPushButton *m_addTagBtn = nullptr;
+  QPushButton *m_removeTagBtn = nullptr;
+  QPushButton *m_okButton = nullptr;
+  QPushButton *m_cancelButton = nullptr;
+  QWidget *m_suggestionsWidget = nullptr;
+
+  MetadataResult m_result;
 };
 
 } // namespace NovelMind::editor::qt

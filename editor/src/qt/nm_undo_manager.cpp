@@ -872,11 +872,21 @@ void DeleteLocalizationKeyCommand::undo() {
   if (!m_panel) {
     return;
   }
-  // Restore the key with all its translations
-  m_panel->addKey(
-      m_key,
-      m_translations.value(m_panel->property("defaultLocale").toString(), ""));
-  // TODO: Restore all translations - requires panel API enhancement
+
+  // First, add the key back with the default locale value
+  QString defaultLocale = m_panel->property("defaultLocale").toString();
+  if (defaultLocale.isEmpty()) {
+    defaultLocale = "en";
+  }
+  m_panel->addKey(m_key, m_translations.value(defaultLocale, ""));
+
+  // Now restore all translations for all locales
+  for (auto it = m_translations.constBegin(); it != m_translations.constEnd();
+       ++it) {
+    const QString &locale = it.key();
+    const QString &value = it.value();
+    m_panel->setTranslationValue(m_key, locale, value);
+  }
 }
 
 void DeleteLocalizationKeyCommand::redo() {

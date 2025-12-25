@@ -1372,36 +1372,50 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
     return;
   }
 
-  // TODO: Create a proper metadata dialog
-  // For now, use simple input dialogs
-  bool ok;
-
-  // Edit tags
+  // Collect current tags
   QStringList currentTags;
   for (const auto &tag : line->tags) {
     currentTags.append(QString::fromStdString(tag));
   }
-  QString tagsStr = NMInputDialog::getText(
-      this, tr("Edit Tags"), tr("Enter tags (comma-separated):"),
-      QLineEdit::Normal, currentTags.join(", "), &ok);
+
+  // Get available speakers and scenes from manifest
+  QStringList availableSpeakers;
+  QStringList availableScenes;
+  QStringList suggestedTags;
+
+  for (const auto &speaker : m_manifest->getSpeakers()) {
+    availableSpeakers.append(QString::fromStdString(speaker));
+  }
+  for (const auto &scene : m_manifest->getScenes()) {
+    availableScenes.append(QString::fromStdString(scene));
+  }
+  for (const auto &tag : m_manifest->getTags()) {
+    suggestedTags.append(QString::fromStdString(tag));
+  }
+
+  // Use the proper metadata dialog
+  NMVoiceMetadataDialog::MetadataResult result;
+  bool ok = NMVoiceMetadataDialog::getMetadata(
+      this, dialogueId, currentTags, QString::fromStdString(line->notes),
+      QString::fromStdString(line->speaker), QString::fromStdString(line->scene),
+      result, availableSpeakers, availableScenes, suggestedTags);
 
   if (ok) {
+    // Update tags
     line->tags.clear();
-    QStringList newTags = tagsStr.split(",", Qt::SkipEmptyParts);
-    for (const QString &tag : newTags) {
-      line->tags.push_back(tag.trimmed().toStdString());
+    for (const QString &tag : result.tags) {
+      line->tags.push_back(tag.toStdString());
     }
 
-    // Edit notes
-    QString notes = NMInputDialog::getMultiLineText(
-        this, tr("Edit Notes"), tr("Enter notes for this line:"),
-        QString::fromStdString(line->notes), &ok);
-
-    if (ok) {
-      line->notes = notes.toStdString();
-    }
+    // Update other metadata
+    line->notes = result.notes.toStdString();
+    line->speaker = result.speaker.toStdString();
+    line->scene = result.scene.toStdString();
 
     updateVoiceList();
+
+    m_statsLabel->setText(tr("Metadata updated for line: %1").arg(dialogueId));
+    QTimer::singleShot(3000, this, [this]() { updateStatistics(); });
   }
 }
 

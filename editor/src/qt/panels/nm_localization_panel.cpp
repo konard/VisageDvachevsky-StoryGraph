@@ -12,6 +12,8 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
+#include <QDirIterator>
+#include <QFile>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QFrame>
@@ -23,6 +25,7 @@
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QTextStream>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -1095,8 +1098,90 @@ QStringList NMLocalizationPanel::findUnusedKeys() const {
 }
 
 void NMLocalizationPanel::scanProjectForUsages() {
-  // TODO: Implement project scanning for key usages
-  // This would scan script files for references to localization keys
+  auto &pm = ProjectManager::instance();
+  if (!pm.hasOpenProject()) {
+    return;
+  }
+
+  const QString projectPath = QString::fromStdString(pm.getProjectPath());
+
+  // Clear existing usage data
+  for (auto it = m_entries.begin(); it != m_entries.end(); ++it) {
+    it->usageLocations.clear();
+    it->isUnused = true;
+  }
+
+  // Directories to scan for script files
+  QStringList scanDirs = {projectPath + "/Scripts", projectPath + "/Scenes",
+                          projectPath + "/Data"};
+
+  // File extensions to scan
+  QStringList extensions = {"*.nms", "*.json", "*.yaml", "*.yml", "*.xml"};
+
+  // Regex patterns to find localization key references
+  // Matches patterns like: localize("key"), tr("key"), @key, loc:key
+  QRegularExpression keyRefPattern(
+      R"((?:localize|tr|getText)\s*\(\s*["\']([^"\']+)["\']\)|@([A-Za-z0-9_.-]+)|loc:([A-Za-z0-9_.-]+))");
+
+  for (const QString &scanDir : scanDirs) {
+    QDir dir(scanDir);
+    if (!dir.exists()) {
+      continue;
+    }
+
+    QDirIterator it(scanDir, extensions, QDir::Files,
+                    QDirIterator::Subdirectories);
+
+    while (it.hasNext()) {
+      const QString filePath = it.next();
+      QFile file(filePath);
+
+      if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        continue;
+      }
+
+      QTextStream in(&file);
+      int lineNumber = 0;
+
+      while (!in.atEnd()) {
+        const QString line = in.readLine();
+        lineNumber++;
+
+        QRegularExpressionMatchIterator matchIt = keyRefPattern.globalMatch(line);
+
+        while (matchIt.hasNext()) {
+          QRegularExpressionMatch match = matchIt.next();
+          QString foundKey;
+
+          // Check which capture group matched
+          if (!match.captured(1).isEmpty()) {
+            foundKey = match.captured(1); // localize/tr/getText pattern
+          } else if (!match.captured(2).isEmpty()) {
+            foundKey = match.captured(2); // @key pattern
+          } else if (!match.captured(3).isEmpty()) {
+            foundKey = match.captured(3); // loc:key pattern
+          }
+
+          if (!foundKey.isEmpty() && m_entries.contains(foundKey)) {
+            LocalizationEntry &entry = m_entries[foundKey];
+            const QString usageLocation =
+                QString("%1:%2").arg(filePath).arg(lineNumber);
+
+            if (!entry.usageLocations.contains(usageLocation)) {
+              entry.usageLocations.append(usageLocation);
+            }
+            entry.isUnused = false;
+          }
+        }
+      }
+
+      file.close();
+    }
+  }
+
+  // Update the table to reflect new usage data
+  rebuildTable();
+  updateStatusBar();
 }
 
 void NMLocalizationPanel::navigateToUsage(const QString &key, int usageIndex) {

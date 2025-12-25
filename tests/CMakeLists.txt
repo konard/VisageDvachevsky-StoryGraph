@@ -64,6 +64,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_asset_browser.cpp
         integration/test_voice_manager.cpp
         integration/test_project_json.cpp
+        integration/test_ui_panel_features.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
     )

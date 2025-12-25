@@ -85,6 +85,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_file_dialog.cpp
     src/qt/nm_color_dialog.cpp
     src/qt/nm_new_project_dialog.cpp
+    src/qt/nm_voice_metadata_dialog.cpp
     src/qt/nm_main_window.cpp
     src/qt/nm_main_window_menu.cpp
     src/qt/nm_main_window_panels.cpp

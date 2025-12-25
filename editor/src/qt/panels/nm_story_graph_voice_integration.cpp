@@ -88,9 +88,102 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
   qDebug() << "[VoiceIntegration] Auto-detecting voice for node:"
            << nodeIdString << "with key:" << localizationKey;
 
-  // TODO: Implement auto-detection using VoiceManager
-  // For now, emit error
-  emit errorOccurred("Auto-detection not yet implemented");
+  // First, try to find a voice file already bound to this line ID
+  const DialogueLine *line =
+      m_voiceManager->getLine(nodeIdString.toStdString());
+  if (line && !line->voiceFile.empty()) {
+    // Line already has a bound voice file
+    QString voicePath = QString::fromStdString(line->voiceFile);
+    if (QFileInfo::exists(voicePath)) {
+      int bindingStatus = determineBindingStatus(voicePath);
+      updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
+      emit voiceClipChanged(nodeIdString, voicePath, bindingStatus);
+      qDebug() << "[VoiceIntegration] Found existing binding:" << voicePath;
+      return;
+    }
+  }
+
+  // Try auto-mapping: preview what would be mapped and check for this node
+  auto previewMap = m_voiceManager->previewAutoMapping();
+  auto it = previewMap.find(nodeIdString.toStdString());
+  if (it != previewMap.end() && !it->second.empty()) {
+    QString voicePath = QString::fromStdString(it->second);
+    if (QFileInfo::exists(voicePath)) {
+      // Apply the binding
+      auto result =
+          m_voiceManager->bindVoice(nodeIdString.toStdString(), it->second);
+      if (result.isOk()) {
+        int bindingStatus = determineBindingStatus(voicePath);
+        updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
+        emit voiceClipChanged(nodeIdString, voicePath, bindingStatus);
+        qDebug() << "[VoiceIntegration] Auto-detected and bound:" << voicePath;
+        return;
+      }
+    }
+  }
+
+  // If we have a manifest, try to find a matching voice file there
+  if (m_manifest) {
+    const audio::VoiceManifestLine *manifestLine =
+        m_manifest->getLine(nodeIdString.toStdString());
+    if (manifestLine) {
+      // Check files for the default locale
+      const audio::VoiceLocaleFile *localeFile =
+          manifestLine->getFile(m_manifest->getDefaultLocale());
+      if (localeFile && !localeFile->filePath.empty()) {
+        QString voicePath = QString::fromStdString(localeFile->filePath);
+        if (QFileInfo::exists(voicePath)) {
+          int bindingStatus = determineBindingStatus(voicePath);
+          updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
+          emit voiceClipChanged(nodeIdString, voicePath, bindingStatus);
+          qDebug() << "[VoiceIntegration] Found in manifest:" << voicePath;
+          return;
+        }
+      }
+    }
+  }
+
+  // No match found - search by localization key pattern
+  // Common pattern: voice files named similar to localization key
+  if (!localizationKey.isEmpty()) {
+    const auto &voiceFiles = m_voiceManager->getVoiceFiles();
+    QString keyBaseName = localizationKey;
+    keyBaseName.replace('.', '_').replace('-', '_');
+
+    for (const auto &vf : voiceFiles) {
+      if (vf.bound) {
+        continue; // Skip already bound files
+      }
+
+      QString filename = QString::fromStdString(vf.filename);
+      QString baseName = QFileInfo(filename).baseName();
+
+      // Check for partial match (case-insensitive)
+      if (baseName.compare(keyBaseName, Qt::CaseInsensitive) == 0 ||
+          baseName.contains(keyBaseName, Qt::CaseInsensitive) ||
+          keyBaseName.contains(baseName, Qt::CaseInsensitive)) {
+        QString voicePath = QString::fromStdString(vf.path);
+        if (QFileInfo::exists(voicePath)) {
+          // Apply the binding
+          auto result =
+              m_voiceManager->bindVoice(nodeIdString.toStdString(), vf.path);
+          if (result.isOk()) {
+            int bindingStatus = determineBindingStatus(voicePath);
+            updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
+            emit voiceClipChanged(nodeIdString, voicePath, bindingStatus);
+            qDebug() << "[VoiceIntegration] Auto-detected by key match:"
+                     << voicePath;
+            return;
+          }
+        }
+      }
+    }
+  }
+
+  // No match found
+  emit errorOccurred(
+      tr("No matching voice file found for: %1").arg(nodeIdString));
+  qDebug() << "[VoiceIntegration] No voice file found for:" << nodeIdString;
 }
 
 void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
