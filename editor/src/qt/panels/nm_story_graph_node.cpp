@@ -288,6 +288,69 @@ void NMGraphNodeItem::paint(QPainter *painter,
                       indicatorRect.center() + QPointF(1, 1));
   }
 
+  // Condition-specific: Draw condition expression preview and branch indicators
+  if (isConditionNode()) {
+    QFont smallFont = NMStyleManager::instance().defaultFont();
+    smallFont.setPointSize(smallFont.pointSize() - 1);
+    painter->setFont(smallFont);
+
+    // Show condition expression (abbreviated if too long)
+    if (!m_conditionExpression.isEmpty()) {
+      QString displayExpr = m_conditionExpression;
+      // Truncate with ellipsis if too long
+      if (displayExpr.length() > 25) {
+        displayExpr = displayExpr.left(22) + "...";
+      }
+      painter->setPen(QColor(220, 180, 255)); // Light purple for condition text
+      painter->drawText(QRectF(8, 36, NODE_WIDTH - 16, 18),
+                        Qt::AlignTop | Qt::AlignLeft, displayExpr);
+    } else {
+      painter->setPen(QColor(180, 140, 200)); // Dimmer purple for placeholder
+      painter->drawText(QRectF(8, 36, NODE_WIDTH - 16, 18),
+                        Qt::AlignTop | Qt::AlignLeft,
+                        QObject::tr("(no condition)"));
+    }
+
+    // Show output branch labels at bottom
+    const qreal bottomY = nodeHeight - 20;
+    if (!m_conditionOutputs.isEmpty()) {
+      // Draw branch indicator icon (small diamond/fork)
+      painter->setPen(QColor(200, 100, 255)); // Purple
+      painter->setBrush(Qt::NoBrush);
+
+      // Draw a small branching indicator
+      const qreal forkX = 8;
+      const qreal forkY = bottomY + 6;
+      painter->drawLine(QPointF(forkX, forkY), QPointF(forkX + 6, forkY - 4));
+      painter->drawLine(QPointF(forkX, forkY), QPointF(forkX + 6, forkY + 4));
+
+      // Show branch count or names
+      QFont tinyFont = NMStyleManager::instance().defaultFont();
+      tinyFont.setPointSize(7);
+      painter->setFont(tinyFont);
+      painter->setPen(QColor(180, 140, 220));
+
+      QString branchText;
+      if (m_conditionOutputs.size() == 2 &&
+          m_conditionOutputs[0].toLower() == "true" &&
+          m_conditionOutputs[1].toLower() == "false") {
+        branchText = "true/false";
+      } else {
+        branchText = QString("%1 branches").arg(m_conditionOutputs.size());
+      }
+      painter->drawText(QRectF(18, bottomY, NODE_WIDTH - 26, 14),
+                        Qt::AlignVCenter | Qt::AlignLeft, branchText);
+    } else {
+      // Default true/false indicator
+      QFont tinyFont = NMStyleManager::instance().defaultFont();
+      tinyFont.setPointSize(7);
+      painter->setFont(tinyFont);
+      painter->setPen(QColor(150, 120, 180));
+      painter->drawText(QRectF(8, bottomY, NODE_WIDTH - 16, 14),
+                        Qt::AlignVCenter | Qt::AlignLeft, "true/false");
+    }
+  }
+
   // Dialogue-specific: Draw voice-over indicators
   if (isDialogueNode()) {
     const qreal bottomY = nodeHeight - 24;

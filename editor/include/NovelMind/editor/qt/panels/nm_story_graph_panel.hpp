@@ -126,6 +126,25 @@ public:
     return m_nodeType.compare("Scene", Qt::CaseInsensitive) == 0;
   }
 
+  // Condition Node specific properties
+  void setConditionExpression(const QString &expr) {
+    m_conditionExpression = expr;
+  }
+  [[nodiscard]] QString conditionExpression() const {
+    return m_conditionExpression;
+  }
+
+  void setConditionOutputs(const QStringList &outputs) {
+    m_conditionOutputs = outputs;
+  }
+  [[nodiscard]] QStringList conditionOutputs() const {
+    return m_conditionOutputs;
+  }
+
+  [[nodiscard]] bool isConditionNode() const {
+    return m_nodeType.compare("Condition", Qt::CaseInsensitive) == 0;
+  }
+
   [[nodiscard]] bool hasBreakpoint() const { return m_hasBreakpoint; }
   [[nodiscard]] bool isCurrentlyExecuting() const {
     return m_isCurrentlyExecuting;
@@ -176,6 +195,10 @@ private:
   bool m_hasEmbeddedDialogue = false;
   int m_dialogueCount = 0;
   QString m_thumbnailPath;
+
+  // Condition Node specific properties
+  QString m_conditionExpression;
+  QStringList m_conditionOutputs;
 
   static constexpr qreal NODE_WIDTH = 200;
   static constexpr qreal NODE_HEIGHT = 80;
@@ -424,6 +447,9 @@ public:
     QString animationDataPath;
     bool hasAnimationData = false;
     int animationTrackCount = 0;
+    // Condition Node specific properties
+    QString conditionExpression;  // e.g., "has_key && visited_shop"
+    QStringList conditionOutputs; // Branch labels, e.g., ["true", "false"]
   };
 
   void onInitialize() override;

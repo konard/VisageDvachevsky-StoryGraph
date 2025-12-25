@@ -199,13 +199,17 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
         node->setDialogueSpeaker(layoutIt->speaker);
         node->setDialogueText(layoutIt->dialogueText);
         node->setChoiceOptions(layoutIt->choices);
-        // Scene Node specific properties - override with layout data if available
+        // Scene Node specific properties - override with layout data if
+        // available
         if (!layoutIt->sceneId.isEmpty()) {
           node->setSceneId(layoutIt->sceneId);
         }
         node->setHasEmbeddedDialogue(layoutIt->hasEmbeddedDialogue);
         node->setDialogueCount(layoutIt->dialogueCount);
         node->setThumbnailPath(layoutIt->thumbnailPath);
+        // Condition Node specific properties
+        node->setConditionExpression(layoutIt->conditionExpression);
+        node->setConditionOutputs(layoutIt->conditionOutputs);
       }
       nodeMap.insert(sceneId, node);
       m_nodeIdToString.insert(node->nodeId(), node->nodeIdString());

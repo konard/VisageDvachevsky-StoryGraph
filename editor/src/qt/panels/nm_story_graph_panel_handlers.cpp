@@ -535,6 +535,10 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
     node->setDialogueText(newValue);
   } else if (propertyName == "choices") {
     node->setChoiceOptions(detail::splitChoiceLines(newValue));
+  } else if (propertyName == "conditionExpression") {
+    node->setConditionExpression(newValue);
+  } else if (propertyName == "conditionOutputs") {
+    node->setConditionOutputs(detail::splitChoiceLines(newValue));
   }
 
   if (!m_isRebuilding) {

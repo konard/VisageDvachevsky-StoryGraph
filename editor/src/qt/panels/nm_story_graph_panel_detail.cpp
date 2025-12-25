@@ -127,6 +127,17 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     node.hasAnimationData = obj.value("hasAnimationData").toBool(false);
     node.animationTrackCount = obj.value("animationTrackCount").toInt(0);
 
+    // Condition Node specific properties
+    node.conditionExpression = obj.value("conditionExpression").toString();
+    const QJsonArray conditionOutputsArray =
+        obj.value("conditionOutputs").toArray();
+    for (const auto &outputValue : conditionOutputsArray) {
+      const QString output = outputValue.toString();
+      if (!output.isEmpty()) {
+        node.conditionOutputs.push_back(output);
+      }
+    }
+
     nodes.insert(id, node);
   }
 
@@ -198,6 +209,18 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     }
     if (it.value().animationTrackCount > 0) {
       obj.insert("animationTrackCount", it.value().animationTrackCount);
+    }
+
+    // Condition Node specific properties
+    if (!it.value().conditionExpression.isEmpty()) {
+      obj.insert("conditionExpression", it.value().conditionExpression);
+    }
+    if (!it.value().conditionOutputs.isEmpty()) {
+      QJsonArray conditionOutputsArray;
+      for (const auto &output : it.value().conditionOutputs) {
+        conditionOutputsArray.append(output);
+      }
+      obj.insert("conditionOutputs", conditionOutputsArray);
     }
 
     nodeArray.push_back(obj);
@@ -390,6 +413,10 @@ NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
   layout.hasEmbeddedDialogue = node->hasEmbeddedDialogue();
   layout.dialogueCount = node->dialogueCount();
   layout.thumbnailPath = node->thumbnailPath();
+
+  // Condition Node specific properties
+  layout.conditionExpression = node->conditionExpression();
+  layout.conditionOutputs = node->conditionOutputs();
 
   return layout;
 }

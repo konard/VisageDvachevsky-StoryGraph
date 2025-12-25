@@ -430,6 +430,40 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
             &NMInspectorPanel::onGroupPropertyChanged);
   }
 
+  // Condition node handling - provides UI for editing condition expression and
+  // output branches
+  if (node->nodeType().contains("Condition", Qt::CaseInsensitive)) {
+    auto *conditionGroup = addGroup(tr("Condition"));
+    const QString expressionValue = node->conditionExpression();
+    const QString outputsValue = node->conditionOutputs().join("\n");
+
+    if (m_editMode) {
+      // Expression editor for entering condition logic
+      if (auto *exprEdit = conditionGroup->addEditableProperty(
+              "conditionExpression", tr("Expression"),
+              NMPropertyType::MultiLine, expressionValue)) {
+        trackPropertyWidget("conditionExpression", exprEdit);
+      }
+
+      // Output path labels (branch names like "true", "false", or custom)
+      if (auto *outputsEdit = conditionGroup->addEditableProperty(
+              "conditionOutputs", tr("Output Paths (one per line)"),
+              NMPropertyType::MultiLine, outputsValue)) {
+        trackPropertyWidget("conditionOutputs", outputsEdit);
+      }
+    } else {
+      conditionGroup->addProperty(tr("Expression"), expressionValue.isEmpty()
+                                                        ? tr("(no expression)")
+                                                        : expressionValue);
+      conditionGroup->addProperty(tr("Outputs"), outputsValue.isEmpty()
+                                                     ? tr("true, false")
+                                                     : outputsValue);
+    }
+
+    connect(conditionGroup, &NMPropertyGroup::propertyValueChanged, this,
+            &NMInspectorPanel::onGroupPropertyChanged);
+  }
+
   m_mainLayout->addStretch();
 }
 
