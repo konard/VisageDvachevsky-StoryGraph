@@ -146,6 +146,15 @@ public:
    */
   QString currentLocale() const { return m_currentLocale; }
 
+  /**
+   * @brief Set a translation value (for undo/redo commands)
+   * @param key The localization key
+   * @param locale The locale code
+   * @param value The translation value
+   */
+  void setTranslationValue(const QString &key, const QString &locale,
+                           const QString &value);
+
 signals:
   void keySelected(const QString &key);
   void navigateToFile(const QString &filePath, int lineNumber);

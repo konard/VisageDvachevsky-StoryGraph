@@ -163,7 +163,7 @@ void NMSceneDialogueGraphPanel::loadSceneDialogue(const QString &sceneId) {
   }
 
   m_currentSceneId = sceneId;
-  m_hasUnsavedChanges = false;
+  m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
 
   updateBreadcrumb();
   loadDialogueGraphFromScene();
@@ -178,7 +178,7 @@ void NMSceneDialogueGraphPanel::clear() {
     m_dialogueScene->clearGraph();
   }
   m_currentSceneId.clear();
-  m_hasUnsavedChanges = false;
+  m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
   m_nodeIdToString.clear();
   updateBreadcrumb();
 }
@@ -404,7 +404,7 @@ void NMSceneDialogueGraphPanel::saveDialogueGraphToScene() {
   if (file.open(QIODevice::WriteOnly)) {
     file.write(QJsonDocument(graphData).toJson(QJsonDocument::Indented));
     file.close();
-    m_hasUnsavedChanges = false;
+    m_hasUnsavedChanges.store(false, std::memory_order_relaxed);
     qDebug() << "[SceneDialogueGraph] Saved dialogue graph to:" << filePath;
   } else {
     qWarning() << "[SceneDialogueGraph] Failed to save dialogue graph:"
@@ -511,9 +511,10 @@ void NMSceneDialogueGraphPanel::updateDialogueCount() {
 }
 
 void NMSceneDialogueGraphPanel::markAsModified() {
-  if (!m_hasUnsavedChanges) {
-    m_hasUnsavedChanges = true;
-    // Auto-save on modification
+  bool expected = false;
+  if (m_hasUnsavedChanges.compare_exchange_strong(expected, true,
+                                                  std::memory_order_relaxed)) {
+    // First modification - trigger auto-save
     saveDialogueGraphToScene();
   }
 }
@@ -547,8 +548,112 @@ void NMSceneDialogueGraphPanel::onFitToGraph() {
 }
 
 void NMSceneDialogueGraphPanel::onAutoLayout() {
-  // TODO: Implement auto-layout algorithm
-  qDebug() << "[SceneDialogueGraph] Auto-layout not yet implemented";
+  if (!m_dialogueScene || m_dialogueScene->nodes().isEmpty()) {
+    qDebug() << "[SceneDialogueGraph] No nodes to layout";
+    return;
+  }
+
+  qDebug() << "[SceneDialogueGraph] Running hierarchical auto-layout";
+
+  // Hierarchical layered graph layout algorithm (Sugiyama-style)
+  const qreal LAYER_SPACING = 200.0;
+  const qreal NODE_SPACING = 80.0;
+  const qreal START_X = 100.0;
+  const qreal START_Y = 100.0;
+
+  // Step 1: Find entry nodes (nodes with no incoming connections)
+  QList<NMGraphNodeItem *> entryNodes;
+  QHash<NMGraphNodeItem *, int> inDegree;
+  QHash<NMGraphNodeItem *, QList<NMGraphNodeItem *>> children;
+
+  // Initialize in-degree map
+  for (auto *node : m_dialogueScene->nodes()) {
+    inDegree[node] = 0;
+  }
+
+  // Count in-degrees and build children map
+  for (auto *conn : m_dialogueScene->connections()) {
+    auto *startNode = conn->startNode();
+    auto *endNode = conn->endNode();
+    if (startNode && endNode) {
+      inDegree[endNode]++;
+      children[startNode].append(endNode);
+    }
+  }
+
+  // Find entry nodes
+  for (auto *node : m_dialogueScene->nodes()) {
+    if (inDegree[node] == 0) {
+      entryNodes.append(node);
+    }
+  }
+
+  // If no entry nodes found, use the first node
+  if (entryNodes.isEmpty() && !m_dialogueScene->nodes().isEmpty()) {
+    entryNodes.append(m_dialogueScene->nodes().first());
+  }
+
+  // Step 2: Assign nodes to layers using BFS from entry nodes
+  QHash<NMGraphNodeItem *, int> nodeLayer;
+  QHash<int, QList<NMGraphNodeItem *>> layers;
+  QSet<NMGraphNodeItem *> visited;
+  QList<NMGraphNodeItem *> queue;
+
+  // Start BFS from all entry nodes
+  for (auto *entry : entryNodes) {
+    nodeLayer[entry] = 0;
+    layers[0].append(entry);
+    queue.append(entry);
+    visited.insert(entry);
+  }
+
+  while (!queue.isEmpty()) {
+    auto *current = queue.takeFirst();
+    int currentLayer = nodeLayer[current];
+
+    // Process all children
+    for (auto *child : children[current]) {
+      if (!visited.contains(child)) {
+        int childLayer = currentLayer + 1;
+        nodeLayer[child] = childLayer;
+        layers[childLayer].append(child);
+        queue.append(child);
+        visited.insert(child);
+      }
+    }
+  }
+
+  // Handle any disconnected nodes
+  for (auto *node : m_dialogueScene->nodes()) {
+    if (!visited.contains(node)) {
+      int layer = layers.keys().isEmpty() ? 0 : layers.keys().last() + 1;
+      nodeLayer[node] = layer;
+      layers[layer].append(node);
+    }
+  }
+
+  // Step 3: Position nodes based on their layer
+  for (int layer : layers.keys()) {
+    const QList<NMGraphNodeItem *> &nodesInLayer = layers[layer];
+    const qreal layerY = START_Y + layer * LAYER_SPACING;
+    const qreal totalWidth = (nodesInLayer.size() - 1) * NODE_SPACING;
+    const qreal startX = START_X - totalWidth / 2.0;
+
+    for (int i = 0; i < nodesInLayer.size(); ++i) {
+      auto *node = nodesInLayer[i];
+      const qreal x = startX + i * NODE_SPACING;
+      node->setPos(x, layerY);
+    }
+  }
+
+  // Step 4: Center the view on the laid out graph
+  if (m_view) {
+    m_view->centerOnGraph();
+  }
+
+  markAsModified();
+  qDebug() << "[SceneDialogueGraph] Auto-layout complete:" << layers.size()
+           << "layers," << m_dialogueScene->nodes().size() << "nodes";
 }
 
 void NMSceneDialogueGraphPanel::onReturnToStoryGraph() {

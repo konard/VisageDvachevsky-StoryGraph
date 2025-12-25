@@ -898,7 +898,9 @@ void ChangeTranslationCommand::undo() {
   if (!m_panel) {
     return;
   }
-  // TODO: Set translation value - requires panel API enhancement
+  // Set the translation value in the panel's internal data structure
+  // and emit the signal to notify other components
+  m_panel->setTranslationValue(m_key, m_locale, m_oldValue);
   emit m_panel->translationChanged(m_key, m_locale, m_oldValue);
 }
 
@@ -906,7 +908,9 @@ void ChangeTranslationCommand::redo() {
   if (!m_panel) {
     return;
   }
-  // TODO: Set translation value - requires panel API enhancement
+  // Set the translation value in the panel's internal data structure
+  // and emit the signal to notify other components
+  m_panel->setTranslationValue(m_key, m_locale, m_newValue);
   emit m_panel->translationChanged(m_key, m_locale, m_newValue);
 }
 

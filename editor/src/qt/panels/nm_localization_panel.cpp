@@ -1640,4 +1640,35 @@ QString NMLocalizationPanel::getTranslation(const QString &key) const {
   return entry.translations.value(m_defaultLocale);
 }
 
+void NMLocalizationPanel::setTranslationValue(const QString &key,
+                                              const QString &locale,
+                                              const QString &value) {
+  // Update the in-memory entry
+  if (m_entries.contains(key)) {
+    m_entries[key].translations[locale] = value;
+    m_entries[key].isMissing = value.isEmpty();
+    m_entries[key].isModified = true;
+    setDirty(true);
+
+    // Update the table if the key is currently displayed
+    if (m_stringsTable && locale == m_currentLocale) {
+      // Find the row for this key
+      for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
+        auto *idItem = m_stringsTable->item(row, 0);
+        if (idItem && idItem->text() == key) {
+          // Update the translation cell (column 2)
+          auto *valueItem = m_stringsTable->item(row, 2);
+          if (valueItem) {
+            // Block signals to prevent creating a new undo command
+            bool wasBlocked = m_stringsTable->blockSignals(true);
+            valueItem->setText(value);
+            m_stringsTable->blockSignals(wasBlocked);
+          }
+          break;
+        }
+      }
+    }
+  }
+}
+
 } // namespace NovelMind::editor::qt

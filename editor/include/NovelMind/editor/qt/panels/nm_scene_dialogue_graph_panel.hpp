@@ -17,6 +17,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QWidget>
+#include <atomic>
 
 namespace NovelMind::editor::qt {
 
@@ -106,7 +107,9 @@ public:
    * @brief Check if the dialogue graph has unsaved changes
    * @return true if there are unsaved changes
    */
-  [[nodiscard]] bool hasUnsavedChanges() const { return m_hasUnsavedChanges; }
+  [[nodiscard]] bool hasUnsavedChanges() const {
+    return m_hasUnsavedChanges.load(std::memory_order_relaxed);
+  }
 
   /**
    * @brief Get the dialogue graph scene
@@ -181,7 +184,7 @@ private:
 
   // State
   QString m_currentSceneId;
-  bool m_hasUnsavedChanges = false;
+  std::atomic<bool> m_hasUnsavedChanges{false};
   QHash<uint64_t, QString> m_nodeIdToString;
 };
 

@@ -728,8 +728,31 @@ NMVoiceManagerPanel::getMissingLines() const {
 }
 
 QStringList NMVoiceManagerPanel::getUnmatchedLines() const {
-  // TODO: Implement unmatched lines logic
-  return QStringList();
+  if (!m_manifest) {
+    return QStringList();
+  }
+
+  QStringList unmatchedLines;
+  const std::string locale = m_currentLocale.toStdString();
+
+  // Iterate through all lines and find those without voice files
+  for (const auto &line : m_manifest->getLines()) {
+    // Check if this line has a file for the current locale
+    auto it = line.files.find(locale);
+    if (it == line.files.end() || it->second.filePath.empty()) {
+      // No file for this locale - it's unmatched
+      unmatchedLines.append(QString::fromStdString(line.id));
+    } else {
+      // Check if the file actually exists on disk
+      const QString filePath = QString::fromStdString(it->second.filePath);
+      if (!QFile::exists(filePath)) {
+        // File is referenced but doesn't exist - also unmatched
+        unmatchedLines.append(QString::fromStdString(line.id));
+      }
+    }
+  }
+
+  return unmatchedLines;
 }
 
 bool NMVoiceManagerPanel::exportToCsv(const QString &filePath) {

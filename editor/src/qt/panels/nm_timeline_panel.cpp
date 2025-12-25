@@ -29,6 +29,40 @@ namespace NovelMind::editor::qt {
 // Forward declaration for easing function
 static float applyEasingFunction(float t, EasingType easing);
 
+// Helper function for cubic Bezier curve evaluation
+static float evaluateCubicBezier(float t, float p0, float p1, float p2,
+                                 float p3) {
+  // Standard cubic Bezier formula: B(t) = (1-t)^3*P0 + 3*(1-t)^2*t*P1 +
+  // 3*(1-t)*t^2*P2 + t^3*P3
+  float oneMinusT = 1.0f - t;
+  return oneMinusT * oneMinusT * oneMinusT * p0 +
+         3.0f * oneMinusT * oneMinusT * t * p1 + 3.0f * oneMinusT * t * t * p2 +
+         t * t * t * p3;
+}
+
+// Helper function to find t for a given x in a cubic Bezier curve (Newton's
+// method)
+static float solveBezierX(float x, float p0x, float p1x, float p2x, float p3x) {
+  // Use Newton-Raphson iteration to find t such that Bezier_x(t) = x
+  float t = x; // Initial guess
+  for (int i = 0; i < 8; ++i) {
+    float currentX = evaluateCubicBezier(t, p0x, p1x, p2x, p3x);
+    if (std::abs(currentX - x) < 0.001f) {
+      break; // Close enough
+    }
+    // Derivative of cubic Bezier
+    float derivative = 3.0f * (1.0f - t) * (1.0f - t) * (p1x - p0x) +
+                       6.0f * (1.0f - t) * t * (p2x - p1x) +
+                       3.0f * t * t * (p3x - p2x);
+    if (std::abs(derivative) < 0.00001f) {
+      break; // Avoid division by zero
+    }
+    t -= (currentX - x) / derivative;
+    t = std::max(0.0f, std::min(1.0f, t)); // Clamp to [0,1]
+  }
+  return t;
+}
+
 // =============================================================================
 // TimelineTrack Implementation
 // =============================================================================
@@ -152,7 +186,27 @@ Keyframe TimelineTrack::interpolate(int frame) const {
             static_cast<float>(nextKf->frame - prevKf->frame);
 
   // Apply easing function to t
-  double easedT = static_cast<double>(applyEasingFunction(t, prevKf->easing));
+  double easedT;
+  if (prevKf->easing == EasingType::Custom) {
+    // Use Bezier curve data from keyframe handles
+    // Construct cubic Bezier curve from handles
+    // P0 = (0, 0), P1 = (handleOutX, handleOutY)
+    // P2 = (1 + handleInX, 1 + handleInY), P3 = (1, 1)
+    float p0x = 0.0f, p0y = 0.0f;
+    float p1x = prevKf->handleOutX, p1y = prevKf->handleOutY;
+    float p2x = 1.0f + nextKf->handleInX, p2y = 1.0f + nextKf->handleInY;
+    float p3x = 1.0f, p3y = 1.0f;
+
+    // Solve for the parameter value that gives us the current x position
+    float bezierT = solveBezierX(t, p0x, p1x, p2x, p3x);
+
+    // Evaluate the y value at that parameter
+    easedT =
+        static_cast<double>(evaluateCubicBezier(bezierT, p0y, p1y, p2y, p3y));
+  } else {
+    // Use standard easing function
+    easedT = static_cast<double>(applyEasingFunction(t, prevKf->easing));
+  }
 
   // Interpolate value based on type
   int typeId = prevKf->value.typeId();
@@ -268,9 +322,14 @@ static float applyEasingFunction(float t, EasingType easing) {
     return t < 1.0f ? 0.0f : 1.0f;
 
   case EasingType::Custom:
-    // TODO: Use Bezier curve data from keyframe handles
-    // For now, fallback to ease in-out
-    return t < 0.5f ? 2.0f * t * t : -1.0f + (4.0f - 2.0f * t) * t;
+    // Use Bezier curve data from keyframe handles
+    // This is intentionally left as a simplified fallback since full Bezier
+    // interpolation requires access to both keyframes (start and end) and their
+    // handles. The actual Bezier curve interpolation should be implemented in
+    // TimelineTrack::interpolate() where both keyframes are available.
+    // For standalone easing function, use cubic ease-in-out as approximation.
+    return t < 0.5f ? 4.0f * t * t * t
+                    : 1.0f - std::pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 
   default:
     return t;

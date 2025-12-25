@@ -13,6 +13,7 @@
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -666,31 +667,116 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     }
   } else if (isScene && openScriptAction &&
              selectedAction == openScriptAction) {
-    // TODO: Emit signal to open script editor
+    // Emit signal to open script editor
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->openSceneScriptRequested(m_sceneId, m_scriptPath);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Open script:" << m_scriptPath;
   } else if (isScene && duplicateAction && selectedAction == duplicateAction) {
-    // TODO: Implement scene duplication
-    qDebug() << "[StoryGraph] Duplicate scene:" << m_sceneId;
+    // Implement scene duplication
+    if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+      // Create a duplicate node with offset position
+      const QPointF offset(50, 50);
+      const QString newTitle = m_title + " (Copy)";
+
+      // Add the duplicated node
+      auto *newNode = graphScene->addNode(newTitle, m_nodeType, pos() + offset);
+      if (newNode) {
+        // Copy all properties from the original node
+        newNode->setSceneId(m_sceneId + "_copy");
+        newNode->setScriptPath(m_scriptPath);
+        newNode->setHasEmbeddedDialogue(m_hasEmbeddedDialogue);
+        newNode->setDialogueCount(m_dialogueCount);
+        newNode->setThumbnailPath(m_thumbnailPath);
+
+        qDebug() << "[StoryGraph] Duplicated scene:" << m_sceneId << "to"
+                 << newNode->sceneId();
+      }
+    }
   } else if (isScene && renameAction && selectedAction == renameAction) {
-    // TODO: Implement scene renaming
-    qDebug() << "[StoryGraph] Rename scene:" << m_sceneId;
+    // Implement scene renaming with input dialog
+    bool ok = false;
+    QString newName = QInputDialog::getText(
+        nullptr, "Rename Scene", "Enter new scene name:", QLineEdit::Normal,
+        m_title, &ok);
+
+    if (ok && !newName.isEmpty() && newName != m_title) {
+      setTitle(newName);
+      qDebug() << "[StoryGraph] Renamed scene:" << m_sceneId << "to" << newName;
+    }
   } else if (isDialogue && assignVoiceAction &&
              selectedAction == assignVoiceAction) {
-    // TODO: Open file dialog to assign voice clip
+    // Emit signal to open voice clip assignment dialog
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->voiceClipAssignRequested(m_nodeIdString,
+                                                 m_voiceClipPath);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Assign voice clip to dialogue node:"
              << m_nodeIdString;
   } else if (isDialogue && autoDetectVoiceAction &&
              selectedAction == autoDetectVoiceAction) {
-    // TODO: Auto-detect voice file based on localization key
+    // Emit signal to auto-detect voice file based on localization key
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->voiceAutoDetectRequested(m_nodeIdString,
+                                                 m_localizationKey);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Auto-detect voice for dialogue node:"
              << m_nodeIdString;
   } else if (isDialogue && previewVoiceAction &&
              selectedAction == previewVoiceAction) {
-    // TODO: Preview voice clip
+    // Emit signal to preview voice clip
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->voiceClipPreviewRequested(m_nodeIdString,
+                                                  m_voiceClipPath);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Preview voice:" << m_voiceClipPath;
   } else if (isDialogue && recordVoiceAction &&
              selectedAction == recordVoiceAction) {
-    // TODO: Open Recording Studio panel with this dialogue line
+    // Emit signal to open Recording Studio panel with this dialogue line
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            emit panel->voiceRecordingRequested(m_nodeIdString, m_dialogueText,
+                                                m_dialogueSpeaker);
+            break;
+          }
+        }
+      }
+    }
     qDebug() << "[StoryGraph] Record voice for dialogue node:"
              << m_nodeIdString;
   } else if (isDialogue && clearVoiceAction &&
