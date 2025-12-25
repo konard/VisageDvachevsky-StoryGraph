@@ -12,7 +12,6 @@
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QFrame>
@@ -21,7 +20,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QTableWidget>
 #include <QTableWidgetItem>
@@ -1186,7 +1184,7 @@ void NMLocalizationPanel::exportLocale() {
   const QString filter = tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
   const QString defaultName =
       QDir(localizationRoot).filePath(m_currentLocale + ".csv");
-  const QString path = QFileDialog::getSaveFileName(
+  const QString path = NMFileDialog::getSaveFileName(
       this, tr("Export Localization"), defaultName, filter);
   if (path.isEmpty()) {
     return;
@@ -1339,7 +1337,7 @@ void NMLocalizationPanel::exportMissingStrings() {
   const QString filter = tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
   const QString defaultName =
       QDir(localizationRoot).filePath(m_currentLocale + "_missing.csv");
-  const QString path = QFileDialog::getSaveFileName(
+  const QString path = NMFileDialog::getSaveFileName(
       this, tr("Export Missing Translations"), defaultName, filter);
   if (path.isEmpty()) {
     return;

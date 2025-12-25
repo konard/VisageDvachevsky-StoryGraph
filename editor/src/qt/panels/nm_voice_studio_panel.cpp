@@ -13,6 +13,7 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/core/logger.hpp"
@@ -23,15 +24,12 @@
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
-#include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
-#include <QInputDialog>
 #include <QLabel>
 #include <QMediaDevices>
 #include <QMediaPlayer>
-#include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QProgressBar>
@@ -832,8 +830,8 @@ void NMVoiceStudioPanel::setManifest(audio::VoiceManifest *manifest) {
 
 bool NMVoiceStudioPanel::loadFile(const QString &filePath) {
   if (!loadWavFile(filePath)) {
-    QMessageBox::warning(this, tr("Error"),
-                         tr("Could not load audio file: %1").arg(filePath));
+    NMMessageDialog::showWarning(this, tr("Error"),
+                                 tr("Could not load audio file: %1").arg(filePath));
     return false;
   }
 
@@ -968,8 +966,8 @@ void NMVoiceStudioPanel::onTrimToSelection() {
   double selEnd = m_waveformWidget->getSelectionEnd();
 
   if (selStart >= selEnd) {
-    QMessageBox::information(this, tr("Trim"),
-                             tr("Please select a region to keep."));
+    NMMessageDialog::showInfo(this, tr("Trim"),
+                              tr("Please select a region to keep."));
     return;
   }
 
@@ -1107,9 +1105,9 @@ void NMVoiceStudioPanel::onSavePresetClicked() {
   if (!m_clip) return;
 
   bool ok;
-  QString name = QInputDialog::getText(this, tr("Save Preset"),
-                                       tr("Preset name:"), QLineEdit::Normal,
-                                       QString(), &ok);
+  QString name = NMInputDialog::getText(this, tr("Save Preset"),
+                                        tr("Preset name:"), QLineEdit::Normal,
+                                        QString(), &ok);
   if (!ok || name.isEmpty()) return;
 
   // Add or update preset
@@ -1144,7 +1142,7 @@ void NMVoiceStudioPanel::onSaveClicked() {
 }
 
 void NMVoiceStudioPanel::onSaveAsClicked() {
-  QString filePath = QFileDialog::getSaveFileName(
+  QString filePath = NMFileDialog::getSaveFileName(
       this, tr("Save Audio File"), QString(),
       tr("WAV Files (*.wav);;All Files (*)"));
 
@@ -1165,7 +1163,7 @@ void NMVoiceStudioPanel::onSaveAsClicked() {
 void NMVoiceStudioPanel::onExportClicked() {
   if (!m_clip) return;
 
-  QString filePath = QFileDialog::getSaveFileName(
+  QString filePath = NMFileDialog::getSaveFileName(
       this, tr("Export Processed Audio"), QString(),
       tr("WAV Files (*.wav);;All Files (*)"));
 
@@ -1178,8 +1176,8 @@ void NMVoiceStudioPanel::onExportClicked() {
   // Render and save
   auto processed = renderProcessedAudio();
   if (processed.empty()) {
-    QMessageBox::warning(this, tr("Export Error"),
-                         tr("No audio to export."));
+    NMMessageDialog::showWarning(this, tr("Export Error"),
+                                 tr("No audio to export."));
     return;
   }
 
@@ -1195,26 +1193,27 @@ void NMVoiceStudioPanel::onExportClicked() {
   std::swap(m_clip, exportClip);
 
   if (success) {
-    QMessageBox::information(this, tr("Export Complete"),
-                             tr("Audio exported to: %1").arg(filePath));
+    NMMessageDialog::showInfo(this, tr("Export Complete"),
+                              tr("Audio exported to: %1").arg(filePath));
   }
 }
 
 void NMVoiceStudioPanel::onOpenClicked() {
   if (hasUnsavedChanges()) {
-    auto result = QMessageBox::question(
+    auto result = NMMessageDialog::showQuestion(
         this, tr("Unsaved Changes"),
         tr("You have unsaved changes. Do you want to save them first?"),
-        QMessageBox::Save | QMessageBox::Discard | QMessageBox::Cancel);
+        {NMDialogButton::Save, NMDialogButton::Discard, NMDialogButton::Cancel},
+        NMDialogButton::Save);
 
-    if (result == QMessageBox::Save) {
+    if (result == NMDialogButton::Save) {
       onSaveClicked();
-    } else if (result == QMessageBox::Cancel) {
+    } else if (result == NMDialogButton::Cancel) {
       return;
     }
   }
 
-  QString filePath = QFileDialog::getOpenFileName(
+  QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Open Audio File"), QString(),
       tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 
@@ -1312,7 +1311,7 @@ void NMVoiceStudioPanel::onRecordingError(const QString &error) {
   if (m_stopRecordBtn) m_stopRecordBtn->setEnabled(false);
   if (m_cancelRecordBtn) m_cancelRecordBtn->setEnabled(false);
 
-  QMessageBox::warning(this, tr("Recording Error"), error);
+  NMMessageDialog::showWarning(this, tr("Recording Error"), error);
 }
 
 void NMVoiceStudioPanel::onUpdateTimer() {

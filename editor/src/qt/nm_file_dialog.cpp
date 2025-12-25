@@ -130,6 +130,9 @@ NMFileDialog::NMFileDialog(QWidget *parent, const QString &title, Mode mode,
   m_fileModel = new QFileSystemModel(this);
   if (m_mode == Mode::SelectDirectory) {
     m_fileModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Drives);
+  } else if (m_mode == Mode::SaveFile) {
+    m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot |
+                           QDir::Drives);
   } else {
     m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot |
                            QDir::Drives);
@@ -278,6 +281,20 @@ void NMFileDialog::buildUi() {
   m_selectionLabel->setText(tr("No selection"));
   mainLayout->addWidget(m_selectionLabel);
 
+  // Add filename edit for save mode
+  if (m_mode == Mode::SaveFile) {
+    auto *filenameLayout = new QHBoxLayout();
+    filenameLayout->setSpacing(6);
+    auto *filenameLabel = new QLabel(tr("File name:"), this);
+    m_filenameEdit = new QLineEdit(this);
+    m_filenameEdit->setPlaceholderText(tr("Enter file name"));
+    connect(m_filenameEdit, &QLineEdit::textChanged, this,
+            &NMFileDialog::updateAcceptState);
+    filenameLayout->addWidget(filenameLabel);
+    filenameLayout->addWidget(m_filenameEdit, 1);
+    mainLayout->addLayout(filenameLayout);
+  }
+
   auto *footerLayout = new QHBoxLayout();
   footerLayout->setSpacing(6);
 
@@ -294,8 +311,15 @@ void NMFileDialog::buildUi() {
   footerLayout->addWidget(m_filterCombo, 0, Qt::AlignLeft);
   footerLayout->addStretch();
 
-  m_acceptButton = new QPushButton(
-      m_mode == Mode::SelectDirectory ? tr("Select") : tr("Open"), this);
+  QString acceptText;
+  if (m_mode == Mode::SelectDirectory) {
+    acceptText = tr("Select");
+  } else if (m_mode == Mode::SaveFile) {
+    acceptText = tr("Save");
+  } else {
+    acceptText = tr("Open");
+  }
+  m_acceptButton = new QPushButton(acceptText, this);
   m_acceptButton->setObjectName("NMPrimaryButton");
   connect(m_acceptButton, &QPushButton::clicked, this,
           &NMFileDialog::acceptSelection);
@@ -431,6 +455,21 @@ void NMFileDialog::updateAcceptState() {
     return;
   }
 
+  if (m_mode == Mode::SaveFile) {
+    const bool hasFilename =
+        m_filenameEdit && !m_filenameEdit->text().trimmed().isEmpty();
+    m_acceptButton->setEnabled(hasFilename && !m_currentDir.isEmpty());
+    if (m_selectionLabel) {
+      if (hasFilename) {
+        m_selectionLabel->setText(
+            QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed()));
+      } else {
+        m_selectionLabel->setText(tr("Enter a file name"));
+      }
+    }
+    return;
+  }
+
   m_acceptButton->setEnabled(!selected.isEmpty());
   if (m_selectionLabel) {
     if (selected.isEmpty()) {
@@ -523,6 +562,17 @@ void NMFileDialog::acceptSelection() {
     return;
   }
 
+  if (m_mode == Mode::SaveFile) {
+    if (!m_filenameEdit || m_filenameEdit->text().trimmed().isEmpty()) {
+      return;
+    }
+    const QString fullPath =
+        QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed());
+    m_selectedPaths = {fullPath};
+    accept();
+    return;
+  }
+
   const QStringList files = selectedFilePaths();
   if (files.isEmpty()) {
     return;
@@ -550,6 +600,17 @@ QStringList NMFileDialog::getOpenFileNames(QWidget *parent, const QString &title
     return dialog.m_selectedPaths;
   }
   return {};
+}
+
+QString NMFileDialog::getSaveFileName(QWidget *parent, const QString &title,
+                                      const QString &dir,
+                                      const QString &filter) {
+  NMFileDialog dialog(parent, title, Mode::SaveFile, dir, filter);
+  if (dialog.exec() == QDialog::Accepted) {
+    const QStringList files = dialog.m_selectedPaths;
+    return files.isEmpty() ? QString() : files.front();
+  }
+  return QString();
 }
 
 QString NMFileDialog::getExistingDirectory(QWidget *parent,

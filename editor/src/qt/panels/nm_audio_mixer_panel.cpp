@@ -11,11 +11,11 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/core/logger.hpp"
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
-#include <QFileDialog>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -232,7 +232,7 @@ void NMAudioMixerPanel::onCrossfadeDurationChanged(double value) {
 void NMAudioMixerPanel::onCrossfadeToClicked() {
   if (m_nextCrossfadeAsset.isEmpty()) {
     // Open file dialog to select next track
-    QString filePath = QFileDialog::getOpenFileName(
+    QString filePath = NMFileDialog::getOpenFileName(
         this, tr("Select Next Track"), QString(),
         tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 
@@ -377,7 +377,7 @@ void NMAudioMixerPanel::onChannelSoloToggled(bool checked) {
 }
 
 void NMAudioMixerPanel::onBrowseAudioClicked() {
-  QString filePath = QFileDialog::getOpenFileName(
+  QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Select Audio File"), QString(),
       tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 

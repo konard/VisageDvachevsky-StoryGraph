@@ -1,9 +1,9 @@
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 
 #include <QDateTime>
 #include <QFileInfo>
-#include <QInputDialog>
 #include <QLineEdit>
 
 namespace NovelMind::editor::qt {
@@ -364,8 +364,8 @@ void NMSceneViewPanel::renameSelectedObject() {
   bool ok = false;
   const QString current = obj->name().isEmpty() ? obj->id() : obj->name();
   const QString name =
-      QInputDialog::getText(this, tr("Rename Object"),
-                            tr("Name:"), QLineEdit::Normal, current, &ok)
+      NMInputDialog::getText(this, tr("Rename Object"),
+                             tr("Name:"), QLineEdit::Normal, current, &ok)
           .trimmed();
   if (ok && !name.isEmpty() && name != obj->name()) {
     renameObject(obj->id(), name);

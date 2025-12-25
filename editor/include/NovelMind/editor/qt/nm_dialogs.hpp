@@ -88,8 +88,18 @@ public:
                           double maxValue = 1.0e308, int decimals = 2,
                           bool *ok = nullptr);
 
+  static QString getItem(QWidget *parent, const QString &title,
+                         const QString &label, const QStringList &items,
+                         int current = 0, bool editable = false,
+                         bool *ok = nullptr);
+
+  static QString getMultiLineText(QWidget *parent, const QString &title,
+                                  const QString &label,
+                                  const QString &text = QString(),
+                                  bool *ok = nullptr);
+
 private:
-  enum class InputType { Text, Int, Double };
+  enum class InputType { Text, Int, Double, Item, MultiLine };
 
   explicit NMInputDialog(QWidget *parent, const QString &title,
                          const QString &label, InputType type);
@@ -98,15 +108,21 @@ private:
   void configureInt(int value, int minValue, int maxValue, int step);
   void configureDouble(double value, double minValue, double maxValue,
                        int decimals);
+  void configureItem(const QStringList &items, int current, bool editable);
+  void configureMultiLine(const QString &text);
 
   QString textValue() const;
   int intValue() const;
   double doubleValue() const;
+  QString itemValue() const;
+  QString multiLineValue() const;
 
   QLabel *m_label = nullptr;
   QLineEdit *m_textEdit = nullptr;
   QSpinBox *m_intSpin = nullptr;
   QDoubleSpinBox *m_doubleSpin = nullptr;
+  QComboBox *m_comboBox = nullptr;
+  class QTextEdit *m_multiLineEdit = nullptr;
   QPushButton *m_okButton = nullptr;
   QPushButton *m_cancelButton = nullptr;
   InputType m_type = InputType::Text;
@@ -116,7 +132,7 @@ class NMFileDialog final : public QDialog {
   Q_OBJECT
 
 public:
-  enum class Mode { OpenFile, OpenFiles, SelectDirectory };
+  enum class Mode { OpenFile, OpenFiles, SaveFile, SelectDirectory };
 
   static QString getOpenFileName(QWidget *parent, const QString &title,
                                  const QString &dir = QString(),
@@ -124,6 +140,9 @@ public:
   static QStringList getOpenFileNames(QWidget *parent, const QString &title,
                                       const QString &dir = QString(),
                                       const QString &filter = QString());
+  static QString getSaveFileName(QWidget *parent, const QString &title,
+                                 const QString &dir = QString(),
+                                 const QString &filter = QString());
   static QString getExistingDirectory(QWidget *parent, const QString &title,
                                       const QString &dir = QString());
 
@@ -155,6 +174,7 @@ private:
   QLabel *m_previewImage = nullptr;
   QLabel *m_previewName = nullptr;
   QLabel *m_previewMeta = nullptr;
+  QLineEdit *m_filenameEdit = nullptr;
 
   ::QFileSystemModel *m_dirModel = nullptr;
   ::QFileSystemModel *m_fileModel = nullptr;

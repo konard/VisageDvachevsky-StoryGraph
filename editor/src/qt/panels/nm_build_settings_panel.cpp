@@ -10,11 +10,11 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/build_system.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -22,7 +22,6 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
-#include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
@@ -585,9 +584,9 @@ void NMBuildSettingsPanel::startBuild() {
 
         emit buildCompleted(true, QString::fromStdString(result.outputPath));
 
-        QMessageBox::information(
-            this, "Build Complete",
-            QString("Build completed successfully!\n\nOutput: %1\nSize: %2\nTime: %3")
+        NMMessageDialog::showInfo(
+            this, tr("Build Complete"),
+            tr("Build completed successfully!\n\nOutput: %1\nSize: %2\nTime: %3")
                 .arg(QString::fromStdString(result.outputPath))
                 .arg(QString::fromStdString(
                     editor::BuildUtils::formatFileSize(result.totalSize)))
@@ -603,9 +602,9 @@ void NMBuildSettingsPanel::startBuild() {
 
         emit buildCompleted(false, QString::fromStdString(result.errorMessage));
 
-        QMessageBox::critical(
-            this, "Build Failed",
-            QString("Build failed:\n\n%1")
+        NMMessageDialog::showError(
+            this, tr("Build Failed"),
+            tr("Build failed:\n\n%1")
                 .arg(QString::fromStdString(result.errorMessage)));
       }
     });
@@ -619,9 +618,9 @@ void NMBuildSettingsPanel::startBuild() {
     m_buildStatus = BuildStatus::Failed;
     appendLog(QString("Failed to start build: %1")
                   .arg(QString::fromStdString(result.error())));
-    QMessageBox::critical(
-        this, "Build Error",
-        QString("Failed to start build:\n\n%1")
+    NMMessageDialog::showError(
+        this, tr("Build Error"),
+        tr("Failed to start build:\n\n%1")
             .arg(QString::fromStdString(result.error())));
   } else {
     emit buildStarted();
@@ -668,9 +667,8 @@ void NMBuildSettingsPanel::onProfileChanged(int index) {
 }
 
 void NMBuildSettingsPanel::onBrowseOutput() {
-  QString dir = QFileDialog::getExistingDirectory(
-      this, "Select Output Directory", m_outputPathEdit->text(),
-      QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+  QString dir = NMFileDialog::getExistingDirectory(
+      this, tr("Select Output Directory"), m_outputPathEdit->text());
 
   if (!dir.isEmpty()) {
     m_outputPathEdit->setText(dir);
@@ -690,13 +688,14 @@ void NMBuildSettingsPanel::onBuildClicked() {
   }
 
   if (hasCriticalWarnings) {
-    auto result = QMessageBox::warning(
-        this, "Build Warnings",
-        "There are critical warnings that may cause the build to fail.\n\n"
-        "Do you want to continue anyway?",
-        QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    auto result = NMMessageDialog::showQuestion(
+        this, tr("Build Warnings"),
+        tr("There are critical warnings that may cause the build to fail.\n\n"
+           "Do you want to continue anyway?"),
+        {NMDialogButton::Yes, NMDialogButton::No},
+        NMDialogButton::No);
 
-    if (result != QMessageBox::Yes) {
+    if (result != NMDialogButton::Yes) {
       return;
     }
   }

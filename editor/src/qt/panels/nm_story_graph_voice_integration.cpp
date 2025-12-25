@@ -1,14 +1,13 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_voice_integration.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/voice_manager.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/audio/audio_manager.hpp"
 
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QDir>
 #include <QDebug>
-#include <QMessageBox>
 
 namespace NovelMind::editor::qt {
 
@@ -45,11 +44,11 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString, 
   }
 
   // Open file dialog for voice file selection
-  QString voiceFile = QFileDialog::getOpenFileName(
+  QString voiceFile = NMFileDialog::getOpenFileName(
       m_graphPanel,
-      "Select Voice Clip",
+      tr("Select Voice Clip"),
       initialDir,
-      "Audio Files (*.ogg *.wav *.mp3 *.flac *.opus);;All Files (*)"
+      tr("Audio Files (*.ogg *.wav *.mp3 *.flac *.opus);;All Files (*)")
   );
 
   if (voiceFile.isEmpty()) {

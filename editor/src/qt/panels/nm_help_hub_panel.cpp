@@ -4,13 +4,13 @@
  */
 
 #include "NovelMind/editor/qt/panels/nm_help_hub_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_manager.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QMessageBox>
 #include <QSplitter>
 #include <QVBoxLayout>
 
@@ -416,12 +416,13 @@ void NMHelpHubPanel::onResetProgressButtonClicked() {
   if (m_selectedTutorialId.isEmpty())
     return;
 
-  auto reply = QMessageBox::question(
+  auto reply = NMMessageDialog::showQuestion(
       this, tr("Reset Progress"),
       tr("Are you sure you want to reset progress for this tutorial?"),
-      QMessageBox::Yes | QMessageBox::No);
+      {NMDialogButton::Yes, NMDialogButton::No},
+      NMDialogButton::No);
 
-  if (reply == QMessageBox::Yes) {
+  if (reply == NMDialogButton::Yes) {
     NMTutorialManager::instance().resetTutorialProgress(m_selectedTutorialId.toStdString());
     updateTutorialDetails();
   }
@@ -444,13 +445,14 @@ void NMHelpHubPanel::onDisableButtonClicked() {
 }
 
 void NMHelpHubPanel::onResetAllProgressClicked() {
-  auto reply = QMessageBox::question(
+  auto reply = NMMessageDialog::showQuestion(
       this, tr("Reset All Progress"),
       tr("Are you sure you want to reset progress for ALL tutorials?\n"
          "This cannot be undone."),
-      QMessageBox::Yes | QMessageBox::No);
+      {NMDialogButton::Yes, NMDialogButton::No},
+      NMDialogButton::No);
 
-  if (reply == QMessageBox::Yes) {
+  if (reply == NMDialogButton::Yes) {
     NMTutorialManager::instance().resetAllProgress();
     refreshTutorialList();
   }
@@ -461,13 +463,14 @@ void NMHelpHubPanel::onSettingsButtonClicked() {
   // For now, just show a simple toggle
   bool currentlyEnabled = NMTutorialManager::instance().isEnabled();
 
-  auto reply = QMessageBox::question(
+  auto reply = NMMessageDialog::showQuestion(
       this, tr("Guided Learning Settings"),
       currentlyEnabled ? tr("Guided learning is currently enabled.\nWould you like to disable it?")
                        : tr("Guided learning is currently disabled.\nWould you like to enable it?"),
-      QMessageBox::Yes | QMessageBox::No);
+      {NMDialogButton::Yes, NMDialogButton::No},
+      NMDialogButton::No);
 
-  if (reply == QMessageBox::Yes) {
+  if (reply == NMDialogButton::Yes) {
     NMTutorialSubsystem::instance().setEnabled(!currentlyEnabled);
   }
 }

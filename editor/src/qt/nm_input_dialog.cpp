@@ -1,12 +1,14 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "nm_dialogs_detail.hpp"
 
+#include <QComboBox>
 #include <QDoubleSpinBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QSpinBox>
+#include <QTextEdit>
 #include <QVBoxLayout>
 
 namespace NovelMind::editor::qt {
@@ -33,9 +35,17 @@ NMInputDialog::NMInputDialog(QWidget *parent, const QString &title,
   } else if (type == InputType::Int) {
     m_intSpin = new QSpinBox(this);
     layout->addWidget(m_intSpin);
-  } else {
+  } else if (type == InputType::Double) {
     m_doubleSpin = new QDoubleSpinBox(this);
     layout->addWidget(m_doubleSpin);
+  } else if (type == InputType::Item) {
+    m_comboBox = new QComboBox(this);
+    layout->addWidget(m_comboBox);
+  } else if (type == InputType::MultiLine) {
+    m_multiLineEdit = new QTextEdit(this);
+    m_multiLineEdit->setMinimumHeight(100);
+    m_multiLineEdit->setAcceptRichText(false);
+    layout->addWidget(m_multiLineEdit);
   }
 
   auto *buttonLayout = new QHBoxLayout();
@@ -100,6 +110,34 @@ double NMInputDialog::doubleValue() const {
   return m_doubleSpin ? m_doubleSpin->value() : 0.0;
 }
 
+void NMInputDialog::configureItem(const QStringList &items, int current,
+                                  bool editable) {
+  if (m_comboBox) {
+    m_comboBox->setEditable(editable);
+    m_comboBox->addItems(items);
+    if (current >= 0 && current < items.size()) {
+      m_comboBox->setCurrentIndex(current);
+    }
+    m_comboBox->setFocus();
+  }
+}
+
+void NMInputDialog::configureMultiLine(const QString &text) {
+  if (m_multiLineEdit) {
+    m_multiLineEdit->setPlainText(text);
+    m_multiLineEdit->selectAll();
+    m_multiLineEdit->setFocus();
+  }
+}
+
+QString NMInputDialog::itemValue() const {
+  return m_comboBox ? m_comboBox->currentText() : QString();
+}
+
+QString NMInputDialog::multiLineValue() const {
+  return m_multiLineEdit ? m_multiLineEdit->toPlainText() : QString();
+}
+
 QString NMInputDialog::getText(QWidget *parent, const QString &title,
                                const QString &label,
                                QLineEdit::EchoMode mode,
@@ -138,5 +176,32 @@ double NMInputDialog::getDouble(QWidget *parent, const QString &title,
   return result == QDialog::Accepted ? dialog.doubleValue() : value;
 }
 
+QString NMInputDialog::getItem(QWidget *parent, const QString &title,
+                               const QString &label, const QStringList &items,
+                               int current, bool editable, bool *ok) {
+  NMInputDialog dialog(parent, title, label, InputType::Item);
+  dialog.configureItem(items, current, editable);
+  const int result = dialog.exec();
+  if (ok) {
+    *ok = (result == QDialog::Accepted);
+  }
+  if (result == QDialog::Accepted) {
+    return dialog.itemValue();
+  }
+  return (current >= 0 && current < items.size()) ? items.at(current)
+                                                   : QString();
+}
+
+QString NMInputDialog::getMultiLineText(QWidget *parent, const QString &title,
+                                        const QString &label,
+                                        const QString &text, bool *ok) {
+  NMInputDialog dialog(parent, title, label, InputType::MultiLine);
+  dialog.configureMultiLine(text);
+  const int result = dialog.exec();
+  if (ok) {
+    *ok = (result == QDialog::Accepted);
+  }
+  return result == QDialog::Accepted ? dialog.multiLineValue() : QString();
+}
 
 } // namespace NovelMind::editor::qt

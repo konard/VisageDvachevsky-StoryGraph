@@ -4,12 +4,12 @@
  */
 
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/core/logger.hpp"
 #include <set>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
-#include <QFileDialog>
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -332,7 +332,7 @@ void NMPathSettingWidget::setValue(const SettingValue& value) {
 }
 
 void NMPathSettingWidget::onBrowseClicked() {
-  QString path = QFileDialog::getExistingDirectory(
+  QString path = qt::NMFileDialog::getExistingDirectory(
       this, QString::fromStdString(m_definition.displayName),
       m_lineEdit->text());
   if (!path.isEmpty()) {

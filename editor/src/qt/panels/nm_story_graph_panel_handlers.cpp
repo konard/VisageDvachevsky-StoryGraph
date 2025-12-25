@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/project_manager.hpp"
@@ -7,7 +8,6 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
-#include <QMessageBox>
 #include <QQueue>
 #include <QSet>
 #include <QTextStream>
@@ -53,15 +53,14 @@ void NMStoryGraphPanel::onAutoLayout() {
   }
 
   // Ask for confirmation before rearranging
-  QMessageBox msgBox;
-  msgBox.setIcon(QMessageBox::Question);
-  msgBox.setWindowTitle(tr("Auto Layout"));
-  msgBox.setText(tr("This will automatically arrange all nodes in a hierarchical layout."));
-  msgBox.setInformativeText(tr("Current manual positioning will be lost. Do you want to continue?"));
-  msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-  msgBox.setDefaultButton(QMessageBox::No);
+  auto result = NMMessageDialog::showQuestion(
+      this, tr("Auto Layout"),
+      tr("This will automatically arrange all nodes in a hierarchical layout.\n\n"
+         "Current manual positioning will be lost. Do you want to continue?"),
+      {NMDialogButton::Yes, NMDialogButton::No},
+      NMDialogButton::No);
 
-  if (msgBox.exec() != QMessageBox::Yes) {
+  if (result != NMDialogButton::Yes) {
     return;
   }
 
@@ -486,7 +485,7 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
     );
 
     // Show user feedback
-    QMessageBox::warning(this, tr("Cycle Detected"), message);
+    NMMessageDialog::showWarning(this, tr("Cycle Detected"), message);
     return;
   }
 

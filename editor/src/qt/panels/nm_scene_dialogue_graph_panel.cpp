@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
@@ -14,7 +15,6 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLabel>
-#include <QMessageBox>
 #include <QPushButton>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -154,11 +154,12 @@ void NMSceneDialogueGraphPanel::onUpdate(double /*deltaTime*/) {
 
 void NMSceneDialogueGraphPanel::loadSceneDialogue(const QString &sceneId) {
   if (m_hasUnsavedChanges) {
-    QMessageBox::StandardButton reply = QMessageBox::question(
+    auto reply = NMMessageDialog::showQuestion(
         this, tr("Unsaved Changes"),
         tr("The current dialogue graph has unsaved changes. Discard them?"),
-        QMessageBox::Yes | QMessageBox::No);
-    if (reply == QMessageBox::No) {
+        {NMDialogButton::Yes, NMDialogButton::No},
+        NMDialogButton::No);
+    if (reply == NMDialogButton::No) {
       return;
     }
   }
@@ -332,8 +333,8 @@ void NMSceneDialogueGraphPanel::createNode(const QString &nodeType) {
   }
 
   if (m_currentSceneId.isEmpty()) {
-    QMessageBox::warning(this, tr("No Scene Loaded"),
-                         tr("Please load a scene first before adding nodes."));
+    NMMessageDialog::showWarning(this, tr("No Scene Loaded"),
+                                 tr("Please load a scene first before adding nodes."));
     return;
   }
 

@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 
 #include <QAudioOutput>
@@ -7,18 +8,15 @@
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QGroupBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMediaPlayer>
 #include <QMenu>
-#include <QMessageBox>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -1070,7 +1068,7 @@ void NMVoiceManagerPanel::onAutoMatchClicked() {
 }
 
 void NMVoiceManagerPanel::onImportClicked() {
-  QString filePath = QFileDialog::getOpenFileName(
+  QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Import Voice Mapping"), QString(), tr("CSV Files (*.csv)"));
   if (!filePath.isEmpty()) {
     importFromCsv(filePath);
@@ -1078,7 +1076,7 @@ void NMVoiceManagerPanel::onImportClicked() {
 }
 
 void NMVoiceManagerPanel::onExportClicked() {
-  QString filePath = QFileDialog::getSaveFileName(
+  QString filePath = NMFileDialog::getSaveFileName(
       this, tr("Export Voice Mapping"), "voice_mapping.csv",
       tr("CSV Files (*.csv)"));
   if (!filePath.isEmpty()) {
@@ -1164,7 +1162,7 @@ void NMVoiceManagerPanel::onAssignVoiceFile() {
   auto &pm = ProjectManager::instance();
   QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
 
-  QString filePath = QFileDialog::getOpenFileName(
+  QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Select Voice File"), voiceDir,
       tr("Audio Files (*.ogg *.wav *.mp3 *.flac)"));
 
@@ -1250,7 +1248,7 @@ void NMVoiceManagerPanel::onExportTemplateClicked() {
     return;
   }
 
-  QString filePath = QFileDialog::getSaveFileName(
+  QString filePath = NMFileDialog::getSaveFileName(
       this, tr("Export VO Template"), "vo_template.json",
       tr("JSON Files (*.json)"));
 
@@ -1296,7 +1294,7 @@ void NMVoiceManagerPanel::onValidateManifestClicked() {
       msg += tr("\n\n... and %1 more errors").arg(errors.size() - 10);
     }
 
-    QMessageBox::warning(this, tr("Validation Errors"), msg);
+    NMMessageDialog::showWarning(this, tr("Validation Errors"), msg);
   }
 }
 
@@ -1321,7 +1319,7 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
   for (const auto &tag : line->tags) {
     currentTags.append(QString::fromStdString(tag));
   }
-  QString tagsStr = QInputDialog::getText(
+  QString tagsStr = NMInputDialog::getText(
       this, tr("Edit Tags"),
       tr("Enter tags (comma-separated):"),
       QLineEdit::Normal,
@@ -1336,7 +1334,7 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
     }
 
     // Edit notes
-    QString notes = QInputDialog::getMultiLineText(
+    QString notes = NMInputDialog::getMultiLineText(
         this, tr("Edit Notes"),
         tr("Enter notes for this line:"),
         QString::fromStdString(line->notes),
@@ -1361,7 +1359,7 @@ void NMVoiceManagerPanel::onAddTake() {
   auto &pm = ProjectManager::instance();
   QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
 
-  QString filePath = QFileDialog::getOpenFileName(
+  QString filePath = NMFileDialog::getOpenFileName(
       this, tr("Select Take Audio File"), voiceDir,
       tr("Audio Files (*.ogg *.wav *.mp3 *.flac)"));
 
@@ -1417,7 +1415,7 @@ void NMVoiceManagerPanel::onSetActiveTake() {
   }
 
   bool ok;
-  QString selected = QInputDialog::getItem(
+  QString selected = NMInputDialog::getItem(
       this, tr("Select Active Take"),
       tr("Choose which take to set as active:"),
       takeNames, static_cast<int>(localeFile->activeTakeIndex), false, &ok);
@@ -1447,7 +1445,7 @@ void NMVoiceManagerPanel::onSetLineStatus() {
                           tr("Needs Review"), tr("Approved")};
 
   bool ok;
-  QString selected = QInputDialog::getItem(
+  QString selected = NMInputDialog::getItem(
       this, tr("Set Status"),
       tr("Select status for this line:"),
       statuses, 0, false, &ok);
