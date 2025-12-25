@@ -704,33 +704,53 @@ void NMMainWindow::setupConnections() {
   connect(m_sceneViewPanel, &NMSceneViewPanel::objectSelected, m_hierarchyPanel,
           &NMHierarchyPanel::selectObject);
 
-  // Connect hierarchy selection to scene view and inspector
+  // Connect hierarchy selection to scene view
   connect(m_hierarchyPanel, &NMHierarchyPanel::objectSelected, m_sceneViewPanel,
           [this](const QString &objectId) {
             if (m_sceneViewPanel) {
               m_sceneViewPanel->selectObjectById(objectId);
             }
           });
+
+  // Update status bar when hierarchy selection changes
   connect(m_hierarchyPanel, &NMHierarchyPanel::objectSelected, this,
           [this](const QString &objectId) {
-            if (!m_inspectorPanel) {
-              return;
-            }
-            if (objectId.isEmpty()) {
-              m_inspectorPanel->showNoSelection();
-              return;
-            }
-            if (auto *obj = m_sceneViewPanel->findObjectById(objectId)) {
-              const bool editable =
-                  !objectId.startsWith("runtime_");
-              m_inspectorPanel->inspectSceneObject(obj, editable);
-            }
             if (!objectId.isEmpty()) {
               m_activeSelectionLabel = tr("Object: %1").arg(objectId);
             } else {
               m_activeSelectionLabel.clear();
             }
             updateStatusBarContext();
+          });
+
+  // Connect hierarchy double-click to show inspector as a tab
+  connect(m_hierarchyPanel, &NMHierarchyPanel::objectDoubleClicked, this,
+          [this](const QString &objectId) {
+            if (!m_inspectorPanel) {
+              return;
+            }
+            if (objectId.isEmpty()) {
+              return;
+            }
+            // Ensure inspector is tabified (not floating)
+            if (m_inspectorPanel->isFloating()) {
+              m_inspectorPanel->setFloating(false);
+              // Re-dock to right area
+              addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
+              // Re-tabify with other panels if needed
+              QList<QDockWidget*> rightDocks = findChildren<QDockWidget*>();
+              for (QDockWidget *dock : rightDocks) {
+                if (dock != m_inspectorPanel &&
+                    dockWidgetArea(dock) == Qt::RightDockWidgetArea &&
+                    dock->isVisible()) {
+                  tabifyDockWidget(dock, m_inspectorPanel);
+                  break;
+                }
+              }
+            }
+            m_inspectorPanel->show();
+            m_inspectorPanel->raise();
+            m_inspectorPanel->setFocus();
           });
 
   connect(m_storyGraphPanel, &NMStoryGraphPanel::nodeSelected, this,
