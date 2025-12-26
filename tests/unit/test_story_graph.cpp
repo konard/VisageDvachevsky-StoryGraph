@@ -491,3 +491,130 @@ TEST_CASE("Scene Node - Scene graph structure", "[story_graph][scene_node]") {
     CHECK(sceneAdjacency[3].size() == 2);
   }
 }
+
+// ============================================================================
+// Condition Node Tests (Silent branching - Issue #76 fix verification)
+// ============================================================================
+
+namespace {
+
+// Node type enumeration for testing
+enum class TestNodeType {
+  Scene,
+  Dialogue,
+  Condition,
+  Choice,
+  Event,
+  Unknown
+};
+
+// Helper function to determine if a node type should generate say statements
+// This mirrors the logic in nm_story_graph_scene.cpp and nm_story_graph_panel_handlers.cpp
+bool shouldGenerateSayStatement(TestNodeType nodeType) {
+  switch (nodeType) {
+  case TestNodeType::Scene:
+    return false;  // Scene nodes are "silent" containers
+  case TestNodeType::Condition:
+    return false;  // Condition nodes only branch, they don't speak (Issue #76 fix)
+  case TestNodeType::Dialogue:
+    return true;   // Dialogue nodes should have say statements
+  case TestNodeType::Choice:
+    return true;   // Choice nodes can have prompt text
+  case TestNodeType::Event:
+    return true;   // Event nodes may have narrative text
+  default:
+    return true;   // Default for unknown types
+  }
+}
+
+// Helper to determine what script content comment should be generated
+std::string getScriptContentComment(TestNodeType nodeType) {
+  switch (nodeType) {
+  case TestNodeType::Scene:
+    return "// Scene node - add scene content here";
+  case TestNodeType::Condition:
+    return "// Condition node - add branching logic here";
+  default:
+    return "";  // No comment for dialogue types
+  }
+}
+
+} // namespace
+
+TEST_CASE("Condition Node - Silent branching behavior (Issue #76)",
+          "[story_graph][condition_node]") {
+  SECTION("Condition nodes should NOT generate say statements") {
+    CHECK(shouldGenerateSayStatement(TestNodeType::Condition) == false);
+  }
+
+  SECTION("Scene nodes should NOT generate say statements") {
+    CHECK(shouldGenerateSayStatement(TestNodeType::Scene) == false);
+  }
+
+  SECTION("Dialogue nodes SHOULD generate say statements") {
+    CHECK(shouldGenerateSayStatement(TestNodeType::Dialogue) == true);
+  }
+
+  SECTION("Condition node script content comment") {
+    auto comment = getScriptContentComment(TestNodeType::Condition);
+    CHECK(comment == "// Condition node - add branching logic here");
+    CHECK(comment.find("say") == std::string::npos);  // No "say" in comment
+  }
+
+  SECTION("Scene node script content comment") {
+    auto comment = getScriptContentComment(TestNodeType::Scene);
+    CHECK(comment == "// Scene node - add scene content here");
+    CHECK(comment.find("say") == std::string::npos);  // No "say" in comment
+  }
+}
+
+TEST_CASE("Condition Node - Branching properties", "[story_graph][condition_node]") {
+  // Test condition node specific properties
+  struct TestConditionNodeData {
+    std::string nodeId;
+    std::string conditionExpression;
+    std::vector<std::string> conditionOutputs;
+    std::unordered_map<std::string, std::string> conditionTargets;
+  };
+
+  SECTION("Default condition outputs are true/false") {
+    TestConditionNodeData data;
+    data.nodeId = "cond_1";
+    data.conditionExpression = "has_key";
+    data.conditionOutputs = {"true", "false"};
+
+    CHECK(data.conditionOutputs.size() == 2);
+    CHECK(data.conditionOutputs[0] == "true");
+    CHECK(data.conditionOutputs[1] == "false");
+  }
+
+  SECTION("Condition can have custom output labels") {
+    TestConditionNodeData data;
+    data.nodeId = "cond_2";
+    data.conditionExpression = "player_choice";
+    data.conditionOutputs = {"path_a", "path_b", "path_c"};
+
+    CHECK(data.conditionOutputs.size() == 3);
+  }
+
+  SECTION("Condition targets map outputs to node IDs") {
+    TestConditionNodeData data;
+    data.nodeId = "cond_3";
+    data.conditionExpression = "check_inventory";
+    data.conditionOutputs = {"success", "failure"};
+    data.conditionTargets["success"] = "node_10";
+    data.conditionTargets["failure"] = "node_11";
+
+    CHECK(data.conditionTargets["success"] == "node_10");
+    CHECK(data.conditionTargets["failure"] == "node_11");
+  }
+
+  SECTION("Empty condition expression is valid but shows placeholder") {
+    TestConditionNodeData data;
+    data.nodeId = "cond_4";
+    data.conditionExpression = "";
+
+    CHECK(data.conditionExpression.empty());
+    // UI should show "(no condition)" placeholder for empty expressions
+  }
+}

@@ -650,7 +650,16 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
         QTextStream out(&scriptFile);
         out << "// " << node->nodeIdString() << "\n";
         out << "scene " << node->nodeIdString() << " {\n";
-        out << "  say Narrator \"New script node\"\n";
+        // Condition and Scene nodes are "silent" - they only handle branching,
+        // not dialogue. Only Dialogue nodes get a default say statement.
+        // This fixes issue #76 where Condition nodes incorrectly said text.
+        if (node->isConditionNode()) {
+          out << "  // Condition node - add branching logic here\n";
+        } else if (node->isSceneNode()) {
+          out << "  // Scene node - add scene content here\n";
+        } else {
+          out << "  say Narrator \"New script node\"\n";
+        }
         out << "}\n";
       }
     }
