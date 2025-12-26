@@ -531,8 +531,20 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
     }
   } else if (propertyName == "speaker") {
     node->setDialogueSpeaker(newValue);
+    // Sync speaker change to the .nms script file
+    const QString scriptPath = detail::resolveScriptPath(node);
+    if (!scriptPath.isEmpty()) {
+      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath,
+                                      newValue, node->dialogueText());
+    }
   } else if (propertyName == "text") {
     node->setDialogueText(newValue);
+    // Sync text change to the .nms script file
+    const QString scriptPath = detail::resolveScriptPath(node);
+    if (!scriptPath.isEmpty()) {
+      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath,
+                                      node->dialogueSpeaker(), newValue);
+    }
   } else if (propertyName == "choices") {
     node->setChoiceOptions(detail::splitChoiceLines(newValue));
   } else if (propertyName == "conditionExpression") {

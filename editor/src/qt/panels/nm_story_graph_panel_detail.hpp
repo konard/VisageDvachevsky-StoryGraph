@@ -11,6 +11,8 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
 QString resolveScriptPath(const NMGraphNodeItem *node);
 bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
                            const QStringList &targets);
+bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
+                             const QString &speaker, const QString &text);
 QStringList splitChoiceLines(const QString &raw);
 NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node);
 

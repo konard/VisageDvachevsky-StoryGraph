@@ -381,6 +381,145 @@ bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
   return true;
 }
 
+bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
+                             const QString &speaker, const QString &text) {
+  if (sceneId.isEmpty() || scriptPath.isEmpty()) {
+    return false;
+  }
+
+  QFile file(scriptPath);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    return false;
+  }
+  QString content = QString::fromUtf8(file.readAll());
+  file.close();
+
+  // Find the scene block
+  const QRegularExpression sceneRe(
+      QString("\\bscene\\s+%1\\b").arg(QRegularExpression::escape(sceneId)));
+  const QRegularExpressionMatch match = sceneRe.match(content);
+  if (!match.hasMatch()) {
+    return false;
+  }
+
+  const qsizetype bracePos = content.indexOf('{', match.capturedEnd());
+  if (bracePos < 0) {
+    return false;
+  }
+
+  // Find the scene end
+  int depth = 0;
+  bool inString = false;
+  QChar stringDelimiter;
+  bool inLineComment = false;
+  bool inBlockComment = false;
+  qsizetype sceneEnd = -1;
+
+  for (qsizetype i = bracePos; i < content.size(); ++i) {
+    const QChar c = content.at(i);
+    const QChar next = (i + 1 < content.size()) ? content.at(i + 1) : QChar();
+
+    if (inLineComment) {
+      if (c == '\n') {
+        inLineComment = false;
+      }
+      continue;
+    }
+    if (inBlockComment) {
+      if (c == '*' && next == '/') {
+        inBlockComment = false;
+        ++i;
+      }
+      continue;
+    }
+
+    if (!inString && c == '/' && next == '/') {
+      inLineComment = true;
+      ++i;
+      continue;
+    }
+    if (!inString && c == '/' && next == '*') {
+      inBlockComment = true;
+      ++i;
+      continue;
+    }
+
+    if (c == '"' || c == '\'') {
+      if (!inString) {
+        inString = true;
+        stringDelimiter = c;
+      } else if (stringDelimiter == c && content.at(i - 1) != '\\') {
+        inString = false;
+      }
+    }
+
+    if (inString) {
+      continue;
+    }
+
+    if (c == '{') {
+      ++depth;
+    } else if (c == '}') {
+      --depth;
+      if (depth == 0) {
+        sceneEnd = i;
+        break;
+      }
+    }
+  }
+
+  if (sceneEnd < 0) {
+    return false;
+  }
+
+  const qsizetype bodyStart = bracePos + 1;
+  const qsizetype bodyEnd = sceneEnd;
+  QString body = content.mid(bodyStart, bodyEnd - bodyStart);
+
+  // Find and replace the first say statement
+  // Pattern: say <speaker> "<text>"
+  // We need to match say statements and replace them
+  const QRegularExpression sayRe(
+      "\\bsay\\s+(\\w+)\\s+\"([^\"]*)\"",
+      QRegularExpression::DotMatchesEverythingOption);
+
+  QRegularExpressionMatch sayMatch = sayRe.match(body);
+  if (!sayMatch.hasMatch()) {
+    // No say statement found in the scene - add one at the beginning
+    // Escape quotes in the text
+    QString escapedText = text;
+    escapedText.replace("\\", "\\\\");
+    escapedText.replace("\"", "\\\"");
+
+    QString newSay =
+        QString("\n    say %1 \"%2\"")
+            .arg(speaker.isEmpty() ? "Narrator" : speaker, escapedText);
+    body = newSay + body;
+  } else {
+    // Replace the existing say statement
+    QString escapedText = text;
+    escapedText.replace("\\", "\\\\");
+    escapedText.replace("\"", "\\\"");
+
+    QString newSay =
+        QString("say %1 \"%2\"")
+            .arg(speaker.isEmpty() ? "Narrator" : speaker, escapedText);
+    body.replace(sayMatch.capturedStart(), sayMatch.capturedLength(), newSay);
+  }
+
+  QString updated = content.left(bodyStart);
+  updated += body;
+  updated += content.mid(bodyEnd);
+
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
+                 QIODevice::Truncate)) {
+    return false;
+  }
+  file.write(updated.toUtf8());
+  file.close();
+  return true;
+}
+
 QStringList splitChoiceLines(const QString &raw) {
   const QStringList lines =
       raw.split(QRegularExpression("[\\r\\n]+"), Qt::SkipEmptyParts);
