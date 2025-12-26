@@ -11,12 +11,14 @@
 
 #include <QAbstractItemView>
 #include <QCompleter>
+#include <QContextMenuEvent>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QHeaderView>
 #include <QKeyEvent>
+#include <QMenu>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QScrollBar>
@@ -177,6 +179,25 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   lineCommentRule.pattern = QRegularExpression("//[^\n]*");
   lineCommentRule.format = m_commentFormat;
   m_rules.push_back(lineCommentRule);
+
+  // Error format: red wavy underline
+  m_errorFormat.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+  m_errorFormat.setUnderlineColor(QColor(220, 80, 80));
+
+  // Warning format: yellow wavy underline
+  m_warningFormat.setUnderlineStyle(QTextCharFormat::WaveUnderline);
+  m_warningFormat.setUnderlineColor(QColor(230, 180, 60));
+}
+
+void NMScriptHighlighter::setDiagnostics(
+    const QHash<int, QList<NMScriptIssue>> &diagnostics) {
+  m_diagnostics = diagnostics;
+  rehighlight();
+}
+
+void NMScriptHighlighter::clearDiagnostics() {
+  m_diagnostics.clear();
+  rehighlight();
 }
 
 void NMScriptHighlighter::highlightBlock(const QString &text) {
@@ -215,6 +236,25 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
     startIndex =
         clampToInt(text.indexOf(m_commentStart, startIndex + commentLength));
   }
+
+  // Apply diagnostic underlines for errors and warnings
+  const int lineNumber = currentBlock().blockNumber() + 1;
+  if (m_diagnostics.contains(lineNumber)) {
+    const auto &issues = m_diagnostics.value(lineNumber);
+    for (const auto &issue : issues) {
+      // Underline the whole line for the diagnostic
+      const QTextCharFormat &format =
+          (issue.severity == "error") ? m_errorFormat : m_warningFormat;
+      // Apply to non-whitespace portion of line
+      int startPos = 0;
+      while (startPos < text.size() && text.at(startPos).isSpace()) {
+        ++startPos;
+      }
+      if (startPos < text.size()) {
+        setFormat(startPos, clampToInt(text.size()) - startPos, format);
+      }
+    }
+  }
 }
 
 // ============================================================================
@@ -250,8 +290,7 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
   updateLineNumberAreaWidth(0);
   highlightCurrentLine();
 
-  auto *highlighter = new NMScriptHighlighter(document());
-  Q_UNUSED(highlighter);
+  m_highlighter = new NMScriptHighlighter(document());
 
   m_baseCompletionWords = detail::buildCompletionWords();
   auto *completer = new QCompleter(this);
@@ -317,9 +356,154 @@ void NMScriptEditor::setProjectDocs(const QHash<QString, QString> &docs) {
   }
 }
 
+void NMScriptEditor::setSymbolLocations(
+    const QHash<QString, SymbolLocation> &locations) {
+  m_symbolLocations.clear();
+  for (auto it = locations.constBegin(); it != locations.constEnd(); ++it) {
+    m_symbolLocations.insert(it.key().toLower(), it.value());
+  }
+}
+
+void NMScriptEditor::setDiagnostics(const QList<NMScriptIssue> &issues) {
+  if (!m_highlighter) {
+    return;
+  }
+  QHash<int, QList<NMScriptIssue>> byLine;
+  for (const auto &issue : issues) {
+    byLine[issue.line].append(issue);
+  }
+  m_highlighter->setDiagnostics(byLine);
+}
+
+void NMScriptEditor::insertSnippet(const QString &snippetType) {
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+
+  QString snippet;
+  int cursorOffset = 0; // Position cursor within snippet
+
+  if (snippetType == "scene") {
+    snippet = "scene scene_name {\n  say Narrator \"Description\"\n}\n";
+    cursorOffset = 6; // Position at scene_name
+  } else if (snippetType == "choice") {
+    snippet = "choice {\n  \"Option 1\" -> scene_target1\n  \"Option 2\" -> "
+              "scene_target2\n}\n";
+    cursorOffset = 12; // Position at first option
+  } else if (snippetType == "if") {
+    snippet = "if flag condition {\n  // true branch\n} else {\n  // false "
+              "branch\n}\n";
+    cursorOffset = 8; // Position at condition
+  } else if (snippetType == "goto") {
+    snippet = "goto scene_name\n";
+    cursorOffset = 5; // Position at scene_name
+  } else if (snippetType == "character") {
+    snippet = "character CharName(name=\"Display Name\", color=\"#4A9FD9\")\n";
+    cursorOffset = 10; // Position at CharName
+  } else if (snippetType == "say") {
+    snippet = "say Character \"Dialogue text\"\n";
+    cursorOffset = 4; // Position at Character
+  } else if (snippetType == "show") {
+    snippet = "show background \"asset_path\"\n";
+    cursorOffset = 17; // Position at asset_path
+  } else {
+    cursor.endEditBlock();
+    return;
+  }
+
+  const int startPos = cursor.position();
+  cursor.insertText(snippet);
+  cursor.setPosition(startPos + cursorOffset);
+  cursor.endEditBlock();
+  setTextCursor(cursor);
+}
+
+QString NMScriptEditor::symbolAtPosition(const QPoint &pos) const {
+  QTextCursor cursor = cursorForPosition(pos);
+  cursor.select(QTextCursor::WordUnderCursor);
+  return cursor.selectedText();
+}
+
+void NMScriptEditor::goToDefinition() {
+  const QString symbol = textUnderCursor();
+  if (symbol.isEmpty()) {
+    return;
+  }
+  const QString key = symbol.toLower();
+  if (m_symbolLocations.contains(key)) {
+    emit goToDefinitionRequested(symbol, m_symbolLocations.value(key));
+  }
+}
+
+void NMScriptEditor::findReferences() {
+  const QString symbol = textUnderCursor();
+  if (!symbol.isEmpty()) {
+    emit findReferencesRequested(symbol);
+  }
+}
+
+void NMScriptEditor::showSnippetMenu() {
+  QMenu menu(this);
+  menu.setStyleSheet(
+      "QMenu { background-color: #2d2d2d; color: #e0e0e0; }"
+      "QMenu::item:selected { background-color: #404040; }");
+
+  menu.addAction(tr("Scene block"), this,
+                 [this]() { insertSnippet("scene"); });
+  menu.addAction(tr("Choice block"), this,
+                 [this]() { insertSnippet("choice"); });
+  menu.addAction(tr("If/Else block"), this,
+                 [this]() { insertSnippet("if"); });
+  menu.addAction(tr("Goto statement"), this,
+                 [this]() { insertSnippet("goto"); });
+  menu.addSeparator();
+  menu.addAction(tr("Character declaration"), this,
+                 [this]() { insertSnippet("character"); });
+  menu.addAction(tr("Say dialogue"), this,
+                 [this]() { insertSnippet("say"); });
+  menu.addAction(tr("Show background"), this,
+                 [this]() { insertSnippet("show"); });
+
+  menu.exec(mapToGlobal(cursorRect().bottomLeft()));
+}
+
 void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   if (event->matches(QKeySequence::Save)) {
     emit requestSave();
+    event->accept();
+    return;
+  }
+
+  // F12: Go to Definition
+  if (event->key() == Qt::Key_F12 && event->modifiers() == Qt::NoModifier) {
+    goToDefinition();
+    event->accept();
+    return;
+  }
+
+  // Shift+F12: Find References
+  if (event->key() == Qt::Key_F12 &&
+      (event->modifiers() & Qt::ShiftModifier)) {
+    findReferences();
+    event->accept();
+    return;
+  }
+
+  // Ctrl+J: Insert Snippet
+  if (event->key() == Qt::Key_J &&
+      (event->modifiers() & Qt::ControlModifier)) {
+    showSnippetMenu();
+    event->accept();
+    return;
+  }
+
+  // Ctrl+G: Navigate to Graph (for scenes)
+  if (event->key() == Qt::Key_G &&
+      (event->modifiers() & Qt::ControlModifier) &&
+      (event->modifiers() & Qt::ShiftModifier)) {
+    const QString symbol = textUnderCursor();
+    if (!symbol.isEmpty()) {
+      emit navigateToGraphNodeRequested(symbol);
+    }
     event->accept();
     return;
   }
@@ -397,8 +581,38 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   }
 }
 
+void NMScriptEditor::mousePressEvent(QMouseEvent *event) {
+  // Ctrl+Click for go-to-definition
+  if (event->button() == Qt::LeftButton &&
+      (event->modifiers() & Qt::ControlModifier)) {
+    const QString symbol = symbolAtPosition(event->pos());
+    if (!symbol.isEmpty()) {
+      const QString key = symbol.toLower();
+      if (m_symbolLocations.contains(key)) {
+        emit goToDefinitionRequested(symbol, m_symbolLocations.value(key));
+        event->accept();
+        return;
+      }
+    }
+  }
+  QPlainTextEdit::mousePressEvent(event);
+}
+
 void NMScriptEditor::mouseMoveEvent(QMouseEvent *event) {
   QPlainTextEdit::mouseMoveEvent(event);
+
+  // Change cursor to pointing hand when hovering over a navigable symbol with
+  // Ctrl held
+  if (event->modifiers() & Qt::ControlModifier) {
+    const QString symbol = symbolAtPosition(event->pos());
+    if (!symbol.isEmpty() && m_symbolLocations.contains(symbol.toLower())) {
+      viewport()->setCursor(Qt::PointingHandCursor);
+    } else {
+      viewport()->setCursor(Qt::IBeamCursor);
+    }
+  } else {
+    viewport()->setCursor(Qt::IBeamCursor);
+  }
 
   QTextCursor cursor = cursorForPosition(event->pos());
   cursor.select(QTextCursor::WordUnderCursor);
@@ -419,6 +633,45 @@ void NMScriptEditor::mouseMoveEvent(QMouseEvent *event) {
     QToolTip::hideText();
     emit hoverDocChanged(QString(), QString());
   }
+}
+
+void NMScriptEditor::contextMenuEvent(QContextMenuEvent *event) {
+  QMenu *menu = createStandardContextMenu();
+  const auto &palette = NMStyleManager::instance().palette();
+  menu->setStyleSheet(QString("QMenu { background-color: %1; color: %2; }"
+                              "QMenu::item:selected { background-color: %3; }")
+                          .arg(palette.bgMedium.name())
+                          .arg(palette.textPrimary.name())
+                          .arg(palette.bgLight.name()));
+
+  menu->addSeparator();
+
+  const QString symbol = textUnderCursor();
+  const bool hasSymbol = !symbol.isEmpty();
+  const bool isNavigable =
+      hasSymbol && m_symbolLocations.contains(symbol.toLower());
+
+  QAction *gotoAction = menu->addAction(tr("Go to Definition (F12)"));
+  gotoAction->setEnabled(isNavigable);
+  connect(gotoAction, &QAction::triggered, this, &NMScriptEditor::goToDefinition);
+
+  QAction *findRefsAction = menu->addAction(tr("Find References (Shift+F12)"));
+  findRefsAction->setEnabled(hasSymbol);
+  connect(findRefsAction, &QAction::triggered, this, &NMScriptEditor::findReferences);
+
+  if (isNavigable && m_symbolLocations.value(symbol.toLower()).filePath.contains("scene")) {
+    QAction *graphAction = menu->addAction(tr("Navigate to Graph (Ctrl+Shift+G)"));
+    connect(graphAction, &QAction::triggered, this,
+            [this, symbol]() { emit navigateToGraphNodeRequested(symbol); });
+  }
+
+  menu->addSeparator();
+
+  QAction *snippetAction = menu->addAction(tr("Insert Snippet... (Ctrl+J)"));
+  connect(snippetAction, &QAction::triggered, this, &NMScriptEditor::showSnippetMenu);
+
+  menu->exec(event->globalPos());
+  delete menu;
 }
 
 QString NMScriptEditor::textUnderCursor() const {

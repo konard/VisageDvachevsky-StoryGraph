@@ -11,12 +11,17 @@
 
 #include <QAbstractItemView>
 #include <QCompleter>
+#include <QDialog>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
+#include <QGroupBox>
 #include <QHeaderView>
 #include <QKeyEvent>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
 #include <QPainter>
 #include <QRegularExpression>
 #include <QScrollBar>
@@ -252,30 +257,15 @@ void NMScriptEditorPanel::setupContent() {
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
-  m_toolBar = new QToolBar(m_contentWidget);
-  m_toolBar->setIconSize(QSize(16, 16));
-  QAction *actionSave = m_toolBar->addAction(tr("Save"));
-  actionSave->setToolTip(tr("Save (Ctrl+S)"));
-  connect(actionSave, &QAction::triggered, this,
-          &NMScriptEditorPanel::onSaveRequested);
-
-  QAction *actionSaveAll = m_toolBar->addAction(tr("Save All"));
-  actionSaveAll->setToolTip(tr("Save all open scripts"));
-  connect(actionSaveAll, &QAction::triggered, this,
-          &NMScriptEditorPanel::onSaveAllRequested);
-
-  QAction *actionFormat = m_toolBar->addAction(tr("Format"));
-  actionFormat->setToolTip(tr("Auto-format script (Ctrl+Shift+F)"));
-  actionFormat->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
-  actionFormat->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-  addAction(actionFormat);
-  connect(actionFormat, &QAction::triggered, this,
-          &NMScriptEditorPanel::onFormatRequested);
-
+  setupToolBar();
   layout->addWidget(m_toolBar);
 
   m_splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
-  m_fileTree = new QTreeWidget(m_splitter);
+
+  // Left panel with file tree and symbol list
+  m_leftSplitter = new QSplitter(Qt::Vertical, m_splitter);
+
+  m_fileTree = new QTreeWidget(m_leftSplitter);
   m_fileTree->setHeaderHidden(true);
   m_fileTree->setMinimumWidth(180);
   m_fileTree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -284,6 +274,36 @@ void NMScriptEditorPanel::setupContent() {
           &NMScriptEditorPanel::onFileActivated);
   connect(m_fileTree, &QTreeWidget::itemActivated, this,
           &NMScriptEditorPanel::onFileActivated);
+
+  // Symbol list for quick navigation
+  auto *symbolGroup = new QGroupBox(tr("Symbols"), m_leftSplitter);
+  auto *symbolLayout = new QVBoxLayout(symbolGroup);
+  symbolLayout->setContentsMargins(4, 4, 4, 4);
+  symbolLayout->setSpacing(4);
+
+  auto *symbolFilter = new QLineEdit(symbolGroup);
+  symbolFilter->setPlaceholderText(tr("Filter symbols..."));
+  symbolFilter->setClearButtonEnabled(true);
+  connect(symbolFilter, &QLineEdit::textChanged, this,
+          &NMScriptEditorPanel::filterSymbolList);
+  symbolLayout->addWidget(symbolFilter);
+
+  m_symbolList = new QListWidget(symbolGroup);
+  const auto &palette = NMStyleManager::instance().palette();
+  m_symbolList->setStyleSheet(
+      QString("QListWidget { background-color: %1; color: %2; border: none; }"
+              "QListWidget::item:selected { background-color: %3; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.bgLight.name()));
+  connect(m_symbolList, &QListWidget::itemDoubleClicked, this,
+          &NMScriptEditorPanel::onSymbolListActivated);
+  symbolLayout->addWidget(m_symbolList);
+
+  m_leftSplitter->addWidget(m_fileTree);
+  m_leftSplitter->addWidget(symbolGroup);
+  m_leftSplitter->setStretchFactor(0, 1);
+  m_leftSplitter->setStretchFactor(1, 1);
 
   m_tabs = new QTabWidget(m_splitter);
   m_tabs->setTabsClosable(true);
@@ -296,10 +316,58 @@ void NMScriptEditorPanel::setupContent() {
     delete widget;
   });
 
+  m_splitter->addWidget(m_leftSplitter);
+  m_splitter->addWidget(m_tabs);
+  m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
   layout->addWidget(m_splitter);
 
   setContentWidget(m_contentWidget);
+}
+
+void NMScriptEditorPanel::setupToolBar() {
+  m_toolBar = new QToolBar(m_contentWidget);
+  m_toolBar->setIconSize(QSize(16, 16));
+
+  QAction *actionSave = m_toolBar->addAction(tr("Save"));
+  actionSave->setToolTip(tr("Save (Ctrl+S)"));
+  connect(actionSave, &QAction::triggered, this,
+          &NMScriptEditorPanel::onSaveRequested);
+
+  QAction *actionSaveAll = m_toolBar->addAction(tr("Save All"));
+  actionSaveAll->setToolTip(tr("Save all open scripts"));
+  connect(actionSaveAll, &QAction::triggered, this,
+          &NMScriptEditorPanel::onSaveAllRequested);
+
+  m_toolBar->addSeparator();
+
+  QAction *actionFormat = m_toolBar->addAction(tr("Format"));
+  actionFormat->setToolTip(tr("Auto-format script (Ctrl+Shift+F)"));
+  actionFormat->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_F));
+  actionFormat->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  addAction(actionFormat);
+  connect(actionFormat, &QAction::triggered, this,
+          &NMScriptEditorPanel::onFormatRequested);
+
+  m_toolBar->addSeparator();
+
+  // Snippet insertion
+  QAction *actionSnippet = m_toolBar->addAction(tr("Insert"));
+  actionSnippet->setToolTip(tr("Insert code snippet (Ctrl+J)"));
+  actionSnippet->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_J));
+  actionSnippet->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  addAction(actionSnippet);
+  connect(actionSnippet, &QAction::triggered, this,
+          &NMScriptEditorPanel::onInsertSnippetRequested);
+
+  // Symbol navigator
+  QAction *actionSymbols = m_toolBar->addAction(tr("Symbols"));
+  actionSymbols->setToolTip(tr("Open symbol navigator (Ctrl+Shift+O)"));
+  actionSymbols->setShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_O));
+  actionSymbols->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  addAction(actionSymbols);
+  connect(actionSymbols, &QAction::triggered, this,
+          &NMScriptEditorPanel::onSymbolNavigatorRequested);
 }
 
 void NMScriptEditorPanel::addEditorTab(const QString &path) {
@@ -314,6 +382,8 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   editor->setPlainText(content);
   editor->setHoverDocs(detail::buildHoverDocs());
   editor->setDocHtml(detail::buildDocHtml());
+  editor->setSymbolLocations(buildSymbolLocations());
+
   connect(editor, &NMScriptEditor::requestSave, this,
           &NMScriptEditorPanel::onSaveRequested);
   connect(editor, &NMScriptEditor::hoverDocChanged, this,
@@ -322,6 +392,14 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           });
   connect(editor, &QPlainTextEdit::textChanged, this,
           [this]() { m_diagnosticsTimer.start(); });
+
+  // IDE feature connections
+  connect(editor, &NMScriptEditor::goToDefinitionRequested, this,
+          &NMScriptEditorPanel::onGoToDefinition);
+  connect(editor, &NMScriptEditor::findReferencesRequested, this,
+          &NMScriptEditorPanel::onFindReferences);
+  connect(editor, &NMScriptEditor::navigateToGraphNodeRequested, this,
+          &NMScriptEditorPanel::onNavigateToGraphNode);
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -464,6 +542,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
     pushCompletionsToEditors();
+    refreshSymbolList();
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
     }
@@ -474,6 +553,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   fs::path base(root.toStdString());
   if (!fs::exists(base)) {
     pushCompletionsToEditors();
+    refreshSymbolList();
     return;
   }
 
@@ -533,6 +613,34 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
       const QString content = QString::fromUtf8(file.readAll());
       file.close();
 
+      // Collect symbols with line numbers
+      const QStringList lines = content.split('\n');
+      for (int lineNum = 0; lineNum < lines.size(); ++lineNum) {
+        const QString &line = lines[lineNum];
+
+        // Scenes with line numbers
+        QRegularExpressionMatch sceneMatch = reScene.match(line);
+        if (sceneMatch.hasMatch()) {
+          const QString value = sceneMatch.captured(1);
+          if (!seenScenes.contains(value.toLower())) {
+            seenScenes.insert(value.toLower());
+            m_symbolIndex.scenes.insert(value, path);
+            m_symbolIndex.sceneLines.insert(value, lineNum + 1);
+          }
+        }
+
+        // Characters with line numbers
+        QRegularExpressionMatch charMatch = reCharacter.match(line);
+        if (charMatch.hasMatch()) {
+          const QString value = charMatch.captured(1);
+          if (!seenCharacters.contains(value.toLower())) {
+            seenCharacters.insert(value.toLower());
+            m_symbolIndex.characters.insert(value, path);
+            m_symbolIndex.characterLines.insert(value, lineNum + 1);
+          }
+        }
+      }
+
       auto collect = [&](const QRegularExpression &regex, auto &&callback) {
         QRegularExpressionMatchIterator it = regex.globalMatch(content);
         while (it.hasNext()) {
@@ -541,16 +649,6 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         }
       };
 
-      collect(reScene, [&](const QString &value) {
-        insertMap(m_symbolIndex.scenes, seenScenes, value, path);
-        if (value.isEmpty()) {
-          issues.push_back({QFileInfo(path).fileName(), 0,
-                            tr("Scene block missing identifier"), "warning"});
-        }
-      });
-      collect(reCharacter, [&](const QString &value) {
-        insertMap(m_symbolIndex.characters, seenCharacters, value, path);
-      });
       collect(reSetFlag, [&](const QString &value) {
         insertMap(m_symbolIndex.flags, seenFlags, value, path);
       });
@@ -576,6 +674,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   }
 
   pushCompletionsToEditors();
+  refreshSymbolList();
   if (m_issuesPanel) {
     m_issuesPanel->setIssues(issues);
   }
@@ -636,6 +735,10 @@ void NMScriptEditorPanel::runDiagnostics() {
   }
   const QString text = editor->toPlainText();
   QList<NMScriptIssue> issues = validateSource(path, text);
+
+  // Update inline error markers in the editor
+  editor->setDiagnostics(issues);
+
   if (m_issuesPanel) {
     m_issuesPanel->setIssues(issues);
   }
@@ -793,11 +896,15 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
     docHtml.insert(it.key(), it.value());
   }
 
+  // Build symbol locations for go-to-definition
+  const auto symbolLocations = buildSymbolLocations();
+
   for (auto *editor : editors()) {
     editor->setCompletionEntries(combined);
     editor->setHoverDocs(hoverDocs);
     editor->setProjectDocs(projectHoverDocs);
     editor->setDocHtml(docHtml);
+    editor->setSymbolLocations(symbolLocations);
   }
 
   m_diagnosticsTimer.start();
@@ -814,6 +921,261 @@ QList<NMScriptEditor *> NMScriptEditorPanel::editors() const {
     }
   }
   return list;
+}
+
+NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
+  if (!m_tabs) {
+    return nullptr;
+  }
+  return qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+}
+
+bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+  const QString key = sceneName.toLower();
+  for (auto it = m_symbolIndex.scenes.constBegin();
+       it != m_symbolIndex.scenes.constEnd(); ++it) {
+    if (it.key().toLower() == key) {
+      const QString filePath = it.value();
+      const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
+      goToLocation(filePath, line);
+      return true;
+    }
+  }
+  return false;
+}
+
+QList<ReferenceResult>
+NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
+  QList<ReferenceResult> results;
+  const QString root = scriptsRootPath();
+  if (root.isEmpty()) {
+    return results;
+  }
+
+  const QString lowerSymbol = symbol.toLower();
+  const QRegularExpression re(QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
+                              QRegularExpression::CaseInsensitiveOption);
+
+  namespace fs = std::filesystem;
+  fs::path base(root.toStdString());
+  if (!fs::exists(base)) {
+    return results;
+  }
+
+  try {
+    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+      if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
+        continue;
+      }
+
+      const QString filePath = QString::fromStdString(entry.path().string());
+      QFile file(filePath);
+      if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        continue;
+      }
+
+      const QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
+      for (int i = 0; i < lines.size(); ++i) {
+        const QString &line = lines[i];
+        if (re.match(line).hasMatch()) {
+          ReferenceResult ref;
+          ref.filePath = filePath;
+          ref.line = i + 1;
+          ref.context = line.trimmed();
+
+          // Check if this is a definition (scene, character declaration)
+          ref.isDefinition = line.contains(
+              QRegularExpression(QString("\\b(scene|character)\\s+%1\\b")
+                                     .arg(QRegularExpression::escape(symbol)),
+                                 QRegularExpression::CaseInsensitiveOption));
+          results.append(ref);
+        }
+      }
+    }
+  } catch (const std::exception &e) {
+    core::Logger::instance().warning(
+        std::string("Failed to find references: ") + e.what());
+  }
+
+  return results;
+}
+
+void NMScriptEditorPanel::onSymbolListActivated(QListWidgetItem *item) {
+  if (!item) {
+    return;
+  }
+  const QString filePath = item->data(Qt::UserRole).toString();
+  const int line = item->data(Qt::UserRole + 1).toInt();
+  if (!filePath.isEmpty()) {
+    goToLocation(filePath, line);
+  }
+}
+
+void NMScriptEditorPanel::onSymbolNavigatorRequested() {
+  refreshSymbolList();
+  if (m_symbolList) {
+    m_symbolList->setFocus();
+  }
+}
+
+void NMScriptEditorPanel::onGoToDefinition(const QString &symbol,
+                                           const SymbolLocation &location) {
+  if (!location.filePath.isEmpty()) {
+    goToLocation(location.filePath, location.line);
+  }
+}
+
+void NMScriptEditorPanel::onFindReferences(const QString &symbol) {
+  const QList<ReferenceResult> references = findAllReferences(symbol);
+  showReferencesDialog(symbol, references);
+  emit referencesFound(symbol, references);
+}
+
+void NMScriptEditorPanel::onInsertSnippetRequested() {
+  if (auto *editor = currentEditor()) {
+    editor->insertSnippet("scene");
+  }
+}
+
+void NMScriptEditorPanel::onNavigateToGraphNode(const QString &sceneId) {
+  emit navigateToGraphNode(sceneId);
+}
+
+void NMScriptEditorPanel::refreshSymbolList() {
+  if (!m_symbolList) {
+    return;
+  }
+  m_symbolList->clear();
+
+  const auto &palette = NMStyleManager::instance().palette();
+  auto addItems = [this, &palette](const QHash<QString, QString> &map,
+                                   const QString &typeLabel,
+                                   const QColor &color) {
+    for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
+      auto *item = new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
+      item->setData(Qt::UserRole, it.value());
+      item->setData(Qt::UserRole + 1, m_symbolIndex.sceneLines.value(it.key(), 1));
+      item->setForeground(color);
+      m_symbolList->addItem(item);
+    }
+  };
+
+  addItems(m_symbolIndex.scenes, tr("scene"), palette.accentPrimary);
+  addItems(m_symbolIndex.characters, tr("character"), QColor(220, 180, 120));
+  addItems(m_symbolIndex.flags, tr("flag"), QColor(170, 200, 255));
+  addItems(m_symbolIndex.variables, tr("variable"), QColor(200, 170, 255));
+}
+
+void NMScriptEditorPanel::filterSymbolList(const QString &filter) {
+  if (!m_symbolList) {
+    return;
+  }
+  for (int i = 0; i < m_symbolList->count(); ++i) {
+    auto *item = m_symbolList->item(i);
+    const bool matches =
+        filter.isEmpty() ||
+        item->text().contains(filter, Qt::CaseInsensitive);
+    item->setHidden(!matches);
+  }
+}
+
+void NMScriptEditorPanel::showReferencesDialog(
+    const QString &symbol, const QList<ReferenceResult> &references) {
+  if (references.isEmpty()) {
+    return;
+  }
+
+  // Create a simple dialog to show references
+  auto *dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("References to '%1' (%2 found)")
+                             .arg(symbol)
+                             .arg(references.size()));
+  dialog->resize(600, 400);
+
+  auto *layout = new QVBoxLayout(dialog);
+  auto *list = new QListWidget(dialog);
+
+  const auto &palette = NMStyleManager::instance().palette();
+  list->setStyleSheet(
+      QString("QListWidget { background-color: %1; color: %2; }"
+              "QListWidget::item:selected { background-color: %3; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.bgLight.name()));
+
+  for (const auto &ref : references) {
+    const QString fileName = QFileInfo(ref.filePath).fileName();
+    QString label = QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
+    if (ref.isDefinition) {
+      label = "[DEF] " + label;
+    }
+    auto *item = new QListWidgetItem(label);
+    item->setData(Qt::UserRole, ref.filePath);
+    item->setData(Qt::UserRole + 1, ref.line);
+    if (ref.isDefinition) {
+      item->setForeground(palette.accentPrimary);
+    }
+    list->addItem(item);
+  }
+
+  connect(list, &QListWidget::itemDoubleClicked, this,
+          [this, dialog](QListWidgetItem *item) {
+            const QString path = item->data(Qt::UserRole).toString();
+            const int line = item->data(Qt::UserRole + 1).toInt();
+            goToLocation(path, line);
+            dialog->accept();
+          });
+
+  layout->addWidget(list);
+  dialog->setLayout(layout);
+  dialog->setAttribute(Qt::WA_DeleteOnClose);
+  dialog->show();
+}
+
+QHash<QString, SymbolLocation>
+NMScriptEditorPanel::buildSymbolLocations() const {
+  QHash<QString, SymbolLocation> locations;
+
+  // Add scenes
+  for (auto it = m_symbolIndex.scenes.constBegin();
+       it != m_symbolIndex.scenes.constEnd(); ++it) {
+    SymbolLocation loc;
+    loc.filePath = it.value();
+    loc.line = m_symbolIndex.sceneLines.value(it.key(), 1);
+    loc.context = QString("scene %1").arg(it.key());
+    locations.insert(it.key().toLower(), loc);
+  }
+
+  // Add characters
+  for (auto it = m_symbolIndex.characters.constBegin();
+       it != m_symbolIndex.characters.constEnd(); ++it) {
+    SymbolLocation loc;
+    loc.filePath = it.value();
+    loc.line = m_symbolIndex.characterLines.value(it.key(), 1);
+    loc.context = QString("character %1").arg(it.key());
+    locations.insert(it.key().toLower(), loc);
+  }
+
+  // Add flags and variables
+  for (auto it = m_symbolIndex.flags.constBegin();
+       it != m_symbolIndex.flags.constEnd(); ++it) {
+    SymbolLocation loc;
+    loc.filePath = it.value();
+    loc.line = 1;
+    loc.context = QString("flag %1").arg(it.key());
+    locations.insert(it.key().toLower(), loc);
+  }
+
+  for (auto it = m_symbolIndex.variables.constBegin();
+       it != m_symbolIndex.variables.constEnd(); ++it) {
+    SymbolLocation loc;
+    loc.filePath = it.value();
+    loc.line = 1;
+    loc.context = QString("variable %1").arg(it.key());
+    locations.insert(it.key().toLower(), loc);
+  }
+
+  return locations;
 }
 
 } // namespace NovelMind::editor::qt
