@@ -27,10 +27,12 @@
 #include <QMenu>
 #include <QPlainTextEdit>
 #include <QPointer>
+#include <QRegularExpression>
 #include <QScrollArea>
 #include <QSplitter>
 #include <QSyntaxHighlighter>
 #include <QTabWidget>
+#include <QTextEdit>
 #include <QTimer>
 #include <QToolBar>
 #include <QTreeWidget>
