@@ -77,7 +77,13 @@ void NMGraphConnectionItem::updatePath() {
 }
 
 QRectF NMGraphConnectionItem::boundingRect() const {
-  return m_path.boundingRect().adjusted(-5, -5, 5, 5);
+  // Expand bounding rect to include label area
+  QRectF rect = m_path.boundingRect().adjusted(-5, -5, 5, 5);
+  if (!m_label.isEmpty()) {
+    // Add extra space for label text (centered on path)
+    rect = rect.adjusted(-50, -20, 50, 20);
+  }
+  return rect;
 }
 
 void NMGraphConnectionItem::paint(QPainter *painter,
@@ -89,9 +95,65 @@ void NMGraphConnectionItem::paint(QPainter *painter,
   const auto &palette = NMStyleManager::instance().palette();
 
   painter->setRenderHint(QPainter::Antialiasing);
-  painter->setPen(QPen(palette.connectionLine, 2));
+
+  // Determine connection color based on branch type
+  QColor lineColor = palette.connectionLine;
+  if (!m_label.isEmpty()) {
+    // Use different colors for different branch types
+    if (m_label.toLower() == "true") {
+      lineColor = QColor(100, 200, 100); // Green for true
+    } else if (m_label.toLower() == "false") {
+      lineColor = QColor(200, 100, 100); // Red for false
+    } else if (m_branchIndex >= 0) {
+      // Use a color palette for choice options
+      static const QColor branchColors[] = {
+          QColor(100, 180, 255), // Blue
+          QColor(255, 180, 100), // Orange
+          QColor(180, 100, 255), // Purple
+          QColor(255, 100, 180), // Pink
+          QColor(100, 255, 180), // Cyan
+      };
+      lineColor = branchColors[m_branchIndex % 5];
+    }
+  }
+
+  painter->setPen(QPen(lineColor, 2));
   painter->setBrush(Qt::NoBrush);
   painter->drawPath(m_path);
+
+  // Draw edge label if set
+  if (!m_label.isEmpty()) {
+    // Calculate label position (middle of the bezier curve)
+    qreal t = 0.5;
+    QPointF labelPos = m_path.pointAtPercent(t);
+
+    // Draw label background
+    QFont labelFont = NMStyleManager::instance().defaultFont();
+    labelFont.setPointSize(labelFont.pointSize() - 1);
+    painter->setFont(labelFont);
+
+    QFontMetrics fm(labelFont);
+    QString displayLabel = m_label;
+    // Truncate long labels
+    if (displayLabel.length() > 15) {
+      displayLabel = displayLabel.left(12) + "...";
+    }
+    QRect textRect = fm.boundingRect(displayLabel);
+    textRect.adjust(-4, -2, 4, 2);
+
+    // Position label slightly above the path
+    QPointF bgPos = labelPos - QPointF(textRect.width() / 2.0, textRect.height() + 4);
+    QRectF bgRect(bgPos.x(), bgPos.y(), textRect.width(), textRect.height());
+
+    // Draw rounded background
+    painter->setBrush(QColor(40, 44, 52, 220)); // Semi-transparent dark bg
+    painter->setPen(QPen(lineColor.darker(120), 1));
+    painter->drawRoundedRect(bgRect, 4, 4);
+
+    // Draw label text
+    painter->setPen(lineColor.lighter(130));
+    painter->drawText(bgRect, Qt::AlignCenter, displayLabel);
+  }
 
   // Restore painter state
   painter->restore();

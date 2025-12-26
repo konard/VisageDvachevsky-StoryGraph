@@ -418,6 +418,66 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
             &NMInspectorPanel::onGroupPropertyChanged);
   }
 
+  // Choice node branching UI - shows which choice option leads to which target
+  if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
+    auto *branchGroup = addGroup(tr("Branch Mapping"));
+
+    const QStringList choiceOptions = node->choiceOptions();
+    const QHash<QString, QString> choiceTargets = node->choiceTargets();
+
+    if (choiceOptions.isEmpty()) {
+      branchGroup->addProperty(tr("Info"),
+                               tr("Add choices above to configure branching"));
+    } else {
+      // Build a display string showing choice → target mappings
+      QString mappingDisplay;
+      for (int i = 0; i < choiceOptions.size(); ++i) {
+        const QString &option = choiceOptions[i];
+        const QString target = choiceTargets.value(option);
+        QString targetDisplay = target.isEmpty() ? tr("(not connected)")
+                                                 : target;
+        // Truncate long option text for display
+        QString optionDisplay = option;
+        if (optionDisplay.length() > 25) {
+          optionDisplay = optionDisplay.left(22) + "...";
+        }
+        mappingDisplay += QString("%1. %2 → %3")
+                              .arg(i + 1)
+                              .arg(optionDisplay)
+                              .arg(targetDisplay);
+        if (i < choiceOptions.size() - 1) {
+          mappingDisplay += "\n";
+        }
+      }
+
+      if (m_editMode) {
+        // Show the mapping as editable multiline (format: "OptionText=TargetNodeId")
+        QString editableMapping;
+        for (const QString &option : choiceOptions) {
+          const QString target = choiceTargets.value(option);
+          editableMapping += option + "=" + target + "\n";
+        }
+        editableMapping = editableMapping.trimmed();
+
+        if (auto *mappingEdit = branchGroup->addEditableProperty(
+                "choiceTargets", tr("Choice → Target"),
+                NMPropertyType::MultiLine, editableMapping)) {
+          trackPropertyWidget("choiceTargets", mappingEdit);
+        }
+      } else {
+        branchGroup->addProperty(tr("Mapping"), mappingDisplay);
+      }
+
+      // Add helper text
+      branchGroup->addProperty(tr("Help"),
+          tr("Connect edges from this node to target nodes.\n"
+             "Each connection is automatically mapped to the next choice option."));
+    }
+
+    connect(branchGroup, &NMPropertyGroup::propertyValueChanged, this,
+            &NMInspectorPanel::onGroupPropertyChanged);
+  }
+
   if (node->nodeType().contains("Script", Qt::CaseInsensitive)) {
     auto *scriptGroup = addGroup(tr("Script"));
     scriptGroup->addProperty(tr("File"), node->scriptPath());
@@ -463,6 +523,56 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
     }
 
     connect(conditionGroup, &NMPropertyGroup::propertyValueChanged, this,
+            &NMInspectorPanel::onGroupPropertyChanged);
+
+    // Condition branch mapping UI - shows which output leads to which target
+    auto *branchGroup = addGroup(tr("Branch Mapping"));
+
+    const QStringList conditionOutputs = node->conditionOutputs();
+    const QHash<QString, QString> conditionTargets = node->conditionTargets();
+
+    // Use default "true/false" if no outputs defined
+    QStringList outputs = conditionOutputs.isEmpty()
+                              ? QStringList{"true", "false"}
+                              : conditionOutputs;
+
+    // Build display showing output → target mappings
+    QString mappingDisplay;
+    for (int i = 0; i < outputs.size(); ++i) {
+      const QString &output = outputs[i];
+      const QString target = conditionTargets.value(output);
+      QString targetDisplay = target.isEmpty() ? tr("(not connected)") : target;
+      mappingDisplay += QString("%1 → %2").arg(output).arg(targetDisplay);
+      if (i < outputs.size() - 1) {
+        mappingDisplay += "\n";
+      }
+    }
+
+    if (m_editMode) {
+      // Show the mapping as editable multiline (format: "OutputLabel=TargetNodeId")
+      QString editableMapping;
+      for (const QString &output : outputs) {
+        const QString target = conditionTargets.value(output);
+        editableMapping += output + "=" + target + "\n";
+      }
+      editableMapping = editableMapping.trimmed();
+
+      if (auto *mappingEdit = branchGroup->addEditableProperty(
+              "conditionTargets", tr("Output → Target"),
+              NMPropertyType::MultiLine, editableMapping)) {
+        trackPropertyWidget("conditionTargets", mappingEdit);
+      }
+    } else {
+      branchGroup->addProperty(tr("Mapping"), mappingDisplay);
+    }
+
+    // Add helper text explaining the condition logic
+    QString helpText = tr("Expression is evaluated at runtime.\n"
+                          "Connect edges from this node to target nodes.\n"
+                          "First connection = first output (e.g., 'true').");
+    branchGroup->addProperty(tr("Help"), helpText);
+
+    connect(branchGroup, &NMPropertyGroup::propertyValueChanged, this,
             &NMInspectorPanel::onGroupPropertyChanged);
   }
 
