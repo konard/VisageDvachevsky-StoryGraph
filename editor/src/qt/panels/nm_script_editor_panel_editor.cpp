@@ -813,10 +813,10 @@ void NMFindReplaceWidget::updateMatchCount() {
 }
 
 // ============================================================================
-// NMCommandPalette - VSCode-like Command Palette
+// NMScriptCommandPalette - VSCode-like Command Palette
 // ============================================================================
 
-NMCommandPalette::NMCommandPalette(QWidget *parent) : QWidget(parent) {
+NMScriptCommandPalette::NMScriptCommandPalette(QWidget *parent) : QWidget(parent) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
   setFixedWidth(500);
   setMaximumHeight(400);
@@ -845,23 +845,23 @@ NMCommandPalette::NMCommandPalette(QWidget *parent) : QWidget(parent) {
   m_filterEdit->setPlaceholderText(tr("> Type a command..."));
   m_filterEdit->installEventFilter(this);
   connect(m_filterEdit, &QLineEdit::textChanged, this,
-          &NMCommandPalette::onFilterChanged);
+          &NMScriptCommandPalette::onFilterChanged);
 
   m_commandList = new QListWidget(this);
   connect(m_commandList, &QListWidget::itemActivated, this,
-          &NMCommandPalette::onItemActivated);
+          &NMScriptCommandPalette::onItemActivated);
   connect(m_commandList, &QListWidget::itemDoubleClicked, this,
-          &NMCommandPalette::onItemActivated);
+          &NMScriptCommandPalette::onItemActivated);
 
   layout->addWidget(m_filterEdit);
   layout->addWidget(m_commandList);
 }
 
-void NMCommandPalette::addCommand(const Command &cmd) {
+void NMScriptCommandPalette::addCommand(const Command &cmd) {
   m_commands.append(cmd);
 }
 
-void NMCommandPalette::show() {
+void NMScriptCommandPalette::show() {
   m_filterEdit->clear();
   updateCommandList(QString());
 
@@ -876,7 +876,7 @@ void NMCommandPalette::show() {
   raise();
 }
 
-bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
+bool NMScriptCommandPalette::eventFilter(QObject *obj, QEvent *event) {
   if (obj == m_filterEdit && event->type() == QEvent::KeyPress) {
     auto *keyEvent = static_cast<QKeyEvent *>(event);
 
@@ -913,11 +913,11 @@ bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
   return QWidget::eventFilter(obj, event);
 }
 
-void NMCommandPalette::onFilterChanged(const QString &filter) {
+void NMScriptCommandPalette::onFilterChanged(const QString &filter) {
   updateCommandList(filter);
 }
 
-void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
+void NMScriptCommandPalette::onItemActivated(QListWidgetItem *item) {
   if (!item) {
     return;
   }
@@ -932,7 +932,7 @@ void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
   }
 }
 
-void NMCommandPalette::updateCommandList(const QString &filter) {
+void NMScriptCommandPalette::updateCommandList(const QString &filter) {
   m_commandList->clear();
 
   for (int i = 0; i < static_cast<int>(m_commands.size()); ++i) {

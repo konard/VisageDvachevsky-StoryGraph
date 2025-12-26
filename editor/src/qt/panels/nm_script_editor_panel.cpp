@@ -323,7 +323,7 @@ void NMScriptEditorPanel::setupContent() {
           [this]() { m_findReplaceWidget->hide(); });
 
   // Command Palette
-  m_commandPalette = new NMCommandPalette(this);
+  m_commandPalette = new NMScriptCommandPalette(this);
   setupCommandPalette();
 
   m_splitter->addWidget(m_leftSplitter);

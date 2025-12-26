@@ -98,7 +98,7 @@ struct SymbolLocation {
 class NMScriptEditor;
 class NMScriptMinimap;
 class NMFindReplaceWidget;
-class NMCommandPalette;
+class NMScriptCommandPalette;
 
 /**
  * @brief Minimap widget for code overview (VSCode-like)
@@ -211,7 +211,7 @@ private:
  * @brief Command palette for quick access to commands (VSCode-like
  * Ctrl+Shift+P)
  */
-class NMCommandPalette final : public QWidget {
+class NMScriptCommandPalette final : public QWidget {
   Q_OBJECT
 
 public:
@@ -225,7 +225,7 @@ public:
     std::function<void()> action;
   };
 
-  explicit NMCommandPalette(QWidget *parent = nullptr);
+  explicit NMScriptCommandPalette(QWidget *parent = nullptr);
 
   /**
    * @brief Register a command
@@ -599,7 +599,7 @@ private:
   QTabWidget *m_tabs = nullptr;
   QToolBar *m_toolBar = nullptr;
   NMFindReplaceWidget *m_findReplaceWidget = nullptr;
-  NMCommandPalette *m_commandPalette = nullptr;
+  NMScriptCommandPalette *m_commandPalette = nullptr;
 
   QHash<QWidget *, QString> m_tabPaths;
   QPointer<QFileSystemWatcher> m_scriptWatcher;
