@@ -146,6 +146,38 @@ public:
     return m_nodeType.compare("Condition", Qt::CaseInsensitive) == 0;
   }
 
+  // Choice branching properties - maps choice options to target node IDs
+  void setChoiceTargets(const QHash<QString, QString> &targets) {
+    m_choiceTargets = targets;
+  }
+  [[nodiscard]] QHash<QString, QString> choiceTargets() const {
+    return m_choiceTargets;
+  }
+  void setChoiceTarget(const QString &choiceOption, const QString &targetNodeId) {
+    m_choiceTargets.insert(choiceOption, targetNodeId);
+  }
+  [[nodiscard]] QString choiceTarget(const QString &choiceOption) const {
+    return m_choiceTargets.value(choiceOption);
+  }
+
+  // Condition branching properties - maps condition outputs to target node IDs
+  void setConditionTargets(const QHash<QString, QString> &targets) {
+    m_conditionTargets = targets;
+  }
+  [[nodiscard]] QHash<QString, QString> conditionTargets() const {
+    return m_conditionTargets;
+  }
+  void setConditionTarget(const QString &outputLabel, const QString &targetNodeId) {
+    m_conditionTargets.insert(outputLabel, targetNodeId);
+  }
+  [[nodiscard]] QString conditionTarget(const QString &outputLabel) const {
+    return m_conditionTargets.value(outputLabel);
+  }
+
+  [[nodiscard]] bool isChoiceNode() const {
+    return m_nodeType.compare("Choice", Qt::CaseInsensitive) == 0;
+  }
+
   [[nodiscard]] bool hasBreakpoint() const { return m_hasBreakpoint; }
   [[nodiscard]] bool isCurrentlyExecuting() const {
     return m_isCurrentlyExecuting;
@@ -201,6 +233,10 @@ private:
   QString m_conditionExpression;
   QStringList m_conditionOutputs;
 
+  // Choice/Condition branching - maps option/output labels to target node IDs
+  QHash<QString, QString> m_choiceTargets;
+  QHash<QString, QString> m_conditionTargets;
+
   static constexpr qreal NODE_WIDTH = 200;
   static constexpr qreal NODE_HEIGHT = 80;
   static constexpr qreal SCENE_NODE_HEIGHT = 100; // Larger for scene nodes
@@ -224,6 +260,14 @@ public:
   [[nodiscard]] NMGraphNodeItem *startNode() const { return m_startNode; }
   [[nodiscard]] NMGraphNodeItem *endNode() const { return m_endNode; }
 
+  // Edge label for branch indication (e.g., "true", "false", "Option 1")
+  void setLabel(const QString &label) { m_label = label; }
+  [[nodiscard]] QString label() const { return m_label; }
+
+  // Branch index for ordering (0-based)
+  void setBranchIndex(int index) { m_branchIndex = index; }
+  [[nodiscard]] int branchIndex() const { return m_branchIndex; }
+
   QRectF boundingRect() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget) override;
@@ -232,6 +276,8 @@ private:
   NMGraphNodeItem *m_startNode;
   NMGraphNodeItem *m_endNode;
   QPainterPath m_path;
+  QString m_label;        // Branch label (e.g., "true", "Option 1")
+  int m_branchIndex = -1; // -1 means no specific branch
 };
 
 /**
@@ -456,6 +502,9 @@ public:
     // Condition Node specific properties
     QString conditionExpression;  // e.g., "has_key && visited_shop"
     QStringList conditionOutputs; // Branch labels, e.g., ["true", "false"]
+    // Branching mappings - maps choice options/condition outputs to target node IDs
+    QHash<QString, QString> choiceTargets;     // e.g., {"Option 1": "node_123"}
+    QHash<QString, QString> conditionTargets;  // e.g., {"true": "node_456"}
   };
 
   void onInitialize() override;

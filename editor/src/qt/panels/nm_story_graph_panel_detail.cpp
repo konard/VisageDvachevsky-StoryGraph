@@ -138,6 +138,18 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
       }
     }
 
+    // Choice branching mappings
+    const QJsonObject choiceTargetsObj = obj.value("choiceTargets").toObject();
+    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end(); ++it) {
+      node.choiceTargets.insert(it.key(), it.value().toString());
+    }
+
+    // Condition branching mappings
+    const QJsonObject conditionTargetsObj = obj.value("conditionTargets").toObject();
+    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end(); ++it) {
+      node.conditionTargets.insert(it.key(), it.value().toString());
+    }
+
     nodes.insert(id, node);
   }
 
@@ -221,6 +233,26 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
         conditionOutputsArray.append(output);
       }
       obj.insert("conditionOutputs", conditionOutputsArray);
+    }
+
+    // Choice branching mappings
+    if (!it.value().choiceTargets.isEmpty()) {
+      QJsonObject choiceTargetsObj;
+      for (auto ct = it.value().choiceTargets.constBegin();
+           ct != it.value().choiceTargets.constEnd(); ++ct) {
+        choiceTargetsObj.insert(ct.key(), ct.value());
+      }
+      obj.insert("choiceTargets", choiceTargetsObj);
+    }
+
+    // Condition branching mappings
+    if (!it.value().conditionTargets.isEmpty()) {
+      QJsonObject conditionTargetsObj;
+      for (auto ct = it.value().conditionTargets.constBegin();
+           ct != it.value().conditionTargets.constEnd(); ++ct) {
+        conditionTargetsObj.insert(ct.key(), ct.value());
+      }
+      obj.insert("conditionTargets", conditionTargetsObj);
     }
 
     nodeArray.push_back(obj);
@@ -556,6 +588,10 @@ NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
   // Condition Node specific properties
   layout.conditionExpression = node->conditionExpression();
   layout.conditionOutputs = node->conditionOutputs();
+
+  // Branching mappings
+  layout.choiceTargets = node->choiceTargets();
+  layout.conditionTargets = node->conditionTargets();
 
   return layout;
 }

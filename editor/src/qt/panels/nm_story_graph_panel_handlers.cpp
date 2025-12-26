@@ -296,18 +296,82 @@ void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId,
     return;
   }
 
-  QStringList targets;
+  // Collect all connections from this source node
+  QList<NMGraphConnectionItem *> outgoingConns;
   for (auto *conn : m_scene->connections()) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
     if (conn->startNode()->nodeId() == fromNodeId) {
-      targets << conn->endNode()->nodeIdString();
+      outgoingConns.append(conn);
     }
+  }
+
+  // Update connection labels for Choice nodes
+  if (from->isChoiceNode()) {
+    const QStringList choices = from->choiceOptions();
+    QHash<QString, QString> newTargets;
+
+    for (int i = 0; i < outgoingConns.size(); ++i) {
+      auto *conn = outgoingConns[i];
+      QString label;
+      if (i < choices.size()) {
+        label = choices[i];
+        // Update the mapping
+        newTargets.insert(label, conn->endNode()->nodeIdString());
+      } else {
+        label = QString("Option %1").arg(i + 1);
+      }
+      conn->setLabel(label);
+      conn->setBranchIndex(i);
+      conn->update();
+    }
+
+    // Update the node's choice targets mapping
+    from->setChoiceTargets(newTargets);
+  }
+
+  // Update connection labels for Condition nodes
+  if (from->isConditionNode()) {
+    QStringList outputs = from->conditionOutputs();
+    if (outputs.isEmpty()) {
+      outputs << "true" << "false"; // Default outputs
+    }
+
+    QHash<QString, QString> newTargets;
+    for (int i = 0; i < outgoingConns.size(); ++i) {
+      auto *conn = outgoingConns[i];
+      QString label;
+      if (i < outputs.size()) {
+        label = outputs[i];
+        newTargets.insert(label, conn->endNode()->nodeIdString());
+      } else {
+        label = QString("branch_%1").arg(i + 1);
+      }
+      conn->setLabel(label);
+      conn->setBranchIndex(i);
+      conn->update();
+    }
+
+    // Update the node's condition targets mapping
+    from->setConditionTargets(newTargets);
+  }
+
+  // Build targets list for script update
+  QStringList targets;
+  for (auto *conn : outgoingConns) {
+    targets << conn->endNode()->nodeIdString();
   }
 
   detail::updateSceneGraphBlock(from->nodeIdString(),
                                 detail::resolveScriptPath(from), targets);
+
+  // Save the updated layout
+  if (!m_isRebuilding) {
+    LayoutNode layout = detail::buildLayoutFromNode(from);
+    m_layoutNodes.insert(from->nodeIdString(), layout);
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+  }
 }
 
 void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
@@ -321,18 +385,79 @@ void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
     return;
   }
 
-  QStringList targets;
+  // Collect remaining connections from this source node
+  QList<NMGraphConnectionItem *> outgoingConns;
   for (auto *conn : m_scene->connections()) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
     if (conn->startNode()->nodeId() == fromNodeId) {
-      targets << conn->endNode()->nodeIdString();
+      outgoingConns.append(conn);
     }
+  }
+
+  // Update connection labels for Choice nodes
+  if (from->isChoiceNode()) {
+    const QStringList choices = from->choiceOptions();
+    QHash<QString, QString> newTargets;
+
+    for (int i = 0; i < outgoingConns.size(); ++i) {
+      auto *conn = outgoingConns[i];
+      QString label;
+      if (i < choices.size()) {
+        label = choices[i];
+        newTargets.insert(label, conn->endNode()->nodeIdString());
+      } else {
+        label = QString("Option %1").arg(i + 1);
+      }
+      conn->setLabel(label);
+      conn->setBranchIndex(i);
+      conn->update();
+    }
+
+    from->setChoiceTargets(newTargets);
+  }
+
+  // Update connection labels for Condition nodes
+  if (from->isConditionNode()) {
+    QStringList outputs = from->conditionOutputs();
+    if (outputs.isEmpty()) {
+      outputs << "true" << "false";
+    }
+
+    QHash<QString, QString> newTargets;
+    for (int i = 0; i < outgoingConns.size(); ++i) {
+      auto *conn = outgoingConns[i];
+      QString label;
+      if (i < outputs.size()) {
+        label = outputs[i];
+        newTargets.insert(label, conn->endNode()->nodeIdString());
+      } else {
+        label = QString("branch_%1").arg(i + 1);
+      }
+      conn->setLabel(label);
+      conn->setBranchIndex(i);
+      conn->update();
+    }
+
+    from->setConditionTargets(newTargets);
+  }
+
+  // Build targets list for script update
+  QStringList targets;
+  for (auto *conn : outgoingConns) {
+    targets << conn->endNode()->nodeIdString();
   }
 
   detail::updateSceneGraphBlock(from->nodeIdString(),
                                 detail::resolveScriptPath(from), targets);
+
+  // Save the updated layout
+  if (!m_isRebuilding) {
+    LayoutNode layout = detail::buildLayoutFromNode(from);
+    m_layoutNodes.insert(from->nodeIdString(), layout);
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+  }
 }
 
 NMGraphNodeItem *
@@ -551,6 +676,36 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
     node->setConditionExpression(newValue);
   } else if (propertyName == "conditionOutputs") {
     node->setConditionOutputs(detail::splitChoiceLines(newValue));
+  } else if (propertyName == "choiceTargets") {
+    // Parse "OptionText=TargetNodeId" format
+    QHash<QString, QString> targets;
+    const QStringList lines = detail::splitChoiceLines(newValue);
+    for (const QString &line : lines) {
+      int eqPos = line.indexOf('=');
+      if (eqPos > 0) {
+        QString option = line.left(eqPos).trimmed();
+        QString target = line.mid(eqPos + 1).trimmed();
+        if (!option.isEmpty()) {
+          targets.insert(option, target);
+        }
+      }
+    }
+    node->setChoiceTargets(targets);
+  } else if (propertyName == "conditionTargets") {
+    // Parse "OutputLabel=TargetNodeId" format
+    QHash<QString, QString> targets;
+    const QStringList lines = detail::splitChoiceLines(newValue);
+    for (const QString &line : lines) {
+      int eqPos = line.indexOf('=');
+      if (eqPos > 0) {
+        QString output = line.left(eqPos).trimmed();
+        QString target = line.mid(eqPos + 1).trimmed();
+        if (!output.isEmpty()) {
+          targets.insert(output, target);
+        }
+      }
+    }
+    node->setConditionTargets(targets);
   }
 
   if (!m_isRebuilding) {
