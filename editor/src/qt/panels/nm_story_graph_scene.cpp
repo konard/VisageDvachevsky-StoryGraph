@@ -83,7 +83,6 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
           QTextStream out(&scriptFile);
           out << "// " << node->nodeIdString() << "\n";
           out << "scene " << node->nodeIdString() << " {\n";
-          out << "    say \"New scene\"\n";
           out << "}\n";
         }
       }

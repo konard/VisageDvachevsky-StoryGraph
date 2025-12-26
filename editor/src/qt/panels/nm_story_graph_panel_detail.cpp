@@ -140,13 +140,16 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
 
     // Choice branching mappings
     const QJsonObject choiceTargetsObj = obj.value("choiceTargets").toObject();
-    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end(); ++it) {
+    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end();
+         ++it) {
       node.choiceTargets.insert(it.key(), it.value().toString());
     }
 
     // Condition branching mappings
-    const QJsonObject conditionTargetsObj = obj.value("conditionTargets").toObject();
-    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end(); ++it) {
+    const QJsonObject conditionTargetsObj =
+        obj.value("conditionTargets").toObject();
+    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end();
+         ++it) {
       node.conditionTargets.insert(it.key(), it.value().toString());
     }
 
@@ -417,6 +420,11 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
                              const QString &speaker, const QString &text) {
   if (sceneId.isEmpty() || scriptPath.isEmpty()) {
     return false;
+  }
+
+  // Skip if text is empty or is the default placeholder "New scene"
+  if (text.isEmpty() || text.trimmed() == "New scene") {
+    return true; // Not an error, just nothing to update
   }
 
   QFile file(scriptPath);
