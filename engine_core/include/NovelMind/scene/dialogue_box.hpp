@@ -15,6 +15,10 @@
 #include <optional>
 #include <string>
 
+namespace NovelMind::resource {
+class ResourceManager;
+} // namespace NovelMind::resource
+
 namespace NovelMind::Scene {
 
 /**
@@ -65,6 +69,12 @@ public:
    */
   explicit DialogueBox(const std::string &id);
   ~DialogueBox() override;
+
+  /**
+   * @brief Set the resource manager for font loading
+   * @param resources Pointer to the resource manager
+   */
+  void setResourceManager(resource::ResourceManager *resources);
 
   /**
    * @brief Set the dialogue box style
@@ -219,6 +229,8 @@ private:
   f32 m_autoAdvanceTimer;
 
   CompletionCallback m_onComplete;
+
+  resource::ResourceManager *m_resources = nullptr;
 };
 
 } // namespace NovelMind::Scene

@@ -29,6 +29,10 @@
 #include <string>
 #include <variant>
 
+namespace NovelMind::resource {
+class ResourceManager;
+} // namespace NovelMind::resource
+
 namespace NovelMind::scripting {
 
 // Forward declarations
@@ -163,6 +167,11 @@ public:
    * @brief Set the dialogue box for text display
    */
   void setDialogueBox(Scene::DialogueBox *dialogueBox);
+
+  /**
+   * @brief Set the resource manager for font loading in dialogue box
+   */
+  void setResourceManager(resource::ResourceManager *resources);
 
   /**
    * @brief Set the choice menu for player choices
@@ -347,6 +356,7 @@ private:
   Scene::ChoiceMenu *m_choiceMenu = nullptr;
   audio::AudioManager *m_audioManager = nullptr;
   scene::AnimationManager *m_animationManager = nullptr;
+  resource::ResourceManager *m_resources = nullptr;
 
   // State
   RuntimeState m_state = RuntimeState::Idle;

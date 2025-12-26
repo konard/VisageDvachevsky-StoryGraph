@@ -1,4 +1,5 @@
 #include "NovelMind/scene/dialogue_box.hpp"
+#include "NovelMind/resource/resource_manager.hpp"
 #include <algorithm>
 
 namespace NovelMind::Scene {
@@ -13,6 +14,10 @@ DialogueBox::DialogueBox(const std::string &id)
       m_onComplete(nullptr) {}
 
 DialogueBox::~DialogueBox() = default;
+
+void DialogueBox::setResourceManager(resource::ResourceManager *resources) {
+  m_resources = resources;
+}
 
 void DialogueBox::setStyle(const DialogueBoxStyle &style) { m_style = style; }
 
@@ -204,8 +209,44 @@ void DialogueBox::render(renderer::IRenderer &renderer) {
     renderer.drawRect(m_bounds, borderColor);
   }
 
-  // Text rendering would require font support
-  // For now, the dialogue box structure is in place
+  // Text rendering requires ResourceManager for font loading
+  if (m_resources) {
+    constexpr i32 kDefaultFontSize = 18;
+    constexpr i32 kSpeakerFontSize = 20;
+    const std::string kDefaultFontId = "fonts/default.ttf";
+
+    f32 textY = m_bounds.y + m_style.paddingTop;
+    f32 textX = m_bounds.x + m_style.paddingLeft;
+
+    // Draw speaker name if present
+    if (!m_speakerName.empty()) {
+      auto speakerFontResult =
+          m_resources->loadFont(kDefaultFontId, kSpeakerFontSize);
+      if (speakerFontResult.isOk()) {
+        renderer::Color speakerColor = m_speakerColor;
+        if (speakerColor == renderer::Color::White) {
+          speakerColor = m_style.nameColor;
+        }
+        speakerColor.a = static_cast<u8>(speakerColor.a * m_alpha);
+        renderer.drawText(*speakerFontResult.value(), m_speakerName, textX,
+                          textY, speakerColor);
+        textY += static_cast<f32>(kSpeakerFontSize) + m_style.namePaddingBottom;
+      }
+    }
+
+    // Draw dialogue text (with typewriter effect)
+    if (!m_text.empty()) {
+      auto textFontResult =
+          m_resources->loadFont(kDefaultFontId, kDefaultFontSize);
+      if (textFontResult.isOk()) {
+        std::string visibleText = getVisibleText();
+        renderer::Color textColor = m_style.textColor;
+        textColor.a = static_cast<u8>(textColor.a * m_alpha);
+        renderer.drawText(*textFontResult.value(), visibleText, textX, textY,
+                          textColor);
+      }
+    }
+  }
 
   // Draw wait indicator (simple rectangle for now)
   if (m_waitIndicatorVisible) {
