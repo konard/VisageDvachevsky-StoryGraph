@@ -1,5 +1,6 @@
 #include "NovelMind/scripting/script_runtime.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/resource/resource_manager.hpp"
 #include <algorithm>
 #include <cstring>
 
@@ -33,6 +34,18 @@ void ScriptRuntime::setSceneManager(scene::SceneManager *manager) {
 
 void ScriptRuntime::setDialogueBox(Scene::DialogueBox *dialogueBox) {
   m_dialogueBox = dialogueBox;
+  // Pass resource manager to dialogue box if both are set
+  if (m_dialogueBox && m_resources) {
+    m_dialogueBox->setResourceManager(m_resources);
+  }
+}
+
+void ScriptRuntime::setResourceManager(resource::ResourceManager *resources) {
+  m_resources = resources;
+  // Pass resource manager to dialogue box if both are set
+  if (m_dialogueBox && m_resources) {
+    m_dialogueBox->setResourceManager(m_resources);
+  }
 }
 
 void ScriptRuntime::setChoiceMenu(Scene::ChoiceMenu *choiceMenu) {
