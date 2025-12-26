@@ -32,6 +32,7 @@ public:
   [[nodiscard]] bool isWaiting() const;
   [[nodiscard]] bool isHalted() const;
   [[nodiscard]] u32 getIP() const { return m_ip; }
+  [[nodiscard]] u32 getProgramSize() const { return static_cast<u32>(m_program.size()); }
   void setIP(u32 ip);
 
   void setVariable(const std::string &name, Value value);

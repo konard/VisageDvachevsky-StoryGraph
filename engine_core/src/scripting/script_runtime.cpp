@@ -489,6 +489,7 @@ void ScriptRuntime::onChoice(const std::vector<Value> &args) {
 
 void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
   if (args.empty()) {
+    NOVELMIND_LOG_WARN("GOTO_SCENE called with no arguments");
     return;
   }
 
@@ -503,9 +504,27 @@ void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
         break;
       }
     }
+
+    // If scene not found by entry point, log warning and attempt to continue
+    // execution from the entry point directly without scene transition effects
+    if (sceneName.empty()) {
+      NOVELMIND_LOG_WARN("GOTO_SCENE: No scene found for entry point " +
+                         std::to_string(entryPoint) + ", jumping directly");
+      // Set VM instruction pointer directly to allow execution to continue
+      // This handles cases where the entry point exists but scene name lookup fails
+      if (entryPoint < m_vm.getProgramSize()) {
+        m_vm.setIP(entryPoint);
+        m_state = RuntimeState::Running;
+        return;
+      }
+      NOVELMIND_LOG_ERROR("GOTO_SCENE: Invalid entry point " +
+                          std::to_string(entryPoint));
+      return;
+    }
   }
 
   if (sceneName.empty()) {
+    NOVELMIND_LOG_WARN("GOTO_SCENE: Empty scene name");
     return;
   }
 

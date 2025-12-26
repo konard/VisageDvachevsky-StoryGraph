@@ -32,6 +32,7 @@ add_executable(unit_tests
     unit/test_fuzzing.cpp
     unit/test_texture_loading.cpp
     unit/test_voice_manifest.cpp
+    unit/test_script_runtime_transition.cpp
 )
 
 target_link_libraries(unit_tests

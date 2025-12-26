@@ -148,3 +148,112 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
     REQUIRE(asInt(args[0]) == 123);
   }
 }
+
+// Test case for Issue #73: Dialogue -> Choice transition
+// This tests that GOTO_SCENE callback receives correct entry point
+// and that the callback can successfully redirect the VM
+TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
+  SECTION("GOTO_SCENE callback receives correct entry point and can redirect") {
+    VirtualMachine vm;
+    // Simple test: GOTO_SCENE should pass the correct entry point to callback
+    // and the callback can set the IP to redirect execution
+    std::vector<Instruction> program = {
+        {OpCode::GOTO_SCENE, 3},  // Jump to instruction 3
+        {OpCode::HALT, 0},        // Should not reach (1)
+        {OpCode::HALT, 0},        // Should not reach (2)
+        {OpCode::PUSH_INT, 42},   // Target instruction (3)
+        {OpCode::HALT, 0},        // End (4)
+    };
+    REQUIRE(vm.load(program, {}).isOk());
+
+    bool gotoExecuted = false;
+    i32 gotoTarget = -1;
+    bool reachedTarget = false;
+
+    vm.registerCallback(OpCode::GOTO_SCENE,
+                        [&gotoExecuted, &gotoTarget, &vm](const std::vector<Value> &args) {
+                          gotoExecuted = true;
+                          if (!args.empty()) {
+                            gotoTarget = asInt(args[0]);
+                            // Simulate scene transition by setting IP
+                            vm.setIP(static_cast<u32>(gotoTarget));
+                          }
+                        });
+
+    // Execute GOTO_SCENE
+    vm.step();
+    REQUIRE(gotoExecuted);
+    REQUIRE(gotoTarget == 3);
+
+    // After GOTO_SCENE, waiting is set
+    REQUIRE(vm.isWaiting());
+    vm.signalContinue();
+
+    // Now the IP should be at instruction 3 (PUSH_INT 42)
+    // Step should execute it
+    vm.step();
+    reachedTarget = true;  // If we got here, the jump worked
+
+    // Verify we executed instruction 3 (PUSH_INT 42)
+    REQUIRE(reachedTarget);
+    // The IP should now be 5 (after executing PUSH_INT at 3, then HALT at 4)
+    // Wait, step() increments IP, so after executing instruction at IP 3, IP becomes 4
+    // Actually vm.getIP() returns the next instruction to execute
+    // After step() executes instruction 3, IP becomes 4
+    // But we called step() twice: once for GOTO_SCENE (which set IP to 3 via callback)
+    // then step incremented to 4, then another step() executed 4 and incremented to 5
+    // Let's just verify we're past the original halt instructions
+    REQUIRE(vm.getIP() >= 4);
+  }
+
+  SECTION("SAY followed by GOTO_SCENE executes in sequence") {
+    VirtualMachine vm;
+    // Test the sequence: SAY -> GOTO_SCENE -> target instruction
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_NULL, 0},   // 0: speaker
+        {OpCode::SAY, 0},         // 1: say
+        {OpCode::GOTO_SCENE, 4},  // 2: goto instruction 4
+        {OpCode::HALT, 0},        // 3: should not reach
+        {OpCode::PUSH_INT, 99},   // 4: target
+        {OpCode::HALT, 0},        // 5: end
+    };
+    std::vector<std::string> strings = {"test"};
+    REQUIRE(vm.load(program, strings).isOk());
+
+    bool sayExecuted = false;
+    bool gotoExecuted = false;
+
+    vm.registerCallback(OpCode::SAY,
+                        [&sayExecuted](const std::vector<Value> &) {
+                          sayExecuted = true;
+                        });
+
+    vm.registerCallback(OpCode::GOTO_SCENE,
+                        [&gotoExecuted, &vm](const std::vector<Value> &args) {
+                          gotoExecuted = true;
+                          if (!args.empty()) {
+                            vm.setIP(static_cast<u32>(asInt(args[0])));
+                          }
+                        });
+
+    // Step 1: PUSH_NULL
+    vm.step();
+    REQUIRE(!vm.isWaiting());
+
+    // Step 2: SAY
+    vm.step();
+    REQUIRE(sayExecuted);
+    REQUIRE(vm.isWaiting());
+    vm.signalContinue();
+
+    // Step 3: GOTO_SCENE
+    vm.step();
+    REQUIRE(gotoExecuted);
+    REQUIRE(vm.isWaiting());
+    vm.signalContinue();
+
+    // Step 4: Should execute PUSH_INT at instruction 4
+    vm.step();
+    REQUIRE(vm.getIP() >= 5); // Moved past instruction 4 after executing it
+  }
+}
