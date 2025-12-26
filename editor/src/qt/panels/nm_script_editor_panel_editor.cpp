@@ -10,19 +10,24 @@
 #include "NovelMind/scripting/validator.hpp"
 
 #include <QAbstractItemView>
+#include <QCheckBox>
 #include <QCompleter>
 #include <QContextMenuEvent>
+#include <QCoreApplication>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QMenu>
 #include <QPainter>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
+#include <QStack>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringListModel>
@@ -32,6 +37,7 @@
 #include <QTextStream>
 #include <QToolTip>
 #include <QVBoxLayout>
+#include <QWheelEvent>
 #include <QWindow>
 #include <algorithm>
 #include <filesystem>
@@ -129,6 +135,50 @@ public:
 protected:
   void paintEvent(QPaintEvent *event) override {
     m_editor->lineNumberAreaPaintEvent(event);
+  }
+
+private:
+  NMScriptEditor *m_editor = nullptr;
+};
+
+class NMScriptEditorFoldingArea : public QWidget {
+public:
+  explicit NMScriptEditorFoldingArea(NMScriptEditor *editor)
+      : QWidget(editor), m_editor(editor) {
+    setCursor(Qt::PointingHandCursor);
+  }
+
+  [[nodiscard]] QSize sizeHint() const override {
+    return QSize(m_editor->foldingAreaWidth(), 0);
+  }
+
+protected:
+  void paintEvent(QPaintEvent *event) override {
+    m_editor->foldingAreaPaintEvent(event);
+  }
+
+  void mousePressEvent(QMouseEvent *event) override {
+    if (event->button() == Qt::LeftButton) {
+      // Calculate which line was clicked
+      QTextBlock block = m_editor->firstVisibleBlock();
+      int top = static_cast<int>(m_editor->blockBoundingGeometry(block)
+                                     .translated(m_editor->contentOffset())
+                                     .top());
+      int bottom =
+          top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+
+      while (block.isValid() && top <= event->pos().y()) {
+        if (block.isVisible() && bottom >= event->pos().y()) {
+          m_editor->toggleFold(block.blockNumber());
+          break;
+        }
+        block = block.next();
+        top = bottom;
+        bottom =
+            top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+      }
+    }
+    QWidget::mousePressEvent(event);
   }
 
 private:
@@ -258,6 +308,670 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
 }
 
 // ============================================================================
+// NMScriptMinimap - VSCode-like code overview
+// ============================================================================
+
+NMScriptMinimap::NMScriptMinimap(NMScriptEditor *editor, QWidget *parent)
+    : QWidget(parent), m_editor(editor) {
+  setFixedWidth(MINIMAP_WIDTH);
+  setMouseTracking(true);
+
+  // Connect to editor signals for updates
+  connect(m_editor->document(), &QTextDocument::contentsChanged, this,
+          &NMScriptMinimap::updateContent);
+  connect(m_editor, &NMScriptEditor::viewportChanged, this,
+          &NMScriptMinimap::setViewportRange);
+}
+
+void NMScriptMinimap::updateContent() {
+  m_totalLines = m_editor->document()->blockCount();
+
+  // Create a cached image of the minimap
+  const int height = static_cast<int>(m_totalLines * LINE_HEIGHT);
+  if (height <= 0) {
+    m_cachedImage = QImage();
+    update();
+    return;
+  }
+
+  m_cachedImage = QImage(MINIMAP_WIDTH, std::max(1, height),
+                         QImage::Format_ARGB32_Premultiplied);
+  m_cachedImage.fill(Qt::transparent);
+
+  QPainter painter(&m_cachedImage);
+  const auto &palette = NMStyleManager::instance().palette();
+
+  // Draw each line as colored rectangles
+  QTextBlock block = m_editor->document()->begin();
+  int lineNum = 0;
+
+  while (block.isValid()) {
+    const QString text = block.text();
+    const int y = static_cast<int>(lineNum * LINE_HEIGHT);
+    int x = 0;
+
+    for (const QChar &ch : text) {
+      if (ch.isSpace()) {
+        x += static_cast<int>(CHAR_WIDTH);
+        continue;
+      }
+
+      QColor color = palette.textSecondary;
+      // Simple syntax coloring for minimap
+      if (ch == '{' || ch == '}') {
+        color = palette.accentPrimary;
+      } else if (ch == '"') {
+        color = QColor(220, 180, 120);
+      }
+
+      painter.fillRect(QRectF(x, y, CHAR_WIDTH, LINE_HEIGHT - 1), color);
+      x += static_cast<int>(CHAR_WIDTH);
+
+      if (x >= MINIMAP_WIDTH - 10) {
+        break;
+      }
+    }
+
+    block = block.next();
+    ++lineNum;
+  }
+
+  update();
+}
+
+void NMScriptMinimap::setViewportRange(int firstLine, int lastLine) {
+  m_firstVisibleLine = firstLine;
+  m_lastVisibleLine = lastLine;
+  update();
+}
+
+void NMScriptMinimap::paintEvent(QPaintEvent *event) {
+  Q_UNUSED(event);
+  QPainter painter(this);
+  const auto &palette = NMStyleManager::instance().palette();
+
+  // Background
+  painter.fillRect(rect(), palette.bgMedium);
+
+  if (m_cachedImage.isNull() || m_totalLines == 0) {
+    return;
+  }
+
+  // Calculate scale factor to fit minimap
+  const double scale =
+      std::min(1.0, static_cast<double>(height()) /
+                        static_cast<double>(m_totalLines * LINE_HEIGHT));
+
+  // Draw the cached minimap image
+  painter.save();
+  painter.scale(1.0, scale);
+  painter.drawImage(0, 0, m_cachedImage);
+  painter.restore();
+
+  // Draw viewport indicator (the visible region box)
+  if (m_totalLines > 0) {
+    const double viewportTop =
+        (static_cast<double>(m_firstVisibleLine) / m_totalLines) * height();
+    const double viewportHeight =
+        (static_cast<double>(m_lastVisibleLine - m_firstVisibleLine + 1) /
+         m_totalLines) *
+        height();
+
+    QColor viewportColor = palette.bgLight;
+    viewportColor.setAlpha(80);
+    painter.fillRect(QRectF(0, viewportTop, width(), viewportHeight),
+                     viewportColor);
+
+    // Border for viewport
+    painter.setPen(QPen(palette.borderLight, 1));
+    painter.drawRect(QRectF(0, viewportTop, width() - 1, viewportHeight));
+  }
+}
+
+void NMScriptMinimap::mousePressEvent(QMouseEvent *event) {
+  m_isDragging = true;
+  // Navigate to clicked position
+  if (m_totalLines > 0) {
+    const int targetLine = static_cast<int>(
+        (static_cast<double>(event->pos().y()) / height()) * m_totalLines);
+    QTextBlock block = m_editor->document()->findBlockByNumber(targetLine);
+    if (block.isValid()) {
+      QTextCursor cursor(block);
+      m_editor->setTextCursor(cursor);
+      m_editor->centerCursor();
+    }
+  }
+}
+
+void NMScriptMinimap::mouseMoveEvent(QMouseEvent *event) {
+  if (m_isDragging && (event->buttons() & Qt::LeftButton)) {
+    if (m_totalLines > 0) {
+      const int targetLine = static_cast<int>(
+          (static_cast<double>(event->pos().y()) / height()) * m_totalLines);
+      QTextBlock block = m_editor->document()->findBlockByNumber(
+          std::max(0, std::min(targetLine, m_totalLines - 1)));
+      if (block.isValid()) {
+        QTextCursor cursor(block);
+        m_editor->setTextCursor(cursor);
+        m_editor->centerCursor();
+      }
+    }
+  }
+}
+
+void NMScriptMinimap::wheelEvent(QWheelEvent *event) {
+  // Forward wheel events to the editor
+  QCoreApplication::sendEvent(m_editor, event);
+}
+
+// ============================================================================
+// NMFindReplaceWidget - VSCode-like Find and Replace
+// ============================================================================
+
+NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
+  const auto &palette = NMStyleManager::instance().palette();
+  setStyleSheet(
+      QString("QWidget { background-color: %1; }"
+              "QLineEdit { background-color: %2; color: %3; border: 1px solid "
+              "%4; padding: 4px; }"
+              "QCheckBox { color: %3; }"
+              "QPushButton { background-color: %5; color: %3; border: none; "
+              "padding: 4px 8px; }"
+              "QPushButton:hover { background-color: %6; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.bgDark.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.borderLight.name())
+          .arg(palette.bgLight.name())
+          .arg(palette.accentPrimary.name()));
+
+  auto *mainLayout = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(8, 8, 8, 8);
+  mainLayout->setSpacing(6);
+
+  // Search row
+  auto *searchRow = new QHBoxLayout();
+  m_searchEdit = new QLineEdit(this);
+  m_searchEdit->setPlaceholderText(tr("Find"));
+  m_searchEdit->setClearButtonEnabled(true);
+  connect(m_searchEdit, &QLineEdit::textChanged, this,
+          &NMFindReplaceWidget::onSearchTextChanged);
+  connect(m_searchEdit, &QLineEdit::returnPressed, this,
+          &NMFindReplaceWidget::findNext);
+
+  auto *findPrevBtn = new QPushButton(tr("<"), this);
+  findPrevBtn->setToolTip(tr("Find Previous (Shift+Enter)"));
+  findPrevBtn->setFixedWidth(30);
+  connect(findPrevBtn, &QPushButton::clicked, this,
+          &NMFindReplaceWidget::findPrevious);
+
+  auto *findNextBtn = new QPushButton(tr(">"), this);
+  findNextBtn->setToolTip(tr("Find Next (Enter)"));
+  findNextBtn->setFixedWidth(30);
+  connect(findNextBtn, &QPushButton::clicked, this,
+          &NMFindReplaceWidget::findNext);
+
+  m_matchCountLabel = new QLabel(this);
+  m_matchCountLabel->setStyleSheet(
+      QString("color: %1; padding: 0 8px;").arg(palette.textSecondary.name()));
+
+  m_closeBtn = new QPushButton(tr("X"), this);
+  m_closeBtn->setFixedWidth(24);
+  m_closeBtn->setToolTip(tr("Close (Escape)"));
+  connect(m_closeBtn, &QPushButton::clicked, this,
+          &NMFindReplaceWidget::closeRequested);
+
+  searchRow->addWidget(m_searchEdit, 1);
+  searchRow->addWidget(findPrevBtn);
+  searchRow->addWidget(findNextBtn);
+  searchRow->addWidget(m_matchCountLabel);
+  searchRow->addWidget(m_closeBtn);
+
+  // Options row
+  auto *optionsRow = new QHBoxLayout();
+  m_caseSensitive = new QCheckBox(tr("Aa"), this);
+  m_caseSensitive->setToolTip(tr("Match Case"));
+  connect(m_caseSensitive, &QCheckBox::toggled, this,
+          [this]() { onSearchTextChanged(m_searchEdit->text()); });
+
+  m_wholeWord = new QCheckBox(tr("W"), this);
+  m_wholeWord->setToolTip(tr("Match Whole Word"));
+  connect(m_wholeWord, &QCheckBox::toggled, this,
+          [this]() { onSearchTextChanged(m_searchEdit->text()); });
+
+  m_useRegex = new QCheckBox(tr(".*"), this);
+  m_useRegex->setToolTip(tr("Use Regular Expression"));
+  connect(m_useRegex, &QCheckBox::toggled, this,
+          [this]() { onSearchTextChanged(m_searchEdit->text()); });
+
+  optionsRow->addWidget(m_caseSensitive);
+  optionsRow->addWidget(m_wholeWord);
+  optionsRow->addWidget(m_useRegex);
+  optionsRow->addStretch();
+
+  // Replace row (hidden by default in find-only mode)
+  m_replaceRow = new QWidget(this);
+  auto *replaceLayout = new QHBoxLayout(m_replaceRow);
+  replaceLayout->setContentsMargins(0, 0, 0, 0);
+
+  m_replaceEdit = new QLineEdit(m_replaceRow);
+  m_replaceEdit->setPlaceholderText(tr("Replace"));
+
+  auto *replaceBtn = new QPushButton(tr("Replace"), m_replaceRow);
+  connect(replaceBtn, &QPushButton::clicked, this,
+          &NMFindReplaceWidget::replaceNext);
+
+  auto *replaceAllBtn = new QPushButton(tr("Replace All"), m_replaceRow);
+  connect(replaceAllBtn, &QPushButton::clicked, this,
+          &NMFindReplaceWidget::replaceAll);
+
+  replaceLayout->addWidget(m_replaceEdit, 1);
+  replaceLayout->addWidget(replaceBtn);
+  replaceLayout->addWidget(replaceAllBtn);
+
+  mainLayout->addLayout(searchRow);
+  mainLayout->addLayout(optionsRow);
+  mainLayout->addWidget(m_replaceRow);
+
+  m_replaceRow->hide();
+  setMaximumHeight(120);
+}
+
+void NMFindReplaceWidget::setEditor(NMScriptEditor *editor) {
+  m_editor = editor;
+}
+
+void NMFindReplaceWidget::showFind() {
+  m_replaceRow->hide();
+  setMaximumHeight(80);
+  show();
+  m_searchEdit->setFocus();
+  m_searchEdit->selectAll();
+}
+
+void NMFindReplaceWidget::showReplace() {
+  m_replaceRow->show();
+  setMaximumHeight(120);
+  show();
+  m_searchEdit->setFocus();
+  m_searchEdit->selectAll();
+}
+
+void NMFindReplaceWidget::setSearchText(const QString &text) {
+  m_searchEdit->setText(text);
+}
+
+void NMFindReplaceWidget::findNext() { performSearch(true); }
+
+void NMFindReplaceWidget::findPrevious() { performSearch(false); }
+
+void NMFindReplaceWidget::replaceNext() {
+  if (!m_editor) {
+    return;
+  }
+
+  const QString searchText = m_searchEdit->text();
+  const QString replaceText = m_replaceEdit->text();
+  if (searchText.isEmpty()) {
+    return;
+  }
+
+  QTextCursor cursor = m_editor->textCursor();
+  if (cursor.hasSelection() &&
+      cursor.selectedText().compare(searchText, m_caseSensitive->isChecked()
+                                                    ? Qt::CaseSensitive
+                                                    : Qt::CaseInsensitive) ==
+          0) {
+    cursor.insertText(replaceText);
+    m_editor->setTextCursor(cursor);
+  }
+
+  findNext();
+  updateMatchCount();
+}
+
+void NMFindReplaceWidget::replaceAll() {
+  if (!m_editor) {
+    return;
+  }
+
+  const QString searchText = m_searchEdit->text();
+  const QString replaceText = m_replaceEdit->text();
+  if (searchText.isEmpty()) {
+    return;
+  }
+
+  QTextDocument::FindFlags flags;
+  if (m_caseSensitive->isChecked()) {
+    flags |= QTextDocument::FindCaseSensitively;
+  }
+  if (m_wholeWord->isChecked()) {
+    flags |= QTextDocument::FindWholeWords;
+  }
+
+  QTextCursor cursor = m_editor->textCursor();
+  cursor.beginEditBlock();
+  cursor.movePosition(QTextCursor::Start);
+  m_editor->setTextCursor(cursor);
+
+  int count = 0;
+  while (true) {
+    if (m_useRegex->isChecked()) {
+      QRegularExpression re(searchText);
+      if (!m_caseSensitive->isChecked()) {
+        re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+      }
+      cursor = m_editor->document()->find(re, cursor, flags);
+    } else {
+      cursor = m_editor->document()->find(searchText, cursor, flags);
+    }
+
+    if (cursor.isNull()) {
+      break;
+    }
+
+    cursor.insertText(replaceText);
+    ++count;
+  }
+
+  cursor.endEditBlock();
+  updateMatchCount();
+}
+
+void NMFindReplaceWidget::onSearchTextChanged(const QString &text) {
+  Q_UNUSED(text);
+  highlightAllMatches();
+  updateMatchCount();
+}
+
+void NMFindReplaceWidget::performSearch(bool forward) {
+  if (!m_editor) {
+    return;
+  }
+
+  const QString searchText = m_searchEdit->text();
+  if (searchText.isEmpty()) {
+    clearHighlights();
+    return;
+  }
+
+  QTextDocument::FindFlags flags;
+  if (!forward) {
+    flags |= QTextDocument::FindBackward;
+  }
+  if (m_caseSensitive->isChecked()) {
+    flags |= QTextDocument::FindCaseSensitively;
+  }
+  if (m_wholeWord->isChecked()) {
+    flags |= QTextDocument::FindWholeWords;
+  }
+
+  QTextCursor cursor = m_editor->textCursor();
+  QTextCursor found;
+
+  if (m_useRegex->isChecked()) {
+    QRegularExpression re(searchText);
+    if (!m_caseSensitive->isChecked()) {
+      re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+    }
+    found = m_editor->document()->find(re, cursor, flags);
+  } else {
+    found = m_editor->document()->find(searchText, cursor, flags);
+  }
+
+  // Wrap around if not found
+  if (found.isNull()) {
+    cursor.movePosition(forward ? QTextCursor::Start : QTextCursor::End);
+    if (m_useRegex->isChecked()) {
+      QRegularExpression re(searchText);
+      if (!m_caseSensitive->isChecked()) {
+        re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+      }
+      found = m_editor->document()->find(re, cursor, flags);
+    } else {
+      found = m_editor->document()->find(searchText, cursor, flags);
+    }
+  }
+
+  if (!found.isNull()) {
+    m_editor->setTextCursor(found);
+    m_editor->centerCursor();
+  }
+}
+
+void NMFindReplaceWidget::highlightAllMatches() {
+  clearHighlights();
+  if (!m_editor) {
+    return;
+  }
+
+  const QString searchText = m_searchEdit->text();
+  if (searchText.isEmpty()) {
+    return;
+  }
+
+  const auto &palette = NMStyleManager::instance().palette();
+  QTextCharFormat format;
+  format.setBackground(QColor(255, 255, 0, 80)); // Yellow highlight
+
+  QTextDocument::FindFlags flags;
+  if (m_caseSensitive->isChecked()) {
+    flags |= QTextDocument::FindCaseSensitively;
+  }
+  if (m_wholeWord->isChecked()) {
+    flags |= QTextDocument::FindWholeWords;
+  }
+
+  QTextCursor cursor(m_editor->document());
+  cursor.movePosition(QTextCursor::Start);
+
+  while (true) {
+    QTextCursor found;
+    if (m_useRegex->isChecked()) {
+      QRegularExpression re(searchText);
+      if (!m_caseSensitive->isChecked()) {
+        re.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
+      }
+      found = m_editor->document()->find(re, cursor, flags);
+    } else {
+      found = m_editor->document()->find(searchText, cursor, flags);
+    }
+
+    if (found.isNull()) {
+      break;
+    }
+
+    QTextEdit::ExtraSelection selection;
+    selection.cursor = found;
+    selection.format = format;
+    m_searchHighlights.append(selection);
+
+    cursor = found;
+  }
+
+  m_editor->setSearchHighlights(m_searchHighlights);
+}
+
+void NMFindReplaceWidget::clearHighlights() {
+  m_searchHighlights.clear();
+  if (m_editor) {
+    m_editor->clearSearchHighlights();
+  }
+}
+
+int NMFindReplaceWidget::countMatches() const {
+  return m_searchHighlights.size();
+}
+
+void NMFindReplaceWidget::updateMatchCount() {
+  const int count = countMatches();
+  if (count == 0) {
+    m_matchCountLabel->setText(tr("No results"));
+  } else {
+    m_matchCountLabel->setText(tr("%1 found").arg(count));
+  }
+}
+
+// ============================================================================
+// NMCommandPalette - VSCode-like Command Palette
+// ============================================================================
+
+NMCommandPalette::NMCommandPalette(QWidget *parent) : QWidget(parent) {
+  setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
+  setFixedWidth(500);
+  setMaximumHeight(400);
+
+  const auto &palette = NMStyleManager::instance().palette();
+  setStyleSheet(
+      QString("QWidget { background-color: %1; border: 1px solid %2; }"
+              "QLineEdit { background-color: %3; color: %4; border: none; "
+              "padding: 8px; font-size: 14px; }"
+              "QListWidget { background-color: %1; color: %4; border: none; }"
+              "QListWidget::item { padding: 6px 12px; }"
+              "QListWidget::item:selected { background-color: %5; }"
+              "QListWidget::item:hover { background-color: %6; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.borderLight.name())
+          .arg(palette.bgDark.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.accentPrimary.name())
+          .arg(palette.bgLight.name()));
+
+  auto *layout = new QVBoxLayout(this);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+
+  m_filterEdit = new QLineEdit(this);
+  m_filterEdit->setPlaceholderText(tr("> Type a command..."));
+  m_filterEdit->installEventFilter(this);
+  connect(m_filterEdit, &QLineEdit::textChanged, this,
+          &NMCommandPalette::onFilterChanged);
+
+  m_commandList = new QListWidget(this);
+  connect(m_commandList, &QListWidget::itemActivated, this,
+          &NMCommandPalette::onItemActivated);
+  connect(m_commandList, &QListWidget::itemDoubleClicked, this,
+          &NMCommandPalette::onItemActivated);
+
+  layout->addWidget(m_filterEdit);
+  layout->addWidget(m_commandList);
+}
+
+void NMCommandPalette::addCommand(const Command &cmd) {
+  m_commands.append(cmd);
+}
+
+void NMCommandPalette::show() {
+  m_filterEdit->clear();
+  updateCommandList(QString());
+
+  // Position in center of parent
+  if (parentWidget()) {
+    QPoint center = parentWidget()->rect().center();
+    move(parentWidget()->mapToGlobal(center) - QPoint(width() / 2, 100));
+  }
+
+  QWidget::show();
+  m_filterEdit->setFocus();
+  raise();
+}
+
+bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == m_filterEdit && event->type() == QEvent::KeyPress) {
+    auto *keyEvent = static_cast<QKeyEvent *>(event);
+
+    if (keyEvent->key() == Qt::Key_Escape) {
+      hide();
+      return true;
+    }
+
+    if (keyEvent->key() == Qt::Key_Down) {
+      int row = m_commandList->currentRow();
+      if (row < m_commandList->count() - 1) {
+        m_commandList->setCurrentRow(row + 1);
+      }
+      return true;
+    }
+
+    if (keyEvent->key() == Qt::Key_Up) {
+      int row = m_commandList->currentRow();
+      if (row > 0) {
+        m_commandList->setCurrentRow(row - 1);
+      }
+      return true;
+    }
+
+    if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
+      QListWidgetItem *item = m_commandList->currentItem();
+      if (item) {
+        onItemActivated(item);
+      }
+      return true;
+    }
+  }
+
+  return QWidget::eventFilter(obj, event);
+}
+
+void NMCommandPalette::onFilterChanged(const QString &filter) {
+  updateCommandList(filter);
+}
+
+void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
+  if (!item) {
+    return;
+  }
+
+  const int index = item->data(Qt::UserRole).toInt();
+  if (index >= 0 && index < m_commands.size()) {
+    hide();
+    if (m_commands[index].action) {
+      m_commands[index].action();
+      emit commandExecuted(m_commands[index].name);
+    }
+  }
+}
+
+void NMCommandPalette::updateCommandList(const QString &filter) {
+  m_commandList->clear();
+
+  const auto &palette = NMStyleManager::instance().palette();
+
+  for (int i = 0; i < m_commands.size(); ++i) {
+    const Command &cmd = m_commands[i];
+
+    // Filter by name or category
+    if (!filter.isEmpty() && !cmd.name.contains(filter, Qt::CaseInsensitive) &&
+        !cmd.category.contains(filter, Qt::CaseInsensitive)) {
+      continue;
+    }
+
+    QString label = cmd.name;
+    if (!cmd.shortcut.isEmpty()) {
+      label += QString("  [%1]").arg(cmd.shortcut);
+    }
+
+    auto *item = new QListWidgetItem(label);
+    item->setData(Qt::UserRole, i);
+    if (!cmd.category.isEmpty()) {
+      item->setToolTip(cmd.category);
+    }
+    m_commandList->addItem(item);
+  }
+
+  if (m_commandList->count() > 0) {
+    m_commandList->setCurrentRow(0);
+  }
+
+  // Adjust height based on content
+  const int itemHeight = 30;
+  const int maxVisibleItems = 10;
+  const int visibleItems = std::min(m_commandList->count(), maxVisibleItems);
+  m_commandList->setFixedHeight(visibleItems * itemHeight);
+  adjustSize();
+}
+
+// ============================================================================
 // NMScriptEditor
 // ============================================================================
 
@@ -281,16 +995,27 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
                     .arg(palette.bgDarkest.name()));
 
   m_lineNumberArea = new NMScriptEditorLineNumberArea(this);
+  m_foldingArea = new NMScriptEditorFoldingArea(this);
+
   connect(this, &QPlainTextEdit::blockCountChanged, this,
           &NMScriptEditor::updateLineNumberAreaWidth);
   connect(this, &QPlainTextEdit::updateRequest, this,
           &NMScriptEditor::updateLineNumberArea);
   connect(this, &QPlainTextEdit::cursorPositionChanged, this,
           &NMScriptEditor::highlightCurrentLine);
+  connect(this, &QPlainTextEdit::cursorPositionChanged, this,
+          &NMScriptEditor::highlightMatchingBrackets);
+  connect(document(), &QTextDocument::contentsChanged, this,
+          &NMScriptEditor::updateFoldingRegions);
+
   updateLineNumberAreaWidth(0);
   highlightCurrentLine();
 
   m_highlighter = new NMScriptHighlighter(document());
+
+  // Create minimap
+  m_minimap = new NMScriptMinimap(this, this);
+  m_minimap->updateContent();
 
   m_baseCompletionWords = detail::buildCompletionWords();
   auto *completer = new QCompleter(this);
@@ -316,7 +1041,13 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
           this, &NMScriptEditor::insertCompletion);
   connect(document(), &QTextDocument::contentsChanged, this,
           &NMScriptEditor::refreshDynamicCompletions);
+
+  // Emit viewport changes for minimap sync
+  connect(verticalScrollBar(), &QScrollBar::valueChanged, this,
+          &NMScriptEditor::emitViewportChanged);
 }
+
+NMScriptEditor::~NMScriptEditor() = default;
 
 void NMScriptEditor::setCompletionWords(const QStringList &words) {
   QList<CompletionEntry> entries;
@@ -443,23 +1174,19 @@ void NMScriptEditor::findReferences() {
 
 void NMScriptEditor::showSnippetMenu() {
   QMenu menu(this);
-  menu.setStyleSheet(
-      "QMenu { background-color: #2d2d2d; color: #e0e0e0; }"
-      "QMenu::item:selected { background-color: #404040; }");
+  menu.setStyleSheet("QMenu { background-color: #2d2d2d; color: #e0e0e0; }"
+                     "QMenu::item:selected { background-color: #404040; }");
 
-  menu.addAction(tr("Scene block"), this,
-                 [this]() { insertSnippet("scene"); });
+  menu.addAction(tr("Scene block"), this, [this]() { insertSnippet("scene"); });
   menu.addAction(tr("Choice block"), this,
                  [this]() { insertSnippet("choice"); });
-  menu.addAction(tr("If/Else block"), this,
-                 [this]() { insertSnippet("if"); });
+  menu.addAction(tr("If/Else block"), this, [this]() { insertSnippet("if"); });
   menu.addAction(tr("Goto statement"), this,
                  [this]() { insertSnippet("goto"); });
   menu.addSeparator();
   menu.addAction(tr("Character declaration"), this,
                  [this]() { insertSnippet("character"); });
-  menu.addAction(tr("Say dialogue"), this,
-                 [this]() { insertSnippet("say"); });
+  menu.addAction(tr("Say dialogue"), this, [this]() { insertSnippet("say"); });
   menu.addAction(tr("Show background"), this,
                  [this]() { insertSnippet("show"); });
 
@@ -481,29 +1208,49 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   }
 
   // Shift+F12: Find References
-  if (event->key() == Qt::Key_F12 &&
-      (event->modifiers() & Qt::ShiftModifier)) {
+  if (event->key() == Qt::Key_F12 && (event->modifiers() & Qt::ShiftModifier)) {
     findReferences();
     event->accept();
     return;
   }
 
   // Ctrl+J: Insert Snippet
-  if (event->key() == Qt::Key_J &&
-      (event->modifiers() & Qt::ControlModifier)) {
+  if (event->key() == Qt::Key_J && (event->modifiers() & Qt::ControlModifier)) {
     showSnippetMenu();
     event->accept();
     return;
   }
 
   // Ctrl+G: Navigate to Graph (for scenes)
-  if (event->key() == Qt::Key_G &&
-      (event->modifiers() & Qt::ControlModifier) &&
+  if (event->key() == Qt::Key_G && (event->modifiers() & Qt::ControlModifier) &&
       (event->modifiers() & Qt::ShiftModifier)) {
     const QString symbol = textUnderCursor();
     if (!symbol.isEmpty()) {
       emit navigateToGraphNodeRequested(symbol);
     }
+    event->accept();
+    return;
+  }
+
+  // Ctrl+F: Find (VSCode-like)
+  if (event->key() == Qt::Key_F && (event->modifiers() & Qt::ControlModifier) &&
+      !(event->modifiers() & Qt::ShiftModifier)) {
+    emit showFindRequested();
+    event->accept();
+    return;
+  }
+
+  // Ctrl+H: Find and Replace (VSCode-like)
+  if (event->key() == Qt::Key_H && (event->modifiers() & Qt::ControlModifier)) {
+    emit showReplaceRequested();
+    event->accept();
+    return;
+  }
+
+  // Ctrl+Shift+P: Command Palette (VSCode-like)
+  if (event->key() == Qt::Key_P && (event->modifiers() & Qt::ControlModifier) &&
+      (event->modifiers() & Qt::ShiftModifier)) {
+    emit showCommandPaletteRequested();
     event->accept();
     return;
   }
@@ -653,14 +1400,18 @@ void NMScriptEditor::contextMenuEvent(QContextMenuEvent *event) {
 
   QAction *gotoAction = menu->addAction(tr("Go to Definition (F12)"));
   gotoAction->setEnabled(isNavigable);
-  connect(gotoAction, &QAction::triggered, this, &NMScriptEditor::goToDefinition);
+  connect(gotoAction, &QAction::triggered, this,
+          &NMScriptEditor::goToDefinition);
 
   QAction *findRefsAction = menu->addAction(tr("Find References (Shift+F12)"));
   findRefsAction->setEnabled(hasSymbol);
-  connect(findRefsAction, &QAction::triggered, this, &NMScriptEditor::findReferences);
+  connect(findRefsAction, &QAction::triggered, this,
+          &NMScriptEditor::findReferences);
 
-  if (isNavigable && m_symbolLocations.value(symbol.toLower()).filePath.contains("scene")) {
-    QAction *graphAction = menu->addAction(tr("Navigate to Graph (Ctrl+Shift+G)"));
+  if (isNavigable &&
+      m_symbolLocations.value(symbol.toLower()).filePath.contains("scene")) {
+    QAction *graphAction =
+        menu->addAction(tr("Navigate to Graph (Ctrl+Shift+G)"));
     connect(graphAction, &QAction::triggered, this,
             [this, symbol]() { emit navigateToGraphNodeRequested(symbol); });
   }
@@ -668,7 +1419,8 @@ void NMScriptEditor::contextMenuEvent(QContextMenuEvent *event) {
   menu->addSeparator();
 
   QAction *snippetAction = menu->addAction(tr("Insert Snippet... (Ctrl+J)"));
-  connect(snippetAction, &QAction::triggered, this, &NMScriptEditor::showSnippetMenu);
+  connect(snippetAction, &QAction::triggered, this,
+          &NMScriptEditor::showSnippetMenu);
 
   menu->exec(event->globalPos());
   delete menu;
@@ -694,18 +1446,27 @@ int NMScriptEditor::lineNumberAreaWidth() const {
 
 void NMScriptEditor::updateLineNumberAreaWidth(int newBlockCount) {
   Q_UNUSED(newBlockCount);
-  setViewportMargins(lineNumberAreaWidth(), 0, 0, 0);
+  const int rightMargin = m_minimapEnabled && m_minimap ? 120 : 0;
+  setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0, rightMargin,
+                     0);
 }
 
 void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
-  if (!m_lineNumberArea) {
-    return;
-  }
   if (dy) {
-    m_lineNumberArea->scroll(0, dy);
+    if (m_lineNumberArea) {
+      m_lineNumberArea->scroll(0, dy);
+    }
+    if (m_foldingArea) {
+      m_foldingArea->scroll(0, dy);
+    }
   } else {
-    m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
-                             rect.height());
+    if (m_lineNumberArea) {
+      m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
+                               rect.height());
+    }
+    if (m_foldingArea) {
+      m_foldingArea->update(0, rect.y(), m_foldingArea->width(), rect.height());
+    }
   }
 
   if (rect.contains(viewport()->rect())) {
@@ -715,12 +1476,25 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
 
 void NMScriptEditor::resizeEvent(QResizeEvent *event) {
   QPlainTextEdit::resizeEvent(event);
-  if (!m_lineNumberArea) {
-    return;
-  }
+
   QRect cr = contentsRect();
-  m_lineNumberArea->setGeometry(
-      QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+
+  if (m_lineNumberArea) {
+    m_lineNumberArea->setGeometry(
+        QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+  }
+
+  if (m_foldingArea) {
+    m_foldingArea->setGeometry(QRect(cr.left() + lineNumberAreaWidth(),
+                                     cr.top(), foldingAreaWidth(),
+                                     cr.height()));
+  }
+
+  if (m_minimap && m_minimapEnabled) {
+    const int minimapWidth = 120;
+    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth,
+                           cr.height());
+  }
 }
 
 void NMScriptEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
@@ -945,6 +1719,309 @@ void NMScriptEditor::rebuildCompleterModel(
     ++row;
   }
   m_completer->setModel(model);
+}
+
+// ============================================================================
+// VSCode-like features: Folding, Bracket Matching, Minimap, etc.
+// ============================================================================
+
+int NMScriptEditor::foldingAreaWidth() const { return 14; }
+
+void NMScriptEditor::foldingAreaPaintEvent(QPaintEvent *event) {
+  if (!m_foldingArea) {
+    return;
+  }
+
+  QPainter painter(m_foldingArea);
+  const auto &palette = NMStyleManager::instance().palette();
+  painter.fillRect(event->rect(), palette.bgMedium);
+
+  QTextBlock block = firstVisibleBlock();
+  int blockNumber = block.blockNumber();
+  int top = static_cast<int>(
+      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+
+  while (block.isValid() && top <= event->rect().bottom()) {
+    if (block.isVisible() && bottom >= event->rect().top()) {
+      // Check if this line starts a folding region
+      for (const auto &region : m_foldingRegions) {
+        if (region.startLine == blockNumber) {
+          // Draw fold indicator
+          const int iconSize = 10;
+          const int x = (m_foldingArea->width() - iconSize) / 2;
+          const int y = top + (fontMetrics().height() - iconSize) / 2;
+
+          painter.setPen(palette.textSecondary);
+          painter.drawRect(x, y, iconSize, iconSize);
+
+          // Draw +/- sign
+          painter.drawLine(x + 2, y + iconSize / 2, x + iconSize - 2,
+                           y + iconSize / 2);
+          if (region.isCollapsed) {
+            painter.drawLine(x + iconSize / 2, y + 2, x + iconSize / 2,
+                             y + iconSize - 2);
+          }
+          break;
+        }
+      }
+    }
+
+    block = block.next();
+    top = bottom;
+    bottom = top + static_cast<int>(blockBoundingRect(block).height());
+    ++blockNumber;
+  }
+}
+
+void NMScriptEditor::toggleFold(int line) {
+  for (auto &region : m_foldingRegions) {
+    if (region.startLine == line) {
+      region.isCollapsed = !region.isCollapsed;
+
+      // Hide or show the lines in the region
+      QTextBlock startBlock = document()->findBlockByNumber(line + 1);
+      QTextBlock endBlock = document()->findBlockByNumber(region.endLine);
+
+      while (startBlock.isValid() &&
+             startBlock.blockNumber() <= region.endLine) {
+        startBlock.setVisible(!region.isCollapsed);
+        startBlock = startBlock.next();
+      }
+
+      // Force a repaint
+      viewport()->update();
+      m_foldingArea->update();
+
+      if (m_minimap) {
+        m_minimap->updateContent();
+      }
+      break;
+    }
+  }
+}
+
+void NMScriptEditor::updateFoldingRegions() {
+  m_foldingRegions.clear();
+
+  const QString text = document()->toPlainText();
+  const QStringList lines = text.split('\n');
+
+  QStack<int> braceStack;
+
+  for (int i = 0; i < lines.size(); ++i) {
+    const QString &line = lines[i];
+    const int openCount = static_cast<int>(line.count('{'));
+    const int closeCount = static_cast<int>(line.count('}'));
+
+    // Push opening braces
+    for (int j = 0; j < openCount; ++j) {
+      braceStack.push(i);
+    }
+
+    // Pop closing braces and create regions
+    for (int j = 0; j < closeCount; ++j) {
+      if (!braceStack.isEmpty()) {
+        const int startLine = braceStack.pop();
+        if (i > startLine) {
+          FoldingRegion region;
+          region.startLine = startLine;
+          region.endLine = i;
+          region.isCollapsed = false;
+          m_foldingRegions.append(region);
+        }
+      }
+    }
+  }
+
+  if (m_foldingArea) {
+    m_foldingArea->update();
+  }
+}
+
+void NMScriptEditor::setMinimapEnabled(bool enabled) {
+  m_minimapEnabled = enabled;
+  if (m_minimap) {
+    m_minimap->setVisible(enabled);
+    updateMinimapGeometry();
+  }
+}
+
+void NMScriptEditor::updateMinimapGeometry() {
+  if (!m_minimap) {
+    return;
+  }
+
+  if (m_minimapEnabled) {
+    QRect cr = contentsRect();
+    const int minimapWidth = 120;
+    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth,
+                           cr.height());
+    m_minimap->show();
+
+    // Adjust viewport margins to make room for minimap
+    setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0,
+                       minimapWidth, 0);
+  } else {
+    m_minimap->hide();
+    setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0, 0, 0);
+  }
+}
+
+void NMScriptEditor::emitViewportChanged() {
+  const QTextBlock firstBlock = firstVisibleBlock();
+  const int firstLine = firstBlock.blockNumber();
+
+  // Calculate last visible line
+  QTextBlock block = firstBlock;
+  int lastLine = firstLine;
+  int top = static_cast<int>(
+      blockBoundingGeometry(block).translated(contentOffset()).top());
+
+  while (block.isValid() && top < viewport()->height()) {
+    lastLine = block.blockNumber();
+    top += static_cast<int>(blockBoundingRect(block).height());
+    block = block.next();
+  }
+
+  emit viewportChanged(firstLine, lastLine);
+}
+
+BracketPosition NMScriptEditor::findMatchingBracket(int position) const {
+  BracketPosition result;
+  const QString text = document()->toPlainText();
+
+  if (position < 0 || position >= text.size()) {
+    return result;
+  }
+
+  const QChar ch = text.at(position);
+  const QString openBrackets = "({[";
+  const QString closeBrackets = ")}]";
+
+  int direction = 0;
+  QChar matchingBracket;
+
+  if (openBrackets.contains(ch)) {
+    direction = 1;
+    matchingBracket = closeBrackets.at(openBrackets.indexOf(ch));
+  } else if (closeBrackets.contains(ch)) {
+    direction = -1;
+    matchingBracket = openBrackets.at(closeBrackets.indexOf(ch));
+  } else {
+    return result;
+  }
+
+  int depth = 1;
+  int i = position + direction;
+
+  while (i >= 0 && i < text.size() && depth > 0) {
+    const QChar current = text.at(i);
+    if (current == ch) {
+      ++depth;
+    } else if (current == matchingBracket) {
+      --depth;
+    }
+
+    if (depth == 0) {
+      result.position = i;
+      result.bracket = matchingBracket;
+      result.isOpening = (direction == -1);
+      return result;
+    }
+
+    i += direction;
+  }
+
+  return result;
+}
+
+void NMScriptEditor::highlightMatchingBrackets() {
+  m_bracketHighlights.clear();
+
+  const QTextCursor cursor = textCursor();
+  const int pos = cursor.position();
+  const QString text = document()->toPlainText();
+
+  // Check character at cursor and before cursor
+  QList<int> positions;
+  positions << pos << (pos - 1);
+
+  const auto &palette = NMStyleManager::instance().palette();
+  QTextCharFormat bracketFormat;
+  bracketFormat.setBackground(QColor(palette.accentPrimary.red(),
+                                     palette.accentPrimary.green(),
+                                     palette.accentPrimary.blue(), 80));
+
+  for (int checkPos : positions) {
+    if (checkPos < 0 || checkPos >= text.size()) {
+      continue;
+    }
+
+    const QChar ch = text.at(checkPos);
+    if (QString("(){}[]").contains(ch)) {
+      BracketPosition match = findMatchingBracket(checkPos);
+      if (match.position >= 0) {
+        // Highlight current bracket
+        QTextEdit::ExtraSelection sel1;
+        sel1.format = bracketFormat;
+        sel1.cursor = QTextCursor(document());
+        sel1.cursor.setPosition(checkPos);
+        sel1.cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor);
+        m_bracketHighlights.append(sel1);
+
+        // Highlight matching bracket
+        QTextEdit::ExtraSelection sel2;
+        sel2.format = bracketFormat;
+        sel2.cursor = QTextCursor(document());
+        sel2.cursor.setPosition(match.position);
+        sel2.cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor);
+        m_bracketHighlights.append(sel2);
+
+        break;
+      }
+    }
+  }
+
+  // Combine with current line highlight and search highlights
+  QList<QTextEdit::ExtraSelection> allSelections;
+
+  // Current line highlight
+  if (!isReadOnly()) {
+    QTextEdit::ExtraSelection lineSelection;
+    lineSelection.format.setBackground(QColor(palette.bgLight.red(),
+                                              palette.bgLight.green(),
+                                              palette.bgLight.blue(), 60));
+    lineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
+    lineSelection.cursor = textCursor();
+    lineSelection.cursor.clearSelection();
+    allSelections.append(lineSelection);
+  }
+
+  allSelections.append(m_searchHighlights);
+  allSelections.append(m_bracketHighlights);
+  setExtraSelections(allSelections);
+}
+
+void NMScriptEditor::setSearchHighlights(
+    const QList<QTextEdit::ExtraSelection> &highlights) {
+  m_searchHighlights = highlights;
+  highlightMatchingBrackets(); // This will combine all highlights
+}
+
+void NMScriptEditor::clearSearchHighlights() {
+  m_searchHighlights.clear();
+  highlightMatchingBrackets();
+}
+
+void NMScriptEditor::paintEvent(QPaintEvent *event) {
+  QPlainTextEdit::paintEvent(event);
+  // Additional custom painting can go here if needed
+}
+
+void NMScriptEditor::scrollContentsBy(int dx, int dy) {
+  QPlainTextEdit::scrollContentsBy(dx, dy);
+  emitViewportChanged();
 }
 
 // ============================================================================

@@ -316,10 +316,21 @@ void NMScriptEditorPanel::setupContent() {
     delete widget;
   });
 
+  // Find/Replace widget (hidden by default)
+  m_findReplaceWidget = new NMFindReplaceWidget(m_contentWidget);
+  m_findReplaceWidget->hide();
+  connect(m_findReplaceWidget, &NMFindReplaceWidget::closeRequested, this,
+          [this]() { m_findReplaceWidget->hide(); });
+
+  // Command Palette
+  m_commandPalette = new NMCommandPalette(this);
+  setupCommandPalette();
+
   m_splitter->addWidget(m_leftSplitter);
   m_splitter->addWidget(m_tabs);
   m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
+  layout->addWidget(m_findReplaceWidget);
   layout->addWidget(m_splitter);
 
   setContentWidget(m_contentWidget);
@@ -400,6 +411,14 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::onFindReferences);
   connect(editor, &NMScriptEditor::navigateToGraphNodeRequested, this,
           &NMScriptEditorPanel::onNavigateToGraphNode);
+
+  // VSCode-like feature connections
+  connect(editor, &NMScriptEditor::showFindRequested, this,
+          &NMScriptEditorPanel::showFindDialog);
+  connect(editor, &NMScriptEditor::showReplaceRequested, this,
+          &NMScriptEditorPanel::showReplaceDialog);
+  connect(editor, &NMScriptEditor::showCommandPaletteRequested, this,
+          &NMScriptEditorPanel::showCommandPalette);
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -953,8 +972,9 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
   }
 
   const QString lowerSymbol = symbol.toLower();
-  const QRegularExpression re(QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
-                              QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpression re(
+      QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
+      QRegularExpression::CaseInsensitiveOption);
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
@@ -1052,9 +1072,11 @@ void NMScriptEditorPanel::refreshSymbolList() {
                                    const QString &typeLabel,
                                    const QColor &color) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
-      auto *item = new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
+      auto *item =
+          new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
       item->setData(Qt::UserRole, it.value());
-      item->setData(Qt::UserRole + 1, m_symbolIndex.sceneLines.value(it.key(), 1));
+      item->setData(Qt::UserRole + 1,
+                    m_symbolIndex.sceneLines.value(it.key(), 1));
       item->setForeground(color);
       m_symbolList->addItem(item);
     }
@@ -1073,8 +1095,7 @@ void NMScriptEditorPanel::filterSymbolList(const QString &filter) {
   for (int i = 0; i < m_symbolList->count(); ++i) {
     auto *item = m_symbolList->item(i);
     const bool matches =
-        filter.isEmpty() ||
-        item->text().contains(filter, Qt::CaseInsensitive);
+        filter.isEmpty() || item->text().contains(filter, Qt::CaseInsensitive);
     item->setHidden(!matches);
   }
 }
@@ -1087,9 +1108,8 @@ void NMScriptEditorPanel::showReferencesDialog(
 
   // Create a simple dialog to show references
   auto *dialog = new QDialog(this);
-  dialog->setWindowTitle(tr("References to '%1' (%2 found)")
-                             .arg(symbol)
-                             .arg(references.size()));
+  dialog->setWindowTitle(
+      tr("References to '%1' (%2 found)").arg(symbol).arg(references.size()));
   dialog->resize(600, 400);
 
   auto *layout = new QVBoxLayout(dialog);
@@ -1105,7 +1125,8 @@ void NMScriptEditorPanel::showReferencesDialog(
 
   for (const auto &ref : references) {
     const QString fileName = QFileInfo(ref.filePath).fileName();
-    QString label = QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
+    QString label =
+        QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
     if (ref.isDefinition) {
       label = "[DEF] " + label;
     }
@@ -1176,6 +1197,137 @@ NMScriptEditorPanel::buildSymbolLocations() const {
   }
 
   return locations;
+}
+
+// ============================================================================
+// VSCode-like Features: Find/Replace, Command Palette, Minimap Toggle
+// ============================================================================
+
+void NMScriptEditorPanel::showFindDialog() {
+  if (!m_findReplaceWidget) {
+    return;
+  }
+  auto *editor = currentEditor();
+  if (editor) {
+    m_findReplaceWidget->setEditor(editor);
+    // Pre-fill with selected text
+    const QString selected = editor->textCursor().selectedText();
+    if (!selected.isEmpty()) {
+      m_findReplaceWidget->setSearchText(selected);
+    }
+  }
+  m_findReplaceWidget->showFind();
+}
+
+void NMScriptEditorPanel::showReplaceDialog() {
+  if (!m_findReplaceWidget) {
+    return;
+  }
+  auto *editor = currentEditor();
+  if (editor) {
+    m_findReplaceWidget->setEditor(editor);
+    const QString selected = editor->textCursor().selectedText();
+    if (!selected.isEmpty()) {
+      m_findReplaceWidget->setSearchText(selected);
+    }
+  }
+  m_findReplaceWidget->showReplace();
+}
+
+void NMScriptEditorPanel::showCommandPalette() {
+  if (m_commandPalette) {
+    m_commandPalette->show();
+  }
+}
+
+void NMScriptEditorPanel::setupCommandPalette() {
+  if (!m_commandPalette) {
+    return;
+  }
+
+  // File commands
+  m_commandPalette->addCommand(
+      {tr("Save"), "Ctrl+S", tr("File"), [this]() { onSaveRequested(); }});
+  m_commandPalette->addCommand(
+      {tr("Save All"), "", tr("File"), [this]() { onSaveAllRequested(); }});
+
+  // Edit commands
+  m_commandPalette->addCommand(
+      {tr("Find"), "Ctrl+F", tr("Edit"), [this]() { showFindDialog(); }});
+  m_commandPalette->addCommand(
+      {tr("Replace"), "Ctrl+H", tr("Edit"), [this]() { showReplaceDialog(); }});
+  m_commandPalette->addCommand({tr("Format Document"), "Ctrl+Shift+F",
+                                tr("Edit"), [this]() { onFormatRequested(); }});
+
+  // Navigation commands
+  m_commandPalette->addCommand({tr("Go to Symbol"), "Ctrl+Shift+O",
+                                tr("Navigation"),
+                                [this]() { onSymbolNavigatorRequested(); }});
+  m_commandPalette->addCommand(
+      {tr("Go to Definition"), "F12", tr("Navigation"), [this]() {
+         if (auto *editor = currentEditor()) {
+           // Trigger go-to-definition on current word
+           const QString symbol = editor->textCursor().selectedText();
+           if (!symbol.isEmpty()) {
+             goToSceneDefinition(symbol);
+           }
+         }
+       }});
+
+  // View commands
+  m_commandPalette->addCommand(
+      {tr("Toggle Minimap"), "", tr("View"), [this]() { onToggleMinimap(); }});
+  m_commandPalette->addCommand(
+      {tr("Fold All"), "", tr("View"), [this]() { onFoldAll(); }});
+  m_commandPalette->addCommand(
+      {tr("Unfold All"), "", tr("View"), [this]() { onUnfoldAll(); }});
+
+  // Insert commands
+  m_commandPalette->addCommand(
+      {tr("Insert Scene Snippet"), "Ctrl+J", tr("Insert"), [this]() {
+         if (auto *editor = currentEditor()) {
+           editor->insertSnippet("scene");
+         }
+       }});
+  m_commandPalette->addCommand(
+      {tr("Insert Choice Snippet"), "", tr("Insert"), [this]() {
+         if (auto *editor = currentEditor()) {
+           editor->insertSnippet("choice");
+         }
+       }});
+  m_commandPalette->addCommand(
+      {tr("Insert Character"), "", tr("Insert"), [this]() {
+         if (auto *editor = currentEditor()) {
+           editor->insertSnippet("character");
+         }
+       }});
+}
+
+void NMScriptEditorPanel::onToggleMinimap() {
+  m_minimapEnabled = !m_minimapEnabled;
+  for (auto *editor : editors()) {
+    editor->setMinimapEnabled(m_minimapEnabled);
+  }
+}
+
+void NMScriptEditorPanel::onFoldAll() {
+  if (auto *editor = currentEditor()) {
+    for (const auto &region : editor->foldingRegions()) {
+      if (!region.isCollapsed) {
+        editor->toggleFold(region.startLine);
+      }
+    }
+  }
+}
+
+void NMScriptEditorPanel::onUnfoldAll() {
+  if (auto *editor = currentEditor()) {
+    for (const auto &region : editor->foldingRegions()) {
+      if (region.isCollapsed) {
+        editor->toggleFold(region.startLine);
+      }
+    }
+  }
 }
 
 } // namespace NovelMind::editor::qt
