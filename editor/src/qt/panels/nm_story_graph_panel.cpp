@@ -1,6 +1,7 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+#include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
 
 #include <QAction>
@@ -12,6 +13,7 @@
 #include <QPair>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -266,9 +268,12 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
 }
 
 void NMStoryGraphPanel::setupToolBar() {
-  m_toolBar = new QToolBar(this);
-  m_toolBar->setObjectName("StoryGraphToolBar");
-  m_toolBar->setIconSize(QSize(16, 16));
+  // Wrap the toolbar in a scrollable container for adaptive layout
+  // This ensures all toolbar controls remain accessible when panel is small
+  m_scrollableToolBar = new NMScrollableToolBar(this);
+  m_toolBar = m_scrollableToolBar->toolbar();
+  m_scrollableToolBar->setToolBarObjectName("StoryGraphToolBar");
+  m_scrollableToolBar->setIconSize(QSize(16, 16));
 
   QAction *actionConnect = m_toolBar->addAction(tr("Connect"));
   actionConnect->setToolTip(tr("Connection mode"));
@@ -343,7 +348,7 @@ void NMStoryGraphPanel::setupToolBar() {
   m_toolBar->addWidget(m_exportDialogueBtn);
 
   if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
-    layout->insertWidget(0, m_toolBar);
+    layout->insertWidget(0, m_scrollableToolBar);
   }
 }
 

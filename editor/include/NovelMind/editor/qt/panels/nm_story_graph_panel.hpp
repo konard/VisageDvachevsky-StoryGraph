@@ -20,6 +20,7 @@
 #include <QPushButton>
 #include <QStringList>
 #include <QToolBar>
+#include <QVBoxLayout>
 #include <QVector>
 
 namespace NovelMind::editor::qt {
@@ -406,6 +407,9 @@ private:
 
 /**
  * @brief Node creation palette for adding new nodes to the graph
+ *
+ * The palette now includes a scroll area to ensure all node type buttons
+ * remain accessible when the panel height is small (addresses issue #69).
  */
 class NMNodePalette : public QWidget {
   Q_OBJECT
@@ -418,6 +422,8 @@ signals:
 
 private:
   void createNodeButton(const QString &nodeType, const QString &icon);
+
+  QVBoxLayout *m_contentLayout = nullptr;
 };
 
 /**
@@ -547,6 +553,7 @@ private:
   NMStoryGraphMinimap *m_minimap = nullptr;
   QWidget *m_contentWidget = nullptr;
   QToolBar *m_toolBar = nullptr;
+  class NMScrollableToolBar *m_scrollableToolBar = nullptr;
   NMNodePalette *m_nodePalette = nullptr;
   QString m_currentExecutingNode;
 

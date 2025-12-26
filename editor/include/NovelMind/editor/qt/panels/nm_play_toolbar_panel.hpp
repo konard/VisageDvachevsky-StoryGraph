@@ -40,6 +40,7 @@ private:
   void showTransientStatus(const QString &text, const QString &color);
 
   // UI Elements
+  class NMScrollableToolBar *m_scrollableToolBar = nullptr;
   QPushButton *m_playButton = nullptr;
   QPushButton *m_pauseButton = nullptr;
   QPushButton *m_stopButton = nullptr;

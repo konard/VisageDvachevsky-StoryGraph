@@ -25,6 +25,7 @@
 #include <QPainter>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QSet>
 #include <QTextStream>
@@ -272,25 +273,52 @@ void NMStoryGraphView::drawForeground(QPainter *painter,
 // ============================================================================
 
 NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
-  auto *layout = new QVBoxLayout(this);
-  layout->setContentsMargins(4, 4, 4, 4);
-  layout->setSpacing(4);
+  // Main layout for the widget
+  auto *mainLayout = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(0, 0, 0, 0);
+  mainLayout->setSpacing(0);
 
   const auto &palette = NMStyleManager::instance().palette();
 
+  // Create scroll area for adaptive layout when panel height is small
+  auto *scrollArea = new QScrollArea(this);
+  scrollArea->setWidgetResizable(true);
+  scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  scrollArea->setFrameShape(QFrame::NoFrame);
+
+  // Style the scroll bar to be minimal
+  scrollArea->setStyleSheet(
+      QString("QScrollArea { background: transparent; border: none; }"
+              "QScrollBar:vertical { width: 6px; background: %1; }"
+              "QScrollBar::handle:vertical { background: %2; border-radius: "
+              "3px; min-height: 20px; }"
+              "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical "
+              "{ height: 0; }"
+              "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical "
+              "{ background: none; }")
+          .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
+          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+
+  // Create content widget inside scroll area
+  auto *contentWidget = new QWidget(scrollArea);
+  m_contentLayout = new QVBoxLayout(contentWidget);
+  m_contentLayout->setContentsMargins(4, 4, 4, 4);
+  m_contentLayout->setSpacing(4);
+
   // Title
-  auto *titleLabel = new QLabel(tr("Create Node"), this);
+  auto *titleLabel = new QLabel(tr("Create Node"), contentWidget);
   titleLabel->setStyleSheet(
       QString("color: %1; font-weight: bold; padding: 4px;")
           .arg(palette.textPrimary.name()));
-  layout->addWidget(titleLabel);
+  m_contentLayout->addWidget(titleLabel);
 
   // Separator
-  auto *separator = new QFrame(this);
+  auto *separator = new QFrame(contentWidget);
   separator->setFrameShape(QFrame::HLine);
   separator->setStyleSheet(
       QString("background-color: %1;").arg(palette.borderDark.name()));
-  layout->addWidget(separator);
+  m_contentLayout->addWidget(separator);
 
   // Node type buttons - Core nodes
   createNodeButton("Entry", "node-start");
@@ -299,11 +327,11 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   createNodeButton("Scene", "panel-scene");
 
   // Separator for flow control nodes
-  auto *separator2 = new QFrame(this);
+  auto *separator2 = new QFrame(contentWidget);
   separator2->setFrameShape(QFrame::HLine);
   separator2->setStyleSheet(
       QString("background-color: %1;").arg(palette.borderDark.name()));
-  layout->addWidget(separator2);
+  m_contentLayout->addWidget(separator2);
 
   // Flow control nodes
   createNodeButton("Jump", "node-jump");
@@ -313,18 +341,21 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   createNodeButton("End", "node-end");
 
   // Separator for advanced nodes
-  auto *separator3 = new QFrame(this);
+  auto *separator3 = new QFrame(contentWidget);
   separator3->setFrameShape(QFrame::HLine);
   separator3->setStyleSheet(
       QString("background-color: %1;").arg(palette.borderDark.name()));
-  layout->addWidget(separator3);
+  m_contentLayout->addWidget(separator3);
 
   // Advanced nodes
   createNodeButton("Script", "settings");
   createNodeButton("Variable", "node-variable");
   createNodeButton("Event", "node-event");
 
-  layout->addStretch();
+  m_contentLayout->addStretch();
+
+  scrollArea->setWidget(contentWidget);
+  mainLayout->addWidget(scrollArea);
 
   // Style the widget
   setStyleSheet(QString("QWidget { background-color: %1; border: 1px solid %2; "
@@ -337,8 +368,7 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
 
 void NMNodePalette::createNodeButton(const QString &nodeType,
                                      const QString &iconName) {
-  auto *layout = qobject_cast<QVBoxLayout *>(this->layout());
-  if (!layout)
+  if (!m_contentLayout)
     return;
 
   auto &iconMgr = NMIconManager::instance();
@@ -372,7 +402,7 @@ void NMNodePalette::createNodeButton(const QString &nodeType,
   connect(button, &QPushButton::clicked, this,
           [this, nodeType]() { emit nodeTypeSelected(nodeType); });
 
-  layout->insertWidget(layout->count() - 1, button);
+  m_contentLayout->insertWidget(m_contentLayout->count() - 1, button);
 }
 
 // ============================================================================

@@ -1,4 +1,5 @@
 #include <NovelMind/editor/qt/nm_icon_manager.hpp>
+#include <NovelMind/editor/qt/nm_scrollable_toolbar.hpp>
 #include <NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -51,10 +52,12 @@ void NMPlayToolbarPanel::setupUI() {
   layout->setContentsMargins(4, 4, 4, 4);
   layout->setSpacing(4);
 
-  // Create toolbar
-  auto *toolbar = new QToolBar;
-  toolbar->setObjectName("PlayControlBar");
-  toolbar->setIconSize(QSize(24, 24));
+  // Wrap the toolbar in a scrollable container for adaptive layout
+  // This ensures all play controls remain accessible when panel is small
+  m_scrollableToolBar = new NMScrollableToolBar(this);
+  auto *toolbar = m_scrollableToolBar->toolbar();
+  m_scrollableToolBar->setToolBarObjectName("PlayControlBar");
+  m_scrollableToolBar->setIconSize(QSize(24, 24));
   toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   auto &iconMgr = NMIconManager::instance();
@@ -217,7 +220,7 @@ void NMPlayToolbarPanel::setupUI() {
   m_statusLabel->setObjectName("PlayStatusLabel");
   toolbar->addWidget(m_statusLabel);
 
-  layout->addWidget(toolbar);
+  layout->addWidget(m_scrollableToolBar);
   layout->addStretch();
 
   // Use setContentWidget instead of setLayout
