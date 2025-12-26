@@ -126,11 +126,6 @@ QTabBar::tab:hover {
     background: %6;
 }
 
-QTabWidget::pane {
-    border: 1px solid %5;
-    top: -1px;
-}
-
 QSplitter::handle {
     background: %5;
 }
