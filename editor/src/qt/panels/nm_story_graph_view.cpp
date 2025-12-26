@@ -47,12 +47,16 @@ NMStoryGraphView::NMStoryGraphView(QWidget *parent) : QGraphicsView(parent) {
   setRenderHint(QPainter::TextAntialiasing);
   setRenderHint(QPainter::SmoothPixmapTransform);
 
-  // Use SmartViewportUpdate for better balance between performance and quality
-  // This avoids artifacts while being faster than FullViewportUpdate
-  setViewportUpdateMode(SmartViewportUpdate);
+  // Use FullViewportUpdate to prevent visual trails when dragging nodes
+  // SmartViewportUpdate combined with CacheBackground can cause artifacts
+  // when items are moved frequently (see issue #53)
+  setViewportUpdateMode(FullViewportUpdate);
+
+  // Disable background caching to prevent visual trails when nodes are dragged
+  // CacheBackground can cause stale content to persist during frequent redraws
+  setCacheMode(CacheNone);
 
   // Optimization flags
-  setCacheMode(CacheBackground);
   setOptimizationFlag(DontSavePainterState, true);
 
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
