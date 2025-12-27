@@ -17,15 +17,3 @@ Original repository (upstream): VisageDvachevsky/StoryGraph
 Proceed.
 
 Run timestamp: 2025-12-26T12:46:36.284Z
-
----
-
-Issue to solve: https://github.com/VisageDvachevsky/StoryGraph/issues/97
-Your prepared branch: issue-97-c8ded12aa5dd
-Your prepared working directory: /tmp/gh-issue-solver-1766854715211
-Your forked repository: konard/VisageDvachevsky-StoryGraph
-Original repository (upstream): VisageDvachevsky/StoryGraph
-
-Proceed.
-
-Run timestamp: 2025-12-27T16:58:39.611Z
