@@ -8,9 +8,12 @@
 #include <QDebug>
 #include <QFile>
 #include <QFileInfo>
+#include <QProgressDialog>
 #include <QQueue>
 #include <QSet>
 #include <QTextStream>
+#include <QThread>
+#include <atomic>
 
 #include "nm_story_graph_panel_detail.hpp"
 
@@ -929,18 +932,88 @@ void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
   }
 }
 
+// Helper struct for sync item data (Issue #96: async sync)
+struct SyncItem {
+  QString sceneId;
+  QString scriptPath;
+  QString speaker;
+  QString dialogueText;
+};
+
+// Result struct for async sync operation
+struct SyncResult {
+  int nodesSynced = 0;
+  int nodesSkipped = 0;
+  QStringList syncErrors;
+};
+
+/**
+ * @brief Worker class for async sync operation (Issue #96)
+ *
+ * This worker runs in a separate thread to perform file I/O operations
+ * without blocking the UI thread.
+ */
+class SyncToScriptWorker : public QObject {
+  Q_OBJECT
+
+public:
+  SyncToScriptWorker(QList<SyncItem> items,
+                     std::shared_ptr<std::atomic<bool>> cancelled)
+      : m_items(std::move(items)), m_cancelled(std::move(cancelled)) {}
+
+public slots:
+  void process() {
+    SyncResult result;
+
+    for (int i = 0; i < m_items.size(); ++i) {
+      // Check for cancellation
+      if (m_cancelled->load()) {
+        result.syncErrors << tr("Operation cancelled by user");
+        break;
+      }
+
+      const auto &item = m_items.at(i);
+
+      // Perform the actual sync (file I/O in background thread)
+      bool success = detail::updateSceneSayStatement(
+          item.sceneId, item.scriptPath, item.speaker, item.dialogueText);
+
+      if (success) {
+        ++result.nodesSynced;
+      } else {
+        result.syncErrors << tr("Failed to sync node '%1' to '%2'")
+                                 .arg(item.sceneId, item.scriptPath);
+      }
+
+      // Report progress
+      emit progressUpdated(i + 1, static_cast<int>(m_items.size()));
+    }
+
+    emit finished(result);
+  }
+
+signals:
+  void progressUpdated(int current, int total);
+  void finished(const SyncResult &result);
+
+private:
+  QList<SyncItem> m_items;
+  std::shared_ptr<std::atomic<bool>> m_cancelled;
+};
+
 void NMStoryGraphPanel::onSyncGraphToScript() {
   // Issue #82: Sync Story Graph data to NMScript files
+  // Issue #96: Run sync asynchronously to prevent UI freeze
   // This ensures that visual edits made in the Story Graph are persisted
-  // to the authoritative NMScript source files.
+  // to the authoritative NMScript source files without blocking the UI.
 
   if (!m_scene) {
     return;
   }
 
-  int nodesSynced = 0;
+  // Collect sync items from UI thread (fast operation)
+  QList<SyncItem> syncItems;
   int nodesSkipped = 0;
-  QStringList syncErrors;
 
   for (auto *item : m_scene->items()) {
     auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item);
@@ -967,42 +1040,110 @@ void NMStoryGraphPanel::onSyncGraphToScript() {
       continue;
     }
 
-    bool success = detail::updateSceneSayStatement(sceneId, scriptPath, speaker,
-                                                   dialogueText);
-    if (success) {
-      ++nodesSynced;
-    } else {
-      syncErrors
-          << tr("Failed to sync node '%1' to '%2'").arg(sceneId, scriptPath);
-    }
+    syncItems.append({sceneId, scriptPath, speaker, dialogueText});
   }
 
-  // Report results to user
-  QString message;
-  if (syncErrors.isEmpty()) {
-    if (nodesSynced > 0) {
-      message = tr("Successfully synchronized %1 node(s) to NMScript files.\n"
-                   "(%2 node(s) skipped - no script or empty content)")
-                    .arg(nodesSynced)
-                    .arg(nodesSkipped);
-      qDebug() << "[StoryGraph] Sync to Script:" << nodesSynced << "synced,"
-               << nodesSkipped << "skipped";
-    } else {
-      message = tr("No nodes needed synchronization.\n"
-                   "(%1 node(s) skipped - no script or empty content)")
-                    .arg(nodesSkipped);
-    }
-  } else {
-    message = tr("Synchronization completed with errors:\n\n%1\n\n"
-                 "(%2 node(s) synced, %3 failed)")
-                  .arg(syncErrors.join("\n"))
-                  .arg(nodesSynced)
-                  .arg(syncErrors.size());
-    ErrorReporter::instance().reportWarning(message.toStdString());
+  // If nothing to sync, show message immediately
+  if (syncItems.isEmpty()) {
+    QString message = tr("No nodes needed synchronization.\n"
+                         "(%1 node(s) skipped - no script or empty content)")
+                          .arg(nodesSkipped);
+    NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
+    return;
   }
 
-  // Show notification (non-blocking info dialog)
-  NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
+  // Create progress dialog (Issue #96: keep UI responsive)
+  auto *progressDialog = new QProgressDialog(
+      tr("Synchronizing nodes to scripts..."), tr("Cancel"), 0,
+      static_cast<int>(syncItems.size()), this);
+  progressDialog->setWindowModality(Qt::WindowModal);
+  progressDialog->setMinimumDuration(0); // Show immediately
+  progressDialog->setValue(0);
+  progressDialog->setAutoClose(false);
+  progressDialog->setAutoReset(false);
+
+  // Capture initial skip count for final message
+  const int initialSkipped = nodesSkipped;
+
+  // Create cancellation flag (shared with worker thread)
+  auto cancelled = std::make_shared<std::atomic<bool>>(false);
+
+  // Create worker thread
+  auto *workerThread = new QThread(this);
+  auto *worker = new SyncToScriptWorker(syncItems, cancelled);
+  worker->moveToThread(workerThread);
+
+  // Connect cancel button to set cancellation flag
+  connect(progressDialog, &QProgressDialog::canceled, this,
+          [cancelled, progressDialog]() {
+            cancelled->store(true);
+            progressDialog->setLabelText(tr("Cancelling..."));
+          });
+
+  // Connect signals for progress updates
+  connect(worker, &SyncToScriptWorker::progressUpdated, progressDialog,
+          [progressDialog](int current, int total) {
+            progressDialog->setValue(current);
+            progressDialog->setLabelText(
+                QObject::tr("Synchronizing node %1 of %2...")
+                    .arg(current)
+                    .arg(total));
+          });
+
+  // Connect finished signal to handle results
+  connect(
+      worker, &SyncToScriptWorker::finished, this,
+      [this, progressDialog, workerThread, worker,
+       initialSkipped](const SyncResult &result) {
+        progressDialog->close();
+        progressDialog->deleteLater();
+
+        // Clean up worker and thread
+        workerThread->quit();
+        workerThread->wait();
+        worker->deleteLater();
+        workerThread->deleteLater();
+
+        // Report results to user
+        QString message;
+        const int totalSkipped = initialSkipped + result.nodesSkipped;
+
+        if (result.syncErrors.isEmpty()) {
+          if (result.nodesSynced > 0) {
+            message = tr("Successfully synchronized %1 node(s) to NMScript "
+                         "files.\n"
+                         "(%2 node(s) skipped - no script or empty content)")
+                          .arg(result.nodesSynced)
+                          .arg(totalSkipped);
+            qDebug() << "[StoryGraph] Sync to Script:" << result.nodesSynced
+                     << "synced," << totalSkipped << "skipped";
+          } else {
+            message = tr("No nodes needed synchronization.\n"
+                         "(%1 node(s) skipped - no script or empty content)")
+                          .arg(totalSkipped);
+          }
+        } else {
+          message = tr("Synchronization completed with errors:\n\n%1\n\n"
+                       "(%2 node(s) synced, %3 failed)")
+                        .arg(result.syncErrors.join("\n"))
+                        .arg(result.nodesSynced)
+                        .arg(result.syncErrors.size());
+          ErrorReporter::instance().reportWarning(message.toStdString());
+        }
+
+        // Show notification (non-blocking info dialog)
+        NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
+      });
+
+  // Connect thread started signal to start worker
+  connect(workerThread, &QThread::started, worker,
+          &SyncToScriptWorker::process);
+
+  // Start the worker thread
+  workerThread->start();
 }
 
 } // namespace NovelMind::editor::qt
+
+// Include MOC for Q_OBJECT class defined in this file
+#include "nm_story_graph_panel_handlers.moc"
