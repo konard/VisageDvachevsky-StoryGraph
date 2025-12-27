@@ -306,7 +306,9 @@ std::string ProjectManager::getFolderPath(ProjectFolder folder) const {
   case ProjectFolder::Fonts:
     return (base / "Assets" / "Fonts").string();
   case ProjectFolder::Scripts:
-    return (base / "Scripts").string();
+    return (base / "scripts").string();
+  case ProjectFolder::ScriptsGenerated:
+    return (base / "scripts" / "generated").string();
   case ProjectFolder::Scenes:
     return (base / "Scenes").string();
   case ProjectFolder::Localization:
@@ -360,7 +362,8 @@ Result<void> ProjectManager::createFolderStructure() {
                                    base / "Assets" / "Images",
                                    base / "Assets" / "Audio",
                                    base / "Assets" / "Fonts",
-                                   base / "Scripts",
+                                   base / "scripts",
+                                   base / "scripts" / "generated",
                                    base / "Scenes",
                                    base / "Localization",
                                    base / "Build",
@@ -389,7 +392,7 @@ bool ProjectManager::verifyFolderStructure() const {
   fs::path base(m_projectPath);
 
   // Check required folders
-  std::vector<fs::path> required = {base / "Assets", base / "Scripts",
+  std::vector<fs::path> required = {base / "Assets", base / "scripts",
                                     base / "Scenes"};
 
   for (const auto &folder : required) {

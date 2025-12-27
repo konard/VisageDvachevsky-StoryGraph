@@ -18,7 +18,8 @@
  *       /Images/
  *       /Audio/
  *       /Fonts/
- *     /Scripts/
+ *     /scripts/
+ *       /generated/       - Auto-generated scripts from Story Graph
  *     /Scenes/
  *     /Localization/
  *     /Build/             - Build output
@@ -108,6 +109,7 @@ enum class ProjectFolder : u8 {
   Audio,
   Fonts,
   Scripts,
+  ScriptsGenerated, // Auto-generated scripts from Story Graph (issue #85)
   Scenes,
   Localization,
   Build,

@@ -68,7 +68,7 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
       (nodeType.compare("Entry", Qt::CaseInsensitive) == 0);
   if (!isEntryNode) {
     const auto scriptsDir = QString::fromStdString(
-        ProjectManager::instance().getFolderPath(ProjectFolder::Scripts));
+        ProjectManager::instance().getFolderPath(ProjectFolder::ScriptsGenerated));
     if (!scriptsDir.isEmpty()) {
       const QString scriptPathAbs =
           scriptsDir + "/" + node->nodeIdString() + ".nms";
@@ -81,6 +81,10 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
       if (!scriptFile.exists()) {
         if (scriptFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
           QTextStream out(&scriptFile);
+          out << "// ========================================\n";
+          out << "// Generated from Story Graph\n";
+          out << "// Do not edit manually - changes may be overwritten\n";
+          out << "// ========================================\n";
           out << "// " << node->nodeIdString() << "\n";
           out << "scene " << node->nodeIdString() << " {\n";
           // Condition and Scene nodes are "silent" - they only handle branching,
