@@ -334,112 +334,119 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
     const QStringList &music, const QStringList &voices) {
   QList<NMScriptEditor::CompletionEntry> entries;
 
+  auto addEntry = [&entries](const QString &text, const QString &detail) {
+    NMScriptEditor::CompletionEntry entry;
+    entry.text = text;
+    entry.detail = detail;
+    entries.append(entry);
+  };
+
   switch (context) {
   case CompletionContext::AfterSay:
     // Suggest character names
     for (const auto &name : characters.keys()) {
-      entries.append({name, "character"});
+      addEntry(name, "character");
     }
-    entries.append({"Narrator", "narrator"});
+    addEntry("Narrator", "narrator");
     break;
 
   case CompletionContext::AfterGoto:
   case CompletionContext::AfterScene:
     // Suggest scene names
     for (const auto &name : scenes.keys()) {
-      entries.append({name, "scene"});
+      addEntry(name, "scene");
     }
     break;
 
   case CompletionContext::AfterShow:
     // Suggest backgrounds and characters
-    entries.append({"background", "keyword"});
+    addEntry("background", "keyword");
     for (const auto &name : characters.keys()) {
-      entries.append({name, "character"});
+      addEntry(name, "character");
     }
     for (const auto &bg : backgrounds) {
-      entries.append({bg, "background"});
+      addEntry(bg, "background");
     }
     break;
 
   case CompletionContext::AfterHide:
     // Suggest characters
     for (const auto &name : characters.keys()) {
-      entries.append({name, "character"});
+      addEntry(name, "character");
     }
     break;
 
   case CompletionContext::AfterPlay:
     // Suggest channel types
-    entries.append({"music", "channel"});
-    entries.append({"sound", "channel"});
-    entries.append({"voice", "channel"});
+    addEntry("music", "channel");
+    addEntry("sound", "channel");
+    addEntry("voice", "channel");
     break;
 
   case CompletionContext::AfterStop:
-    entries.append({"music", "channel"});
-    entries.append({"sound", "channel"});
-    entries.append({"voice", "channel"});
+    addEntry("music", "channel");
+    addEntry("sound", "channel");
+    addEntry("voice", "channel");
     break;
 
   case CompletionContext::AfterSet:
     // Suggest existing variables and flags
-    entries.append({"flag", "keyword"});
+    addEntry("flag", "keyword");
     for (const auto &name : variables.keys()) {
-      entries.append({name, "variable"});
+      addEntry(name, "variable");
     }
     for (const auto &name : flags.keys()) {
-      entries.append({name, "flag"});
+      addEntry(name, "flag");
     }
     break;
 
   case CompletionContext::AfterIf:
     // Suggest flags and variables for conditions
-    entries.append({"flag", "keyword"});
-    entries.append({"not", "keyword"});
+    addEntry("flag", "keyword");
+    addEntry("not", "keyword");
     for (const auto &name : flags.keys()) {
-      entries.append({name, "flag"});
+      addEntry(name, "flag");
     }
     for (const auto &name : variables.keys()) {
-      entries.append({name, "variable"});
+      addEntry(name, "variable");
     }
     break;
 
   case CompletionContext::AfterAt:
     // Suggest positions
-    entries.append({"left", "position"});
-    entries.append({"center", "position"});
-    entries.append({"right", "position"});
+    addEntry("left", "position");
+    addEntry("center", "position");
+    addEntry("right", "position");
     break;
 
   case CompletionContext::AfterTransition:
     // Suggest transition types
-    entries.append({"fade", "transition"});
-    entries.append({"dissolve", "transition"});
-    entries.append({"slide_left", "transition"});
-    entries.append({"slide_right", "transition"});
-    entries.append({"slide_up", "transition"});
-    entries.append({"slide_down", "transition"});
+    addEntry("fade", "transition");
+    addEntry("dissolve", "transition");
+    addEntry("slide_left", "transition");
+    addEntry("slide_right", "transition");
+    addEntry("slide_up", "transition");
+    addEntry("slide_down", "transition");
     break;
 
   case CompletionContext::AfterChoice:
     // Inside choice - suggest arrow syntax
-    entries.append({"->", "operator"});
+    addEntry("->", "operator");
     for (const auto &name : scenes.keys()) {
-      entries.append({name, "scene"});
+      addEntry(name, "scene");
     }
     break;
 
   case CompletionContext::InString:
     // Suggest asset paths
     for (const auto &bg : backgrounds) {
-      entries.append({bg, "background"});
+      addEntry(bg, "background");
     }
     for (const auto &m : music) {
-      entries.append({m, "music"});
+      addEntry(m, "music");
     }
     for (const auto &v : voices) {
-      entries.append({v, "voice"});
+      addEntry(v, "voice");
     }
     break;
 

@@ -305,7 +305,6 @@ void NMScriptEditorPanel::setupContent() {
   symbolLayout->addWidget(symbolFilter);
 
   m_symbolList = new QListWidget(symbolGroup);
-  const auto &palette = NMStyleManager::instance().palette();
   m_symbolList->setStyleSheet(
       QString("QListWidget { background-color: %1; color: %2; border: none; }"
               "QListWidget::item:selected { background-color: %3; }")
