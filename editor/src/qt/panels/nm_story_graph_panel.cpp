@@ -99,10 +99,18 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
   QHash<QString, QString> sceneToFile;
   QList<QPair<QString, QString>> edges;
 
-  const QRegularExpression sceneRe("\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression gotoRe("\\bgoto\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  // Use Unicode-aware patterns to support Cyrillic, Greek, CJK, and other
+  // non-ASCII identifiers in scene names, goto targets, and choice targets.
+  // \p{L} matches any Unicode letter, \p{N} matches any Unicode digit.
+  const QRegularExpression sceneRe(
+      "\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression gotoRe(
+      "\\bgoto\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+      QRegularExpression::UseUnicodePropertiesOption);
   const QRegularExpression choiceRe(
-      "\"([^\"]+)\"\\s*->\\s*([A-Za-z_][A-Za-z0-9_]*)");
+      "\"([^\"]+)\"\\s*->\\s*([\\p{L}_][\\p{L}\\p{N}_]*)",
+      QRegularExpression::UseUnicodePropertiesOption);
 
   for (const auto &entry : fs::recursive_directory_iterator(base)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".nms") {

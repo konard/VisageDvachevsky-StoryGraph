@@ -1,6 +1,7 @@
 #include "NovelMind/scripting/lexer.hpp"
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
 
 namespace NovelMind::scripting {
 
@@ -22,6 +23,130 @@ inline bool safeIsAlnum(char c) {
 
 inline bool safeIsXdigit(char c) {
   return std::isxdigit(static_cast<unsigned char>(c)) != 0;
+}
+
+// UTF-8 helper functions for Unicode identifier support
+// Checks if a byte is a UTF-8 continuation byte (10xxxxxx)
+inline bool isUtf8Continuation(unsigned char c) { return (c & 0xC0) == 0x80; }
+
+// Checks if a character starts a valid UTF-8 multibyte sequence
+// Returns the number of bytes in the sequence (2-4), or 0 if not a valid start
+inline int utf8SequenceLength(unsigned char c) {
+  if ((c & 0xE0) == 0xC0)
+    return 2; // 110xxxxx - 2-byte sequence
+  if ((c & 0xF0) == 0xE0)
+    return 3; // 1110xxxx - 3-byte sequence
+  if ((c & 0xF8) == 0xF0)
+    return 4; // 11110xxx - 4-byte sequence
+  return 0;
+}
+
+// Decodes a UTF-8 code point from a string view starting at position pos
+// Returns the Unicode code point and advances pos past the decoded character
+// Returns 0 and doesn't advance pos on error
+inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
+  if (pos >= source.size())
+    return 0;
+
+  unsigned char c = static_cast<unsigned char>(source[pos]);
+
+  // ASCII character
+  if (c < 0x80) {
+    return c;
+  }
+
+  int seqLen = utf8SequenceLength(c);
+  if (seqLen == 0 || pos + seqLen > source.size()) {
+    return 0; // Invalid sequence
+  }
+
+  // Verify continuation bytes
+  for (int i = 1; i < seqLen; ++i) {
+    if (!isUtf8Continuation(static_cast<unsigned char>(source[pos + i]))) {
+      return 0; // Invalid continuation byte
+    }
+  }
+
+  // Decode the code point
+  uint32_t codePoint = 0;
+  switch (seqLen) {
+  case 2:
+    codePoint = (c & 0x1F) << 6;
+    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F);
+    break;
+  case 3:
+    codePoint = (c & 0x0F) << 12;
+    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 6;
+    codePoint |= (static_cast<unsigned char>(source[pos + 2]) & 0x3F);
+    break;
+  case 4:
+    codePoint = (c & 0x07) << 18;
+    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 12;
+    codePoint |= (static_cast<unsigned char>(source[pos + 2]) & 0x3F) << 6;
+    codePoint |= (static_cast<unsigned char>(source[pos + 3]) & 0x3F);
+    break;
+  default:
+    return 0;
+  }
+
+  return codePoint;
+}
+
+// Checks if a Unicode code point is a valid identifier start character
+// Supports Latin, Cyrillic, Greek, and other common alphabets
+inline bool isUnicodeIdentifierStart(uint32_t codePoint) {
+  // ASCII letters
+  if ((codePoint >= 'A' && codePoint <= 'Z') ||
+      (codePoint >= 'a' && codePoint <= 'z')) {
+    return true;
+  }
+  // Latin Extended-A, Extended-B, Extended Additional
+  if (codePoint >= 0x00C0 && codePoint <= 0x024F)
+    return true;
+  // Cyrillic (Russian, Ukrainian, etc.)
+  if (codePoint >= 0x0400 && codePoint <= 0x04FF)
+    return true;
+  // Cyrillic Supplement
+  if (codePoint >= 0x0500 && codePoint <= 0x052F)
+    return true;
+  // Greek
+  if (codePoint >= 0x0370 && codePoint <= 0x03FF)
+    return true;
+  // CJK Unified Ideographs (Chinese, Japanese Kanji)
+  if (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+    return true;
+  // Hiragana
+  if (codePoint >= 0x3040 && codePoint <= 0x309F)
+    return true;
+  // Katakana
+  if (codePoint >= 0x30A0 && codePoint <= 0x30FF)
+    return true;
+  // Korean Hangul
+  if (codePoint >= 0xAC00 && codePoint <= 0xD7AF)
+    return true;
+  // Arabic
+  if (codePoint >= 0x0600 && codePoint <= 0x06FF)
+    return true;
+  // Hebrew
+  if (codePoint >= 0x0590 && codePoint <= 0x05FF)
+    return true;
+
+  return false;
+}
+
+// Checks if a Unicode code point is valid within an identifier (after start)
+inline bool isUnicodeIdentifierPart(uint32_t codePoint) {
+  // All identifier start chars are also valid parts
+  if (isUnicodeIdentifierStart(codePoint))
+    return true;
+  // ASCII digits
+  if (codePoint >= '0' && codePoint <= '9')
+    return true;
+  // Unicode combining marks (accents, etc.)
+  if (codePoint >= 0x0300 && codePoint <= 0x036F)
+    return true;
+
+  return false;
 }
 } // anonymous namespace
 
@@ -213,9 +338,25 @@ Token Lexer::scanToken() {
     return scanNumber();
   }
 
-  // Handle identifiers and keywords
+  // Handle identifiers and keywords (ASCII)
   if (safeIsAlpha(c) || c == '_') {
     return scanIdentifier();
+  }
+
+  // Handle Unicode identifiers (Cyrillic, Greek, CJK, etc.)
+  // Check if this is a UTF-8 multibyte character that could start an identifier
+  unsigned char uc = static_cast<unsigned char>(c);
+  if (uc >= 0x80) {
+    // Rewind to re-examine this character as UTF-8
+    --m_current;
+    --m_column;
+    size_t checkPos = m_current;
+    uint32_t codePoint = decodeUtf8(m_source, checkPos);
+    if (codePoint != 0 && isUnicodeIdentifierStart(codePoint)) {
+      return scanIdentifier();
+    }
+    // Not a valid identifier start - advance past this char and continue
+    advance();
   }
 
   // Handle strings
@@ -389,8 +530,33 @@ Token Lexer::scanNumber() {
 }
 
 Token Lexer::scanIdentifier() {
-  while (!isAtEnd() && (safeIsAlnum(peek()) || peek() == '_')) {
-    advance();
+  // Scan both ASCII and Unicode identifier characters
+  while (!isAtEnd()) {
+    char c = peek();
+
+    // ASCII alphanumeric or underscore
+    if (safeIsAlnum(c) || c == '_') {
+      advance();
+      continue;
+    }
+
+    // Check for UTF-8 multibyte character
+    unsigned char uc = static_cast<unsigned char>(c);
+    if (uc >= 0x80) {
+      size_t checkPos = m_current;
+      uint32_t codePoint = decodeUtf8(m_source, checkPos);
+      if (codePoint != 0 && isUnicodeIdentifierPart(codePoint)) {
+        // Advance past all bytes of this UTF-8 character
+        size_t bytesToAdvance = checkPos - m_current;
+        for (size_t i = 0; i < bytesToAdvance; ++i) {
+          advance();
+        }
+        continue;
+      }
+    }
+
+    // Not a valid identifier character, stop scanning
+    break;
   }
 
   std::string lexeme(m_source.substr(m_start, m_current - m_start));

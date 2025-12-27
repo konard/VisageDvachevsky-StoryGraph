@@ -200,10 +200,18 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   keywordFormat.setForeground(palette.accentPrimary);
   keywordFormat.setFontWeight(QFont::Bold);
 
+  // Use Unicode-aware word boundaries for keyword matching
+  // This enables proper highlighting in presence of Cyrillic/Unicode
+  // identifiers
   const QStringList keywords = detail::buildCompletionWords();
   for (const auto &word : keywords) {
     Rule rule;
-    rule.pattern = QRegularExpression(QString("\\b%1\\b").arg(word));
+    // Use explicit word boundary pattern that works with Unicode
+    // (?<![\\w\\p{L}]) - not preceded by word char or Unicode letter
+    // (?![\\w\\p{L}]) - not followed by word char or Unicode letter
+    rule.pattern = QRegularExpression(
+        QString("(?<![\\w\\p{L}])%1(?![\\w\\p{L}])").arg(word),
+        QRegularExpression::UseUnicodePropertiesOption);
     rule.format = keywordFormat;
     m_rules.push_back(rule);
   }
@@ -221,6 +229,19 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   numberRule.pattern = QRegularExpression("\\b\\d+(\\.\\d+)?\\b");
   numberRule.format = numberFormat;
   m_rules.push_back(numberRule);
+
+  // Add identifier highlighting for Unicode identifiers (Cyrillic, etc.)
+  // This helps users see that their non-ASCII identifiers are recognized
+  QTextCharFormat identifierFormat;
+  identifierFormat.setForeground(QColor(200, 200, 230)); // Light blue-gray
+  Rule unicodeIdentifierRule;
+  // Match identifiers starting with Unicode letters (including Cyrillic)
+  // Pattern: Unicode letter followed by any word chars or Unicode letters
+  unicodeIdentifierRule.pattern = QRegularExpression(
+      "(?<![\\w\\p{L}])[\\p{L}_][\\p{L}\\p{N}_]*(?![\\w\\p{L}])",
+      QRegularExpression::UseUnicodePropertiesOption);
+  unicodeIdentifierRule.format = identifierFormat;
+  m_rules.push_back(unicodeIdentifierRule);
 
   m_commentFormat.setForeground(QColor(120, 140, 150));
   m_commentStart = QRegularExpression("/\\*");

@@ -38,6 +38,71 @@
 namespace NovelMind::editor::qt {
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * @brief Sanitizes a string to be a valid NMScript identifier.
+ *
+ * Valid identifiers must:
+ * - Start with a letter (ASCII or Unicode) or underscore
+ * - Contain only letters, digits, or underscores
+ *
+ * This function:
+ * - Replaces invalid characters with underscores
+ * - Prepends an underscore if the string starts with a digit
+ * - Converts empty strings to a default identifier
+ *
+ * @param input The input string to sanitize
+ * @param defaultPrefix Prefix to use for empty or all-invalid inputs
+ * @return A valid NMScript identifier string
+ */
+static QString sanitizeToIdentifier(const QString &input,
+                                    const QString &defaultPrefix = "node") {
+  if (input.isEmpty()) {
+    return defaultPrefix;
+  }
+
+  QString result;
+  result.reserve(input.length() + 1);
+
+  bool firstChar = true;
+  for (const QChar &ch : input) {
+    if (ch.isLetter() || ch == '_') {
+      // Valid character
+      result.append(ch);
+      firstChar = false;
+    } else if (ch.isDigit()) {
+      if (firstChar) {
+        // Can't start with a digit, prepend underscore
+        result.append('_');
+        firstChar = false;
+      }
+      result.append(ch);
+    } else if (ch.isSpace() || ch == '-' || ch == '.') {
+      // Replace common separators with underscore
+      if (!result.isEmpty() && result.back() != '_') {
+        result.append('_');
+      }
+      firstChar = false;
+    }
+    // Other characters are simply dropped
+  }
+
+  // Trim trailing underscores
+  while (result.endsWith('_')) {
+    result.chop(1);
+  }
+
+  // If result is empty, use default
+  if (result.isEmpty()) {
+    return defaultPrefix;
+  }
+
+  return result;
+}
+
+// ============================================================================
 // NMStoryGraphScene
 // ============================================================================
 
@@ -58,17 +123,37 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
     m_nextNodeId = std::max(m_nextNodeId, nodeId + 1);
   }
   node->setNodeId(nodeId);
+
+  // Set the node ID string, ensuring it's a valid identifier
+  // The node ID string is used as the scene name in NMScript, so it must be
+  // valid
   if (!nodeIdString.isEmpty()) {
-    node->setNodeIdString(nodeIdString);
+    // Sanitize the provided ID string to ensure it's a valid identifier
+    const QString sanitized = sanitizeToIdentifier(nodeIdString, "node");
+    // If sanitization changed it significantly or it's the same as another
+    // node, make it unique with the numeric ID
+    if (sanitized != nodeIdString) {
+      node->setNodeIdString(sanitized + QString("_%1").arg(nodeId));
+    } else {
+      node->setNodeIdString(nodeIdString);
+    }
   } else {
-    node->setNodeIdString(QString("node_%1").arg(nodeId));
+    // No ID string provided - generate from title or use default
+    const QString sanitizedTitle = sanitizeToIdentifier(title, "scene");
+    if (sanitizedTitle != "scene" && sanitizedTitle != "node") {
+      // Use sanitized title with numeric suffix for uniqueness
+      node->setNodeIdString(sanitizedTitle + QString("_%1").arg(nodeId));
+    } else {
+      node->setNodeIdString(QString("node_%1").arg(nodeId));
+    }
   }
 
   const bool isEntryNode =
       (nodeType.compare("Entry", Qt::CaseInsensitive) == 0);
   if (!isEntryNode) {
-    const auto scriptsDir = QString::fromStdString(
-        ProjectManager::instance().getFolderPath(ProjectFolder::ScriptsGenerated));
+    const auto scriptsDir =
+        QString::fromStdString(ProjectManager::instance().getFolderPath(
+            ProjectFolder::ScriptsGenerated));
     if (!scriptsDir.isEmpty()) {
       const QString scriptPathAbs =
           scriptsDir + "/" + node->nodeIdString() + ".nms";
@@ -87,9 +172,10 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
           out << "// ========================================\n";
           out << "// " << node->nodeIdString() << "\n";
           out << "scene " << node->nodeIdString() << " {\n";
-          // Condition and Scene nodes are "silent" - they only handle branching,
-          // not dialogue. Only Dialogue nodes get a default say statement.
-          // This fixes issue #76 where Condition nodes incorrectly said text.
+          // Condition and Scene nodes are "silent" - they only handle
+          // branching, not dialogue. Only Dialogue nodes get a default say
+          // statement. This fixes issue #76 where Condition nodes incorrectly
+          // said text.
           if (node->isConditionNode()) {
             out << "    // Condition node - add branching logic here\n";
           } else if (node->isSceneNode()) {

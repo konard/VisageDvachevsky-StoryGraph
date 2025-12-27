@@ -435,8 +435,11 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   file.close();
 
   // Find the scene block
+  // Use Unicode-aware pattern to support Cyrillic and other non-ASCII scene IDs
   const QRegularExpression sceneRe(
-      QString("\\bscene\\s+%1\\b").arg(QRegularExpression::escape(sceneId)));
+      QString("\\bscene\\s+%1(?![\\p{L}\\p{N}_])")
+          .arg(QRegularExpression::escape(sceneId)),
+      QRegularExpression::UseUnicodePropertiesOption);
   const QRegularExpressionMatch match = sceneRe.match(content);
   if (!match.hasMatch()) {
     return false;
@@ -519,32 +522,43 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   // Find and replace the first say statement
   // Pattern: say <speaker> "<text>" OR say "<text>"
   // We need to match say statements with or without speaker
+  // Use Unicode-aware pattern to match Cyrillic and other non-ASCII identifiers
   const QRegularExpression sayRe(
-      "\\bsay\\s+(?:(\\w+)\\s+)?\"([^\"]*)\"",
-      QRegularExpression::DotMatchesEverythingOption);
+      "\\bsay\\s+(?:([\\p{L}_][\\p{L}\\p{N}_]*)\\s+)?\"([^\"]*)\"",
+      QRegularExpression::UseUnicodePropertiesOption);
 
   QRegularExpressionMatch sayMatch = sayRe.match(body);
+
+  // Escape quotes in the text
+  QString escapedText = text;
+  escapedText.replace("\\", "\\\\");
+  escapedText.replace("\"", "\\\"");
+
+  // Determine the speaker to use
+  const QString speakerToUse = speaker.isEmpty() ? "Narrator" : speaker;
+
   if (!sayMatch.hasMatch()) {
     // No say statement found in the scene - add one at the beginning
-    // Escape quotes in the text
-    QString escapedText = text;
-    escapedText.replace("\\", "\\\\");
-    escapedText.replace("\"", "\\\"");
+    // But first check if the body already has this exact content to avoid
+    // duplication
+    const QString newSay =
+        QString("\n    say %1 \"%2\"").arg(speakerToUse, escapedText);
 
-    QString newSay =
-        QString("\n    say %1 \"%2\"")
-            .arg(speaker.isEmpty() ? "Narrator" : speaker, escapedText);
-    body = newSay + body;
+    // Check if this say statement already exists to prevent duplication
+    if (!body.contains(QString("say %1 \"%2\"").arg(speakerToUse, escapedText),
+                       Qt::CaseSensitive)) {
+      body = newSay + body;
+    }
   } else {
     // Replace the existing say statement
-    QString escapedText = text;
-    escapedText.replace("\\", "\\\\");
-    escapedText.replace("\"", "\\\"");
+    const QString newSay =
+        QString("say %1 \"%2\"").arg(speakerToUse, escapedText);
 
-    QString newSay =
-        QString("say %1 \"%2\"")
-            .arg(speaker.isEmpty() ? "Narrator" : speaker, escapedText);
-    body.replace(sayMatch.capturedStart(), sayMatch.capturedLength(), newSay);
+    // Only replace if it's actually different to prevent redundant writes
+    const QString existingSay = sayMatch.captured(0);
+    if (existingSay != newSay) {
+      body.replace(sayMatch.capturedStart(), sayMatch.capturedLength(), newSay);
+    }
   }
 
   QString updated = content.left(bodyStart);
