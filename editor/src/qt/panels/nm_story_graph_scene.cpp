@@ -184,6 +184,26 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
             out << "    say \"New scene\"\n";
           }
           out << "}\n";
+
+          // Flush the stream and close the file to ensure data is written to
+          // disk This fixes issue #97 where runtime couldn't find scenes
+          // because script files weren't properly flushed before
+          // validation/compilation
+          out.flush();
+          scriptFile.close();
+
+          // Verify the file was written successfully
+          if (scriptFile.error() != QFile::NoError) {
+            qWarning() << "[StoryGraph] Failed to write script file for node"
+                       << node->nodeIdString() << ":"
+                       << scriptFile.errorString();
+          } else {
+            qDebug() << "[StoryGraph] Successfully created script file:"
+                     << scriptPathRel;
+          }
+        } else {
+          qWarning() << "[StoryGraph] Failed to open script file for writing:"
+                     << scriptPathAbs << "-" << scriptFile.errorString();
         }
       }
     }
