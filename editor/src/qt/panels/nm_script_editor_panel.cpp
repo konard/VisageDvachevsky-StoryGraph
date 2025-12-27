@@ -17,12 +17,15 @@
 #include <QFileInfo>
 #include <QFileSystemWatcher>
 #include <QGroupBox>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMenu>
 #include <QPainter>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
@@ -260,6 +263,19 @@ void NMScriptEditorPanel::setupContent() {
   setupToolBar();
   layout->addWidget(m_toolBar);
 
+  // Breadcrumb bar (shows current scope: scene > choice > if)
+  const auto &palette = NMStyleManager::instance().palette();
+  m_breadcrumbBar = new QWidget(m_contentWidget);
+  auto *breadcrumbLayout = new QHBoxLayout(m_breadcrumbBar);
+  breadcrumbLayout->setContentsMargins(8, 2, 8, 2);
+  breadcrumbLayout->setSpacing(0);
+  m_breadcrumbBar->setStyleSheet(
+      QString("background-color: %1; border-bottom: 1px solid %2;")
+          .arg(palette.bgMedium.name())
+          .arg(palette.borderLight.name()));
+  m_breadcrumbBar->setFixedHeight(24);
+  layout->addWidget(m_breadcrumbBar);
+
   m_splitter = new QSplitter(Qt::Horizontal, m_contentWidget);
 
   // Left panel with file tree and symbol list
@@ -289,7 +305,6 @@ void NMScriptEditorPanel::setupContent() {
   symbolLayout->addWidget(symbolFilter);
 
   m_symbolList = new QListWidget(symbolGroup);
-  const auto &palette = NMStyleManager::instance().palette();
   m_symbolList->setStyleSheet(
       QString("QListWidget { background-color: %1; color: %2; border: none; }"
               "QListWidget::item:selected { background-color: %3; }")
@@ -332,6 +347,38 @@ void NMScriptEditorPanel::setupContent() {
   m_splitter->setStretchFactor(1, 1);
   layout->addWidget(m_findReplaceWidget);
   layout->addWidget(m_splitter);
+
+  // Status bar with syntax hints and cursor position
+  m_statusBar = new QWidget(m_contentWidget);
+  auto *statusLayout = new QHBoxLayout(m_statusBar);
+  statusLayout->setContentsMargins(8, 2, 8, 2);
+  statusLayout->setSpacing(16);
+  m_statusBar->setStyleSheet(
+      QString("background-color: %1; border-top: 1px solid %2;")
+          .arg(palette.bgMedium.name())
+          .arg(palette.borderLight.name()));
+  m_statusBar->setFixedHeight(22);
+
+  // Syntax hint label
+  m_syntaxHintLabel = new QLabel(m_statusBar);
+  m_syntaxHintLabel->setStyleSheet(
+      QString("color: %1; font-family: %2;")
+          .arg(palette.textSecondary.name())
+          .arg(NMStyleManager::instance().monospaceFont().family()));
+  statusLayout->addWidget(m_syntaxHintLabel);
+
+  statusLayout->addStretch();
+
+  // Cursor position label
+  m_cursorPosLabel = new QLabel(tr("Ln 1, Col 1"), m_statusBar);
+  m_cursorPosLabel->setStyleSheet(
+      QString("color: %1;").arg(palette.textSecondary.name()));
+  statusLayout->addWidget(m_cursorPosLabel);
+
+  layout->addWidget(m_statusBar);
+
+  // Initialize snippet templates
+  m_snippetTemplates = detail::buildSnippetTemplates();
 
   setContentWidget(m_contentWidget);
 }
@@ -419,6 +466,35 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::showReplaceDialog);
   connect(editor, &NMScriptEditor::showCommandPaletteRequested, this,
           &NMScriptEditorPanel::showCommandPalette);
+
+  // Status bar and breadcrumb connections
+  connect(editor, &NMScriptEditor::syntaxHintChanged, this,
+          &NMScriptEditorPanel::onSyntaxHintChanged);
+  connect(editor, &NMScriptEditor::breadcrumbsChanged, this,
+          &NMScriptEditorPanel::onBreadcrumbsChanged);
+  connect(editor, &NMScriptEditor::quickFixesAvailable, this,
+          &NMScriptEditorPanel::showQuickFixMenu);
+
+  // Update cursor position in status bar
+  connect(editor, &QPlainTextEdit::cursorPositionChanged, this,
+          [this, editor]() {
+            const QTextCursor cursor = editor->textCursor();
+            const int line = cursor.blockNumber() + 1;
+            const int col = cursor.positionInBlock() + 1;
+            if (m_cursorPosLabel) {
+              m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
+            }
+
+            // Update syntax hint
+            const QString hint = editor->getSyntaxHint();
+            if (m_syntaxHintLabel && hint != m_syntaxHintLabel->text()) {
+              m_syntaxHintLabel->setText(hint);
+            }
+
+            // Update breadcrumbs
+            const QStringList breadcrumbs = editor->getBreadcrumbs();
+            onBreadcrumbsChanged(breadcrumbs);
+          });
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -1328,6 +1404,98 @@ void NMScriptEditorPanel::onUnfoldAll() {
       }
     }
   }
+}
+
+void NMScriptEditorPanel::onSyntaxHintChanged(const QString &hint) {
+  if (m_syntaxHintLabel) {
+    m_syntaxHintLabel->setText(hint);
+    m_syntaxHintLabel->setVisible(!hint.isEmpty());
+  }
+}
+
+void NMScriptEditorPanel::onBreadcrumbsChanged(const QStringList &breadcrumbs) {
+  if (!m_breadcrumbBar) {
+    return;
+  }
+
+  // Clear existing breadcrumb buttons
+  QLayoutItem *item;
+  while ((item = m_breadcrumbBar->layout()->takeAt(0)) != nullptr) {
+    delete item->widget();
+    delete item;
+  }
+
+  const auto &palette = NMStyleManager::instance().palette();
+
+  for (int i = 0; i < breadcrumbs.size(); ++i) {
+    if (i > 0) {
+      auto *separator = new QLabel(">", m_breadcrumbBar);
+      separator->setStyleSheet(QString("color: %1; padding: 0 4px;")
+                                   .arg(palette.textSecondary.name()));
+      m_breadcrumbBar->layout()->addWidget(separator);
+    }
+
+    auto *button = new QPushButton(breadcrumbs[i], m_breadcrumbBar);
+    button->setFlat(true);
+    button->setCursor(Qt::PointingHandCursor);
+    button->setStyleSheet(
+        QString("QPushButton { color: %1; border: none; padding: 2px 4px; }"
+                "QPushButton:hover { background-color: %2; }")
+            .arg(palette.textPrimary.name())
+            .arg(palette.bgLight.name()));
+    m_breadcrumbBar->layout()->addWidget(button);
+  }
+
+  // Add stretch at the end
+  static_cast<QHBoxLayout *>(m_breadcrumbBar->layout())->addStretch();
+}
+
+void NMScriptEditorPanel::onQuickFixRequested() {
+  auto *editor = currentEditor();
+  if (!editor) {
+    return;
+  }
+
+  const int line = editor->textCursor().blockNumber() + 1;
+  const auto fixes = editor->getQuickFixes(line);
+  if (!fixes.isEmpty()) {
+    showQuickFixMenu(fixes);
+  }
+}
+
+void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix> &fixes) {
+  auto *editor = currentEditor();
+  if (!editor || fixes.isEmpty()) {
+    return;
+  }
+
+  const auto &palette = NMStyleManager::instance().palette();
+
+  QMenu menu(this);
+  menu.setStyleSheet(
+      QString("QMenu { background-color: %1; color: %2; border: 1px solid %3; }"
+              "QMenu::item { padding: 6px 20px; }"
+              "QMenu::item:selected { background-color: %4; }")
+          .arg(palette.bgMedium.name())
+          .arg(palette.textPrimary.name())
+          .arg(palette.borderLight.name())
+          .arg(palette.accentPrimary.name()));
+
+  for (const auto &fix : fixes) {
+    QAction *action = menu.addAction(fix.title);
+    action->setToolTip(fix.description);
+    connect(action, &QAction::triggered, this, [this, fix]() {
+      if (auto *ed = currentEditor()) {
+        ed->applyQuickFix(fix);
+        m_diagnosticsTimer.start();
+      }
+    });
+  }
+
+  // Position menu at cursor
+  const QRect cursorRect = editor->cursorRect();
+  const QPoint globalPos = editor->mapToGlobal(cursorRect.bottomLeft());
+  menu.exec(globalPos);
 }
 
 } // namespace NovelMind::editor::qt

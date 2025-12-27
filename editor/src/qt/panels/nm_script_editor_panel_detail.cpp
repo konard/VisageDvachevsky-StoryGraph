@@ -1,4 +1,5 @@
 #include "nm_script_editor_panel_detail.hpp"
+#include <QRegularExpression>
 
 namespace NovelMind::editor::qt::detail {
 
@@ -14,6 +15,137 @@ QStringList buildCompletionWords() {
           "fade_from", "move",       "scale",    "rotate",     "textbox",
           "set_speed", "allow_skip", "duration", "intensity",  "color",
           "to"};
+}
+
+QList<SnippetTemplate> buildSnippetTemplates() {
+  QList<SnippetTemplate> templates;
+
+  // Scene template
+  templates.append(
+      {"Scene Block",
+       "scene",
+       "Create a new scene with dialogue",
+       "scene ${1:scene_name} {\n  say ${2:Narrator} \"${3:Description}\"\n}\n",
+       {"scene_name", "Narrator", "Description"}});
+
+  // Character declaration
+  templates.append({"Character Declaration",
+                    "character",
+                    "Declare a new character with properties",
+                    "character ${1:CharName}(name=\"${2:Display Name}\", "
+                    "color=\"${3:#4A9FD9}\")\n",
+                    {"CharName", "Display Name", "#4A9FD9"}});
+
+  // Say dialogue
+  templates.append({"Say Dialogue",
+                    "say",
+                    "Character speaks dialogue",
+                    "say ${1:Character} \"${2:Dialogue text}\"\n",
+                    {"Character", "Dialogue text"}});
+
+  // Choice block
+  templates.append(
+      {"Choice Block",
+       "choice",
+       "Present interactive options to player",
+       "choice {\n  \"${1:Option 1}\" -> ${2:scene_target1}\n  \"${3:Option "
+       "2}\" -> ${4:scene_target2}\n}\n",
+       {"Option 1", "scene_target1", "Option 2", "scene_target2"}});
+
+  // If/else block
+  templates.append(
+      {"If/Else Block",
+       "if",
+       "Conditional branch based on expression",
+       "if ${1:flag condition} {\n  ${2:// true branch}\n} else {\n  "
+       "${3:// false branch}\n}\n",
+       {"flag condition", "// true branch", "// false branch"}});
+
+  // Goto statement
+  templates.append({"Goto Statement",
+                    "goto",
+                    "Jump to another scene",
+                    "goto ${1:scene_name}\n",
+                    {"scene_name"}});
+
+  // Show background
+  templates.append({"Show Background",
+                    "showbg",
+                    "Display a background image",
+                    "show background \"${1:background_id}\"\n",
+                    {"background_id"}});
+
+  // Show character
+  templates.append({"Show Character",
+                    "showchar",
+                    "Display a character at position",
+                    "show ${1:character} at ${2:center}\n",
+                    {"character", "center"}});
+
+  // Hide character
+  templates.append({"Hide Character",
+                    "hide",
+                    "Hide a character or element",
+                    "hide ${1:character}\n",
+                    {"character"}});
+
+  // Play music
+  templates.append({"Play Music",
+                    "playmusic",
+                    "Start playing background music",
+                    "play music \"${1:music_id}\" loop=${2:true}\n",
+                    {"music_id", "true"}});
+
+  // Play sound
+  templates.append({"Play Sound",
+                    "playsound",
+                    "Play a sound effect",
+                    "play sound \"${1:sound_id}\"\n",
+                    {"sound_id"}});
+
+  // Play voice
+  templates.append({"Play Voice",
+                    "playvoice",
+                    "Play voice acting",
+                    "play voice \"${1:voice_id}\"\n",
+                    {"voice_id"}});
+
+  // Wait
+  templates.append({"Wait",
+                    "wait",
+                    "Pause execution for duration",
+                    "wait ${1:1.0}\n",
+                    {"1.0"}});
+
+  // Transition
+  templates.append({"Transition",
+                    "transition",
+                    "Apply a visual transition",
+                    "transition ${1:fade} ${2:0.5}\n",
+                    {"fade", "0.5"}});
+
+  // Set variable
+  templates.append({"Set Variable",
+                    "setvar",
+                    "Assign a value to a variable",
+                    "set ${1:variable} = ${2:value}\n",
+                    {"variable", "value"}});
+
+  // Set flag
+  templates.append({"Set Flag",
+                    "setflag",
+                    "Set a boolean flag",
+                    "set flag ${1:flag_name} = ${2:true}\n",
+                    {"flag_name", "true"}});
+
+  // Move character
+  templates.append({"Move Character",
+                    "move",
+                    "Move character to position over time",
+                    "move ${1:character} to (${2:0.5}, ${3:0.5}) ${4:1.0}\n",
+                    {"character", "0.5", "0.5", "1.0"}});
+
+  return templates;
 }
 
 QHash<QString, QString> buildHoverDocs() {
@@ -192,6 +324,256 @@ QList<NMScriptEditor::CompletionEntry> buildKeywordEntries() {
     entries.push_back({word, "keyword"});
   }
   return entries;
+}
+
+QList<NMScriptEditor::CompletionEntry> getContextCompletions(
+    CompletionContext context, const QHash<QString, QString> &scenes,
+    const QHash<QString, QString> &characters,
+    const QHash<QString, QString> &flags,
+    const QHash<QString, QString> &variables, const QStringList &backgrounds,
+    const QStringList &music, const QStringList &voices) {
+  QList<NMScriptEditor::CompletionEntry> entries;
+
+  auto addEntry = [&entries](const QString &text, const QString &detail) {
+    NMScriptEditor::CompletionEntry entry;
+    entry.text = text;
+    entry.detail = detail;
+    entries.append(entry);
+  };
+
+  switch (context) {
+  case CompletionContext::AfterSay:
+    // Suggest character names
+    for (const auto &name : characters.keys()) {
+      addEntry(name, "character");
+    }
+    addEntry("Narrator", "narrator");
+    break;
+
+  case CompletionContext::AfterGoto:
+  case CompletionContext::AfterScene:
+    // Suggest scene names
+    for (const auto &name : scenes.keys()) {
+      addEntry(name, "scene");
+    }
+    break;
+
+  case CompletionContext::AfterShow:
+    // Suggest backgrounds and characters
+    addEntry("background", "keyword");
+    for (const auto &name : characters.keys()) {
+      addEntry(name, "character");
+    }
+    for (const auto &bg : backgrounds) {
+      addEntry(bg, "background");
+    }
+    break;
+
+  case CompletionContext::AfterHide:
+    // Suggest characters
+    for (const auto &name : characters.keys()) {
+      addEntry(name, "character");
+    }
+    break;
+
+  case CompletionContext::AfterPlay:
+    // Suggest channel types
+    addEntry("music", "channel");
+    addEntry("sound", "channel");
+    addEntry("voice", "channel");
+    break;
+
+  case CompletionContext::AfterStop:
+    addEntry("music", "channel");
+    addEntry("sound", "channel");
+    addEntry("voice", "channel");
+    break;
+
+  case CompletionContext::AfterSet:
+    // Suggest existing variables and flags
+    addEntry("flag", "keyword");
+    for (const auto &name : variables.keys()) {
+      addEntry(name, "variable");
+    }
+    for (const auto &name : flags.keys()) {
+      addEntry(name, "flag");
+    }
+    break;
+
+  case CompletionContext::AfterIf:
+    // Suggest flags and variables for conditions
+    addEntry("flag", "keyword");
+    addEntry("not", "keyword");
+    for (const auto &name : flags.keys()) {
+      addEntry(name, "flag");
+    }
+    for (const auto &name : variables.keys()) {
+      addEntry(name, "variable");
+    }
+    break;
+
+  case CompletionContext::AfterAt:
+    // Suggest positions
+    addEntry("left", "position");
+    addEntry("center", "position");
+    addEntry("right", "position");
+    break;
+
+  case CompletionContext::AfterTransition:
+    // Suggest transition types
+    addEntry("fade", "transition");
+    addEntry("dissolve", "transition");
+    addEntry("slide_left", "transition");
+    addEntry("slide_right", "transition");
+    addEntry("slide_up", "transition");
+    addEntry("slide_down", "transition");
+    break;
+
+  case CompletionContext::AfterChoice:
+    // Inside choice - suggest arrow syntax
+    addEntry("->", "operator");
+    for (const auto &name : scenes.keys()) {
+      addEntry(name, "scene");
+    }
+    break;
+
+  case CompletionContext::InString:
+    // Suggest asset paths
+    for (const auto &bg : backgrounds) {
+      addEntry(bg, "background");
+    }
+    for (const auto &m : music) {
+      addEntry(m, "music");
+    }
+    for (const auto &v : voices) {
+      addEntry(v, "voice");
+    }
+    break;
+
+  case CompletionContext::InComment:
+    // No suggestions in comments
+    break;
+
+  case CompletionContext::Unknown:
+  default:
+    // Return all keywords
+    return buildKeywordEntries();
+  }
+
+  return entries;
+}
+
+QHash<int, QList<QuickFix>>
+generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
+  QHash<int, QList<QuickFix>> fixes;
+
+  for (const auto &issue : issues) {
+    QList<QuickFix> lineFixes;
+
+    // Check for common error patterns and suggest fixes
+    const QString msg = issue.message.toLower();
+
+    // Unknown scene reference
+    if (msg.contains("unknown scene") || msg.contains("undefined scene")) {
+      QRegularExpression re("scene\\s+([A-Za-z_][A-Za-z0-9_]*)");
+      QRegularExpressionMatch match = re.match(msg);
+      if (match.hasMatch()) {
+        const QString sceneName = match.captured(1);
+        lineFixes.append({QString("Create scene '%1'").arg(sceneName),
+                          "Add a new scene definition", issue.line, 0,
+                          QString("scene %1 {\n  say Narrator \"New "
+                                  "scene\"\n}\n\n")
+                              .arg(sceneName),
+                          0});
+      }
+    }
+
+    // Unknown character
+    if (msg.contains("unknown character") ||
+        msg.contains("undefined character")) {
+      QRegularExpression re("character\\s+([A-Za-z_][A-Za-z0-9_]*)");
+      QRegularExpressionMatch match = re.match(msg);
+      if (match.hasMatch()) {
+        const QString charName = match.captured(1);
+        lineFixes.append(
+            {QString("Declare character '%1'").arg(charName),
+             "Add a character declaration at the start", 1, 0,
+             QString("character %1(name=\"%1\", color=\"#4A9FD9\")\n\n")
+                 .arg(charName),
+             0});
+      }
+    }
+
+    // Missing closing brace
+    if (msg.contains("expected '}'") || msg.contains("missing '}'")) {
+      lineFixes.append(
+          {"Add missing '}'", "Insert closing brace", issue.line, 0, "}\n", 0});
+    }
+
+    // Missing opening brace
+    if (msg.contains("expected '{'") || msg.contains("missing '{'")) {
+      lineFixes.append({"Add missing '{'", "Insert opening brace", issue.line,
+                        0, " {\n", 0});
+    }
+
+    // Missing quotes
+    if (msg.contains("expected '\"'") || msg.contains("unterminated string")) {
+      lineFixes.append(
+          {"Close string", "Add closing quote", issue.line, 0, "\"", 0});
+    }
+
+    // Typo suggestions (common misspellings)
+    const QHash<QString, QString> typoFixes = {
+        {"scnee", "scene"},          {"charater", "character"},
+        {"choise", "choice"},        {"backgorund", "background"},
+        {"trasition", "transition"}, {"disolve", "dissolve"},
+        {"centter", "center"},       {"rigth", "right"}};
+
+    for (auto it = typoFixes.constBegin(); it != typoFixes.constEnd(); ++it) {
+      if (msg.contains(it.key()) ||
+          source.mid(0, 200).contains(it.key(), Qt::CaseInsensitive)) {
+        lineFixes.append(
+            {QString("Replace '%1' with '%2'").arg(it.key(), it.value()),
+             "Fix typo", issue.line, 0, it.value(),
+             static_cast<int>(it.key().length())});
+      }
+    }
+
+    if (!lineFixes.isEmpty()) {
+      fixes[issue.line] = lineFixes;
+    }
+  }
+
+  return fixes;
+}
+
+QString getSyntaxHintForKeyword(const QString &keyword) {
+  static const QHash<QString, QString> hints = {
+      {"scene", "scene <name> { <statements> }"},
+      {"character", "character <id>(name=\"Name\", color=\"#RRGGBB\")"},
+      {"say", "say <character> \"<dialogue>\""},
+      {"show", "show background \"id\" | show <char> at <pos>"},
+      {"hide", "hide <character>"},
+      {"choice", "choice { \"Option\" -> <scene> }"},
+      {"goto", "goto <scene_name>"},
+      {"if", "if <condition> { ... } else { ... }"},
+      {"set", "set <variable> = <value> | set flag <name> = true/false"},
+      {"play", "play music|sound|voice \"id\" [loop=true]"},
+      {"stop", "stop music|sound|voice [fade=1.0]"},
+      {"wait", "wait <seconds>"},
+      {"transition", "transition fade|dissolve|slide_* <duration>"},
+      {"move", "move <char> to (<x>, <y>) <duration>"},
+      {"at", "at left | center | right | (<x>, <y>)"},
+      {"with", "with \"expression_name\""},
+      {"fade", "fade <duration>"},
+      {"dissolve", "dissolve <duration>"},
+      {"flag", "flag <name> (in conditions or set statements)"}};
+
+  const QString key = keyword.toLower();
+  if (hints.contains(key)) {
+    return hints.value(key);
+  }
+  return QString();
 }
 
 } // namespace NovelMind::editor::qt::detail

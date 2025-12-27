@@ -2,20 +2,30 @@
 
 /**
  * @file nm_script_editor_panel.hpp
- * @brief Script editor panel for NMScript editing with VSCode-like IDE features
+ * @brief Script editor panel for NMScript editing with full IDE features
  *
- * Enhanced IDE features include:
+ * Full-featured IDE for NMScript with professional editing capabilities:
+ *
+ * Core IDE Features:
+ * - Context-aware autocompletion with smart suggestions
+ * - Real-time error/warning highlighting with detailed tooltips
  * - Go-to Definition (Ctrl+Click / F12)
  * - Find References (Shift+F12)
- * - Symbol Navigator (Ctrl+Shift+O)
- * - Code Snippets (scene, choice, if, goto templates)
- * - Inline error markers with underlines
- * - Script-to-Graph navigation
+ * - Symbol Navigator/Outline (Ctrl+Shift+O)
+ * - Code Snippets with tabstop placeholders (scene, choice, if, goto, etc.)
+ * - Inline quick help and documentation popups
+ * - Script-to-Graph bidirectional navigation
+ *
+ * Editor Features:
  * - Minimap (code overview on right side)
  * - Code Folding (collapse/expand blocks)
  * - Bracket Matching (highlight matching brackets)
  * - Find and Replace with regex (Ctrl+F / Ctrl+H)
  * - Command Palette (Ctrl+Shift+P)
+ * - Auto-formatting and linting
+ * - Quick fixes for common errors
+ * - Status bar with syntax hints
+ * - Breadcrumb navigation
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
@@ -92,6 +102,51 @@ struct SymbolLocation {
   int line = 0;
   int column = 0;
   QString context; // Surrounding code line for preview
+};
+
+/**
+ * @brief Completion context for context-aware suggestions
+ */
+enum class CompletionContext {
+  Unknown,         // General completion
+  AfterScene,      // After "scene" keyword - suggest scene names
+  AfterCharacter,  // After "character" keyword
+  AfterSay,        // After "say" - suggest character names
+  AfterShow,       // After "show" - suggest background/character
+  AfterHide,       // After "hide" - suggest visible elements
+  AfterGoto,       // After "goto" - suggest scene names
+  AfterPlay,       // After "play" - suggest music/sound/voice
+  AfterStop,       // After "stop" - suggest channels
+  AfterSet,        // After "set" - suggest variables/flags
+  AfterIf,         // After "if" - suggest conditions
+  AfterChoice,     // Inside choice block
+  AfterAt,         // After "at" - suggest positions
+  AfterTransition, // After "transition" - suggest transition types
+  InString,        // Inside a string literal
+  InComment        // Inside a comment
+};
+
+/**
+ * @brief Quick fix action for diagnostics
+ */
+struct QuickFix {
+  QString title;
+  QString description;
+  int line = 0;
+  int column = 0;
+  QString replacement;
+  int replacementLength = 0; // Length of text to replace (0 for insert)
+};
+
+/**
+ * @brief Snippet with tabstop placeholders for smart insertion
+ */
+struct SnippetTemplate {
+  QString name;
+  QString prefix; // Trigger text
+  QString description;
+  QString body;         // Snippet body with ${1:placeholder} syntax
+  QStringList tabstops; // Extracted tabstop values
 };
 
 // Forward declarations for new VSCode-like features
@@ -318,10 +373,95 @@ public:
   int foldingAreaWidth() const;
 
   /**
+   * @brief Get the first visible block (wrapper for protected method)
+   */
+  [[nodiscard]] QTextBlock getFirstVisibleBlock() const {
+    return firstVisibleBlock();
+  }
+
+  /**
+   * @brief Get block bounding geometry (wrapper for protected method)
+   */
+  [[nodiscard]] QRectF getBlockBoundingGeometry(const QTextBlock &block) const {
+    return blockBoundingGeometry(block);
+  }
+
+  /**
+   * @brief Get block bounding rect (wrapper for protected method)
+   */
+  [[nodiscard]] QRectF getBlockBoundingRect(const QTextBlock &block) const {
+    return blockBoundingRect(block);
+  }
+
+  /**
+   * @brief Get content offset (wrapper for protected method)
+   */
+  [[nodiscard]] QPointF getContentOffset() const { return contentOffset(); }
+
+  /**
    * @brief Insert a code snippet at cursor position
    * @param snippetType Type of snippet: "scene", "choice", "if", "goto"
    */
   void insertSnippet(const QString &snippetType);
+
+  /**
+   * @brief Insert a snippet template with tabstop navigation
+   * @param snippet The snippet template to insert
+   */
+  void insertSnippetTemplate(const SnippetTemplate &snippet);
+
+  /**
+   * @brief Get the current completion context based on cursor position
+   * @return The determined context for filtering suggestions
+   */
+  [[nodiscard]] CompletionContext getCompletionContext() const;
+
+  /**
+   * @brief Get context-aware completion suggestions
+   * @param prefix The current typing prefix
+   * @return List of completion entries filtered by context
+   */
+  [[nodiscard]] QList<CompletionEntry>
+  getContextualCompletions(const QString &prefix) const;
+
+  /**
+   * @brief Get quick fixes for the current line
+   * @return List of applicable quick fixes
+   */
+  [[nodiscard]] QList<QuickFix> getQuickFixes(int line) const;
+
+  /**
+   * @brief Apply a quick fix
+   * @param fix The quick fix to apply
+   */
+  void applyQuickFix(const QuickFix &fix);
+
+  /**
+   * @brief Navigate to the next tabstop in snippet mode
+   */
+  void nextTabstop();
+
+  /**
+   * @brief Navigate to the previous tabstop in snippet mode
+   */
+  void previousTabstop();
+
+  /**
+   * @brief Check if currently in snippet navigation mode
+   */
+  [[nodiscard]] bool isInSnippetMode() const { return m_inSnippetMode; }
+
+  /**
+   * @brief Get syntax hint for current cursor position
+   * @return A short syntax hint string for the status bar
+   */
+  [[nodiscard]] QString getSyntaxHint() const;
+
+  /**
+   * @brief Get breadcrumb path for current position
+   * @return List of breadcrumb items (e.g., ["scene main", "choice"])
+   */
+  [[nodiscard]] QStringList getBreadcrumbs() const;
 
   /**
    * @brief Toggle folding for a line
@@ -410,6 +550,21 @@ signals:
    */
   void viewportChanged(int firstLine, int lastLine);
 
+  /**
+   * @brief Emitted when syntax hint changes (for status bar)
+   */
+  void syntaxHintChanged(const QString &hint);
+
+  /**
+   * @brief Emitted when breadcrumbs change
+   */
+  void breadcrumbsChanged(const QStringList &breadcrumbs);
+
+  /**
+   * @brief Emitted when quick fixes are available for current position
+   */
+  void quickFixesAvailable(const QList<QuickFix> &fixes);
+
 protected:
   void keyPressEvent(QKeyEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
@@ -459,6 +614,20 @@ private:
   QList<FoldingRegion> m_foldingRegions;
   QList<QTextEdit::ExtraSelection> m_searchHighlights;
   QList<QTextEdit::ExtraSelection> m_bracketHighlights;
+
+  // Snippet tabstop navigation
+  bool m_inSnippetMode = false;
+  int m_currentTabstop = 0;
+  QList<QPair<int, int>> m_tabstopPositions; // start, length pairs
+  QString m_lastSyntaxHint;
+  QStringList m_lastBreadcrumbs;
+
+  // Context-aware completion
+  QList<CompletionEntry> m_contextualEntries;
+  mutable CompletionContext m_lastContext = CompletionContext::Unknown;
+
+  // Quick fixes for current diagnostics
+  QHash<int, QList<QuickFix>> m_quickFixes; // line -> fixes
 };
 
 /**
@@ -566,6 +735,10 @@ private slots:
   void onFoldAll();
   void onUnfoldAll();
   void runDiagnostics();
+  void onSyntaxHintChanged(const QString &hint);
+  void onBreadcrumbsChanged(const QStringList &breadcrumbs);
+  void onQuickFixRequested();
+  void showQuickFixMenu(const QList<QuickFix> &fixes);
 
 private:
   void setupContent();
@@ -621,6 +794,15 @@ private:
   QTimer m_diagnosticsTimer;
   class NMIssuesPanel *m_issuesPanel = nullptr;
   bool m_minimapEnabled = true;
+
+  // Status bar and breadcrumbs
+  QWidget *m_statusBar = nullptr;
+  QLabel *m_syntaxHintLabel = nullptr;
+  QLabel *m_cursorPosLabel = nullptr;
+  QWidget *m_breadcrumbBar = nullptr;
+
+  // Snippet templates
+  QList<SnippetTemplate> m_snippetTemplates;
 };
 
 } // namespace NovelMind::editor::qt

@@ -161,12 +161,12 @@ protected:
   void mousePressEvent(QMouseEvent *event) override {
     if (event->button() == Qt::LeftButton) {
       // Calculate which line was clicked
-      QTextBlock block = m_editor->firstVisibleBlock();
-      int top = static_cast<int>(m_editor->blockBoundingGeometry(block)
-                                     .translated(m_editor->contentOffset())
+      QTextBlock block = m_editor->getFirstVisibleBlock();
+      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
+                                     .translated(m_editor->getContentOffset())
                                      .top());
-      int bottom =
-          top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+      int bottom = top + static_cast<int>(
+                             m_editor->getBlockBoundingRect(block).height());
 
       while (block.isValid() && top <= event->pos().y()) {
         if (block.isVisible() && bottom >= event->pos().y()) {
@@ -175,8 +175,8 @@ protected:
         }
         block = block.next();
         top = bottom;
-        bottom =
-            top + static_cast<int>(m_editor->blockBoundingRect(block).height());
+        bottom = top + static_cast<int>(
+                           m_editor->getBlockBoundingRect(block).height());
       }
     }
     QWidget::mousePressEvent(event);
@@ -298,7 +298,8 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
           (issue.severity == "error") ? m_errorFormat : m_warningFormat;
       // Apply to non-whitespace portion of line
       int startPos = 0;
-      while (startPos < static_cast<int>(text.size()) && text.at(startPos).isSpace()) {
+      while (startPos < static_cast<int>(text.size()) &&
+             text.at(startPos).isSpace()) {
         ++startPos;
       }
       if (startPos < static_cast<int>(text.size())) {
@@ -365,7 +366,8 @@ void NMScriptMinimap::updateContent() {
         color = QColor(220, 180, 120);
       }
 
-      painter.fillRect(QRectF(x, y, kMinimapCharWidth, kMinimapLineHeight - 1), color);
+      painter.fillRect(QRectF(x, y, kMinimapCharWidth, kMinimapLineHeight - 1),
+                       color);
       x += static_cast<int>(kMinimapCharWidth);
 
       if (x >= kMinimapWidth - 10) {
@@ -816,7 +818,8 @@ void NMFindReplaceWidget::updateMatchCount() {
 // NMScriptCommandPalette - VSCode-like Command Palette
 // ============================================================================
 
-NMScriptCommandPalette::NMScriptCommandPalette(QWidget *parent) : QWidget(parent) {
+NMScriptCommandPalette::NMScriptCommandPalette(QWidget *parent)
+    : QWidget(parent) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
   setFixedWidth(500);
   setMaximumHeight(400);
@@ -1105,35 +1108,45 @@ void NMScriptEditor::setDiagnostics(const QList<NMScriptIssue> &issues) {
 }
 
 void NMScriptEditor::insertSnippet(const QString &snippetType) {
+  // Find matching snippet template
+  for (const auto &tmpl : detail::buildSnippetTemplates()) {
+    if (tmpl.prefix == snippetType ||
+        tmpl.name.toLower().contains(snippetType.toLower())) {
+      insertSnippetTemplate(tmpl);
+      return;
+    }
+  }
+
+  // Fallback to simple insertion
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
 
   QString snippet;
-  int cursorOffset = 0; // Position cursor within snippet
+  int cursorOffset = 0;
 
   if (snippetType == "scene") {
     snippet = "scene scene_name {\n  say Narrator \"Description\"\n}\n";
-    cursorOffset = 6; // Position at scene_name
+    cursorOffset = 6;
   } else if (snippetType == "choice") {
     snippet = "choice {\n  \"Option 1\" -> scene_target1\n  \"Option 2\" -> "
               "scene_target2\n}\n";
-    cursorOffset = 12; // Position at first option
+    cursorOffset = 12;
   } else if (snippetType == "if") {
     snippet = "if flag condition {\n  // true branch\n} else {\n  // false "
               "branch\n}\n";
-    cursorOffset = 8; // Position at condition
+    cursorOffset = 8;
   } else if (snippetType == "goto") {
     snippet = "goto scene_name\n";
-    cursorOffset = 5; // Position at scene_name
+    cursorOffset = 5;
   } else if (snippetType == "character") {
     snippet = "character CharName(name=\"Display Name\", color=\"#4A9FD9\")\n";
-    cursorOffset = 10; // Position at CharName
+    cursorOffset = 10;
   } else if (snippetType == "say") {
     snippet = "say Character \"Dialogue text\"\n";
-    cursorOffset = 4; // Position at Character
+    cursorOffset = 4;
   } else if (snippetType == "show") {
     snippet = "show background \"asset_path\"\n";
-    cursorOffset = 17; // Position at asset_path
+    cursorOffset = 17;
   } else {
     cursor.endEditBlock();
     return;
@@ -1144,6 +1157,314 @@ void NMScriptEditor::insertSnippet(const QString &snippetType) {
   cursor.setPosition(startPos + cursorOffset);
   cursor.endEditBlock();
   setTextCursor(cursor);
+}
+
+void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+
+  // Parse snippet body and replace tabstop placeholders
+  QString body = snippet.body;
+  const int startPos = cursor.position();
+
+  // Store tabstop positions
+  m_tabstopPositions.clear();
+  m_currentTabstop = 0;
+
+  // Replace ${N:placeholder} with placeholder and record positions
+  QRegularExpression re("\\$\\{(\\d+):([^}]*)\\}");
+  int offset = 0;
+
+  QRegularExpressionMatchIterator it = re.globalMatch(body);
+  QList<QPair<int, QRegularExpressionMatch>> matches;
+
+  while (it.hasNext()) {
+    matches.append({0, it.next()});
+  }
+
+  // Process matches in reverse order to maintain correct positions
+  for (int i = static_cast<int>(matches.size()) - 1; i >= 0; --i) {
+    const auto &match = matches[i].second;
+    const QString placeholder = match.captured(2);
+    body.replace(match.capturedStart(), match.capturedLength(), placeholder);
+  }
+
+  // Insert the processed body
+  cursor.insertText(body);
+
+  // Now find the tabstop positions in the inserted text
+  QRegularExpressionMatchIterator it2 = re.globalMatch(snippet.body);
+  offset = 0;
+  int tabstopIndex = 0;
+
+  while (it2.hasNext()) {
+    QRegularExpressionMatch match = it2.next();
+    const QString placeholder = match.captured(2);
+    const int originalPos = match.capturedStart() - offset;
+
+    // Calculate actual position in document
+    const int docPos = startPos + originalPos;
+    m_tabstopPositions.append({docPos, static_cast<int>(placeholder.length())});
+
+    offset += match.capturedLength() - static_cast<int>(placeholder.length());
+    ++tabstopIndex;
+  }
+
+  cursor.endEditBlock();
+
+  // Select the first tabstop
+  if (!m_tabstopPositions.isEmpty()) {
+    m_inSnippetMode = true;
+    m_currentTabstop = 0;
+    const auto &firstTabstop = m_tabstopPositions[0];
+    cursor.setPosition(firstTabstop.first);
+    cursor.setPosition(firstTabstop.first + firstTabstop.second,
+                       QTextCursor::KeepAnchor);
+    setTextCursor(cursor);
+  } else {
+    setTextCursor(cursor);
+  }
+}
+
+void NMScriptEditor::nextTabstop() {
+  if (!m_inSnippetMode || m_tabstopPositions.isEmpty()) {
+    return;
+  }
+
+  ++m_currentTabstop;
+  if (m_currentTabstop >= static_cast<int>(m_tabstopPositions.size())) {
+    // Exit snippet mode
+    m_inSnippetMode = false;
+    m_tabstopPositions.clear();
+    return;
+  }
+
+  const auto &tabstop = m_tabstopPositions[m_currentTabstop];
+  QTextCursor cursor = textCursor();
+  cursor.setPosition(tabstop.first);
+  cursor.setPosition(tabstop.first + tabstop.second, QTextCursor::KeepAnchor);
+  setTextCursor(cursor);
+}
+
+void NMScriptEditor::previousTabstop() {
+  if (!m_inSnippetMode || m_tabstopPositions.isEmpty()) {
+    return;
+  }
+
+  if (m_currentTabstop > 0) {
+    --m_currentTabstop;
+    const auto &tabstop = m_tabstopPositions[m_currentTabstop];
+    QTextCursor cursor = textCursor();
+    cursor.setPosition(tabstop.first);
+    cursor.setPosition(tabstop.first + tabstop.second, QTextCursor::KeepAnchor);
+    setTextCursor(cursor);
+  }
+}
+
+CompletionContext NMScriptEditor::getCompletionContext() const {
+  QTextCursor cursor = textCursor();
+  const int pos = cursor.position();
+  const QString text = document()->toPlainText();
+
+  if (pos == 0) {
+    return CompletionContext::Unknown;
+  }
+
+  // Get the current line up to cursor
+  const int lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const QString lineBeforeCursor = text.mid(lineStart, pos - lineStart);
+
+  // Check if inside a string
+  int quoteCount = 0;
+  for (const QChar &ch : lineBeforeCursor) {
+    if (ch == '"') {
+      ++quoteCount;
+    }
+  }
+  if (quoteCount % 2 == 1) {
+    return CompletionContext::InString;
+  }
+
+  // Check if inside a comment
+  if (lineBeforeCursor.contains("//")) {
+    return CompletionContext::InComment;
+  }
+
+  // Check for keywords before cursor
+  const QString trimmed = lineBeforeCursor.trimmed().toLower();
+
+  if (trimmed.endsWith("say")) {
+    return CompletionContext::AfterSay;
+  }
+  if (trimmed.endsWith("goto")) {
+    return CompletionContext::AfterGoto;
+  }
+  if (trimmed.endsWith("show")) {
+    return CompletionContext::AfterShow;
+  }
+  if (trimmed.endsWith("hide")) {
+    return CompletionContext::AfterHide;
+  }
+  if (trimmed.endsWith("play")) {
+    return CompletionContext::AfterPlay;
+  }
+  if (trimmed.endsWith("stop")) {
+    return CompletionContext::AfterStop;
+  }
+  if (trimmed.endsWith("set")) {
+    return CompletionContext::AfterSet;
+  }
+  if (trimmed.endsWith("if")) {
+    return CompletionContext::AfterIf;
+  }
+  if (trimmed.endsWith("at")) {
+    return CompletionContext::AfterAt;
+  }
+  if (trimmed.endsWith("transition")) {
+    return CompletionContext::AfterTransition;
+  }
+
+  // Check if inside choice block
+  const int choiceStart = text.lastIndexOf("choice", pos);
+  if (choiceStart >= 0) {
+    const int braceAfterChoice = text.indexOf('{', choiceStart);
+    const int closingBrace = text.indexOf('}', braceAfterChoice);
+    if (braceAfterChoice >= 0 && pos > braceAfterChoice &&
+        (closingBrace < 0 || pos < closingBrace)) {
+      return CompletionContext::AfterChoice;
+    }
+  }
+
+  return CompletionContext::Unknown;
+}
+
+QList<NMScriptEditor::CompletionEntry>
+NMScriptEditor::getContextualCompletions(const QString &prefix) const {
+  Q_UNUSED(prefix);
+  // This would be called by the panel with symbol index
+  // For now, return basic keywords
+  return detail::buildKeywordEntries();
+}
+
+QList<QuickFix> NMScriptEditor::getQuickFixes(int line) const {
+  if (m_quickFixes.contains(line)) {
+    return m_quickFixes.value(line);
+  }
+  return {};
+}
+
+void NMScriptEditor::applyQuickFix(const QuickFix &fix) {
+  QTextCursor cursor = textCursor();
+  cursor.beginEditBlock();
+
+  // Move to the fix location
+  QTextBlock block = document()->findBlockByNumber(fix.line - 1);
+  if (!block.isValid()) {
+    cursor.endEditBlock();
+    return;
+  }
+
+  cursor.setPosition(block.position() + fix.column);
+
+  if (fix.replacementLength > 0) {
+    // Select and replace
+    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
+                        fix.replacementLength);
+  }
+
+  cursor.insertText(fix.replacement);
+  cursor.endEditBlock();
+  setTextCursor(cursor);
+}
+
+QString NMScriptEditor::getSyntaxHint() const {
+  // Get the keyword near cursor
+  QTextCursor cursor = textCursor();
+  cursor.select(QTextCursor::WordUnderCursor);
+  QString word = cursor.selectedText();
+
+  // If no word, check the previous word
+  if (word.isEmpty()) {
+    cursor = textCursor();
+    cursor.movePosition(QTextCursor::PreviousWord);
+    cursor.select(QTextCursor::WordUnderCursor);
+    word = cursor.selectedText();
+  }
+
+  return detail::getSyntaxHintForKeyword(word);
+}
+
+QStringList NMScriptEditor::getBreadcrumbs() const {
+  QStringList breadcrumbs;
+  const int pos = textCursor().position();
+  const QString text = document()->toPlainText();
+
+  // Find enclosing scene
+  const QRegularExpression sceneRe("scene\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\{");
+  QRegularExpressionMatchIterator sceneIt = sceneRe.globalMatch(text);
+  QString currentScene;
+  int sceneStart = -1;
+
+  while (sceneIt.hasNext()) {
+    QRegularExpressionMatch match = sceneIt.next();
+    if (match.capturedStart() < pos) {
+      // Check if we're still inside this scene
+      int braceCount = 1;
+      int searchPos = match.capturedEnd();
+      while (searchPos < static_cast<int>(text.size()) && braceCount > 0) {
+        if (text.at(searchPos) == '{') {
+          ++braceCount;
+        } else if (text.at(searchPos) == '}') {
+          --braceCount;
+        }
+        ++searchPos;
+      }
+      if (searchPos >= pos) {
+        currentScene = match.captured(1);
+        sceneStart = match.capturedStart();
+      }
+    }
+  }
+
+  if (!currentScene.isEmpty()) {
+    breadcrumbs.append(QString("scene %1").arg(currentScene));
+  }
+
+  // Find enclosing choice block
+  if (sceneStart >= 0) {
+    int choicePos = text.lastIndexOf("choice", pos);
+    if (choicePos > sceneStart) {
+      const int braceAfterChoice = text.indexOf('{', choicePos);
+      if (braceAfterChoice >= 0 && braceAfterChoice < pos) {
+        // Check if still inside
+        int braceCount = 1;
+        int searchPos = braceAfterChoice + 1;
+        while (searchPos < static_cast<int>(text.size()) && searchPos < pos &&
+               braceCount > 0) {
+          if (text.at(searchPos) == '{') {
+            ++braceCount;
+          } else if (text.at(searchPos) == '}') {
+            --braceCount;
+          }
+          ++searchPos;
+        }
+        if (braceCount > 0) {
+          breadcrumbs.append("choice");
+        }
+      }
+    }
+
+    // Find enclosing if block
+    int ifPos = text.lastIndexOf("if ", pos);
+    if (ifPos > sceneStart && ifPos > text.lastIndexOf("choice", pos)) {
+      const int braceAfterIf = text.indexOf('{', ifPos);
+      if (braceAfterIf >= 0 && braceAfterIf < pos) {
+        breadcrumbs.append("if");
+      }
+    }
+  }
+
+  return breadcrumbs;
 }
 
 QString NMScriptEditor::symbolAtPosition(const QPoint &pos) const {
@@ -1253,17 +1574,49 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
+  // Ctrl+.: Quick Fix (VSCode-like)
+  if (event->key() == Qt::Key_Period &&
+      (event->modifiers() & Qt::ControlModifier)) {
+    const int line = textCursor().blockNumber() + 1;
+    const auto fixes = getQuickFixes(line);
+    if (!fixes.isEmpty()) {
+      emit quickFixesAvailable(fixes);
+    }
+    event->accept();
+    return;
+  }
+
+  // Handle Tab for snippet navigation or normal indent
   if ((event->key() == Qt::Key_Tab) &&
       !(event->modifiers() & Qt::ControlModifier) &&
       !(event->modifiers() & Qt::ShiftModifier)) {
+    if (m_inSnippetMode) {
+      nextTabstop();
+      event->accept();
+      return;
+    }
     handleTabKey(event);
     return;
   }
 
+  // Handle Shift+Tab for snippet navigation or normal outdent
   if ((event->key() == Qt::Key_Backtab) ||
       ((event->key() == Qt::Key_Tab) &&
        (event->modifiers() & Qt::ShiftModifier))) {
+    if (m_inSnippetMode) {
+      previousTabstop();
+      event->accept();
+      return;
+    }
     handleBacktabKey(event);
+    return;
+  }
+
+  // Escape exits snippet mode
+  if (event->key() == Qt::Key_Escape && m_inSnippetMode) {
+    m_inSnippetMode = false;
+    m_tabstopPositions.clear();
+    event->accept();
     return;
   }
 
@@ -1544,7 +1897,8 @@ void NMScriptEditor::highlightCurrentLine() {
 QString NMScriptEditor::indentForCurrentLine(int *outLogicalIndent) const {
   const QString text = textCursor().block().text();
   int leading = 0;
-  while (leading < static_cast<int>(text.size()) && text.at(leading).isSpace()) {
+  while (leading < static_cast<int>(text.size()) &&
+         text.at(leading).isSpace()) {
     ++leading;
   }
   if (outLogicalIndent) {
@@ -1592,8 +1946,8 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
-             removable < m_indentSize) {
+      while (removable < static_cast<int>(text.size()) &&
+             text.at(removable).isSpace() && removable < m_indentSize) {
         ++removable;
       }
       if (removable > 0) {
@@ -1619,8 +1973,8 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
-             removable < m_indentSize) {
+      while (removable < static_cast<int>(text.size()) &&
+             text.at(removable).isSpace() && removable < m_indentSize) {
         ++removable;
       }
       if (removable > 0) {
