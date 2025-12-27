@@ -1,17 +1,442 @@
 #include "NovelMind/editor/editor_runtime_host.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/scene_document.hpp"
+#include "NovelMind/scripting/ir.hpp"
 #include "editor_runtime_host_detail.hpp"
 
 #include <chrono>
 #include <exception>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <system_error>
+#include <unordered_set>
 #include <variant>
+
+// JSON parsing - use nlohmann/json if available, otherwise simple parsing
+#ifdef NOVELMIND_HAS_NLOHMANN_JSON
+#include <nlohmann/json.hpp>
+#endif
 
 namespace NovelMind::editor {
 
 namespace fs = std::filesystem;
+
+namespace {
+
+/**
+ * @brief Simple JSON value type for story graph parsing
+ */
+struct JsonValue {
+  std::string type; // "null", "bool", "number", "string", "array", "object"
+  std::string stringValue;
+  double numberValue = 0.0;
+  bool boolValue = false;
+  std::vector<JsonValue> arrayValue;
+  std::unordered_map<std::string, JsonValue> objectValue;
+};
+
+/**
+ * @brief Minimal JSON parser for story_graph.json
+ */
+class SimpleJsonParser {
+public:
+  static Result<JsonValue> parse(const std::string &json) {
+    SimpleJsonParser parser(json);
+    return parser.parseValue();
+  }
+
+private:
+  explicit SimpleJsonParser(const std::string &json) : m_json(json), m_pos(0) {}
+
+  void skipWhitespace() {
+    while (m_pos < m_json.size() && std::isspace(m_json[m_pos])) {
+      ++m_pos;
+    }
+  }
+
+  Result<JsonValue> parseValue() {
+    skipWhitespace();
+    if (m_pos >= m_json.size()) {
+      return Result<JsonValue>::error("Unexpected end of JSON");
+    }
+
+    char c = m_json[m_pos];
+    if (c == '{') {
+      return parseObject();
+    } else if (c == '[') {
+      return parseArray();
+    } else if (c == '"') {
+      return parseString();
+    } else if (c == 't' || c == 'f') {
+      return parseBool();
+    } else if (c == 'n') {
+      return parseNull();
+    } else if (std::isdigit(c) || c == '-') {
+      return parseNumber();
+    }
+    return Result<JsonValue>::error("Unexpected character in JSON");
+  }
+
+  Result<JsonValue> parseObject() {
+    if (m_pos >= m_json.size() || m_json[m_pos] != '{') {
+      return Result<JsonValue>::error("Expected '{'");
+    }
+    ++m_pos;
+
+    JsonValue result;
+    result.type = "object";
+
+    skipWhitespace();
+    if (m_pos < m_json.size() && m_json[m_pos] == '}') {
+      ++m_pos;
+      return Result<JsonValue>::ok(std::move(result));
+    }
+
+    while (true) {
+      skipWhitespace();
+      auto keyResult = parseString();
+      if (!keyResult.isOk()) {
+        return keyResult;
+      }
+      std::string key = keyResult.value().stringValue;
+
+      skipWhitespace();
+      if (m_pos >= m_json.size() || m_json[m_pos] != ':') {
+        return Result<JsonValue>::error("Expected ':'");
+      }
+      ++m_pos;
+
+      auto valueResult = parseValue();
+      if (!valueResult.isOk()) {
+        return valueResult;
+      }
+      result.objectValue[key] = std::move(valueResult.value());
+
+      skipWhitespace();
+      if (m_pos >= m_json.size()) {
+        return Result<JsonValue>::error("Unexpected end of JSON");
+      }
+      if (m_json[m_pos] == '}') {
+        ++m_pos;
+        break;
+      }
+      if (m_json[m_pos] != ',') {
+        return Result<JsonValue>::error("Expected ',' or '}'");
+      }
+      ++m_pos;
+    }
+
+    return Result<JsonValue>::ok(std::move(result));
+  }
+
+  Result<JsonValue> parseArray() {
+    if (m_pos >= m_json.size() || m_json[m_pos] != '[') {
+      return Result<JsonValue>::error("Expected '['");
+    }
+    ++m_pos;
+
+    JsonValue result;
+    result.type = "array";
+
+    skipWhitespace();
+    if (m_pos < m_json.size() && m_json[m_pos] == ']') {
+      ++m_pos;
+      return Result<JsonValue>::ok(std::move(result));
+    }
+
+    while (true) {
+      auto valueResult = parseValue();
+      if (!valueResult.isOk()) {
+        return valueResult;
+      }
+      result.arrayValue.push_back(std::move(valueResult.value()));
+
+      skipWhitespace();
+      if (m_pos >= m_json.size()) {
+        return Result<JsonValue>::error("Unexpected end of JSON");
+      }
+      if (m_json[m_pos] == ']') {
+        ++m_pos;
+        break;
+      }
+      if (m_json[m_pos] != ',') {
+        return Result<JsonValue>::error("Expected ',' or ']'");
+      }
+      ++m_pos;
+    }
+
+    return Result<JsonValue>::ok(std::move(result));
+  }
+
+  Result<JsonValue> parseString() {
+    if (m_pos >= m_json.size() || m_json[m_pos] != '"') {
+      return Result<JsonValue>::error("Expected '\"'");
+    }
+    ++m_pos;
+
+    std::string str;
+    while (m_pos < m_json.size() && m_json[m_pos] != '"') {
+      if (m_json[m_pos] == '\\' && m_pos + 1 < m_json.size()) {
+        ++m_pos;
+        char escaped = m_json[m_pos];
+        switch (escaped) {
+        case 'n':
+          str += '\n';
+          break;
+        case 't':
+          str += '\t';
+          break;
+        case 'r':
+          str += '\r';
+          break;
+        case '"':
+          str += '"';
+          break;
+        case '\\':
+          str += '\\';
+          break;
+        default:
+          str += escaped;
+          break;
+        }
+      } else {
+        str += m_json[m_pos];
+      }
+      ++m_pos;
+    }
+
+    if (m_pos >= m_json.size()) {
+      return Result<JsonValue>::error("Unterminated string");
+    }
+    ++m_pos; // Skip closing quote
+
+    JsonValue result;
+    result.type = "string";
+    result.stringValue = str;
+    return Result<JsonValue>::ok(std::move(result));
+  }
+
+  Result<JsonValue> parseNumber() {
+    size_t start = m_pos;
+    if (m_json[m_pos] == '-') {
+      ++m_pos;
+    }
+    while (m_pos < m_json.size() &&
+           (std::isdigit(m_json[m_pos]) || m_json[m_pos] == '.')) {
+      ++m_pos;
+    }
+
+    JsonValue result;
+    result.type = "number";
+    result.numberValue = std::stod(m_json.substr(start, m_pos - start));
+    return Result<JsonValue>::ok(std::move(result));
+  }
+
+  Result<JsonValue> parseBool() {
+    JsonValue result;
+    result.type = "bool";
+
+    if (m_json.substr(m_pos, 4) == "true") {
+      result.boolValue = true;
+      m_pos += 4;
+    } else if (m_json.substr(m_pos, 5) == "false") {
+      result.boolValue = false;
+      m_pos += 5;
+    } else {
+      return Result<JsonValue>::error("Expected boolean");
+    }
+
+    return Result<JsonValue>::ok(std::move(result));
+  }
+
+  Result<JsonValue> parseNull() {
+    if (m_json.substr(m_pos, 4) == "null") {
+      m_pos += 4;
+      JsonValue result;
+      result.type = "null";
+      return Result<JsonValue>::ok(std::move(result));
+    }
+    return Result<JsonValue>::error("Expected null");
+  }
+
+  const std::string &m_json;
+  size_t m_pos;
+};
+
+/**
+ * @brief Helper to get string value from JsonValue object
+ */
+std::string jsonGetString(const JsonValue &obj, const std::string &key) {
+  auto it = obj.objectValue.find(key);
+  if (it != obj.objectValue.end() && it->second.type == "string") {
+    return it->second.stringValue;
+  }
+  return "";
+}
+
+/**
+ * @brief Convert story graph JSON to NMScript text
+ *
+ * This generates script content from the story graph visual representation.
+ * Used when PlaybackSourceMode::Graph or Mixed is selected.
+ */
+std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
+  std::ostringstream script;
+
+  // Get entry scene
+  std::string entryScene = jsonGetString(graphJson, "entry");
+
+  // Process nodes array
+  auto nodesIt = graphJson.objectValue.find("nodes");
+  if (nodesIt == graphJson.objectValue.end() ||
+      nodesIt->second.type != "array") {
+    return "";
+  }
+
+  // First pass: collect all scene nodes
+  std::vector<const JsonValue *> sceneNodes;
+  for (const auto &node : nodesIt->second.arrayValue) {
+    if (node.type != "object") {
+      continue;
+    }
+    std::string nodeType = jsonGetString(node, "type");
+    if (nodeType == "Scene") {
+      sceneNodes.push_back(&node);
+    }
+  }
+
+  // Generate script from scene nodes
+  for (const auto *nodePtr : sceneNodes) {
+    const JsonValue &node = *nodePtr;
+    std::string nodeId = jsonGetString(node, "id");
+    std::string title = jsonGetString(node, "title");
+    std::string dialogueText = jsonGetString(node, "dialogueText");
+    if (dialogueText.empty()) {
+      dialogueText = jsonGetString(node, "text");
+    }
+    std::string speaker = jsonGetString(node, "speaker");
+
+    // Use ID as scene name
+    script << "scene " << nodeId << " {\n";
+
+    // Add dialogue if present
+    if (!dialogueText.empty()) {
+      // Escape quotes in dialogue
+      std::string escapedText = dialogueText;
+      size_t pos = 0;
+      while ((pos = escapedText.find('"', pos)) != std::string::npos) {
+        escapedText.insert(pos, "\\");
+        pos += 2;
+      }
+
+      if (!speaker.empty()) {
+        script << "    say " << speaker << " \"" << escapedText << "\"\n";
+      } else {
+        script << "    say \"" << escapedText << "\"\n";
+      }
+    }
+
+    // Check for choice targets (branching)
+    auto choiceTargetsIt = node.objectValue.find("choiceTargets");
+    if (choiceTargetsIt != node.objectValue.end() &&
+        choiceTargetsIt->second.type == "object" &&
+        !choiceTargetsIt->second.objectValue.empty()) {
+      script << "    choice {\n";
+      for (const auto &[optionText, targetValue] :
+           choiceTargetsIt->second.objectValue) {
+        if (targetValue.type == "string") {
+          script << "        \"" << optionText << "\" -> goto "
+                 << targetValue.stringValue << "\n";
+        }
+      }
+      script << "    }\n";
+    }
+
+    script << "}\n\n";
+  }
+
+  return script.str();
+}
+
+/**
+ * @brief Load story graph from project's .novelmind/story_graph.json
+ */
+Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
+  fs::path graphPath = fs::path(projectPath) / ".novelmind" / "story_graph.json";
+
+  if (!fs::exists(graphPath)) {
+    return Result<std::string>::error("Story graph file not found: " +
+                                      graphPath.string());
+  }
+
+  std::ifstream file(graphPath);
+  if (!file) {
+    return Result<std::string>::error("Failed to open story graph file: " +
+                                      graphPath.string());
+  }
+
+  std::ostringstream buffer;
+  buffer << file.rdbuf();
+  std::string jsonContent = buffer.str();
+  file.close();
+
+  // Parse JSON
+  auto parseResult = SimpleJsonParser::parse(jsonContent);
+  if (!parseResult.isOk()) {
+    return Result<std::string>::error("Failed to parse story graph JSON: " +
+                                      parseResult.error());
+  }
+
+  // Convert to script
+  std::string script = generateScriptFromGraphJson(parseResult.value());
+  if (script.empty()) {
+    return Result<std::string>::error("No scene nodes found in story graph");
+  }
+
+  return Result<std::string>::ok(std::move(script));
+}
+
+/**
+ * @brief Get the current playback source mode from project settings
+ */
+PlaybackSourceMode getPlaybackSourceMode() {
+  auto &pm = ProjectManager::instance();
+  if (!pm.hasOpenProject()) {
+    return PlaybackSourceMode::Script; // Default to script mode
+  }
+  return pm.getMetadata().playbackSourceMode;
+}
+
+/**
+ * @brief Collect entry scene from story graph if available
+ */
+std::string getGraphEntryScene(const std::string &projectPath) {
+  fs::path graphPath = fs::path(projectPath) / ".novelmind" / "story_graph.json";
+
+  if (!fs::exists(graphPath)) {
+    return "";
+  }
+
+  std::ifstream file(graphPath);
+  if (!file) {
+    return "";
+  }
+
+  std::ostringstream buffer;
+  buffer << file.rdbuf();
+  std::string jsonContent = buffer.str();
+  file.close();
+
+  auto parseResult = SimpleJsonParser::parse(jsonContent);
+  if (!parseResult.isOk()) {
+    return "";
+  }
+
+  return jsonGetString(parseResult.value(), "entry");
+}
+
+} // anonymous namespace
 
 // ============================================================================
 // Private Helpers
@@ -19,45 +444,121 @@ namespace fs = std::filesystem;
 
 Result<void> EditorRuntimeHost::compileProject() {
   try {
-    fs::path scriptsPath(m_project.scriptsPath);
+    // Determine the playback source mode from project settings
+    PlaybackSourceMode sourceMode = getPlaybackSourceMode();
 
-    if (!fs::exists(scriptsPath)) {
-      return Result<void>::error("Scripts path does not exist: " +
-                                 m_project.scriptsPath);
-    }
-
-    // Collect all script files
     std::string allScripts;
     m_sceneNames.clear();
 
-    for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
-      if (entry.is_regular_file()) {
-        std::string ext = entry.path().extension().string();
-        if (ext == ".nms" || ext == ".nm") {
-          std::ifstream file(entry.path());
-          if (file) {
-            std::string content;
-            if (!detail::readFileToString(file, content)) {
-              return Result<void>::error("Failed to read script file: " +
-                                         entry.path().string());
-            }
-            allScripts += "\n// File: " + entry.path().string() + "\n";
-            allScripts += content;
+    // Handle different playback source modes (Issue #94)
+    switch (sourceMode) {
+    case PlaybackSourceMode::Graph: {
+      // Load story graph and convert to script
+      auto graphScriptResult = loadStoryGraphScript(m_project.path);
+      if (!graphScriptResult.isOk()) {
+        // Fall back to script mode if graph is not available
+        return Result<void>::error(
+            "Graph mode selected but story graph not available: " +
+            graphScriptResult.error() +
+            ". Switch to Script mode or create a Story Graph.");
+      }
+      allScripts = "// Generated from Story Graph (Graph Mode)\n";
+      allScripts += graphScriptResult.value();
 
-            // Track file timestamps for hot reload
-            u64 modTime = static_cast<u64>(
-                std::chrono::duration_cast<std::chrono::seconds>(
-                    entry.last_write_time().time_since_epoch())
-                    .count());
-            m_fileTimestamps[entry.path().string()] = modTime;
+      // Use graph entry scene if available
+      std::string graphEntry = getGraphEntryScene(m_project.path);
+      if (!graphEntry.empty() && m_project.startScene.empty()) {
+        m_project.startScene = graphEntry;
+      }
+      break;
+    }
+
+    case PlaybackSourceMode::Mixed: {
+      // First load all script files (base content)
+      fs::path scriptsPath(m_project.scriptsPath);
+      if (fs::exists(scriptsPath)) {
+        for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
+          if (entry.is_regular_file()) {
+            std::string ext = entry.path().extension().string();
+            if (ext == ".nms" || ext == ".nm") {
+              std::ifstream file(entry.path());
+              if (file) {
+                std::string content;
+                if (detail::readFileToString(file, content)) {
+                  allScripts += "\n// File: " + entry.path().string() + "\n";
+                  allScripts += content;
+
+                  u64 modTime = static_cast<u64>(
+                      std::chrono::duration_cast<std::chrono::seconds>(
+                          entry.last_write_time().time_since_epoch())
+                          .count());
+                  m_fileTimestamps[entry.path().string()] = modTime;
+                }
+              }
+            }
           }
         }
       }
+
+      // Then append graph-generated content (graph overrides scripts on conflict)
+      auto graphScriptResult = loadStoryGraphScript(m_project.path);
+      if (graphScriptResult.isOk()) {
+        allScripts += "\n// ========================================\n";
+        allScripts += "// Story Graph Overrides (Mixed Mode)\n";
+        allScripts += "// ========================================\n";
+        allScripts += graphScriptResult.value();
+
+        // In Mixed mode, graph entry scene takes priority
+        std::string graphEntry = getGraphEntryScene(m_project.path);
+        if (!graphEntry.empty()) {
+          m_project.startScene = graphEntry;
+        }
+      }
+      // If graph is not available in Mixed mode, just use scripts (no error)
+      break;
+    }
+
+    case PlaybackSourceMode::Script:
+    default: {
+      // Default behavior: load script files only
+      fs::path scriptsPath(m_project.scriptsPath);
+
+      if (!fs::exists(scriptsPath)) {
+        return Result<void>::error("Scripts path does not exist: " +
+                                   m_project.scriptsPath);
+      }
+
+      for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
+        if (entry.is_regular_file()) {
+          std::string ext = entry.path().extension().string();
+          if (ext == ".nms" || ext == ".nm") {
+            std::ifstream file(entry.path());
+            if (file) {
+              std::string content;
+              if (!detail::readFileToString(file, content)) {
+                return Result<void>::error("Failed to read script file: " +
+                                           entry.path().string());
+              }
+              allScripts += "\n// File: " + entry.path().string() + "\n";
+              allScripts += content;
+
+              // Track file timestamps for hot reload
+              u64 modTime = static_cast<u64>(
+                  std::chrono::duration_cast<std::chrono::seconds>(
+                      entry.last_write_time().time_since_epoch())
+                      .count());
+              m_fileTimestamps[entry.path().string()] = modTime;
+            }
+          }
+        }
+      }
+      break;
+    }
     }
 
     if (allScripts.empty()) {
-      return Result<void>::error("No script files found in: " +
-                                 m_project.scriptsPath);
+      return Result<void>::error("No content found for playback. "
+                                 "Check your scripts or Story Graph.");
     }
 
     // Lexer
