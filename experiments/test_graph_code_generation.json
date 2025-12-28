@@ -1,0 +1,166 @@
+{
+  "description": "Test story graph JSON for validating code generation for all node types",
+  "entry": "scene_start",
+  "nodes": [
+    {
+      "id": "scene_start",
+      "type": "Scene",
+      "title": "Game Start",
+      "dialogueText": "Welcome to the story!",
+      "speaker": "Narrator",
+      "x": 100,
+      "y": 100,
+      "choiceTargets": {
+        "Begin Journey": "scene_town",
+        "Check Inventory": "variable_check_items"
+      }
+    },
+    {
+      "id": "scene_town",
+      "type": "Scene",
+      "title": "Town Square",
+      "dialogueText": "You arrive at the bustling town square.",
+      "speaker": "Narrator",
+      "x": 300,
+      "y": 100
+    },
+    {
+      "id": "dialogue_merchant",
+      "type": "Dialogue",
+      "title": "Merchant Greeting",
+      "dialogueText": "Welcome, traveler! What can I do for you?",
+      "speaker": "Merchant",
+      "x": 500,
+      "y": 100,
+      "choiceTargets": {
+        "next": "choice_merchant_options"
+      }
+    },
+    {
+      "id": "choice_merchant_options",
+      "type": "Choice",
+      "title": "Merchant Options",
+      "dialogueText": "The merchant waits for your response.",
+      "speaker": "Narrator",
+      "x": 700,
+      "y": 100,
+      "choiceTargets": {
+        "Buy something": "variable_bought_item",
+        "Ask about the town": "dialogue_town_info",
+        "Leave": "scene_town"
+      }
+    },
+    {
+      "id": "condition_has_key",
+      "type": "Condition",
+      "title": "Key Check",
+      "conditionExpression": "has_key == true",
+      "x": 100,
+      "y": 300,
+      "conditionTargets": {
+        "true": "scene_secret_room",
+        "false": "dialogue_need_key"
+      }
+    },
+    {
+      "id": "variable_bought_item",
+      "type": "Variable",
+      "title": "Set Item Flag",
+      "variableName": "bought_item",
+      "variableValue": "true",
+      "x": 300,
+      "y": 300,
+      "choiceTargets": {
+        "next": "scene_town"
+      }
+    },
+    {
+      "id": "variable_check_items",
+      "type": "Variable",
+      "title": "Increment Items",
+      "variableName": "item_count",
+      "variableValue": "item_count + 1",
+      "x": 500,
+      "y": 300,
+      "choiceTargets": {
+        "next": "scene_start"
+      }
+    },
+    {
+      "id": "random_encounter",
+      "type": "Random",
+      "title": "Random Encounter",
+      "x": 700,
+      "y": 300,
+      "conditionTargets": {
+        "Option A": "scene_town",
+        "Option B": "dialogue_merchant",
+        "Option C": "scene_end"
+      }
+    },
+    {
+      "id": "jump_to_town",
+      "type": "Jump",
+      "title": "Go to Town",
+      "jumpTarget": "scene_town",
+      "x": 100,
+      "y": 500
+    },
+    {
+      "id": "event_achievement",
+      "type": "Event",
+      "title": "Unlock Achievement",
+      "eventName": "first_purchase",
+      "x": 300,
+      "y": 500,
+      "choiceTargets": {
+        "next": "scene_town"
+      }
+    },
+    {
+      "id": "script_custom",
+      "type": "Script",
+      "title": "Custom Script",
+      "scriptContent": "// Custom script logic here\nset player_health = 100",
+      "x": 500,
+      "y": 500,
+      "choiceTargets": {
+        "next": "scene_town"
+      }
+    },
+    {
+      "id": "scene_end",
+      "type": "End",
+      "title": "Game Over",
+      "x": 700,
+      "y": 500
+    },
+    {
+      "id": "dialogue_town_info",
+      "type": "Dialogue",
+      "title": "Town Information",
+      "dialogueText": "This town has been here for centuries.",
+      "speaker": "Merchant",
+      "x": 900,
+      "y": 100
+    },
+    {
+      "id": "scene_secret_room",
+      "type": "Scene",
+      "title": "Secret Room",
+      "dialogueText": "You found the hidden treasure!",
+      "speaker": "Narrator",
+      "x": 900,
+      "y": 300
+    },
+    {
+      "id": "dialogue_need_key",
+      "type": "Dialogue",
+      "title": "Need Key",
+      "dialogueText": "The door is locked. You need a key.",
+      "speaker": "Narrator",
+      "x": 900,
+      "y": 500
+    }
+  ]
+}
