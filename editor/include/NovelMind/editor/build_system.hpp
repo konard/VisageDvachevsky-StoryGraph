@@ -114,6 +114,11 @@ struct BuildConfig {
   std::vector<u8> encryptionKey; // 32-byte AES-256 key (runtime only)
   CompressionLevel compression = CompressionLevel::Balanced;
 
+  // Signing (RSA)
+  bool signPacks = false;                   // Sign packs with RSA for integrity
+  std::string signingPrivateKeyPath;        // Path to RSA private key PEM file
+  std::string signingPublicKeyPath;         // Path to RSA public key for bundling
+
   // Features
   bool includeDebugConsole = false;
   bool includeEditor = false;
@@ -132,6 +137,11 @@ struct BuildConfig {
   bool generateSourceMap = false;
   bool signExecutable = false;
   std::string signingCertificate;
+
+  // Determinism - for reproducible builds
+  bool deterministicBuild = true;           // Enable deterministic ordering
+  u64 fixedBuildTimestamp = 0;              // If non-zero, use this instead of current time
+  u32 fixedRandomSeed = 0;                  // If non-zero, use for any randomization
 };
 
 /**
@@ -278,6 +288,43 @@ public:
   void setOnLogMessage(
       std::function<void(const std::string &, bool isError)> callback);
 
+  // ==========================================================================
+  // Public utilities (for testing and external use)
+  // ==========================================================================
+
+  // Crypto helpers (static, can be used without instance)
+  [[nodiscard]] static u32 calculateCrc32(const u8 *data, usize size);
+  [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8 *data,
+                                                          usize size);
+  [[nodiscard]] static Result<std::vector<u8>>
+  compressData(const std::vector<u8> &data, CompressionLevel level);
+  [[nodiscard]] static Result<std::vector<u8>>
+  encryptData(const std::vector<u8> &data, const std::vector<u8> &key,
+              std::array<u8, 12> &ivOut);
+
+  // Resource type detection
+  [[nodiscard]] static ResourceType
+  getResourceTypeFromExtension(const std::string &path);
+
+  // VFS path normalization
+  [[nodiscard]] static std::string normalizeVfsPath(const std::string &path);
+
+  // Key management
+  [[nodiscard]] static Result<std::vector<u8>>
+  loadEncryptionKeyFromEnv(); // Load from NOVELMIND_PACK_AES_KEY_HEX or _FILE
+  [[nodiscard]] static Result<std::vector<u8>>
+  loadEncryptionKeyFromFile(const std::string &path);
+  [[nodiscard]] static Result<std::vector<u8>>
+  signData(const std::vector<u8> &data, const std::string &privateKeyPath);
+
+  // Deterministic timestamp (uses config if set)
+  [[nodiscard]] u64 getBuildTimestamp() const;
+
+  // Pack building (public for testing)
+  Result<void> buildPack(const std::string &outputPath,
+                         const std::vector<std::string> &files, bool encrypt,
+                         bool compress);
+
 private:
   // Build pipeline
   void runBuildPipeline();
@@ -311,24 +358,7 @@ private:
   AssetProcessResult processData(const std::string &sourcePath,
                                  const std::string &outputPath);
 
-  // Pack building
-  Result<void> buildPack(const std::string &outputPath,
-                         const std::vector<std::string> &files, bool encrypt,
-                         bool compress);
-
-  // Crypto and compression helpers
-  [[nodiscard]] static u32 calculateCrc32(const u8 *data, usize size);
-  [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8 *data,
-                                                          usize size);
-  [[nodiscard]] static Result<std::vector<u8>>
-  compressData(const std::vector<u8> &data, CompressionLevel level);
-  [[nodiscard]] static Result<std::vector<u8>>
-  encryptData(const std::vector<u8> &data, const std::vector<u8> &key,
-              std::array<u8, 12> &ivOut);
-  [[nodiscard]] static ResourceType getResourceTypeFromExtension(
-      const std::string &path);
-
-  // Platform-specific
+  // Platform-specific bundling
   Result<void> buildWindowsExecutable(const std::string &outputPath);
   Result<void> buildLinuxExecutable(const std::string &outputPath);
   Result<void> buildMacOSBundle(const std::string &outputPath);

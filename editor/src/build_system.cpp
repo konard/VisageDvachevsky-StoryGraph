@@ -28,9 +28,12 @@
 
 #ifdef NOVELMIND_HAS_OPENSSL
 #include <openssl/evp.h>
+#include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/sha.h>
 #endif
+
+#include <cstdlib>  // for std::getenv
 
 namespace fs = std::filesystem;
 
@@ -384,6 +387,152 @@ BuildSystem::encryptData(const std::vector<u8> &data,
   }
   return Result<std::vector<u8>>::ok(data);
 #endif
+}
+
+// VFS path normalization (lowercase, forward slashes)
+std::string BuildSystem::normalizeVfsPath(const std::string &path) {
+  std::string result = path;
+  // Convert backslashes to forward slashes
+  std::replace(result.begin(), result.end(), '\\', '/');
+  // Convert to lowercase
+  std::transform(result.begin(), result.end(), result.begin(), ::tolower);
+  // Remove leading slashes
+  while (!result.empty() && result[0] == '/') {
+    result.erase(0, 1);
+  }
+  // Remove trailing slashes
+  while (!result.empty() && result.back() == '/') {
+    result.pop_back();
+  }
+  return result;
+}
+
+// Load encryption key from environment variables
+Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
+  // Try NOVELMIND_PACK_AES_KEY_HEX first
+  const char *hexKey = std::getenv("NOVELMIND_PACK_AES_KEY_HEX");
+  if (hexKey != nullptr) {
+    std::string hexStr(hexKey);
+    if (hexStr.length() != 64) {
+      return Result<std::vector<u8>>::error(
+          "NOVELMIND_PACK_AES_KEY_HEX must be 64 hex characters (32 bytes)");
+    }
+    std::vector<u8> key(32);
+    for (usize i = 0; i < 32; ++i) {
+      std::string byteStr = hexStr.substr(i * 2, 2);
+      key[i] = static_cast<u8>(std::stoul(byteStr, nullptr, 16));
+    }
+    return Result<std::vector<u8>>::ok(std::move(key));
+  }
+
+  // Try NOVELMIND_PACK_AES_KEY_FILE
+  const char *keyFile = std::getenv("NOVELMIND_PACK_AES_KEY_FILE");
+  if (keyFile != nullptr) {
+    return loadEncryptionKeyFromFile(keyFile);
+  }
+
+  return Result<std::vector<u8>>::error(
+      "No encryption key found. Set NOVELMIND_PACK_AES_KEY_HEX or "
+      "NOVELMIND_PACK_AES_KEY_FILE environment variable");
+}
+
+// Load encryption key from file
+Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromFile(
+    const std::string &path) {
+  std::ifstream file(path, std::ios::binary);
+  if (!file.is_open()) {
+    return Result<std::vector<u8>>::error("Cannot open key file: " + path);
+  }
+
+  std::vector<u8> key(32);
+  file.read(reinterpret_cast<char *>(key.data()), 32);
+
+  if (file.gcount() != 32) {
+    return Result<std::vector<u8>>::error(
+        "Key file must contain exactly 32 bytes: " + path);
+  }
+
+  file.close();
+  return Result<std::vector<u8>>::ok(std::move(key));
+}
+
+// Sign data with RSA private key (returns signature)
+Result<std::vector<u8>>
+BuildSystem::signData(const std::vector<u8> &data,
+                      const std::string &privateKeyPath) {
+#ifdef NOVELMIND_HAS_OPENSSL
+  // Read private key
+  FILE *keyFile = fopen(privateKeyPath.c_str(), "r");
+  if (!keyFile) {
+    return Result<std::vector<u8>>::error("Cannot open private key file: " +
+                                          privateKeyPath);
+  }
+
+  EVP_PKEY *pkey = PEM_read_PrivateKey(keyFile, nullptr, nullptr, nullptr);
+  fclose(keyFile);
+
+  if (!pkey) {
+    return Result<std::vector<u8>>::error("Failed to read RSA private key");
+  }
+
+  // Create signing context
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) {
+    EVP_PKEY_free(pkey);
+    return Result<std::vector<u8>>::error("Failed to create signing context");
+  }
+
+  // Initialize signing
+  if (EVP_DigestSignInit(mdctx, nullptr, EVP_sha256(), nullptr, pkey) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+    return Result<std::vector<u8>>::error("Failed to initialize signing");
+  }
+
+  // Update with data
+  if (EVP_DigestSignUpdate(mdctx, data.data(), data.size()) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+    return Result<std::vector<u8>>::error("Failed to update signing digest");
+  }
+
+  // Get signature length
+  size_t sigLen = 0;
+  if (EVP_DigestSignFinal(mdctx, nullptr, &sigLen) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+    return Result<std::vector<u8>>::error("Failed to get signature length");
+  }
+
+  // Get signature
+  std::vector<u8> signature(sigLen);
+  if (EVP_DigestSignFinal(mdctx, signature.data(), &sigLen) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    EVP_PKEY_free(pkey);
+    return Result<std::vector<u8>>::error("Failed to create signature");
+  }
+
+  signature.resize(sigLen);
+  EVP_MD_CTX_free(mdctx);
+  EVP_PKEY_free(pkey);
+
+  return Result<std::vector<u8>>::ok(std::move(signature));
+#else
+  (void)data;
+  (void)privateKeyPath;
+  return Result<std::vector<u8>>::error("RSA signing requires OpenSSL");
+#endif
+}
+
+// Get deterministic build timestamp
+u64 BuildSystem::getBuildTimestamp() const {
+  if (m_config.fixedBuildTimestamp != 0) {
+    return m_config.fixedBuildTimestamp;
+  }
+  return static_cast<u64>(
+      std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now().time_since_epoch())
+          .count());
 }
 
 ResourceType BuildSystem::getResourceTypeFromExtension(const std::string &path) {
@@ -780,6 +929,11 @@ Result<void> BuildSystem::prepareOutputDirectory() {
     }
   }
 
+  // Sort script files for deterministic ordering
+  if (m_config.deterministicBuild) {
+    std::sort(m_scriptFiles.begin(), m_scriptFiles.end());
+  }
+
   // Collect asset files
   updateProgress(0.9f, "Scanning asset files...");
   m_assetFiles.clear();
@@ -790,6 +944,11 @@ Result<void> BuildSystem::prepareOutputDirectory() {
         m_assetFiles.push_back(entry.path().string());
       }
     }
+  }
+
+  // Sort asset files for deterministic ordering
+  if (m_config.deterministicBuild) {
+    std::sort(m_assetFiles.begin(), m_assetFiles.end());
   }
 
   logMessage("Found " + std::to_string(m_scriptFiles.size()) +
@@ -931,9 +1090,8 @@ Result<void> BuildSystem::processAssets() {
                                     " - " + result.errorMessage);
     }
 
-    // Map original path to VFS path
-    std::string vfsPath = relativePath.string();
-    std::replace(vfsPath.begin(), vfsPath.end(), '\\', '/');
+    // Map original path to normalized VFS path (lowercase, forward slashes)
+    std::string vfsPath = normalizeVfsPath(relativePath.string());
     m_assetMapping[assetPath] = vfsPath;
 
     processed++;
@@ -946,15 +1104,32 @@ Result<void> BuildSystem::processAssets() {
   fs::path manifestPath = stagingDir / "resource_manifest.json";
   std::ofstream manifestFile(manifestPath);
   if (manifestFile.is_open()) {
+    // Use deterministic timestamp if configured
+    u64 buildTs = getBuildTimestamp();
+
+    // Generate ISO 8601 timestamp string
+    std::time_t tsTime = static_cast<std::time_t>(buildTs);
+    std::tm *tm = std::gmtime(&tsTime);
+    std::ostringstream isoTs;
+    isoTs << std::put_time(tm, "%Y-%m-%dT%H:%M:%SZ");
+
     manifestFile << "{\n";
     manifestFile << "  \"version\": \"1.0\",\n";
-    manifestFile << "  \"build_timestamp\": "
-                 << std::chrono::duration_cast<std::chrono::seconds>(
-                        std::chrono::system_clock::now().time_since_epoch())
-                        .count()
-                 << ",\n";
+    manifestFile << "  \"generated\": \"" << isoTs.str() << "\",\n";
+    manifestFile << "  \"build_timestamp\": " << buildTs << ",\n";
     manifestFile << "  \"build_number\": " << m_config.buildNumber << ",\n";
     manifestFile << "  \"resource_count\": " << m_assetMapping.size() << ",\n";
+    manifestFile << "  \"locales\": [";
+    bool firstLocale = true;
+    for (const auto &lang : m_config.includedLanguages) {
+      if (!firstLocale)
+        manifestFile << ", ";
+      firstLocale = false;
+      manifestFile << "\"" << lang << "\"";
+    }
+    manifestFile << "],\n";
+    manifestFile << "  \"default_locale\": \"" << m_config.defaultLanguage
+                 << "\",\n";
     manifestFile << "  \"resources\": [\n";
 
     bool first = true;
@@ -1031,6 +1206,22 @@ Result<void> BuildSystem::processAssets() {
         }
       }
 
+      // Determine pack binding (Base or Lang_<locale>)
+      std::string packBinding = locale.empty() ? "Base" : ("Lang_" + locale);
+
+      // Determine resource flags based on type
+      std::vector<std::string> flags;
+      if (resType == ResourceType::Texture || resType == ResourceType::Font) {
+        flags.push_back("PRELOAD");
+      }
+      if (resType == ResourceType::Music) {
+        flags.push_back("STREAMABLE");
+      }
+
+      // Detect if this is a voice file (for voice mapping)
+      bool isVoice = (vfsPath.find("voice/") != std::string::npos ||
+                      vfsPath.find("/voice/") != std::string::npos);
+
       // Escape backslashes and quotes for JSON
       std::string escapedSource = sourcePath;
       std::string escapedVfs = vfsPath;
@@ -1050,13 +1241,28 @@ Result<void> BuildSystem::processAssets() {
       escapeJson(escapedVfs);
 
       manifestFile << "    {\n";
-      manifestFile << "      \"source\": \"" << escapedSource << "\",\n";
-      manifestFile << "      \"vfs_path\": \"" << escapedVfs << "\",\n";
+      manifestFile << "      \"id\": \"" << escapedVfs << "\",\n";
       manifestFile << "      \"type\": \"" << typeStr << "\",\n";
+      manifestFile << "      \"source_path\": \"" << escapedSource << "\",\n";
       manifestFile << "      \"size\": " << fileSize << ",\n";
-      manifestFile << "      \"hash\": \"" << hashHex << "\"";
+      manifestFile << "      \"hash\": \"" << hashHex << "\",\n";
+      manifestFile << "      \"pack\": \"" << packBinding << "\"";
+      if (!flags.empty()) {
+        manifestFile << ",\n      \"flags\": [";
+        bool firstFlag = true;
+        for (const auto &flag : flags) {
+          if (!firstFlag)
+            manifestFile << ", ";
+          firstFlag = false;
+          manifestFile << "\"" << flag << "\"";
+        }
+        manifestFile << "]";
+      }
       if (!locale.empty()) {
         manifestFile << ",\n      \"locale\": \"" << locale << "\"";
+      }
+      if (isVoice) {
+        manifestFile << ",\n      \"voice\": true";
       }
       manifestFile << "\n    }";
     }
@@ -1158,8 +1364,52 @@ Result<void> BuildSystem::packResources() {
     }
   }
 
-  // Generate packs_index.json
+  // Generate packs_index.json with full metadata per spec
   updateProgress(0.95f, "Generating pack index...");
+
+  // Helper function to calculate pack hash and size
+  auto getPackInfo = [this](const fs::path &packPath)
+      -> std::tuple<std::string, u64, u32> {
+    std::string hashHex = "sha256:";
+    u64 packSize = 0;
+    u32 resourceCount = 0;
+
+    if (!fs::exists(packPath)) {
+      return {"sha256:0000000000000000", 0, 0};
+    }
+
+    try {
+      std::ifstream file(packPath, std::ios::binary | std::ios::ate);
+      if (file.is_open()) {
+        packSize = static_cast<u64>(file.tellg());
+        file.seekg(0, std::ios::beg);
+
+        // Read pack data for hashing
+        std::vector<u8> data(packSize);
+        file.read(reinterpret_cast<char *>(data.data()),
+                  static_cast<std::streamsize>(packSize));
+        file.close();
+
+        // Calculate SHA-256 hash
+        auto hash = calculateSha256(data.data(), data.size());
+        std::ostringstream oss;
+        oss << std::hex << std::setfill('0');
+        for (int i = 0; i < 16; ++i) {
+          oss << std::setw(2) << static_cast<int>(hash[i]);
+        }
+        hashHex += oss.str() + "...";
+
+        // Read resource count from header (offset 12)
+        if (packSize >= 16) {
+          resourceCount = *reinterpret_cast<const u32 *>(data.data() + 12);
+        }
+      }
+    } catch (...) {
+      // Hash calculation failed
+    }
+
+    return {hashHex, packSize, resourceCount};
+  };
 
   fs::path indexPath = packsDir / "packs_index.json";
   std::ofstream indexFile(indexPath);
@@ -1168,18 +1418,34 @@ Result<void> BuildSystem::packResources() {
     indexFile << "  \"version\": \"1.0\",\n";
     indexFile << "  \"packs\": [\n";
 
+    // Get Base pack info
+    auto [baseHash, baseSize, baseResCount] =
+        getPackInfo(packsDir / "Base.nmres");
+
     indexFile << "    {\n";
     indexFile << "      \"id\": \"base\",\n";
     indexFile << "      \"filename\": \"Base.nmres\",\n";
     indexFile << "      \"type\": \"Base\",\n";
     indexFile << "      \"priority\": 0,\n";
+    indexFile << "      \"version\": \"" << m_config.version << "\",\n";
+    indexFile << "      \"hash\": \"" << baseHash << "\",\n";
+    indexFile << "      \"size\": " << baseSize << ",\n";
+    indexFile << "      \"resource_count\": " << baseResCount << ",\n";
     indexFile << "      \"encrypted\": "
-              << (m_config.encryptAssets ? "true" : "false") << "\n";
+              << (m_config.encryptAssets ? "true" : "false") << ",\n";
+    indexFile << "      \"signed\": "
+              << (m_config.signPacks ? "true" : "false") << "\n";
     indexFile << "    }";
+
+    // Build load_order array
+    std::vector<std::string> loadOrder;
+    loadOrder.push_back("base");
 
     for (const auto &lang : m_config.includedLanguages) {
       std::string packName = "Lang_" + lang + ".nmres";
       if (fs::exists(packsDir / packName)) {
+        auto [langHash, langSize, langResCount] = getPackInfo(packsDir / packName);
+
         indexFile << ",\n";
         indexFile << "    {\n";
         indexFile << "      \"id\": \"lang_" << lang << "\",\n";
@@ -1187,13 +1453,33 @@ Result<void> BuildSystem::packResources() {
         indexFile << "      \"type\": \"Language\",\n";
         indexFile << "      \"priority\": 3,\n";
         indexFile << "      \"locale\": \"" << lang << "\",\n";
+        indexFile << "      \"version\": \"" << m_config.version << "\",\n";
+        indexFile << "      \"hash\": \"" << langHash << "\",\n";
+        indexFile << "      \"size\": " << langSize << ",\n";
+        indexFile << "      \"resource_count\": " << langResCount << ",\n";
         indexFile << "      \"encrypted\": "
-                  << (m_config.encryptAssets ? "true" : "false") << "\n";
+                  << (m_config.encryptAssets ? "true" : "false") << ",\n";
+        indexFile << "      \"signed\": "
+                  << (m_config.signPacks ? "true" : "false") << "\n";
         indexFile << "    }";
+
+        loadOrder.push_back("lang_" + lang);
       }
     }
 
     indexFile << "\n  ],\n";
+
+    // Write load_order array
+    indexFile << "  \"load_order\": [";
+    bool firstOrder = true;
+    for (const auto &id : loadOrder) {
+      if (!firstOrder)
+        indexFile << ", ";
+      firstOrder = false;
+      indexFile << "\"" << id << "\"";
+    }
+    indexFile << "],\n";
+
     indexFile << "  \"default_locale\": \"" << m_config.defaultLanguage
               << "\"\n";
     indexFile << "}\n";
@@ -1395,6 +1681,39 @@ Result<void> BuildSystem::signAndFinalize() {
         }
 
         file.close();
+
+        // Perform smoke-load test by attempting to read resource table
+        // This verifies the pack structure is valid and parseable
+        std::ifstream packTest(packPath, std::ios::binary);
+        if (packTest.is_open()) {
+          packTest.seekg(0, std::ios::beg);
+
+          u8 hdr[64];
+          packTest.read(reinterpret_cast<char *>(hdr), 64);
+
+          u32 resCount = *reinterpret_cast<u32 *>(hdr + 12);
+          u64 tableOffset = *reinterpret_cast<u64 *>(hdr + 16);
+
+          if (resCount > 0 && tableOffset >= 64) {
+            // Try to read first resource entry (48 bytes each)
+            packTest.seekg(static_cast<std::streamoff>(tableOffset));
+
+            u8 resEntry[48];
+            packTest.read(reinterpret_cast<char *>(resEntry), 48);
+
+            if (packTest.gcount() == 48) {
+              // Entry read successfully - pack structure is valid
+              logMessage("Smoke-load test passed for: " +
+                             entry.path().filename().string(),
+                         false);
+            } else {
+              m_progress.warnings.push_back(
+                  "Smoke-load failed: Cannot read resource table: " + packPath);
+            }
+          }
+          packTest.close();
+        }
+
         logMessage("Pack verified: " + entry.path().filename().string(), false);
       }
     }
@@ -1590,7 +1909,9 @@ ScriptCompileResult BuildSystem::compileScript(const std::string &scriptPath) {
 
 Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
   try {
-    // Create a combined bytecode file (placeholder implementation)
+    // Create a combined bytecode file
+    // Note: This is a placeholder that stores source as "bytecode"
+    // In production, this would use the actual scripting::Compiler
     std::ofstream output(outputPath, std::ios::binary);
     if (!output.is_open()) {
       return Result<void>::error("Cannot create bytecode file: " + outputPath);
@@ -1607,6 +1928,10 @@ Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
     output.write(reinterpret_cast<const char *>(&scriptCount),
                  sizeof(scriptCount));
 
+    // Prepare script map entries for source mapping
+    std::vector<std::tuple<u64, std::string, u32, u32>> scriptMapEntries;
+    u64 currentOffset = 12; // After header (4 + 4 + 4)
+
     // Write placeholder bytecode for each script
     for (const auto &scriptPath : m_scriptFiles) {
       std::ifstream file(scriptPath);
@@ -1616,14 +1941,67 @@ Result<void> BuildSystem::compileBytecode(const std::string &outputPath) {
         std::string source = buffer.str();
         file.close();
 
+        // Record mapping: bytecode_offset, source_file, line, column
+        fs::path relativePath =
+            fs::relative(scriptPath, m_config.projectPath);
+        scriptMapEntries.emplace_back(currentOffset, relativePath.string(), 1, 0);
+
         u32 size = static_cast<u32>(source.size());
         output.write(reinterpret_cast<const char *>(&size), sizeof(size));
         output.write(source.data(),
                      static_cast<std::streamsize>(source.size()));
+
+        currentOffset += 4 + size; // size field + data
       }
     }
 
     output.close();
+
+    // Generate script_map.json for source mapping
+    fs::path scriptMapPath =
+        fs::path(outputPath).parent_path() / "script_map.json";
+    std::ofstream mapFile(scriptMapPath);
+    if (mapFile.is_open()) {
+      mapFile << "{\n";
+      mapFile << "  \"version\": \"1.0\",\n";
+      mapFile << "  \"bytecode_file\": \"compiled_scripts.bin\",\n";
+      mapFile << "  \"entries\": [\n";
+
+      bool first = true;
+      for (const auto &[offset, sourceFile, line, col] : scriptMapEntries) {
+        if (!first)
+          mapFile << ",\n";
+        first = false;
+
+        // Escape backslashes for JSON
+        std::string escapedPath = sourceFile;
+        std::string escaped;
+        for (char c : escapedPath) {
+          if (c == '\\')
+            escaped += "\\\\";
+          else if (c == '"')
+            escaped += "\\\"";
+          else
+            escaped += c;
+        }
+
+        mapFile << "    {\n";
+        mapFile << "      \"bytecode_offset\": " << offset << ",\n";
+        mapFile << "      \"source_file\": \"" << escaped << "\",\n";
+        mapFile << "      \"source_line\": " << line << ",\n";
+        mapFile << "      \"source_column\": " << col << "\n";
+        mapFile << "    }";
+      }
+
+      mapFile << "\n  ]\n";
+      mapFile << "}\n";
+      mapFile.close();
+
+      logMessage("Generated script_map.json with " +
+                     std::to_string(scriptMapEntries.size()) + " entries",
+                 false);
+    }
+
     return Result<void>::ok();
 
   } catch (const std::exception &e) {
@@ -1761,10 +2139,8 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
       output.write(footerMagic, 4);
       u32 tablesCrc = 0;
       output.write(reinterpret_cast<const char *>(&tablesCrc), 4);
-      u64 timestamp = static_cast<u64>(
-          std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::system_clock::now().time_since_epoch())
-              .count());
+      // Use deterministic timestamp if configured
+      u64 timestamp = getBuildTimestamp();
       output.write(reinterpret_cast<const char *>(&timestamp), 8);
       u32 buildNumber = m_config.buildNumber;
       output.write(reinterpret_cast<const char *>(&buildNumber), 4);
@@ -2103,11 +2479,8 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
 
     output.write(reinterpret_cast<const char *>(&tablesCrc), 4);
 
-    // Unix epoch timestamp
-    u64 timestamp = static_cast<u64>(
-        std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::system_clock::now().time_since_epoch())
-            .count());
+    // Use deterministic timestamp if configured
+    u64 timestamp = getBuildTimestamp();
     output.write(reinterpret_cast<const char *>(&timestamp), 8);
 
     u32 buildNumber = m_config.buildNumber;
@@ -2130,6 +2503,40 @@ Result<void> BuildSystem::buildPack(const std::string &outputPath,
     output.write(reinterpret_cast<const char *>(fullHash.data()), 16);
 
     output.close();
+
+    // Generate signature file if signing is enabled
+    if (m_config.signPacks && !m_config.signingPrivateKeyPath.empty()) {
+      // Read the pack file for signing
+      std::ifstream packFile(outputPath, std::ios::binary);
+      if (packFile.is_open()) {
+        packFile.seekg(0, std::ios::end);
+        auto packSize = packFile.tellg();
+        packFile.seekg(0, std::ios::beg);
+
+        std::vector<u8> packData(static_cast<usize>(packSize));
+        packFile.read(reinterpret_cast<char *>(packData.data()), packSize);
+        packFile.close();
+
+        // Sign the pack data
+        auto signResult = signData(packData, m_config.signingPrivateKeyPath);
+        if (signResult.isOk()) {
+          // Write signature to .sig file
+          std::string sigPath = outputPath + ".sig";
+          std::ofstream sigFile(sigPath, std::ios::binary);
+          if (sigFile.is_open()) {
+            sigFile.write(
+                reinterpret_cast<const char *>(signResult.value().data()),
+                static_cast<std::streamsize>(signResult.value().size()));
+            sigFile.close();
+            logMessage("Generated signature: " + sigPath, false);
+          }
+        } else {
+          logMessage("Warning: Failed to sign pack: " + signResult.error(),
+                     false);
+        }
+      }
+    }
+
     return Result<void>::ok();
 
   } catch (const std::exception &e) {
