@@ -372,7 +372,6 @@ Result<void> VoiceManifest::removeTake(const std::string &lineId,
     }
   } else if (file.activeTakeIndex > 0) {
     // Adjust active index if needed
-    size_t removedIndex = 0;
     for (size_t i = 0; i < file.takes.size(); ++i) {
       if (file.takes[i].isActive) {
         file.activeTakeIndex = static_cast<u32>(i);

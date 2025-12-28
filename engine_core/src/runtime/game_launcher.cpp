@@ -835,11 +835,10 @@ Result<void> GameLauncher::loadCompiledScripts() {
 }
 
 void GameLauncher::mainLoop() {
-  using Clock = std::chrono::high_resolution_clock;
-
-  auto lastTime = Clock::now();
-  constexpr f64 targetFps = 60.0;
-  constexpr f64 frameTime = 1.0 / targetFps;
+  // Note: lastTime and frameTime are prepared for future frame limiting
+  // implementation when integrating with the full Application class
+  [[maybe_unused]] constexpr f64 targetFps = 60.0;
+  [[maybe_unused]] constexpr f64 frameTime = 1.0 / targetFps;
 
   logInfo("Entering main loop");
 

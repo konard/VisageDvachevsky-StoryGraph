@@ -406,7 +406,7 @@ Result<void> ConfigManager::loadFromFile(const std::string &path,
 }
 
 Result<void> ConfigManager::parseJson(const std::string &jsonStr,
-                                      RuntimeConfig &config, bool isUserConfig) {
+                                      RuntimeConfig &config, [[maybe_unused]] bool isUserConfig) {
   // Parse version
   std::string version = json::extractString(jsonStr, "version");
   if (!version.empty()) {
