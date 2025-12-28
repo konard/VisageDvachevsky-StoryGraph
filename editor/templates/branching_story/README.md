@@ -33,7 +33,8 @@ branching_story/
 │   ├── act1_scene1.nmscene
 │   └── act1_choice1.nmscene
 ├── scripts/
-│   └── main.nms                  # All dialogue and logic
+│   ├── main.nms                  # All dialogue and logic
+│   └── generated/                # Auto-generated scripts from Graph
 └── story_graph/
     └── branching_story.nmgraph   # Visual story flow with branches
 ```
@@ -170,6 +171,15 @@ choice {
 2. **Check Variables**: Add debug output during development
 3. **Verify Endings**: Ensure all endings are reachable
 4. **Edge Cases**: Test what happens with equal affinities
+
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
 
 ## Need Help?
 

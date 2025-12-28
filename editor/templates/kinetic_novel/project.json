@@ -43,5 +43,6 @@
     "outputDirectory": "dist",
     "compression": true,
     "encryptScripts": false
-  }
+  },
+  "playbackSourceMode": "Script"
 }

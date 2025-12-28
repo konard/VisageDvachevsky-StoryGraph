@@ -123,7 +123,8 @@ demo_branching_novel/
 │   └── ending_lonely.nmscene
 │
 ├── scripts/
-│   └── main.nms           # Complete story script
+│   ├── main.nms           # Complete story script
+│   └── generated/         # Auto-generated scripts from Graph
 │
 └── story_graph/
     └── demo_story.nmgraph # Visual story flow
@@ -157,6 +158,15 @@ This template is designed to be modified. Try:
 - Engine version: 1.0.0+
 - Resolution: 1920x1080 (16:9)
 - Platforms: Windows, Linux, Web
+
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
 
 ## License
 

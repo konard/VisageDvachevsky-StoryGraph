@@ -29,7 +29,8 @@ empty_project/
 ├── scenes/
 │   └── main.nmscene      # Main scene file
 ├── scripts/
-│   └── main.nms          # Main script
+│   ├── main.nms          # Main script
+│   └── generated/        # Auto-generated scripts from Graph
 └── story_graph/
     └── main.nmgraph      # Story flow graph
 ```
@@ -66,6 +67,15 @@ scene my_scene {
     goto next_scene
 }
 ```
+
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
 
 ## Need Help?
 

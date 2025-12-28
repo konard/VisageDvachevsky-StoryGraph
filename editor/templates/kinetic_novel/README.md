@@ -39,7 +39,8 @@ kinetic_novel/
 │   ├── chapter2.nmscene
 │   └── epilogue.nmscene
 ├── scripts/
-│   └── main.nms              # All dialogue and scene logic
+│   ├── main.nms              # All dialogue and scene logic
+│   └── generated/            # Auto-generated scripts from Graph
 └── story_graph/
     └── main_story.nmgraph    # Visual story flow
 ```
@@ -125,6 +126,15 @@ hide Friend
 2. **Visual Variety**: Change backgrounds and character positions to keep scenes dynamic.
 3. **Audio Atmosphere**: Music greatly enhances emotional moments.
 4. **Scene Transitions**: Match transition types to the mood of scene changes.
+
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
 
 ## Need Help?
 

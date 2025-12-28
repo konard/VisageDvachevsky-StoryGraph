@@ -47,5 +47,6 @@
   "tutorial": {
     "showHints": true,
     "highlightNewFeatures": true
-  }
+  },
+  "playbackSourceMode": "Script"
 }

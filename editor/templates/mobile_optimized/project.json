@@ -60,5 +60,6 @@
     },
     "permissions": [],
     "hapticFeedback": true
-  }
+  },
+  "playbackSourceMode": "Script"
 }
