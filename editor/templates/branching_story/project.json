@@ -51,5 +51,6 @@
       "affinity_b": 0,
       "secret_found": false
     }
-  }
+  },
+  "playbackSourceMode": "Script"
 }

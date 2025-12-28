@@ -43,7 +43,8 @@ mobile_optimized/
 │   └── ui/               # Touch-friendly UI elements
 ├── scenes/
 ├── scripts/
-│   └── main.nms
+│   ├── main.nms
+│   └── generated/        # Auto-generated scripts from Graph
 └── story_graph/
 ```
 
@@ -110,6 +111,15 @@ This template is configured for:
 - Android 8.0+
 - iOS 13.0+
 - Mobile web browsers
+
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
 
 ## Need Help?
 

@@ -178,6 +178,15 @@ After completing this tutorial:
 4. **Use Comments**: Document your code
 5. **Back Up Your Work**: Save frequently
 
+## Workflow Mode
+
+This template uses **Script mode** by default, meaning:
+- `scripts/main.nms` is the source of truth
+- Edit the script file to change story content
+- The Story Graph is for visualization only
+
+To change the workflow mode, see [Workflow Modes Documentation](../../../docs/WORKFLOW_MODES.md).
+
 ## Need Help?
 
 - **Documentation**: [novelmind.dev/docs](https://novelmind.dev/docs)
