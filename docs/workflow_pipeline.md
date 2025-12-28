@@ -286,3 +286,103 @@ scene εισαγωγή { ... }  // Греческий
 
 **Важно:** При конфликте приоритет имеет источник, из которого
 выполняется синхронизация.
+
+### 7.6 Выбор режима при создании проекта (issue #100)
+
+При создании нового проекта в диалоге "New Project" теперь можно выбрать
+режим работы (Workflow Mode):
+
+- **Code-Only (Script is source of truth)**: NMScript файлы являются
+  единственным источником истины. Story Graph автоматически синхронизируется
+  из скриптов.
+- **Graph-Only (Visual graph is source of truth)**: Story Graph является
+  единственным источником истины. Скрипты генерируются автоматически.
+- **Mixed (Both with conflict rules)**: Оба источника могут редактироваться.
+  При конфликтах Graph имеет приоритет.
+
+Выбранный режим сохраняется в `project.json` как поле `playbackSourceMode`:
+- `"Script"` — режим Code-Only
+- `"Graph"` — режим Graph-Only
+- `"Mixed"` — гибридный режим
+
+Режим также отображается и может быть изменён в:
+- **Project Settings** → вкладка "Workflow"
+- **Play Toolbar** → выпадающий список "Source"
+
+Все три UI-компонента синхронизированы и показывают одно и то же значение.
+
+### 7.7 Паритет функциональности Graph ↔ NMScript
+
+Редактор обеспечивает полный паритет между типами узлов в Story Graph и
+конструкциями NMScript. Каждый узел в визуальном редакторе генерирует
+соответствующий код при синхронизации или работе в режиме Graph.
+
+| Node Palette Type | Генерируемый NMScript | Описание |
+|-------------------|----------------------|----------|
+| **Entry** | `scene entry { ... }` | Преобразуется в Scene с маркером входа |
+| **Scene** | `scene id { say speaker "text" }` | Основной контейнер сцены с диалогами |
+| **Dialogue** | `scene id { say speaker "text" goto next }` | Диалоговый узел с переходом |
+| **Choice** | `choice { "opt1" -> goto target1 }` | Блок выбора с ветвлением |
+| **Condition** | `if expr { goto a } else { goto b }` | Условное ветвление |
+| **Jump** | `goto target` | Безусловный переход к узлу |
+| **Variable** | `set var = value` | Установка переменной |
+| **Random** | `choice { "A" -> goto a "B" -> goto b }` | Рандомный выбор (как choice) |
+| **Event** | `// Event trigger: eventName` | Триггер события (в комментарии) |
+| **Script** | Inline script content | Произвольный NMScript код |
+| **End** | `scene id { // End of story path }` | Конец ветки сюжета |
+| **Label** | Implicit scene name | Метка перехода (как имя сцены) |
+
+#### Генерация кода (Graph → Script)
+
+При работе в режиме **Graph** или **Mixed** система автоматически генерирует
+NMScript код из визуального графа. Файл `editor/src/editor_runtime_host_runtime.cpp`
+содержит функцию `generateScriptFromGraphJson()`, которая:
+
+1. Парсит JSON файл `story_graph.json` из проекта
+2. Категоризирует узлы по типам
+3. Генерирует NMScript блоки для каждого типа узла
+4. Обрабатывает связи между узлами (goto, choice)
+5. Поддерживает условия (if/else) и переменные (set)
+
+Пример генерируемого кода:
+
+```nmscript
+// ========================================
+// Generated from Story Graph (Graph Mode)
+// Do not edit manually - changes may be overwritten
+// ========================================
+
+scene prologue {
+    say Narrator "Welcome to the story!"
+    choice {
+        "Start adventure" -> goto chapter1
+        "View settings" -> goto settings
+    }
+}
+
+scene check_item {
+    if has_key == true {
+        goto secret_room
+    } else {
+        goto locked_door
+    }
+}
+
+scene set_flag {
+    set visited_town = true
+    goto town_square
+}
+```
+
+#### Парсинг скриптов (Script → Graph)
+
+Файл `editor/src/qt/panels/nm_story_graph_panel.cpp` содержит функцию
+`rebuildFromProjectScripts()`, которая:
+
+1. Сканирует все `.nms` файлы в директории `scripts/`
+2. Извлекает `scene` блоки с помощью регулярных выражений
+3. Находит `goto` переходы и `choice` конструкции
+4. Создает узлы и связи в Story Graph
+5. Восстанавливает позиции узлов из `story_graph.json`
+
+Поддерживаются Unicode-идентификаторы (кириллица, греческий, CJK и др.).

@@ -45,6 +45,12 @@ QStringList NMNewProjectDialog::standardLocales() {
           "it (Italian)"};
 }
 
+QStringList NMNewProjectDialog::workflowModes() {
+  return {QObject::tr("Code-Only (Script is source of truth)"),
+          QObject::tr("Graph-Only (Visual graph is source of truth)"),
+          QObject::tr("Mixed (Both with conflict rules)")};
+}
+
 void NMNewProjectDialog::buildUi() {
   auto *layout = new QVBoxLayout(this);
   layout->setContentsMargins(16, 16, 16, 16);
@@ -105,6 +111,31 @@ void NMNewProjectDialog::buildUi() {
   displayLayout->addRow(tr("Default Language:"), m_localeCombo);
 
   layout->addWidget(displayGroup);
+
+  // Workflow Settings Group (issue #100)
+  auto *workflowGroup = new QGroupBox(tr("Workflow Settings"), this);
+  auto *workflowLayout = new QFormLayout(workflowGroup);
+  workflowLayout->setSpacing(8);
+
+  m_workflowCombo = new QComboBox(workflowGroup);
+  m_workflowCombo->addItems(workflowModes());
+  m_workflowCombo->setCurrentIndex(0); // Default to Code-Only (Script)
+  m_workflowCombo->setToolTip(
+      tr("Choose the primary development workflow for your project.\n"
+         "This determines which data source (Script or Graph) is authoritative."));
+  workflowLayout->addRow(tr("Workflow Mode:"), m_workflowCombo);
+
+  m_workflowDescription = new QLabel(workflowGroup);
+  m_workflowDescription->setWordWrap(true);
+  m_workflowDescription->setStyleSheet(
+      "color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
+  workflowLayout->addRow(m_workflowDescription);
+
+  connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &NMNewProjectDialog::updateWorkflowDescription);
+  updateWorkflowDescription();
+
+  layout->addWidget(workflowGroup);
 
   // Path Preview
   m_pathPreview = new QLabel(this);
@@ -242,6 +273,50 @@ QString NMNewProjectDialog::locale() const {
   // Extract just the locale code (e.g., "en" from "en (English)")
   const qsizetype spacePos = text.indexOf(' ');
   return spacePos > 0 ? text.left(spacePos) : text;
+}
+
+void NMNewProjectDialog::setWorkflowMode(int modeIndex) {
+  if (!m_workflowCombo) {
+    return;
+  }
+  if (modeIndex >= 0 && modeIndex < m_workflowCombo->count()) {
+    m_workflowCombo->setCurrentIndex(modeIndex);
+  }
+}
+
+int NMNewProjectDialog::workflowMode() const {
+  // Returns: 0 = Script (Code-Only), 1 = Graph (Graph-Only), 2 = Mixed
+  return m_workflowCombo ? m_workflowCombo->currentIndex() : 0;
+}
+
+void NMNewProjectDialog::updateWorkflowDescription() {
+  if (!m_workflowDescription || !m_workflowCombo) {
+    return;
+  }
+
+  int idx = m_workflowCombo->currentIndex();
+  QString desc;
+  switch (idx) {
+  case 0: // Code-Only (Script)
+    desc = tr("NMScript files are the authoritative source. The Story Graph "
+              "will automatically sync from script files. Best for "
+              "programmers and version control workflows.");
+    break;
+  case 1: // Graph-Only
+    desc = tr("The Story Graph is the authoritative source. Script files "
+              "are automatically generated from the graph. Best for "
+              "narrative designers and visual prototyping.");
+    break;
+  case 2: // Mixed
+    desc = tr("Both Script and Graph can be edited. Graph overrides script "
+              "when conflicts occur. Per-scene workflow can be configured. "
+              "Best for team collaboration.");
+    break;
+  default:
+    desc = tr("Select a workflow mode.");
+    break;
+  }
+  m_workflowDescription->setText(desc);
 }
 
 void NMNewProjectDialog::updatePreview() {

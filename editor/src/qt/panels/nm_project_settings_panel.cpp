@@ -548,6 +548,24 @@ void NMProjectSettingsPanel::loadFromProject() {
 
   const auto &meta = pm.getMetadata();
 
+  // Load workflow mode from playbackSourceMode (issue #100)
+  if (m_workflowCombo) {
+    int workflowIndex = 0; // Default to Visual-First (Graph)
+    switch (meta.playbackSourceMode) {
+    case PlaybackSourceMode::Script:
+      workflowIndex = 1; // Code-First
+      break;
+    case PlaybackSourceMode::Graph:
+      workflowIndex = 0; // Visual-First
+      break;
+    case PlaybackSourceMode::Mixed:
+      workflowIndex = 2; // Hybrid
+      break;
+    }
+    m_workflowCombo->setCurrentIndex(workflowIndex);
+    updateWorkflowDescription();
+  }
+
   // Load resolution
   if (m_resolutionCombo) {
     QString resolution = QString::fromStdString(meta.targetResolution);
@@ -580,6 +598,25 @@ void NMProjectSettingsPanel::saveToProject() {
 
   auto meta = pm.getMetadata();
 
+  // Save workflow mode to playbackSourceMode (issue #100)
+  if (m_workflowCombo) {
+    int idx = m_workflowCombo->currentIndex();
+    switch (idx) {
+    case 0: // Visual-First -> Graph
+      meta.playbackSourceMode = PlaybackSourceMode::Graph;
+      break;
+    case 1: // Code-First -> Script
+      meta.playbackSourceMode = PlaybackSourceMode::Script;
+      break;
+    case 2: // Hybrid -> Mixed
+      meta.playbackSourceMode = PlaybackSourceMode::Mixed;
+      break;
+    default:
+      meta.playbackSourceMode = PlaybackSourceMode::Script;
+      break;
+    }
+  }
+
   // Save resolution
   if (m_resolutionCombo) {
     QString text = m_resolutionCombo->currentText();
@@ -602,6 +639,7 @@ void NMProjectSettingsPanel::saveToProject() {
   }
 
   pm.setMetadata(meta);
+  pm.saveProject();
 }
 
 } // namespace NovelMind::editor::qt

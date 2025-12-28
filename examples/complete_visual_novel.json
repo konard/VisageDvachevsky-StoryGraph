@@ -1,0 +1,329 @@
+{
+  "description": "Complete visual novel example demonstrating all node types and features",
+  "version": "1.0",
+  "entry": "prologue",
+  "nodes": [
+    {
+      "id": "prologue",
+      "type": "Scene",
+      "title": "Prologue - A New Beginning",
+      "dialogueText": "The sun rose over the coastal town of Havenshore, painting the sky in hues of gold and crimson.\n\nThis was the day everything would change.",
+      "speaker": "Narrator",
+      "x": 100,
+      "y": 100,
+      "choiceTargets": {
+        "Continue": "meet_stranger"
+      }
+    },
+    {
+      "id": "meet_stranger",
+      "type": "Dialogue",
+      "title": "The Mysterious Stranger",
+      "dialogueText": "Excuse me... you wouldn't happen to know where the old lighthouse is, would you?\n\nI've been searching for hours.",
+      "speaker": "Stranger",
+      "x": 300,
+      "y": 100,
+      "choiceTargets": {
+        "next": "player_response_choice"
+      }
+    },
+    {
+      "id": "player_response_choice",
+      "type": "Choice",
+      "title": "Player Response",
+      "dialogueText": "The stranger's eyes held a mixture of hope and desperation.\n\nHow will you respond?",
+      "speaker": "Narrator",
+      "x": 500,
+      "y": 100,
+      "choiceTargets": {
+        "Help them find the lighthouse": "help_stranger",
+        "Ask why they're looking for it": "ask_why",
+        "Pretend you don't know": "pretend_ignorance"
+      }
+    },
+    {
+      "id": "help_stranger",
+      "type": "Variable",
+      "title": "Set Trust Flag",
+      "variableName": "stranger_trust",
+      "variableValue": "true",
+      "x": 700,
+      "y": 50,
+      "choiceTargets": {
+        "next": "lead_to_lighthouse"
+      }
+    },
+    {
+      "id": "ask_why",
+      "type": "Dialogue",
+      "title": "Stranger's Explanation",
+      "dialogueText": "There's something... someone I need to find.\n\nA person who disappeared there years ago.\n\nPlease, it's important.",
+      "speaker": "Stranger",
+      "x": 700,
+      "y": 150,
+      "choiceTargets": {
+        "next": "understanding_choice"
+      }
+    },
+    {
+      "id": "pretend_ignorance",
+      "type": "Dialogue",
+      "title": "Evasive Response",
+      "dialogueText": "Sorry, I'm not from around here.\n\nYou might want to ask someone else.",
+      "speaker": "Player",
+      "x": 700,
+      "y": 250,
+      "choiceTargets": {
+        "next": "stranger_leaves"
+      }
+    },
+    {
+      "id": "understanding_choice",
+      "type": "Choice",
+      "title": "Decide to Help",
+      "dialogueText": "The sincerity in their voice is unmistakable.",
+      "speaker": "Narrator",
+      "x": 900,
+      "y": 150,
+      "choiceTargets": {
+        "I'll take you there": "help_stranger",
+        "That sounds dangerous...": "warn_stranger"
+      }
+    },
+    {
+      "id": "warn_stranger",
+      "type": "Dialogue",
+      "title": "Warning Given",
+      "dialogueText": "The lighthouse has been abandoned for years.\n\nPeople say strange things happen there at night.",
+      "speaker": "Player",
+      "x": 1100,
+      "y": 200,
+      "choiceTargets": {
+        "next": "stranger_insists"
+      }
+    },
+    {
+      "id": "stranger_insists",
+      "type": "Dialogue",
+      "title": "Stranger Insists",
+      "dialogueText": "I know the risks.\n\nBut some things are worth facing any danger for.\n\nWill you help me?",
+      "speaker": "Stranger",
+      "x": 1300,
+      "y": 200,
+      "choiceTargets": {
+        "next": "final_decision"
+      }
+    },
+    {
+      "id": "final_decision",
+      "type": "Choice",
+      "title": "Final Decision",
+      "dialogueText": "You look into the stranger's determined eyes.",
+      "speaker": "Narrator",
+      "x": 1500,
+      "y": 200,
+      "choiceTargets": {
+        "Alright, follow me": "lead_to_lighthouse",
+        "I'm sorry, I can't help you": "refuse_finally"
+      }
+    },
+    {
+      "id": "lead_to_lighthouse",
+      "type": "Scene",
+      "title": "Journey to the Lighthouse",
+      "dialogueText": "You lead the stranger down the winding coastal path.\n\nThe old lighthouse looms in the distance, its light long extinguished.\n\n\"Thank you,\" the stranger whispers. \"You have no idea what this means to me.\"",
+      "speaker": "Narrator",
+      "x": 1700,
+      "y": 100,
+      "choiceTargets": {
+        "Continue": "check_trust"
+      }
+    },
+    {
+      "id": "check_trust",
+      "type": "Condition",
+      "title": "Check Trust Level",
+      "conditionExpression": "stranger_trust == true",
+      "x": 1900,
+      "y": 100,
+      "conditionTargets": {
+        "true": "trusted_reveal",
+        "false": "normal_arrival"
+      }
+    },
+    {
+      "id": "trusted_reveal",
+      "type": "Dialogue",
+      "title": "Trusted Reveal",
+      "dialogueText": "Since you've been so kind...\n\nI should tell you the truth.\n\nMy name is Aria, and the person I'm looking for is my sister.\n\nShe was a lighthouse keeper who vanished five years ago.",
+      "speaker": "Aria",
+      "x": 2100,
+      "y": 50,
+      "choiceTargets": {
+        "next": "arrival_at_lighthouse"
+      }
+    },
+    {
+      "id": "normal_arrival",
+      "type": "Scene",
+      "title": "Normal Arrival",
+      "dialogueText": "The stranger grows silent as you approach the lighthouse.\n\nYou sense there's more to this story than they're telling.",
+      "speaker": "Narrator",
+      "x": 2100,
+      "y": 150,
+      "choiceTargets": {
+        "Continue": "arrival_at_lighthouse"
+      }
+    },
+    {
+      "id": "arrival_at_lighthouse",
+      "type": "Scene",
+      "title": "The Lighthouse",
+      "dialogueText": "The lighthouse door creaks open at your touch.\n\nInside, dust motes dance in the shafts of light streaming through broken windows.\n\n\"This is it,\" the stranger breathes. \"After all these years...\"",
+      "speaker": "Narrator",
+      "x": 2300,
+      "y": 100,
+      "choiceTargets": {
+        "Continue": "random_discovery"
+      }
+    },
+    {
+      "id": "random_discovery",
+      "type": "Random",
+      "title": "Random Discovery",
+      "x": 2500,
+      "y": 100,
+      "conditionTargets": {
+        "Find a hidden diary": "discover_diary",
+        "Hear a mysterious voice": "mysterious_voice",
+        "Nothing happens": "explore_further"
+      }
+    },
+    {
+      "id": "discover_diary",
+      "type": "Scene",
+      "title": "The Hidden Diary",
+      "dialogueText": "Behind a loose stone in the wall, you find a leather-bound journal.\n\nThe pages are yellowed but the handwriting is still legible.\n\n\"My sister's diary!\" the stranger gasps.",
+      "speaker": "Narrator",
+      "x": 2700,
+      "y": 50,
+      "choiceTargets": {
+        "Continue": "good_ending"
+      }
+    },
+    {
+      "id": "mysterious_voice",
+      "type": "Dialogue",
+      "title": "The Voice",
+      "dialogueText": "Welcome... I've been waiting for someone to come.\n\nFollow the light, and you shall find what you seek.",
+      "speaker": "???",
+      "x": 2700,
+      "y": 100,
+      "choiceTargets": {
+        "next": "mysterious_ending"
+      }
+    },
+    {
+      "id": "explore_further",
+      "type": "Scene",
+      "title": "Further Exploration",
+      "dialogueText": "The lighthouse seems ordinary, almost disappointingly so.\n\nBut the stranger doesn't give up, searching every corner with determination.",
+      "speaker": "Narrator",
+      "x": 2700,
+      "y": 150,
+      "choiceTargets": {
+        "Continue": "neutral_ending"
+      }
+    },
+    {
+      "id": "stranger_leaves",
+      "type": "Scene",
+      "title": "Stranger Departs",
+      "dialogueText": "The stranger nods slowly, disappointment evident in their eyes.\n\n\"Thank you anyway.\"\n\nThey walk away, their figure slowly disappearing into the morning mist.",
+      "speaker": "Narrator",
+      "x": 900,
+      "y": 250,
+      "choiceTargets": {
+        "Continue": "missed_opportunity"
+      }
+    },
+    {
+      "id": "refuse_finally",
+      "type": "Scene",
+      "title": "Final Refusal",
+      "dialogueText": "The stranger's shoulders slump.\n\n\"I understand. Not everyone wants to get involved in other people's problems.\"\n\nThey turn and walk away alone.",
+      "speaker": "Narrator",
+      "x": 1700,
+      "y": 250,
+      "choiceTargets": {
+        "Continue": "missed_opportunity"
+      }
+    },
+    {
+      "id": "missed_opportunity",
+      "type": "Event",
+      "title": "Trigger Regret Event",
+      "eventName": "path_not_taken",
+      "x": 1900,
+      "y": 250,
+      "choiceTargets": {
+        "next": "bad_ending"
+      }
+    },
+    {
+      "id": "good_ending",
+      "type": "Scene",
+      "title": "Good Ending - Truth Revealed",
+      "dialogueText": "The diary reveals the truth: the sister had left to start a new life, leaving behind clues only family would understand.\n\n\"She's alive,\" the stranger — Aria — whispers with tears of joy. \"Thank you... for everything.\"\n\nAs you watch her leave with newfound hope, you realize that sometimes, helping a stranger can change both your lives.\n\n— THE END —",
+      "speaker": "Narrator",
+      "x": 2900,
+      "y": 50,
+      "choiceTargets": {
+        "Play again": "prologue"
+      }
+    },
+    {
+      "id": "mysterious_ending",
+      "type": "Scene",
+      "title": "Mysterious Ending",
+      "dialogueText": "Following the ethereal voice, you discover a hidden passage beneath the lighthouse.\n\nWhat secrets lie below remains to be discovered...\n\n— TO BE CONTINUED —",
+      "speaker": "Narrator",
+      "x": 2900,
+      "y": 100,
+      "choiceTargets": {
+        "Play again": "prologue"
+      }
+    },
+    {
+      "id": "neutral_ending",
+      "type": "Scene",
+      "title": "Neutral Ending",
+      "dialogueText": "After hours of searching, the stranger finally gives up.\n\n\"Maybe the answers aren't here,\" they say quietly.\n\nBut as you leave, you both notice something: a fresh flower on the windowsill.\n\nSomeone has been here recently.\n\n— THE END? —",
+      "speaker": "Narrator",
+      "x": 2900,
+      "y": 150,
+      "choiceTargets": {
+        "Play again": "prologue"
+      }
+    },
+    {
+      "id": "bad_ending",
+      "type": "Scene",
+      "title": "Bad Ending - Regret",
+      "dialogueText": "Weeks pass, and you can't shake the feeling that you made a mistake.\n\nYou often wonder what would have happened if you had helped that stranger.\n\nSome chances come only once in a lifetime.\n\n— THE END —",
+      "speaker": "Narrator",
+      "x": 2100,
+      "y": 250,
+      "choiceTargets": {
+        "Play again": "prologue"
+      }
+    },
+    {
+      "id": "credits",
+      "type": "End",
+      "title": "Credits",
+      "x": 3100,
+      "y": 100
+    }
+  ]
+}

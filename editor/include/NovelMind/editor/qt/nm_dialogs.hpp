@@ -204,6 +204,7 @@ public:
   void setBaseDirectory(const QString &directory);
   void setResolution(const QString &resolution);
   void setLocale(const QString &locale);
+  void setWorkflowMode(int modeIndex);
 
   [[nodiscard]] QString projectName() const;
   [[nodiscard]] QString baseDirectory() const;
@@ -211,16 +212,20 @@ public:
   [[nodiscard]] QString templateName() const;
   [[nodiscard]] QString resolution() const;
   [[nodiscard]] QString locale() const;
+  [[nodiscard]] int workflowMode() const;
 
   // Common resolutions for visual novels
   static QStringList standardResolutions();
   // Common locales
   static QStringList standardLocales();
+  // Workflow modes (issue #100)
+  static QStringList workflowModes();
 
 private:
   void buildUi();
   void updatePreview();
   void updateCreateEnabled();
+  void updateWorkflowDescription();
   void browseDirectory();
 
   QLineEdit *m_nameEdit = nullptr;
@@ -228,6 +233,8 @@ private:
   QComboBox *m_templateCombo = nullptr;
   QComboBox *m_resolutionCombo = nullptr;
   QComboBox *m_localeCombo = nullptr;
+  QComboBox *m_workflowCombo = nullptr;
+  QLabel *m_workflowDescription = nullptr;
   QLabel *m_pathPreview = nullptr;
   QPushButton *m_browseButton = nullptr;
   QPushButton *m_createButton = nullptr;

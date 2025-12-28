@@ -293,10 +293,12 @@ int main(int argc, char *argv[]) {
       const QString name = dialog.projectName();
       const QString baseDir = dialog.baseDirectory();
       const QString templateName = dialog.templateName();
+      const int workflowMode = dialog.workflowMode();
       core::Logger::instance().info("New Project accepted: name='" +
                                     name.toStdString() + "', base='" +
                                     baseDir.toStdString() + "', template='" +
-                                    templateName.toStdString() + "'");
+                                    templateName.toStdString() + "', workflow=" +
+                                    std::to_string(workflowMode));
       if (name.isEmpty() || baseDir.isEmpty()) {
         NMMessageDialog::showWarning(
             &mainWindow, QObject::tr("New Project"),
@@ -324,6 +326,29 @@ int main(int argc, char *argv[]) {
                                    QString::fromStdString(result.error()));
         continue;
       }
+
+      // Apply workflow mode to project metadata (issue #100)
+      auto metadata = projectManager.getMetadata();
+      switch (workflowMode) {
+      case 0: // Code-Only (Script)
+        metadata.playbackSourceMode =
+            NovelMind::editor::PlaybackSourceMode::Script;
+        break;
+      case 1: // Graph-Only
+        metadata.playbackSourceMode =
+            NovelMind::editor::PlaybackSourceMode::Graph;
+        break;
+      case 2: // Mixed
+        metadata.playbackSourceMode =
+            NovelMind::editor::PlaybackSourceMode::Mixed;
+        break;
+      default:
+        metadata.playbackSourceMode =
+            NovelMind::editor::PlaybackSourceMode::Script;
+        break;
+      }
+      projectManager.setMetadata(metadata);
+      projectManager.saveProject();
 
       core::Logger::instance().info("Project created at: " +
                                     projectPath.toStdString());

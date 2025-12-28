@@ -592,6 +592,21 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
   }
   outMetadata.targetPlatforms = platformsResult.value();
 
+  // Playback source mode (issue #82, #100)
+  auto playbackModeResult =
+      getOptionalField<std::string>(obj, "playbackSourceMode", "Script");
+  if (playbackModeResult.isError()) {
+    return Result<void>::error(playbackModeResult.error());
+  }
+  std::string modeStr = playbackModeResult.value();
+  if (modeStr == "Graph") {
+    outMetadata.playbackSourceMode = PlaybackSourceMode::Graph;
+  } else if (modeStr == "Mixed") {
+    outMetadata.playbackSourceMode = PlaybackSourceMode::Mixed;
+  } else {
+    outMetadata.playbackSourceMode = PlaybackSourceMode::Script;
+  }
+
   // Validate
   auto validateResult = validate(outMetadata);
   if (validateResult.isError()) {
@@ -644,7 +659,23 @@ ProjectJsonHandler::serializeToString(const ProjectMetadata &metadata,
       json << ", ";
     json << "\"" << escapeJsonString(metadata.targetPlatforms[i]) << "\"";
   }
-  json << "]\n";
+  json << "],\n";
+
+  // Playback source mode (issue #82, #100)
+  std::string modeStr;
+  switch (metadata.playbackSourceMode) {
+  case PlaybackSourceMode::Graph:
+    modeStr = "Graph";
+    break;
+  case PlaybackSourceMode::Mixed:
+    modeStr = "Mixed";
+    break;
+  case PlaybackSourceMode::Script:
+  default:
+    modeStr = "Script";
+    break;
+  }
+  json << "  \"playbackSourceMode\": \"" << modeStr << "\"\n";
   json << "}\n";
 
   outJson = json.str();
