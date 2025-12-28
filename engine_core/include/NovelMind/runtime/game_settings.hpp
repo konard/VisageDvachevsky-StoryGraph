@@ -55,12 +55,12 @@ enum class SettingsCategory {
  * @brief Setting item type
  */
 enum class SettingType {
-  Toggle,   // On/Off switch
-  Slider,   // Value slider (0-100)
-  Choice,   // Dropdown selection
-  Key,      // Key binding
-  Button,   // Action button (Apply, Reset)
-  Label     // Information text
+  Toggle, // On/Off switch
+  Slider, // Value slider (0-100)
+  Choice, // Dropdown selection
+  Key,    // Key binding
+  Button, // Action button (Apply, Reset)
+  Label   // Information text
 };
 
 /**
@@ -253,7 +253,8 @@ public:
   /**
    * @brief Get available resolutions
    */
-  [[nodiscard]] std::vector<std::pair<i32, i32>> getAvailableResolutions() const;
+  [[nodiscard]] std::vector<std::pair<i32, i32>>
+  getAvailableResolutions() const;
 
   /**
    * @brief Get available languages

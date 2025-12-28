@@ -40,9 +40,9 @@ GameSettings::getItemsInCategory(SettingsCategory category) const {
 }
 
 std::vector<SettingsCategory> GameSettings::getCategories() const {
-  return {SettingsCategory::Video,   SettingsCategory::Audio,
-          SettingsCategory::Text,    SettingsCategory::Language,
-          SettingsCategory::Input,   SettingsCategory::Accessibility};
+  return {SettingsCategory::Video, SettingsCategory::Audio,
+          SettingsCategory::Text,  SettingsCategory::Language,
+          SettingsCategory::Input, SettingsCategory::Accessibility};
 }
 
 std::string GameSettings::getCategoryName(SettingsCategory category) {
@@ -225,8 +225,8 @@ void GameSettings::setOnSettingsReset(OnSettingsReset callback) {
 }
 
 std::vector<std::pair<i32, i32>> GameSettings::getAvailableResolutions() const {
-  return {{1280, 720},  {1366, 768},  {1600, 900},  {1920, 1080},
-          {2560, 1440}, {3840, 2160}, {1024, 768},  {1280, 1024}};
+  return {{1280, 720},  {1366, 768},  {1600, 900}, {1920, 1080},
+          {2560, 1440}, {3840, 2160}, {1024, 768}, {1280, 1024}};
 }
 
 std::vector<std::string> GameSettings::getAvailableLanguages() const {

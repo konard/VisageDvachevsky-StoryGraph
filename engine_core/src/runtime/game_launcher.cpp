@@ -16,6 +16,10 @@
 #include <iostream>
 #include <thread>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 namespace fs = std::filesystem;
 
 namespace NovelMind::runtime {
@@ -122,8 +126,7 @@ Result<void> GameLauncher::initialize(const std::string &basePath,
 
   result = initializeLocalization();
   if (result.isError()) {
-    setError("INIT_LOCALE", "Failed to initialize localization",
-             result.error(),
+    setError("INIT_LOCALE", "Failed to initialize localization", result.error(),
              "Check that localization files exist for the selected language");
     return result;
   }
@@ -172,13 +175,9 @@ i32 GameLauncher::run() {
   return 0;
 }
 
-void GameLauncher::quit() {
-  m_running = false;
-}
+void GameLauncher::quit() { m_running = false; }
 
-bool GameLauncher::isRunning() const {
-  return m_running;
-}
+bool GameLauncher::isRunning() const { return m_running; }
 
 void GameLauncher::showError(const LauncherError &error) {
   m_lastError = error;
@@ -208,9 +207,7 @@ ConfigManager *GameLauncher::getConfigManager() {
   return m_configManager.get();
 }
 
-GameSettings *GameLauncher::getGameSettings() {
-  return m_gameSettings.get();
-}
+GameSettings *GameLauncher::getGameSettings() { return m_gameSettings.get(); }
 
 vfs::MultiPackManager *GameLauncher::getPackManager() {
   return m_packManager.get();
@@ -484,7 +481,8 @@ Result<void> GameLauncher::loadPacksIndex() {
     return Result<void>::error("Invalid packs_index.json format");
   }
 
-  std::string packsArray = indexContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+  std::string packsArray =
+      indexContent.substr(arrayStart, arrayEnd - arrayStart + 1);
 
   // Parse each pack entry
   size_t pos = 0;
@@ -526,7 +524,8 @@ Result<void> GameLauncher::loadPacksIndex() {
     size_t priorityStart = entry.find("\"priority\"");
     i32 priority = 0;
     if (priorityStart != std::string::npos) {
-      size_t valueStart = entry.find_first_of("-0123456789", priorityStart + 10);
+      size_t valueStart =
+          entry.find_first_of("-0123456789", priorityStart + 10);
       if (valueStart != std::string::npos) {
         try {
           priority = std::stoi(entry.substr(valueStart));
@@ -593,8 +592,10 @@ Result<void> GameLauncher::initializeAudio() {
   // with volume settings from config
 
   const auto &config = m_configManager->getConfig();
-  logInfo("Audio: Master=" + std::to_string(static_cast<int>(config.audio.master * 100)) +
-          "%, Music=" + std::to_string(static_cast<int>(config.audio.music * 100)) + "%");
+  logInfo("Audio: Master=" +
+          std::to_string(static_cast<int>(config.audio.master * 100)) +
+          "%, Music=" +
+          std::to_string(static_cast<int>(config.audio.music * 100)) + "%");
 
   return Result<void>::ok();
 }
@@ -620,32 +621,82 @@ Result<void> GameLauncher::initializeLocalization() {
         localization::LocaleId::fromString(locale), locConfig);
   }
 
-  // Try to load localization files from packs if available
+  // Load localization files from packs
+  // VFS path: locales/<locale>.json  (e.g., "locales/en.json",
+  // "locales/ru.json") These files should be packed in game packs and contain
+  // localized strings
   if (m_packManager && m_packManager->getPackCount() > 0) {
-    std::string localeFile = "locales/" + config.localization.currentLocale + ".json";
-    if (m_packManager->exists(localeFile)) {
-      auto resourceData = m_packManager->readResource(localeFile);
+    // Load current locale
+    std::string currentLocaleFile =
+        "locales/" + config.localization.currentLocale + ".json";
+    logInfo("Loading localization from VFS path: " + currentLocaleFile);
+
+    if (m_packManager->exists(currentLocaleFile)) {
+      auto resourceData = m_packManager->readResource(currentLocaleFile);
       if (resourceData.isOk()) {
-        std::string jsonContent(resourceData.value().begin(), resourceData.value().end());
+        std::string jsonContent(resourceData.value().begin(),
+                                resourceData.value().end());
         auto loadResult = m_localizationManager->loadStringsFromMemory(
-            localization::LocaleId::fromString(config.localization.currentLocale),
+            localization::LocaleId::fromString(
+                config.localization.currentLocale),
             jsonContent, localization::LocalizationFormat::JSON);
         if (loadResult.isError()) {
-          logWarning("Failed to load localization from pack: " + loadResult.error());
+          logWarning("Failed to load localization from pack: " +
+                     loadResult.error());
         } else {
-          logInfo("Loaded localization from pack: " + localeFile);
+          logInfo("Loaded localization from pack: " + currentLocaleFile);
+        }
+      }
+    } else {
+      logInfo("Localization file not found in packs: " + currentLocaleFile);
+      logInfo("Available VFS paths for localization: locales/<locale>.json");
+    }
+
+    // Also load fallback (default) locale if different from current
+    if (config.localization.defaultLocale !=
+        config.localization.currentLocale) {
+      std::string defaultLocaleFile =
+          "locales/" + config.localization.defaultLocale + ".json";
+      if (m_packManager->exists(defaultLocaleFile)) {
+        auto resourceData = m_packManager->readResource(defaultLocaleFile);
+        if (resourceData.isOk()) {
+          std::string jsonContent(resourceData.value().begin(),
+                                  resourceData.value().end());
+          m_localizationManager->loadStringsFromMemory(
+              localization::LocaleId::fromString(
+                  config.localization.defaultLocale),
+              jsonContent, localization::LocalizationFormat::JSON);
+          logInfo("Loaded fallback localization: " + defaultLocaleFile);
         }
       }
     }
   }
 
   // Set callback to handle language changes from settings
+  // When language changes, reload localization from the new locale file
   m_localizationManager->setOnLanguageChanged(
       [this](const localization::LocaleId &newLocale) {
         logInfo("Language changed to: " + newLocale.toString());
-        // Update config when language changes
+
+        // Update config
         if (m_configManager) {
           m_configManager->setLocale(newLocale.toString());
+        }
+
+        // Reload localization from new locale file
+        if (m_packManager && m_packManager->getPackCount() > 0) {
+          std::string localeFile = "locales/" + newLocale.toString() + ".json";
+          if (m_packManager->exists(localeFile)) {
+            auto resourceData = m_packManager->readResource(localeFile);
+            if (resourceData.isOk()) {
+              std::string jsonContent(resourceData.value().begin(),
+                                      resourceData.value().end());
+              m_localizationManager->loadStringsFromMemory(
+                  newLocale, jsonContent,
+                  localization::LocalizationFormat::JSON);
+              logInfo("Reloaded localization for: " + localeFile);
+            }
+          }
         }
       });
 
@@ -775,7 +826,8 @@ Result<void> GameLauncher::loadCompiledScripts() {
   // m_scriptRuntime->load(deserializedScript);
 
   // Count resources of type Script
-  auto scriptResources = m_packManager->listResources(vfs::ResourceType::Script);
+  auto scriptResources =
+      m_packManager->listResources(vfs::ResourceType::Script);
   logInfo("Found " + std::to_string(scriptResources.size()) +
           " script resource(s) in packs");
 
@@ -794,12 +846,19 @@ void GameLauncher::mainLoop() {
   // For this implementation, we'll run a simplified demo loop
   // In a full implementation, this would integrate with the Application class
 
-  std::cout << "\n╔════════════════════════════════════════════════════════════╗\n";
+  std::cout
+      << "\n╔════════════════════════════════════════════════════════════╗\n";
   std::cout << "║           " << m_configManager->getConfig().game.name;
-  std::cout << std::string(49 - m_configManager->getConfig().game.name.length(), ' ') << "║\n";
-  std::cout << "║           Version " << m_configManager->getConfig().game.version;
-  std::cout << std::string(41 - m_configManager->getConfig().game.version.length(), ' ') << "║\n";
-  std::cout << "╚════════════════════════════════════════════════════════════╝\n\n";
+  std::cout << std::string(49 - m_configManager->getConfig().game.name.length(),
+                           ' ')
+            << "║\n";
+  std::cout << "║           Version "
+            << m_configManager->getConfig().game.version;
+  std::cout << std::string(
+                   41 - m_configManager->getConfig().game.version.length(), ' ')
+            << "║\n";
+  std::cout
+      << "╚════════════════════════════════════════════════════════════╝\n\n";
 
   std::cout << "Game launcher is running.\n";
   std::cout << "Configuration loaded from: " << m_basePath << "config/\n";
@@ -828,7 +887,170 @@ void GameLauncher::mainLoop() {
 
 void GameLauncher::update(f64 deltaTime) {
   (void)deltaTime;
-  // Update game logic
+
+  // Update input manager
+  if (m_inputManager) {
+    m_inputManager->update();
+  }
+
+  // Process input actions based on bindings
+  processInput();
+}
+
+void GameLauncher::processInput() {
+  // Check for Menu action (typically Escape to quit)
+  if (isActionTriggered(InputAction::Menu)) {
+    logInfo("Menu action triggered");
+    // In full implementation, would show menu or quit
+    m_running = false;
+  }
+
+  // Check for Auto toggle
+  if (isActionTriggered(InputAction::Auto)) {
+    logInfo("Auto action triggered");
+    // In full implementation, would toggle auto-advance
+  }
+
+  // Check for Skip
+  if (isActionTriggered(InputAction::Skip)) {
+    logInfo("Skip action triggered");
+    // In full implementation, would enable skip mode
+  }
+
+  // Check for QuickSave
+  if (isActionTriggered(InputAction::QuickSave)) {
+    logInfo("QuickSave action triggered");
+    // In full implementation, would quick save
+  }
+
+  // Check for QuickLoad
+  if (isActionTriggered(InputAction::QuickLoad)) {
+    logInfo("QuickLoad action triggered");
+    // In full implementation, would quick load
+  }
+
+  // Check for FullScreen toggle
+  if (isActionTriggered(InputAction::FullScreen)) {
+    logInfo("FullScreen action triggered");
+    // In full implementation, would toggle fullscreen
+  }
+}
+
+bool GameLauncher::isActionTriggered(InputAction action) const {
+  if (!m_inputManager || !m_configManager) {
+    return false;
+  }
+
+  const auto &bindings = m_configManager->getConfig().input.bindings;
+  auto it = bindings.find(action);
+  if (it == bindings.end()) {
+    return false;
+  }
+
+  const auto &binding = it->second;
+
+  // Check keyboard keys
+  for (const auto &keyName : binding.keys) {
+    input::Key key = stringToKey(keyName);
+    if (key != input::Key::Unknown && m_inputManager->isKeyPressed(key)) {
+      return true;
+    }
+  }
+
+  // Check mouse buttons
+  for (const auto &buttonName : binding.mouseButtons) {
+    input::MouseButton button = stringToMouseButton(buttonName);
+    if (m_inputManager->isMouseButtonPressed(button)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+input::Key GameLauncher::stringToKey(const std::string &keyName) const {
+  // Map common key names to Key enum
+  if (keyName == "Space")
+    return input::Key::Space;
+  if (keyName == "Enter")
+    return input::Key::Enter;
+  if (keyName == "Escape")
+    return input::Key::Escape;
+  if (keyName == "Backspace")
+    return input::Key::Backspace;
+  if (keyName == "Tab")
+    return input::Key::Tab;
+  if (keyName == "Up")
+    return input::Key::Up;
+  if (keyName == "Down")
+    return input::Key::Down;
+  if (keyName == "Left")
+    return input::Key::Left;
+  if (keyName == "Right")
+    return input::Key::Right;
+  if (keyName == "LShift")
+    return input::Key::LShift;
+  if (keyName == "RShift")
+    return input::Key::RShift;
+  if (keyName == "LCtrl")
+    return input::Key::LCtrl;
+  if (keyName == "RCtrl")
+    return input::Key::RCtrl;
+  if (keyName == "LAlt")
+    return input::Key::LAlt;
+  if (keyName == "RAlt")
+    return input::Key::RAlt;
+
+  // Single letter keys
+  if (keyName.length() == 1) {
+    char c = keyName[0];
+    if (c >= 'A' && c <= 'Z') {
+      return static_cast<input::Key>(static_cast<int>(input::Key::A) +
+                                     (c - 'A'));
+    }
+    if (c >= 'a' && c <= 'z') {
+      return static_cast<input::Key>(static_cast<int>(input::Key::A) +
+                                     (c - 'a'));
+    }
+    if (c >= '0' && c <= '9') {
+      return static_cast<input::Key>(static_cast<int>(input::Key::Num0) +
+                                     (c - '0'));
+    }
+  }
+
+  // Function keys
+  if (keyName.length() >= 2 && keyName[0] == 'F') {
+    int num = 0;
+    try {
+      num = std::stoi(keyName.substr(1));
+    } catch (...) {
+      return input::Key::Unknown;
+    }
+    if (num >= 1 && num <= 12) {
+      return static_cast<input::Key>(static_cast<int>(input::Key::F1) +
+                                     (num - 1));
+    }
+  }
+
+  // PageUp/PageDown not in enum, so map to existing keys or return Unknown
+  if (keyName == "PageUp" || keyName == "PageDown") {
+    // For now, PageUp/PageDown are not in the Key enum
+    // Return Unknown - in full implementation would extend Key enum
+    return input::Key::Unknown;
+  }
+
+  return input::Key::Unknown;
+}
+
+input::MouseButton
+GameLauncher::stringToMouseButton(const std::string &buttonName) const {
+  if (buttonName == "Left")
+    return input::MouseButton::Left;
+  if (buttonName == "Right")
+    return input::MouseButton::Right;
+  if (buttonName == "Middle")
+    return input::MouseButton::Middle;
+  return input::MouseButton::Left; // Default
 }
 
 void GameLauncher::render() {

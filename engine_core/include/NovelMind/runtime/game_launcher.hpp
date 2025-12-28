@@ -17,6 +17,7 @@
 
 #include "NovelMind/core/result.hpp"
 #include "NovelMind/core/types.hpp"
+#include "NovelMind/input/input_manager.hpp"
 #include "NovelMind/runtime/config_manager.hpp"
 #include "NovelMind/runtime/game_settings.hpp"
 #include "NovelMind/runtime/runtime_config.hpp"
@@ -35,9 +36,6 @@ struct CompiledScript;
 } // namespace NovelMind::scripting
 namespace NovelMind::localization {
 class LocalizationManager;
-}
-namespace NovelMind::input {
-class InputManager;
 }
 
 namespace NovelMind::runtime {
@@ -71,14 +69,14 @@ struct LauncherError {
  * @brief Command-line options (for developer override)
  */
 struct LaunchOptions {
-  std::string configOverride;  // Override config file path
-  std::string langOverride;    // Override language
-  std::string sceneOverride;   // Override start scene
-  bool debugMode = false;      // Enable debug features
-  bool verbose = false;        // Verbose logging
-  bool noFullscreen = false;   // Disable fullscreen
-  bool help = false;           // Show help
-  bool version = false;        // Show version
+  std::string configOverride; // Override config file path
+  std::string langOverride;   // Override language
+  std::string sceneOverride;  // Override start scene
+  bool debugMode = false;     // Enable debug features
+  bool verbose = false;       // Verbose logging
+  bool noFullscreen = false;  // Disable fullscreen
+  bool help = false;          // Show help
+  bool version = false;       // Show version
 };
 
 using OnLauncherError = std::function<void(const LauncherError &)>;
@@ -292,6 +290,13 @@ private:
   void mainLoop();
   void update(f64 deltaTime);
   void render();
+  void processInput();
+
+  // Input action checking
+  [[nodiscard]] bool isActionTriggered(InputAction action) const;
+  [[nodiscard]] input::Key stringToKey(const std::string &keyName) const;
+  [[nodiscard]] input::MouseButton
+  stringToMouseButton(const std::string &buttonName) const;
 
   // State management
   void setState(LauncherState state);
