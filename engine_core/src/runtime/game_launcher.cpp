@@ -5,6 +5,10 @@
 
 #include "NovelMind/runtime/game_launcher.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/input/input_manager.hpp"
+#include "NovelMind/localization/localization_manager.hpp"
+#include "NovelMind/scripting/script_runtime.hpp"
+#include "NovelMind/vfs/multi_pack_manager.hpp"
 #include <chrono>
 #include <cstring>
 #include <filesystem>
@@ -116,6 +120,22 @@ Result<void> GameLauncher::initialize(const std::string &basePath,
     return result;
   }
 
+  result = initializeLocalization();
+  if (result.isError()) {
+    setError("INIT_LOCALE", "Failed to initialize localization",
+             result.error(),
+             "Check that localization files exist for the selected language");
+    return result;
+  }
+
+  result = initializeScriptRuntime();
+  if (result.isError()) {
+    setError("INIT_SCRIPT", "Failed to initialize script runtime",
+             result.error(),
+             "Check that compiled scripts are present in the packs");
+    return result;
+  }
+
   setState(LauncherState::Ready);
   logInfo("Game launcher initialized successfully");
 
@@ -190,6 +210,22 @@ ConfigManager *GameLauncher::getConfigManager() {
 
 GameSettings *GameLauncher::getGameSettings() {
   return m_gameSettings.get();
+}
+
+vfs::MultiPackManager *GameLauncher::getPackManager() {
+  return m_packManager.get();
+}
+
+scripting::ScriptRuntime *GameLauncher::getScriptRuntime() {
+  return m_scriptRuntime.get();
+}
+
+localization::LocalizationManager *GameLauncher::getLocalizationManager() {
+  return m_localizationManager.get();
+}
+
+input::InputManager *GameLauncher::getInputManager() {
+  return m_inputManager.get();
 }
 
 const RuntimeConfig &GameLauncher::getConfig() const {
@@ -357,14 +393,34 @@ Result<void> GameLauncher::initializeDirectories() {
 }
 
 Result<void> GameLauncher::initializePacks() {
-  // In a full implementation, this would:
-  // 1. Read packs_index.json
-  // 2. Initialize the VFS with pack files
-  // 3. Verify pack integrity
-
   const auto &config = m_configManager->getConfig();
   std::string packsDir = m_basePath + config.packs.directory + "/";
   std::string indexPath = packsDir + config.packs.indexFile;
+
+  // Initialize the pack manager
+  m_packManager = std::make_unique<vfs::MultiPackManager>();
+
+  auto initResult = m_packManager->initialize();
+  if (initResult.isError()) {
+    logError("Failed to initialize pack manager: " + initResult.error());
+    return initResult;
+  }
+
+  // Set pack directory
+  m_packManager->setPackDirectory(packsDir);
+
+  // Configure encryption keys from environment if packs are encrypted
+  if (config.packs.encrypted) {
+    auto keyResult = m_packManager->configureKeysFromEnvironment();
+    if (keyResult.isError()) {
+      logError("Failed to configure encryption keys from environment: " +
+               keyResult.error());
+      logError("Required environment variables: NOVELMIND_PACK_AES_KEY_HEX, "
+               "NOVELMIND_PACK_AES_KEY_FILE, or NOVELMIND_PACK_PUBLIC_KEY");
+      return keyResult;
+    }
+    logInfo("Encryption keys configured from environment");
+  }
 
   // Check if packs directory exists
   if (!fs::exists(packsDir)) {
@@ -372,13 +428,151 @@ Result<void> GameLauncher::initializePacks() {
     return Result<void>::ok();
   }
 
-  // Check if index file exists
-  if (!fs::exists(indexPath)) {
+  // Load packs index if available
+  if (fs::exists(indexPath)) {
+    auto indexResult = loadPacksIndex();
+    if (indexResult.isError()) {
+      logError("Failed to load packs index: " + indexResult.error());
+      return indexResult;
+    }
+  } else {
     logInfo("No packs_index.json found, running in development mode");
-    return Result<void>::ok();
   }
 
   logInfo("Resource packs initialized from: " + packsDir);
+  return Result<void>::ok();
+}
+
+Result<void> GameLauncher::loadPacksIndex() {
+  const auto &config = m_configManager->getConfig();
+  std::string packsDir = m_basePath + config.packs.directory + "/";
+  std::string indexPath = packsDir + config.packs.indexFile;
+
+  // Read the packs_index.json
+  std::ifstream indexFile(indexPath);
+  if (!indexFile.is_open()) {
+    return Result<void>::error("Cannot open packs_index.json: " + indexPath);
+  }
+
+  std::stringstream buffer;
+  buffer << indexFile.rdbuf();
+  std::string indexContent = buffer.str();
+
+  // Parse the packs index JSON
+  // Expected format:
+  // {
+  //   "packs": [
+  //     { "path": "base.nmpack", "type": "base", "priority": 0 },
+  //     { "path": "lang_en.nmpack", "type": "language", "priority": 0 },
+  //     { "path": "patch_01.nmpack", "type": "patch", "priority": 1 }
+  //   ]
+  // }
+
+  // Simple JSON parsing for packs array
+  size_t packsStart = indexContent.find("\"packs\"");
+  if (packsStart == std::string::npos) {
+    return Result<void>::error("No 'packs' array found in packs_index.json");
+  }
+
+  size_t arrayStart = indexContent.find('[', packsStart);
+  if (arrayStart == std::string::npos) {
+    return Result<void>::error("Invalid packs_index.json format");
+  }
+
+  size_t arrayEnd = indexContent.find(']', arrayStart);
+  if (arrayEnd == std::string::npos) {
+    return Result<void>::error("Invalid packs_index.json format");
+  }
+
+  std::string packsArray = indexContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+
+  // Parse each pack entry
+  size_t pos = 0;
+  int loadedPacks = 0;
+  while ((pos = packsArray.find('{', pos)) != std::string::npos) {
+    size_t entryEnd = packsArray.find('}', pos);
+    if (entryEnd == std::string::npos)
+      break;
+
+    std::string entry = packsArray.substr(pos, entryEnd - pos + 1);
+
+    // Extract path
+    size_t pathStart = entry.find("\"path\"");
+    std::string packPath;
+    if (pathStart != std::string::npos) {
+      size_t valueStart = entry.find('"', pathStart + 6);
+      if (valueStart != std::string::npos) {
+        size_t valueEnd = entry.find('"', valueStart + 1);
+        if (valueEnd != std::string::npos) {
+          packPath = entry.substr(valueStart + 1, valueEnd - valueStart - 1);
+        }
+      }
+    }
+
+    // Extract type
+    size_t typeStart = entry.find("\"type\"");
+    std::string packType = "base";
+    if (typeStart != std::string::npos) {
+      size_t valueStart = entry.find('"', typeStart + 6);
+      if (valueStart != std::string::npos) {
+        size_t valueEnd = entry.find('"', valueStart + 1);
+        if (valueEnd != std::string::npos) {
+          packType = entry.substr(valueStart + 1, valueEnd - valueStart - 1);
+        }
+      }
+    }
+
+    // Extract priority
+    size_t priorityStart = entry.find("\"priority\"");
+    i32 priority = 0;
+    if (priorityStart != std::string::npos) {
+      size_t valueStart = entry.find_first_of("-0123456789", priorityStart + 10);
+      if (valueStart != std::string::npos) {
+        try {
+          priority = std::stoi(entry.substr(valueStart));
+        } catch (...) {
+          priority = 0;
+        }
+      }
+    }
+
+    // Map type string to PackType enum
+    vfs::PackType vfsType = vfs::PackType::Base;
+    if (packType == "patch")
+      vfsType = vfs::PackType::Patch;
+    else if (packType == "dlc")
+      vfsType = vfs::PackType::DLC;
+    else if (packType == "language")
+      vfsType = vfs::PackType::Language;
+    else if (packType == "mod")
+      vfsType = vfs::PackType::Mod;
+
+    // Load the pack
+    if (!packPath.empty()) {
+      std::string fullPath = packsDir + packPath;
+      if (fs::exists(fullPath)) {
+        auto loadResult = m_packManager->loadPack(fullPath, vfsType, priority);
+        if (loadResult.success) {
+          logInfo("Loaded pack: " + packPath + " (type=" + packType +
+                  ", priority=" + std::to_string(priority) + ")");
+          loadedPacks++;
+        } else {
+          for (const auto &error : loadResult.errors) {
+            logError("Pack load error [" + packPath + "]: " + error);
+          }
+          for (const auto &missing : loadResult.missingDependencies) {
+            logWarning("Missing dependency for " + packPath + ": " + missing);
+          }
+        }
+      } else {
+        logWarning("Pack file not found: " + fullPath);
+      }
+    }
+
+    pos = entryEnd + 1;
+  }
+
+  logInfo("Loaded " + std::to_string(loadedPacks) + " pack(s) from index");
   return Result<void>::ok();
 }
 
@@ -406,18 +600,104 @@ Result<void> GameLauncher::initializeAudio() {
 }
 
 Result<void> GameLauncher::initializeLocalization() {
-  // In a full implementation, this would load localization files
-  // for the selected language
-
   const auto &config = m_configManager->getConfig();
-  logInfo("Localization: " + config.localization.currentLocale);
 
+  // Initialize localization manager
+  m_localizationManager = std::make_unique<localization::LocalizationManager>();
+
+  // Set default and current locales
+  m_localizationManager->setDefaultLocale(
+      localization::LocaleId::fromString(config.localization.defaultLocale));
+  m_localizationManager->setCurrentLocale(
+      localization::LocaleId::fromString(config.localization.currentLocale));
+
+  // Register available locales
+  for (const auto &locale : config.localization.availableLocales) {
+    localization::LocaleConfig locConfig;
+    locConfig.displayName = locale;
+    locConfig.nativeName = locale;
+    m_localizationManager->registerLocale(
+        localization::LocaleId::fromString(locale), locConfig);
+  }
+
+  // Try to load localization files from packs if available
+  if (m_packManager && m_packManager->getPackCount() > 0) {
+    std::string localeFile = "locales/" + config.localization.currentLocale + ".json";
+    if (m_packManager->exists(localeFile)) {
+      auto resourceData = m_packManager->readResource(localeFile);
+      if (resourceData.isOk()) {
+        std::string jsonContent(resourceData.value().begin(), resourceData.value().end());
+        auto loadResult = m_localizationManager->loadStringsFromMemory(
+            localization::LocaleId::fromString(config.localization.currentLocale),
+            jsonContent, localization::LocalizationFormat::JSON);
+        if (loadResult.isError()) {
+          logWarning("Failed to load localization from pack: " + loadResult.error());
+        } else {
+          logInfo("Loaded localization from pack: " + localeFile);
+        }
+      }
+    }
+  }
+
+  // Set callback to handle language changes from settings
+  m_localizationManager->setOnLanguageChanged(
+      [this](const localization::LocaleId &newLocale) {
+        logInfo("Language changed to: " + newLocale.toString());
+        // Update config when language changes
+        if (m_configManager) {
+          m_configManager->setLocale(newLocale.toString());
+        }
+      });
+
+  logInfo("Localization initialized: " + config.localization.currentLocale);
   return Result<void>::ok();
 }
 
 Result<void> GameLauncher::initializeInput() {
-  // Input system is already configured via RuntimeConfig
+  // Initialize input manager
+  m_inputManager = std::make_unique<input::InputManager>();
+
+  // Apply input bindings from configuration
+  auto result = applyInputBindings();
+  if (result.isError()) {
+    logWarning("Failed to apply input bindings: " + result.error());
+    // Continue with default bindings
+  }
+
   logInfo("Input bindings configured");
+  return Result<void>::ok();
+}
+
+Result<void> GameLauncher::applyInputBindings() {
+  if (!m_inputManager || !m_configManager) {
+    return Result<void>::error("Input or config manager not initialized");
+  }
+
+  const auto &config = m_configManager->getConfig();
+
+  // Log the configured bindings for debugging
+  for (const auto &[action, binding] : config.input.bindings) {
+    std::string actionName = inputActionToString(action);
+    std::string keys;
+    for (const auto &key : binding.keys) {
+      if (!keys.empty())
+        keys += ", ";
+      keys += key;
+    }
+    std::string mouse;
+    for (const auto &btn : binding.mouseButtons) {
+      if (!mouse.empty())
+        mouse += ", ";
+      mouse += btn;
+    }
+    logInfo("Input binding [" + actionName + "]: keys=[" + keys + "], mouse=[" +
+            mouse + "]");
+  }
+
+  // Input bindings are stored in RuntimeConfig and used by the runtime
+  // The InputManager handles raw input polling, bindings are checked
+  // in the main loop update
+
   return Result<void>::ok();
 }
 
@@ -436,14 +716,69 @@ Result<void> GameLauncher::initializeSaveSystem() {
 }
 
 Result<void> GameLauncher::initializeScriptRuntime() {
-  // In a full implementation, this would initialize the script runtime
-  // and load the start scene
-
   const auto &config = m_configManager->getConfig();
   std::string startScene =
       m_options.sceneOverride.empty() ? "main" : m_options.sceneOverride;
 
+  // Initialize script runtime
+  m_scriptRuntime = std::make_unique<scripting::ScriptRuntime>();
+
+  // Configure script runtime from config
+  scripting::RuntimeConfig scriptConfig;
+  scriptConfig.defaultTextSpeed = static_cast<f32>(config.text.speed);
+  scriptConfig.autoAdvanceEnabled = config.text.autoAdvance;
+  scriptConfig.autoAdvanceDelay =
+      static_cast<f32>(config.text.autoAdvanceMs) / 1000.0f;
+  m_scriptRuntime->setConfig(scriptConfig);
+
+  // Load compiled scripts from packs
+  auto loadResult = loadCompiledScripts();
+  if (loadResult.isError()) {
+    logWarning("No compiled scripts loaded: " + loadResult.error());
+    logInfo("Running in development mode without pre-compiled scripts");
+  }
+
   logInfo("Script runtime ready, start scene: " + startScene);
+  return Result<void>::ok();
+}
+
+Result<void> GameLauncher::loadCompiledScripts() {
+  if (!m_packManager) {
+    return Result<void>::error("Pack manager not initialized");
+  }
+
+  if (!m_scriptRuntime) {
+    return Result<void>::error("Script runtime not initialized");
+  }
+
+  // Try to find compiled scripts in packs
+  // Standard location: scripts/compiled_scripts.bin
+  const std::string scriptResource = "scripts/compiled_scripts.bin";
+
+  if (!m_packManager->exists(scriptResource)) {
+    return Result<void>::error("No compiled scripts found in packs (" +
+                               scriptResource + ")");
+  }
+
+  // Read the compiled script data
+  auto resourceData = m_packManager->readResource(scriptResource);
+  if (resourceData.isError()) {
+    return Result<void>::error("Failed to read compiled scripts: " +
+                               resourceData.error());
+  }
+
+  logInfo("Found compiled scripts: " + scriptResource + " (" +
+          std::to_string(resourceData.value().size()) + " bytes)");
+
+  // The script runtime would deserialize the compiled script here
+  // For now, we log success - full implementation would call:
+  // m_scriptRuntime->load(deserializedScript);
+
+  // Count resources of type Script
+  auto scriptResources = m_packManager->listResources(vfs::ResourceType::Script);
+  logInfo("Found " + std::to_string(scriptResources.size()) +
+          " script resource(s) in packs");
+
   return Result<void>::ok();
 }
 

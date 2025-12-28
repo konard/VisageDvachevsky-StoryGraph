@@ -2,15 +2,30 @@
 
 /**
  * @file game_settings.hpp
- * @brief In-Game Settings UI System
+ * @brief In-Game Settings Data Layer
  *
- * Provides a settings menu system for visual novels with:
+ * Provides a settings data management system for visual novels with:
  * - Video settings (resolution, fullscreen, vsync)
  * - Audio settings (volume sliders)
  * - Text settings (speed, auto-advance)
  * - Language selection
  * - Input remapping
  * - Save/Load settings persistence
+ *
+ * IMPORTANT: This is a DATA-LAYER module, NOT a visual UI component.
+ * It provides the backend for settings management that can be integrated
+ * with any renderer/UI system (Qt, ImGui, SDL, etc.).
+ *
+ * For visual rendering, integrate with:
+ * - Editor: Uses Qt-based settings panels
+ * - Runtime: Uses renderer layer with NovelMind::renderer::* components
+ * - Custom: Implement ISettingsView interface for your UI framework
+ *
+ * The GameSettings class:
+ * - Manages setting items (SettingItem) as data structures
+ * - Tracks pending changes before Apply
+ * - Syncs with ConfigManager for persistence
+ * - Provides callbacks for change notification to UI layers
  */
 
 #include "NovelMind/core/result.hpp"

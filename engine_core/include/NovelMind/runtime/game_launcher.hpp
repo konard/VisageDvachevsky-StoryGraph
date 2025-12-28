@@ -25,6 +25,21 @@
 #include <string>
 #include <vector>
 
+// Forward declarations
+namespace NovelMind::vfs {
+class MultiPackManager;
+}
+namespace NovelMind::scripting {
+class ScriptRuntime;
+struct CompiledScript;
+} // namespace NovelMind::scripting
+namespace NovelMind::localization {
+class LocalizationManager;
+}
+namespace NovelMind::input {
+class InputManager;
+}
+
 namespace NovelMind::runtime {
 
 /**
@@ -202,6 +217,26 @@ public:
   [[nodiscard]] GameSettings *getGameSettings();
 
   /**
+   * @brief Get the pack manager
+   */
+  [[nodiscard]] vfs::MultiPackManager *getPackManager();
+
+  /**
+   * @brief Get the script runtime
+   */
+  [[nodiscard]] scripting::ScriptRuntime *getScriptRuntime();
+
+  /**
+   * @brief Get the localization manager
+   */
+  [[nodiscard]] localization::LocalizationManager *getLocalizationManager();
+
+  /**
+   * @brief Get the input manager
+   */
+  [[nodiscard]] input::InputManager *getInputManager();
+
+  /**
    * @brief Get the current configuration
    */
   [[nodiscard]] const RuntimeConfig &getConfig() const;
@@ -249,6 +284,9 @@ private:
   Result<void> initializeInput();
   Result<void> initializeSaveSystem();
   Result<void> initializeScriptRuntime();
+  Result<void> loadPacksIndex();
+  Result<void> loadCompiledScripts();
+  Result<void> applyInputBindings();
 
   // Main loop
   void mainLoop();
@@ -275,6 +313,10 @@ private:
 
   std::unique_ptr<ConfigManager> m_configManager;
   std::unique_ptr<GameSettings> m_gameSettings;
+  std::unique_ptr<vfs::MultiPackManager> m_packManager;
+  std::unique_ptr<scripting::ScriptRuntime> m_scriptRuntime;
+  std::unique_ptr<localization::LocalizationManager> m_localizationManager;
+  std::unique_ptr<input::InputManager> m_inputManager;
 
   OnLauncherError m_onError;
   OnLauncherStateChanged m_onStateChanged;
