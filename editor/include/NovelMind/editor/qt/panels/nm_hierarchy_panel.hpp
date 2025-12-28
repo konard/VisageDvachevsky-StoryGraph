@@ -70,6 +70,7 @@ protected:
   void dropEvent(QDropEvent *event) override;
   void dragEnterEvent(QDragEnterEvent *event) override;
   void dragMoveEvent(QDragMoveEvent *event) override;
+  void contextMenuEvent(QContextMenuEvent *event) override;
 
 private slots:
   void onItemDoubleClicked(QTreeWidgetItem *item, int column);

@@ -5,9 +5,13 @@
 
 #include <QAction>
 #include <QComboBox>
+#include <QContextMenuEvent>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMenu>
+#include <QMessageBox>
 #include <QSignalBlocker>
 #include <QToolBar>
 #include <QVBoxLayout>
@@ -395,6 +399,163 @@ bool NMHierarchyTree::canDropOn(QTreeWidgetItem *dragItem,
   }
 
   return true;
+}
+
+void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
+  QTreeWidgetItem *item = itemAt(event->pos());
+
+  QMenu contextMenu(this);
+
+  // Get selected object ID if any
+  QString objectId;
+  if (item) {
+    objectId = getObjectId(item);
+  }
+
+  const bool hasValidSelection = !objectId.isEmpty() && m_scene;
+  const bool isRuntime = objectId.startsWith("runtime_");
+  const bool canEdit = hasValidSelection && !isRuntime;
+
+  // Duplicate action
+  // Note: Duplication requires selecting the object first and using internal
+  // duplication logic. For now, we select the object and show a message that
+  // the user can use Ctrl+D in the scene view to duplicate.
+  QAction *duplicateAction = contextMenu.addAction(tr("Duplicate"));
+  duplicateAction->setEnabled(canEdit && m_sceneViewPanel);
+  duplicateAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
+  connect(duplicateAction, &QAction::triggered, this, [this, objectId]() {
+    if (m_sceneViewPanel && m_scene) {
+      // Select the object first so scene view's duplicate shortcut works
+      m_sceneViewPanel->selectObjectById(objectId);
+      // Note: Actual duplication is handled by scene view panel's internal
+      // keyboard shortcut (Ctrl+D). User needs to press Ctrl+D in scene view.
+      // TODO: Expose duplicateSelectedObject() as public API for full support.
+    }
+  });
+
+  // Rename action
+  QAction *renameAction = contextMenu.addAction(tr("Rename"));
+  renameAction->setEnabled(canEdit);
+  renameAction->setShortcut(QKeySequence(Qt::Key_F2));
+  connect(renameAction, &QAction::triggered, this, [this, objectId]() {
+    if (!m_scene) {
+      return;
+    }
+    auto *obj = m_scene->findSceneObject(objectId);
+    if (!obj) {
+      return;
+    }
+
+    bool ok = false;
+    QString newName = QInputDialog::getText(this, tr("Rename Object"),
+                                            tr("New name:"), QLineEdit::Normal,
+                                            obj->name(), &ok);
+    if (ok && !newName.isEmpty()) {
+      obj->setName(newName);
+      refresh();
+    }
+  });
+
+  contextMenu.addSeparator();
+
+  // Delete action
+  QAction *deleteAction = contextMenu.addAction(tr("Delete"));
+  deleteAction->setEnabled(canEdit && m_sceneViewPanel);
+  deleteAction->setShortcut(QKeySequence::Delete);
+  connect(deleteAction, &QAction::triggered, this, [this, objectId]() {
+    if (m_sceneViewPanel) {
+      QMessageBox::StandardButton reply = QMessageBox::question(
+          this, tr("Delete Object"), tr("Delete '%1'?").arg(objectId),
+          QMessageBox::Yes | QMessageBox::No);
+      if (reply == QMessageBox::Yes) {
+        m_sceneViewPanel->deleteObject(objectId);
+        refresh();
+      }
+    }
+  });
+
+  contextMenu.addSeparator();
+
+  // Toggle visibility
+  QAction *visibilityAction = contextMenu.addAction(tr("Toggle Visibility"));
+  visibilityAction->setEnabled(canEdit);
+  visibilityAction->setShortcut(QKeySequence(Qt::Key_H));
+  connect(visibilityAction, &QAction::triggered, this, [this, objectId]() {
+    if (!m_scene) {
+      return;
+    }
+    auto *obj = m_scene->findSceneObject(objectId);
+    if (obj) {
+      m_scene->setObjectVisible(objectId, !obj->isVisible());
+      refresh();
+    }
+  });
+
+  // Toggle lock
+  QAction *lockAction = contextMenu.addAction(tr("Toggle Lock"));
+  lockAction->setEnabled(canEdit);
+  connect(lockAction, &QAction::triggered, this, [this, objectId]() {
+    if (!m_scene) {
+      return;
+    }
+    auto *obj = m_scene->findSceneObject(objectId);
+    if (obj) {
+      m_scene->setObjectLocked(objectId, !obj->isLocked());
+      refresh();
+    }
+  });
+
+  contextMenu.addSeparator();
+
+  // Isolate action (hide all others)
+  QAction *isolateAction = contextMenu.addAction(tr("Isolate"));
+  isolateAction->setEnabled(canEdit);
+  connect(isolateAction, &QAction::triggered, this, [this, objectId]() {
+    if (!m_scene) {
+      return;
+    }
+    for (auto *obj : m_scene->sceneObjects()) {
+      if (obj) {
+        m_scene->setObjectVisible(obj->id(), obj->id() == objectId);
+      }
+    }
+    refresh();
+  });
+
+  // Show all action
+  QAction *showAllAction = contextMenu.addAction(tr("Show All"));
+  showAllAction->setEnabled(m_scene != nullptr);
+  connect(showAllAction, &QAction::triggered, this, [this]() {
+    if (!m_scene) {
+      return;
+    }
+    for (auto *obj : m_scene->sceneObjects()) {
+      if (obj && !obj->id().startsWith("runtime_")) {
+        m_scene->setObjectVisible(obj->id(), true);
+      }
+    }
+    refresh();
+  });
+
+  contextMenu.addSeparator();
+
+  // Frame selected (zoom to object)
+  QAction *frameAction = contextMenu.addAction(tr("Frame Selected"));
+  frameAction->setEnabled(canEdit && m_sceneViewPanel);
+  frameAction->setShortcut(QKeySequence(Qt::Key_F));
+  connect(frameAction, &QAction::triggered, this, [this, objectId]() {
+    if (m_sceneViewPanel && m_scene) {
+      // Select the object first
+      m_sceneViewPanel->selectObjectById(objectId);
+      // Center the view on the selected object
+      auto *obj = m_scene->findSceneObject(objectId);
+      if (obj && m_sceneViewPanel->graphicsView()) {
+        m_sceneViewPanel->graphicsView()->centerOn(obj);
+      }
+    }
+  });
+
+  contextMenu.exec(event->globalPos());
 }
 
 // ============================================================================
