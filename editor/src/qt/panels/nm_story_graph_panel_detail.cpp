@@ -675,10 +675,14 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
 
   QRegularExpressionMatch sayMatch = sayRe.match(body);
 
-  // Escape quotes in the text
+  // Escape special characters in the text for NMScript string literals
+  // Order matters: escape backslash first, then other characters
   QString escapedText = text;
-  escapedText.replace("\\", "\\\\");
+  escapedText.replace("\\", "\\\\");  // Must be first
   escapedText.replace("\"", "\\\"");
+  escapedText.replace("\n", "\\n");   // Newlines
+  escapedText.replace("\r", "\\r");   // Carriage returns
+  escapedText.replace("\t", "\\t");   // Tabs
 
   // Sanitize the speaker name to be a valid NMScript identifier (issue #92)
   // This prevents runtime errors like "Undefined character 'rfsfsddsf' [E3001]"
