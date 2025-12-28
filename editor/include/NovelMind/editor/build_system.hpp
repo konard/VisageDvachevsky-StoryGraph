@@ -14,6 +14,7 @@
 
 #include "NovelMind/core/result.hpp"
 #include "NovelMind/core/types.hpp"
+#include <array>
 #include <atomic>
 #include <functional>
 #include <memory>
@@ -27,7 +28,15 @@ namespace NovelMind::editor {
 /**
  * @brief Target platform for build
  */
-enum class BuildPlatform : u8 { Windows, Linux, MacOS, All };
+enum class BuildPlatform : u8 {
+  Windows,
+  Linux,
+  MacOS,
+  Web,     // WebAssembly/Emscripten
+  Android, // Android APK
+  iOS,     // iOS App
+  All      // Build for all platforms
+};
 
 /**
  * @brief Build type (affects optimizations and debug info)
@@ -43,9 +52,44 @@ enum class BuildType : u8 {
  */
 enum class CompressionLevel : u8 {
   None,     // No compression
-  Fast,     // Quick compression
-  Balanced, // Balance speed and size
-  Maximum   // Maximum compression (slower)
+  Fast,     // Quick compression (zlib level 1)
+  Balanced, // Balance speed and size (zlib level 6)
+  Maximum   // Maximum compression (zlib level 9)
+};
+
+/**
+ * @brief Resource type as per pack_file_format.md specification
+ */
+enum class ResourceType : u8 {
+  Unknown = 0x00,      // Undefined type
+  Texture = 0x01,      // Image data (PNG, etc.)
+  Audio = 0x02,        // Sound effect
+  Music = 0x03,        // Background music (streamable)
+  Font = 0x04,         // Font file
+  Script = 0x05,       // Compiled NM Script bytecode
+  Scene = 0x06,        // Scene definition
+  Localization = 0x07, // Translation strings
+  Data = 0x08          // Generic data block
+};
+
+/**
+ * @brief Resource flags as per pack_file_format.md specification
+ */
+enum class ResourceFlags : u32 {
+  None = 0,
+  Streamable = 1 << 0, // Resource should be streamed
+  Preload = 1 << 1     // Resource should be preloaded
+};
+
+/**
+ * @brief Pack type for multi-pack VFS (from multi_pack_manager.hpp)
+ */
+enum class PackTypeId : u8 {
+  Base = 0,     // Core game content (lowest priority)
+  Patch = 1,    // Official patches/updates
+  DLC = 2,      // Downloadable content
+  Language = 3, // Localization resources
+  Mod = 4       // User mods (highest priority)
 };
 
 /**
@@ -57,6 +101,7 @@ struct BuildConfig {
   std::string outputPath;
   std::string executableName;
   std::string version = "1.0.0";
+  u32 buildNumber = 1;
 
   // Platform
   BuildPlatform platform = BuildPlatform::Windows;
@@ -65,7 +110,8 @@ struct BuildConfig {
   // Asset settings
   bool packAssets = true;
   bool encryptAssets = false;
-  std::string encryptionKey;
+  std::string encryptionKeyPath; // Path to key file (never the key itself)
+  std::vector<u8> encryptionKey; // 32-byte AES-256 key (runtime only)
   CompressionLevel compression = CompressionLevel::Balanced;
 
   // Features
@@ -270,10 +316,25 @@ private:
                          const std::vector<std::string> &files, bool encrypt,
                          bool compress);
 
+  // Crypto and compression helpers
+  [[nodiscard]] static u32 calculateCrc32(const u8 *data, usize size);
+  [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8 *data,
+                                                          usize size);
+  [[nodiscard]] static Result<std::vector<u8>>
+  compressData(const std::vector<u8> &data, CompressionLevel level);
+  [[nodiscard]] static Result<std::vector<u8>>
+  encryptData(const std::vector<u8> &data, const std::vector<u8> &key,
+              std::array<u8, 12> &ivOut);
+  [[nodiscard]] static ResourceType getResourceTypeFromExtension(
+      const std::string &path);
+
   // Platform-specific
   Result<void> buildWindowsExecutable(const std::string &outputPath);
   Result<void> buildLinuxExecutable(const std::string &outputPath);
   Result<void> buildMacOSBundle(const std::string &outputPath);
+  Result<void> buildWebBundle(const std::string &outputPath);
+  Result<void> buildAndroidBundle(const std::string &outputPath);
+  Result<void> buildIOSBundle(const std::string &outputPath);
 
   BuildConfig m_config;
   BuildProgress m_progress;
