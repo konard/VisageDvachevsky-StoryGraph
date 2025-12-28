@@ -707,18 +707,50 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     }
   } else if (isScene && selectedAction == editDialogueFlowAction) {
     // Emit signal to open embedded dialogue graph editor
-    if (scene() && !scene()->views().isEmpty()) {
+    bool signalEmitted = false;
+    if (scene()) {
       if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
-        // Find the parent panel to emit the signal
+        // Find the parent panel to emit the signal by traversing parent chain
         for (QObject *obj = graphScene; obj; obj = obj->parent()) {
           if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            qDebug() << "[StoryGraph] Found panel via parent chain, emitting "
+                        "editDialogueFlowRequested for scene:"
+                     << m_sceneId;
             emit panel->editDialogueFlowRequested(m_sceneId);
+            signalEmitted = true;
             break;
+          }
+        }
+
+        // Fallback: If parent chain didn't find the panel, try via views
+        if (!signalEmitted && !graphScene->views().isEmpty()) {
+          for (QGraphicsView *view : graphScene->views()) {
+            // Traverse view's parent chain to find the panel
+            for (QWidget *widget = view->parentWidget(); widget;
+                 widget = widget->parentWidget()) {
+              if (auto *panel = qobject_cast<NMStoryGraphPanel *>(widget)) {
+                qDebug() << "[StoryGraph] Found panel via view parent chain, "
+                            "emitting editDialogueFlowRequested for scene:"
+                         << m_sceneId;
+                emit panel->editDialogueFlowRequested(m_sceneId);
+                signalEmitted = true;
+                break;
+              }
+            }
+            if (signalEmitted) {
+              break;
+            }
           }
         }
       }
     }
-    qDebug() << "[StoryGraph] Edit dialogue flow for scene:" << m_sceneId;
+    if (!signalEmitted) {
+      qWarning() << "[StoryGraph] Failed to emit editDialogueFlowRequested - "
+                    "could not find NMStoryGraphPanel for scene:"
+                 << m_sceneId;
+    }
+    qDebug() << "[StoryGraph] Edit dialogue flow for scene:" << m_sceneId
+             << "signalEmitted:" << signalEmitted;
   } else if (isScene && editAnimationsAction &&
              selectedAction == editAnimationsAction) {
     // Emit signal to open Timeline and Scene View for animation editing
