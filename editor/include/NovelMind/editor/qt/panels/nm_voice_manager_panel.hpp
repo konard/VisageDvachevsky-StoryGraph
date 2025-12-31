@@ -6,11 +6,19 @@
  *
  * Provides comprehensive voice-over file management:
  * - Auto-detection and matching of voice files to dialogue lines
- * - Voice file preview/playback using Qt Multimedia
+ * - Voice file preview/playback using IAudioPlayer interface (issue #150)
  * - Import/export of voice mapping tables
  * - Actor assignment and metadata management
  * - Missing voice detection
  * - Async duration probing with caching
+ *
+ * Signal Flow:
+ * - Outgoing: voiceLineSelected(QString) - emitted when user selects a voice
+ * line
+ * - Outgoing: voiceFileChanged(QString, QString) - emitted when voice file is
+ * assigned
+ * - Uses QSignalBlocker in updateVoiceList() to prevent feedback loops during
+ *   programmatic tree widget updates
  */
 
 #include "NovelMind/audio/voice_manifest.hpp"
@@ -22,12 +30,13 @@
 #include <QToolBar>
 #include <QWidget>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
-// Forward declarations for Qt Multimedia
+// Forward declarations for Qt Multimedia (still needed for duration probing)
 class QMediaPlayer;
-class QAudioOutput;
 
 class QListWidget;
 class QTreeWidget;
@@ -40,6 +49,10 @@ class QComboBox;
 class QSlider;
 class QSplitter;
 class QProgressBar;
+
+namespace NovelMind::editor {
+class IAudioPlayer;
+} // namespace NovelMind::editor
 
 namespace NovelMind::editor::qt {
 
@@ -67,11 +80,26 @@ struct DurationCacheEntry {
   qint64 mtime = 0; // File modification time for cache invalidation
 };
 
+/**
+ * @brief Voice Manager panel
+ *
+ * Uses IAudioPlayer interface for playback, enabling:
+ * - Unit testing without audio hardware
+ * - Mocking for CI/CD environments
+ * - Easy swap of audio backends
+ */
 class NMVoiceManagerPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMVoiceManagerPanel(QWidget *parent = nullptr);
+  /**
+   * @brief Construct panel with optional audio player injection
+   * @param parent Parent widget
+   * @param audioPlayer Optional audio player for dependency injection
+   *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
+   */
+  explicit NMVoiceManagerPanel(QWidget *parent = nullptr,
+                               IAudioPlayer *audioPlayer = nullptr);
   ~NMVoiceManagerPanel() override;
 
   void onInitialize() override;
@@ -126,6 +154,21 @@ signals:
    * @param errorMessage Human-readable error description
    */
   void playbackError(const QString &errorMessage);
+
+public slots:
+  /**
+   * @brief Handle recording completion from Voice Studio
+   * @param lineId Voice line ID that was recorded
+   * @param locale Locale of the recording
+   */
+  void onRecordingCompleted(const QString &lineId, const QString &locale);
+
+  /**
+   * @brief Handle file status change from manifest
+   * @param lineId Voice line ID that changed
+   * @param locale Locale that changed
+   */
+  void onFileStatusChanged(const QString &lineId, const QString &locale);
 
 private slots:
   void onScanClicked();
@@ -188,6 +231,12 @@ private:
   void cacheDuration(const QString &filePath, double duration);
   void updateDurationsInList();
 
+  // Selection and row management (VM-4)
+  int findRowByLineId(const QString &lineId) const;
+  void updateRowStatus(int row, const QString &lineId, const QString &locale);
+  void flashRow(int row);
+  void setupManifestCallbacks();
+
   // UI Elements
   QSplitter *m_splitter = nullptr;
   QTreeWidget *m_voiceTree = nullptr;
@@ -204,15 +253,16 @@ private:
   QProgressBar *m_playbackProgress = nullptr;
   QLabel *m_statsLabel = nullptr;
 
-  // Qt Multimedia - using QPointer for safe references
-  QPointer<QMediaPlayer> m_mediaPlayer;
-  QPointer<QAudioOutput> m_audioOutput;
+  // Audio playback - using IAudioPlayer interface (issue #150)
+  std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
+  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
 
   // Duration probing player (separate from playback)
   QPointer<QMediaPlayer> m_probePlayer;
   QQueue<QString> m_probeQueue;
   QString m_currentProbeFile;
-  bool m_isProbing = false;
+  std::atomic<bool> m_isProbing{false};    // Thread-safe flag for probing state
+  mutable std::mutex m_probeMutex;         // Mutex for queue and file access
   static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
 
   // Duration cache: path -> {duration, mtime}

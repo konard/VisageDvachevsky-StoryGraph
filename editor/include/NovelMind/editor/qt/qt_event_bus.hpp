@@ -35,6 +35,9 @@ enum class QtEditorEventType {
   PlayModeStopped,
   LogMessage,
   ErrorOccurred,
+  AssetImported,
+  AssetDeleted,
+  AssetRenamed,
   Custom
 };
 
@@ -114,6 +117,21 @@ public:
    * @brief Convenience method to publish graph connection removed
    */
   void publishGraphConnectionRemoved(const QString &connectionId);
+
+  /**
+   * @brief Convenience method to publish asset imported event
+   */
+  void publishAssetImported(const QString &assetPath, const QString &targetDir);
+
+  /**
+   * @brief Convenience method to publish asset deleted event
+   */
+  void publishAssetDeleted(const QString &assetPath);
+
+  /**
+   * @brief Convenience method to publish asset renamed event
+   */
+  void publishAssetRenamed(const QString &oldPath, const QString &newPath);
 
 signals:
   /**
@@ -207,6 +225,21 @@ signals:
    * @brief Emitted when a graph connection is removed
    */
   void graphConnectionRemoved(const QString &connectionId);
+
+  /**
+   * @brief Emitted when an asset is imported
+   */
+  void assetImported(const QString &assetPath, const QString &targetDir);
+
+  /**
+   * @brief Emitted when an asset is deleted
+   */
+  void assetDeleted(const QString &assetPath);
+
+  /**
+   * @brief Emitted when an asset is renamed
+   */
+  void assetRenamed(const QString &oldPath, const QString &newPath);
 
 private:
   QtEventBus();

@@ -1,27 +1,36 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+#include "NovelMind/editor/qt/nm_bezier_curve_editor_dialog.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 
+#include <QAction>
 #include <QBrush>
+#include <QComboBox>
+#include <QMutexLocker>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QElapsedTimer>
 #include <QGraphicsRectItem>
 #include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsTextItem>
 #include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLabel>
 #include <QListWidget>
+#include <QMouseEvent>
+#include <QMutexLocker>
 #include <QPen>
 #include <QPushButton>
 #include <QSlider>
 #include <QSpinBox>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <climits>
 #include <cmath>
 
@@ -183,8 +192,14 @@ Keyframe TimelineTrack::interpolate(int frame) const {
   result.easing = prevKf->easing;
 
   // Calculate interpolation factor (0 to 1)
-  float t = static_cast<float>(frame - prevKf->frame) /
-            static_cast<float>(nextKf->frame - prevKf->frame);
+  // Safe division with epsilon check to prevent division by zero
+  float frameDiff = static_cast<float>(nextKf->frame - prevKf->frame);
+  if (frameDiff < 0.0001f) {
+    // Same frame or extremely close - no interpolation needed
+    return *prevKf;
+  }
+  float t = static_cast<float>(frame - prevKf->frame) / frameDiff;
+  t = std::clamp(t, 0.0f, 1.0f); // Additional safety clamp
 
   // Apply easing function to t
   double easedT;
@@ -478,6 +493,29 @@ void NMTimelinePanel::setupToolbar() {
   connect(m_btnZoomFit, &QPushButton::clicked, this,
           &NMTimelinePanel::zoomToFit);
 
+  // Snap to grid action
+  m_snapToGridAction = new QAction("Snap to Grid", m_toolbar);
+  m_snapToGridAction->setCheckable(true);
+  m_snapToGridAction->setChecked(m_snapToGrid);
+  m_snapToGridAction->setShortcut(QKeySequence("Ctrl+G"));
+  m_snapToGridAction->setToolTip("Snap to Grid (Ctrl+G)");
+  connect(m_snapToGridAction, &QAction::toggled, this,
+          &NMTimelinePanel::setSnapToGrid);
+
+  // Grid interval combo
+  m_gridIntervalCombo = new QComboBox(m_toolbar);
+  m_gridIntervalCombo->addItem("1 frame", 1);
+  m_gridIntervalCombo->addItem("5 frames", 5);
+  m_gridIntervalCombo->addItem("10 frames", 10);
+  m_gridIntervalCombo->addItem("30 frames", 30);
+  m_gridIntervalCombo->setCurrentIndex(1); // Default to 5 frames
+  m_gridIntervalCombo->setToolTip("Grid Interval");
+  connect(m_gridIntervalCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          [this](int /*index*/) {
+            int interval = m_gridIntervalCombo->currentData().toInt();
+            setGridSize(interval);
+          });
+
   // Add widgets to toolbar
   m_toolbar->addWidget(m_btnPlay);
   m_toolbar->addWidget(m_btnStop);
@@ -492,6 +530,10 @@ void NMTimelinePanel::setupToolbar() {
   m_toolbar->addWidget(m_btnZoomIn);
   m_toolbar->addWidget(m_btnZoomOut);
   m_toolbar->addWidget(m_btnZoomFit);
+  m_toolbar->addSeparator();
+  m_toolbar->addAction(m_snapToGridAction);
+  m_toolbar->addWidget(new QLabel("Grid:", m_toolbar));
+  m_toolbar->addWidget(m_gridIntervalCombo);
 }
 
 void NMTimelinePanel::setupPlaybackControls() {
@@ -503,11 +545,12 @@ void NMTimelinePanel::setupTrackView() {
   m_timelineView = new QGraphicsView(m_timelineScene, contentWidget());
   m_timelineView->setObjectName("TimelineView");
   m_timelineView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  m_timelineView->setDragMode(QGraphicsView::ScrollHandDrag);
+  m_timelineView->setDragMode(QGraphicsView::NoDrag);
   m_timelineView->setFocusPolicy(Qt::StrongFocus);
 
-  // Install event filter for keyboard handling
+  // Install event filter for keyboard and mouse handling
   m_timelineView->installEventFilter(this);
+  m_timelineView->viewport()->installEventFilter(this);
 
   // Create playhead
   m_playheadItem =
@@ -583,42 +626,46 @@ void NMTimelinePanel::stepForward() { setCurrentFrame(m_currentFrame + 1); }
 void NMTimelinePanel::stepBackward() { setCurrentFrame(m_currentFrame - 1); }
 
 void NMTimelinePanel::addTrack(TimelineTrackType type, const QString &name) {
-  if (m_tracks.contains(name))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (m_tracks.contains(name))
+      return;
 
-  TimelineTrack *track = new TimelineTrack();
-  track->name = name;
-  track->type = type;
+    TimelineTrack *track = new TimelineTrack();
+    track->name = name;
+    track->type = type;
 
-  // Assign color based on type
-  switch (type) {
-  case TimelineTrackType::Audio:
-    track->color = QColor("#4CAF50");
-    break;
-  case TimelineTrackType::Animation:
-    track->color = QColor("#2196F3");
-    break;
-  case TimelineTrackType::Event:
-    track->color = QColor("#FF9800");
-    break;
-  case TimelineTrackType::Camera:
-    track->color = QColor("#9C27B0");
-    break;
-  case TimelineTrackType::Character:
-    track->color = QColor("#F44336");
-    break;
-  case TimelineTrackType::Effect:
-    track->color = QColor("#00BCD4");
-    break;
-  case TimelineTrackType::Dialogue:
-    track->color = QColor("#8BC34A");
-    break;
-  case TimelineTrackType::Variable:
-    track->color = QColor("#9E9E9E");
-    break;
-  }
+    // Assign color based on type
+    switch (type) {
+    case TimelineTrackType::Audio:
+      track->color = QColor("#4CAF50");
+      break;
+    case TimelineTrackType::Animation:
+      track->color = QColor("#2196F3");
+      break;
+    case TimelineTrackType::Event:
+      track->color = QColor("#FF9800");
+      break;
+    case TimelineTrackType::Camera:
+      track->color = QColor("#9C27B0");
+      break;
+    case TimelineTrackType::Character:
+      track->color = QColor("#F44336");
+      break;
+    case TimelineTrackType::Effect:
+      track->color = QColor("#00BCD4");
+      break;
+    case TimelineTrackType::Dialogue:
+      track->color = QColor("#8BC34A");
+      break;
+    case TimelineTrackType::Variable:
+      track->color = QColor("#9E9E9E");
+      break;
+    }
 
-  m_tracks[name] = track;
+    m_tracks[name] = track;
+  } // Lock released here
+
   renderTracks();
 }
 
@@ -669,37 +716,61 @@ void NMTimelinePanel::duplicateSelectedKeyframes(int offsetFrames) {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  // This ensures the track names snapshot is consistent throughout the
+  // operation
+  const QStringList trackNamesCopy = getTrackNamesSafe();
 
   // Collect keyframes to duplicate
   QVector<QPair<QString, KeyframeSnapshot>> toDuplicate;
 
   for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
       continue;
     }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
+    QString trackName = trackNamesCopy.at(id.trackIndex);
+
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
+
     if (!track || track->locked) {
       continue;
     }
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      KeyframeSnapshot snapshot;
-      snapshot.frame = kf->frame + offsetFrames;
-      snapshot.value = kf->value;
-      snapshot.easingType = static_cast<int>(kf->easing);
-      snapshot.handleInX = kf->handleInX;
-      snapshot.handleInY = kf->handleInY;
-      snapshot.handleOutX = kf->handleOutX;
-      snapshot.handleOutY = kf->handleOutY;
-      toDuplicate.append(qMakePair(trackName, snapshot));
-    }
-  }
+    for (const KeyframeId &id : m_selectedKeyframes) {
+      // Bounds check against the atomic copy
+      if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
+        continue;
+      }
 
-  // Add duplicated keyframes
+      QString trackName = trackNamesCopy.at(id.trackIndex);
+
+      // Get track while still holding lock
+      TimelineTrack *track = m_tracks.value(trackName, nullptr);
+      if (!track || track->locked) {
+        continue;
+      }
+
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        KeyframeSnapshot snapshot;
+        snapshot.frame = kf->frame + offsetFrames;
+        snapshot.value = kf->value;
+        snapshot.easingType = static_cast<int>(kf->easing);
+        snapshot.handleInX = kf->handleInX;
+        snapshot.handleInY = kf->handleInY;
+        snapshot.handleOutX = kf->handleOutX;
+        snapshot.handleOutY = kf->handleOutY;
+        toDuplicate.append(qMakePair(trackName, snapshot));
+      }
+    }
+  } // Lock released here
+
+  // Add duplicated keyframes (outside lock to avoid holding lock during undo)
   for (const auto &pair : toDuplicate) {
     auto *cmd = new AddKeyframeCommand(this, pair.first, pair.second);
     NMUndoManager::instance().pushCommand(cmd);
@@ -713,28 +784,41 @@ void NMTimelinePanel::setSelectedKeyframesEasing(EasingType easing) {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
 
   for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
       continue;
     }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
+    QString trackName = trackNamesCopy.at(id.trackIndex);
+
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
+
     if (!track || track->locked) {
       continue;
     }
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      EasingType oldEasing = kf->easing;
-      kf->easing = easing;
-      emit keyframeEasingChanged(trackName, id.frame, easing);
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        EasingType oldEasing = kf->easing;
+        kf->easing = easing;
+        easingChanges.append(qMakePair(trackName, id.frame));
 
-      // Create undo command (simplified - ideally would batch these)
-      Q_UNUSED(oldEasing);
+        // Create undo command (simplified - ideally would batch these)
+        Q_UNUSED(oldEasing);
+      }
     }
+  } // Lock released here
+
+  // Emit signals outside lock
+  for (const auto &change : easingChanges) {
+    emit keyframeEasingChanged(change.first, change.second, easing);
   }
 
   renderTracks();
@@ -747,8 +831,8 @@ void NMTimelinePanel::copySelectedKeyframes() {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
 
   // Find minimum frame to use as reference point
   int minFrame = INT_MAX;
@@ -760,24 +844,32 @@ void NMTimelinePanel::copySelectedKeyframes() {
 
   // Copy keyframes with relative frame offsets
   for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex < 0 || id.trackIndex >= trackNames.size()) {
+    if (id.trackIndex < 0 || id.trackIndex >= trackNamesCopy.size()) {
       continue;
     }
-    QString trackName = trackNames.at(id.trackIndex);
-    TimelineTrack *track = getTrack(trackName);
+    QString trackName = trackNamesCopy.at(id.trackIndex);
+
+    // Get track with mutex protection
+    TimelineTrack *track = nullptr;
+    {
+      QMutexLocker locker(&m_tracksMutex);
+      track = m_tracks.value(trackName, nullptr);
+    }
+
     if (!track) {
       continue;
     }
 
-    Keyframe *kf = track->getKeyframe(id.frame);
-    if (kf) {
-      KeyframeCopy copy;
-      copy.relativeFrame = kf->frame - minFrame;
-      copy.value = kf->value;
-      copy.easing = kf->easing;
-      m_keyframeClipboard.append(copy);
+      Keyframe *kf = track->getKeyframe(id.frame);
+      if (kf) {
+        KeyframeCopy copy;
+        copy.relativeFrame = kf->frame - minFrame;
+        copy.value = kf->value;
+        copy.easing = kf->easing;
+        m_keyframeClipboard.append(copy);
+      }
     }
-  }
+  } // Lock released here
 }
 
 void NMTimelinePanel::pasteKeyframes() {
@@ -785,33 +877,44 @@ void NMTimelinePanel::pasteKeyframes() {
     return;
   }
 
-  // Get track names from track map (indexed by order)
-  QStringList trackNames = m_tracks.keys();
+  // Get thread-safe atomic copy of track names to prevent TOCTOU race condition
+  const QStringList trackNamesCopy = getTrackNamesSafe();
 
   // Get the first selected track or first visible track
   QString targetTrack;
   for (const KeyframeId &id : m_selectedKeyframes) {
-    if (id.trackIndex >= 0 && id.trackIndex < trackNames.size()) {
-      targetTrack = trackNames.at(id.trackIndex);
+    if (id.trackIndex >= 0 && id.trackIndex < trackNamesCopy.size()) {
+      targetTrack = trackNamesCopy.at(id.trackIndex);
       break;
     }
   }
 
   if (targetTrack.isEmpty()) {
-    // Use first visible track
+    // Use first visible track (with mutex protection)
+    QMutexLocker locker(&m_tracksMutex);
     for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
       if (it.value()->visible && !it.value()->locked) {
         targetTrack = it.key();
         break;
       }
     }
-  }
+
+    if (targetTrack.isEmpty()) {
+      // Use first visible track
+      for (auto it = m_tracks.constBegin(); it != m_tracks.constEnd(); ++it) {
+        if (it.value()->visible && !it.value()->locked) {
+          targetTrack = it.key();
+          break;
+        }
+      }
+    }
+  } // Lock released here
 
   if (targetTrack.isEmpty()) {
     return;
   }
 
-  // Paste keyframes at current frame position
+  // Paste keyframes at current frame position (outside lock)
   for (const KeyframeCopy &copy : m_keyframeClipboard) {
     KeyframeSnapshot snapshot;
     snapshot.frame = m_currentFrame + copy.relativeFrame;
@@ -849,18 +952,25 @@ void NMTimelinePanel::setGridSize(int frames) {
 }
 
 void NMTimelinePanel::removeTrack(const QString &name) {
-  if (!m_tracks.contains(name))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (!m_tracks.contains(name))
+      return;
 
-  delete m_tracks[name];
-  m_tracks.remove(name);
+    delete m_tracks[name];
+    m_tracks.remove(name);
+  } // Lock released here
+
   renderTracks();
 }
 
 void NMTimelinePanel::addKeyframeAtCurrent(const QString &trackName,
                                            const QVariant &value) {
-  if (!m_tracks.contains(trackName))
-    return;
+  {
+    QMutexLocker locker(&m_tracksMutex);
+    if (!m_tracks.contains(trackName))
+      return;
+  } // Lock released here
 
   // Create snapshot for undo
   KeyframeSnapshot snapshot;
@@ -920,6 +1030,37 @@ void NMTimelinePanel::updateFrameDisplay() {
                            .arg(frames, 2, 10, QChar('0')));
 }
 
+/**
+ * @brief Get or create cached frame label string (PERF-3 optimization)
+ *
+ * Avoids repeated QString::number() allocations during renderTracks().
+ * The cache is lazily populated and bounded to prevent memory issues.
+ *
+ * @param frame Frame number to get label for
+ * @return Cached QString reference for the frame number
+ */
+const QString &NMTimelinePanel::getCachedFrameLabel(int frame) const {
+  auto it = m_frameLabelCache.find(frame);
+  if (it != m_frameLabelCache.end()) {
+    return it.value();
+  }
+
+  // Cache miss - create and cache the label
+  // Limit cache size to prevent unbounded growth
+  if (m_frameLabelCache.size() >= m_frameLabelCacheMaxSize) {
+    // Simple eviction: clear half the cache when full
+    // In practice, timeline frames are usually contiguous, so this is rare
+    QList<int> keys = m_frameLabelCache.keys();
+    for (int i = 0; i < keys.size() / 2; ++i) {
+      m_frameLabelCache.remove(keys[i]);
+    }
+  }
+
+  // Insert and return reference to cached value
+  m_frameLabelCache.insert(frame, QString::number(frame));
+  return m_frameLabelCache[frame];
+}
+
 void NMTimelinePanel::renderTracks() {
   QElapsedTimer timer;
   timer.start();
@@ -939,17 +1080,26 @@ void NMTimelinePanel::renderTracks() {
   int y = TIMELINE_MARGIN;
   int trackIndex = 0;
 
+  // PERF-3: Cache commonly used colors/pens as static to avoid repeated
+  // allocations
+  static const QPen rulerPen(QColor("#606060"));
+  static const QColor labelColor("#a0a0a0");
+  static const QPen noPen(Qt::NoPen);
+  static const QBrush trackBgBrush(QColor("#2d2d2d"));
+  static const QColor nameLabelColor("#e0e0e0");
+
   // Draw frame ruler
   for (int frame = 0; frame <= m_totalFrames; frame += 10) {
     int x = frameToX(frame);
-    m_timelineScene->addLine(x, 0, x, 10, QPen(QColor("#606060")));
+    m_timelineScene->addLine(x, 0, x, 10, rulerPen);
 
     if (frame % 30 == 0) // Every second
     {
+      // PERF-3: Use cached frame label instead of QString::number()
       QGraphicsTextItem *label =
-          m_timelineScene->addText(QString::number(frame));
+          m_timelineScene->addText(getCachedFrameLabel(frame));
       label->setPos(x - 10, -20);
-      label->setDefaultTextColor(QColor("#a0a0a0"));
+      label->setDefaultTextColor(labelColor);
     }
   }
 
@@ -958,17 +1108,17 @@ void NMTimelinePanel::renderTracks() {
     TimelineTrack *track = it.value();
 
     // Track background
-    m_timelineScene->addRect(
-        TRACK_HEADER_WIDTH, y, frameToX(m_totalFrames) - TRACK_HEADER_WIDTH,
-        TRACK_HEIGHT, QPen(Qt::NoPen), QBrush(QColor("#2d2d2d")));
+    m_timelineScene->addRect(TRACK_HEADER_WIDTH, y,
+                             frameToX(m_totalFrames) - TRACK_HEADER_WIDTH,
+                             TRACK_HEIGHT, noPen, trackBgBrush);
 
     // Track header
-    m_timelineScene->addRect(0, y, TRACK_HEADER_WIDTH, TRACK_HEIGHT,
-                             QPen(Qt::NoPen), QBrush(track->color.darker(150)));
+    m_timelineScene->addRect(0, y, TRACK_HEADER_WIDTH, TRACK_HEIGHT, noPen,
+                             QBrush(track->color.darker(150)));
 
     QGraphicsTextItem *nameLabel = m_timelineScene->addText(track->name);
     nameLabel->setPos(8, y + 8);
-    nameLabel->setDefaultTextColor(QColor("#e0e0e0"));
+    nameLabel->setDefaultTextColor(nameLabelColor);
 
     // Draw keyframes using custom items
     for (const Keyframe &kf : track->keyframes) {
@@ -980,6 +1130,7 @@ void NMTimelinePanel::renderTracks() {
       kfItem->setPos(kfX, y + TRACK_HEIGHT / 2);
       kfItem->setSnapToGrid(m_snapToGrid);
       kfItem->setGridSize(m_gridSize);
+      kfItem->setEasingType(static_cast<int>(kf.easing));
 
       // Set coordinate conversion functions
       kfItem->setFrameConverter([this](int x) { return this->xToFrame(x); },
@@ -992,6 +1143,10 @@ void NMTimelinePanel::renderTracks() {
               &NMTimelinePanel::onKeyframeMoved);
       connect(kfItem, &NMKeyframeItem::doubleClicked, this,
               &NMTimelinePanel::onKeyframeDoubleClicked);
+      connect(kfItem, &NMKeyframeItem::dragStarted, this,
+              &NMTimelinePanel::onKeyframeDragStarted);
+      connect(kfItem, &NMKeyframeItem::dragEnded, this,
+              &NMTimelinePanel::onKeyframeDragEnded);
 
       // Add to scene
       m_timelineScene->addItem(kfItem);
@@ -1083,8 +1238,17 @@ void NMTimelinePanel::updateSelectionVisuals() {
 // =============================================================================
 
 void NMTimelinePanel::onKeyframeClicked(bool additiveSelection,
+                                        bool rangeSelection,
                                         const KeyframeId &id) {
-  selectKeyframe(id, additiveSelection);
+  if (rangeSelection && m_lastClickedKeyframe.trackIndex >= 0) {
+    // Shift+Click: select range from last clicked to current
+    selectKeyframeRange(m_lastClickedKeyframe, id);
+  } else {
+    selectKeyframe(id, additiveSelection);
+  }
+
+  // Remember the last clicked keyframe for range selection
+  m_lastClickedKeyframe = id;
 }
 
 void NMTimelinePanel::onKeyframeMoved(int oldFrame, int newFrame,
@@ -1104,29 +1268,80 @@ void NMTimelinePanel::onKeyframeMoved(int oldFrame, int newFrame,
   if (!targetTrack)
     return;
 
-  // Create and push move command
-  auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame,
-                                              newFrame);
-  NMUndoManager::instance().pushCommand(cmd);
+  // Calculate the frame delta
+  int frameDelta = newFrame - oldFrame;
 
-  // Update selection to new position
-  KeyframeId oldId;
-  oldId.trackIndex = trackIndex;
-  oldId.frame = oldFrame;
+  // If multi-select dragging, move all selected keyframes by the same delta
+  if (m_isDraggingSelection && m_selectedKeyframes.size() > 1) {
+    // Create macro for multiple moves
+    NMUndoManager::instance().beginMacro("Move Selected Keyframes");
 
-  KeyframeId newId;
-  newId.trackIndex = trackIndex;
-  newId.frame = newFrame;
+    // Get track names list
+    QStringList trackNames = m_tracks.keys();
 
-  if (m_selectedKeyframes.contains(oldId)) {
-    m_selectedKeyframes.remove(oldId);
-    m_selectedKeyframes.insert(newId);
+    // Move all selected keyframes
+    QSet<KeyframeId> newSelection;
+    for (const KeyframeId &selId : m_selectedKeyframes) {
+      if (selId.trackIndex < 0 || selId.trackIndex >= trackNames.size()) {
+        continue;
+      }
+
+      QString selTrackName = trackNames.at(selId.trackIndex);
+      TimelineTrack *selTrack = getTrack(selTrackName);
+      if (!selTrack || selTrack->locked) {
+        continue;
+      }
+
+      int startFrame = m_dragStartFrames.value(selId, selId.frame);
+      int targetFrame = startFrame + frameDelta;
+      if (targetFrame < 0) {
+        targetFrame = 0;
+      }
+
+      // Only move if the keyframe still exists at the start position
+      if (selTrack->getKeyframe(startFrame)) {
+        auto *cmd = new TimelineKeyframeMoveCommand(this, selTrackName,
+                                                    startFrame, targetFrame);
+        NMUndoManager::instance().pushCommand(cmd);
+
+        emit keyframeMoved(selTrackName, startFrame, targetFrame);
+      }
+
+      // Update selection to new position
+      KeyframeId newSelId;
+      newSelId.trackIndex = selId.trackIndex;
+      newSelId.frame = targetFrame;
+      newSelection.insert(newSelId);
+    }
+
+    NMUndoManager::instance().endMacro();
+
+    m_selectedKeyframes = newSelection;
+  } else {
+    // Single keyframe move
+    auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame,
+                                                newFrame);
+    NMUndoManager::instance().pushCommand(cmd);
+
+    // Update selection to new position
+    KeyframeId oldId;
+    oldId.trackIndex = trackIndex;
+    oldId.frame = oldFrame;
+
+    KeyframeId newId;
+    newId.trackIndex = trackIndex;
+    newId.frame = newFrame;
+
+    if (m_selectedKeyframes.contains(oldId)) {
+      m_selectedKeyframes.remove(oldId);
+      m_selectedKeyframes.insert(newId);
+    }
+
+    emit keyframeMoved(targetTrack->name, oldFrame, newFrame);
   }
 
   // Re-render to update positions
   renderTracks();
-
-  emit keyframeMoved(targetTrack->name, oldFrame, newFrame);
 }
 
 void NMTimelinePanel::onKeyframeDoubleClicked(int trackIndex, int frame) {
@@ -1158,6 +1373,7 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
   // Create easing selection dialog
   QDialog dialog(this);
   dialog.setWindowTitle("Select Easing Type");
+  dialog.setMinimumWidth(300);
   QVBoxLayout *layout = new QVBoxLayout(&dialog);
 
   QListWidget *easingList = new QListWidget(&dialog);
@@ -1176,12 +1392,20 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
   easingList->addItem("Ease In Bounce");
   easingList->addItem("Ease Out Bounce");
   easingList->addItem("Step");
-  easingList->addItem("Custom");
+  easingList->addItem("Custom Bezier...");
 
   // Select current easing
   easingList->setCurrentRow(static_cast<int>(targetKeyframe->easing));
 
   layout->addWidget(easingList);
+
+  // Add "Edit Bezier Curve..." button when Custom is selected or already set
+  QPushButton *editBezierBtn = new QPushButton(tr("Edit Bezier Curve..."), &dialog);
+  editBezierBtn->setVisible(targetKeyframe->easing == EasingType::Custom);
+  connect(easingList, &QListWidget::currentRowChanged, [editBezierBtn](int row) {
+    editBezierBtn->setVisible(row == static_cast<int>(EasingType::Custom));
+  });
+  layout->addWidget(editBezierBtn);
 
   QDialogButtonBox *buttonBox =
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -1190,22 +1414,65 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
 
   layout->addWidget(buttonBox);
 
+  // Handle "Edit Bezier Curve..." button click
+  connect(editBezierBtn, &QPushButton::clicked, [this, targetKeyframe, targetTrack, frame, &dialog]() {
+    BezierCurveResult result;
+    if (NMBezierCurveEditorDialog::getEasing(this, targetKeyframe, result)) {
+      // Apply the bezier curve result
+      targetKeyframe->easing = EasingType::Custom;
+      targetKeyframe->handleOutX = result.handleOutX;
+      targetKeyframe->handleOutY = result.handleOutY;
+      targetKeyframe->handleInX = result.handleInX;
+      targetKeyframe->handleInY = result.handleInY;
+
+      emit keyframeEasingChanged(targetTrack->name, frame, EasingType::Custom);
+      renderTracks();
+      dialog.accept();
+    }
+  });
+
   if (dialog.exec() == QDialog::Accepted) {
     int selectedIndex = easingList->currentRow();
     if (selectedIndex >= 0 &&
         selectedIndex < static_cast<int>(EasingType::Custom) + 1) {
-      // Create undo command for easing change
-      int oldEasing = static_cast<int>(targetKeyframe->easing);
-      int newEasing = selectedIndex;
 
-      if (oldEasing != newEasing) {
-        auto *cmd = new ChangeKeyframeEasingCommand(
-            this, targetTrack->name, frame, oldEasing, newEasing);
-        NMUndoManager::instance().pushCommand(cmd);
+      // If "Custom Bezier..." is selected, open the bezier editor
+      if (selectedIndex == static_cast<int>(EasingType::Custom)) {
+        BezierCurveResult result;
+        if (NMBezierCurveEditorDialog::getEasing(this, targetKeyframe, result)) {
+          // Apply the bezier curve result
+          int oldEasing = static_cast<int>(targetKeyframe->easing);
+          targetKeyframe->easing = EasingType::Custom;
+          targetKeyframe->handleOutX = result.handleOutX;
+          targetKeyframe->handleOutY = result.handleOutY;
+          targetKeyframe->handleInX = result.handleInX;
+          targetKeyframe->handleInY = result.handleInY;
+
+          // Create undo command for easing change
+          if (oldEasing != static_cast<int>(EasingType::Custom)) {
+            auto *cmd = new ChangeKeyframeEasingCommand(
+                this, targetTrack->name, frame, oldEasing,
+                static_cast<int>(EasingType::Custom));
+            NMUndoManager::instance().pushCommand(cmd);
+          }
+
+          emit keyframeEasingChanged(targetTrack->name, frame, EasingType::Custom);
+          renderTracks();
+        }
+      } else {
+        // Create undo command for easing change
+        int oldEasing = static_cast<int>(targetKeyframe->easing);
+        int newEasing = selectedIndex;
+
+        if (oldEasing != newEasing) {
+          auto *cmd = new ChangeKeyframeEasingCommand(
+              this, targetTrack->name, frame, oldEasing, newEasing);
+          NMUndoManager::instance().pushCommand(cmd);
+        }
+
+        emit keyframeEasingChanged(targetTrack->name, frame,
+                                   static_cast<EasingType>(newEasing));
       }
-
-      emit keyframeEasingChanged(targetTrack->name, frame,
-                                 static_cast<EasingType>(newEasing));
     }
   }
 }
@@ -1271,17 +1538,66 @@ void NMTimelinePanel::deleteSelectedKeyframes() {
 }
 
 // =============================================================================
-// Event Filter for Keyboard
+// Event Filter for Keyboard and Mouse
 // =============================================================================
 
 bool NMTimelinePanel::eventFilter(QObject *obj, QEvent *event) {
   if (event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
+    // Delete selected keyframes
     if (keyEvent->key() == Qt::Key_Delete ||
         keyEvent->key() == Qt::Key_Backspace) {
       deleteSelectedKeyframes();
       return true;
+    }
+
+    // Copy selected keyframes (Ctrl+C)
+    if (keyEvent->matches(QKeySequence::Copy)) {
+      copySelectedKeyframes();
+      return true;
+    }
+
+    // Paste keyframes (Ctrl+V)
+    if (keyEvent->matches(QKeySequence::Paste)) {
+      pasteKeyframes();
+      return true;
+    }
+
+    // Select all keyframes (Ctrl+A)
+    if (keyEvent->matches(QKeySequence::SelectAll)) {
+      selectAllKeyframes();
+      return true;
+    }
+  }
+
+  // Handle mouse events for box selection on the graphics view
+  if (obj == m_timelineView->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+      if (mouseEvent->button() == Qt::LeftButton) {
+        // Check if clicking on empty space (no item at position)
+        QPointF scenePos = m_timelineView->mapToScene(mouseEvent->pos());
+        QGraphicsItem *item = m_timelineScene->itemAt(scenePos, QTransform());
+
+        // If no item at position, start box selection
+        if (!item || item == m_playheadItem) {
+          startBoxSelection(scenePos);
+          return true;
+        }
+      }
+    } else if (event->type() == QEvent::MouseMove) {
+      if (m_isBoxSelecting) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        QPointF scenePos = m_timelineView->mapToScene(mouseEvent->pos());
+        updateBoxSelection(scenePos);
+        return true;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      if (m_isBoxSelecting) {
+        endBoxSelection();
+        return true;
+      }
     }
   }
 
@@ -1293,6 +1609,7 @@ bool NMTimelinePanel::eventFilter(QObject *obj, QEvent *event) {
 // =============================================================================
 
 TimelineTrack *NMTimelinePanel::getTrack(const QString &name) const {
+  QMutexLocker locker(&m_tracksMutex);
   auto it = m_tracks.find(name);
   if (it != m_tracks.end()) {
     return it.value();
@@ -1335,6 +1652,178 @@ void NMTimelinePanel::recordRenderMetrics(double renderTimeMs, int itemCount) {
         PerformanceMetrics::METRIC_TIMELINE_CACHE_HIT,
         static_cast<int>(stats.hitRate() * 100));
   }
+}
+
+// =============================================================================
+// Select All Keyframes
+// =============================================================================
+
+void NMTimelinePanel::selectAllKeyframes() {
+  m_selectedKeyframes.clear();
+
+  int trackIndex = 0;
+  for (auto trackIt = m_tracks.begin(); trackIt != m_tracks.end();
+       ++trackIt, ++trackIndex) {
+    TimelineTrack *track = trackIt.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+
+    for (const auto &kf : track->keyframes) {
+      KeyframeId id;
+      id.trackIndex = trackIndex;
+      id.frame = kf.frame;
+      m_selectedKeyframes.insert(id);
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Range Selection (Shift+Click)
+// =============================================================================
+
+void NMTimelinePanel::selectKeyframeRange(const KeyframeId &fromId,
+                                          const KeyframeId &toId) {
+  // Determine the frame range
+  int startFrame = qMin(fromId.frame, toId.frame);
+  int endFrame = qMax(fromId.frame, toId.frame);
+
+  // Determine track range
+  int startTrack = qMin(fromId.trackIndex, toId.trackIndex);
+  int endTrack = qMax(fromId.trackIndex, toId.trackIndex);
+
+  // Select all keyframes within the range
+  int trackIndex = 0;
+  for (auto trackIt = m_tracks.begin(); trackIt != m_tracks.end();
+       ++trackIt, ++trackIndex) {
+    if (trackIndex < startTrack || trackIndex > endTrack) {
+      continue;
+    }
+
+    TimelineTrack *track = trackIt.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+
+    for (const auto &kf : track->keyframes) {
+      if (kf.frame >= startFrame && kf.frame <= endFrame) {
+        KeyframeId id;
+        id.trackIndex = trackIndex;
+        id.frame = kf.frame;
+        m_selectedKeyframes.insert(id);
+      }
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Box Selection
+// =============================================================================
+
+void NMTimelinePanel::startBoxSelection(const QPointF &pos) {
+  m_isBoxSelecting = true;
+  m_boxSelectStart = pos;
+  m_boxSelectEnd = pos;
+
+  // Create the selection rectangle visual
+  if (!m_boxSelectRect) {
+    m_boxSelectRect = new QGraphicsRectItem();
+    m_boxSelectRect->setPen(QPen(QColor("#4A90D9"), 1, Qt::DashLine));
+    m_boxSelectRect->setBrush(QBrush(QColor(74, 144, 217, 50)));
+    m_boxSelectRect->setZValue(99); // Just below playhead
+    m_timelineScene->addItem(m_boxSelectRect);
+  }
+
+  m_boxSelectRect->setRect(QRectF(m_boxSelectStart, QSizeF(0, 0)));
+  m_boxSelectRect->setVisible(true);
+
+  // Clear selection unless Ctrl is held
+  // (handled by Qt automatically in the mouse event)
+}
+
+void NMTimelinePanel::updateBoxSelection(const QPointF &pos) {
+  m_boxSelectEnd = pos;
+
+  // Update the visual rectangle
+  if (m_boxSelectRect) {
+    QRectF rect = QRectF(m_boxSelectStart, m_boxSelectEnd).normalized();
+    m_boxSelectRect->setRect(rect);
+  }
+}
+
+void NMTimelinePanel::endBoxSelection() {
+  if (!m_isBoxSelecting) {
+    return;
+  }
+
+  m_isBoxSelecting = false;
+
+  // Hide the selection rectangle
+  if (m_boxSelectRect) {
+    m_boxSelectRect->setVisible(false);
+  }
+
+  // Calculate the selection rectangle
+  QRectF selectionRect = QRectF(m_boxSelectStart, m_boxSelectEnd).normalized();
+
+  // Select keyframes within the rectangle
+  selectKeyframesInRect(selectionRect);
+}
+
+void NMTimelinePanel::selectKeyframesInRect(const QRectF &rect) {
+  // Clear existing selection
+  m_selectedKeyframes.clear();
+
+  // Find all keyframes within the rectangle
+  for (auto it = m_keyframeItems.begin(); it != m_keyframeItems.end(); ++it) {
+    NMKeyframeItem *kfItem = it.value();
+    if (!kfItem) {
+      continue;
+    }
+
+    // Get the keyframe's scene position
+    QPointF kfPos = kfItem->scenePos();
+
+    // Check if the keyframe is within the selection rectangle
+    if (rect.contains(kfPos)) {
+      m_selectedKeyframes.insert(it.key());
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Multi-select Dragging
+// =============================================================================
+
+void NMTimelinePanel::onKeyframeDragStarted(const KeyframeId &id) {
+  // If the dragged keyframe is not in the selection, select only it
+  if (!m_selectedKeyframes.contains(id)) {
+    m_selectedKeyframes.clear();
+    m_selectedKeyframes.insert(id);
+    updateSelectionVisuals();
+  }
+
+  // Store the starting frames for all selected keyframes
+  m_dragStartFrames.clear();
+  for (const KeyframeId &selId : m_selectedKeyframes) {
+    m_dragStartFrames[selId] = selId.frame;
+  }
+
+  m_isDraggingSelection = true;
+}
+
+void NMTimelinePanel::onKeyframeDragEnded() {
+  m_isDraggingSelection = false;
+  m_dragStartFrames.clear();
+QStringList NMTimelinePanel::getTrackNamesSafe() const {
+  QMutexLocker locker(&m_tracksMutex);
+  return m_tracks.keys();
 }
 
 } // namespace NovelMind::editor::qt

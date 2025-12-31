@@ -924,6 +924,22 @@ void ChangeTranslationCommand::redo() {
   emit m_panel->translationChanged(m_key, m_locale, m_newValue);
 }
 
+bool ChangeTranslationCommand::mergeWith(const QUndoCommand *other) {
+  // Only merge with same command type (ensured by matching id())
+  const auto *otherCmd = static_cast<const ChangeTranslationCommand *>(other);
+
+  // Only merge if same key and locale
+  if (otherCmd->m_key != m_key || otherCmd->m_locale != m_locale) {
+    return false;
+  }
+
+  // Merge: keep old value from this command, new value from other
+  // This combines consecutive edits (e.g., typing "Hello" character by
+  // character) into a single undo operation
+  m_newValue = otherCmd->m_newValue;
+  return true;
+}
+
 // =============================================================================
 // Curve Editor Commands Implementation
 // =============================================================================

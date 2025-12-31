@@ -52,6 +52,13 @@ void NMHierarchyTree::setScene(NMSceneGraphicsScene *scene) {
   refresh();
 }
 
+/**
+ * @brief Rebuild the entire hierarchy tree
+ *
+ * This clears and rebuilds the tree from scratch. For incremental updates
+ * during gizmo operations (position/scale changes), use updateObjectItem()
+ * instead to maintain 60 FPS performance.
+ */
 void NMHierarchyTree::refresh() {
   QString previouslySelected;
   if (!selectedItems().isEmpty()) {
@@ -61,6 +68,9 @@ void NMHierarchyTree::refresh() {
 
   QSignalBlocker blocker(this);
   clear();
+
+  // PERF-2: Clear the object-to-item map when rebuilding tree
+  m_objectToItemMap.clear();
 
   if (!m_scene) {
     return;
@@ -135,6 +145,9 @@ void NMHierarchyTree::refresh() {
     item->setCheckState(1, object->isVisible() ? Qt::Checked : Qt::Unchecked);
     item->setCheckState(2, object->isLocked() ? Qt::Checked : Qt::Unchecked);
 
+    // PERF-2: Add to object-to-item map for O(1) lookup
+    m_objectToItemMap.insert(object->id(), item);
+
     const bool isRuntime = object->id().startsWith("runtime_");
     if (isRuntime) {
       QFont font = item->font(0);
@@ -148,18 +161,82 @@ void NMHierarchyTree::refresh() {
   }
 
   if (!previouslySelected.isEmpty()) {
-    QTreeWidgetItemIterator it(this);
-    while (*it) {
-      const QString id = (*it)->data(0, Qt::UserRole).toString();
-      if (id == previouslySelected) {
-        setCurrentItem(*it);
-        (*it)->setSelected(true);
-        scrollToItem(*it);
-        break;
-      }
-      ++it;
+    // PERF-2: Use O(1) lookup from map instead of O(n) iterator
+    QTreeWidgetItem *prevItem = m_objectToItemMap.value(previouslySelected);
+    if (prevItem) {
+      setCurrentItem(prevItem);
+      prevItem->setSelected(true);
+      scrollToItem(prevItem);
     }
   }
+}
+
+/**
+ * @brief Update a single object's tree item (PERF-2 optimization)
+ *
+ * This provides O(1) update for individual object property changes instead of
+ * rebuilding the entire tree. Use this during gizmo operations to maintain
+ * 60 FPS performance. Only updates name, visibility, and lock state - does
+ * not handle reparenting or object type changes (use refresh() for those).
+ *
+ * @param objectId ID of the object to update
+ */
+void NMHierarchyTree::updateObjectItem(const QString &objectId) {
+  if (!m_scene || objectId.isEmpty()) {
+    return;
+  }
+
+  // PERF-2: O(1) lookup using hash map
+  QTreeWidgetItem *item = m_objectToItemMap.value(objectId);
+  if (!item) {
+    return; // Object not in tree (filtered out or doesn't exist)
+  }
+
+  NMSceneObject *object = m_scene->findSceneObject(objectId);
+  if (!object) {
+    // Object was deleted - remove from map and tree
+    m_objectToItemMap.remove(objectId);
+    delete item;
+    return;
+  }
+
+  // Block signals to prevent triggering onItemChanged during update
+  QSignalBlocker blocker(this);
+
+  // Update name if changed
+  const QString displayName =
+      object->name().isEmpty() ? object->id() : object->name();
+  if (item->text(0) != displayName) {
+    item->setText(0, displayName);
+  }
+
+  // Update visibility if changed
+  const Qt::CheckState expectedVisible =
+      object->isVisible() ? Qt::Checked : Qt::Unchecked;
+  if (item->checkState(1) != expectedVisible) {
+    item->setCheckState(1, expectedVisible);
+  }
+
+  // Update lock state if changed
+  const Qt::CheckState expectedLocked =
+      object->isLocked() ? Qt::Checked : Qt::Unchecked;
+  if (item->checkState(2) != expectedLocked) {
+    item->setCheckState(2, expectedLocked);
+  }
+}
+
+/**
+ * @brief Find tree item for a specific object (O(1) lookup)
+ *
+ * PERF-2 optimization: Uses hash map for constant-time lookup instead
+ * of iterating through all tree items.
+ *
+ * @param objectId ID of the object
+ * @return Tree item or nullptr if not found
+ */
+QTreeWidgetItem *
+NMHierarchyTree::findTreeItemForObject(const QString &objectId) const {
+  return m_objectToItemMap.value(objectId, nullptr);
 }
 
 void NMHierarchyTree::setFilterText(const QString &text) {
@@ -447,9 +524,9 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
     }
 
     bool ok = false;
-    QString newName = QInputDialog::getText(this, tr("Rename Object"),
-                                            tr("New name:"), QLineEdit::Normal,
-                                            obj->name(), &ok);
+    QString newName =
+        QInputDialog::getText(this, tr("Rename Object"), tr("New name:"),
+                              QLineEdit::Normal, obj->name(), &ok);
     if (ok && !newName.isEmpty()) {
       obj->setName(newName);
       refresh();
@@ -587,6 +664,21 @@ void NMHierarchyPanel::refresh() {
   }
 }
 
+/**
+ * @brief Update a single object (PERF-2: incremental update)
+ *
+ * Use this instead of refresh() for property changes (visibility, lock,
+ * name) during gizmo operations to maintain 60 FPS. This provides O(1)
+ * update complexity vs O(n) for full refresh.
+ *
+ * @param objectId ID of the object to update
+ */
+void NMHierarchyPanel::updateObject(const QString &objectId) {
+  if (m_tree) {
+    m_tree->updateObjectItem(objectId);
+  }
+}
+
 void NMHierarchyPanel::setScene(NMSceneGraphicsScene *scene) {
   if (m_tree) {
     m_tree->setScene(scene);
@@ -617,16 +709,12 @@ void NMHierarchyPanel::selectObject(const QString &objectId) {
     return;
   }
 
-  // Find and select the item with the given object ID
-  QTreeWidgetItemIterator it(m_tree);
-  while (*it) {
-    if ((*it)->data(0, Qt::UserRole).toString() == objectId) {
-      m_tree->clearSelection();
-      (*it)->setSelected(true);
-      m_tree->scrollToItem(*it);
-      break;
-    }
-    ++it;
+  // PERF-2: Use O(1) lookup instead of O(n) iterator
+  QTreeWidgetItem *item = m_tree->findTreeItemForObject(objectId);
+  if (item) {
+    m_tree->clearSelection();
+    item->setSelected(true);
+    m_tree->scrollToItem(item);
   }
 }
 

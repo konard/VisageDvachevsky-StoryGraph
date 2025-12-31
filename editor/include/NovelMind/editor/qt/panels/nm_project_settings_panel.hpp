@@ -5,14 +5,20 @@
  * @brief Project Settings panel for configuring project-wide settings
  *
  * This panel provides access to:
- * - Workflow settings (Visual-First, Code-First, Hybrid)
+ * - Workflow settings (Visual-First, Code-First, Hybrid) with radio buttons
  * - Display settings (resolution, safe area, fullscreen)
  * - Text/dialogue settings (font theme, text speed, auto-advance)
  * - Localization settings (default locale, available locales)
  * - Export/build profiles
  * - Project metadata
+ *
+ * Signal Flow:
+ * - Outgoing: settingsChanged() - emitted when any setting is modified
+ * - Uses QSignalBlocker in loadFromProject() to prevent feedback loops with
+ *   NMPlayToolbarPanel when loading settings from project metadata
  */
 
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 
 #include <QWidget>
@@ -27,6 +33,8 @@ class QPushButton;
 class QTabWidget;
 class QSlider;
 class QLabel;
+class QRadioButton;
+class QButtonGroup;
 
 namespace NovelMind::editor::qt {
 
@@ -47,6 +55,12 @@ public:
 
 signals:
   void settingsChanged();
+  /// Emitted when workflow mode is changed and applied
+  void workflowModeChanged(PlaybackSourceMode mode);
+
+public slots:
+  /// Update the workflow mode selection from external source (e.g., PlayToolbar)
+  void setWorkflowMode(PlaybackSourceMode mode);
 
 private slots:
   void onSettingChanged();
@@ -66,11 +80,15 @@ private:
 
   QTabWidget *m_tabWidget = nullptr;
 
-  // Workflow settings (Scene Node development approach)
-  QComboBox *m_workflowCombo = nullptr; // Visual-First, Code-First, Hybrid
+  // Workflow settings (Scene Node development approach) - using radio buttons
+  QRadioButton *m_scriptModeRadio = nullptr;  // Code-First (Script mode)
+  QRadioButton *m_graphModeRadio = nullptr;   // Visual-First (Graph mode)
+  QRadioButton *m_mixedModeRadio = nullptr;   // Hybrid (Mixed mode)
+  QButtonGroup *m_workflowButtonGroup = nullptr;
   QCheckBox *m_allowMixedWorkflows =
       nullptr;                             // Allow per-scene workflow override
   QLabel *m_workflowDescription = nullptr; // Description of selected workflow
+  QLabel *m_workflowWarningLabel = nullptr; // Warning about mode switching
 
   // Display settings
   QComboBox *m_resolutionCombo = nullptr;

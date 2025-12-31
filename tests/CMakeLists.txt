@@ -34,6 +34,8 @@ add_executable(unit_tests
     unit/test_voice_manifest.cpp
     unit/test_script_runtime_transition.cpp
     unit/test_runtime_config.cpp
+    unit/test_division_safety.cpp
+    unit/test_audio_recorder.cpp
 )
 
 target_link_libraries(unit_tests
@@ -90,6 +92,30 @@ if(NOVELMIND_BUILD_EDITOR)
     )
 
     catch_discover_tests(integration_tests
+        PROPERTIES
+            TIMEOUT 60
+    )
+
+    # Abstraction interface unit tests (issue #150)
+    # These tests verify the mock implementations work correctly
+    add_executable(abstraction_interface_tests
+        unit/test_abstraction_interfaces.cpp
+    )
+
+    target_link_libraries(abstraction_interface_tests
+        PRIVATE
+            engine_core
+            novelmind_editor
+            Catch2::Catch2WithMain
+            novelmind_compiler_options
+    )
+
+    target_include_directories(abstraction_interface_tests
+        PRIVATE
+            ${CMAKE_SOURCE_DIR}/editor/include
+    )
+
+    catch_discover_tests(abstraction_interface_tests
         PROPERTIES
             TIMEOUT 60
     )

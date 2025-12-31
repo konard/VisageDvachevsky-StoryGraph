@@ -221,6 +221,10 @@ private:
   bool m_editMode = true;
   bool m_multiEditMode = false;
   QHash<QString, QString> m_clipboardProperties;
+
+  // Transform controls for aspect ratio lock
+  bool m_lockAspectRatio = false;
+  QPointF m_lastScale{1.0, 1.0};
 };
 
 } // namespace NovelMind::editor::qt

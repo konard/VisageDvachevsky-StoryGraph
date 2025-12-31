@@ -27,6 +27,10 @@ namespace NovelMind::editor {
 class NMSettingsRegistry;
 }
 
+namespace NovelMind::editor::mediators {
+class PanelMediatorManager;
+}
+
 namespace NovelMind::editor::qt {
 
 // Forward declarations
@@ -53,6 +57,7 @@ class NMBuildSettingsPanel;
 class NMVoiceStudioPanel;
 class NMAudioMixerPanel;
 class NMAnimationAdapter;
+class NMProjectSettingsPanel;
 
 /**
  * @brief Main application window for the NovelMind Editor
@@ -142,6 +147,9 @@ public:
   }
   [[nodiscard]] NMAudioMixerPanel *audioMixerPanel() const {
     return m_audioMixerPanel;
+  }
+  [[nodiscard]] NMProjectSettingsPanel *projectSettingsPanel() const {
+    return m_projectSettingsPanel;
   }
 
   // =========================================================================
@@ -312,6 +320,23 @@ private:
   void saveCustomLayout();
   void loadCustomLayout();
 
+  // Connection setup helpers (refactored from monolithic setupConnections)
+  void setupClipboardConnections();
+  void setupPanelToggleConnections();
+  void setupPanelVisibilitySync();
+  void setupLayoutConnections();
+  void setupPlayConnections();
+  void setupHelpConnections();
+  void setupPanelMediators();
+
+  // Panel toggle helpers
+  void toggleVoiceStudioPanel(bool checked);
+  void toggleAudioMixerPanel(bool checked);
+
+  // Dialog helpers
+  void showHotkeysDialog();
+  void onValidateProject();
+
   // =========================================================================
   // Menu Actions
   // =========================================================================
@@ -462,6 +487,7 @@ private:
   NMVoiceStudioPanel *m_voiceStudioPanel = nullptr;
   NMAudioMixerPanel *m_audioMixerPanel = nullptr;
   NMAnimationAdapter *m_animationAdapter = nullptr;
+  NMProjectSettingsPanel *m_projectSettingsPanel = nullptr;
 
   // =========================================================================
   // State
@@ -473,6 +499,9 @@ private:
 
   // Settings system
   std::unique_ptr<editor::NMSettingsRegistry> m_settingsRegistry;
+
+  // Panel mediator manager (replaces 1,400+ lines of direct connections)
+  std::unique_ptr<mediators::PanelMediatorManager> m_mediatorManager;
 };
 
 } // namespace NovelMind::editor::qt

@@ -1,6 +1,7 @@
 #include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 
+#include <QButtonGroup>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -11,6 +12,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSpinBox>
 #include <QTabWidget>
@@ -353,57 +356,110 @@ void NMProjectSettingsPanel::setupBuildProfilesTab(QWidget *parent) {
 
 void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
   auto *layout = new QVBoxLayout(parent);
-  layout->setContentsMargins(12, 12, 12, 12);
+  layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(12);
 
-  // Development Workflow group
-  auto *workflowGroup = new QGroupBox(tr("Development Workflow"), parent);
-  auto *workflowLayout = new QFormLayout(workflowGroup);
+  // Header
+  auto *header = new QLabel(tr("Workflow Mode"), parent);
+  header->setStyleSheet("font-size: 14pt; font-weight: bold;");
+  layout->addWidget(header);
 
-  m_workflowCombo = new QComboBox(workflowGroup);
-  m_workflowCombo->addItems(
-      {tr("Visual-First"), tr("Code-First"), tr("Hybrid")});
-  m_workflowCombo->setToolTip(
-      tr("Choose the primary development approach for scene creation"));
-  workflowLayout->addRow(tr("Default Workflow:"), m_workflowCombo);
+  auto *description = new QLabel(
+      tr("Choose the source of truth for your story content. "
+         "This affects how editing works across Script Editor and Story Graph."),
+      parent);
+  description->setWordWrap(true);
+  description->setStyleSheet("color: #a0a0a0;");
+  layout->addWidget(description);
 
+  layout->addSpacing(16);
+
+  // Mode Selection with Radio Buttons
+  auto *modeGroup = new QGroupBox(tr("Select Mode"), parent);
+  auto *modeLayout = new QVBoxLayout(modeGroup);
+
+  m_workflowButtonGroup = new QButtonGroup(this);
+
+  m_scriptModeRadio = new QRadioButton(tr("Script Mode (Code-First)"), modeGroup);
+  m_scriptModeRadio->setToolTip(
+      tr("NMScript files are the source of truth. Story Graph is read-only."));
+  m_graphModeRadio = new QRadioButton(tr("Graph Mode (Visual-First)"), modeGroup);
+  m_graphModeRadio->setToolTip(
+      tr("Story Graph visual data is the source of truth. Script files are for export/backup."));
+  m_mixedModeRadio = new QRadioButton(tr("Mixed Mode (Hybrid)"), modeGroup);
+  m_mixedModeRadio->setToolTip(
+      tr("Script provides base content, Graph can override. Graph wins on conflicts."));
+
+  // Add to button group for mutual exclusivity
+  m_workflowButtonGroup->addButton(m_scriptModeRadio, 1);  // Script = index 1
+  m_workflowButtonGroup->addButton(m_graphModeRadio, 0);   // Graph = index 0 (Visual-First)
+  m_workflowButtonGroup->addButton(m_mixedModeRadio, 2);   // Mixed = index 2
+
+  modeLayout->addWidget(m_graphModeRadio);   // Visual-First first (most common)
+  modeLayout->addWidget(m_scriptModeRadio);  // Code-First second
+  modeLayout->addWidget(m_mixedModeRadio);   // Hybrid third
+
+  layout->addWidget(modeGroup);
+
+  // Mode Description (dynamic based on selection)
+  m_workflowDescription = new QLabel(parent);
+  m_workflowDescription->setWordWrap(true);
+  m_workflowDescription->setStyleSheet(
+      "background-color: #2d2d2d; "
+      "padding: 12px; "
+      "border-radius: 4px; "
+      "color: #e0e0e0;");
+  layout->addWidget(m_workflowDescription);
+
+  // Warning Box
+  m_workflowWarningLabel = new QLabel(
+      tr("<b>⚠️ Warning:</b> Changing workflow mode may affect how your project loads. "
+         "Make sure to backup your project before switching modes."),
+      parent);
+  m_workflowWarningLabel->setWordWrap(true);
+  m_workflowWarningLabel->setStyleSheet(
+      "background-color: #3d2d1f; "
+      "border-left: 4px solid #ff9800; "
+      "padding: 12px; "
+      "color: #ffc107;");
+  m_workflowWarningLabel->setTextFormat(Qt::RichText);
+  layout->addWidget(m_workflowWarningLabel);
+
+  layout->addSpacing(8);
+
+  // Per-scene override option
   m_allowMixedWorkflows =
-      new QCheckBox(tr("Allow per-scene workflow override"), workflowGroup);
+      new QCheckBox(tr("Allow per-scene workflow override"), parent);
   m_allowMixedWorkflows->setChecked(true);
   m_allowMixedWorkflows->setToolTip(
       tr("When enabled, individual scenes can use a different workflow than "
          "the default"));
-  workflowLayout->addRow("", m_allowMixedWorkflows);
+  layout->addWidget(m_allowMixedWorkflows);
 
-  layout->addWidget(workflowGroup);
-
-  // Workflow description
-  m_workflowDescription = new QLabel(parent);
-  m_workflowDescription->setWordWrap(true);
-  m_workflowDescription->setStyleSheet(
-      "color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
-  updateWorkflowDescription();
-  layout->addWidget(m_workflowDescription);
-
-  // Connect workflow combo to update description
-  connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, [this]() {
+  // Connect radio buttons to update description
+  connect(m_workflowButtonGroup,
+          QOverload<QAbstractButton *>::of(&QButtonGroup::buttonClicked), this,
+          [this]([[maybe_unused]] QAbstractButton *button) {
             updateWorkflowDescription();
             onSettingChanged();
           });
+
+  // Set initial selection to Visual-First (Graph mode)
+  m_graphModeRadio->setChecked(true);
+  updateWorkflowDescription();
 
   // Workflow help section
   auto *helpGroup = new QGroupBox(tr("Workflow Comparison"), parent);
   auto *helpLayout = new QVBoxLayout(helpGroup);
 
   auto *helpLabel =
-      new QLabel(tr("<b>Visual-First:</b> Create scenes visually with embedded "
+      new QLabel(tr("<b>Graph Mode (Visual-First):</b> Create scenes visually with embedded "
                     "dialogue graphs. "
                     "Best for rapid prototyping and non-programmers.<br><br>"
-                    "<b>Code-First:</b> Define scenes in NMScript with "
+                    "<b>Script Mode (Code-First):</b> Define scenes in NMScript with "
                     "optional visual layout. "
                     "Best for version control and complex logic.<br><br>"
-                    "<b>Hybrid:</b> Mix both approaches per scene. "
+                    "<b>Mixed Mode (Hybrid):</b> Mix both approaches per scene. "
                     "Best for team collaboration and flexibility."),
                  helpGroup);
   helpLabel->setWordWrap(true);
@@ -415,35 +471,34 @@ void NMProjectSettingsPanel::setupWorkflowTab(QWidget *parent) {
 }
 
 void NMProjectSettingsPanel::updateWorkflowDescription() {
-  if (!m_workflowDescription || !m_workflowCombo)
+  if (!m_workflowDescription)
     return;
 
-  int idx = m_workflowCombo->currentIndex();
   QString desc;
-  switch (idx) {
-  case 0: // Visual-First
-    desc =
-        tr("Visual-First: Create scenes visually using the Scene View and "
-           "embedded dialogue graphs. Double-click a Scene Node to edit its "
-           "visual layout, or right-click and choose 'Edit Dialogue Flow' to "
-           "add dialogue sequences. No coding required.");
-    break;
-  case 1: // Code-First
+  if (m_scriptModeRadio && m_scriptModeRadio->isChecked()) {
     desc = tr(
-        "Code-First: Define dialogue and game logic in NMScript (.nms) files. "
-        "Create Scene Nodes in the Story Graph to define structure, then "
-        "right-click and choose 'Open Script' to write the scene logic. "
-        "Optionally configure visual layout in Scene View.");
-    break;
-  case 2: // Hybrid
-    desc =
-        tr("Hybrid: Use both Visual-First and Code-First approaches as needed. "
-           "Simple scenes can use embedded dialogue graphs, while complex "
-           "scenes with branching logic can use NMScript. Each scene can "
-           "choose its own workflow.");
-    break;
+        "<b>Script Mode (Recommended for programmers)</b><br><br>"
+        "✅ <b>Source of Truth:</b> .nms script files<br>"
+        "✅ <b>Story Graph:</b> Read-only visualization<br>"
+        "✅ <b>Best for:</b> Text-based editing, full control, version control friendly<br><br>"
+        "Use \"Sync to Graph\" to update visual representation after script changes.");
+  } else if (m_graphModeRadio && m_graphModeRadio->isChecked()) {
+    desc = tr(
+        "<b>Graph Mode (Recommended for visual designers)</b><br><br>"
+        "✅ <b>Source of Truth:</b> Story Graph visual editor<br>"
+        "✅ <b>Script Files:</b> Read-only export/backup<br>"
+        "✅ <b>Best for:</b> Visual editing, non-programmers, drag-and-drop workflow<br><br>"
+        "Use \"Sync to Script\" to export graph to .nms files for backup.");
+  } else if (m_mixedModeRadio && m_mixedModeRadio->isChecked()) {
+    desc = tr(
+        "<b>Mixed Mode (Advanced users only)</b><br><br>"
+        "⚠️ <b>Source of Truth:</b> Scripts provide base, Graph overrides<br>"
+        "⚠️ <b>Conflict Resolution:</b> Graph scenes override script scenes with same name<br>"
+        "⚠️ <b>Best for:</b> Teams with mixed skill levels, gradual migration<br><br>"
+        "<b>Important:</b> Avoid duplicate scene names between Script and Graph.");
   }
   m_workflowDescription->setText(desc);
+  m_workflowDescription->setTextFormat(Qt::RichText);
 }
 
 void NMProjectSettingsPanel::connectSignals() {
@@ -476,7 +531,7 @@ void NMProjectSettingsPanel::connectSignals() {
     }
   };
 
-  // Workflow (note: m_workflowCombo is connected in setupWorkflowTab with
+  // Workflow (note: radio buttons are connected in setupWorkflowTab with
   // description update)
   connectCheck(m_allowMixedWorkflows);
 
@@ -548,26 +603,41 @@ void NMProjectSettingsPanel::loadFromProject() {
 
   const auto &meta = pm.getMetadata();
 
+  // Load workflow mode from playbackSourceMode (issue #100, #125)
+  // Use radio buttons instead of combo box
+  {
+    QSignalBlocker blocker(m_workflowButtonGroup);
   // Load workflow mode from playbackSourceMode (issue #100)
+  // Use QSignalBlocker to prevent signal loops during programmatic updates
   if (m_workflowCombo) {
     int workflowIndex = 0; // Default to Visual-First (Graph)
     switch (meta.playbackSourceMode) {
     case PlaybackSourceMode::Script:
-      workflowIndex = 1; // Code-First
+      if (m_scriptModeRadio) {
+        m_scriptModeRadio->setChecked(true);
+      }
       break;
     case PlaybackSourceMode::Graph:
-      workflowIndex = 0; // Visual-First
+      if (m_graphModeRadio) {
+        m_graphModeRadio->setChecked(true);
+      }
       break;
     case PlaybackSourceMode::Mixed:
-      workflowIndex = 2; // Hybrid
+      if (m_mixedModeRadio) {
+        m_mixedModeRadio->setChecked(true);
+      }
       break;
     }
+    // Block signals to prevent feedback loop with PlayToolbar
+    QSignalBlocker blocker(m_workflowCombo);
     m_workflowCombo->setCurrentIndex(workflowIndex);
     updateWorkflowDescription();
   }
 
   // Load resolution
+  // Use signal blocker to prevent unintended signal emission during load
   if (m_resolutionCombo) {
+    QSignalBlocker blocker(m_resolutionCombo);
     QString resolution = QString::fromStdString(meta.targetResolution);
     int idx = m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
     if (idx >= 0) {
@@ -577,11 +647,13 @@ void NMProjectSettingsPanel::loadFromProject() {
 
   // Load fullscreen default
   if (m_fullscreenDefault) {
+    QSignalBlocker blocker(m_fullscreenDefault);
     m_fullscreenDefault->setChecked(meta.fullscreenDefault);
   }
 
   // Load default locale
   if (m_defaultLocaleCombo) {
+    QSignalBlocker blocker(m_defaultLocaleCombo);
     QString locale = QString::fromStdString(meta.defaultLocale);
     int idx = m_defaultLocaleCombo->findText(locale, Qt::MatchStartsWith);
     if (idx >= 0) {
@@ -598,24 +670,20 @@ void NMProjectSettingsPanel::saveToProject() {
 
   auto meta = pm.getMetadata();
 
-  // Save workflow mode to playbackSourceMode (issue #100)
-  if (m_workflowCombo) {
-    int idx = m_workflowCombo->currentIndex();
-    switch (idx) {
-    case 0: // Visual-First -> Graph
-      meta.playbackSourceMode = PlaybackSourceMode::Graph;
-      break;
-    case 1: // Code-First -> Script
-      meta.playbackSourceMode = PlaybackSourceMode::Script;
-      break;
-    case 2: // Hybrid -> Mixed
-      meta.playbackSourceMode = PlaybackSourceMode::Mixed;
-      break;
-    default:
-      meta.playbackSourceMode = PlaybackSourceMode::Script;
-      break;
-    }
+  // Save workflow mode to playbackSourceMode (issue #100, #125)
+  // Determine mode from radio buttons
+  PlaybackSourceMode newMode = PlaybackSourceMode::Script; // Default
+  if (m_graphModeRadio && m_graphModeRadio->isChecked()) {
+    newMode = PlaybackSourceMode::Graph;
+  } else if (m_scriptModeRadio && m_scriptModeRadio->isChecked()) {
+    newMode = PlaybackSourceMode::Script;
+  } else if (m_mixedModeRadio && m_mixedModeRadio->isChecked()) {
+    newMode = PlaybackSourceMode::Mixed;
   }
+
+  // Check if mode actually changed
+  const bool modeChanged = (meta.playbackSourceMode != newMode);
+  meta.playbackSourceMode = newMode;
 
   // Save resolution
   if (m_resolutionCombo) {
@@ -640,6 +708,41 @@ void NMProjectSettingsPanel::saveToProject() {
 
   pm.setMetadata(meta);
   pm.saveProject();
+
+  // Emit workflow mode changed signal if the mode was changed (issue #125)
+  // This allows other panels (like PlayToolbar) to update their UI
+  if (modeChanged) {
+    emit workflowModeChanged(newMode);
+  }
+}
+
+void NMProjectSettingsPanel::setWorkflowMode(PlaybackSourceMode mode) {
+  // Update the radio buttons to reflect the new mode
+  // This is called when PlayToolbar changes the mode
+  QSignalBlocker blocker(m_workflowButtonGroup);
+
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    if (m_scriptModeRadio) {
+      m_scriptModeRadio->setChecked(true);
+    }
+    break;
+  case PlaybackSourceMode::Graph:
+    if (m_graphModeRadio) {
+      m_graphModeRadio->setChecked(true);
+    }
+    break;
+  case PlaybackSourceMode::Mixed:
+    if (m_mixedModeRadio) {
+      m_mixedModeRadio->setChecked(true);
+    }
+    break;
+  }
+
+  updateWorkflowDescription();
+
+  // Note: We don't call onSettingChanged() here because this is an external
+  // update. The project is already saved by the PlayToolbar.
 }
 
 } // namespace NovelMind::editor::qt

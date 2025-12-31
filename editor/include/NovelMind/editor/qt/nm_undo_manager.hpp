@@ -583,6 +583,10 @@ private:
 
 /**
  * @brief Command for changing a translation value
+ *
+ * Supports command merging to combine consecutive edits to the same
+ * key/locale into a single undo operation (e.g., typing "Hello" character
+ * by character creates one command instead of five).
  */
 class ChangeTranslationCommand : public QUndoCommand {
 public:
@@ -593,6 +597,8 @@ public:
 
   void undo() override;
   void redo() override;
+  bool mergeWith(const QUndoCommand *other) override;
+  int id() const override { return 6; } // Unique ID for command merging
 
 private:
   QPointer<NMLocalizationPanel> m_panel;
