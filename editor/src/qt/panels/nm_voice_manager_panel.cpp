@@ -982,60 +982,109 @@ void NMVoiceManagerPanel::startDurationProbing() {
     return;
   }
 
-  // RACE-1 fix: Stop any in-progress probing before restarting
-  if (m_isProbing) {
-    // Cancel current probe by clearing the queue and resetting state
-    m_probeQueue.clear();
-    m_isProbing = false;
-    m_currentProbeFile.clear();
+  // RACE-1 fix: Atomic check-and-cancel for thread safety
+  bool wasProbing = m_isProbing.exchange(false);
+
+  if (wasProbing) {
+    // Cancel current probe
     if (m_probePlayer) {
       m_probePlayer->stop();
     }
+
+    // Clear queue under lock
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      m_probeQueue.clear();
+      m_currentProbeFile.clear();
+    }
   }
 
-  // Clear the probe queue and add all voice files for current locale
-  m_probeQueue.clear();
+  // Build queue under lock to prevent concurrent modification
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    m_probeQueue.clear();
 
-  for (const auto &line : m_manifest->getLines()) {
-    auto *localeFile = line.getFile(m_currentLocale.toStdString());
-    if (localeFile && !localeFile->filePath.empty()) {
-      QString filePath = QString::fromStdString(localeFile->filePath);
-      // Check if we have a valid cached duration
-      double cached = getCachedDuration(filePath);
-      if (cached <= 0) {
-        m_probeQueue.enqueue(filePath);
+    // Copy manifest lines to avoid iterator invalidation during iteration
+    auto lines = m_manifest->getLines();
+
+    for (const auto &line : lines) {
+      auto *localeFile = line.getFile(m_currentLocale.toStdString());
+      if (localeFile && !localeFile->filePath.empty()) {
+        QString filePath = QString::fromStdString(localeFile->filePath);
+        // Check if we have a valid cached duration
+        double cached = getCachedDuration(filePath);
+        if (cached <= 0) {
+          m_probeQueue.enqueue(filePath);
+        }
       }
     }
   }
 
-  // Start processing
-  if (!m_probeQueue.isEmpty() && !m_isProbing) {
-    processNextDurationProbe();
+  // Start probing with atomic guard to prevent double-start
+  bool queueNotEmpty = false;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    queueNotEmpty = !m_probeQueue.isEmpty();
+  }
+
+  if (queueNotEmpty) {
+    bool expected = false;
+    if (m_isProbing.compare_exchange_strong(expected, true)) {
+      // Successfully acquired probing lock
+      processNextDurationProbe();
+    }
+    // If compare_exchange fails, another thread started probing - that's fine
   }
 }
 
 void NMVoiceManagerPanel::processNextDurationProbe() {
-  if (m_probeQueue.isEmpty()) {
-    m_isProbing = false;
-    m_currentProbeFile.clear();
-    // Update the list with newly probed durations
-    updateDurationsInList();
+  // Check atomic flag first
+  if (!m_isProbing.load()) {
     return;
   }
 
-  m_isProbing = true;
-  m_currentProbeFile = m_probeQueue.dequeue();
+  QString nextFile;
+
+  // Dequeue under lock
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+
+    if (m_probeQueue.isEmpty()) {
+      m_isProbing.store(false);
+      m_currentProbeFile.clear();
+      // Update the list with newly probed durations (outside lock to avoid deadlock)
+      QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
+                                Qt::QueuedConnection);
+      return;
+    }
+
+    nextFile = m_probeQueue.dequeue();
+    m_currentProbeFile = nextFile;
+  }
 
   if (!m_probePlayer) {
-    m_isProbing = false;
+    m_isProbing.store(false);
     return;
   }
 
-  m_probePlayer->setSource(QUrl::fromLocalFile(m_currentProbeFile));
+  // Probe outside lock to avoid deadlock
+  m_probePlayer->setSource(QUrl::fromLocalFile(nextFile));
 }
 
 void NMVoiceManagerPanel::onProbeDurationFinished() {
-  if (!m_probePlayer || m_currentProbeFile.isEmpty() || !m_manifest) {
+  if (!m_probePlayer || !m_manifest) {
+    processNextDurationProbe();
+    return;
+  }
+
+  // Read current file under lock
+  QString filePath;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    filePath = m_currentProbeFile;
+  }
+
+  if (filePath.isEmpty()) {
     processNextDurationProbe();
     return;
   }
@@ -1043,10 +1092,10 @@ void NMVoiceManagerPanel::onProbeDurationFinished() {
   qint64 durationMs = m_probePlayer->duration();
   if (durationMs > 0) {
     double durationSec = static_cast<double>(durationMs) / 1000.0;
-    cacheDuration(m_currentProbeFile, durationSec);
+    cacheDuration(filePath, durationSec);
 
     // Update the duration in manifest for current locale
-    std::string currentFilePath = m_currentProbeFile.toStdString();
+    std::string currentFilePath = filePath.toStdString();
     for (auto &line : m_manifest->getLines()) {
       auto *localeFile = line.getFile(m_currentLocale.toStdString());
       if (localeFile && localeFile->filePath == currentFilePath) {

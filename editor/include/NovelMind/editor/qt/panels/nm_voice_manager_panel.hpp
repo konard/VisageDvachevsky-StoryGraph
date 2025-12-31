@@ -22,7 +22,9 @@
 #include <QToolBar>
 #include <QWidget>
 
+#include <atomic>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 // Forward declarations for Qt Multimedia
@@ -212,7 +214,8 @@ private:
   QPointer<QMediaPlayer> m_probePlayer;
   QQueue<QString> m_probeQueue;
   QString m_currentProbeFile;
-  bool m_isProbing = false;
+  std::atomic<bool> m_isProbing{false};    // Thread-safe flag for probing state
+  mutable std::mutex m_probeMutex;         // Mutex for queue and file access
   static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
 
   // Duration cache: path -> {duration, mtime}
