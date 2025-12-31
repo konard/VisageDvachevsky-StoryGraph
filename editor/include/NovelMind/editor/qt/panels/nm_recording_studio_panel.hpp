@@ -32,6 +32,7 @@ class QPushButton;
 class QLabel;
 class QProgressBar;
 class QListWidget;
+class QListWidgetItem;
 class QSlider;
 class QTextEdit;
 class QLineEdit;
@@ -149,6 +150,9 @@ private slots:
   void onPrevLineClicked();
   void onTakeSelected(int index);
   void onDeleteTakeClicked();
+  void onSetActiveTakeClicked();
+  void onTakeDoubleClicked(QListWidgetItem *item);
+  void onTakesContextMenu(const QPoint &pos);
   void onInputVolumeChanged(int value);
 
   // Recorder callbacks
@@ -169,6 +173,7 @@ private:
   void refreshDeviceList();
   void updateLineInfo();
   void updateTakeList();
+  void updateTakesHeader(int totalTakes, int activeTakeNum);
   void updateRecordingState();
   void generateOutputPath();
 
@@ -199,6 +204,7 @@ private:
   QLabel *m_notesLabel = nullptr;
 
   // Take management
+  QLabel *m_takesHeaderLabel = nullptr;
   QListWidget *m_takesList = nullptr;
   QPushButton *m_playTakeBtn = nullptr;
   QPushButton *m_deleteTakeBtn = nullptr;
