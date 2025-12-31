@@ -13,6 +13,8 @@
 #include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
 #include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 
+#include <QApplication>
+#include <QAudioOutput>
 #include <QComboBox>
 #include <QDateTime>
 #include <QDesktopServices>
@@ -37,6 +39,8 @@
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
+
+#include <algorithm>
 
 namespace NovelMind::editor::qt {
 
@@ -273,6 +277,7 @@ void NMRecordingStudioPanel::setupUI() {
 
   // Create sections
   setupDeviceSection();
+  setupFormatSection();
   setupLevelMeterSection();
   setupLineInfoSection();
   setupRecordingControls();
@@ -311,6 +316,78 @@ void NMRecordingStudioPanel::setupDeviceSection() {
   }
 }
 
+void NMRecordingStudioPanel::setupFormatSection() {
+  auto *group = new QGroupBox(tr("Recording Format"), m_contentWidget);
+  auto *layout = new QHBoxLayout(group);
+
+  // Sample rate selector
+  layout->addWidget(new QLabel(tr("Sample Rate:"), group));
+  m_sampleRateCombo = new QComboBox(group);
+  m_sampleRateCombo->addItem(tr("44.1 kHz (CD Quality)"), 44100);
+  m_sampleRateCombo->addItem(tr("48 kHz (Professional)"), 48000);
+  m_sampleRateCombo->addItem(tr("96 kHz (Hi-Res)"), 96000);
+  m_sampleRateCombo->setCurrentIndex(1);  // Default: 48 kHz
+  connect(m_sampleRateCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int) { onFormatChanged(); });
+  layout->addWidget(m_sampleRateCombo);
+
+  layout->addSpacing(12);
+
+  // Bit depth selector
+  layout->addWidget(new QLabel(tr("Bit Depth:"), group));
+  m_bitDepthCombo = new QComboBox(group);
+  m_bitDepthCombo->addItem(tr("16-bit (Standard)"), 16);
+  m_bitDepthCombo->addItem(tr("24-bit (Professional)"), 24);
+  m_bitDepthCombo->setCurrentIndex(0);  // Default: 16-bit
+  connect(m_bitDepthCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int) { onFormatChanged(); });
+  layout->addWidget(m_bitDepthCombo);
+
+  layout->addSpacing(12);
+
+  // Channels selector
+  layout->addWidget(new QLabel(tr("Channels:"), group));
+  m_channelsCombo = new QComboBox(group);
+  m_channelsCombo->addItem(tr("Mono"), 1);
+  m_channelsCombo->addItem(tr("Stereo"), 2);
+  m_channelsCombo->setCurrentIndex(0);  // Default: Mono (typical for voice)
+  connect(m_channelsCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, [this](int) { onFormatChanged(); });
+  layout->addWidget(m_channelsCombo);
+
+  layout->addStretch();
+
+  if (auto *mainLayout =
+          qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+    mainLayout->addWidget(group);
+  }
+}
+
+void NMRecordingStudioPanel::onFormatChanged() {
+  if (!m_recorder) {
+    return;
+  }
+
+  audio::RecordingFormat format = m_recorder->getRecordingFormat();
+
+  if (m_sampleRateCombo) {
+    format.sampleRate = static_cast<u32>(m_sampleRateCombo->currentData().toInt());
+  }
+  if (m_bitDepthCombo) {
+    format.bitsPerSample = static_cast<u8>(m_bitDepthCombo->currentData().toInt());
+  }
+  if (m_channelsCombo) {
+    format.channels = static_cast<u8>(m_channelsCombo->currentData().toInt());
+  }
+
+  m_recorder->setRecordingFormat(format);
+
+  NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Recording format: ") +
+                     std::to_string(format.sampleRate) + " Hz, " +
+                     std::to_string(format.bitsPerSample) + "-bit, " +
+                     std::to_string(format.channels) + " ch");
+}
+
 void NMRecordingStudioPanel::setupLevelMeterSection() {
   auto *group = new QGroupBox(tr("Level Meter"), m_contentWidget);
   auto *layout = new QVBoxLayout(group);
@@ -325,10 +402,15 @@ void NMRecordingStudioPanel::setupLevelMeterSection() {
   m_levelDbLabel = new QLabel(tr("Level: -60 dB"), group);
   infoLayout->addWidget(m_levelDbLabel);
 
+  // Level status label (Good level / Too quiet / Clipping)
+  m_levelStatusLabel = new QLabel(tr("Ready"), group);
+  m_levelStatusLabel->setMinimumWidth(150);
+  infoLayout->addWidget(m_levelStatusLabel);
+
   infoLayout->addStretch();
 
-  m_clippingWarning = new QLabel(tr("CLIPPING"), group);
-  m_clippingWarning->setStyleSheet("color: red; font-weight: bold;");
+  m_clippingWarning = new QLabel(tr("CLIPPING!"), group);
+  m_clippingWarning->setStyleSheet("color: #ff4444; font-weight: bold;");
   m_clippingWarning->setVisible(false);
   infoLayout->addWidget(m_clippingWarning);
 
@@ -518,16 +600,59 @@ void NMRecordingStudioPanel::refreshDeviceList() {
   QSignalBlocker blocker(m_inputDeviceCombo);
 
   m_inputDeviceCombo->clear();
-  m_inputDeviceCombo->addItem(tr("(Default Device)"), QString());
 
   auto devices = m_recorder->getInputDevices();
-  for (const auto &device : devices) {
-    QString name = QString::fromStdString(device.name);
-    if (device.isDefault) {
-      name += tr(" (Default)");
+
+  if (devices.empty()) {
+    // No devices found - show warning
+    m_inputDeviceCombo->addItem(tr("No microphone detected"));
+    m_inputDeviceCombo->setEnabled(false);
+    if (m_recordBtn) {
+      m_recordBtn->setEnabled(false);
     }
+
+    // Show warning in level status
+    if (m_levelStatusLabel) {
+      m_levelStatusLabel->setText(tr("No recording devices found. Please connect a microphone."));
+      m_levelStatusLabel->setStyleSheet("color: #ff6666;");
+    }
+    return;
+  }
+
+  // Add default device option first
+  m_inputDeviceCombo->addItem(tr("(System Default)"), QString());
+  m_inputDeviceCombo->setEnabled(true);
+  if (m_recordBtn) {
+    m_recordBtn->setEnabled(!m_currentLineId.empty());
+  }
+
+  // Add all detected devices
+  int defaultIndex = 0;
+  for (size_t i = 0; i < devices.size(); ++i) {
+    const auto &device = devices[i];
+    QString name = QString::fromStdString(device.name);
+
+    // Add sample rate and channel info if available
+    if (!device.supportedSampleRates.empty()) {
+      u32 maxRate = *std::max_element(device.supportedSampleRates.begin(),
+                                       device.supportedSampleRates.end());
+      name += QString(" (%1 Hz, %2 ch)")
+                  .arg(maxRate)
+                  .arg(device.maxInputChannels > 0 ? device.maxInputChannels : 2);
+    }
+
+    // Mark default device with ★
+    if (device.isDefault) {
+      name = QString::fromUtf8("\u2605 ") + name + tr(" (Default)");
+      // Remember index for default selection (offset by 1 for "(System Default)" entry)
+      defaultIndex = static_cast<int>(i) + 1;
+    }
+
     m_inputDeviceCombo->addItem(name, QString::fromStdString(device.id));
   }
+
+  // Select default device
+  m_inputDeviceCombo->setCurrentIndex(defaultIndex);
 }
 
 void NMRecordingStudioPanel::updateLineInfo() {
@@ -691,6 +816,17 @@ void NMRecordingStudioPanel::updateRecordingState() {
   m_inputDeviceCombo->setEnabled(!isRecording);
   m_prevLineBtn->setEnabled(!isRecording);
   m_nextLineBtn->setEnabled(!isRecording);
+
+  // Disable format controls during recording
+  if (m_sampleRateCombo) {
+    m_sampleRateCombo->setEnabled(!isRecording);
+  }
+  if (m_bitDepthCombo) {
+    m_bitDepthCombo->setEnabled(!isRecording);
+  }
+  if (m_channelsCombo) {
+    m_channelsCombo->setEnabled(!isRecording);
+  }
 }
 
 void NMRecordingStudioPanel::generateOutputPath() {
@@ -1064,6 +1200,46 @@ void NMRecordingStudioPanel::onLevelUpdate(const audio::LevelMeter &level) {
 
   if (m_clippingWarning) {
     m_clippingWarning->setVisible(level.clipping);
+  }
+
+  // Update level status message
+  if (m_levelStatusLabel) {
+    if (level.clipping) {
+      // Clipping - signal too loud
+      m_levelStatusLabel->setText(tr("Reduce input gain!"));
+      m_levelStatusLabel->setStyleSheet("color: #ff4444; font-weight: bold;");
+
+      // Play warning beep on first clip detection
+      if (!m_clippingWarningShown) {
+        QApplication::beep();
+        m_clippingWarningShown = true;
+      }
+    } else if (level.rmsLevelDb > -6.0f) {
+      // Very good signal level (close to optimal)
+      m_levelStatusLabel->setText(tr("\u2713 Good level"));
+      m_levelStatusLabel->setStyleSheet("color: #44ff44;");
+      m_clippingWarningShown = false;
+    } else if (level.rmsLevelDb > -12.0f) {
+      // Good signal level
+      m_levelStatusLabel->setText(tr("\u2713 Good level"));
+      m_levelStatusLabel->setStyleSheet("color: #66cc66;");
+      m_clippingWarningShown = false;
+    } else if (level.rmsLevelDb > -20.0f) {
+      // Acceptable level
+      m_levelStatusLabel->setText(tr("Level OK"));
+      m_levelStatusLabel->setStyleSheet("color: #ffaa44;");
+      m_clippingWarningShown = false;
+    } else if (level.rmsLevelDb > -40.0f) {
+      // Too quiet
+      m_levelStatusLabel->setText(tr("Too quiet - speak louder"));
+      m_levelStatusLabel->setStyleSheet("color: #aaaaaa;");
+      m_clippingWarningShown = false;
+    } else {
+      // Silence / very quiet
+      m_levelStatusLabel->setText(tr("Ready"));
+      m_levelStatusLabel->setStyleSheet("color: #888888;");
+      m_clippingWarningShown = false;
+    }
   }
 }
 
