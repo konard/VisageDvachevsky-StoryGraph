@@ -11,6 +11,11 @@
  * - Localization settings (default locale, available locales)
  * - Export/build profiles
  * - Project metadata
+ *
+ * Signal Flow:
+ * - Outgoing: settingsChanged() - emitted when any setting is modified
+ * - Uses QSignalBlocker in loadFromProject() to prevent feedback loops with
+ *   NMPlayToolbarPanel when loading settings from project metadata
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"

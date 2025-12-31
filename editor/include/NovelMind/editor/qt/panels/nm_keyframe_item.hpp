@@ -120,11 +120,23 @@ signals:
   void moved(int oldFrame, int newFrame, int trackIndex);
 
   /**
-   * @brief Emitted when keyframe is clicked
-   * @param additiveSelection True if Ctrl is held (additive selection)
+   * @brief Emitted when keyframe drag starts
    * @param id Keyframe ID
    */
-  void clicked(bool additiveSelection, const KeyframeId &id);
+  void dragStarted(const KeyframeId &id);
+
+  /**
+   * @brief Emitted when keyframe drag ends
+   */
+  void dragEnded();
+
+  /**
+   * @brief Emitted when keyframe is clicked
+   * @param additiveSelection True if Ctrl is held (additive selection)
+   * @param rangeSelection True if Shift is held (range selection)
+   * @param id Keyframe ID
+   */
+  void clicked(bool additiveSelection, bool rangeSelection, const KeyframeId &id);
 
   /**
    * @brief Emitted when keyframe is double-clicked

@@ -3,6 +3,7 @@
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
 #include <QStyleOptionGraphicsItem>
+#include <QToolTip>
 
 namespace NovelMind::editor::qt {
 
@@ -78,7 +79,11 @@ void NMKeyframeItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     m_dragStartFrame = m_id.frame;
 
     bool additiveSelection = event->modifiers() & Qt::ControlModifier;
-    emit clicked(additiveSelection, m_id);
+    bool rangeSelection = event->modifiers() & Qt::ShiftModifier;
+    emit clicked(additiveSelection, rangeSelection, m_id);
+
+    // Emit drag started signal
+    emit dragStarted(m_id);
 
     event->accept();
   } else {
@@ -106,6 +111,10 @@ void NMKeyframeItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
       emit moved(oldFrame, newFrame, m_id.trackIndex);
     }
 
+    // Show tooltip with current frame number
+    QToolTip::showText(event->screenPos(), QString("Frame: %1").arg(newFrame),
+                       nullptr);
+
     event->accept();
   } else {
     QGraphicsObject::mouseMoveEvent(event);
@@ -117,11 +126,11 @@ void NMKeyframeItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     if (m_dragging) {
       m_dragging = false;
 
-      // Final move signal with the final position
-      if (m_id.frame != m_dragStartFrame) {
-        // Already emitted during drag, but we could emit a final confirmation
-        // For now, the move signals during drag are sufficient
-      }
+      // Hide tooltip on release
+      QToolTip::hideText();
+
+      // Emit drag ended signal
+      emit dragEnded();
     }
     event->accept();
   } else {

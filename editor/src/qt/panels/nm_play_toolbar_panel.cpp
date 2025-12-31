@@ -29,17 +29,23 @@ void NMPlayToolbarPanel::onInitialize() {
           &NMPlayToolbarPanel::updateStatusLabel);
 
   // Initialize playback source mode from project settings
+  // Use QSignalBlocker to prevent signal loops during programmatic
+  // initialization
   auto &pm = ProjectManager::instance();
   if (pm.hasOpenProject()) {
     const auto &meta = pm.getMetadata();
     int modeIndex = static_cast<int>(meta.playbackSourceMode);
     if (m_sourceCombo && modeIndex >= 0 && modeIndex < m_sourceCombo->count()) {
+      // Block signals to prevent onSourceModeChanged from triggering during
+      // initialization
+      QSignalBlocker blocker(m_sourceCombo);
       m_sourceCombo->setCurrentIndex(modeIndex);
     }
   }
-  // Trigger initial indicator update
+  // Trigger initial indicator update (direct call, not via signal)
   if (m_sourceCombo) {
-    onSourceModeChanged(m_sourceCombo->currentIndex());
+    // Update indicator without emitting signal since we're just initializing
+    updateSourceIndicator(m_sourceCombo->currentIndex());
   }
 
   updateButtonStates();
@@ -371,7 +377,7 @@ void NMPlayToolbarPanel::showTransientStatus(const QString &text,
   m_statusTimer.start(2000);
 }
 
-void NMPlayToolbarPanel::onSourceModeChanged(int index) {
+void NMPlayToolbarPanel::updateSourceIndicator(int index) {
   if (!m_sourceCombo || !m_sourceIndicator) {
     return;
   }
@@ -408,6 +414,18 @@ void NMPlayToolbarPanel::onSourceModeChanged(int index) {
               "border-radius: 8px; padding: 2px 6px; font-weight: bold; "
               "font-size: 10px; }")
           .arg(indicatorColor, indicatorBg));
+}
+
+void NMPlayToolbarPanel::onSourceModeChanged(int index) {
+  // Update the visual indicator first
+  updateSourceIndicator(index);
+
+  if (!m_sourceCombo) {
+    return;
+  }
+
+  auto mode =
+      static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
 
   // Update project settings
   auto &pm = ProjectManager::instance();
@@ -421,16 +439,20 @@ void NMPlayToolbarPanel::onSourceModeChanged(int index) {
   emit playbackSourceModeChanged(mode);
 
   // Show transient status
+  QString indicatorColor;
   QString modeStr;
   switch (mode) {
   case PlaybackSourceMode::Script:
     modeStr = tr("Script (NMScript files)");
+    indicatorColor = "#2196f3";
     break;
   case PlaybackSourceMode::Graph:
     modeStr = tr("Graph (Story Graph visual data)");
+    indicatorColor = "#4caf50";
     break;
   case PlaybackSourceMode::Mixed:
     modeStr = tr("Mixed (Script + Graph overrides)");
+    indicatorColor = "#ff9800";
     break;
   }
   showTransientStatus(tr("Playback source: %1").arg(modeStr), indicatorColor);

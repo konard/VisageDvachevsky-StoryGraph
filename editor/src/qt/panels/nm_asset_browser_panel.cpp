@@ -5,6 +5,8 @@
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 #include "NovelMind/editor/qt/qt_event_bus.hpp"
 
+#include <QDebug>
+
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -239,6 +241,39 @@ NMAssetBrowserPanel::NMAssetBrowserPanel(QWidget *parent)
 
   setupContent();
   setupToolBar();
+
+  // Subscribe to asset import events to auto-refresh when assets are imported
+  // from other panels (e.g., Inspector Panel)
+  connect(&QtEventBus::instance(), &QtEventBus::assetImported, this,
+          [this](const QString &assetPath, const QString &targetDir) {
+            Q_UNUSED(assetPath);
+            // Refresh the view if the import target is within our current view
+            if (!targetDir.isEmpty() && !m_rootPath.isEmpty()) {
+              if (targetDir.startsWith(m_rootPath)) {
+                qDebug() << "Asset Browser: Auto-refreshing after import to"
+                         << targetDir;
+                refresh();
+              }
+            } else {
+              // Always refresh if no target dir specified
+              refresh();
+            }
+          });
+
+  // Subscribe to asset deleted events
+  connect(&QtEventBus::instance(), &QtEventBus::assetDeleted, this,
+          [this](const QString &assetPath) {
+            Q_UNUSED(assetPath);
+            refresh();
+          });
+
+  // Subscribe to asset renamed events
+  connect(&QtEventBus::instance(), &QtEventBus::assetRenamed, this,
+          [this](const QString &oldPath, const QString &newPath) {
+            Q_UNUSED(oldPath);
+            Q_UNUSED(newPath);
+            refresh();
+          });
 }
 
 NMAssetBrowserPanel::~NMAssetBrowserPanel() {
@@ -856,6 +891,9 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
 
     importedCount++;
     targetDirs.insert(target.absolutePath());
+
+    // Publish asset imported event so other Asset Browser panels can refresh
+    QtEventBus::instance().publishAssetImported(destPath, targetDir);
   }
 
   if (importedCount > 0) {

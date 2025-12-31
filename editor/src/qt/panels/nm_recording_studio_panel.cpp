@@ -1,16 +1,23 @@
 /**
  * @file nm_recording_studio_panel.cpp
  * @brief Recording Studio panel implementation
+ *
+ * Uses IAudioPlayer interface for take playback (issue #150)
  */
 
 #include "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp"
 #include "NovelMind/audio/audio_recorder.hpp"
 #include "NovelMind/audio/voice_manifest.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 
-#include <QAudioOutput>
 #include <QComboBox>
+#include <QDateTime>
+#include <QDesktopServices>
 #include <QFile>
+#include <QFileInfo>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -18,14 +25,17 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMediaPlayer>
+#include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSplitter>
 #include <QTextEdit>
 #include <QTimer>
+#include <QUrl>
 #include <QVBoxLayout>
 
 namespace NovelMind::editor::qt {
@@ -119,9 +129,25 @@ void VUMeterWidget::paintEvent(QPaintEvent *event) {
 // NMRecordingStudioPanel Implementation
 // ============================================================================
 
-NMRecordingStudioPanel::NMRecordingStudioPanel(QWidget *parent)
+NMRecordingStudioPanel::NMRecordingStudioPanel(QWidget *parent,
+                                               IAudioPlayer *audioPlayer)
     : NMDockPanel(tr("Recording Studio"), parent) {
   setPanelId("recording_studio");
+
+  // Use injected audio player or create one
+  if (audioPlayer) {
+    m_audioPlayer = audioPlayer;
+  } else {
+    // Try ServiceLocator first, otherwise create QtAudioPlayer
+    auto *locatorPlayer = ServiceLocator::getAudioPlayer();
+    if (locatorPlayer) {
+      m_audioPlayer = locatorPlayer;
+    } else {
+      // Create our own QtAudioPlayer
+      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
+      m_audioPlayer = m_ownedAudioPlayer.get();
+    }
+  }
 }
 
 NMRecordingStudioPanel::~NMRecordingStudioPanel() {
@@ -173,19 +199,17 @@ void NMRecordingStudioPanel::onInitialize() {
         Qt::QueuedConnection);
   });
 
-  // Initialize media player for take playback
-  m_audioOutput = new QAudioOutput(this);
-  m_audioOutput->setVolume(1.0);
-  m_mediaPlayer = new QMediaPlayer(this);
-  m_mediaPlayer->setAudioOutput(m_audioOutput);
-
-  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
-          [this](QMediaPlayer::PlaybackState state) {
-            m_isPlayingTake = (state == QMediaPlayer::PlayingState);
-            if (m_playTakeBtn) {
-              m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
-            }
-          });
+  // Set up audio player callbacks (issue #150 - using IAudioPlayer interface)
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(1.0f);
+    m_audioPlayer->setOnPlaybackStateChanged(
+        [this](AudioPlaybackState state) {
+          m_isPlayingTake = (state == AudioPlaybackState::Playing);
+          if (m_playTakeBtn) {
+            m_playTakeBtn->setText(m_isPlayingTake ? tr("Stop") : tr("Play"));
+          }
+        });
+  }
 
   // Refresh device list
   refreshDeviceList();
@@ -401,14 +425,29 @@ void NMRecordingStudioPanel::setupRecordingControls() {
 
 void NMRecordingStudioPanel::setupTakeManagement() {
   auto *group = new QGroupBox(tr("Takes"), m_contentWidget);
-  auto *layout = new QHBoxLayout(group);
+  auto *mainGroupLayout = new QVBoxLayout(group);
+
+  // Takes header with count
+  m_takesHeaderLabel = new QLabel(tr("Recorded Takes (0 total)"), group);
+  m_takesHeaderLabel->setStyleSheet("font-weight: bold;");
+  mainGroupLayout->addWidget(m_takesHeaderLabel);
+
+  auto *contentLayout = new QHBoxLayout();
 
   // Takes list
   m_takesList = new QListWidget(group);
-  m_takesList->setMaximumHeight(100);
+  m_takesList->setMaximumHeight(150);
+  m_takesList->setMinimumHeight(100);
+  m_takesList->setSelectionMode(QAbstractItemView::SingleSelection);
+  m_takesList->setContextMenuPolicy(Qt::CustomContextMenu);
+
   connect(m_takesList, &QListWidget::currentRowChanged, this,
           &NMRecordingStudioPanel::onTakeSelected);
-  layout->addWidget(m_takesList, 1);
+  connect(m_takesList, &QListWidget::itemDoubleClicked, this,
+          &NMRecordingStudioPanel::onTakeDoubleClicked);
+  connect(m_takesList, &QListWidget::customContextMenuRequested, this,
+          &NMRecordingStudioPanel::onTakesContextMenu);
+  contentLayout->addWidget(m_takesList, 1);
 
   // Take controls
   auto *controlsLayout = new QVBoxLayout();
@@ -421,6 +460,8 @@ void NMRecordingStudioPanel::setupTakeManagement() {
 
   m_setActiveBtn = new QPushButton(tr("Set Active"), group);
   m_setActiveBtn->setEnabled(false);
+  connect(m_setActiveBtn, &QPushButton::clicked, this,
+          &NMRecordingStudioPanel::onSetActiveTakeClicked);
   controlsLayout->addWidget(m_setActiveBtn);
 
   m_deleteTakeBtn = new QPushButton(tr("Delete"), group);
@@ -431,7 +472,8 @@ void NMRecordingStudioPanel::setupTakeManagement() {
 
   controlsLayout->addStretch();
 
-  layout->addLayout(controlsLayout);
+  contentLayout->addLayout(controlsLayout);
+  mainGroupLayout->addLayout(contentLayout);
 
   if (auto *mainLayout =
           qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
@@ -470,6 +512,10 @@ void NMRecordingStudioPanel::refreshDeviceList() {
   if (!m_recorder || !m_inputDeviceCombo) {
     return;
   }
+
+  // Block signals to prevent onInputDeviceChanged from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_inputDeviceCombo);
 
   m_inputDeviceCombo->clear();
   m_inputDeviceCombo->addItem(tr("(Default Device)"), QString());
@@ -516,24 +562,122 @@ void NMRecordingStudioPanel::updateTakeList() {
     return;
   }
 
+  // Block signals to prevent onTakeSelected from triggering during
+  // programmatic updates, which could cause feedback loops
+  QSignalBlocker blocker(m_takesList);
+
   m_takesList->clear();
 
   if (!m_manifest || m_currentLineId.empty()) {
+    updateTakesHeader(0, 0);
     return;
   }
 
   auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
-  for (const auto &take : takes) {
-    QString label = tr("Take %1 (%2s)%3")
-                        .arg(take.takeNumber)
-                        .arg(take.duration, 0, 'f', 1)
-                        .arg(take.isActive ? tr(" [Active]") : "");
-    auto *item = new QListWidgetItem(label, m_takesList);
-    item->setData(Qt::UserRole, take.takeNumber);
+
+  if (takes.empty()) {
+    auto *emptyItem = new QListWidgetItem(tr("No takes recorded yet"));
+    emptyItem->setFlags(Qt::NoItemFlags); // Not selectable
+    emptyItem->setForeground(QColor("#808080"));
+    m_takesList->addItem(emptyItem);
+    updateTakesHeader(0, 0);
+    return;
+  }
+
+  int activeTakeNum = 0;
+  for (size_t i = 0; i < takes.size(); ++i) {
+    const auto &take = takes[i];
+
+    // Build display text with star indicator for active take
+    QString displayText;
     if (take.isActive) {
-      item->setForeground(QColor(60, 180, 60));
+      displayText = QString::fromUtf8("\u2605 Take %1").arg(take.takeNumber);
+      activeTakeNum = static_cast<int>(take.takeNumber);
+    } else {
+      displayText = QString("   Take %1").arg(take.takeNumber);
+    }
+
+    // Add duration
+    if (take.duration > 0.0f) {
+      displayText += QString(" - %1s").arg(take.duration, 0, 'f', 2);
+    }
+
+    // Add timestamp
+    if (take.recordedTimestamp > 0) {
+      QDateTime timestamp = QDateTime::fromSecsSinceEpoch(
+          static_cast<qint64>(take.recordedTimestamp));
+      displayText += QString(" - %1").arg(timestamp.toString("MMM dd, hh:mm"));
+    }
+
+    // Add file size
+    QString filePath = QString::fromStdString(take.filePath);
+    if (!filePath.isEmpty()) {
+      QString fullPath =
+          QString::fromStdString(m_manifest->getBasePath()) + "/" + filePath;
+      QFileInfo fileInfo(fullPath);
+      if (fileInfo.exists()) {
+        qint64 sizeKB = fileInfo.size() / 1024;
+        displayText += QString(" - %1 KB").arg(sizeKB);
+      }
+    }
+
+    auto *item = new QListWidgetItem(displayText, m_takesList);
+    item->setData(Qt::UserRole, static_cast<int>(i)); // Store index
+    item->setData(Qt::UserRole + 1, take.takeNumber); // Store take number
+
+    if (take.isActive) {
+      item->setForeground(QColor("#ffd700")); // Gold for active take
+    }
+
+    // Build tooltip with full details
+    QString tooltip =
+        QString("Take %1\n"
+                "File: %2\n"
+                "Duration: %3 seconds\n"
+                "Recorded: %4\n"
+                "Active: %5")
+            .arg(take.takeNumber)
+            .arg(QString::fromStdString(take.filePath))
+            .arg(take.duration, 0, 'f', 3)
+            .arg(take.recordedTimestamp > 0
+                     ? QDateTime::fromSecsSinceEpoch(
+                           static_cast<qint64>(take.recordedTimestamp))
+                           .toString()
+                     : "-")
+            .arg(take.isActive ? "Yes" : "No");
+    item->setToolTip(tooltip);
+  }
+
+  updateTakesHeader(static_cast<int>(takes.size()), activeTakeNum);
+
+  // Select active take by default
+  for (int i = 0; i < m_takesList->count(); ++i) {
+    auto *item = m_takesList->item(i);
+    if (item && takes[static_cast<size_t>(i)].isActive) {
+      m_takesList->setCurrentRow(i);
+      break;
     }
   }
+}
+
+void NMRecordingStudioPanel::updateTakesHeader(int totalTakes,
+                                               int activeTakeNum) {
+  if (!m_takesHeaderLabel) {
+    return;
+  }
+
+  QString headerText;
+  if (totalTakes == 0) {
+    headerText = tr("Recorded Takes (0 total)");
+  } else if (activeTakeNum > 0) {
+    headerText = tr("Recorded Takes (%1 total, active: #%2)")
+                     .arg(totalTakes)
+                     .arg(activeTakeNum);
+  } else {
+    headerText = tr("Recorded Takes (%1 total)").arg(totalTakes);
+  }
+
+  m_takesHeaderLabel->setText(headerText);
 }
 
 void NMRecordingStudioPanel::updateRecordingState() {
@@ -622,13 +766,13 @@ void NMRecordingStudioPanel::onCancelClicked() {
 }
 
 void NMRecordingStudioPanel::onPlayClicked() {
-  if (!m_mediaPlayer || !m_manifest || m_currentLineId.empty()) {
+  if (!m_audioPlayer || !m_manifest || m_currentLineId.empty()) {
     return;
   }
 
   // If already playing, stop
   if (m_isPlayingTake) {
-    m_mediaPlayer->stop();
+    m_audioPlayer->stop();
     return;
   }
 
@@ -657,16 +801,16 @@ void NMRecordingStudioPanel::onPlayClicked() {
     return;
   }
 
-  // Play the file
-  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
-  m_mediaPlayer->play();
+  // Play the file using IAudioPlayer interface (issue #150)
+  m_audioPlayer->load(take.filePath);
+  m_audioPlayer->play();
   NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Playing take: ") +
                      take.filePath);
 }
 
 void NMRecordingStudioPanel::onPlayStopClicked() {
-  if (m_mediaPlayer && m_isPlayingTake) {
-    m_mediaPlayer->stop();
+  if (m_audioPlayer && m_isPlayingTake) {
+    m_audioPlayer->stop();
   }
 }
 
@@ -676,9 +820,28 @@ void NMRecordingStudioPanel::onPrevLineClicked() { emit requestPrevLine(); }
 
 void NMRecordingStudioPanel::onTakeSelected(int index) {
   bool hasSelection = index >= 0;
+
   m_playTakeBtn->setEnabled(hasSelection);
-  m_setActiveBtn->setEnabled(hasSelection);
   m_deleteTakeBtn->setEnabled(hasSelection);
+
+  if (!hasSelection || !m_manifest || m_currentLineId.empty()) {
+    m_setActiveBtn->setEnabled(false);
+    m_setActiveBtn->setText(tr("Set Active"));
+    return;
+  }
+
+  // Get takes to check if selected take is already active
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (index < static_cast<int>(takes.size())) {
+    bool isActive = takes[static_cast<size_t>(index)].isActive;
+    if (isActive) {
+      m_setActiveBtn->setText(tr("Active \u2605"));
+      m_setActiveBtn->setEnabled(false);
+    } else {
+      m_setActiveBtn->setText(tr("Set Active"));
+      m_setActiveBtn->setEnabled(true);
+    }
+  }
 }
 
 void NMRecordingStudioPanel::onDeleteTakeClicked() {
@@ -716,8 +879,8 @@ void NMRecordingStudioPanel::onDeleteTakeClicked() {
   }
 
   // Stop playback if this take is playing
-  if (m_mediaPlayer && m_isPlayingTake) {
-    m_mediaPlayer->stop();
+  if (m_audioPlayer && m_isPlayingTake) {
+    m_audioPlayer->stop();
   }
 
   // Delete the file
@@ -744,6 +907,141 @@ void NMRecordingStudioPanel::onDeleteTakeClicked() {
   NOVELMIND_LOG_INFO(std::string("[RecordingStudio] Deleted take #") +
                      std::to_string(take.takeNumber) + " for line " +
                      m_currentLineId);
+}
+
+void NMRecordingStudioPanel::onSetActiveTakeClicked() {
+  if (!m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  int selectedIndex = m_takesList ? m_takesList->currentRow() : -1;
+  if (selectedIndex < 0) {
+    return;
+  }
+
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (selectedIndex >= static_cast<int>(takes.size())) {
+    return;
+  }
+
+  // Don't set active if already active
+  if (takes[static_cast<size_t>(selectedIndex)].isActive) {
+    return;
+  }
+
+  // Set the active take via manifest
+  auto result = m_manifest->setActiveTake(m_currentLineId, m_currentLocale,
+                                          static_cast<u32>(selectedIndex));
+  if (result.isError()) {
+    NOVELMIND_LOG_WARN("[RecordingStudio] Failed to set active take: {}",
+                       result.error());
+    return;
+  }
+
+  // Refresh UI
+  updateTakeList();
+
+  // Emit signal for voice manager
+  emit activeTakeChanged(QString::fromStdString(m_currentLineId),
+                         selectedIndex);
+
+  NOVELMIND_LOG_INFO("[RecordingStudio] Set take {} as active for line {}",
+                     takes[static_cast<size_t>(selectedIndex)].takeNumber,
+                     m_currentLineId);
+}
+
+void NMRecordingStudioPanel::onTakeDoubleClicked(QListWidgetItem *item) {
+  if (!item) {
+    return;
+  }
+
+  // Double-click sets take as active (convenience shortcut)
+  int takeIndex = item->data(Qt::UserRole).toInt();
+
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (takeIndex >= static_cast<int>(takes.size())) {
+    return;
+  }
+
+  // Only set if not already active
+  if (!takes[static_cast<size_t>(takeIndex)].isActive) {
+    m_takesList->setCurrentRow(takeIndex);
+    onSetActiveTakeClicked();
+  }
+}
+
+void NMRecordingStudioPanel::onTakesContextMenu(const QPoint &pos) {
+  QListWidgetItem *item = m_takesList->itemAt(pos);
+  if (!item) {
+    return;
+  }
+
+  if (!m_manifest || m_currentLineId.empty()) {
+    return;
+  }
+
+  int takeIndex = item->data(Qt::UserRole).toInt();
+  auto takes = m_manifest->getTakes(m_currentLineId, m_currentLocale);
+  if (takeIndex >= static_cast<int>(takes.size())) {
+    return;
+  }
+
+  const auto &take = takes[static_cast<size_t>(takeIndex)];
+  bool isActive = take.isActive;
+
+  // Build context menu
+  QMenu menu(this);
+
+  // Play action
+  QAction *playAction = menu.addAction(tr("Play Take"));
+  connect(playAction, &QAction::triggered, this,
+          &NMRecordingStudioPanel::onPlayClicked);
+
+  menu.addSeparator();
+
+  // Set active action
+  if (!isActive) {
+    QAction *setActiveAction = menu.addAction(tr("Set as Active"));
+    connect(setActiveAction, &QAction::triggered, this,
+            &NMRecordingStudioPanel::onSetActiveTakeClicked);
+  } else {
+    QAction *activeAction = menu.addAction(tr("\u2605 Active Take"));
+    activeAction->setEnabled(false);
+  }
+
+  menu.addSeparator();
+
+  // Show in file manager action
+  QAction *showFileAction = menu.addAction(tr("Show in File Manager"));
+  connect(showFileAction, &QAction::triggered, this, [this, take]() {
+    QString filePath = QString::fromStdString(take.filePath);
+    if (!filePath.isEmpty()) {
+      QString fullPath =
+          QString::fromStdString(m_manifest->getBasePath()) + "/" + filePath;
+      QFileInfo fileInfo(fullPath);
+      if (fileInfo.exists()) {
+        QDesktopServices::openUrl(QUrl::fromLocalFile(fileInfo.absolutePath()));
+      } else {
+        QMessageBox::warning(this, tr("File Not Found"),
+                             tr("The file does not exist:\n%1").arg(fullPath));
+      }
+    }
+  });
+
+  menu.addSeparator();
+
+  // Delete action
+  QAction *deleteAction = menu.addAction(tr("Delete Take"));
+  connect(deleteAction, &QAction::triggered, this,
+          &NMRecordingStudioPanel::onDeleteTakeClicked);
+
+  // Disable delete if only one take
+  if (takes.size() == 1) {
+    deleteAction->setEnabled(false);
+    deleteAction->setToolTip(tr("Cannot delete the only take"));
+  }
+
+  menu.exec(m_takesList->mapToGlobal(pos));
 }
 
 void NMRecordingStudioPanel::onInputVolumeChanged(int value) {
