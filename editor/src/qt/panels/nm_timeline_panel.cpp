@@ -4,19 +4,24 @@
 #include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
 #include "NovelMind/editor/qt/performance_metrics.hpp"
 
+#include <QAction>
 #include <QBrush>
+#include <QComboBox>
 #include <QMutexLocker>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QElapsedTimer>
 #include <QGraphicsRectItem>
 #include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsTextItem>
 #include <QGraphicsView>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLabel>
 #include <QListWidget>
+#include <QMouseEvent>
 #include <QMutexLocker>
 #include <QPen>
 #include <QPushButton>
@@ -487,6 +492,29 @@ void NMTimelinePanel::setupToolbar() {
   connect(m_btnZoomFit, &QPushButton::clicked, this,
           &NMTimelinePanel::zoomToFit);
 
+  // Snap to grid action
+  m_snapToGridAction = new QAction("Snap to Grid", m_toolbar);
+  m_snapToGridAction->setCheckable(true);
+  m_snapToGridAction->setChecked(m_snapToGrid);
+  m_snapToGridAction->setShortcut(QKeySequence("Ctrl+G"));
+  m_snapToGridAction->setToolTip("Snap to Grid (Ctrl+G)");
+  connect(m_snapToGridAction, &QAction::toggled, this,
+          &NMTimelinePanel::setSnapToGrid);
+
+  // Grid interval combo
+  m_gridIntervalCombo = new QComboBox(m_toolbar);
+  m_gridIntervalCombo->addItem("1 frame", 1);
+  m_gridIntervalCombo->addItem("5 frames", 5);
+  m_gridIntervalCombo->addItem("10 frames", 10);
+  m_gridIntervalCombo->addItem("30 frames", 30);
+  m_gridIntervalCombo->setCurrentIndex(1); // Default to 5 frames
+  m_gridIntervalCombo->setToolTip("Grid Interval");
+  connect(m_gridIntervalCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          [this](int /*index*/) {
+            int interval = m_gridIntervalCombo->currentData().toInt();
+            setGridSize(interval);
+          });
+
   // Add widgets to toolbar
   m_toolbar->addWidget(m_btnPlay);
   m_toolbar->addWidget(m_btnStop);
@@ -501,6 +529,10 @@ void NMTimelinePanel::setupToolbar() {
   m_toolbar->addWidget(m_btnZoomIn);
   m_toolbar->addWidget(m_btnZoomOut);
   m_toolbar->addWidget(m_btnZoomFit);
+  m_toolbar->addSeparator();
+  m_toolbar->addAction(m_snapToGridAction);
+  m_toolbar->addWidget(new QLabel("Grid:", m_toolbar));
+  m_toolbar->addWidget(m_gridIntervalCombo);
 }
 
 void NMTimelinePanel::setupPlaybackControls() {
@@ -512,11 +544,12 @@ void NMTimelinePanel::setupTrackView() {
   m_timelineView = new QGraphicsView(m_timelineScene, contentWidget());
   m_timelineView->setObjectName("TimelineView");
   m_timelineView->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  m_timelineView->setDragMode(QGraphicsView::ScrollHandDrag);
+  m_timelineView->setDragMode(QGraphicsView::NoDrag);
   m_timelineView->setFocusPolicy(Qt::StrongFocus);
 
-  // Install event filter for keyboard handling
+  // Install event filter for keyboard and mouse handling
   m_timelineView->installEventFilter(this);
+  m_timelineView->viewport()->installEventFilter(this);
 
   // Create playhead
   m_playheadItem =
@@ -1108,6 +1141,10 @@ void NMTimelinePanel::renderTracks() {
               &NMTimelinePanel::onKeyframeMoved);
       connect(kfItem, &NMKeyframeItem::doubleClicked, this,
               &NMTimelinePanel::onKeyframeDoubleClicked);
+      connect(kfItem, &NMKeyframeItem::dragStarted, this,
+              &NMTimelinePanel::onKeyframeDragStarted);
+      connect(kfItem, &NMKeyframeItem::dragEnded, this,
+              &NMTimelinePanel::onKeyframeDragEnded);
 
       // Add to scene
       m_timelineScene->addItem(kfItem);
@@ -1199,8 +1236,17 @@ void NMTimelinePanel::updateSelectionVisuals() {
 // =============================================================================
 
 void NMTimelinePanel::onKeyframeClicked(bool additiveSelection,
+                                        bool rangeSelection,
                                         const KeyframeId &id) {
-  selectKeyframe(id, additiveSelection);
+  if (rangeSelection && m_lastClickedKeyframe.trackIndex >= 0) {
+    // Shift+Click: select range from last clicked to current
+    selectKeyframeRange(m_lastClickedKeyframe, id);
+  } else {
+    selectKeyframe(id, additiveSelection);
+  }
+
+  // Remember the last clicked keyframe for range selection
+  m_lastClickedKeyframe = id;
 }
 
 void NMTimelinePanel::onKeyframeMoved(int oldFrame, int newFrame,
@@ -1220,29 +1266,80 @@ void NMTimelinePanel::onKeyframeMoved(int oldFrame, int newFrame,
   if (!targetTrack)
     return;
 
-  // Create and push move command
-  auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame,
-                                              newFrame);
-  NMUndoManager::instance().pushCommand(cmd);
+  // Calculate the frame delta
+  int frameDelta = newFrame - oldFrame;
 
-  // Update selection to new position
-  KeyframeId oldId;
-  oldId.trackIndex = trackIndex;
-  oldId.frame = oldFrame;
+  // If multi-select dragging, move all selected keyframes by the same delta
+  if (m_isDraggingSelection && m_selectedKeyframes.size() > 1) {
+    // Create macro for multiple moves
+    NMUndoManager::instance().beginMacro("Move Selected Keyframes");
 
-  KeyframeId newId;
-  newId.trackIndex = trackIndex;
-  newId.frame = newFrame;
+    // Get track names list
+    QStringList trackNames = m_tracks.keys();
 
-  if (m_selectedKeyframes.contains(oldId)) {
-    m_selectedKeyframes.remove(oldId);
-    m_selectedKeyframes.insert(newId);
+    // Move all selected keyframes
+    QSet<KeyframeId> newSelection;
+    for (const KeyframeId &selId : m_selectedKeyframes) {
+      if (selId.trackIndex < 0 || selId.trackIndex >= trackNames.size()) {
+        continue;
+      }
+
+      QString selTrackName = trackNames.at(selId.trackIndex);
+      TimelineTrack *selTrack = getTrack(selTrackName);
+      if (!selTrack || selTrack->locked) {
+        continue;
+      }
+
+      int startFrame = m_dragStartFrames.value(selId, selId.frame);
+      int targetFrame = startFrame + frameDelta;
+      if (targetFrame < 0) {
+        targetFrame = 0;
+      }
+
+      // Only move if the keyframe still exists at the start position
+      if (selTrack->getKeyframe(startFrame)) {
+        auto *cmd = new TimelineKeyframeMoveCommand(this, selTrackName,
+                                                    startFrame, targetFrame);
+        NMUndoManager::instance().pushCommand(cmd);
+
+        emit keyframeMoved(selTrackName, startFrame, targetFrame);
+      }
+
+      // Update selection to new position
+      KeyframeId newSelId;
+      newSelId.trackIndex = selId.trackIndex;
+      newSelId.frame = targetFrame;
+      newSelection.insert(newSelId);
+    }
+
+    NMUndoManager::instance().endMacro();
+
+    m_selectedKeyframes = newSelection;
+  } else {
+    // Single keyframe move
+    auto *cmd = new TimelineKeyframeMoveCommand(this, targetTrack->name, oldFrame,
+                                                newFrame);
+    NMUndoManager::instance().pushCommand(cmd);
+
+    // Update selection to new position
+    KeyframeId oldId;
+    oldId.trackIndex = trackIndex;
+    oldId.frame = oldFrame;
+
+    KeyframeId newId;
+    newId.trackIndex = trackIndex;
+    newId.frame = newFrame;
+
+    if (m_selectedKeyframes.contains(oldId)) {
+      m_selectedKeyframes.remove(oldId);
+      m_selectedKeyframes.insert(newId);
+    }
+
+    emit keyframeMoved(targetTrack->name, oldFrame, newFrame);
   }
 
   // Re-render to update positions
   renderTracks();
-
-  emit keyframeMoved(targetTrack->name, oldFrame, newFrame);
 }
 
 void NMTimelinePanel::onKeyframeDoubleClicked(int trackIndex, int frame) {
@@ -1387,17 +1484,66 @@ void NMTimelinePanel::deleteSelectedKeyframes() {
 }
 
 // =============================================================================
-// Event Filter for Keyboard
+// Event Filter for Keyboard and Mouse
 // =============================================================================
 
 bool NMTimelinePanel::eventFilter(QObject *obj, QEvent *event) {
   if (event->type() == QEvent::KeyPress) {
     QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
+    // Delete selected keyframes
     if (keyEvent->key() == Qt::Key_Delete ||
         keyEvent->key() == Qt::Key_Backspace) {
       deleteSelectedKeyframes();
       return true;
+    }
+
+    // Copy selected keyframes (Ctrl+C)
+    if (keyEvent->matches(QKeySequence::Copy)) {
+      copySelectedKeyframes();
+      return true;
+    }
+
+    // Paste keyframes (Ctrl+V)
+    if (keyEvent->matches(QKeySequence::Paste)) {
+      pasteKeyframes();
+      return true;
+    }
+
+    // Select all keyframes (Ctrl+A)
+    if (keyEvent->matches(QKeySequence::SelectAll)) {
+      selectAllKeyframes();
+      return true;
+    }
+  }
+
+  // Handle mouse events for box selection on the graphics view
+  if (obj == m_timelineView->viewport()) {
+    if (event->type() == QEvent::MouseButtonPress) {
+      QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+      if (mouseEvent->button() == Qt::LeftButton) {
+        // Check if clicking on empty space (no item at position)
+        QPointF scenePos = m_timelineView->mapToScene(mouseEvent->pos());
+        QGraphicsItem *item = m_timelineScene->itemAt(scenePos, QTransform());
+
+        // If no item at position, start box selection
+        if (!item || item == m_playheadItem) {
+          startBoxSelection(scenePos);
+          return true;
+        }
+      }
+    } else if (event->type() == QEvent::MouseMove) {
+      if (m_isBoxSelecting) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        QPointF scenePos = m_timelineView->mapToScene(mouseEvent->pos());
+        updateBoxSelection(scenePos);
+        return true;
+      }
+    } else if (event->type() == QEvent::MouseButtonRelease) {
+      if (m_isBoxSelecting) {
+        endBoxSelection();
+        return true;
+      }
     }
   }
 
@@ -1454,6 +1600,173 @@ void NMTimelinePanel::recordRenderMetrics(double renderTimeMs, int itemCount) {
   }
 }
 
+// =============================================================================
+// Select All Keyframes
+// =============================================================================
+
+void NMTimelinePanel::selectAllKeyframes() {
+  m_selectedKeyframes.clear();
+
+  int trackIndex = 0;
+  for (auto trackIt = m_tracks.begin(); trackIt != m_tracks.end();
+       ++trackIt, ++trackIndex) {
+    TimelineTrack *track = trackIt.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+
+    for (const auto &kf : track->keyframes) {
+      KeyframeId id;
+      id.trackIndex = trackIndex;
+      id.frame = kf.frame;
+      m_selectedKeyframes.insert(id);
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Range Selection (Shift+Click)
+// =============================================================================
+
+void NMTimelinePanel::selectKeyframeRange(const KeyframeId &fromId,
+                                          const KeyframeId &toId) {
+  // Determine the frame range
+  int startFrame = qMin(fromId.frame, toId.frame);
+  int endFrame = qMax(fromId.frame, toId.frame);
+
+  // Determine track range
+  int startTrack = qMin(fromId.trackIndex, toId.trackIndex);
+  int endTrack = qMax(fromId.trackIndex, toId.trackIndex);
+
+  // Select all keyframes within the range
+  int trackIndex = 0;
+  for (auto trackIt = m_tracks.begin(); trackIt != m_tracks.end();
+       ++trackIt, ++trackIndex) {
+    if (trackIndex < startTrack || trackIndex > endTrack) {
+      continue;
+    }
+
+    TimelineTrack *track = trackIt.value();
+    if (!track || !track->visible) {
+      continue;
+    }
+
+    for (const auto &kf : track->keyframes) {
+      if (kf.frame >= startFrame && kf.frame <= endFrame) {
+        KeyframeId id;
+        id.trackIndex = trackIndex;
+        id.frame = kf.frame;
+        m_selectedKeyframes.insert(id);
+      }
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Box Selection
+// =============================================================================
+
+void NMTimelinePanel::startBoxSelection(const QPointF &pos) {
+  m_isBoxSelecting = true;
+  m_boxSelectStart = pos;
+  m_boxSelectEnd = pos;
+
+  // Create the selection rectangle visual
+  if (!m_boxSelectRect) {
+    m_boxSelectRect = new QGraphicsRectItem();
+    m_boxSelectRect->setPen(QPen(QColor("#4A90D9"), 1, Qt::DashLine));
+    m_boxSelectRect->setBrush(QBrush(QColor(74, 144, 217, 50)));
+    m_boxSelectRect->setZValue(99); // Just below playhead
+    m_timelineScene->addItem(m_boxSelectRect);
+  }
+
+  m_boxSelectRect->setRect(QRectF(m_boxSelectStart, QSizeF(0, 0)));
+  m_boxSelectRect->setVisible(true);
+
+  // Clear selection unless Ctrl is held
+  // (handled by Qt automatically in the mouse event)
+}
+
+void NMTimelinePanel::updateBoxSelection(const QPointF &pos) {
+  m_boxSelectEnd = pos;
+
+  // Update the visual rectangle
+  if (m_boxSelectRect) {
+    QRectF rect = QRectF(m_boxSelectStart, m_boxSelectEnd).normalized();
+    m_boxSelectRect->setRect(rect);
+  }
+}
+
+void NMTimelinePanel::endBoxSelection() {
+  if (!m_isBoxSelecting) {
+    return;
+  }
+
+  m_isBoxSelecting = false;
+
+  // Hide the selection rectangle
+  if (m_boxSelectRect) {
+    m_boxSelectRect->setVisible(false);
+  }
+
+  // Calculate the selection rectangle
+  QRectF selectionRect = QRectF(m_boxSelectStart, m_boxSelectEnd).normalized();
+
+  // Select keyframes within the rectangle
+  selectKeyframesInRect(selectionRect);
+}
+
+void NMTimelinePanel::selectKeyframesInRect(const QRectF &rect) {
+  // Clear existing selection
+  m_selectedKeyframes.clear();
+
+  // Find all keyframes within the rectangle
+  for (auto it = m_keyframeItems.begin(); it != m_keyframeItems.end(); ++it) {
+    NMKeyframeItem *kfItem = it.value();
+    if (!kfItem) {
+      continue;
+    }
+
+    // Get the keyframe's scene position
+    QPointF kfPos = kfItem->scenePos();
+
+    // Check if the keyframe is within the selection rectangle
+    if (rect.contains(kfPos)) {
+      m_selectedKeyframes.insert(it.key());
+    }
+  }
+
+  updateSelectionVisuals();
+}
+
+// =============================================================================
+// Multi-select Dragging
+// =============================================================================
+
+void NMTimelinePanel::onKeyframeDragStarted(const KeyframeId &id) {
+  // If the dragged keyframe is not in the selection, select only it
+  if (!m_selectedKeyframes.contains(id)) {
+    m_selectedKeyframes.clear();
+    m_selectedKeyframes.insert(id);
+    updateSelectionVisuals();
+  }
+
+  // Store the starting frames for all selected keyframes
+  m_dragStartFrames.clear();
+  for (const KeyframeId &selId : m_selectedKeyframes) {
+    m_dragStartFrames[selId] = selId.frame;
+  }
+
+  m_isDraggingSelection = true;
+}
+
+void NMTimelinePanel::onKeyframeDragEnded() {
+  m_isDraggingSelection = false;
+  m_dragStartFrames.clear();
 QStringList NMTimelinePanel::getTrackNamesSafe() const {
   QMutexLocker locker(&m_tracksMutex);
   return m_tracks.keys();
