@@ -35,10 +35,10 @@ void CameraPath::updatePoint(size_t index, const CameraPathPoint &point) {
 void CameraPath::clear() { m_points.clear(); }
 
 Vec2 CameraPath::evaluatePosition(f32 t) const {
-  if (m_points.empty())
-    return {0.0f, 0.0f};
-  if (m_points.size() == 1)
-    return m_points[0].position;
+  // Defensive check: need at least 2 points for interpolation
+  if (m_points.size() < 2) {
+    return m_points.empty() ? Vec2{0.0f, 0.0f} : m_points[0].position;
+  }
 
   f32 totalTime = m_totalDuration;
   if (m_loop && t > totalTime) {
@@ -46,14 +46,23 @@ Vec2 CameraPath::evaluatePosition(f32 t) const {
   }
   t = std::clamp(t, 0.0f, totalTime);
 
-  // Find the two points we're interpolating between
+  // Now safe: m_points.size() >= 2 guaranteed
   f32 segmentDuration = totalTime / static_cast<f32>(m_points.size() - 1);
+
+  // Protect against division by zero if segmentDuration is 0
+  if (segmentDuration <= 0.0f) {
+    return m_points[0].position;
+  }
+
   size_t index = static_cast<size_t>(t / segmentDuration);
-  if (index >= m_points.size() - 1)
+  // Bounds check for segment index
+  if (index >= m_points.size() - 1) {
     index = m_points.size() - 2;
+  }
 
   f32 localT =
       (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
   const auto &p0 = m_points[index];
   const auto &p1 = m_points[index + 1];
@@ -66,21 +75,31 @@ Vec2 CameraPath::evaluatePosition(f32 t) const {
 }
 
 f32 CameraPath::evaluateZoom(f32 t) const {
-  if (m_points.empty())
-    return 1.0f;
-  if (m_points.size() == 1)
-    return m_points[0].zoom;
+  // Defensive check: need at least 2 points for interpolation
+  if (m_points.size() < 2) {
+    return m_points.empty() ? 1.0f : m_points[0].zoom;
+  }
 
   f32 totalTime = m_totalDuration;
   t = std::clamp(t, 0.0f, totalTime);
 
+  // Now safe: m_points.size() >= 2 guaranteed
   f32 segmentDuration = totalTime / static_cast<f32>(m_points.size() - 1);
+
+  // Protect against division by zero if segmentDuration is 0
+  if (segmentDuration <= 0.0f) {
+    return m_points[0].zoom;
+  }
+
   size_t index = static_cast<size_t>(t / segmentDuration);
-  if (index >= m_points.size() - 1)
+  // Bounds check for segment index
+  if (index >= m_points.size() - 1) {
     index = m_points.size() - 2;
+  }
 
   f32 localT =
       (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
   const auto &p0 = m_points[index];
   const auto &p1 = m_points[index + 1];
@@ -91,21 +110,31 @@ f32 CameraPath::evaluateZoom(f32 t) const {
 }
 
 f32 CameraPath::evaluateRotation(f32 t) const {
-  if (m_points.empty())
-    return 0.0f;
-  if (m_points.size() == 1)
-    return m_points[0].rotation;
+  // Defensive check: need at least 2 points for interpolation
+  if (m_points.size() < 2) {
+    return m_points.empty() ? 0.0f : m_points[0].rotation;
+  }
 
   f32 totalTime = m_totalDuration;
   t = std::clamp(t, 0.0f, totalTime);
 
+  // Now safe: m_points.size() >= 2 guaranteed
   f32 segmentDuration = totalTime / static_cast<f32>(m_points.size() - 1);
+
+  // Protect against division by zero if segmentDuration is 0
+  if (segmentDuration <= 0.0f) {
+    return m_points[0].rotation;
+  }
+
   size_t index = static_cast<size_t>(t / segmentDuration);
-  if (index >= m_points.size() - 1)
+  // Bounds check for segment index
+  if (index >= m_points.size() - 1) {
     index = m_points.size() - 2;
+  }
 
   f32 localT =
       (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
   const auto &p0 = m_points[index];
   const auto &p1 = m_points[index + 1];
