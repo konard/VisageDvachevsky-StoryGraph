@@ -7,7 +7,7 @@ namespace NovelMind::scripting {
 
 VirtualMachine::VirtualMachine()
     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
-      m_halted(false), m_choiceResult(-1) {}
+      m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
 
 VirtualMachine::~VirtualMachine() = default;
 
@@ -31,6 +31,7 @@ void VirtualMachine::reset() {
   m_paused = false;
   m_waiting = false;
   m_halted = false;
+  m_skipNextIncrement = false;
   m_choiceResult = -1;
 }
 
@@ -45,7 +46,13 @@ bool VirtualMachine::step() {
   }
 
   executeInstruction(m_program[m_ip]);
-  ++m_ip;
+
+  // Skip increment if a JUMP to address 0 set m_ip directly
+  if (!m_skipNextIncrement) {
+    ++m_ip;
+  } else {
+    m_skipNextIncrement = false;
+  }
 
   return !m_halted;
 }
@@ -146,34 +153,57 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::JUMP:
-    // Use signed arithmetic to avoid underflow when operand is 0
-    // If operand is 0, m_ip becomes max value, but step() will detect end of
-    // program
+    // Validate jump target is within program bounds
+    if (instr.operand >= m_program.size()) {
+      NOVELMIND_LOG_ERROR("JUMP operand out of bounds");
+      m_halted = true;
+      return;
+    }
+
     if (instr.operand > 0) {
-      m_ip = instr.operand - 1; // -1 because we increment after
+      // Normal case: set to (target - 1) to compensate for increment in step()
+      m_ip = instr.operand - 1;
     } else {
-      // Jump to instruction 0 - set to max so after increment it wraps or we
-      // handle specially
-      m_ip = static_cast<u32>(-1); // Will wrap to 0 after increment
+      // Jump to instruction 0: set m_ip directly and skip the increment
+      m_ip = 0;
+      m_skipNextIncrement = true;
     }
     break;
 
   case OpCode::JUMP_IF:
     if (asBool(pop())) {
+      // Validate jump target is within program bounds
+      if (instr.operand >= m_program.size()) {
+        NOVELMIND_LOG_ERROR("JUMP_IF operand out of bounds");
+        m_halted = true;
+        return;
+      }
+
       if (instr.operand > 0) {
         m_ip = instr.operand - 1;
       } else {
-        m_ip = static_cast<u32>(-1);
+        // Jump to instruction 0: set m_ip directly and skip the increment
+        m_ip = 0;
+        m_skipNextIncrement = true;
       }
     }
     break;
 
   case OpCode::JUMP_IF_NOT:
     if (!asBool(pop())) {
+      // Validate jump target is within program bounds
+      if (instr.operand >= m_program.size()) {
+        NOVELMIND_LOG_ERROR("JUMP_IF_NOT operand out of bounds");
+        m_halted = true;
+        return;
+      }
+
       if (instr.operand > 0) {
         m_ip = instr.operand - 1;
       } else {
-        m_ip = static_cast<u32>(-1);
+        // Jump to instruction 0: set m_ip directly and skip the increment
+        m_ip = 0;
+        m_skipNextIncrement = true;
       }
     }
     break;
@@ -567,7 +597,11 @@ const std::string &VirtualMachine::getString(u32 index) const {
   if (index < m_stringTable.size()) {
     return m_stringTable[index];
   }
-  NOVELMIND_LOG_WARN("Invalid string index");
+  // Log error and halt VM to prevent silent data corruption
+  NOVELMIND_LOG_ERROR("Invalid string table index: " + std::to_string(index) +
+                      " (table size: " + std::to_string(m_stringTable.size()) +
+                      ")");
+  m_halted = true;
   return empty;
 }
 

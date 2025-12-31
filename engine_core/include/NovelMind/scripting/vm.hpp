@@ -73,6 +73,7 @@ private:
   bool m_paused;
   bool m_waiting;
   bool m_halted;
+  bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
 };
 

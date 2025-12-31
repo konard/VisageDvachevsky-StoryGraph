@@ -6,11 +6,19 @@
  *
  * Provides comprehensive voice-over file management:
  * - Auto-detection and matching of voice files to dialogue lines
- * - Voice file preview/playback using Qt Multimedia
+ * - Voice file preview/playback using IAudioPlayer interface (issue #150)
  * - Import/export of voice mapping tables
  * - Actor assignment and metadata management
  * - Missing voice detection
  * - Async duration probing with caching
+ *
+ * Signal Flow:
+ * - Outgoing: voiceLineSelected(QString) - emitted when user selects a voice
+ * line
+ * - Outgoing: voiceFileChanged(QString, QString) - emitted when voice file is
+ * assigned
+ * - Uses QSignalBlocker in updateVoiceList() to prevent feedback loops during
+ *   programmatic tree widget updates
  */
 
 #include "NovelMind/audio/voice_manifest.hpp"
@@ -25,9 +33,8 @@
 #include <memory>
 #include <unordered_map>
 
-// Forward declarations for Qt Multimedia
+// Forward declarations for Qt Multimedia (still needed for duration probing)
 class QMediaPlayer;
-class QAudioOutput;
 
 class QListWidget;
 class QTreeWidget;
@@ -40,6 +47,10 @@ class QComboBox;
 class QSlider;
 class QSplitter;
 class QProgressBar;
+
+namespace NovelMind::editor {
+class IAudioPlayer;
+} // namespace NovelMind::editor
 
 namespace NovelMind::editor::qt {
 
@@ -67,11 +78,26 @@ struct DurationCacheEntry {
   qint64 mtime = 0; // File modification time for cache invalidation
 };
 
+/**
+ * @brief Voice Manager panel
+ *
+ * Uses IAudioPlayer interface for playback, enabling:
+ * - Unit testing without audio hardware
+ * - Mocking for CI/CD environments
+ * - Easy swap of audio backends
+ */
 class NMVoiceManagerPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMVoiceManagerPanel(QWidget *parent = nullptr);
+  /**
+   * @brief Construct panel with optional audio player injection
+   * @param parent Parent widget
+   * @param audioPlayer Optional audio player for dependency injection
+   *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
+   */
+  explicit NMVoiceManagerPanel(QWidget *parent = nullptr,
+                               IAudioPlayer *audioPlayer = nullptr);
   ~NMVoiceManagerPanel() override;
 
   void onInitialize() override;
@@ -204,9 +230,9 @@ private:
   QProgressBar *m_playbackProgress = nullptr;
   QLabel *m_statsLabel = nullptr;
 
-  // Qt Multimedia - using QPointer for safe references
-  QPointer<QMediaPlayer> m_mediaPlayer;
-  QPointer<QAudioOutput> m_audioOutput;
+  // Audio playback - using IAudioPlayer interface (issue #150)
+  std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
+  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
 
   // Duration probing player (separate from playback)
   QPointer<QMediaPlayer> m_probePlayer;

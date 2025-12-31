@@ -53,29 +53,33 @@ void AudioRecorder::shutdown() {
     return;
   }
 
-  // Stop any active recording
-  if (isRecording()) {
+  // Signal cancellation to any running background thread
+  m_cancelRequested = true;
+
+  // Stop any active recording (this will join the processing thread)
+  if (m_state != RecordingState::Idle) {
     cancelRecording();
   }
 
   // Stop metering
   stopMetering();
 
-  // Wait for processing thread
-  if (m_processingThread.joinable()) {
-    m_processingActive = false;
-    m_processingThread.join();
-  }
+  // Ensure processing thread is stopped
+  m_processingActive = false;
+  joinProcessingThread();
 
-  // Cleanup devices
-  if (m_captureDevice) {
-    ma_device_uninit(m_captureDevice.get());
-    m_captureDevice.reset();
-  }
+  // Cleanup devices (protected by mutex)
+  {
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
+    if (m_captureDevice) {
+      ma_device_uninit(m_captureDevice.get());
+      m_captureDevice.reset();
+    }
 
-  if (m_playbackDevice) {
-    ma_device_uninit(m_playbackDevice.get());
-    m_playbackDevice.reset();
+    if (m_playbackDevice) {
+      ma_device_uninit(m_playbackDevice.get());
+      m_playbackDevice.reset();
+    }
   }
 
   // Cleanup context
@@ -389,11 +393,13 @@ Result<void> AudioRecorder::stopRecording() {
 
   setState(RecordingState::Stopping);
 
-  // Finalize in background thread
-  if (m_processingThread.joinable()) {
-    m_processingThread.join();
-  }
+  // Reset cancel flag before starting finalization
+  m_cancelRequested = false;
 
+  // Wait for any previous processing thread to complete
+  joinProcessingThread();
+
+  // Start finalization in background thread
   m_processingActive = true;
   m_processingThread = std::thread(&AudioRecorder::finalizeRecording, this);
 
@@ -405,16 +411,16 @@ void AudioRecorder::cancelRecording() {
     return;
   }
 
-  // Stop capture
-  if (m_captureDevice && !m_meteringActive) {
-    ma_device_stop(m_captureDevice.get());
-  }
+  // Signal cancellation to any running background thread
+  m_cancelRequested = true;
 
-  // Cleanup encoder
-  if (m_encoder) {
-    ma_encoder_uninit(m_encoder.get());
-    m_encoder.reset();
-  }
+  setState(RecordingState::Canceling);
+
+  // Wait for background thread to finish (it will check m_cancelRequested and exit early)
+  joinProcessingThread();
+
+  // Now safe to cleanup resources - background thread has completed
+  cleanupResources();
 
   // Delete incomplete file
   if (!m_outputPath.empty() && fs::exists(m_outputPath)) {
@@ -432,7 +438,8 @@ void AudioRecorder::cancelRecording() {
 }
 
 f32 AudioRecorder::getRecordingDuration() const {
-  if (m_format.sampleRate == 0) {
+  // Check both sampleRate and channels to prevent division by zero
+  if (m_format.sampleRate == 0 || m_format.channels == 0) {
     return 0.0f;
   }
   return static_cast<f32>(m_samplesRecorded) /
@@ -549,20 +556,55 @@ void AudioRecorder::writeToFile(const f32 *samples, u32 sampleCount) {
 }
 
 void AudioRecorder::finalizeRecording() {
-  setState(RecordingState::Processing);
-
-  // Stop capture if not metering
-  if (m_captureDevice && !m_meteringActive) {
-    ma_device_stop(m_captureDevice.get());
+  // Check for early cancellation before doing any work
+  if (m_cancelRequested) {
+    m_processingActive = false;
+    return;
   }
 
-  // Finalize encoder
+  setState(RecordingState::Processing);
+
+  // Check again after state change
+  if (m_cancelRequested) {
+    m_processingActive = false;
+    return;
+  }
+
+  // Stop capture if not metering (protected by mutex)
+  {
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
+
+    // Check cancellation after acquiring lock
+    if (m_cancelRequested) {
+      m_processingActive = false;
+      return;
+    }
+
+    if (m_captureDevice && !m_meteringActive) {
+      ma_device_stop(m_captureDevice.get());
+    }
+  }
+
+  // Finalize encoder (protected by mutex)
   {
     std::lock_guard<std::mutex> lock(m_recordMutex);
+
+    // Check cancellation after acquiring lock
+    if (m_cancelRequested) {
+      m_processingActive = false;
+      return;
+    }
+
     if (m_encoder) {
       ma_encoder_uninit(m_encoder.get());
       m_encoder.reset();
     }
+  }
+
+  // Check cancellation before post-processing
+  if (m_cancelRequested) {
+    m_processingActive = false;
+    return;
   }
 
   // Post-processing (if enabled)
@@ -587,8 +629,8 @@ void AudioRecorder::finalizeRecording() {
 
   setState(RecordingState::Idle);
 
-  // Fire callback
-  if (m_onRecordingComplete) {
+  // Fire callback only if not cancelled
+  if (!m_cancelRequested && m_onRecordingComplete) {
     m_onRecordingComplete(result);
   }
 }
@@ -615,6 +657,30 @@ void AudioRecorder::setState(RecordingState state) {
   m_state = state;
   if (m_onStateChanged) {
     m_onStateChanged(state);
+  }
+}
+
+void AudioRecorder::joinProcessingThread() {
+  if (m_processingThread.joinable()) {
+    m_processingThread.join();
+  }
+}
+
+void AudioRecorder::cleanupResources() {
+  std::lock_guard<std::mutex> lock(m_resourceMutex);
+
+  // Stop capture device if not metering
+  if (m_captureDevice && !m_meteringActive) {
+    ma_device_stop(m_captureDevice.get());
+  }
+
+  // Cleanup encoder
+  {
+    std::lock_guard<std::mutex> recordLock(m_recordMutex);
+    if (m_encoder) {
+      ma_encoder_uninit(m_encoder.get());
+      m_encoder.reset();
+    }
   }
 }
 

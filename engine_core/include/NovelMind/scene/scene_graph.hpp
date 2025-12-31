@@ -164,6 +164,10 @@ public:
     return m_children;
   }
 
+  /// Maximum depth for recursive scene graph traversal to prevent stack
+  /// overflow
+  static constexpr int MAX_SCENE_DEPTH = 100;
+
   // Tags for filtering
   void addTag(const std::string &tag);
   void removeTag(const std::string &tag);
@@ -202,6 +206,10 @@ protected:
   void notifyPropertyChanged(const std::string &property,
                              const std::string &oldValue,
                              const std::string &newValue);
+
+private:
+  // Recursive helper with depth limit to prevent stack overflow
+  SceneObjectBase *findChildRecursive(const std::string &id, int depth);
 
   std::string m_id;
   SceneObjectType m_type;

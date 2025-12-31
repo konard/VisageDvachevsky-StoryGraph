@@ -122,11 +122,23 @@ SceneObjectBase::removeChild(const std::string &id) {
 }
 
 SceneObjectBase *SceneObjectBase::findChild(const std::string &id) {
+  return findChildRecursive(id, 0);
+}
+
+SceneObjectBase *SceneObjectBase::findChildRecursive(const std::string &id,
+                                                     int depth) {
+  // Prevent infinite recursion with depth limit
+  if (depth >= MAX_SCENE_DEPTH) {
+    // Log is not available here without adding header dependency,
+    // but we safely return nullptr to prevent stack overflow
+    return nullptr;
+  }
+
   for (auto &child : m_children) {
     if (child->getId() == id) {
       return child.get();
     }
-    if (auto *found = child->findChild(id)) {
+    if (auto *found = child->findChildRecursive(id, depth + 1)) {
       return found;
     }
   }

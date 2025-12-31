@@ -18,6 +18,12 @@ namespace NovelMind::editor::qt {
  *
  * Provides Play/Pause/Stop/Step buttons and status display.
  * Typically docked in the main toolbar or as a floating panel.
+ *
+ * Signal Flow:
+ * - Outgoing: playbackSourceModeChanged(PlaybackSourceMode) - emitted when user
+ *   changes the playback source mode via combo box selection
+ * - Uses QSignalBlocker during initialization to prevent feedback loops with
+ *   NMProjectSettingsPanel when loading settings from project metadata
  */
 class NMPlayToolbarPanel : public NMDockPanel {
   Q_OBJECT
@@ -45,6 +51,9 @@ private:
   void updateButtonStates();
   void updateStatusLabel();
   void showTransientStatus(const QString &text, const QString &color);
+  /// Updates source indicator UI without emitting signals or modifying project
+  /// settings
+  void updateSourceIndicator(int index);
 
   // UI Elements
   class NMScrollableToolBar *m_scrollableToolBar = nullptr;

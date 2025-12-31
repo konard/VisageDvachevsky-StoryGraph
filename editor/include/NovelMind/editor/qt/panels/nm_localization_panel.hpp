@@ -248,6 +248,10 @@ private:
   NovelMind::localization::LocalizationManager m_localization;
   bool m_dirty = false;
 
+  // PERF-4: Key to table row index mapping for O(1) row lookup
+  // This avoids O(n) linear search when updating specific rows
+  mutable QHash<QString, int> m_keyToRowMap;
+
   // Key validation regex
   static const QRegularExpression s_keyValidationRegex;
 };
