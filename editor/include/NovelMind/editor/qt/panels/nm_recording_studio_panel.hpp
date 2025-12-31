@@ -10,6 +10,16 @@
  * - Recording controls (record, stop, cancel)
  * - Take management (record multiple takes, select active)
  * - Integration with Voice Manifest
+ *
+ * Signal Flow:
+ * - Outgoing: recordingCompleted(QString, QString) - emitted when recording
+ * finishes
+ * - Outgoing: activeTakeChanged(QString, int) - emitted when active take
+ * changes
+ * - Outgoing: requestNextLine() / requestPrevLine() - for navigation between
+ * lines
+ * - Uses QSignalBlocker in refreshDeviceList() and updateTakeList() to prevent
+ *   feedback loops during programmatic combo box and list widget updates
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
@@ -22,14 +32,13 @@ class QPushButton;
 class QLabel;
 class QProgressBar;
 class QListWidget;
+class QListWidgetItem;
 class QSlider;
 class QTextEdit;
 class QLineEdit;
 class QTimer;
 class QStackedWidget;
 class QGroupBox;
-class QMediaPlayer;
-class QAudioOutput;
 
 namespace NovelMind::audio {
 class VoiceManifest;
@@ -38,6 +47,10 @@ struct LevelMeter;
 struct RecordingResult;
 struct VoiceManifestLine;
 } // namespace NovelMind::audio
+
+namespace NovelMind::editor {
+class IAudioPlayer;
+} // namespace NovelMind::editor
 
 namespace NovelMind::editor::qt {
 
@@ -64,12 +77,24 @@ private:
 
 /**
  * @brief Recording Studio panel
+ *
+ * Uses IAudioPlayer interface for take playback, enabling:
+ * - Unit testing without audio hardware
+ * - Mocking for CI/CD environments
+ * - Easy swap of audio backends
  */
 class NMRecordingStudioPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMRecordingStudioPanel(QWidget *parent = nullptr);
+  /**
+   * @brief Construct panel with optional audio player injection
+   * @param parent Parent widget
+   * @param audioPlayer Optional audio player for dependency injection
+   *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
+   */
+  explicit NMRecordingStudioPanel(QWidget *parent = nullptr,
+                                  IAudioPlayer *audioPlayer = nullptr);
   ~NMRecordingStudioPanel() override;
 
   void onInitialize() override;
@@ -125,6 +150,9 @@ private slots:
   void onPrevLineClicked();
   void onTakeSelected(int index);
   void onDeleteTakeClicked();
+  void onSetActiveTakeClicked();
+  void onTakeDoubleClicked(QListWidgetItem *item);
+  void onTakesContextMenu(const QPoint &pos);
   void onInputVolumeChanged(int value);
 
   // Recorder callbacks
@@ -137,14 +165,17 @@ private:
   void setupUI();
   void setupDeviceSection();
   void setupLevelMeterSection();
+  void setupFormatSection();
   void setupRecordingControls();
   void setupLineInfoSection();
   void setupTakeManagement();
   void setupNavigationSection();
 
   void refreshDeviceList();
+  void onFormatChanged();
   void updateLineInfo();
   void updateTakeList();
+  void updateTakesHeader(int totalTakes, int activeTakeNum);
   void updateRecordingState();
   void generateOutputPath();
 
@@ -160,6 +191,12 @@ private:
   VUMeterWidget *m_vuMeter = nullptr;
   QLabel *m_levelDbLabel = nullptr;
   QLabel *m_clippingWarning = nullptr;
+  QLabel *m_levelStatusLabel = nullptr;  // "Good level", "Too quiet", etc.
+
+  // Recording format selection
+  QComboBox *m_sampleRateCombo = nullptr;
+  QComboBox *m_bitDepthCombo = nullptr;
+  QComboBox *m_channelsCombo = nullptr;
 
   // Recording controls
   QPushButton *m_recordBtn = nullptr;
@@ -175,6 +212,7 @@ private:
   QLabel *m_notesLabel = nullptr;
 
   // Take management
+  QLabel *m_takesHeaderLabel = nullptr;
   QListWidget *m_takesList = nullptr;
   QPushButton *m_playTakeBtn = nullptr;
   QPushButton *m_deleteTakeBtn = nullptr;
@@ -198,10 +236,13 @@ private:
   bool m_isRecording = false;
   float m_recordingStartTime = 0.0f;
 
-  // Playback
-  QMediaPlayer *m_mediaPlayer = nullptr;
-  QAudioOutput *m_audioOutput = nullptr;
+  // Playback - using IAudioPlayer interface (issue #150)
+  std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
+  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
   bool m_isPlayingTake = false;
+
+  // Level status tracking
+  bool m_clippingWarningShown = false;  // Prevents repeated beeps
 };
 
 } // namespace NovelMind::editor::qt

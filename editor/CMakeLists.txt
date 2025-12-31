@@ -68,6 +68,17 @@ add_library(novelmind_editor STATIC
     src/build_system.cpp
     src/build_size_analyzer.cpp
 
+    # Abstraction interfaces and adapters (issue #150)
+    src/adapters/QtAudioPlayer.cpp
+    src/adapters/QtFileSystem.cpp
+    src/core/ServiceLocator.cpp
+    # Panel Mediators (EventBus-based decoupled communication)
+    src/mediators/selection_mediator.cpp
+    src/mediators/workflow_mediator.cpp
+    src/mediators/property_mediator.cpp
+    src/mediators/playback_mediator.cpp
+    src/mediators/panel_mediators.cpp
+
     # Performance optimization components
     src/qt/lazy_thumbnail_loader.cpp
     src/qt/timeline_render_cache.cpp
@@ -86,6 +97,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_color_dialog.cpp
     src/qt/nm_new_project_dialog.cpp
     src/qt/nm_voice_metadata_dialog.cpp
+    src/qt/nm_bezier_curve_editor_dialog.cpp
     src/qt/nm_main_window.cpp
     src/qt/nm_main_window_menu.cpp
     src/qt/nm_main_window_panels.cpp
@@ -176,6 +188,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/nm_icon_manager.hpp
     include/NovelMind/editor/qt/nm_play_mode_controller.hpp
     include/NovelMind/editor/qt/nm_scrollable_toolbar.hpp
+    include/NovelMind/editor/qt/nm_bezier_curve_editor_dialog.hpp
 
     # Panel headers
     include/NovelMind/editor/qt/panels/nm_scene_view_panel.hpp
@@ -213,6 +226,22 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/guided_learning/tutorial_manager.hpp
     include/NovelMind/editor/guided_learning/help_overlay.hpp
     include/NovelMind/editor/guided_learning/tutorial_subsystem.hpp
+
+    # Abstraction interface headers (issue #150)
+    include/NovelMind/editor/interfaces/IAudioPlayer.hpp
+    include/NovelMind/editor/interfaces/QtAudioPlayer.hpp
+    include/NovelMind/editor/interfaces/MockAudioPlayer.hpp
+    include/NovelMind/editor/interfaces/IFileSystem.hpp
+    include/NovelMind/editor/interfaces/QtFileSystem.hpp
+    include/NovelMind/editor/interfaces/MockFileSystem.hpp
+    include/NovelMind/editor/interfaces/ServiceLocator.hpp
+    # Panel Events and Mediators headers
+    include/NovelMind/editor/events/panel_events.hpp
+    include/NovelMind/editor/mediators/selection_mediator.hpp
+    include/NovelMind/editor/mediators/workflow_mediator.hpp
+    include/NovelMind/editor/mediators/property_mediator.hpp
+    include/NovelMind/editor/mediators/playback_mediator.hpp
+    include/NovelMind/editor/mediators/panel_mediators.hpp
 
     # Qt Resources
     resources/editor_resources.qrc

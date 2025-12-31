@@ -210,32 +210,101 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
 
   auto *transformGroup = addGroup(tr("Transform"));
   const QPointF pos = object->pos();
+
+  // Store last scale for aspect ratio lock
+  m_lastScale = QPointF(object->scaleX(), object->scaleY());
+
   if (m_editMode) {
+    // Position controls
     if (auto *xEdit = transformGroup->addEditableProperty(
             "position_x", tr("Position X"), NMPropertyType::Float,
             QString::number(pos.x()))) {
       trackPropertyWidget("position_x", xEdit);
+      // Configure spinbox for position
+      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(xEdit)) {
+        spinBox->setRange(-10000.0, 10000.0);
+        spinBox->setSingleStep(1.0);
+        spinBox->setDecimals(1);
+        spinBox->setToolTip(tr("X position in pixels"));
+      }
     }
     if (auto *yEdit = transformGroup->addEditableProperty(
             "position_y", tr("Position Y"), NMPropertyType::Float,
             QString::number(pos.y()))) {
       trackPropertyWidget("position_y", yEdit);
+      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(yEdit)) {
+        spinBox->setRange(-10000.0, 10000.0);
+        spinBox->setSingleStep(1.0);
+        spinBox->setDecimals(1);
+        spinBox->setToolTip(tr("Y position in pixels"));
+      }
     }
+
+    // Add reset position button
+    transformGroup->addResetButton("reset_position", QVariant("0,0"));
+
+    // Rotation control
     if (auto *rotEdit = transformGroup->addEditableProperty(
             "rotation", tr("Rotation"), NMPropertyType::Float,
             QString::number(object->rotation()))) {
       trackPropertyWidget("rotation", rotEdit);
+      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(rotEdit)) {
+        spinBox->setRange(-360.0, 360.0);
+        spinBox->setSingleStep(1.0);
+        spinBox->setDecimals(1);
+        spinBox->setSuffix(QString::fromUtf8("°"));
+        spinBox->setWrapping(true);
+        spinBox->setToolTip(tr("Rotation in degrees"));
+      }
     }
+
+    // Add reset rotation button
+    transformGroup->addResetButton("reset_rotation", QVariant("0"));
+
+    // Scale controls
     if (auto *sxEdit = transformGroup->addEditableProperty(
             "scale_x", tr("Scale X"), NMPropertyType::Float,
             QString::number(object->scaleX()))) {
       trackPropertyWidget("scale_x", sxEdit);
+      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(sxEdit)) {
+        spinBox->setRange(0.01, 100.0);
+        spinBox->setSingleStep(0.1);
+        spinBox->setDecimals(2);
+        spinBox->setToolTip(tr("Scale on X axis (1.0 = original size)"));
+      }
     }
     if (auto *syEdit = transformGroup->addEditableProperty(
             "scale_y", tr("Scale Y"), NMPropertyType::Float,
             QString::number(object->scaleY()))) {
       trackPropertyWidget("scale_y", syEdit);
+      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(syEdit)) {
+        spinBox->setRange(0.01, 100.0);
+        spinBox->setSingleStep(0.1);
+        spinBox->setDecimals(2);
+        spinBox->setToolTip(tr("Scale on Y axis (1.0 = original size)"));
+      }
     }
+
+    // Add lock aspect ratio checkbox
+    auto *lockAspectRatioCheck = new QCheckBox(tr("Lock Aspect Ratio"));
+    lockAspectRatioCheck->setChecked(m_lockAspectRatio);
+    lockAspectRatioCheck->setToolTip(
+        tr("When enabled, changing one scale value will\nproportionally adjust the other"));
+    connect(lockAspectRatioCheck, &QCheckBox::toggled, this,
+            [this](bool checked) { m_lockAspectRatio = checked; });
+    trackPropertyWidget("lock_aspect_ratio", lockAspectRatioCheck);
+
+    // Add checkbox to group
+    auto *lockRow = new QWidget(m_scrollContent);
+    auto *lockLayout = new QHBoxLayout(lockRow);
+    lockLayout->setContentsMargins(100 + 8, 0, 0, 0); // Align with other controls
+    lockLayout->setSpacing(8);
+    lockLayout->addWidget(lockAspectRatioCheck);
+    lockLayout->addStretch();
+    transformGroup->addProperty(QString(), lockRow);
+
+    // Add reset scale button
+    transformGroup->addResetButton("reset_scale", QVariant("1,1"));
   } else {
     transformGroup->addProperty(tr("Position X"), QString::number(pos.x()));
     transformGroup->addProperty(tr("Position Y"), QString::number(pos.y()));
@@ -732,6 +801,68 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
       emit propertyError(propertyName, errorMsg);
     }
     return;
+  }
+
+  // Handle reset button signals
+  if (propertyName == "reset_position") {
+    emit propertyChanged(m_currentObjectId, "position_x", "0");
+    emit propertyChanged(m_currentObjectId, "position_y", "0");
+    // Update UI spinboxes
+    updatePropertyValue("position_x", "0");
+    updatePropertyValue("position_y", "0");
+    return;
+  }
+
+  if (propertyName == "reset_rotation") {
+    emit propertyChanged(m_currentObjectId, "rotation", "0");
+    updatePropertyValue("rotation", "0");
+    return;
+  }
+
+  if (propertyName == "reset_scale") {
+    emit propertyChanged(m_currentObjectId, "scale_x", "1");
+    emit propertyChanged(m_currentObjectId, "scale_y", "1");
+    updatePropertyValue("scale_x", "1");
+    updatePropertyValue("scale_y", "1");
+    m_lastScale = QPointF(1.0, 1.0);
+    return;
+  }
+
+  // Handle aspect ratio lock for scale changes
+  if (m_lockAspectRatio && (propertyName == "scale_x" || propertyName == "scale_y")) {
+    double newScale = newValue.toDouble();
+
+    // Calculate the ratio change
+    if (propertyName == "scale_x" && m_lastScale.x() > 0.0001) {
+      double ratio = newScale / m_lastScale.x();
+      double newScaleY = m_lastScale.y() * ratio;
+
+      // Update scale_y proportionally
+      updatePropertyValue("scale_y", QString::number(newScaleY, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_x", newValue);
+      emit propertyChanged(m_currentObjectId, "scale_y", QString::number(newScaleY, 'f', 2));
+
+      m_lastScale = QPointF(newScale, newScaleY);
+      return;
+    } else if (propertyName == "scale_y" && m_lastScale.y() > 0.0001) {
+      double ratio = newScale / m_lastScale.y();
+      double newScaleX = m_lastScale.x() * ratio;
+
+      // Update scale_x proportionally
+      updatePropertyValue("scale_x", QString::number(newScaleX, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_x", QString::number(newScaleX, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_y", newValue);
+
+      m_lastScale = QPointF(newScaleX, newScale);
+      return;
+    }
+  }
+
+  // Update last scale tracking for non-locked changes
+  if (propertyName == "scale_x") {
+    m_lastScale.setX(newValue.toDouble());
+  } else if (propertyName == "scale_y") {
+    m_lastScale.setY(newValue.toDouble());
   }
 
   // Single-object mode: emit signal

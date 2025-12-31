@@ -1,8 +1,10 @@
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 
-#include <QAudioOutput>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDateTime>
@@ -20,6 +22,7 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSignalBlocker>
 #include <QSlider>
 #include <QSplitter>
 #include <QTextStream>
@@ -38,13 +41,17 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor::qt {
 
-NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent)
+NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent,
+                                         IAudioPlayer *audioPlayer)
     : NMDockPanel("Voice Manager", parent),
       m_manifest(std::make_unique<NovelMind::audio::VoiceManifest>()) {
   // Initialize manifest with default locale
   m_manifest->setDefaultLocale("en");
   m_manifest->addLocale("en");
   m_currentLocale = "en";
+
+  // VM-2: Set up callbacks for auto-refresh
+  setupManifestCallbacks();
 }
 
 NMVoiceManagerPanel::~NMVoiceManagerPanel() {
@@ -314,32 +321,23 @@ void NMVoiceManagerPanel::setupPreviewBar() {
 }
 
 void NMVoiceManagerPanel::setupMediaPlayer() {
-  // Guard against multiple initialization (MEM-3 fix)
-  if (m_mediaPlayer) {
-    return; // Already initialized
+  // Set up audio player callbacks (issue #150 - using IAudioPlayer interface)
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(static_cast<f32>(m_volume));
+
+    m_audioPlayer->setOnPlaybackStateChanged(
+        [this](AudioPlaybackState state) { onPlaybackStateChanged(); });
+    m_audioPlayer->setOnMediaStatusChanged(
+        [this](AudioMediaStatus status) { onMediaStatusChanged(); });
+    m_audioPlayer->setOnDurationChanged(
+        [this](i64 duration) { onDurationChanged(static_cast<qint64>(duration)); });
+    m_audioPlayer->setOnPositionChanged(
+        [this](i64 position) { onPositionChanged(static_cast<qint64>(position)); });
+    m_audioPlayer->setOnError(
+        [this](const std::string &error) { onMediaErrorOccurred(); });
   }
 
-  // Create audio output with parent ownership
-  m_audioOutput = new QAudioOutput(this);
-  m_audioOutput->setVolume(static_cast<float>(m_volume));
-
-  // Create media player with parent ownership
-  m_mediaPlayer = new QMediaPlayer(this);
-  m_mediaPlayer->setAudioOutput(m_audioOutput);
-
-  // Connect signals once during initialization (not on each play)
-  connect(m_mediaPlayer, &QMediaPlayer::playbackStateChanged, this,
-          &NMVoiceManagerPanel::onPlaybackStateChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::mediaStatusChanged, this,
-          &NMVoiceManagerPanel::onMediaStatusChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::durationChanged, this,
-          &NMVoiceManagerPanel::onDurationChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::positionChanged, this,
-          &NMVoiceManagerPanel::onPositionChanged);
-  connect(m_mediaPlayer, &QMediaPlayer::errorOccurred, this,
-          &NMVoiceManagerPanel::onMediaErrorOccurred);
-
-  // Create separate player for duration probing
+  // Create separate player for duration probing (still uses QMediaPlayer)
   m_probePlayer = new QMediaPlayer(this);
 
   // Connect probe player signals
@@ -371,6 +369,9 @@ void NMVoiceManagerPanel::scanProject() {
     m_currentLocale = "en";
     m_manifest->addLocale("en");
   }
+
+  // VM-2: Set up callbacks for auto-refresh
+  setupManifestCallbacks();
 
   m_voiceFiles.clear();
   m_durationCache.clear(); // Clear cache on full rescan
@@ -558,68 +559,116 @@ QString NMVoiceManagerPanel::generateDialogueId(const QString &scriptPath,
   return QString("%1_%2").arg(baseName).arg(lineNumber);
 }
 
+/**
+ * @brief Filter and display voice lines with optimized O(n) performance
+ *
+ * PERF-1 optimization: Pre-filter lines in a single pass, then display.
+ * This avoids O(n²) complexity from nested loops in filtering.
+ */
 void NMVoiceManagerPanel::updateVoiceList() {
   if (!m_voiceTree || !m_manifest) {
     return;
   }
 
+  // VM-4: Save current selection before clearing
+  QString selectedLineId;
+  auto *currentItem = m_voiceTree->currentItem();
+  if (currentItem) {
+    selectedLineId = currentItem->data(0, Qt::UserRole).toString();
+  }
+
   m_voiceTree->clear();
 
-  QString filter = m_filterEdit ? m_filterEdit->text().trimmed() : QString();
-  QString charFilter =
+  // Cache filter settings once (avoid repeated calls during iteration)
+  const QString filter =
+      m_filterEdit ? m_filterEdit->text().trimmed().toLower() : QString();
+  const QString charFilter =
       m_characterFilter && m_characterFilter->currentIndex() > 0
           ? m_characterFilter->currentText()
           : QString();
-  bool showUnmatched = m_showUnmatchedBtn && m_showUnmatchedBtn->isChecked();
+  const bool showUnmatched =
+      m_showUnmatchedBtn && m_showUnmatchedBtn->isChecked();
 
   // Get status filter (0 = All, 1 = Missing, 2 = Recorded, 3 = Imported, 4 =
   // NeedsReview, 5 = Approved)
-  int statusFilterIndex = m_statusFilter ? m_statusFilter->currentIndex() : 0;
-  NovelMind::audio::VoiceLineStatus statusFilter =
-      NovelMind::audio::VoiceLineStatus::Missing;
-  bool filterByStatus = (statusFilterIndex > 0);
-  if (filterByStatus) {
-    statusFilter =
-        static_cast<NovelMind::audio::VoiceLineStatus>(statusFilterIndex - 1);
-  }
+  const int statusFilterIndex =
+      m_statusFilter ? m_statusFilter->currentIndex() : 0;
+  const bool filterByStatus = (statusFilterIndex > 0);
+  const NovelMind::audio::VoiceLineStatus statusFilter =
+      filterByStatus ? static_cast<NovelMind::audio::VoiceLineStatus>(
+                           statusFilterIndex - 1)
+                     : NovelMind::audio::VoiceLineStatus::Missing;
 
-  std::string currentLocale = m_currentLocale.toStdString();
+  const std::string currentLocale = m_currentLocale.toStdString();
+  const auto &lines = m_manifest->getLines();
 
-  for (const auto &line : m_manifest->getLines()) {
-    QString lineId = QString::fromStdString(line.id);
-    QString speaker = QString::fromStdString(line.speaker);
-    QString scene = QString::fromStdString(line.scene);
-    QString textKey = QString::fromStdString(line.textKey);
+  // Pre-allocate filtered results list to avoid repeated allocations
+  struct FilteredLine {
+    const NovelMind::audio::VoiceManifestLine *line;
+    const NovelMind::audio::VoiceLocaleFile *localeFile;
+    NovelMind::audio::VoiceLineStatus status;
+    bool hasFile;
+  };
+  std::vector<FilteredLine> filteredLines;
+  filteredLines.reserve(lines.size()); // Pre-allocate for worst case
 
-    // Apply text filter
-    if (!filter.isEmpty() && !lineId.contains(filter, Qt::CaseInsensitive) &&
-        !speaker.contains(filter, Qt::CaseInsensitive) &&
-        !textKey.contains(filter, Qt::CaseInsensitive)) {
-      continue;
-    }
-
-    // Apply character filter
-    if (!charFilter.isEmpty() &&
-        speaker.compare(charFilter, Qt::CaseInsensitive) != 0) {
-      continue;
-    }
-
-    // Get locale file info
+  // Single-pass filtering: O(n) complexity
+  for (const auto &line : lines) {
+    // Get locale file info first (needed for multiple filter checks)
     const auto *localeFile = line.getFile(currentLocale);
-    NovelMind::audio::VoiceLineStatus status =
+    const NovelMind::audio::VoiceLineStatus status =
         localeFile ? localeFile->status
                    : NovelMind::audio::VoiceLineStatus::Missing;
-    bool hasFile = localeFile && !localeFile->filePath.empty();
+    const bool hasFile = localeFile && !localeFile->filePath.empty();
 
-    // Apply unmatched filter
+    // Apply unmatched filter (early exit)
     if (showUnmatched && hasFile) {
       continue;
     }
 
-    // Apply status filter
+    // Apply status filter (early exit)
     if (filterByStatus && status != statusFilter) {
       continue;
     }
+
+    // Apply character filter (early exit)
+    if (!charFilter.isEmpty()) {
+      const QString speaker = QString::fromStdString(line.speaker);
+      if (speaker.compare(charFilter, Qt::CaseInsensitive) != 0) {
+        continue;
+      }
+    }
+
+    // Apply text filter using cached toLower() (most expensive, do last)
+    if (!filter.isEmpty()) {
+      // Cache toLower() results to avoid repeated allocations in hot path
+      const QString lineIdLower = QString::fromStdString(line.id).toLower();
+      const QString speakerLower =
+          QString::fromStdString(line.speaker).toLower();
+      const QString textKeyLower =
+          QString::fromStdString(line.textKey).toLower();
+
+      if (!lineIdLower.contains(filter) && !speakerLower.contains(filter) &&
+          !textKeyLower.contains(filter)) {
+        continue;
+      }
+    }
+
+    // Line passed all filters
+    filteredLines.push_back({&line, localeFile, status, hasFile});
+  }
+
+  // Batch UI update: set row count first to minimize reallocations
+  // (QTreeWidget handles this internally, but we're adding items efficiently)
+  for (const auto &filtered : filteredLines) {
+    const auto &line = *filtered.line;
+    const auto *localeFile = filtered.localeFile;
+    const auto status = filtered.status;
+
+    const QString lineId = QString::fromStdString(line.id);
+    const QString speaker = QString::fromStdString(line.speaker);
+    const QString scene = QString::fromStdString(line.scene);
+    const QString textKey = QString::fromStdString(line.textKey);
 
     auto *item = new QTreeWidgetItem(m_voiceTree);
     item->setData(0, Qt::UserRole, lineId);
@@ -638,7 +687,7 @@ void NMVoiceManagerPanel::updateVoiceList() {
 
     // Column 4: Voice File
     if (localeFile && !localeFile->filePath.empty()) {
-      QString filePath = QString::fromStdString(localeFile->filePath);
+      const QString filePath = QString::fromStdString(localeFile->filePath);
       item->setText(4, QFileInfo(filePath).fileName());
       item->setToolTip(4, filePath);
     } else {
@@ -649,16 +698,17 @@ void NMVoiceManagerPanel::updateVoiceList() {
     if (localeFile && !localeFile->takes.empty()) {
       item->setText(5, QString::number(localeFile->takes.size()));
     } else {
-      item->setText(5, "0");
+      item->setText(5, QStringLiteral("0"));
     }
 
     // Column 6: Duration
     if (localeFile && localeFile->duration > 0) {
-      qint64 durationMs = static_cast<qint64>(localeFile->duration * 1000);
+      const qint64 durationMs =
+          static_cast<qint64>(localeFile->duration * 1000);
       item->setText(6, formatDuration(durationMs));
     }
 
-    // Column 7: Status
+    // Column 7: Status (use static status text to avoid repeated allocations)
     QString statusText;
     QColor statusColor;
     switch (status) {
@@ -689,11 +739,21 @@ void NMVoiceManagerPanel::updateVoiceList() {
     // Column 8: Tags
     if (!line.tags.empty()) {
       QStringList tagList;
+      tagList.reserve(static_cast<int>(line.tags.size()));
       for (const auto &tag : line.tags) {
         tagList.append(QString::fromStdString(tag));
       }
-      item->setText(8, tagList.join(", "));
-      item->setToolTip(8, tagList.join(", "));
+      const QString tagsJoined = tagList.join(QStringLiteral(", "));
+      item->setText(8, tagsJoined);
+      item->setToolTip(8, tagsJoined);
+    }
+  }
+
+  // VM-4: Restore selection if line still visible
+  if (!selectedLineId.isEmpty()) {
+    int row = findRowByLineId(selectedLineId);
+    if (row >= 0) {
+      m_voiceTree->setCurrentItem(m_voiceTree->topLevelItem(row));
     }
   }
 }
@@ -793,14 +853,19 @@ bool NMVoiceManagerPanel::playVoiceFile(const QString &filePath) {
     return false;
   }
 
+  if (!m_audioPlayer) {
+    setPlaybackError(tr("Audio player not available"));
+    return false;
+  }
+
   // Stop any current playback first
   stopPlayback();
 
   m_currentlyPlayingFile = filePath;
 
-  // Set the source and play
-  m_mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
-  m_mediaPlayer->play();
+  // Set the source and play using IAudioPlayer interface (issue #150)
+  m_audioPlayer->load(filePath.toStdString());
+  m_audioPlayer->play();
 
   m_isPlaying = true;
 
@@ -813,9 +878,9 @@ bool NMVoiceManagerPanel::playVoiceFile(const QString &filePath) {
 }
 
 void NMVoiceManagerPanel::stopPlayback() {
-  if (m_mediaPlayer) {
-    m_mediaPlayer->stop();
-    m_mediaPlayer->setSource(QUrl()); // Clear source
+  if (m_audioPlayer) {
+    m_audioPlayer->stop();
+    m_audioPlayer->clearSource(); // Clear source
   }
 
   m_isPlaying = false;
@@ -874,15 +939,15 @@ QString NMVoiceManagerPanel::formatDuration(qint64 ms) const {
       .arg(tenths);
 }
 
-// Qt Multimedia signal handlers
+// Audio player signal handlers (using IAudioPlayer interface - issue #150)
 void NMVoiceManagerPanel::onPlaybackStateChanged() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QMediaPlayer::PlaybackState state = m_mediaPlayer->playbackState();
+  AudioPlaybackState state = m_audioPlayer->getPlaybackState();
 
   switch (state) {
-  case QMediaPlayer::StoppedState:
+  case AudioPlaybackState::Stopped:
     m_isPlaying = false;
     // Only reset UI if we're not switching tracks
     if (m_currentlyPlayingFile.isEmpty()) {
@@ -890,7 +955,7 @@ void NMVoiceManagerPanel::onPlaybackStateChanged() {
     }
     break;
 
-  case QMediaPlayer::PlayingState:
+  case AudioPlaybackState::Playing:
     m_isPlaying = true;
     if (m_playBtn)
       m_playBtn->setEnabled(false);
@@ -898,37 +963,37 @@ void NMVoiceManagerPanel::onPlaybackStateChanged() {
       m_stopBtn->setEnabled(true);
     break;
 
-  case QMediaPlayer::PausedState:
+  case AudioPlaybackState::Paused:
     // Currently not exposing pause, but handle it gracefully
     break;
   }
 }
 
 void NMVoiceManagerPanel::onMediaStatusChanged() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QMediaPlayer::MediaStatus status = m_mediaPlayer->mediaStatus();
+  AudioMediaStatus status = m_audioPlayer->getMediaStatus();
 
   switch (status) {
-  case QMediaPlayer::EndOfMedia:
+  case AudioMediaStatus::EndOfMedia:
     // Playback finished naturally
     m_currentlyPlayingFile.clear();
     resetPlaybackUI();
     break;
 
-  case QMediaPlayer::InvalidMedia:
+  case AudioMediaStatus::InvalidMedia:
     setPlaybackError(tr("Invalid or unsupported media format"));
     m_currentlyPlayingFile.clear();
     resetPlaybackUI();
     break;
 
-  case QMediaPlayer::NoMedia:
-  case QMediaPlayer::LoadingMedia:
-  case QMediaPlayer::LoadedMedia:
-  case QMediaPlayer::StalledMedia:
-  case QMediaPlayer::BufferingMedia:
-  case QMediaPlayer::BufferedMedia:
+  case AudioMediaStatus::NoMedia:
+  case AudioMediaStatus::Loading:
+  case AudioMediaStatus::Loaded:
+  case AudioMediaStatus::Stalled:
+  case AudioMediaStatus::Buffering:
+  case AudioMediaStatus::Buffered:
     // Normal states, no action needed
     break;
   }
@@ -943,7 +1008,7 @@ void NMVoiceManagerPanel::onDurationChanged(qint64 duration) {
 
   // Update duration label
   if (m_durationLabel) {
-    qint64 position = m_mediaPlayer ? m_mediaPlayer->position() : 0;
+    qint64 position = m_audioPlayer ? static_cast<qint64>(m_audioPlayer->getPositionMs()) : 0;
     m_durationLabel->setText(QString("%1 / %2")
                                  .arg(formatDuration(position))
                                  .arg(formatDuration(duration)));
@@ -963,10 +1028,10 @@ void NMVoiceManagerPanel::onPositionChanged(qint64 position) {
 }
 
 void NMVoiceManagerPanel::onMediaErrorOccurred() {
-  if (!m_mediaPlayer)
+  if (!m_audioPlayer)
     return;
 
-  QString errorMsg = m_mediaPlayer->errorString();
+  QString errorMsg = QString::fromStdString(m_audioPlayer->getErrorString());
   if (errorMsg.isEmpty()) {
     errorMsg = tr("Unknown playback error");
   }
@@ -982,60 +1047,109 @@ void NMVoiceManagerPanel::startDurationProbing() {
     return;
   }
 
-  // RACE-1 fix: Stop any in-progress probing before restarting
-  if (m_isProbing) {
-    // Cancel current probe by clearing the queue and resetting state
-    m_probeQueue.clear();
-    m_isProbing = false;
-    m_currentProbeFile.clear();
+  // RACE-1 fix: Atomic check-and-cancel for thread safety
+  bool wasProbing = m_isProbing.exchange(false);
+
+  if (wasProbing) {
+    // Cancel current probe
     if (m_probePlayer) {
       m_probePlayer->stop();
     }
+
+    // Clear queue under lock
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      m_probeQueue.clear();
+      m_currentProbeFile.clear();
+    }
   }
 
-  // Clear the probe queue and add all voice files for current locale
-  m_probeQueue.clear();
+  // Build queue under lock to prevent concurrent modification
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    m_probeQueue.clear();
 
-  for (const auto &line : m_manifest->getLines()) {
-    auto *localeFile = line.getFile(m_currentLocale.toStdString());
-    if (localeFile && !localeFile->filePath.empty()) {
-      QString filePath = QString::fromStdString(localeFile->filePath);
-      // Check if we have a valid cached duration
-      double cached = getCachedDuration(filePath);
-      if (cached <= 0) {
-        m_probeQueue.enqueue(filePath);
+    // Copy manifest lines to avoid iterator invalidation during iteration
+    auto lines = m_manifest->getLines();
+
+    for (const auto &line : lines) {
+      auto *localeFile = line.getFile(m_currentLocale.toStdString());
+      if (localeFile && !localeFile->filePath.empty()) {
+        QString filePath = QString::fromStdString(localeFile->filePath);
+        // Check if we have a valid cached duration
+        double cached = getCachedDuration(filePath);
+        if (cached <= 0) {
+          m_probeQueue.enqueue(filePath);
+        }
       }
     }
   }
 
-  // Start processing
-  if (!m_probeQueue.isEmpty() && !m_isProbing) {
-    processNextDurationProbe();
+  // Start probing with atomic guard to prevent double-start
+  bool queueNotEmpty = false;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    queueNotEmpty = !m_probeQueue.isEmpty();
+  }
+
+  if (queueNotEmpty) {
+    bool expected = false;
+    if (m_isProbing.compare_exchange_strong(expected, true)) {
+      // Successfully acquired probing lock
+      processNextDurationProbe();
+    }
+    // If compare_exchange fails, another thread started probing - that's fine
   }
 }
 
 void NMVoiceManagerPanel::processNextDurationProbe() {
-  if (m_probeQueue.isEmpty()) {
-    m_isProbing = false;
-    m_currentProbeFile.clear();
-    // Update the list with newly probed durations
-    updateDurationsInList();
+  // Check atomic flag first
+  if (!m_isProbing.load()) {
     return;
   }
 
-  m_isProbing = true;
-  m_currentProbeFile = m_probeQueue.dequeue();
+  QString nextFile;
+
+  // Dequeue under lock
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+
+    if (m_probeQueue.isEmpty()) {
+      m_isProbing.store(false);
+      m_currentProbeFile.clear();
+      // Update the list with newly probed durations (outside lock to avoid deadlock)
+      QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
+                                Qt::QueuedConnection);
+      return;
+    }
+
+    nextFile = m_probeQueue.dequeue();
+    m_currentProbeFile = nextFile;
+  }
 
   if (!m_probePlayer) {
-    m_isProbing = false;
+    m_isProbing.store(false);
     return;
   }
 
-  m_probePlayer->setSource(QUrl::fromLocalFile(m_currentProbeFile));
+  // Probe outside lock to avoid deadlock
+  m_probePlayer->setSource(QUrl::fromLocalFile(nextFile));
 }
 
 void NMVoiceManagerPanel::onProbeDurationFinished() {
-  if (!m_probePlayer || m_currentProbeFile.isEmpty() || !m_manifest) {
+  if (!m_probePlayer || !m_manifest) {
+    processNextDurationProbe();
+    return;
+  }
+
+  // Read current file under lock
+  QString filePath;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    filePath = m_currentProbeFile;
+  }
+
+  if (filePath.isEmpty()) {
     processNextDurationProbe();
     return;
   }
@@ -1043,10 +1157,10 @@ void NMVoiceManagerPanel::onProbeDurationFinished() {
   qint64 durationMs = m_probePlayer->duration();
   if (durationMs > 0) {
     double durationSec = static_cast<double>(durationMs) / 1000.0;
-    cacheDuration(m_currentProbeFile, durationSec);
+    cacheDuration(filePath, durationSec);
 
     // Update the duration in manifest for current locale
-    std::string currentFilePath = m_currentProbeFile.toStdString();
+    std::string currentFilePath = filePath.toStdString();
     for (auto &line : m_manifest->getLines()) {
       auto *localeFile = line.getFile(m_currentLocale.toStdString());
       if (localeFile && localeFile->filePath == currentFilePath) {
@@ -1201,8 +1315,8 @@ void NMVoiceManagerPanel::onShowOnlyUnmatched(bool checked) {
 
 void NMVoiceManagerPanel::onVolumeChanged(int value) {
   m_volume = value / 100.0;
-  if (m_audioOutput) {
-    m_audioOutput->setVolume(static_cast<float>(m_volume));
+  if (m_audioPlayer) {
+    m_audioPlayer->setVolume(static_cast<f32>(m_volume));
   }
 }
 
@@ -1397,8 +1511,9 @@ void NMVoiceManagerPanel::onEditLineMetadata() {
   NMVoiceMetadataDialog::MetadataResult result;
   bool ok = NMVoiceMetadataDialog::getMetadata(
       this, dialogueId, currentTags, QString::fromStdString(line->notes),
-      QString::fromStdString(line->speaker), QString::fromStdString(line->scene),
-      result, availableSpeakers, availableScenes, suggestedTags);
+      QString::fromStdString(line->speaker),
+      QString::fromStdString(line->scene), result, availableSpeakers,
+      availableScenes, suggestedTags);
 
   if (ok) {
     // Update tags
@@ -1533,6 +1648,213 @@ void NMVoiceManagerPanel::onSetLineStatus() {
       updateStatistics();
     }
   }
+}
+
+// ============================================================================
+// VM-2: Auto-Refresh Implementation
+// ============================================================================
+
+void NMVoiceManagerPanel::onRecordingCompleted(const QString &lineId,
+                                               const QString &locale) {
+  if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+    qDebug() << "Recording completed:" << lineId << "(" << locale << ")";
+#endif
+  }
+
+  // Find row for this line
+  int row = findRowByLineId(lineId);
+
+  if (row >= 0) {
+    // Update status column only (avoid full refresh to preserve filters)
+    updateRowStatus(row, lineId, locale);
+
+    // Flash row to indicate update
+    flashRow(row);
+  } else {
+    // Line not visible (filtered out) - just update statistics
+    // Don't refresh table as it would show the line despite active filters
+  }
+
+  // Update statistics
+  updateStatistics();
+}
+
+void NMVoiceManagerPanel::onFileStatusChanged(const QString &lineId,
+                                              const QString &locale) {
+  if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+    qDebug() << "File status changed:" << lineId << "(" << locale << ")";
+#endif
+  }
+
+  // Only update if it's for the current locale
+  if (locale != m_currentLocale) {
+    return;
+  }
+
+  // Find row for this line
+  int row = findRowByLineId(lineId);
+
+  if (row >= 0) {
+    // Update status column only
+    updateRowStatus(row, lineId, locale);
+
+    // Flash row to indicate update
+    flashRow(row);
+  }
+
+  // Update statistics
+  updateStatistics();
+}
+
+// ============================================================================
+// VM-4: Selection and Row Management
+// ============================================================================
+
+int NMVoiceManagerPanel::findRowByLineId(const QString &lineId) const {
+  if (!m_voiceTree) {
+    return -1;
+  }
+
+  for (int i = 0; i < m_voiceTree->topLevelItemCount(); ++i) {
+    auto *item = m_voiceTree->topLevelItem(i);
+    if (item && item->data(0, Qt::UserRole).toString() == lineId) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void NMVoiceManagerPanel::updateRowStatus(int row, const QString &lineId,
+                                          const QString &locale) {
+  if (!m_voiceTree || !m_manifest || row < 0 ||
+      row >= m_voiceTree->topLevelItemCount()) {
+    return;
+  }
+
+  auto *item = m_voiceTree->topLevelItem(row);
+  if (!item) {
+    return;
+  }
+
+  auto *line = m_manifest->getLine(lineId.toStdString());
+  if (!line) {
+    return;
+  }
+
+  std::string localeStr =
+      locale.isEmpty() ? m_currentLocale.toStdString() : locale.toStdString();
+  auto *localeFile = line->getFile(localeStr);
+
+  // Update status column (column 7)
+  NovelMind::audio::VoiceLineStatus status =
+      localeFile ? localeFile->status
+                 : NovelMind::audio::VoiceLineStatus::Missing;
+
+  QString statusText;
+  QColor statusColor;
+  switch (status) {
+  case NovelMind::audio::VoiceLineStatus::Missing:
+    statusText = tr("Missing");
+    statusColor = QColor(200, 60, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Recorded:
+    statusText = tr("Recorded");
+    statusColor = QColor(60, 180, 200);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Imported:
+    statusText = tr("Imported");
+    statusColor = QColor(200, 180, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::NeedsReview:
+    statusText = tr("Needs Review");
+    statusColor = QColor(200, 120, 60);
+    break;
+  case NovelMind::audio::VoiceLineStatus::Approved:
+    statusText = tr("Approved");
+    statusColor = QColor(60, 180, 60);
+    break;
+  }
+  item->setText(7, statusText);
+  item->setForeground(7, statusColor);
+
+  // Update voice file column (column 4)
+  if (localeFile && !localeFile->filePath.empty()) {
+    QString filePath = QString::fromStdString(localeFile->filePath);
+    item->setText(4, QFileInfo(filePath).fileName());
+    item->setToolTip(4, filePath);
+  } else {
+    item->setText(4, tr("(none)"));
+    item->setToolTip(4, QString());
+  }
+
+  // Update duration column (column 6)
+  if (localeFile && localeFile->duration > 0) {
+    qint64 durationMs = static_cast<qint64>(localeFile->duration * 1000);
+    item->setText(6, formatDuration(durationMs));
+  } else {
+    item->setText(6, QString());
+  }
+}
+
+void NMVoiceManagerPanel::flashRow(int row) {
+  if (!m_voiceTree || row < 0 || row >= m_voiceTree->topLevelItemCount()) {
+    return;
+  }
+
+  auto *item = m_voiceTree->topLevelItem(row);
+  if (!item) {
+    return;
+  }
+
+  // Store original background color (use first cell as reference)
+  QBrush originalBrush = item->background(0);
+  QColor flashColor(100, 200, 100, 100); // Light green
+
+  // Apply flash color to all cells in row
+  for (int col = 0; col < m_voiceTree->columnCount(); ++col) {
+    item->setBackground(col, flashColor);
+  }
+
+  // Reset to original color after 500ms
+  QTimer::singleShot(500, this, [this, row, originalBrush]() {
+    if (!m_voiceTree || row >= m_voiceTree->topLevelItemCount()) {
+      return;
+    }
+    auto *item = m_voiceTree->topLevelItem(row);
+    if (item) {
+      for (int col = 0; col < m_voiceTree->columnCount(); ++col) {
+        item->setBackground(col, originalBrush);
+      }
+    }
+  });
+}
+
+void NMVoiceManagerPanel::setupManifestCallbacks() {
+  if (!m_manifest) {
+    return;
+  }
+
+  // Set up callback for status changes
+  m_manifest->setOnStatusChanged(
+      [this](const std::string &lineId, const std::string &locale,
+             [[maybe_unused]] NovelMind::audio::VoiceLineStatus status) {
+        // Use QMetaObject::invokeMethod to ensure thread safety
+        // This will post the call to the Qt event loop
+        QMetaObject::invokeMethod(
+            this, "onFileStatusChanged", Qt::QueuedConnection,
+            Q_ARG(QString, QString::fromStdString(lineId)),
+            Q_ARG(QString, QString::fromStdString(locale)));
+      });
+
+  // Set up callback for line changes
+  m_manifest->setOnLineChanged([this](const std::string &lineId) {
+    // Line content changed - may need to update display
+    QMetaObject::invokeMethod(this, "onFileStatusChanged", Qt::QueuedConnection,
+                              Q_ARG(QString, QString::fromStdString(lineId)),
+                              Q_ARG(QString, m_currentLocale));
+  });
 }
 
 } // namespace NovelMind::editor::qt

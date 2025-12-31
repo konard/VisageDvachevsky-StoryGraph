@@ -2,7 +2,10 @@
 
 #include <QGraphicsSceneMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
+#include <QPolygonF>
 #include <QStyleOptionGraphicsItem>
+#include <QToolTip>
 
 namespace NovelMind::editor::qt {
 
@@ -52,7 +55,45 @@ void NMKeyframeItem::paint(QPainter *painter,
   }
 
   painter->setBrush(QBrush(fillColor));
-  painter->drawEllipse(QPointF(0, 0), radius, radius);
+
+  // Draw shape based on easing type for visual distinction
+  // 0 = Linear (circle), 1-4 = Ease In/Out (diamond), 15 = Custom (square)
+  if (m_easingType == 0) {
+    // Linear: simple circle
+    painter->drawEllipse(QPointF(0, 0), radius, radius);
+  } else if (m_easingType >= 1 && m_easingType <= 14) {
+    // Ease types: diamond shape
+    QPolygonF diamond;
+    diamond << QPointF(0, -radius) << QPointF(radius, 0) << QPointF(0, radius)
+            << QPointF(-radius, 0);
+    painter->drawPolygon(diamond);
+  } else if (m_easingType == 15) {
+    // Custom bezier: rounded square
+    qreal half = radius * 0.85;
+    painter->drawRoundedRect(QRectF(-half, -half, half * 2, half * 2),
+                             radius * 0.3, radius * 0.3);
+
+    // Draw small bezier curve icon inside
+    if (radius >= 4) {
+      painter->setPen(QPen(borderColor.darker(120), 1));
+      QPainterPath curvePath;
+      qreal iconSize = half * 0.7;
+      curvePath.moveTo(-iconSize, iconSize * 0.5);
+      curvePath.cubicTo(-iconSize * 0.3, -iconSize * 0.5, iconSize * 0.3,
+                        iconSize * 0.5, iconSize, -iconSize * 0.5);
+      painter->drawPath(curvePath);
+    }
+  } else {
+    // Default to circle
+    painter->drawEllipse(QPointF(0, 0), radius, radius);
+  }
+}
+
+void NMKeyframeItem::setEasingType(int easing) {
+  if (m_easingType != easing) {
+    m_easingType = easing;
+    update();
+  }
 }
 
 void NMKeyframeItem::setSelected(bool selected) {
@@ -78,7 +119,11 @@ void NMKeyframeItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     m_dragStartFrame = m_id.frame;
 
     bool additiveSelection = event->modifiers() & Qt::ControlModifier;
-    emit clicked(additiveSelection, m_id);
+    bool rangeSelection = event->modifiers() & Qt::ShiftModifier;
+    emit clicked(additiveSelection, rangeSelection, m_id);
+
+    // Emit drag started signal
+    emit dragStarted(m_id);
 
     event->accept();
   } else {
@@ -106,6 +151,10 @@ void NMKeyframeItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
       emit moved(oldFrame, newFrame, m_id.trackIndex);
     }
 
+    // Show tooltip with current frame number
+    QToolTip::showText(event->screenPos(), QString("Frame: %1").arg(newFrame),
+                       nullptr);
+
     event->accept();
   } else {
     QGraphicsObject::mouseMoveEvent(event);
@@ -117,11 +166,11 @@ void NMKeyframeItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
     if (m_dragging) {
       m_dragging = false;
 
-      // Final move signal with the final position
-      if (m_id.frame != m_dragStartFrame) {
-        // Already emitted during drag, but we could emit a final confirmation
-        // For now, the move signals during drag are sufficient
-      }
+      // Hide tooltip on release
+      QToolTip::hideText();
+
+      // Emit drag ended signal
+      emit dragEnded();
     }
     event->accept();
   } else {

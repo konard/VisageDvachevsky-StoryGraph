@@ -85,6 +85,20 @@ void QtEventBus::publish(const QtEditorEvent &event) {
     emit graphConnectionRemoved(event.data.value("connectionId").toString());
     break;
 
+  case QtEditorEventType::AssetImported:
+    emit assetImported(event.data.value("assetPath").toString(),
+                       event.data.value("targetDir").toString());
+    break;
+
+  case QtEditorEventType::AssetDeleted:
+    emit assetDeleted(event.data.value("assetPath").toString());
+    break;
+
+  case QtEditorEventType::AssetRenamed:
+    emit assetRenamed(event.data.value("oldPath").toString(),
+                      event.data.value("newPath").toString());
+    break;
+
   default:
     break;
   }
@@ -159,6 +173,34 @@ void QtEventBus::publishGraphConnectionRemoved(const QString &connectionId) {
   QtEditorEvent event;
   event.type = QtEditorEventType::GraphConnectionRemoved;
   event.data["connectionId"] = connectionId;
+  publish(event);
+}
+
+void QtEventBus::publishAssetImported(const QString &assetPath,
+                                      const QString &targetDir) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::AssetImported;
+  event.source = "AssetPipeline";
+  event.data["assetPath"] = assetPath;
+  event.data["targetDir"] = targetDir;
+  publish(event);
+}
+
+void QtEventBus::publishAssetDeleted(const QString &assetPath) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::AssetDeleted;
+  event.source = "AssetPipeline";
+  event.data["assetPath"] = assetPath;
+  publish(event);
+}
+
+void QtEventBus::publishAssetRenamed(const QString &oldPath,
+                                     const QString &newPath) {
+  QtEditorEvent event;
+  event.type = QtEditorEventType::AssetRenamed;
+  event.source = "AssetPipeline";
+  event.data["oldPath"] = oldPath;
+  event.data["newPath"] = newPath;
   publish(event);
 }
 
