@@ -77,6 +77,7 @@ enum class RecordingState : u8 {
   Preparing,  // Setting up recording
   Recording,  // Actively recording
   Stopping,   // Stopping recording
+  Canceling,  // Canceling recording
   Processing, // Post-processing (trimming, normalizing)
   Error       // Error state
 };
@@ -411,6 +412,14 @@ private:
   // Processing thread
   std::thread m_processingThread;
   std::atomic<bool> m_processingActive{false};
+
+  // Thread safety for concurrent stop/cancel operations
+  mutable std::mutex m_resourceMutex;        // Protects m_encoder and m_captureDevice during stop/cancel
+  std::atomic<bool> m_cancelRequested{false}; // Signals background thread to abort
+
+  // Helper methods for thread-safe operations
+  void joinProcessingThread();
+  void cleanupResources();
 };
 
 } // namespace NovelMind::audio
