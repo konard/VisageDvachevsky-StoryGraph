@@ -34,6 +34,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <functional>
+#include <memory>
 
 namespace NovelMind::editor::qt {
 
@@ -114,7 +115,10 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
                                             const QString &nodeType,
                                             const QPointF &pos, uint64_t nodeId,
                                             const QString &nodeIdString) {
-  auto *node = new NMGraphNodeItem(title, nodeType);
+  // MEM-1 fix: Use unique_ptr for exception-safe allocation, then transfer
+  // ownership to scene via addItem()
+  auto nodePtr = std::make_unique<NMGraphNodeItem>(title, nodeType);
+  auto *node = nodePtr.get();
   node->setPos(pos);
 
   if (nodeId == 0) {
@@ -211,7 +215,7 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
     node->setScriptPath(QString());
   }
 
-  addItem(node);
+  addItem(nodePtr.release()); // Scene takes ownership
   m_nodes.append(node);
   m_nodeLookup.insert(nodeId, node);
   emit nodeAdded(node->nodeId(), node->nodeIdString(), node->nodeType());
@@ -234,8 +238,11 @@ NMGraphConnectionItem *NMStoryGraphScene::addConnection(uint64_t fromNodeId,
     return nullptr;
   }
 
-  auto *connection = new NMGraphConnectionItem(from, to);
-  addItem(connection);
+  // MEM-1 fix: Use unique_ptr for exception-safe allocation, then transfer
+  // ownership to scene via addItem()
+  auto connectionPtr = std::make_unique<NMGraphConnectionItem>(from, to);
+  auto *connection = connectionPtr.get();
+  addItem(connectionPtr.release()); // Scene takes ownership
   m_connections.append(connection);
 
   // Now update the path after the connection is added to the scene
