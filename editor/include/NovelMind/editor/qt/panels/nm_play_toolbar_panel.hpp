@@ -34,6 +34,10 @@ signals:
   /// Emitted when playback source mode is changed by the user
   void playbackSourceModeChanged(PlaybackSourceMode mode);
 
+public slots:
+  /// Update the source mode combo from external source (e.g., Project Settings)
+  void setSourceMode(PlaybackSourceMode mode);
+
 private slots:
   void onPlayModeChanged(NMPlayModeController::PlayMode mode);
   void onCurrentNodeChanged(const QString &nodeId);

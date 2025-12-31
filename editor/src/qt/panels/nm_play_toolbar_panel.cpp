@@ -1,6 +1,7 @@
 #include <NovelMind/editor/qt/nm_icon_manager.hpp>
 #include <NovelMind/editor/qt/nm_scrollable_toolbar.hpp>
 #include <NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp>
+#include <QSignalBlocker>
 #include <QToolBar>
 #include <QVBoxLayout>
 
@@ -434,6 +435,63 @@ void NMPlayToolbarPanel::onSourceModeChanged(int index) {
     break;
   }
   showTransientStatus(tr("Playback source: %1").arg(modeStr), indicatorColor);
+}
+
+void NMPlayToolbarPanel::setSourceMode(PlaybackSourceMode mode) {
+  // Update the combo box to reflect the new mode from external source
+  // (e.g., from Project Settings panel - issue #125)
+  if (!m_sourceCombo) {
+    return;
+  }
+
+  // Find the index for this mode
+  int targetIndex = -1;
+  for (int i = 0; i < m_sourceCombo->count(); ++i) {
+    if (m_sourceCombo->itemData(i).toInt() == static_cast<int>(mode)) {
+      targetIndex = i;
+      break;
+    }
+  }
+
+  if (targetIndex >= 0 && targetIndex != m_sourceCombo->currentIndex()) {
+    // Block signals to prevent feedback loop
+    QSignalBlocker blocker(m_sourceCombo);
+    m_sourceCombo->setCurrentIndex(targetIndex);
+
+    // Update the indicator directly (since we blocked the signal)
+    // This mirrors the logic from onSourceModeChanged
+    QString indicatorText;
+    QString indicatorColor;
+    QString indicatorBg;
+
+    switch (mode) {
+    case PlaybackSourceMode::Script:
+      indicatorText = "NMS";
+      indicatorColor = "#2196f3"; // Blue
+      indicatorBg = "#1d2b32";
+      break;
+    case PlaybackSourceMode::Graph:
+      indicatorText = "GRAPH";
+      indicatorColor = "#4caf50"; // Green
+      indicatorBg = "#1d2b1d";
+      break;
+    case PlaybackSourceMode::Mixed:
+      indicatorText = "MIXED";
+      indicatorColor = "#ff9800"; // Orange
+      indicatorBg = "#2b251d";
+      break;
+    }
+
+    if (m_sourceIndicator) {
+      m_sourceIndicator->setText(indicatorText);
+      m_sourceIndicator->setStyleSheet(
+          QString("QLabel { color: %1; background-color: %2; border: 1px solid "
+                  "%1; "
+                  "border-radius: 8px; padding: 2px 6px; font-weight: bold; "
+                  "font-size: 10px; }")
+              .arg(indicatorColor, indicatorBg));
+    }
+  }
 }
 
 } // namespace NovelMind::editor::qt
