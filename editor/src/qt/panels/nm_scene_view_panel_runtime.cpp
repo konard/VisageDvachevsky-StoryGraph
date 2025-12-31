@@ -1,5 +1,6 @@
 #include "NovelMind/editor/editor_runtime_host.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "nm_scene_view_overlays.hpp"
@@ -155,7 +156,12 @@ void NMSceneViewPanel::restoreEditorObjectsAfterRuntime() {
 
 void NMSceneViewPanel::applyRuntimeSnapshot(
     const ::NovelMind::editor::SceneSnapshot &snapshot) {
-  if (!m_scene) {
+  // P5.3: Validate scene before runtime snapshot operations
+  if (!validateSceneReady()) {
+    qWarning() << "[SceneViewPanel] Cannot apply runtime snapshot: scene not "
+                  "initialized";
+    // Note: We don't show a dialog here as this is called during playback
+    // and the user should see an error from the play mode controller instead
     return;
   }
 
@@ -243,10 +249,16 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     }
   };
 
+  // P5.3: Create runtime objects with comprehensive validation
   int runtimeIndex = 0;
+  int successCount = 0;
+  int failureCount = 0;
+
   for (const auto &state : snapshot.objects) {
     QString baseId = QString::fromStdString(state.id);
     if (baseId.isEmpty()) {
+      qDebug() << "[SceneViewPanel] Runtime object has empty ID, generating "
+                  "fallback ID";
       baseId = QString::number(runtimeIndex++);
     }
     QString id = QString("runtime_%1").arg(baseId);
@@ -254,12 +266,26 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
       id = QString("runtime_%1_%2").arg(baseId).arg(runtimeIndex++);
     }
 
-    // MEM-4 fix: Validate allocation before use
-    auto *obj = new NMSceneObject(id, toQtType(state.type));
-    if (!obj) {
-      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id;
+    // P5.3/MEM-4 fix: Validate allocation before use with defensive programming
+    NMSceneObject *obj = nullptr;
+    try {
+      obj = new NMSceneObject(id, toQtType(state.type));
+    } catch (const std::exception &e) {
+      qCritical() << "[SceneViewPanel] Exception allocating runtime object:"
+                  << id << "error:" << e.what();
+      failureCount++;
       continue;
     }
+
+    if (!obj) {
+      // This branch is technically unreachable with standard new, but kept
+      // for defensive programming in case of custom allocators
+      qWarning() << "[SceneViewPanel] Failed to allocate runtime object:" << id;
+      failureCount++;
+      continue;
+    }
+
+    // Configure the object properties
     obj->setName(objectNameFromState(state));
     obj->setPos(QPointF(state.x, state.y));
     obj->setZValue(state.zOrder);
@@ -269,8 +295,23 @@ void NMSceneViewPanel::applyRuntimeSnapshot(
     obj->setVisible(state.visible);
     obj->setPixmap(
         loadPixmapForAsset(textureHintFromState(state), obj->objectType()));
+
+    // Add to scene
     m_scene->addSceneObject(obj);
     m_runtimeObjectIds << id;
+    successCount++;
+  }
+
+  // Log summary of runtime object creation
+  if (successCount > 0 || failureCount > 0) {
+    qDebug() << "[SceneViewPanel] Runtime snapshot applied: created"
+             << successCount << "objects," << failureCount << "failures";
+  }
+
+  // Show warning if some objects failed to create
+  if (failureCount > 0) {
+    qWarning() << "[SceneViewPanel]" << failureCount
+               << "runtime objects failed to create";
   }
 
   m_runtimePreviewActive = true;
@@ -463,6 +504,48 @@ void NMSceneViewPanel::updatePreviewOverlayVisibility() {
 
   // Show preview badge only in editor preview mode, not in actual play mode
   m_playOverlay->setPreviewMode(m_editorPreviewActive && !m_playModeActive);
+}
+
+// P5.3 - Scene validation helpers for runtime object allocation
+
+bool NMSceneViewPanel::validateSceneReady() const {
+  if (!m_scene) {
+    qWarning() << "[SceneViewPanel] Scene validation failed: scene is nullptr";
+    return false;
+  }
+  return true;
+}
+
+void NMSceneViewPanel::showSceneNotLoadedError() {
+  qWarning() << "[SceneViewPanel] Cannot perform operation: scene not loaded";
+  NMMessageDialog::showError(
+      const_cast<NMSceneViewPanel *>(this), tr("Scene Not Loaded"),
+      tr("Cannot perform this operation because no scene is loaded.\n\n"
+         "Please load or create a scene first:\n"
+         "• File → New Scene\n"
+         "• File → Open Scene"));
+}
+
+void NMSceneViewPanel::showSceneInvalidError() {
+  qWarning() << "[SceneViewPanel] Cannot perform operation: scene is invalid";
+  NMMessageDialog::showWarning(
+      const_cast<NMSceneViewPanel *>(this), tr("Invalid Scene State"),
+      tr("The scene is in an invalid state and cannot perform this "
+         "operation.\n\n"
+         "Try reloading the scene or creating a new one."));
+}
+
+void NMSceneViewPanel::showRuntimeObjectCreationError(const QString &objectId,
+                                                      const QString &reason) {
+  qWarning() << "[SceneViewPanel] Failed to create runtime object:" << objectId
+             << "reason:" << reason;
+  NMMessageDialog::showError(const_cast<NMSceneViewPanel *>(this),
+                             tr("Object Creation Failed"),
+                             tr("Failed to create runtime object '%1'.\n\n"
+                                "Reason: %2\n\n"
+                                "Check the console for more details.")
+                                 .arg(objectId)
+                                 .arg(reason));
 }
 
 } // namespace NovelMind::editor::qt

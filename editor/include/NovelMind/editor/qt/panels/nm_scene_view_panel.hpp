@@ -484,6 +484,13 @@ private:
   NMSceneObjectType guessObjectTypeForAsset(const QString &assetPath) const;
   QPixmap loadPixmapForAsset(const QString &hint, NMSceneObjectType type);
 
+  // Scene validation helpers (P5.3 - runtime object allocation validation)
+  bool validateSceneReady() const;
+  void showSceneNotLoadedError();
+  void showSceneInvalidError();
+  void showRuntimeObjectCreationError(const QString &objectId,
+                                      const QString &reason);
+
   NMSceneGraphicsScene *m_scene = nullptr;
   NMSceneGraphicsView *m_view = nullptr;
   NMSceneGLViewport *m_glViewport = nullptr;
