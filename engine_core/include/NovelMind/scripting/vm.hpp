@@ -72,7 +72,7 @@ private:
   bool m_running;
   bool m_paused;
   bool m_waiting;
-  bool m_halted;
+  mutable bool m_halted; // mutable to allow getString to halt VM on error
   i32 m_choiceResult;
 };
 

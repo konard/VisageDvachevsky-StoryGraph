@@ -567,7 +567,11 @@ const std::string &VirtualMachine::getString(u32 index) const {
   if (index < m_stringTable.size()) {
     return m_stringTable[index];
   }
-  NOVELMIND_LOG_WARN("Invalid string index");
+  // Log error and halt VM to prevent silent data corruption
+  NOVELMIND_LOG_ERROR("Invalid string table index: " + std::to_string(index) +
+                      " (table size: " + std::to_string(m_stringTable.size()) +
+                      ")");
+  m_halted = true;
   return empty;
 }
 
