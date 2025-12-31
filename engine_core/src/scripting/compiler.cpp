@@ -19,6 +19,14 @@ Result<CompiledScript> Compiler::compile(const Program &program) {
 
   // Resolve pending jumps
   for (const auto &pending : m_pendingJumps) {
+    // Bounds check to prevent buffer overflow (security vulnerability)
+    if (pending.instructionIndex >= m_output.instructions.size()) {
+      error("Internal compiler error: Invalid pending jump index " +
+            std::to_string(pending.instructionIndex) + " (program size: " +
+            std::to_string(m_output.instructions.size()) + ")");
+      continue;
+    }
+
     auto it = m_labels.find(pending.targetLabel);
     if (it != m_labels.end()) {
       m_output.instructions[pending.instructionIndex].operand = it->second;
@@ -56,9 +64,18 @@ u32 Compiler::emitJump(OpCode op) {
   return index;
 }
 
-void Compiler::patchJump(u32 jumpIndex) {
+bool Compiler::patchJump(u32 jumpIndex) {
+  // Bounds check to prevent buffer overflow (security vulnerability)
+  if (jumpIndex >= m_output.instructions.size()) {
+    error("Internal compiler error: Invalid jump index " +
+          std::to_string(jumpIndex) + " (program size: " +
+          std::to_string(m_output.instructions.size()) + ")");
+    return false;
+  }
+
   u32 target = static_cast<u32>(m_output.instructions.size());
   m_output.instructions[jumpIndex].operand = target;
+  return true;
 }
 
 u32 Compiler::addString(const std::string &str) {
