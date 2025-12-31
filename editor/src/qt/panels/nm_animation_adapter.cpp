@@ -49,11 +49,19 @@ void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
 
   m_sceneView = sceneView;
 
-  // Connect adapter signals to scene view
+  // Connect adapter signals to scene view - trigger viewport refresh for visual
+  // updates during animation playback
   connect(this, &NMAnimationAdapter::sceneUpdateRequired, m_sceneView,
           [this]() {
             if (m_sceneView) {
-              m_sceneView->update();
+              // Must update the graphics view's viewport, not the dock panel
+              // widget. QWidget::update() on the panel doesn't refresh the
+              // QGraphicsScene contents.
+              if (auto *view = m_sceneView->graphicsView()) {
+                if (view->viewport()) {
+                  view->viewport()->update();
+                }
+              }
             }
           });
 
