@@ -1309,6 +1309,15 @@ void NMLocalizationPanel::importLocale() {
   const QString localeCode = info.baseName();
   const auto format = formatForExtension(info.suffix());
 
+  // Capture old values for undo support (for the target locale)
+  QHash<QString, QString> oldValues;
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (!entry.isDeleted && entry.translations.contains(localeCode)) {
+      oldValues[entry.key] = entry.translations.value(localeCode);
+    }
+  }
+
   NovelMind::localization::LocaleId locale;
   locale.language = localeCode.toStdString();
   auto result = m_localization.loadStrings(locale, path.toStdString(), format);
@@ -1318,7 +1327,35 @@ void NMLocalizationPanel::importLocale() {
     return;
   }
 
+  // Switch to the imported locale and sync entries
   m_currentLocale = localeCode;
+  syncEntriesFromManager();
+
+  // Create undo macro for bulk import
+  NMUndoManager::instance().beginMacro(
+      QString("Import Locale: %1").arg(info.fileName()));
+
+  // Create commands for each changed value
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (entry.isDeleted) {
+      continue;
+    }
+
+    const QString &key = entry.key;
+    const QString newValue = entry.translations.value(localeCode, "");
+    const QString oldValue = oldValues.value(key, "");
+
+    // Only create command if value changed
+    if (newValue != oldValue) {
+      auto *cmd = new ChangeTranslationCommand(this, key, localeCode, oldValue,
+                                               newValue);
+      NMUndoManager::instance().pushCommand(cmd);
+    }
+  }
+
+  NMUndoManager::instance().endMacro();
+
   refreshLocales();
   setDirty(true);
 }
@@ -1392,21 +1429,99 @@ void NMLocalizationPanel::exportToJson(const QString &filePath) {
 }
 
 void NMLocalizationPanel::importFromCsv(const QString &filePath) {
+  // Capture old values for undo support
+  QHash<QString, QString> oldValues;
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (!entry.isDeleted && entry.translations.contains(m_currentLocale)) {
+      oldValues[entry.key] = entry.translations.value(m_currentLocale);
+    }
+  }
+
+  // Perform the import
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
   m_localization.loadStrings(locale, filePath.toStdString(),
                              NovelMind::localization::LocalizationFormat::CSV);
   syncEntriesFromManager();
+
+  // Create undo macro for bulk import
+  QFileInfo fileInfo(filePath);
+  NMUndoManager::instance().beginMacro(
+      QString("Import CSV: %1").arg(fileInfo.fileName()));
+
+  // Create commands for each changed value
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (entry.isDeleted) {
+      continue;
+    }
+
+    const QString &key = entry.key;
+    const QString newValue = entry.translations.value(m_currentLocale, "");
+    const QString oldValue = oldValues.value(key, "");
+
+    // Only create command if value changed
+    if (newValue != oldValue) {
+      auto *cmd =
+          new ChangeTranslationCommand(this, key, m_currentLocale, oldValue,
+                                       newValue);
+      NMUndoManager::instance().pushCommand(cmd);
+    }
+  }
+
+  NMUndoManager::instance().endMacro();
+
   rebuildTable();
+  setDirty(true);
 }
 
 void NMLocalizationPanel::importFromJson(const QString &filePath) {
+  // Capture old values for undo support
+  QHash<QString, QString> oldValues;
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (!entry.isDeleted && entry.translations.contains(m_currentLocale)) {
+      oldValues[entry.key] = entry.translations.value(m_currentLocale);
+    }
+  }
+
+  // Perform the import
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
   m_localization.loadStrings(locale, filePath.toStdString(),
                              NovelMind::localization::LocalizationFormat::JSON);
   syncEntriesFromManager();
+
+  // Create undo macro for bulk import
+  QFileInfo fileInfo(filePath);
+  NMUndoManager::instance().beginMacro(
+      QString("Import JSON: %1").arg(fileInfo.fileName()));
+
+  // Create commands for each changed value
+  for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
+    const LocalizationEntry &entry = it.value();
+    if (entry.isDeleted) {
+      continue;
+    }
+
+    const QString &key = entry.key;
+    const QString newValue = entry.translations.value(m_currentLocale, "");
+    const QString oldValue = oldValues.value(key, "");
+
+    // Only create command if value changed
+    if (newValue != oldValue) {
+      auto *cmd =
+          new ChangeTranslationCommand(this, key, m_currentLocale, oldValue,
+                                       newValue);
+      NMUndoManager::instance().pushCommand(cmd);
+    }
+  }
+
+  NMUndoManager::instance().endMacro();
+
   rebuildTable();
+  setDirty(true);
 }
 
 void NMLocalizationPanel::onExportMissingClicked() { exportMissingStrings(); }
