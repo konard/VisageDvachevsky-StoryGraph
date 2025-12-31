@@ -432,7 +432,8 @@ void AudioRecorder::cancelRecording() {
 }
 
 f32 AudioRecorder::getRecordingDuration() const {
-  if (m_format.sampleRate == 0) {
+  // Check both sampleRate and channels to prevent division by zero
+  if (m_format.sampleRate == 0 || m_format.channels == 0) {
     return 0.0f;
   }
   return static_cast<f32>(m_samplesRecorded) /

@@ -22,6 +22,7 @@
 #include <QSpinBox>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <algorithm>
 #include <climits>
 #include <cmath>
 
@@ -183,8 +184,14 @@ Keyframe TimelineTrack::interpolate(int frame) const {
   result.easing = prevKf->easing;
 
   // Calculate interpolation factor (0 to 1)
-  float t = static_cast<float>(frame - prevKf->frame) /
-            static_cast<float>(nextKf->frame - prevKf->frame);
+  // Safe division with epsilon check to prevent division by zero
+  float frameDiff = static_cast<float>(nextKf->frame - prevKf->frame);
+  if (frameDiff < 0.0001f) {
+    // Same frame or extremely close - no interpolation needed
+    return *prevKf;
+  }
+  float t = static_cast<float>(frame - prevKf->frame) / frameDiff;
+  t = std::clamp(t, 0.0f, 1.0f); // Additional safety clamp
 
   // Apply easing function to t
   double easedT;
