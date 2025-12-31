@@ -17,6 +17,7 @@
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
@@ -1470,6 +1471,85 @@ void NMMainWindow::setupConnections() {
               // through the undo system when connected to property changes
             });
   }
+
+  // Issue #117: Workflow Mode Enforcement - Connect PlayToolbar's source mode
+  // change to update panel read-only states
+  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
+          this, [this](PlaybackSourceMode mode) {
+            qDebug() << "[WorkflowMode] Playback source mode changed to:"
+                     << static_cast<int>(mode);
+
+            switch (mode) {
+            case PlaybackSourceMode::Script:
+              // Script Mode: Story Graph is read-only, Scripts are editable
+              if (m_storyGraphPanel) {
+                m_storyGraphPanel->setReadOnly(true, tr("Script Mode"));
+              }
+              if (m_scriptEditorPanel) {
+                m_scriptEditorPanel->setReadOnly(false);
+              }
+              setStatusMessage(
+                  tr("Script Mode: NMScript files are authoritative"), 3000);
+              break;
+
+            case PlaybackSourceMode::Graph:
+              // Graph Mode: Scripts are read-only, Story Graph is editable
+              if (m_storyGraphPanel) {
+                m_storyGraphPanel->setReadOnly(false);
+              }
+              if (m_scriptEditorPanel) {
+                m_scriptEditorPanel->setReadOnly(true, tr("Graph Mode"));
+              }
+              setStatusMessage(tr("Graph Mode: Story Graph is authoritative"),
+                               3000);
+              break;
+
+            case PlaybackSourceMode::Mixed:
+              // Mixed Mode: Both panels are editable (conflicts resolved at
+              // runtime)
+              if (m_storyGraphPanel) {
+                m_storyGraphPanel->setReadOnly(false);
+              }
+              if (m_scriptEditorPanel) {
+                m_scriptEditorPanel->setReadOnly(false);
+              }
+              setStatusMessage(
+                  tr("Mixed Mode: Both sources are editable, Graph wins on "
+                     "conflicts"),
+                  3000);
+              break;
+            }
+          });
+
+  // Issue #117: Connect Script Editor sync to Story Graph
+  connect(m_scriptEditorPanel, &NMScriptEditorPanel::syncToGraphRequested, this,
+          [this](const QString &sceneName, const QString &speaker,
+                 const QString &dialogueText, const QStringList &choices) {
+            if (!m_storyGraphPanel) {
+              return;
+            }
+
+            // Find the node corresponding to this scene
+            auto *node = m_storyGraphPanel->findNodeByIdString(sceneName);
+            if (!node) {
+              qDebug() << "[WorkflowMode] No graph node found for scene:"
+                       << sceneName;
+              return;
+            }
+
+            // Update node properties from script
+            m_storyGraphPanel->applyNodePropertyChange(sceneName, "speaker",
+                                                       speaker);
+            m_storyGraphPanel->applyNodePropertyChange(sceneName, "text",
+                                                       dialogueText);
+            if (!choices.isEmpty()) {
+              m_storyGraphPanel->applyNodePropertyChange(sceneName, "choices",
+                                                         choices.join("\n"));
+            }
+
+            qDebug() << "[WorkflowMode] Synced script scene to graph:"
+                     << sceneName;
+          });
 
   // Timeline Panel ↔ Scene View Panel synchronization
   if (m_timelinePanel && m_sceneViewPanel) {

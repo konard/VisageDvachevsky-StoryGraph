@@ -17,6 +17,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsView>
 #include <QHash>
+#include <QLabel>
 #include <QPushButton>
 #include <QStringList>
 #include <QToolBar>
@@ -374,6 +375,21 @@ public:
    */
   [[nodiscard]] QStringList validateGraph() const;
 
+  /**
+   * @brief Set read-only mode for workflow enforcement
+   *
+   * When in read-only mode, node creation, deletion, and modification
+   * are disabled. The graph can still be navigated and viewed.
+   *
+   * @param readOnly true to enable read-only mode
+   */
+  void setReadOnly(bool readOnly);
+
+  /**
+   * @brief Check if scene is in read-only mode
+   */
+  [[nodiscard]] bool isReadOnly() const { return m_readOnly; }
+
 signals:
   void nodeAdded(uint64_t nodeId, const QString &nodeIdString,
                  const QString &nodeType);
@@ -397,6 +413,7 @@ private:
   uint64_t m_nextNodeId = 1;
   QHash<uint64_t, QPointF> m_dragStartPositions;
   bool m_isDraggingNodes = false;
+  bool m_readOnly = false; // Issue #117: Read-only mode for workflow enforcement
 };
 
 /**
@@ -483,6 +500,25 @@ class NMStoryGraphPanel : public NMDockPanel {
 public:
   explicit NMStoryGraphPanel(QWidget *parent = nullptr);
   ~NMStoryGraphPanel() override;
+
+  /**
+   * @brief Set read-only mode for workflow enforcement
+   *
+   * When in read-only mode (e.g., Script Mode workflow):
+   * - A banner is displayed indicating read-only state
+   * - Node creation, editing, and deletion are disabled
+   * - Connection creation and deletion are disabled
+   * - The graph can still be navigated and viewed
+   *
+   * @param readOnly true to enable read-only mode
+   * @param reason Optional reason text for the banner (e.g., "Script Mode")
+   */
+  void setReadOnly(bool readOnly, const QString &reason = QString());
+
+  /**
+   * @brief Check if panel is in read-only mode
+   */
+  [[nodiscard]] bool isReadOnly() const { return m_readOnly; }
 
   struct LayoutNode {
     QPointF position;
@@ -624,6 +660,11 @@ private:
 
   // Sync controls (issue #82)
   QPushButton *m_syncGraphToScriptBtn = nullptr;
+
+  // Read-only mode for workflow enforcement (issue #117)
+  bool m_readOnly = false;
+  QWidget *m_readOnlyBanner = nullptr;
+  QLabel *m_readOnlyLabel = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

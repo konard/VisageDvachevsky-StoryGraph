@@ -705,6 +705,32 @@ public:
    */
   void showCommandPalette();
 
+  /**
+   * @brief Set read-only mode for workflow enforcement
+   *
+   * When in read-only mode (e.g., Graph Mode workflow):
+   * - A banner is displayed indicating read-only state
+   * - Script editing and saving are disabled
+   * - The scripts can still be viewed and navigated
+   *
+   * @param readOnly true to enable read-only mode
+   * @param reason Optional reason text for the banner (e.g., "Graph Mode")
+   */
+  void setReadOnly(bool readOnly, const QString &reason = QString());
+
+  /**
+   * @brief Check if panel is in read-only mode
+   */
+  [[nodiscard]] bool isReadOnly() const { return m_readOnly; }
+
+  /**
+   * @brief Sync script content to Story Graph
+   *
+   * Parses the current script and updates the corresponding Story Graph
+   * nodes with dialogue, speaker, and choice information.
+   */
+  void syncScriptToGraph();
+
 signals:
   void docHtmlChanged(const QString &html);
 
@@ -718,6 +744,16 @@ signals:
    */
   void referencesFound(const QString &symbol,
                        const QList<ReferenceResult> &references);
+
+  /**
+   * @brief Emitted when script content should be synced to Story Graph
+   *
+   * Contains parsed scene data from script files that should update
+   * the corresponding Story Graph nodes.
+   */
+  void syncToGraphRequested(const QString &sceneName, const QString &speaker,
+                            const QString &dialogueText,
+                            const QStringList &choices);
 
 private slots:
   void onFileActivated(QTreeWidgetItem *item, int column);
@@ -803,6 +839,12 @@ private:
 
   // Snippet templates
   QList<SnippetTemplate> m_snippetTemplates;
+
+  // Read-only mode for workflow enforcement (issue #117)
+  bool m_readOnly = false;
+  QWidget *m_readOnlyBanner = nullptr;
+  QLabel *m_readOnlyLabel = nullptr;
+  QPushButton *m_syncToGraphBtn = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

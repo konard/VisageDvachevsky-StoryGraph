@@ -7,6 +7,7 @@
 #include <QAction>
 #include <QComboBox>
 #include <QFile>
+#include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QList>
@@ -490,6 +491,96 @@ bool NMStoryGraphPanel::navigateToNode(const QString &nodeIdString) {
 
   qDebug() << "[StoryGraph] Navigated to node:" << nodeIdString;
   return true;
+}
+
+void NMStoryGraphPanel::setReadOnly(bool readOnly, const QString &reason) {
+  if (m_readOnly == readOnly) {
+    return;
+  }
+
+  m_readOnly = readOnly;
+
+  // Create or update the read-only banner
+  if (readOnly) {
+    if (!m_readOnlyBanner) {
+      m_readOnlyBanner = new QFrame(m_contentWidget);
+      m_readOnlyBanner->setObjectName("WorkflowReadOnlyBanner");
+      m_readOnlyBanner->setStyleSheet(
+          "QFrame#WorkflowReadOnlyBanner {"
+          "  background-color: #3d5a80;"
+          "  border: 1px solid #98c1d9;"
+          "  border-radius: 4px;"
+          "  padding: 6px 12px;"
+          "  margin: 4px 8px;"
+          "}");
+
+      auto *bannerLayout = new QHBoxLayout(m_readOnlyBanner);
+      bannerLayout->setContentsMargins(8, 4, 8, 4);
+      bannerLayout->setSpacing(8);
+
+      // Info icon (using text for now)
+      auto *iconLabel = new QLabel(QString::fromUtf8("\xE2\x84\xB9"), // ℹ
+                                   m_readOnlyBanner);
+      iconLabel->setStyleSheet("font-size: 14px; color: #e0fbfc;");
+      bannerLayout->addWidget(iconLabel);
+
+      m_readOnlyLabel = new QLabel(m_readOnlyBanner);
+      m_readOnlyLabel->setStyleSheet("color: #e0fbfc; font-weight: bold;");
+      bannerLayout->addWidget(m_readOnlyLabel);
+
+      bannerLayout->addStretch();
+
+      // Insert banner at the top of the content widget
+      if (auto *layout =
+              qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+        // Insert after toolbar (index 1)
+        layout->insertWidget(1, m_readOnlyBanner);
+      }
+    }
+
+    // Update banner text
+    QString bannerText = tr("Read-only mode");
+    if (!reason.isEmpty()) {
+      bannerText += QString(" (%1)").arg(reason);
+    }
+    bannerText +=
+        tr(" - Graph editing is disabled. Use 'Sync to Script' to update.");
+    m_readOnlyLabel->setText(bannerText);
+    m_readOnlyBanner->setVisible(true);
+  } else if (m_readOnlyBanner) {
+    m_readOnlyBanner->setVisible(false);
+  }
+
+  // Disable/enable editing controls
+  if (m_nodePalette) {
+    m_nodePalette->setEnabled(!readOnly);
+  }
+
+  if (m_scene) {
+    m_scene->setReadOnly(readOnly);
+  }
+
+  // Update toolbar buttons
+  if (m_generateKeysBtn) {
+    m_generateKeysBtn->setEnabled(!readOnly);
+  }
+
+  // Sync button is always enabled - it's how you sync changes
+  if (m_syncGraphToScriptBtn) {
+    m_syncGraphToScriptBtn->setEnabled(true);
+    if (readOnly) {
+      m_syncGraphToScriptBtn->setToolTip(
+          tr("Story Graph is read-only in Script Mode.\n"
+             "Script files are authoritative."));
+    } else {
+      m_syncGraphToScriptBtn->setToolTip(
+          tr("Synchronize Story Graph changes to NMScript files.\n"
+             "This writes graph node data (speaker, dialogue) to .nms files."));
+    }
+  }
+
+  qDebug() << "[StoryGraph] Read-only mode:" << readOnly
+           << "reason:" << reason;
 }
 
 } // namespace NovelMind::editor::qt

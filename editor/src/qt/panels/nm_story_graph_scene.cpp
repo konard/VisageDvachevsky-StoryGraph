@@ -579,7 +579,28 @@ QStringList NMStoryGraphScene::validateGraph() const {
   return errors;
 }
 
+void NMStoryGraphScene::setReadOnly(bool readOnly) {
+  m_readOnly = readOnly;
+
+  // Update item flags for all nodes
+  for (auto *node : m_nodes) {
+    if (readOnly) {
+      // Allow selection but not movement
+      node->setFlag(QGraphicsItem::ItemIsMovable, false);
+    } else {
+      // Normal mode - allow movement
+      node->setFlag(QGraphicsItem::ItemIsMovable, true);
+    }
+  }
+}
+
 void NMStoryGraphScene::keyPressEvent(QKeyEvent *event) {
+  // Block delete in read-only mode
+  if (m_readOnly) {
+    event->accept();
+    return;
+  }
+
   if (event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) {
     emit deleteSelectionRequested();
     event->accept();
