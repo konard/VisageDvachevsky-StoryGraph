@@ -4,6 +4,7 @@
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -691,6 +692,10 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
             }
             value = QString::fromStdString(
                 projectManager.toRelativePath(destPath.toStdString()));
+
+            // Notify Asset Browser that a new asset was imported
+            QtEventBus::instance().publishAssetImported(destPath,
+                                                        choice.targetDir);
           }
         }
       }

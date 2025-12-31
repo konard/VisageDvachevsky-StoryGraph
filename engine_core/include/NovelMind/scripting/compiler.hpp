@@ -86,7 +86,13 @@ private:
   void reset();
   void emitOp(OpCode op, u32 operand = 0);
   u32 emitJump(OpCode op);
-  void patchJump(u32 jumpIndex);
+  /**
+   * @brief Patch a jump instruction with the current program counter
+   * @param jumpIndex Index of the jump instruction to patch
+   * @return true if successful, false if jumpIndex is out of bounds
+   * @note This function validates bounds to prevent buffer overflow
+   */
+  bool patchJump(u32 jumpIndex);
   u32 addString(const std::string &str);
 
   // Error handling

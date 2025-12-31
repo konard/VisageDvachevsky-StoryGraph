@@ -23,6 +23,7 @@
 #include <QGraphicsView>
 #include <QHash>
 #include <QMap>
+#include <QMutex>
 #include <QSet>
 #include <QToolBar>
 #include <QUndoStack>
@@ -30,6 +31,7 @@
 #include <QWidget>
 
 #include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
+#include <QMutex>
 #include <atomic>
 #include <memory>
 
@@ -346,6 +348,7 @@ private:
 
   // State
   QMap<QString, TimelineTrack *> m_tracks;
+  mutable QMutex m_tracksMutex; // Protects m_tracks from concurrent access
   int m_currentFrame = 0;
   int m_totalFrames = 300; // 10 seconds at 30fps
   int m_fps = 30;
@@ -400,10 +403,16 @@ private:
   double m_lastRenderTimeMs = 0.0;
   int m_lastSceneItemCount = 0;
 
+  // Thread safety for track access (protects m_tracks map)
+  mutable QMutex m_tracksMutex;
+
   // Helper methods for cached rendering
   void invalidateRenderCache();
   void invalidateTrackCache(int trackIndex);
   void recordRenderMetrics(double renderTimeMs, int itemCount);
+
+  // Thread-safe helper to get a copy of track names
+  QStringList getTrackNamesSafe() const;
 };
 
 } // namespace NovelMind::editor::qt
