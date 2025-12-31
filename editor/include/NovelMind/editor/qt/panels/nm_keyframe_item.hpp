@@ -9,6 +9,7 @@
  * - Selection support (single and multi-select)
  * - Double-click for easing editing
  * - Visual feedback for interaction states
+ * - Easing type visual indicators
  */
 
 #include <QBrush>
@@ -18,6 +19,9 @@
 #include <functional>
 
 namespace NovelMind::editor::qt {
+
+// Forward declaration
+enum class EasingType;
 
 struct KeyframeId {
   int trackIndex = -1;
@@ -110,6 +114,17 @@ public:
     m_frameToX = frameToX;
   }
 
+  /**
+   * @brief Set the easing type for visual indicator
+   * @param easing The easing type to display
+   */
+  void setEasingType(int easing);
+
+  /**
+   * @brief Get the current easing type
+   */
+  int easingType() const { return m_easingType; }
+
 signals:
   /**
    * @brief Emitted when keyframe is moved
@@ -171,6 +186,9 @@ private:
   // Coordinate conversion
   std::function<int(int)> m_xToFrame;
   std::function<int(int)> m_frameToX;
+
+  // Easing type for visual indicator
+  int m_easingType = 0; // 0 = Linear
 
   static constexpr qreal KEYFRAME_RADIUS = 4.0;
 };

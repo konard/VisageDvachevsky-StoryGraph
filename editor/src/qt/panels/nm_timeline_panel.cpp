@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+#include "NovelMind/editor/qt/nm_bezier_curve_editor_dialog.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
@@ -1129,6 +1130,7 @@ void NMTimelinePanel::renderTracks() {
       kfItem->setPos(kfX, y + TRACK_HEIGHT / 2);
       kfItem->setSnapToGrid(m_snapToGrid);
       kfItem->setGridSize(m_gridSize);
+      kfItem->setEasingType(static_cast<int>(kf.easing));
 
       // Set coordinate conversion functions
       kfItem->setFrameConverter([this](int x) { return this->xToFrame(x); },
@@ -1371,6 +1373,7 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
   // Create easing selection dialog
   QDialog dialog(this);
   dialog.setWindowTitle("Select Easing Type");
+  dialog.setMinimumWidth(300);
   QVBoxLayout *layout = new QVBoxLayout(&dialog);
 
   QListWidget *easingList = new QListWidget(&dialog);
@@ -1389,12 +1392,20 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
   easingList->addItem("Ease In Bounce");
   easingList->addItem("Ease Out Bounce");
   easingList->addItem("Step");
-  easingList->addItem("Custom");
+  easingList->addItem("Custom Bezier...");
 
   // Select current easing
   easingList->setCurrentRow(static_cast<int>(targetKeyframe->easing));
 
   layout->addWidget(easingList);
+
+  // Add "Edit Bezier Curve..." button when Custom is selected or already set
+  QPushButton *editBezierBtn = new QPushButton(tr("Edit Bezier Curve..."), &dialog);
+  editBezierBtn->setVisible(targetKeyframe->easing == EasingType::Custom);
+  connect(easingList, &QListWidget::currentRowChanged, [editBezierBtn](int row) {
+    editBezierBtn->setVisible(row == static_cast<int>(EasingType::Custom));
+  });
+  layout->addWidget(editBezierBtn);
 
   QDialogButtonBox *buttonBox =
       new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -1403,22 +1414,65 @@ void NMTimelinePanel::showEasingDialog(int trackIndex, int frame) {
 
   layout->addWidget(buttonBox);
 
+  // Handle "Edit Bezier Curve..." button click
+  connect(editBezierBtn, &QPushButton::clicked, [this, targetKeyframe, targetTrack, frame, &dialog]() {
+    BezierCurveResult result;
+    if (NMBezierCurveEditorDialog::getEasing(this, targetKeyframe, result)) {
+      // Apply the bezier curve result
+      targetKeyframe->easing = EasingType::Custom;
+      targetKeyframe->handleOutX = result.handleOutX;
+      targetKeyframe->handleOutY = result.handleOutY;
+      targetKeyframe->handleInX = result.handleInX;
+      targetKeyframe->handleInY = result.handleInY;
+
+      emit keyframeEasingChanged(targetTrack->name, frame, EasingType::Custom);
+      renderTracks();
+      dialog.accept();
+    }
+  });
+
   if (dialog.exec() == QDialog::Accepted) {
     int selectedIndex = easingList->currentRow();
     if (selectedIndex >= 0 &&
         selectedIndex < static_cast<int>(EasingType::Custom) + 1) {
-      // Create undo command for easing change
-      int oldEasing = static_cast<int>(targetKeyframe->easing);
-      int newEasing = selectedIndex;
 
-      if (oldEasing != newEasing) {
-        auto *cmd = new ChangeKeyframeEasingCommand(
-            this, targetTrack->name, frame, oldEasing, newEasing);
-        NMUndoManager::instance().pushCommand(cmd);
+      // If "Custom Bezier..." is selected, open the bezier editor
+      if (selectedIndex == static_cast<int>(EasingType::Custom)) {
+        BezierCurveResult result;
+        if (NMBezierCurveEditorDialog::getEasing(this, targetKeyframe, result)) {
+          // Apply the bezier curve result
+          int oldEasing = static_cast<int>(targetKeyframe->easing);
+          targetKeyframe->easing = EasingType::Custom;
+          targetKeyframe->handleOutX = result.handleOutX;
+          targetKeyframe->handleOutY = result.handleOutY;
+          targetKeyframe->handleInX = result.handleInX;
+          targetKeyframe->handleInY = result.handleInY;
+
+          // Create undo command for easing change
+          if (oldEasing != static_cast<int>(EasingType::Custom)) {
+            auto *cmd = new ChangeKeyframeEasingCommand(
+                this, targetTrack->name, frame, oldEasing,
+                static_cast<int>(EasingType::Custom));
+            NMUndoManager::instance().pushCommand(cmd);
+          }
+
+          emit keyframeEasingChanged(targetTrack->name, frame, EasingType::Custom);
+          renderTracks();
+        }
+      } else {
+        // Create undo command for easing change
+        int oldEasing = static_cast<int>(targetKeyframe->easing);
+        int newEasing = selectedIndex;
+
+        if (oldEasing != newEasing) {
+          auto *cmd = new ChangeKeyframeEasingCommand(
+              this, targetTrack->name, frame, oldEasing, newEasing);
+          NMUndoManager::instance().pushCommand(cmd);
+        }
+
+        emit keyframeEasingChanged(targetTrack->name, frame,
+                                   static_cast<EasingType>(newEasing));
       }
-
-      emit keyframeEasingChanged(targetTrack->name, frame,
-                                 static_cast<EasingType>(newEasing));
     }
   }
 }
