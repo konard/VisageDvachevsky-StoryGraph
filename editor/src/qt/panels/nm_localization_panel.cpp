@@ -513,6 +513,12 @@ void NMLocalizationPanel::syncEntriesToManager() {
   }
 }
 
+/**
+ * @brief Rebuild the entire localization table
+ *
+ * PERF-4 optimization: Populates m_keyToRowMap for O(1) row lookups
+ * when updating individual translations via setTranslationValue().
+ */
 void NMLocalizationPanel::rebuildTable() {
   if (!m_stringsTable) {
     return;
@@ -521,8 +527,14 @@ void NMLocalizationPanel::rebuildTable() {
   m_stringsTable->blockSignals(true);
   m_stringsTable->setRowCount(0);
 
+  // PERF-4: Clear and rebuild key-to-row mapping
+  m_keyToRowMap.clear();
+
   QList<QString> sortedKeys = m_entries.keys();
   std::sort(sortedKeys.begin(), sortedKeys.end());
+
+  // PERF-4: Pre-reserve capacity for the row map
+  m_keyToRowMap.reserve(sortedKeys.size());
 
   int row = 0;
   for (const QString &key : sortedKeys) {
@@ -546,6 +558,9 @@ void NMLocalizationPanel::rebuildTable() {
     QString translationText = entry.translations.value(m_currentLocale);
     auto *translationItem = new QTableWidgetItem(translationText);
     m_stringsTable->setItem(row, 2, translationItem);
+
+    // PERF-4: Store key-to-row mapping for O(1) lookup
+    m_keyToRowMap.insert(key, row);
 
     row++;
   }
@@ -832,13 +847,14 @@ void NMLocalizationPanel::onAddKeyClicked() {
 
     rebuildTable();
 
-    // Select the new row
-    for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
+    // PERF-4: Use O(1) lookup to select the new row instead of O(n) search
+    auto rowIt = m_keyToRowMap.find(key);
+    if (rowIt != m_keyToRowMap.end()) {
+      int row = rowIt.value();
       auto *item = m_stringsTable->item(row, 0);
-      if (item && item->text() == key) {
+      if (item) {
         m_stringsTable->selectRow(row);
         m_stringsTable->scrollToItem(item);
-        break;
       }
     }
   }
@@ -1147,7 +1163,8 @@ void NMLocalizationPanel::scanProjectForUsages() {
         const QString line = in.readLine();
         lineNumber++;
 
-        QRegularExpressionMatchIterator matchIt = keyRefPattern.globalMatch(line);
+        QRegularExpressionMatchIterator matchIt =
+            keyRefPattern.globalMatch(line);
 
         while (matchIt.hasNext()) {
           QRegularExpressionMatch match = matchIt.next();
@@ -1725,6 +1742,12 @@ QString NMLocalizationPanel::getTranslation(const QString &key) const {
   return entry.translations.value(m_defaultLocale);
 }
 
+/**
+ * @brief Set a translation value for a specific key and locale
+ *
+ * PERF-4 optimization: Uses m_keyToRowMap for O(1) row lookup instead
+ * of O(n) linear search through all table rows.
+ */
 void NMLocalizationPanel::setTranslationValue(const QString &key,
                                               const QString &locale,
                                               const QString &value) {
@@ -1737,19 +1760,17 @@ void NMLocalizationPanel::setTranslationValue(const QString &key,
 
     // Update the table if the key is currently displayed
     if (m_stringsTable && locale == m_currentLocale) {
-      // Find the row for this key
-      for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-        auto *idItem = m_stringsTable->item(row, 0);
-        if (idItem && idItem->text() == key) {
-          // Update the translation cell (column 2)
-          auto *valueItem = m_stringsTable->item(row, 2);
-          if (valueItem) {
-            // Block signals to prevent creating a new undo command
-            bool wasBlocked = m_stringsTable->blockSignals(true);
-            valueItem->setText(value);
-            m_stringsTable->blockSignals(wasBlocked);
-          }
-          break;
+      // PERF-4: Use O(1) hash lookup instead of O(n) linear search
+      auto rowIt = m_keyToRowMap.find(key);
+      if (rowIt != m_keyToRowMap.end()) {
+        int row = rowIt.value();
+        // Update the translation cell (column 2)
+        auto *valueItem = m_stringsTable->item(row, 2);
+        if (valueItem) {
+          // Block signals to prevent creating a new undo command
+          bool wasBlocked = m_stringsTable->blockSignals(true);
+          valueItem->setText(value);
+          m_stringsTable->blockSignals(wasBlocked);
         }
       }
     }

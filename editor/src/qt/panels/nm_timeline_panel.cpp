@@ -996,6 +996,37 @@ void NMTimelinePanel::updateFrameDisplay() {
                            .arg(frames, 2, 10, QChar('0')));
 }
 
+/**
+ * @brief Get or create cached frame label string (PERF-3 optimization)
+ *
+ * Avoids repeated QString::number() allocations during renderTracks().
+ * The cache is lazily populated and bounded to prevent memory issues.
+ *
+ * @param frame Frame number to get label for
+ * @return Cached QString reference for the frame number
+ */
+const QString &NMTimelinePanel::getCachedFrameLabel(int frame) const {
+  auto it = m_frameLabelCache.find(frame);
+  if (it != m_frameLabelCache.end()) {
+    return it.value();
+  }
+
+  // Cache miss - create and cache the label
+  // Limit cache size to prevent unbounded growth
+  if (m_frameLabelCache.size() >= m_frameLabelCacheMaxSize) {
+    // Simple eviction: clear half the cache when full
+    // In practice, timeline frames are usually contiguous, so this is rare
+    QList<int> keys = m_frameLabelCache.keys();
+    for (int i = 0; i < keys.size() / 2; ++i) {
+      m_frameLabelCache.remove(keys[i]);
+    }
+  }
+
+  // Insert and return reference to cached value
+  m_frameLabelCache.insert(frame, QString::number(frame));
+  return m_frameLabelCache[frame];
+}
+
 void NMTimelinePanel::renderTracks() {
   QElapsedTimer timer;
   timer.start();
@@ -1015,17 +1046,26 @@ void NMTimelinePanel::renderTracks() {
   int y = TIMELINE_MARGIN;
   int trackIndex = 0;
 
+  // PERF-3: Cache commonly used colors/pens as static to avoid repeated
+  // allocations
+  static const QPen rulerPen(QColor("#606060"));
+  static const QColor labelColor("#a0a0a0");
+  static const QPen noPen(Qt::NoPen);
+  static const QBrush trackBgBrush(QColor("#2d2d2d"));
+  static const QColor nameLabelColor("#e0e0e0");
+
   // Draw frame ruler
   for (int frame = 0; frame <= m_totalFrames; frame += 10) {
     int x = frameToX(frame);
-    m_timelineScene->addLine(x, 0, x, 10, QPen(QColor("#606060")));
+    m_timelineScene->addLine(x, 0, x, 10, rulerPen);
 
     if (frame % 30 == 0) // Every second
     {
+      // PERF-3: Use cached frame label instead of QString::number()
       QGraphicsTextItem *label =
-          m_timelineScene->addText(QString::number(frame));
+          m_timelineScene->addText(getCachedFrameLabel(frame));
       label->setPos(x - 10, -20);
-      label->setDefaultTextColor(QColor("#a0a0a0"));
+      label->setDefaultTextColor(labelColor);
     }
   }
 
@@ -1034,17 +1074,17 @@ void NMTimelinePanel::renderTracks() {
     TimelineTrack *track = it.value();
 
     // Track background
-    m_timelineScene->addRect(
-        TRACK_HEADER_WIDTH, y, frameToX(m_totalFrames) - TRACK_HEADER_WIDTH,
-        TRACK_HEIGHT, QPen(Qt::NoPen), QBrush(QColor("#2d2d2d")));
+    m_timelineScene->addRect(TRACK_HEADER_WIDTH, y,
+                             frameToX(m_totalFrames) - TRACK_HEADER_WIDTH,
+                             TRACK_HEIGHT, noPen, trackBgBrush);
 
     // Track header
-    m_timelineScene->addRect(0, y, TRACK_HEADER_WIDTH, TRACK_HEIGHT,
-                             QPen(Qt::NoPen), QBrush(track->color.darker(150)));
+    m_timelineScene->addRect(0, y, TRACK_HEADER_WIDTH, TRACK_HEIGHT, noPen,
+                             QBrush(track->color.darker(150)));
 
     QGraphicsTextItem *nameLabel = m_timelineScene->addText(track->name);
     nameLabel->setPos(8, y + 8);
-    nameLabel->setDefaultTextColor(QColor("#e0e0e0"));
+    nameLabel->setDefaultTextColor(nameLabelColor);
 
     // Draw keyframes using custom items
     for (const Keyframe &kf : track->keyframes) {

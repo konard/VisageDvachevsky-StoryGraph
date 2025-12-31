@@ -403,16 +403,18 @@ private:
   double m_lastRenderTimeMs = 0.0;
   int m_lastSceneItemCount = 0;
 
-  // Thread safety for track access (protects m_tracks map)
-  mutable QMutex m_tracksMutex;
+  // PERF-3: Frame label cache to avoid QString allocations during rendering
+  // Maps frame number to cached label string
+  mutable QHash<int, QString> m_frameLabelCache;
+  int m_frameLabelCacheMaxSize = 1024; // Limit cache size
 
   // Helper methods for cached rendering
   void invalidateRenderCache();
   void invalidateTrackCache(int trackIndex);
   void recordRenderMetrics(double renderTimeMs, int itemCount);
 
-  // Thread-safe helper to get a copy of track names
-  QStringList getTrackNamesSafe() const;
+  // PERF-3: Get or create cached frame label
+  const QString &getCachedFrameLabel(int frame) const;
 };
 
 } // namespace NovelMind::editor::qt
