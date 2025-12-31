@@ -1498,6 +1498,34 @@ void NMMainWindow::setupConnections() {
               }
             });
   }
+
+  // VM-2: Voice Studio → Voice Manager auto-refresh on recording completion
+  if (m_voiceStudioPanel && m_voiceManagerPanel) {
+    // Connect recording completion signal to trigger Voice Manager refresh
+    connect(m_voiceStudioPanel, &NMVoiceStudioPanel::recordingCompleted, this,
+            [this](const QString &filePath) {
+              // Extract line ID from file path (the file name without extension
+              // is typically the line ID)
+              QString lineId = QFileInfo(filePath).baseName();
+              QString locale =
+                  "en"; // Default locale, could be extracted from path
+
+              // Notify Voice Manager panel
+              m_voiceManagerPanel->onRecordingCompleted(lineId, locale);
+
+              setStatusMessage(
+                  tr("Recording saved: %1").arg(QFileInfo(filePath).fileName()),
+                  3000);
+            });
+
+    // Connect asset updated signal for when Voice Studio updates manifest
+    connect(m_voiceStudioPanel, &NMVoiceStudioPanel::assetUpdated, this,
+            [this](const QString &lineId,
+                   [[maybe_unused]] const QString &filePath) {
+              // Notify Voice Manager panel of the file status change
+              m_voiceManagerPanel->onFileStatusChanged(lineId, "en");
+            });
+  }
 }
 
 void NMMainWindow::handleNavigationRequest(const QString &locationString) {
