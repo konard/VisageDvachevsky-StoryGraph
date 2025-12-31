@@ -302,8 +302,13 @@ SceneState SceneGraph::saveState() const {
   auto *bg =
       const_cast<Layer &>(m_backgroundLayer).findObject("main_background");
   if (bg) {
-    auto *bgObj = static_cast<const BackgroundObject *>(bg);
-    state.activeBackground = bgObj->getTextureId();
+    // Use dynamic_cast for type-safe downcasting
+    if (bg->getType() == SceneObjectType::Background) {
+      auto *bgObj = static_cast<const BackgroundObject *>(bg);
+      state.activeBackground = bgObj->getTextureId();
+    }
+    // If type doesn't match, we silently skip - this can happen during scene
+    // transitions when objects are being replaced
   }
 
   for (const auto &obj : m_characterLayer.getObjects()) {

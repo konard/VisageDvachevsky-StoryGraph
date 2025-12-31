@@ -32,6 +32,12 @@ namespace NovelMind::editor::qt {
 // ============================================================================
 
 namespace {
+// Number of mixer channels (excluding Master)
+constexpr int NUM_CHANNELS = 6;
+
+// Total number of channel entries including Master (index 0)
+constexpr int TOTAL_CHANNEL_ENTRIES = NUM_CHANNELS + 1;
+
 // Channel color mapping based on UX spec
 const QColor CHANNEL_COLORS[] = {
     QColor(255, 215, 0),  // Master - Gold
@@ -57,7 +63,24 @@ const int DEFAULT_VOLUMES[] = {
     100  // Reserved
 };
 
-constexpr int NUM_CHANNELS = 6; // Excluding Master
+// Compile-time validation of array sizes to prevent out-of-bounds access
+// These static_asserts ensure arrays have enough elements for all channels
+// Loop accesses indices [i + 1] where i ranges from 0 to NUM_CHANNELS - 1
+// Therefore arrays need at least TOTAL_CHANNEL_ENTRIES elements
+static_assert(sizeof(CHANNEL_COLORS) / sizeof(CHANNEL_COLORS[0]) >=
+                  TOTAL_CHANNEL_ENTRIES,
+              "CHANNEL_COLORS array must have at least TOTAL_CHANNEL_ENTRIES "
+              "elements (NUM_CHANNELS + 1 for Master)");
+
+static_assert(sizeof(CHANNEL_NAMES) / sizeof(CHANNEL_NAMES[0]) >=
+                  TOTAL_CHANNEL_ENTRIES,
+              "CHANNEL_NAMES array must have at least TOTAL_CHANNEL_ENTRIES "
+              "elements (NUM_CHANNELS + 1 for Master)");
+
+static_assert(sizeof(DEFAULT_VOLUMES) / sizeof(DEFAULT_VOLUMES[0]) >=
+                  TOTAL_CHANNEL_ENTRIES,
+              "DEFAULT_VOLUMES array must have at least TOTAL_CHANNEL_ENTRIES "
+              "elements (NUM_CHANNELS + 1 for Master)");
 } // namespace
 
 // ============================================================================

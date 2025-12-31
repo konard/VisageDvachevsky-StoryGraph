@@ -204,3 +204,155 @@ TEST_CASE("VM reset", "[scripting]")
     REQUIRE_FALSE(vm.isHalted());
     REQUIRE_FALSE(vm.isRunning());
 }
+
+TEST_CASE("VM JUMP to address 0", "[scripting][jump]")
+{
+    VirtualMachine vm;
+
+    // Simpler test: Just test JUMP_IF to address 0 directly
+    // Program counts from 0 to 3, then halts
+    // IP tracking:
+    // 0: PUSH_INT 1        -> stack: [1]
+    // 1: LOAD_VAR counter  -> stack: [1, counter]
+    // 2: ADD               -> stack: [counter+1]
+    // 3: DUP               -> stack: [counter+1, counter+1]
+    // 4: STORE_VAR counter -> counter = counter+1, stack: [counter+1]
+    // 5: PUSH_INT 3        -> stack: [counter+1, 3]
+    // 6: LT                -> stack: [counter+1 < 3]
+    // 7: JUMP_IF 0         -> if true, jump to 0
+    // 8: HALT
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},       // 0: Push 1
+        {OpCode::LOAD_VAR, 0},       // 1: Load counter
+        {OpCode::ADD, 0},            // 2: counter + 1
+        {OpCode::DUP, 0},            // 3: Duplicate result
+        {OpCode::STORE_VAR, 0},      // 4: Store back to counter
+        {OpCode::PUSH_INT, 3},       // 5: Push 3
+        {OpCode::LT, 0},             // 6: counter < 3
+        {OpCode::JUMP_IF, 0},        // 7: If true, jump to instruction 0
+        {OpCode::HALT, 0}            // 8: Otherwise halt
+    };
+
+    vm.load(program, {"counter"});
+    vm.setVariable("counter", NovelMind::i32{0});
+
+    // Track IP values during execution
+    int iterations = 0;
+    const int maxIterations = 50; // Safety limit
+
+    while (!vm.isHalted() && iterations < maxIterations) {
+        vm.step();
+        iterations++;
+    }
+
+    // Counter should be 3 (we looped 3 times: 0->1, 1->2, 2->3, then 3 < 3 is false)
+    auto val = vm.getVariable("counter");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+    REQUIRE(std::get<NovelMind::i32>(val) == 3);
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM JUMP to address 0 unconditional", "[scripting][jump]")
+{
+    VirtualMachine vm;
+
+    // Simple program that jumps back to 0 unconditionally
+    // Use a counter to ensure the jump works (max iterations will stop it)
+    std::vector<Instruction> program = {
+        {OpCode::LOAD_VAR, 0},       // 0: Load counter
+        {OpCode::PUSH_INT, 1},       // 1: Push 1
+        {OpCode::ADD, 0},            // 2: counter + 1
+        {OpCode::STORE_VAR, 0},      // 3: Store back to counter
+        {OpCode::JUMP, 0}            // 4: Unconditionally jump to 0
+    };
+
+    vm.load(program, {"counter"});
+    vm.setVariable("counter", NovelMind::i32{0});
+
+    // Execute exactly 10 steps (2 full loops = 10 instructions)
+    for (int i = 0; i < 10; i++) {
+        bool continued = vm.step();
+        REQUIRE(continued);  // Should continue, not halt
+    }
+
+    // Counter should be 2 (completed 2 full loops)
+    auto val = vm.getVariable("counter");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+    REQUIRE(std::get<NovelMind::i32>(val) == 2);
+
+    // VM should NOT be halted (loop is infinite)
+    REQUIRE_FALSE(vm.isHalted());
+}
+
+TEST_CASE("VM JUMP to middle of program", "[scripting][jump]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},       // 0
+        {OpCode::JUMP, 3},           // 1: Skip to instruction 3
+        {OpCode::PUSH_INT, 999},     // 2: Should be skipped
+        {OpCode::STORE_VAR, 0},      // 3: Store 1 to result
+        {OpCode::HALT, 0}            // 4
+    };
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    // Result should be 1 (instruction 2 was skipped)
+    auto val = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+    REQUIRE(std::get<NovelMind::i32>(val) == 1);
+}
+
+TEST_CASE("VM JUMP to invalid address halts", "[scripting][jump]")
+{
+    VirtualMachine vm;
+
+    std::vector<Instruction> program = {
+        {OpCode::JUMP, 999}          // 0: Invalid jump
+    };
+
+    vm.load(program, {});
+    bool continued = vm.step();
+
+    // VM should halt due to invalid jump
+    REQUIRE_FALSE(continued);
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM JUMP_IF_NOT to address 0", "[scripting][jump]")
+{
+    VirtualMachine vm;
+
+    // Program: Loop while counter < 3 using JUMP_IF_NOT
+    std::vector<Instruction> program = {
+        {OpCode::LOAD_VAR, 0},       // 0: Load counter
+        {OpCode::PUSH_INT, 1},       // 1: Push 1
+        {OpCode::ADD, 0},            // 2: counter + 1
+        {OpCode::DUP, 0},            // 3: Duplicate for comparison
+        {OpCode::STORE_VAR, 0},      // 4: Store back to counter
+        {OpCode::PUSH_INT, 3},       // 5: Push 3
+        {OpCode::GE, 0},             // 6: counter >= 3
+        {OpCode::JUMP_IF_NOT, 0},    // 7: If NOT (counter >= 3), jump to 0
+        {OpCode::HALT, 0}            // 8: Otherwise halt
+    };
+
+    vm.load(program, {"counter"});
+    vm.setVariable("counter", NovelMind::i32{0});
+
+    // Execute until halted
+    int iterations = 0;
+    const int maxIterations = 50; // Safety limit
+
+    while (!vm.isHalted() && iterations < maxIterations) {
+        vm.step();
+        iterations++;
+    }
+
+    // Counter should be 3
+    auto val = vm.getVariable("counter");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+    REQUIRE(std::get<NovelMind::i32>(val) == 3);
+    REQUIRE(vm.isHalted());
+}

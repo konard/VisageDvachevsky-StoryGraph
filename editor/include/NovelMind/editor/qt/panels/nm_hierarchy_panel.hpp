@@ -45,6 +45,23 @@ public:
   void refresh();
 
   /**
+   * @brief Update a single object in the tree (PERF-2 optimization)
+   *
+   * This provides O(1) update for individual object changes instead of
+   * rebuilding the entire tree. Used for position updates during gizmo drags.
+   *
+   * @param objectId ID of the object to update
+   */
+  void updateObjectItem(const QString &objectId);
+
+  /**
+   * @brief Find tree item for a specific object (O(1) lookup)
+   * @param objectId ID of the object
+   * @return Tree item or nullptr if not found
+   */
+  QTreeWidgetItem *findTreeItemForObject(const QString &objectId) const;
+
+  /**
    * @brief Set filter text for searching objects
    */
   void setFilterText(const QString &text);
@@ -87,6 +104,9 @@ private:
   QString m_filterText;
   int m_typeFilter = -1; // -1 = all types
   QString m_tagFilter;
+
+  // PERF-2: Object ID to tree item mapping for O(1) lookup
+  QHash<QString, QTreeWidgetItem *> m_objectToItemMap;
 };
 
 /**
@@ -108,6 +128,16 @@ public:
    * @brief Refresh the hierarchy display
    */
   void refresh();
+
+  /**
+   * @brief Update a single object (PERF-2: incremental update)
+   *
+   * Use this instead of refresh() for position/property changes during
+   * gizmo operations to maintain 60 FPS.
+   *
+   * @param objectId ID of the object to update
+   */
+  void updateObject(const QString &objectId);
 
   /**
    * @brief Select an item by object ID

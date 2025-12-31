@@ -11,6 +11,7 @@
 #include <QVector>
 #include <QtMath>
 #include <cmath>
+#include <memory>
 
 namespace NovelMind::editor::qt {
 
@@ -23,10 +24,13 @@ NMSceneGraphicsScene::NMSceneGraphicsScene(QObject *parent)
   // Set a large scene rect for scrolling
   setSceneRect(-5000, -5000, 10000, 10000);
 
-  // Create gizmo
-  m_gizmo = new NMTransformGizmo();
+  // Create gizmo with scene ownership via addItem()
+  // MEM-2 fix: Use unique_ptr for exception-safe allocation, then transfer
+  // ownership to scene
+  auto gizmo = std::make_unique<NMTransformGizmo>();
+  m_gizmo = gizmo.get();
   m_gizmo->setVisible(false);
-  addItem(m_gizmo);
+  addItem(gizmo.release()); // Scene takes ownership
 }
 
 NMSceneGraphicsScene::~NMSceneGraphicsScene() {

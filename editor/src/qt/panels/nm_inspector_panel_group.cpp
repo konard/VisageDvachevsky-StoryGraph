@@ -4,6 +4,7 @@
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -691,6 +692,10 @@ QWidget *NMPropertyGroup::addEditableProperty(const QString &propertyName,
             }
             value = QString::fromStdString(
                 projectManager.toRelativePath(destPath.toStdString()));
+
+            // Notify Asset Browser that a new asset was imported
+            QtEventBus::instance().publishAssetImported(destPath,
+                                                        choice.targetDir);
           }
         }
       }
@@ -937,6 +942,106 @@ void NMPropertyGroup::onPropertyEdited() {
 }
 
 // ============================================================================
+
+void NMPropertyGroup::addResetButton(const QString &propertyName,
+                                     const QVariant &defaultValue) {
+  // Create a reset button widget
+  auto *resetButton = new QPushButton(tr("Reset"));
+  resetButton->setProperty("propertyName", propertyName);
+  resetButton->setProperty("defaultValue", defaultValue);
+  resetButton->setMaximumWidth(60);
+  resetButton->setToolTip(
+      tr("Reset %1 to default value: %2").arg(propertyName).arg(defaultValue.toString()));
+
+  const auto &palette = NMStyleManager::instance().palette();
+  resetButton->setStyleSheet(QString("QPushButton {"
+                                     "  background-color: %1;"
+                                     "  color: %2;"
+                                     "  border: 1px solid %3;"
+                                     "  border-radius: 3px;"
+                                     "  padding: 4px 8px;"
+                                     "}"
+                                     "QPushButton:hover {"
+                                     "  border-color: %4;"
+                                     "}")
+                                 .arg(palette.bgDark.name())
+                                 .arg(palette.textPrimary.name())
+                                 .arg(palette.borderDark.name())
+                                 .arg(palette.accentPrimary.name()));
+
+  connect(resetButton, &QPushButton::clicked, this, [this, propertyName, defaultValue]() {
+    emit propertyValueChanged(propertyName, defaultValue.toString());
+  });
+
+  // Add to the content layout
+  auto *row = new QWidget(m_content);
+  auto *rowLayout = new QHBoxLayout(row);
+  rowLayout->setContentsMargins(0, 0, 0, 0);
+  rowLayout->setSpacing(8);
+  rowLayout->addStretch();
+  rowLayout->addWidget(resetButton);
+
+  m_contentLayout->addWidget(row);
+}
+
+QWidget *NMPropertyGroup::addEditablePropertyWithMetadata(
+    const QString &propertyName, NMPropertyType type,
+    const QString &currentValue, const NMPropertyMetadata &metadata) {
+  QWidget *editor = nullptr;
+  const auto &palette = NMStyleManager::instance().palette();
+
+  // Determine the display label from metadata or property name
+  QString label = metadata.displayName.isEmpty() ? propertyName : metadata.displayName;
+
+  switch (type) {
+  case NMPropertyType::Float: {
+    auto *doubleSpinBox = new QDoubleSpinBox();
+    doubleSpinBox->setProperty("propertyName", propertyName);
+
+    // Apply metadata constraints
+    double minVal = metadata.minValue.isValid() ? metadata.minValue.toDouble() : -999999.0;
+    double maxVal = metadata.maxValue.isValid() ? metadata.maxValue.toDouble() : 999999.0;
+    doubleSpinBox->setRange(minVal, maxVal);
+
+    // Default decimals to 2 unless specified
+    doubleSpinBox->setDecimals(2);
+
+    // Set single step from metadata or default to 0.1
+    doubleSpinBox->setSingleStep(0.1);
+
+    doubleSpinBox->setValue(currentValue.toDouble());
+
+    if (!metadata.tooltip.isEmpty()) {
+      doubleSpinBox->setToolTip(metadata.tooltip);
+    }
+
+    doubleSpinBox->setStyleSheet(QString("QDoubleSpinBox {"
+                                         "  background-color: %1;"
+                                         "  color: %2;"
+                                         "  border: 1px solid %3;"
+                                         "  border-radius: 3px;"
+                                         "  padding: 4px;"
+                                         "}")
+                                     .arg(palette.bgDark.name())
+                                     .arg(palette.textPrimary.name())
+                                     .arg(palette.borderDark.name()));
+
+    connect(doubleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, &NMPropertyGroup::onPropertyEdited);
+    editor = doubleSpinBox;
+    break;
+  }
+
+  default:
+    // Fall back to the standard method for other types
+    return addEditableProperty(propertyName, label, type, currentValue);
+  }
+
+  if (editor) {
+    addProperty(label, editor);
+  }
+  return editor;
+}
 
 } // namespace NovelMind::editor::qt
 
