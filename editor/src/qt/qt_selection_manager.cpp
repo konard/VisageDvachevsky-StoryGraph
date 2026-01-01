@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/qt_selection_manager.hpp"
 #include "NovelMind/editor/qt/qt_event_bus.hpp"
+#include <QMutexLocker>
 
 namespace NovelMind::editor::qt {
 
@@ -11,6 +12,8 @@ QtSelectionManager &QtSelectionManager::instance() {
 QtSelectionManager::QtSelectionManager() : QObject(nullptr) {}
 
 void QtSelectionManager::select(const QString &id, SelectionType type) {
+  QMutexLocker locker(&m_mutex);
+
   if (m_selectedIds.size() == 1 && m_selectedIds.first() == id &&
       m_currentType == type) {
     return; // Already selected
@@ -25,6 +28,8 @@ void QtSelectionManager::select(const QString &id, SelectionType type) {
 
 void QtSelectionManager::selectMultiple(const QStringList &ids,
                                         SelectionType type) {
+  QMutexLocker locker(&m_mutex);
+
   m_selectedIds = ids;
   m_currentType = ids.isEmpty() ? SelectionType::None : type;
 
@@ -32,6 +37,8 @@ void QtSelectionManager::selectMultiple(const QStringList &ids,
 }
 
 void QtSelectionManager::addToSelection(const QString &id, SelectionType type) {
+  QMutexLocker locker(&m_mutex);
+
   // Can only add items of the same type
   if (!m_selectedIds.isEmpty() && m_currentType != type) {
     // Clear and start new selection of this type
@@ -52,6 +59,8 @@ void QtSelectionManager::addToSelection(const QString &id, SelectionType type) {
 }
 
 void QtSelectionManager::removeFromSelection(const QString &id) {
+  QMutexLocker locker(&m_mutex);
+
   if (m_selectedIds.removeOne(id)) {
     if (m_selectedIds.isEmpty()) {
       m_currentType = SelectionType::None;
@@ -62,14 +71,22 @@ void QtSelectionManager::removeFromSelection(const QString &id) {
 
 void QtSelectionManager::toggleSelection(const QString &id,
                                          SelectionType type) {
+  QMutexLocker locker(&m_mutex);
+
   if (m_selectedIds.contains(id)) {
+    // Need to unlock before calling removeFromSelection to avoid deadlock
+    locker.unlock();
     removeFromSelection(id);
   } else {
+    // Need to unlock before calling addToSelection to avoid deadlock
+    locker.unlock();
     addToSelection(id, type);
   }
 }
 
 void QtSelectionManager::clearSelection() {
+  QMutexLocker locker(&m_mutex);
+
   if (m_selectedIds.isEmpty())
     return;
 
@@ -81,24 +98,32 @@ void QtSelectionManager::clearSelection() {
 }
 
 bool QtSelectionManager::hasSelection() const {
+  QMutexLocker locker(&m_mutex);
   return !m_selectedIds.isEmpty();
 }
 
 SelectionType QtSelectionManager::currentSelectionType() const {
+  QMutexLocker locker(&m_mutex);
   return m_currentType;
 }
 
-QStringList QtSelectionManager::selectedIds() const { return m_selectedIds; }
+QStringList QtSelectionManager::selectedIds() const {
+  QMutexLocker locker(&m_mutex);
+  return m_selectedIds;
+}
 
 QString QtSelectionManager::primarySelection() const {
+  QMutexLocker locker(&m_mutex);
   return m_selectedIds.isEmpty() ? QString() : m_selectedIds.first();
 }
 
 int QtSelectionManager::selectionCount() const {
+  QMutexLocker locker(&m_mutex);
   return static_cast<int>(m_selectedIds.size());
 }
 
 bool QtSelectionManager::isSelected(const QString &id) const {
+  QMutexLocker locker(&m_mutex);
   return m_selectedIds.contains(id);
 }
 

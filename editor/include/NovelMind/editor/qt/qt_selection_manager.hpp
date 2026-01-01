@@ -8,6 +8,7 @@
  * synchronization across panels.
  */
 
+#include <QMutex>
 #include <QObject>
 #include <QString>
 #include <QStringList>
@@ -136,6 +137,7 @@ private:
 
   void notifySelectionChanged();
 
+  mutable QMutex m_mutex;  // Protects selection state
   QStringList m_selectedIds;
   SelectionType m_currentType = SelectionType::None;
 };
