@@ -34,6 +34,25 @@ class AudioSource;
 class AudioBuffer;
 
 /**
+ * @brief Custom deleter for ma_engine to ensure proper cleanup
+ * Implementation in audio_manager.cpp to avoid incomplete type issues
+ */
+struct MaEngineDeleter {
+  void operator()(ma_engine* engine) const;
+};
+
+/**
+ * @brief Custom deleter for ma_decoder to ensure proper cleanup
+ * Implementation in audio_manager.cpp to avoid incomplete type issues
+ */
+struct MaDecoderDeleter {
+  void operator()(ma_decoder* decoder) const;
+};
+
+using MaEnginePtr = std::unique_ptr<ma_engine, MaEngineDeleter>;
+using MaDecoderPtr = std::unique_ptr<ma_decoder, MaDecoderDeleter>;
+
+/**
  * @brief Audio channel types for volume control
  */
 enum class AudioChannel : u8 {
@@ -187,7 +206,7 @@ private:
   std::unique_ptr<ma_sound> m_sound;
   bool m_soundReady = false;
   std::vector<u8> m_memoryData;
-  std::unique_ptr<ma_decoder> m_decoder;
+  MaDecoderPtr m_decoder;
   bool m_decoderReady = false;
 };
 
@@ -447,7 +466,7 @@ private:
   f32 calculateEffectiveVolume(const AudioSource &source) const;
 
   bool m_initialized = false;
-  ma_engine *m_engine = nullptr;
+  MaEnginePtr m_engine;
   bool m_engineInitialized = false;
 
   // Channel volumes

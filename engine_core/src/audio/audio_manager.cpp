@@ -6,6 +6,24 @@
 namespace NovelMind::audio {
 
 // ============================================================================
+// Custom Deleters Implementation
+// ============================================================================
+
+void MaEngineDeleter::operator()(ma_engine* engine) const {
+  if (engine) {
+    ma_engine_uninit(engine);
+    delete engine;
+  }
+}
+
+void MaDecoderDeleter::operator()(ma_decoder* decoder) const {
+  if (decoder) {
+    ma_decoder_uninit(decoder);
+    delete decoder;
+  }
+}
+
+// ============================================================================
 // AudioSource Implementation
 // ============================================================================
 
@@ -175,13 +193,12 @@ Result<void> AudioManager::initialize() {
     return Result<void>::ok();
   }
 
-  m_engine = new ma_engine();
+  auto engine = std::make_unique<ma_engine>();
   ma_engine_config config = ma_engine_config_init();
-  if (ma_engine_init(&config, m_engine) != MA_SUCCESS) {
-    delete m_engine;
-    m_engine = nullptr;
+  if (ma_engine_init(&config, engine.get()) != MA_SUCCESS) {
     return Result<void>::error("Failed to initialize audio engine");
   }
+  m_engine = MaEnginePtr(engine.release());
   m_engineInitialized = true;
 
   m_initialized = true;
@@ -202,9 +219,7 @@ void AudioManager::shutdown() {
   m_sources.clear();
 
   if (m_engineInitialized && m_engine) {
-    ma_engine_uninit(m_engine);
-    delete m_engine;
-    m_engine = nullptr;
+    m_engine.reset();
     m_engineInitialized = false;
   }
 
@@ -301,7 +316,7 @@ AudioHandle AudioManager::playSound(const std::string &id,
 
   if (config.startTime > 0.0f && source->m_soundReady && source->m_sound &&
       m_engineInitialized && m_engine) {
-    ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine);
+    ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine.get());
     if (sampleRate > 0) {
       ma_uint64 startFrames = static_cast<ma_uint64>(
           config.startTime * static_cast<f32>(sampleRate));
@@ -373,7 +388,7 @@ AudioHandle AudioManager::playMusic(const std::string &id,
 
   if (config.startTime > 0.0f && source->m_soundReady && source->m_sound &&
       m_engineInitialized && m_engine) {
-    ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine);
+    ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine.get());
     if (sampleRate > 0) {
       ma_uint64 startFrames = static_cast<ma_uint64>(
           config.startTime * static_cast<f32>(sampleRate));
@@ -486,7 +501,7 @@ void AudioManager::seekMusic(f32 position) {
   if (!m_engineInitialized || !m_engine) {
     return;
   }
-  ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine);
+  ma_uint32 sampleRate = ma_engine_get_sample_rate(m_engine.get());
   if (sampleRate == 0) {
     return;
   }
@@ -714,32 +729,34 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
     auto dataResult = m_dataProvider(trackId);
     if (dataResult.isOk() && !dataResult.value().empty()) {
       source->m_memoryData = std::move(dataResult.value());
-      source->m_decoder = std::make_unique<ma_decoder>();
+      auto decoder = std::make_unique<ma_decoder>();
       ma_decoder_config config = ma_decoder_config_init(
-          ma_format_f32, ma_engine_get_channels(m_engine),
-          ma_engine_get_sample_rate(m_engine));
+          ma_format_f32, ma_engine_get_channels(m_engine.get()),
+          ma_engine_get_sample_rate(m_engine.get()));
       if (ma_decoder_init_memory(source->m_memoryData.data(),
                                  source->m_memoryData.size(), &config,
-                                 source->m_decoder.get()) == MA_SUCCESS) {
-        if (ma_sound_init_from_data_source(m_engine, source->m_decoder.get(),
+                                 decoder.get()) == MA_SUCCESS) {
+        // Transfer ownership to MaDecoderPtr only after successful init
+        source->m_decoder = MaDecoderPtr(decoder.release());
+        if (ma_sound_init_from_data_source(m_engine.get(), source->m_decoder.get(),
                                            flags, nullptr,
                                            sound.get()) == MA_SUCCESS) {
           loaded = true;
           source->m_decoderReady = true;
         } else {
-          ma_decoder_uninit(source->m_decoder.get());
+          // Custom deleter will handle ma_decoder_uninit automatically
           source->m_decoder.reset();
           source->m_memoryData.clear();
         }
       } else {
-        source->m_decoder.reset();
+        // Decoder init failed, decoder will be cleaned up automatically
         source->m_memoryData.clear();
       }
     }
   }
 
   if (!loaded) {
-    if (ma_sound_init_from_file(m_engine, trackId.c_str(), flags, nullptr,
+    if (ma_sound_init_from_file(m_engine.get(), trackId.c_str(), flags, nullptr,
                                 nullptr, sound.get()) != MA_SUCCESS) {
       fireEvent(AudioEvent::Type::Error, handle, trackId);
       return {};
@@ -765,9 +782,7 @@ void AudioManager::releaseSource(AudioHandle handle) {
                                    if (s->m_soundReady && s->m_sound) {
                                      ma_sound_uninit(s->m_sound.get());
                                    }
-                                   if (s->m_decoderReady && s->m_decoder) {
-                                     ma_decoder_uninit(s->m_decoder.get());
-                                   }
+                                   // Decoder cleanup handled by MaDecoderPtr custom deleter
                                    return true;
                                  }),
                   m_sources.end());
