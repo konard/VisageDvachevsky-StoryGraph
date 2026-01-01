@@ -11,7 +11,7 @@ Profiler &Profiler::instance() {
 }
 
 void Profiler::beginFrame() {
-  if (!m_enabled) {
+  if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
@@ -24,19 +24,20 @@ void Profiler::beginFrame() {
 }
 
 void Profiler::endFrame() {
-  if (!m_enabled) {
+  if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
   const auto frameEnd = std::chrono::steady_clock::now();
-  m_lastFrameTime =
-      std::chrono::duration<f64, std::milli>(frameEnd - m_frameStart).count();
+  m_lastFrameTime.store(
+      std::chrono::duration<f64, std::milli>(frameEnd - m_frameStart).count(),
+      std::memory_order_relaxed);
   ++m_frameCount;
 }
 
 void Profiler::beginSample(const std::string &name,
                            const std::string &category) {
-  if (!m_enabled) {
+  if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
@@ -56,7 +57,7 @@ void Profiler::beginSample(const std::string &name,
 }
 
 void Profiler::endSample(const std::string &name) {
-  if (!m_enabled) {
+  if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
@@ -122,7 +123,7 @@ void Profiler::reset() {
   m_threadData.clear();
   m_stats.clear();
   m_frameCount = 0;
-  m_lastFrameTime = 0.0;
+  m_lastFrameTime.store(0.0, std::memory_order_relaxed);
 }
 
 bool Profiler::exportToJson(const std::string &filename) const {
@@ -136,7 +137,7 @@ bool Profiler::exportToJson(const std::string &filename) const {
   file << "{\n";
   file << "  \"frameCount\": " << m_frameCount << ",\n";
   file << "  \"lastFrameTimeMs\": " << std::fixed << std::setprecision(3)
-       << m_lastFrameTime << ",\n";
+       << m_lastFrameTime.load(std::memory_order_relaxed) << ",\n";
   file << "  \"stats\": [\n";
 
   bool first = true;
