@@ -63,7 +63,7 @@ void NMInspectorPanel::clear() {
   // Remove all groups
   for (auto *group : m_groups) {
     m_mainLayout->removeWidget(group);
-    delete group;
+    group->deleteLater();
   }
   m_groups.clear();
   m_propertyWidgets.clear();
