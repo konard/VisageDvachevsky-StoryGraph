@@ -194,12 +194,16 @@ void AudioManager::shutdown() {
   }
 
   stopAll(0.0f);
-  for (auto &source : m_sources) {
-    if (source && source->m_soundReady && source->m_sound) {
-      ma_sound_uninit(source->m_sound.get());
+
+  {
+    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+    for (auto &source : m_sources) {
+      if (source && source->m_soundReady && source->m_sound) {
+        ma_sound_uninit(source->m_sound.get());
+      }
     }
+    m_sources.clear();
   }
-  m_sources.clear();
 
   if (m_engineInitialized && m_engine) {
     ma_engine_uninit(m_engine);
@@ -231,30 +235,33 @@ void AudioManager::update(f64 deltaTime) {
   // Update ducking
   updateDucking(deltaTime);
 
-  // Update all sources
-  for (auto &source : m_sources) {
-    if (source && source->isPlaying()) {
-      if (source->m_soundReady && source->m_sound) {
-        const f32 effective =
-            source->m_volume * calculateEffectiveVolume(*source);
-        ma_sound_set_volume(source->m_sound.get(), effective);
-        ma_sound_set_pan(source->m_sound.get(), source->m_pan);
-        ma_sound_set_pitch(source->m_sound.get(), source->m_pitch);
-        ma_sound_set_looping(source->m_sound.get(), source->m_loop);
+  // Update all sources (use unique_lock for potential modification)
+  {
+    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+    for (auto &source : m_sources) {
+      if (source && source->isPlaying()) {
+        if (source->m_soundReady && source->m_sound) {
+          const f32 effective =
+              source->m_volume * calculateEffectiveVolume(*source);
+          ma_sound_set_volume(source->m_sound.get(), effective);
+          ma_sound_set_pan(source->m_sound.get(), source->m_pan);
+          ma_sound_set_pitch(source->m_sound.get(), source->m_pitch);
+          ma_sound_set_looping(source->m_sound.get(), source->m_loop);
+        }
+        source->update(deltaTime);
       }
-      source->update(deltaTime);
     }
-  }
 
-  // Remove stopped sources (but keep some pooled)
-  m_sources.erase(std::remove_if(m_sources.begin(), m_sources.end(),
-                                 [](const auto &s) {
-                                   return s &&
-                                          s->getState() ==
-                                              PlaybackState::Stopped &&
-                                          s->channel != AudioChannel::Music;
-                                 }),
-                  m_sources.end());
+    // Remove stopped sources (but keep some pooled)
+    m_sources.erase(std::remove_if(m_sources.begin(), m_sources.end(),
+                                   [](const auto &s) {
+                                     return s &&
+                                            s->getState() ==
+                                                PlaybackState::Stopped &&
+                                            s->channel != AudioChannel::Music;
+                                   }),
+                    m_sources.end());
+  }
 
   // Check voice playback status
   if (m_voicePlaying) {
@@ -273,17 +280,21 @@ AudioHandle AudioManager::playSound(const std::string &id,
     return {};
   }
 
-  // Check source limit
-  if (m_sources.size() >= m_maxSounds) {
-    // Find and remove lowest priority sound
-    auto lowest = std::min_element(
-        m_sources.begin(), m_sources.end(),
-        [](const auto &a, const auto &b) { return a->priority < b->priority; });
+  // Check source limit (need unique lock for potential modification)
+  {
+    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+    if (m_sources.size() >= m_maxSounds) {
+      // Find and remove lowest priority sound
+      auto lowest = std::min_element(m_sources.begin(), m_sources.end(),
+                                     [](const auto &a, const auto &b) {
+                                       return a->priority < b->priority;
+                                     });
 
-    if (lowest != m_sources.end() && (*lowest)->priority < config.priority) {
-      m_sources.erase(lowest);
-    } else {
-      return {}; // Can't play
+      if (lowest != m_sources.end() && (*lowest)->priority < config.priority) {
+        m_sources.erase(lowest);
+      } else {
+        return {}; // Can't play
+      }
     }
   }
 
@@ -340,6 +351,7 @@ void AudioManager::stopSound(AudioHandle handle, f32 fadeDuration) {
 }
 
 void AudioManager::stopAllSounds(f32 fadeDuration) {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (auto &source : m_sources) {
     if (source && source->channel == AudioChannel::Sound) {
       if (fadeDuration > 0.0f) {
@@ -456,6 +468,7 @@ bool AudioManager::isMusicPlaying() const {
     return false;
   }
 
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (const auto &source : m_sources) {
     if (source && source->handle.id == m_currentMusicHandle.id) {
       return source->isPlaying();
@@ -469,6 +482,7 @@ const std::string &AudioManager::getCurrentMusicId() const {
 }
 
 f32 AudioManager::getMusicPosition() const {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (const auto &source : m_sources) {
     if (source && source->handle.id == m_currentMusicHandle.id) {
       return source->getPlaybackPosition();
@@ -591,6 +605,7 @@ void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
 }
 
 void AudioManager::pauseAll() {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (auto &source : m_sources) {
     if (source && source->isPlaying()) {
       source->pause();
@@ -599,6 +614,7 @@ void AudioManager::pauseAll() {
 }
 
 void AudioManager::resumeAll() {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (auto &source : m_sources) {
     if (source && source->getState() == PlaybackState::Paused) {
       source->play();
@@ -607,12 +623,15 @@ void AudioManager::resumeAll() {
 }
 
 void AudioManager::stopAll(f32 fadeDuration) {
-  for (auto &source : m_sources) {
-    if (source && source->isPlaying()) {
-      if (fadeDuration > 0.0f) {
-        source->fadeOut(fadeDuration, true);
-      } else {
-        source->stop();
+  {
+    std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
+    for (auto &source : m_sources) {
+      if (source && source->isPlaying()) {
+        if (fadeDuration > 0.0f) {
+          source->fadeOut(fadeDuration, true);
+        } else {
+          source->stop();
+        }
       }
     }
   }
@@ -628,6 +647,7 @@ AudioSource *AudioManager::getSource(AudioHandle handle) {
     return nullptr;
   }
 
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (auto &source : m_sources) {
     if (source && source->handle.id == handle.id) {
       return source.get();
@@ -641,6 +661,7 @@ bool AudioManager::isPlaying(AudioHandle handle) const {
     return false;
   }
 
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   for (const auto &source : m_sources) {
     if (source && source->handle.id == handle.id) {
       return source->isPlaying();
@@ -650,6 +671,7 @@ bool AudioManager::isPlaying(AudioHandle handle) const {
 }
 
 std::vector<AudioHandle> AudioManager::getActiveSources() const {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   std::vector<AudioHandle> handles;
   for (const auto &source : m_sources) {
     if (source && source->isPlaying()) {
@@ -660,6 +682,7 @@ std::vector<AudioHandle> AudioManager::getActiveSources() const {
 }
 
 size_t AudioManager::getActiveSourceCount() const {
+  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
   return static_cast<size_t>(
       std::count_if(m_sources.begin(), m_sources.end(),
                     [](const auto &s) { return s && s->isPlaying(); }));
@@ -752,11 +775,15 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   ma_sound_get_length_in_seconds(source->m_sound.get(), &lengthSeconds);
   source->m_duration = lengthSeconds;
 
-  m_sources.push_back(std::move(source));
+  {
+    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+    m_sources.push_back(std::move(source));
+  }
   return handle;
 }
 
 void AudioManager::releaseSource(AudioHandle handle) {
+  std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
   m_sources.erase(std::remove_if(m_sources.begin(), m_sources.end(),
                                  [&handle](const auto &s) {
                                    if (!s || s->handle.id != handle.id) {

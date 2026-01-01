@@ -12,18 +12,14 @@
 
 namespace NovelMind::editor {
 
-// Static instance
-std::unique_ptr<AssetPreviewManager> AssetPreviewManager::s_instance = nullptr;
-
 AssetPreviewManager::AssetPreviewManager() = default;
 
 AssetPreviewManager::~AssetPreviewManager() = default;
 
 AssetPreviewManager &AssetPreviewManager::instance() {
-  if (!s_instance) {
-    s_instance = std::make_unique<AssetPreviewManager>();
-  }
-  return *s_instance;
+  // Thread-safe in C++11+ due to magic statics
+  static AssetPreviewManager instance;
+  return instance;
 }
 
 // ============================================================================
@@ -34,24 +30,36 @@ AssetPreview AssetPreviewManager::getPreview(const std::string &assetPath,
                                              u32 thumbnailSize) {
   namespace fs = std::filesystem;
 
-  // Check cache first
-  auto cacheIt = m_cache.find(assetPath);
-  if (cacheIt != m_cache.end()) {
-    // Check if file was modified
-    std::error_code ec;
-    auto modTime =
-        fs::last_write_time(assetPath, ec).time_since_epoch().count();
-    if (!ec && cacheIt->second.preview.assetModifiedTime ==
-                   static_cast<u64>(modTime)) {
-      cacheIt->second.lastAccessed = static_cast<u64>(
-          std::chrono::steady_clock::now().time_since_epoch().count());
-      cacheIt->second.accessCount++;
-      m_cacheHits++;
-      return cacheIt->second.preview;
+  // Check cache first (use shared lock for read access)
+  {
+    std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
+    auto cacheIt = m_cache.find(assetPath);
+    if (cacheIt != m_cache.end()) {
+      // Check if file was modified
+      std::error_code ec;
+      auto modTime =
+          fs::last_write_time(assetPath, ec).time_since_epoch().count();
+      if (!ec && cacheIt->second.preview.assetModifiedTime ==
+                     static_cast<u64>(modTime)) {
+        // Need to upgrade to unique lock for writing stats
+        lock.unlock();
+        std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
+        auto writeIt = m_cache.find(assetPath);
+        if (writeIt != m_cache.end()) {
+          writeIt->second.lastAccessed = static_cast<u64>(
+              std::chrono::steady_clock::now().time_since_epoch().count());
+          writeIt->second.accessCount++;
+          m_cacheHits++;
+          return writeIt->second.preview;
+        }
+      }
     }
   }
 
-  m_cacheMisses++;
+  {
+    std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
+    m_cacheMisses++;
+  }
   return generatePreview(assetPath, thumbnailSize);
 }
 
@@ -247,10 +255,12 @@ AssetPreviewType AssetPreviewManager::getAssetType(const std::string &path) {
 // ============================================================================
 
 bool AssetPreviewManager::hasCachedPreview(const std::string &assetPath) const {
+  std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
   return m_cache.find(assetPath) != m_cache.end();
 }
 
 void AssetPreviewManager::invalidateCache(const std::string &assetPath) {
+  std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   auto it = m_cache.find(assetPath);
   if (it != m_cache.end()) {
     m_currentCacheSize -= estimatePreviewSize(it->second.preview);
@@ -259,6 +269,7 @@ void AssetPreviewManager::invalidateCache(const std::string &assetPath) {
 }
 
 void AssetPreviewManager::clearCache() {
+  std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   m_cache.clear();
   m_currentCacheSize = 0;
   m_cacheHits = 0;
@@ -266,15 +277,20 @@ void AssetPreviewManager::clearCache() {
 }
 
 void AssetPreviewManager::setMaxCacheSize(size_t bytes) {
+  std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   m_maxCacheSize = bytes;
   while (m_currentCacheSize > m_maxCacheSize && !m_cache.empty()) {
-    evictLRU();
+    evictLRULocked(); // Lock is already held
   }
 }
 
-size_t AssetPreviewManager::getCacheSize() const { return m_currentCacheSize; }
+size_t AssetPreviewManager::getCacheSize() const {
+  std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
+  return m_currentCacheSize;
+}
 
 AssetPreviewManager::CacheStats AssetPreviewManager::getCacheStats() const {
+  std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
   return {m_cache.size(), m_currentCacheSize, m_cacheHits, m_cacheMisses};
 }
 
@@ -402,12 +418,13 @@ AssetPreview AssetPreviewManager::generatePreview(const std::string &assetPath,
 
 void AssetPreviewManager::addToCache(const std::string &path,
                                      const AssetPreview &preview) {
+  std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   size_t previewSize = estimatePreviewSize(preview);
 
-  // Evict if necessary
+  // Evict if necessary (evictLRU assumes lock is already held)
   while (m_currentCacheSize + previewSize > m_maxCacheSize &&
          !m_cache.empty()) {
-    evictLRU();
+    evictLRULocked();
   }
 
   PreviewCacheEntry entry;
@@ -420,7 +437,8 @@ void AssetPreviewManager::addToCache(const std::string &path,
   m_currentCacheSize += previewSize;
 }
 
-void AssetPreviewManager::evictLRU() {
+// Internal helper - assumes m_cacheMutex is already locked
+void AssetPreviewManager::evictLRULocked() {
   if (m_cache.empty()) {
     return;
   }
@@ -435,6 +453,12 @@ void AssetPreviewManager::evictLRU() {
 
   m_currentCacheSize -= estimatePreviewSize(lruIt->second.preview);
   m_cache.erase(lruIt);
+}
+
+void AssetPreviewManager::evictLRU() {
+  // For external callers - acquires lock
+  std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
+  evictLRULocked();
 }
 
 #if defined(__GNUC__)

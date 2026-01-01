@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -258,9 +259,11 @@ private:
   AssetPreview generatePreview(const std::string &assetPath, u32 thumbnailSize);
   void addToCache(const std::string &path, const AssetPreview &preview);
   void evictLRU();
+  void evictLRULocked(); // Assumes m_cacheMutex is already locked
   size_t estimatePreviewSize(const AssetPreview &preview) const;
 
-  // Cache
+  // Cache (protected by m_cacheMutex for thread-safe access)
+  mutable std::shared_mutex m_cacheMutex;
   std::unordered_map<std::string, PreviewCacheEntry> m_cache;
   size_t m_maxCacheSize = 100 * 1024 * 1024; // 100 MB default
   size_t m_currentCacheSize = 0;
@@ -275,9 +278,6 @@ private:
   u32 m_defaultThumbnailSize = 128;
   std::string m_fontSampleText =
       "The quick brown fox jumps over the lazy dog. 0123456789";
-
-  // Singleton
-  static std::unique_ptr<AssetPreviewManager> s_instance;
 };
 
 } // namespace NovelMind::editor
