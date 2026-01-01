@@ -70,7 +70,7 @@ void NMInspectorPanel::clear() {
   // Remove all groups
   for (auto *group : m_groups) {
     m_mainLayout->removeWidget(group);
-    delete group;
+    group->deleteLater();
   }
   m_groups.clear();
   m_propertyWidgets.clear();
@@ -303,7 +303,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     auto *lockAspectRatioCheck = new QCheckBox(tr("Lock Aspect Ratio"));
     lockAspectRatioCheck->setChecked(m_lockAspectRatio);
     lockAspectRatioCheck->setToolTip(
-        tr("When enabled, changing one scale value will\nproportionally adjust the other"));
+        tr("When enabled, changing one scale value will\nproportionally adjust "
+           "the other"));
     connect(lockAspectRatioCheck, &QCheckBox::toggled, this,
             [this](bool checked) { m_lockAspectRatio = checked; });
     trackPropertyWidget("lock_aspect_ratio", lockAspectRatioCheck);
@@ -311,7 +312,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     // Add checkbox to group
     auto *lockRow = new QWidget(m_scrollContent);
     auto *lockLayout = new QHBoxLayout(lockRow);
-    lockLayout->setContentsMargins(100 + 8, 0, 0, 0); // Align with other controls
+    lockLayout->setContentsMargins(100 + 8, 0, 0,
+                                   0); // Align with other controls
     lockLayout->setSpacing(8);
     lockLayout->addWidget(lockAspectRatioCheck);
     lockLayout->addStretch();
@@ -517,8 +519,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       for (int i = 0; i < choiceOptions.size(); ++i) {
         const QString &option = choiceOptions[i];
         const QString target = choiceTargets.value(option);
-        QString targetDisplay = target.isEmpty() ? tr("(not connected)")
-                                                 : target;
+        QString targetDisplay =
+            target.isEmpty() ? tr("(not connected)") : target;
         // Truncate long option text for display
         QString optionDisplay = option;
         if (optionDisplay.length() > 25) {
@@ -534,7 +536,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
 
       if (m_editMode) {
-        // Show the mapping as editable multiline (format: "OptionText=TargetNodeId")
+        // Show the mapping as editable multiline (format:
+        // "OptionText=TargetNodeId")
         QString editableMapping;
         for (const QString &option : choiceOptions) {
           const QString target = choiceTargets.value(option);
@@ -552,9 +555,10 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
 
       // Add helper text
-      branchGroup->addProperty(tr("Help"),
-          tr("Connect edges from this node to target nodes.\n"
-             "Each connection is automatically mapped to the next choice option."));
+      branchGroup->addProperty(
+          tr("Help"), tr("Connect edges from this node to target nodes.\n"
+                         "Each connection is automatically mapped to the next "
+                         "choice option."));
     }
 
     connect(branchGroup, &NMPropertyGroup::propertyValueChanged, this,
@@ -632,7 +636,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
     }
 
     if (m_editMode) {
-      // Show the mapping as editable multiline (format: "OutputLabel=TargetNodeId")
+      // Show the mapping as editable multiline (format:
+      // "OutputLabel=TargetNodeId")
       QString editableMapping;
       for (const QString &output : outputs) {
         const QString target = conditionTargets.value(output);
@@ -843,7 +848,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
   }
 
   // Handle aspect ratio lock for scale changes
-  if (m_lockAspectRatio && (propertyName == "scale_x" || propertyName == "scale_y")) {
+  if (m_lockAspectRatio &&
+      (propertyName == "scale_x" || propertyName == "scale_y")) {
     double newScale = newValue.toDouble();
 
     // Calculate the ratio change
@@ -854,7 +860,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
       // Update scale_y proportionally
       updatePropertyValue("scale_y", QString::number(newScaleY, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_x", newValue);
-      emit propertyChanged(m_currentObjectId, "scale_y", QString::number(newScaleY, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_y",
+                           QString::number(newScaleY, 'f', 2));
 
       m_lastScale = QPointF(newScale, newScaleY);
       return;
@@ -864,7 +871,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
 
       // Update scale_x proportionally
       updatePropertyValue("scale_x", QString::number(newScaleX, 'f', 2));
-      emit propertyChanged(m_currentObjectId, "scale_x", QString::number(newScaleX, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_x",
+                           QString::number(newScaleX, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_y", newValue);
 
       m_lastScale = QPointF(newScaleX, newScale);
@@ -913,6 +921,31 @@ void NMInspectorPanel::flushPendingUpdates() {
     if (widgetIt == m_propertyWidgets.end()) {
       continue;
     }
+  } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
+    spinBox->setValue(newValue.toInt());
+  } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
+    doubleSpinBox->setValue(newValue.toDouble());
+  } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
+    checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
+  } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
+    comboBox->setCurrentText(newValue);
+  } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
+    // Only update if value has changed and widget doesn't have focus
+    // to preserve undo history and cursor position during user editing
+    if (textEdit->toPlainText() != newValue && !textEdit->hasFocus()) {
+      // Save cursor position and selection
+      QTextCursor cursor = textEdit->textCursor();
+      int cursorPos = cursor.position();
+      int anchorPos = cursor.anchor();
+
+      textEdit->setPlainText(newValue);
+
+      // Restore cursor position if still valid
+      if (cursorPos <= newValue.length()) {
+        cursor.setPosition(qMin(anchorPos, newValue.length()));
+        cursor.setPosition(qMin(cursorPos, newValue.length()),
+                           QTextCursor::KeepAnchor);
+        textEdit->setTextCursor(cursor);
 
     QWidget *widget = widgetIt.value();
     QSignalBlocker blocker(widget);

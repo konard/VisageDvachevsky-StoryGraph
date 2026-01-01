@@ -830,11 +830,20 @@ void NMWelcomeDialog::startEntranceAnimations() {
     anim->setEasingCurve(QEasingCurve::OutCubic);
 
     // Start after delay
-    QTimer::singleShot(delayMs, this, [anim, effect, widget]() {
+    // The context object 'this' ensures the timer is cancelled if dialog is
+    // destroyed
+    QTimer::singleShot(delayMs, this, [anim, widget]() {
+      if (!widget || widget->isHidden()) {
+        delete anim;
+        return;
+      }
       anim->start(QPropertyAnimation::DeleteWhenStopped);
       // Clear effect after animation to restore normal rendering
-      QObject::connect(anim, &QPropertyAnimation::finished, widget,
-                       [widget]() { widget->setGraphicsEffect(nullptr); });
+      QObject::connect(anim, &QPropertyAnimation::finished, widget, [widget]() {
+        if (widget) {
+          widget->setGraphicsEffect(nullptr);
+        }
+      });
     });
   };
 

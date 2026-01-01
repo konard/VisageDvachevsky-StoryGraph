@@ -140,6 +140,9 @@ void animateDialogIn(QDialog *dialog) {
   }
   dialog->setWindowOpacity(0.0);
   QTimer::singleShot(0, dialog, [dialog]() {
+    if (!dialog || !dialog->isVisible()) {
+      return;
+    }
     auto *anim = new QPropertyAnimation(dialog, "windowOpacity", dialog);
     anim->setDuration(160);
     anim->setStartValue(0.0);

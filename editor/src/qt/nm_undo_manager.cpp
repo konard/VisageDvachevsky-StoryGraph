@@ -50,6 +50,11 @@ void NMUndoManager::shutdown() {
   if (!m_initialized)
     return;
 
+  // Disconnect all signals before destroying the stack
+  if (m_undoStack) {
+    disconnect(m_undoStack.get(), nullptr, this, nullptr);
+  }
+
   m_undoStack.reset();
   m_initialized = false;
 }
