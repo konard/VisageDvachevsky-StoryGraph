@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <queue>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -110,6 +111,11 @@ enum class AudioTransition : u8 {
 
 /**
  * @brief Audio event for callbacks
+ *
+ * IMPORTANT: AudioCallback may be invoked from background threads.
+ * If you need to update UI elements, use thread-safe mechanisms:
+ * - Qt: Use QMetaObject::invokeMethod(..., Qt::QueuedConnection)
+ * - Other frameworks: Post to main thread event queue
  */
 struct AudioEvent {
   enum class Type : u8 {
@@ -455,7 +461,8 @@ private:
   std::unordered_map<AudioChannel, bool> m_channelMuted;
   bool m_allMuted = false;
 
-  // Active sources
+  // Active sources (protected by m_sourcesMutex for thread-safe access)
+  mutable std::shared_mutex m_sourcesMutex;
   std::vector<std::unique_ptr<AudioSource>> m_sources;
   u32 m_nextHandleId = 1;
   size_t m_maxSounds = 32;
