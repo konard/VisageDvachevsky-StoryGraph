@@ -24,6 +24,8 @@ NMPlayModeController::NMPlayModeController(QObject *parent)
 
   // Wire runtime callbacks
   m_runtimeHost.setOnStateChanged([this](EditorRuntimeState state) {
+    // INVARIANT: Update state BEFORE emitting signals to ensure consistency
+    PlayMode oldMode = m_playMode;
     switch (state) {
     case EditorRuntimeState::Running:
       m_playMode = Playing;
@@ -44,7 +46,10 @@ NMPlayModeController::NMPlayModeController(QObject *parent)
       emit sceneSnapshotUpdated();
       break;
     }
-    emit playModeChanged(m_playMode);
+    // Only emit if mode actually changed, and only after state is updated
+    if (oldMode != m_playMode) {
+      emit playModeChanged(m_playMode);
+    }
   });
 
   m_runtimeHost.setOnSceneChanged([this](const std::string &sceneId) {
