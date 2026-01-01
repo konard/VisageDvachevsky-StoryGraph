@@ -4,6 +4,7 @@
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
+#include "NovelMind/core/logger.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -426,7 +427,9 @@ void AudioRecorder::cancelRecording() {
   if (!m_outputPath.empty() && fs::exists(m_outputPath)) {
     try {
       fs::remove(m_outputPath);
-    } catch (...) {
+    } catch (const std::exception &e) {
+      core::Logger::error("Failed to delete incomplete recording file: " +
+                          std::string(e.what()));
     }
   }
 
