@@ -478,6 +478,7 @@ private:
 
   // Master fade
   f32 m_masterFadeVolume = 1.0f;
+  f32 m_masterFadeStartVolume = 1.0f;
   f32 m_masterFadeTarget = 1.0f;
   f32 m_masterFadeTimer = 0.0f;
   f32 m_masterFadeDuration = 0.0f;

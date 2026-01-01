@@ -224,7 +224,8 @@ void AudioManager::update(f64 deltaTime) {
       m_masterFadeDuration = 0.0f;
     } else {
       f32 t = m_masterFadeTimer / m_masterFadeDuration;
-      m_masterFadeVolume += (m_masterFadeTarget - m_masterFadeVolume) * t;
+      m_masterFadeVolume =
+          m_masterFadeStartVolume + (m_masterFadeTarget - m_masterFadeStartVolume) * t;
     }
   }
 
@@ -586,6 +587,7 @@ void AudioManager::unmuteAll() { m_allMuted = false; }
 
 void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
   m_masterFadeTarget = std::max(0.0f, std::min(1.0f, targetVolume));
+  m_masterFadeStartVolume = m_masterFadeVolume;
   m_masterFadeDuration = duration;
   m_masterFadeTimer = 0.0f;
 }
