@@ -132,12 +132,20 @@ void NMDockPanel::resizeEvent(QResizeEvent *event) {
 }
 
 void NMDockPanel::showEvent(QShowEvent *event) {
+  // INVARIANT: Prevent re-entrance to avoid nested initialization
+  if (m_inShowEvent) {
+    return;
+  }
+  m_inShowEvent = true;
+
   QDockWidget::showEvent(event);
 
   if (!m_initialized) {
     m_initialized = true;
     onInitialize();
   }
+
+  m_inShowEvent = false;
 }
 
 void NMDockPanel::setMinimumPanelSize(int width, int height) {

@@ -50,13 +50,11 @@ void NMUndoManager::shutdown() {
   if (!m_initialized)
     return;
 
-  // Disconnect all signals before destroying the stack
-  if (m_undoStack) {
-    disconnect(m_undoStack.get(), nullptr, this, nullptr);
-  }
-
-  m_undoStack.reset();
+  // INVARIANT: Set initialized flag false BEFORE resetting pointer
+  // to prevent race conditions where methods check m_initialized
+  // but pointer is already null
   m_initialized = false;
+  m_undoStack.reset();
 }
 
 void NMUndoManager::pushCommand(QUndoCommand *command) {

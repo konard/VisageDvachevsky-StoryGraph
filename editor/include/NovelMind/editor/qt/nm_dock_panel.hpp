@@ -165,6 +165,7 @@ private:
   QString m_panelId;
   QWidget *m_contentWidget = nullptr;
   bool m_initialized = false;
+  bool m_inShowEvent = false; // Re-entrance guard for showEvent
 
   // Anchor registration for guided learning system
   std::unique_ptr<guided_learning::ScopedAnchorRegistration> m_panelAnchor;

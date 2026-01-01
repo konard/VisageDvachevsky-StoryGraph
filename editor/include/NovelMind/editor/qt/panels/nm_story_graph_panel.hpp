@@ -23,6 +23,7 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QVector>
+#include <atomic>
 
 namespace NovelMind::editor::qt {
 
@@ -679,7 +680,8 @@ private:
   QHash<QString, LayoutNode> m_layoutNodes;
   QHash<uint64_t, QString> m_nodeIdToString;
   QString m_layoutEntryScene;
-  bool m_isRebuilding = false;
+  // INVARIANT: Use atomic flag to protect against async rebuild issues
+  std::atomic<bool> m_isRebuilding{false};
   bool m_markNextNodeAsEntry = false;
 
   // Localization controls

@@ -76,7 +76,10 @@ void NMInputDialog::configureText(const QString &text,
     m_textEdit->setEchoMode(mode);
     m_textEdit->setText(text);
     m_textEdit->selectAll();
-    m_textEdit->setFocus();
+    // INVARIANT: Only set focus if widget is valid and visible
+    if (m_textEdit->isVisible()) {
+      m_textEdit->setFocus();
+    }
   }
 }
 
@@ -86,7 +89,10 @@ void NMInputDialog::configureInt(int value, int minValue, int maxValue,
     m_intSpin->setRange(minValue, maxValue);
     m_intSpin->setSingleStep(step);
     m_intSpin->setValue(value);
-    m_intSpin->setFocus();
+    // INVARIANT: Only set focus if widget is valid and visible
+    if (m_intSpin->isVisible()) {
+      m_intSpin->setFocus();
+    }
   }
 }
 
@@ -96,7 +102,10 @@ void NMInputDialog::configureDouble(double value, double minValue,
     m_doubleSpin->setRange(minValue, maxValue);
     m_doubleSpin->setDecimals(decimals);
     m_doubleSpin->setValue(value);
-    m_doubleSpin->setFocus();
+    // INVARIANT: Only set focus if widget is valid and visible
+    if (m_doubleSpin->isVisible()) {
+      m_doubleSpin->setFocus();
+    }
   }
 }
 
@@ -120,7 +129,10 @@ void NMInputDialog::configureItem(const QStringList &items, int current,
     if (current >= 0 && current < items.size()) {
       m_comboBox->setCurrentIndex(current);
     }
-    m_comboBox->setFocus();
+    // INVARIANT: Only set focus if widget is valid and visible
+    if (m_comboBox->isVisible()) {
+      m_comboBox->setFocus();
+    }
   }
 }
 
@@ -128,7 +140,10 @@ void NMInputDialog::configureMultiLine(const QString &text) {
   if (m_multiLineEdit) {
     m_multiLineEdit->setPlainText(text);
     m_multiLineEdit->selectAll();
-    m_multiLineEdit->setFocus();
+    // INVARIANT: Only set focus if widget is valid and visible
+    if (m_multiLineEdit->isVisible()) {
+      m_multiLineEdit->setFocus();
+    }
   }
 }
 
