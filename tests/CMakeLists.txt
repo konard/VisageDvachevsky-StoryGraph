@@ -73,6 +73,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_playback_source_mode.cpp  # Issue #82
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
+        unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
     )
 
     target_link_libraries(integration_tests
