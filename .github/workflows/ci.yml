@@ -158,3 +158,72 @@ jobs:
         find engine_core -name '*.cpp' -o -name '*.hpp' | \
           xargs clang-format-14 --dry-run --Werror || \
           echo "::warning::Code formatting issues found. Run clang-format to fix."
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev gcovr lcov
+
+    - name: Configure CMake with coverage
+      env:
+        CC: gcc
+        CXX: g++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DNM_BUILD_TESTS=ON \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_C_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+
+    - name: Generate coverage report
+      run: |
+        cd build
+        gcovr --root .. \
+          --filter ../engine_core/src \
+          --filter ../engine_core/include \
+          --exclude '.*/third_party/.*' \
+          --exclude '.*/tests/.*' \
+          --print-summary \
+          --xml coverage.xml \
+          --html coverage.html
+
+    - name: Upload coverage artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: |
+          build/coverage.html
+          build/coverage.xml
+
+    - name: Check coverage threshold
+      run: |
+        cd build
+        COVERAGE=$(gcovr --root .. \
+          --filter ../engine_core/src \
+          --filter ../engine_core/include \
+          --exclude '.*/third_party/.*' \
+          --exclude '.*/tests/.*' \
+          --json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_valid']*100:.1f}\")")
+        echo "Current line coverage: ${COVERAGE}%"
+        # Set minimum threshold (currently informational, not blocking)
+        THRESHOLD=25.0
+        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+          echo "::warning::Coverage ${COVERAGE}% is below target ${THRESHOLD}%"
+        else
+          echo "Coverage ${COVERAGE}% meets target ${THRESHOLD}%"
+        fi
