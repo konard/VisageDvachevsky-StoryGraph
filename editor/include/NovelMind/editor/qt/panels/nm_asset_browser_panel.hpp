@@ -194,6 +194,10 @@ public: // Used by NMAssetIconProvider
   bool isThumbnailValid(const QString &path,
                         const ThumbnailCacheEntry &entry) const;
 
+  // PERF-3: Request async thumbnail loading (for use by NMAssetIconProvider)
+  void requestAsyncThumbnail(const QString &path, const QSize &size,
+                             int priority = 5);
+
   // Thumbnail cache with LRU eviction (max size in KB)
   QCache<QString, ThumbnailCacheEntry> m_thumbnailCache;
 

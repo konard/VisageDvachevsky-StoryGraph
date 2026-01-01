@@ -167,24 +167,15 @@ public:
         }
       }
 
-      // Load synchronously for now (lazy loading will be added later)
-      QImageReader reader(path);
-      reader.setAutoTransform(true);
-      QImage image = reader.read();
-      if (!image.isNull()) {
-        QPixmap pix = QPixmap::fromImage(image.scaled(
-            m_iconSize, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-
-        // Cache it
-        if (m_panel) {
-          auto *entry =
-              new ThumbnailCacheEntry{pix, info.lastModified(), info.size()};
-          m_panel->m_thumbnailCache.insert(
-              path, entry,
-              static_cast<int>(pix.width() * pix.height() * 4 / 1024));
-        }
-        return QIcon(pix);
+      // PERF-3: Request async loading via lazy loader instead of blocking
+      // Return a placeholder icon while the real thumbnail loads
+      if (m_panel) {
+        // Request thumbnail with normal priority (visible items get high priority)
+        m_panel->requestAsyncThumbnail(path, m_iconSize, 5);
       }
+
+      // Return default file icon as placeholder while async loading
+      return QFileIconProvider::icon(info);
     }
 
     // Check for audio files
@@ -1205,6 +1196,17 @@ bool NMAssetBrowserPanel::isThumbnailValid(
   }
 
   return true;
+}
+
+void NMAssetBrowserPanel::requestAsyncThumbnail(const QString &path,
+                                                 const QSize &size,
+                                                 int priority) {
+  // PERF-3: Public method to request async thumbnail loading
+  // This allows NMAssetIconProvider to request thumbnails without accessing
+  // private members
+  if (m_lazyLoader) {
+    m_lazyLoader->requestThumbnail(path, size, priority);
+  }
 }
 
 void NMAssetBrowserPanel::scheduleVisibleThumbnails() {

@@ -48,6 +48,13 @@ NMInspectorPanel::NMInspectorPanel(QWidget *parent)
   // scrolling
   setMinimumPanelSize(280, 200);
 
+  // PERF-2: Setup update timer for batching property updates
+  m_updateTimer = new QTimer(this);
+  m_updateTimer->setSingleShot(true);
+  m_updateTimer->setInterval(16); // ~60fps update rate
+  connect(m_updateTimer, &QTimer::timeout, this,
+          &NMInspectorPanel::flushPendingUpdates);
+
   setupContent();
 }
 
@@ -67,6 +74,13 @@ void NMInspectorPanel::clear() {
   }
   m_groups.clear();
   m_propertyWidgets.clear();
+
+  // PERF-2: Clear dirty flag caches when switching objects
+  m_pendingUpdates.clear();
+  m_lastKnownValues.clear();
+  if (m_updateTimer && m_updateTimer->isActive()) {
+    m_updateTimer->stop();
+  }
 
   m_headerLabel->clear();
 }
@@ -871,69 +885,91 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
 
 void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
                                            const QString &newValue) {
-  auto it = m_propertyWidgets.find(propertyName);
-  if (it == m_propertyWidgets.end()) {
+  // PERF-2: Check if value has actually changed before queuing update
+  auto lastIt = m_lastKnownValues.find(propertyName);
+  if (lastIt != m_lastKnownValues.end() && lastIt.value() == newValue) {
+    // Value hasn't changed, skip update
     return;
   }
 
-  QWidget *widget = it.value();
-  QSignalBlocker blocker(widget);
-  if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
-    // Only update if value has changed and widget doesn't have focus
-    // to preserve undo history and cursor position during user editing
-    if (lineEdit->text() != newValue && !lineEdit->hasFocus()) {
-      int cursorPos = lineEdit->cursorPosition();
-      lineEdit->setText(newValue);
-      // Restore cursor position if still valid
-      lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
+  // Store the pending update
+  m_pendingUpdates.insert(propertyName, newValue);
+  m_lastKnownValues.insert(propertyName, newValue);
+
+  // Start or restart the batching timer
+  if (m_updateTimer && !m_updateTimer->isActive()) {
+    m_updateTimer->start();
+  }
+}
+
+void NMInspectorPanel::flushPendingUpdates() {
+  // PERF-2: Process all pending updates in one batch
+  for (auto it = m_pendingUpdates.constBegin(); it != m_pendingUpdates.constEnd();
+       ++it) {
+    const QString &propertyName = it.key();
+    const QString &newValue = it.value();
+
+    auto widgetIt = m_propertyWidgets.find(propertyName);
+    if (widgetIt == m_propertyWidgets.end()) {
+      continue;
     }
-  } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
-    spinBox->setValue(newValue.toInt());
-  } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
-    doubleSpinBox->setValue(newValue.toDouble());
-  } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
-    checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
-  } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
-    comboBox->setCurrentText(newValue);
-  } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    // Only update if value has changed and widget doesn't have focus
-    // to preserve undo history and cursor position during user editing
-    if (textEdit->toPlainText() != newValue && !textEdit->hasFocus()) {
-      // Save cursor position and selection
-      QTextCursor cursor = textEdit->textCursor();
-      int cursorPos = cursor.position();
-      int anchorPos = cursor.anchor();
 
-      textEdit->setPlainText(newValue);
+    QWidget *widget = widgetIt.value();
+    QSignalBlocker blocker(widget);
 
-      // Restore cursor position if still valid
-      if (cursorPos <= newValue.length()) {
-        cursor.setPosition(qMin(anchorPos, newValue.length()));
-        cursor.setPosition(qMin(cursorPos, newValue.length()),
-                          QTextCursor::KeepAnchor);
-        textEdit->setTextCursor(cursor);
+    if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
+      // Only update if widget doesn't have focus to preserve user editing
+      if (!lineEdit->hasFocus()) {
+        int cursorPos = lineEdit->cursorPosition();
+        lineEdit->setText(newValue);
+        lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
       }
-    }
-  } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
-    // Check if this is a curve button or asset button
-    if (button->text() == tr("Edit Curve...")) {
-      button->setProperty("curveId", newValue);
+    } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
+      spinBox->setValue(newValue.toInt());
+    } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
+      doubleSpinBox->setValue(newValue.toDouble());
+    } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
+      checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
+    } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
+      comboBox->setCurrentText(newValue);
+    } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
+      // Only update if widget doesn't have focus to preserve user editing
+      if (!textEdit->hasFocus()) {
+        QTextCursor cursor = textEdit->textCursor();
+        int cursorPos = cursor.position();
+        int anchorPos = cursor.anchor();
+
+        textEdit->setPlainText(newValue);
+
+        if (cursorPos <= newValue.length()) {
+          cursor.setPosition(qMin(anchorPos, newValue.length()));
+          cursor.setPosition(qMin(cursorPos, newValue.length()),
+                            QTextCursor::KeepAnchor);
+          textEdit->setTextCursor(cursor);
+        }
+      }
+    } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
+      if (button->text() == tr("Edit Curve...")) {
+        button->setProperty("curveId", newValue);
+      } else {
+        button->setText(newValue.isEmpty() ? "(Select Asset)" : newValue);
+      }
     } else {
-      button->setText(newValue.isEmpty() ? "(Select Asset)" : newValue);
-    }
-  } else {
-    // Handle vector widgets (Vector2/Vector3)
-    // Vector widgets are container QWidgets with child spinboxes
-    QList<QDoubleSpinBox *> spinBoxes =
-        widget->findChildren<QDoubleSpinBox *>();
-    if (!spinBoxes.isEmpty()) {
-      QStringList components = newValue.split(',');
-      for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
-        QSignalBlocker spinBoxBlocker(spinBoxes[i]);
-        spinBoxes[i]->setValue(components[i].toDouble());
+      // Handle vector widgets (Vector2/Vector3)
+      QList<QDoubleSpinBox *> spinBoxes =
+          widget->findChildren<QDoubleSpinBox *>();
+      if (!spinBoxes.isEmpty()) {
+        QStringList components = newValue.split(',');
+        for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
+          QSignalBlocker spinBoxBlocker(spinBoxes[i]);
+          spinBoxes[i]->setValue(components[i].toDouble());
+        }
       }
     }
   }
+
+  // Clear pending updates
+  m_pendingUpdates.clear();
 }
 
 void NMInspectorPanel::trackPropertyWidget(const QString &propertyName,
