@@ -127,6 +127,8 @@ void NMAnimationAdapter::stopPreview() {
   }
 
   m_isPreviewActive = false;
+  // PERF-6: Clear object cache when preview stops
+  clearObjectCache();
   NOVELMIND_LOG_INFO("[AnimationAdapter] Preview stopped");
   emit previewStopped();
 }
@@ -285,17 +287,25 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
     return;
   }
 
+  // PERF-6: Use cached object pointer to avoid repeated lookups
+  NMSceneObject *obj = nullptr;
+  auto objIt = m_objectCache.find(binding.objectId);
+  if (objIt != m_objectCache.end() && objIt.value()) {
+    obj = objIt.value();
+  } else {
+    obj = m_sceneView->findObjectById(binding.objectId);
+    if (!obj) {
+      NOVELMIND_LOG_WARN(std::string("[AnimationAdapter] Object not found: ") +
+                         binding.objectId.toStdString());
+      return;
+    }
+    // Cache the pointer for future frames
+    m_objectCache.insert(binding.objectId, obj);
+  }
+
   // Interpolate value at current time
   QVariant value = interpolateTrackValue(track, time);
   if (!value.isValid()) {
-    return;
-  }
-
-  // Get current object state from scene
-  NMSceneObject *obj = m_sceneView->findObjectById(binding.objectId);
-  if (!obj) {
-    NOVELMIND_LOG_WARN(std::string("[AnimationAdapter] Object not found: ") +
-                       binding.objectId.toStdString());
     return;
   }
 
@@ -403,6 +413,8 @@ void NMAnimationAdapter::cleanupAnimations() {
   m_animationStates.clear();
   m_bindings.clear();
   m_propertyStorage.clear();
+  // PERF-6: Clear object cache when animations are cleaned up
+  clearObjectCache();
   NOVELMIND_LOG_INFO("[AnimationAdapter] Cleaned up animations");
 }
 

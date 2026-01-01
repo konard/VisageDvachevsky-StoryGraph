@@ -570,6 +570,14 @@ public:
   void onUpdate(double deltaTime) override;
   Q_SLOT void rebuildFromProjectScripts();
 
+  // PERF-5: Incremental graph update methods (avoid full rebuild)
+  void updateSingleNode(const QString &nodeIdString, const LayoutNode &data);
+  void addSingleConnection(const QString &fromNodeIdString,
+                           const QString &toNodeIdString);
+  void removeSingleConnection(const QString &fromNodeIdString,
+                              const QString &toNodeIdString);
+  void updateNodePosition(const QString &nodeIdString, const QPointF &newPos);
+
   [[nodiscard]] NMStoryGraphScene *graphScene() const { return m_scene; }
   [[nodiscard]] NMStoryGraphView *graphView() const { return m_view; }
   [[nodiscard]] NMStoryGraphMinimap *minimap() const { return m_minimap; }

@@ -667,4 +667,114 @@ void NMStoryGraphPanel::updateSyncButtonsVisibility() {
            << static_cast<int>(mode);
 }
 
+// ============================================================================
+// PERF-5: Incremental Graph Update Methods
+// ============================================================================
+
+void NMStoryGraphPanel::updateSingleNode(const QString &nodeIdString,
+                                         const LayoutNode &data) {
+  if (!m_scene || nodeIdString.isEmpty()) {
+    return;
+  }
+
+  // Find existing node
+  NMGraphNodeItem *node = findNodeByIdString(nodeIdString);
+  if (!node) {
+    // Node doesn't exist, add it
+    node = m_scene->addNode(data.title, data.type, data.position, 0, nodeIdString);
+    if (!node) {
+      return;
+    }
+    node->setSceneId(nodeIdString);
+  } else {
+    // Update existing node in-place without full rebuild
+    node->setTitle(data.title);
+    node->setNodeType(data.type);
+    node->setPos(data.position);
+  }
+
+  // Update node properties
+  node->setScriptPath(data.scriptPath);
+  node->setDialogueSpeaker(data.speaker);
+  node->setDialogueText(data.dialogueText);
+  node->setChoiceOptions(data.choices);
+  node->setHasEmbeddedDialogue(data.hasEmbeddedDialogue);
+  node->setDialogueCount(data.dialogueCount);
+  node->setThumbnailPath(data.thumbnailPath);
+  node->setConditionExpression(data.conditionExpression);
+  node->setConditionOutputs(data.conditionOutputs);
+
+  // Update layout cache
+  m_layoutNodes.insert(nodeIdString, data);
+  m_nodeIdToString.insert(node->nodeId(), nodeIdString);
+
+  // Force redraw of the node
+  node->update();
+}
+
+void NMStoryGraphPanel::addSingleConnection(const QString &fromNodeIdString,
+                                            const QString &toNodeIdString) {
+  if (!m_scene || fromNodeIdString.isEmpty() || toNodeIdString.isEmpty()) {
+    return;
+  }
+
+  NMGraphNodeItem *fromNode = findNodeByIdString(fromNodeIdString);
+  NMGraphNodeItem *toNode = findNodeByIdString(toNodeIdString);
+
+  if (!fromNode || !toNode) {
+    qWarning() << "[StoryGraph] Cannot add connection: node not found"
+               << fromNodeIdString << "->" << toNodeIdString;
+    return;
+  }
+
+  // Check if connection already exists
+  if (m_scene->hasConnection(fromNode->nodeId(), toNode->nodeId())) {
+    return;
+  }
+
+  m_scene->addConnection(fromNode, toNode);
+}
+
+void NMStoryGraphPanel::removeSingleConnection(const QString &fromNodeIdString,
+                                               const QString &toNodeIdString) {
+  if (!m_scene || fromNodeIdString.isEmpty() || toNodeIdString.isEmpty()) {
+    return;
+  }
+
+  NMGraphNodeItem *fromNode = findNodeByIdString(fromNodeIdString);
+  NMGraphNodeItem *toNode = findNodeByIdString(toNodeIdString);
+
+  if (!fromNode || !toNode) {
+    return;
+  }
+
+  m_scene->removeConnection(fromNode->nodeId(), toNode->nodeId());
+}
+
+void NMStoryGraphPanel::updateNodePosition(const QString &nodeIdString,
+                                           const QPointF &newPos) {
+  if (!m_scene || nodeIdString.isEmpty()) {
+    return;
+  }
+
+  NMGraphNodeItem *node = findNodeByIdString(nodeIdString);
+  if (!node) {
+    return;
+  }
+
+  // Update position without triggering full rebuild
+  node->setPos(newPos);
+
+  // Update layout cache
+  auto it = m_layoutNodes.find(nodeIdString);
+  if (it != m_layoutNodes.end()) {
+    it->position = newPos;
+  }
+
+  // Update connections attached to this node
+  for (auto *conn : m_scene->findConnectionsForNode(node)) {
+    conn->updatePath();
+  }
+}
+
 } // namespace NovelMind::editor::qt

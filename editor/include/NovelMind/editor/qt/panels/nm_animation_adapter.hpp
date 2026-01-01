@@ -294,6 +294,13 @@ private:
     f32 alpha = 1.0f;
   };
   std::unordered_map<QString, PropertyStorage> m_propertyStorage;
+
+  // PERF-6: Object pointer cache to avoid repeated findObjectById lookups
+  // during animation playback. Cleared when scene changes or preview stops.
+  QHash<QString, class NMSceneObject *> m_objectCache;
+
+  // Clear object cache when objects may have changed
+  void clearObjectCache() { m_objectCache.clear(); }
 };
 
 } // namespace NovelMind::editor::qt
