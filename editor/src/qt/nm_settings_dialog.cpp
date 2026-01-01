@@ -371,9 +371,11 @@ void NMSettingsCategoryPage::rebuild() {
   m_widgets.clear();
 
   // Get settings for this category
-  auto settings = m_registry->getByCategory(m_category);
+  // INVARIANT: Copy settings to prevent iterator invalidation if registry
+  // changes during widget creation/setValue() calls
+  auto settingsSnapshot = m_registry->getByCategory(m_category);
 
-  if (settings.empty()) {
+  if (settingsSnapshot.empty()) {
     auto *emptyLabel = new QLabel("No settings found in this category.", this);
     emptyLabel->setAlignment(Qt::AlignCenter);
     m_layout->addWidget(emptyLabel);
@@ -383,7 +385,7 @@ void NMSettingsCategoryPage::rebuild() {
 
   // Group settings by subcategory (if any)
   // For simplicity, we'll just list them all
-  for (const auto &def : settings) {
+  for (const auto &def : settingsSnapshot) {
     auto *widget = createWidgetForSetting(def);
     if (widget) {
       m_widgets.push_back(widget);
