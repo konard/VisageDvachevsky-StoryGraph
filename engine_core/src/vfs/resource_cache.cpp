@@ -139,9 +139,12 @@ void ResourceCache::evictIfNeeded(usize requiredSpace) {
 void ResourceCache::updateAccessOrder(const ResourceId &id) {
   const auto orderIt = m_orderIterators.find(id);
   if (orderIt != m_orderIterators.end()) {
+    // Erase from list using the stored iterator (invalidates orderIt->second)
     m_accessOrder.erase(orderIt->second);
+    // Add to front of list
     m_accessOrder.push_front(id);
-    m_orderIterators[id] = m_accessOrder.begin();
+    // Update map with new iterator (orderIt is still valid map iterator)
+    orderIt->second = m_accessOrder.begin();
   }
 }
 
