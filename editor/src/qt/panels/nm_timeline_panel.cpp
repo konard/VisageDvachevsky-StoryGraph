@@ -406,7 +406,8 @@ void NMTimelinePanel::onInitialize() {
 }
 
 void NMTimelinePanel::onShutdown() {
-  // Clean up tracks
+  // Clean up tracks (protected by mutex for thread safety)
+  QMutexLocker locker(&m_tracksMutex);
   qDeleteAll(m_tracks);
   m_tracks.clear();
 }
