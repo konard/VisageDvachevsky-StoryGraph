@@ -20,7 +20,7 @@ namespace {
 bool readFileToString(std::ifstream &file, std::string &out) {
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
-  if (size < 0) {
+  if (size == std::streampos(-1) || size < 0) {
     return false;
   }
 
@@ -37,7 +37,7 @@ Result<std::vector<u8>> readBinaryFile(const std::string &path) {
   }
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
-  if (size < 0) {
+  if (size == std::streampos(-1) || size < 0) {
     return Result<std::vector<u8>>::error("Failed to determine file size");
   }
   std::vector<u8> data(static_cast<size_t>(size));
