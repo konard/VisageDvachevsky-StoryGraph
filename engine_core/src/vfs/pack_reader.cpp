@@ -56,13 +56,25 @@ void PackReader::unmountAll() {
 
 Result<std::vector<u8>>
 PackReader::readFile(const std::string &resourceId) const {
-  std::lock_guard<std::mutex> lock(m_mutex);
+  // Find entry and copy data needed for reading
+  std::string packPath;
+  PackResourceEntry entry;
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &[packPath, pack] : m_packs) {
-    auto it = pack.entries.find(resourceId);
-    if (it != pack.entries.end()) {
-      return readResourceData(packPath, it->second);
+    for (const auto &[path, pack] : m_packs) {
+      auto it = pack.entries.find(resourceId);
+      if (it != pack.entries.end()) {
+        packPath = path;
+        entry = it->second;
+        break;
+      }
     }
+  }
+
+  // Read data outside lock to avoid holding mutex during I/O
+  if (!packPath.empty()) {
+    return readResourceData(packPath, entry);
   }
 
   return Result<std::vector<u8>>::error("Resource not found: " + resourceId);

@@ -1,6 +1,7 @@
 #include "NovelMind/scripting/interpreter.hpp"
 #include "NovelMind/core/logger.hpp"
 #include <cstring>
+#include <limits>
 
 namespace NovelMind::scripting {
 
@@ -25,6 +26,9 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Read magic
   u32 magic;
+  if (offset + sizeof(u32) > bytecode.size()) {
+    return Result<void>::error("Bytecode truncated at magic");
+  }
   std::memcpy(&magic, bytecode.data() + offset, sizeof(u32));
   offset += sizeof(u32);
 
@@ -34,6 +38,9 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Read version
   u16 version;
+  if (offset + sizeof(u16) > bytecode.size()) {
+    return Result<void>::error("Bytecode truncated at version");
+  }
   std::memcpy(&version, bytecode.data() + offset, sizeof(u16));
   offset += sizeof(u16);
 
@@ -48,6 +55,9 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Read instruction count
   u32 instrCount;
+  if (offset + sizeof(u32) > bytecode.size()) {
+    return Result<void>::error("Bytecode truncated at instruction count");
+  }
   std::memcpy(&instrCount, bytecode.data() + offset, sizeof(u32));
   offset += sizeof(u32);
 
@@ -62,6 +72,9 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Read string table size
   u32 stringCount;
+  if (offset + sizeof(u32) > bytecode.size()) {
+    return Result<void>::error("Bytecode truncated at string count");
+  }
   std::memcpy(&stringCount, bytecode.data() + offset, sizeof(u32));
   offset += sizeof(u32);
 
@@ -76,9 +89,14 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   // Validate that bytecode is large enough for instructions
   constexpr usize INSTRUCTION_SIZE = 5; // 1 byte opcode + 4 bytes operand
+  // Check for potential overflow in multiplication
+  constexpr usize MAX_SAFE_SIZE = std::numeric_limits<usize>::max() / INSTRUCTION_SIZE;
+  if (static_cast<usize>(instrCount) > MAX_SAFE_SIZE) {
+    return Result<void>::error("Instruction count would cause overflow");
+  }
   usize requiredSize =
       offset + (static_cast<usize>(instrCount) * INSTRUCTION_SIZE);
-  if (requiredSize > bytecode.size()) {
+  if (requiredSize > bytecode.size() || requiredSize < offset) {
     return Result<void>::error(
         "Bytecode too small for declared instruction count");
   }

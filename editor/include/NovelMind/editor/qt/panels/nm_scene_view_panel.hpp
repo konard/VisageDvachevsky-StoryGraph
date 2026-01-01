@@ -14,6 +14,7 @@
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include <atomic>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
@@ -24,6 +25,7 @@
 #include <QLabel>
 #include <QStringList>
 #include <QToolBar>
+#include <atomic>
 
 namespace NovelMind::editor {
 struct SceneSnapshot;
@@ -510,7 +512,7 @@ private:
   NMPlayPreviewOverlay *m_playOverlay = nullptr;
   QLabel *m_fontWarning = nullptr;
   QStringList m_runtimeObjectIds;
-  bool m_runtimePreviewActive = false;
+  std::atomic<bool> m_runtimePreviewActive{false};
   bool m_gridVisibleBeforeRuntime = true;
   bool m_renderRuntimeSceneObjects = false;
   QHash<QString, bool> m_editorVisibility;
@@ -521,9 +523,11 @@ private:
   QString m_assetsRoot;
   QString m_currentSceneId;
   bool m_isLoadingScene = false;
-  bool m_playModeActive = false;
+  // INVARIANT: Use atomic flags to prevent save race conditions
+  std::atomic<bool> m_isLoadingScene{false};
+  std::atomic<bool> m_playModeActive{false};
   bool m_followPlayModeNodes = true;
-  bool m_suppressSceneSave = false;
+  std::atomic<bool> m_suppressSceneSave{false};
   QString m_sceneIdBeforePlay;
   bool m_editorPreviewActive = false;
   QString m_editorPreviewSpeaker;

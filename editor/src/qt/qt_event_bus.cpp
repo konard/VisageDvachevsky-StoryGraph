@@ -2,6 +2,9 @@
 
 namespace NovelMind::editor::qt {
 
+// Thread-local flag to prevent re-entrance during signal emission
+thread_local bool g_publishingEvent = false;
+
 QtEventBus &QtEventBus::instance() {
   static QtEventBus instance;
   return instance;
@@ -10,6 +13,12 @@ QtEventBus &QtEventBus::instance() {
 QtEventBus::QtEventBus() : QObject(nullptr) {}
 
 void QtEventBus::publish(const QtEditorEvent &event) {
+  // Prevent re-entrance if a signal handler calls publish() again
+  if (g_publishingEvent) {
+    return;
+  }
+
+  g_publishingEvent = true;
   emit eventPublished(event);
 
   // Emit type-specific signals
@@ -102,6 +111,8 @@ void QtEventBus::publish(const QtEditorEvent &event) {
   default:
     break;
   }
+
+  g_publishingEvent = false;
 }
 
 void QtEventBus::publishSelectionChanged(const QStringList &selectedIds,

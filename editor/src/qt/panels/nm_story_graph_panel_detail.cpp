@@ -2,6 +2,7 @@
 
 #include "NovelMind/editor/project_manager.hpp"
 
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -9,6 +10,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QTextStream>
 
 namespace NovelMind::editor::qt::detail {
 namespace {
@@ -767,6 +769,405 @@ NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
   layout.conditionTargets = node->conditionTargets();
 
   return layout;
+}
+
+// ============================================================================
+// NMScript Generator (Graph -> Script conversion) - Issue #127
+// ============================================================================
+
+QString escapeNMScriptString(const QString &str) {
+  QString escaped = str;
+  escaped.replace("\\", "\\\\"); // Must be first
+  escaped.replace("\"", "\\\"");
+  escaped.replace("\n", "\\n");
+  escaped.replace("\r", "\\r");
+  escaped.replace("\t", "\\t");
+  return escaped;
+}
+
+QString generateSceneBlock(const NMGraphNodeItem *node) {
+  if (!node) {
+    return {};
+  }
+
+  QString block;
+  QTextStream out(&block);
+
+  const QString sceneId = node->nodeIdString();
+  const QString nodeType = node->nodeType();
+
+  out << "scene " << sceneId << " {\n";
+
+  // Generate content based on node type
+  if (node->isDialogueNode()) {
+    const QString speaker = sanitizeSpeakerIdentifier(node->dialogueSpeaker());
+    const QString text = node->dialogueText();
+
+    if (!text.isEmpty() && text.trimmed() != "New scene") {
+      out << "    say " << speaker << " \"" << escapeNMScriptString(text)
+          << "\"\n";
+    }
+  } else if (node->isChoiceNode()) {
+    const QStringList &choices = node->choiceOptions();
+    const auto &targets = node->choiceTargets();
+
+    if (!choices.isEmpty()) {
+      out << "    choice {\n";
+      for (const QString &choice : choices) {
+        QString target = targets.value(choice);
+        if (target.isEmpty()) {
+          // Use choice text as label if no explicit target
+          target = sceneId + "_choice";
+        }
+        out << "        \"" << escapeNMScriptString(choice) << "\" -> goto "
+            << target << "\n";
+      }
+      out << "    }\n";
+    }
+  } else if (node->isConditionNode()) {
+    const QString expr = node->conditionExpression();
+    const QStringList &outputs = node->conditionOutputs();
+    const auto &targets = node->conditionTargets();
+
+    if (!expr.isEmpty()) {
+      out << "    if " << expr << " {\n";
+      if (!outputs.isEmpty() && outputs.size() >= 2) {
+        QString trueTarget = targets.value("true", targets.value(outputs[0]));
+        out << "        goto " << trueTarget << "\n";
+        out << "    } else {\n";
+        QString falseTarget = targets.value("false", targets.value(outputs[1]));
+        out << "        goto " << falseTarget << "\n";
+        out << "    }\n";
+      } else {
+        out << "        // Condition branches\n";
+        out << "    }\n";
+      }
+    } else {
+      out << "    // Condition node - add condition expression\n";
+    }
+  } else if (node->isSceneNode()) {
+    // Scene nodes might have embedded dialogue
+    if (node->hasEmbeddedDialogue()) {
+      const QString speaker = sanitizeSpeakerIdentifier(node->dialogueSpeaker());
+      const QString text = node->dialogueText();
+      if (!text.isEmpty()) {
+        out << "    say " << speaker << " \"" << escapeNMScriptString(text)
+            << "\"\n";
+      }
+    } else {
+      out << "    // Scene: " << node->title() << "\n";
+    }
+  } else {
+    // Generic node with dialogue if available
+    const QString speaker = sanitizeSpeakerIdentifier(node->dialogueSpeaker());
+    const QString text = node->dialogueText();
+    if (!text.isEmpty() && text.trimmed() != "New scene") {
+      out << "    say " << speaker << " \"" << escapeNMScriptString(text)
+          << "\"\n";
+    }
+  }
+
+  out << "}\n";
+  return block;
+}
+
+QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
+                                  const QString &entryScene) {
+  QString script;
+  QTextStream out(&script);
+
+  // Header comment
+  out << "// ========================================\n";
+  out << "// Generated from Story Graph\n";
+  out << "// Generated: " << QDateTime::currentDateTime().toString(Qt::ISODate)
+      << "\n";
+  out << "// Do not edit manually - changes may be overwritten\n";
+  out << "// ========================================\n\n";
+
+  // Entry point marker (not NMScript syntax, but useful comment)
+  if (!entryScene.isEmpty()) {
+    out << "// Entry point: " << entryScene << "\n\n";
+  }
+
+  // Collect unique speakers for character declarations
+  QSet<QString> speakers;
+  for (const auto *node : nodes) {
+    if (node && !node->dialogueSpeaker().isEmpty()) {
+      speakers.insert(sanitizeSpeakerIdentifier(node->dialogueSpeaker()));
+    }
+  }
+
+  // Generate character declarations
+  if (!speakers.isEmpty()) {
+    out << "// Character declarations\n";
+    for (const QString &speaker : speakers) {
+      if (speaker != "Narrator") {
+        out << "character " << speaker << "(name=\"" << speaker << "\")\n";
+      }
+    }
+    out << "character Narrator(name=\"\", color=\"#AAAAAA\")\n";
+    out << "\n";
+  }
+
+  // Generate scene blocks
+  for (const auto *node : nodes) {
+    if (node) {
+      out << generateSceneBlock(node) << "\n";
+    }
+  }
+
+  return script;
+}
+
+bool writeGeneratedScript(const QString &scriptContent, const QString &filename) {
+  const auto &pm = ProjectManager::instance();
+  if (!pm.hasOpenProject()) {
+    return false;
+  }
+
+  const QString generatedPath =
+      QString::fromStdString(pm.getFolderPath(ProjectFolder::ScriptsGenerated));
+
+  if (generatedPath.isEmpty()) {
+    return false;
+  }
+
+  // Ensure directory exists
+  QDir dir(generatedPath);
+  if (!dir.exists()) {
+    dir.mkpath(".");
+  }
+
+  const QString filePath = dir.filePath(filename);
+
+  QFile file(filePath);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
+                 QIODevice::Truncate)) {
+    qWarning() << "[StoryGraph] Failed to write generated script:" << filePath
+               << file.errorString();
+    return false;
+  }
+
+  file.write(scriptContent.toUtf8());
+  file.close();
+
+  qDebug() << "[StoryGraph] Generated script written to:" << filePath;
+  return true;
+}
+
+// ============================================================================
+// NMScript Parser (Script -> Graph conversion) - Issue #127
+// ============================================================================
+
+ParseResult parseNMScriptContent(const QString &content) {
+  ParseResult result;
+  result.success = true;
+
+  if (content.isEmpty()) {
+    result.success = false;
+    result.errorMessage = "Empty content";
+    return result;
+  }
+
+  // Split content into lines for line number tracking
+  const QStringList lines = content.split('\n');
+
+  // Use Unicode-aware patterns matching the existing codebase style
+  const QRegularExpression sceneRe(
+      "\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
+      QRegularExpression::UseUnicodePropertiesOption);
+
+  const QRegularExpression sayRe(
+      "\\bsay\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s+\"([^\"]*)\"",
+      QRegularExpression::UseUnicodePropertiesOption);
+
+  const QRegularExpression gotoRe(
+      "\\bgoto\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+      QRegularExpression::UseUnicodePropertiesOption);
+
+  const QRegularExpression choiceBlockRe(
+      "\\bchoice\\s*\\{([^}]*)\\}",
+      QRegularExpression::UseUnicodePropertiesOption |
+          QRegularExpression::DotMatchesEverythingOption);
+
+  const QRegularExpression choiceOptionRe(
+      "\"([^\"]+)\"\\s*(?:if\\s+[^-]+)?->\\s*(?:goto\\s+)?([\\p{L}_][\\p{L}\\p{N}_]*)",
+      QRegularExpression::UseUnicodePropertiesOption);
+
+  const QRegularExpression ifRe(
+      "\\bif\\s+([^{]+)\\s*\\{",
+      QRegularExpression::UseUnicodePropertiesOption);
+
+  // Track scene blocks
+  struct SceneBlock {
+    QString id;
+    qsizetype start;
+    qsizetype end;
+    int lineNumber;
+  };
+  QVector<SceneBlock> sceneBlocks;
+
+  // First pass: find all scene blocks with their ranges
+  QRegularExpressionMatchIterator sceneIt = sceneRe.globalMatch(content);
+  while (sceneIt.hasNext()) {
+    const QRegularExpressionMatch match = sceneIt.next();
+    SceneBlock block;
+    block.id = match.captured(1);
+    block.start = match.capturedStart();
+
+    // Calculate line number
+    block.lineNumber = 1;
+    for (qsizetype i = 0; i < block.start && i < content.size(); ++i) {
+      if (content[i] == '\n') {
+        ++block.lineNumber;
+      }
+    }
+
+    sceneBlocks.push_back(block);
+  }
+
+  // Calculate end positions for each block
+  for (int i = 0; i < sceneBlocks.size(); ++i) {
+    if (i + 1 < sceneBlocks.size()) {
+      sceneBlocks[i].end = sceneBlocks[i + 1].start;
+    } else {
+      sceneBlocks[i].end = content.size();
+    }
+  }
+
+  // Second pass: parse each scene block
+  for (const auto &block : sceneBlocks) {
+    ParsedNode node;
+    node.id = block.id;
+    node.sourceLineNumber = block.lineNumber;
+
+    // Extract scene body
+    const qsizetype bracePos = content.indexOf('{', block.start);
+    if (bracePos < 0 || bracePos >= block.end) {
+      continue;
+    }
+
+    // Find matching closing brace
+    int depth = 0;
+    bool inString = false;
+    QChar stringDelim;
+    qsizetype bodyEnd = block.end;
+
+    for (qsizetype i = bracePos; i < block.end; ++i) {
+      const QChar c = content.at(i);
+
+      if (c == '"' || c == '\'') {
+        if (!inString) {
+          inString = true;
+          stringDelim = c;
+        } else if (c == stringDelim && (i == 0 || content.at(i - 1) != '\\')) {
+          inString = false;
+        }
+      }
+
+      if (!inString) {
+        if (c == '{') {
+          ++depth;
+        } else if (c == '}') {
+          --depth;
+          if (depth == 0) {
+            bodyEnd = i;
+            break;
+          }
+        }
+      }
+    }
+
+    const QString body = content.mid(bracePos + 1, bodyEnd - bracePos - 1);
+
+    // Check for say statements
+    QRegularExpressionMatchIterator sayIt = sayRe.globalMatch(body);
+    if (sayIt.hasNext()) {
+      const QRegularExpressionMatch sayMatch = sayIt.next();
+      node.speaker = sayMatch.captured(1);
+      node.text = sayMatch.captured(2);
+      // Unescape the text
+      node.text.replace("\\n", "\n");
+      node.text.replace("\\t", "\t");
+      node.text.replace("\\\"", "\"");
+      node.text.replace("\\\\", "\\");
+      node.type = "Dialogue";
+    }
+
+    // Check for choice blocks
+    QRegularExpressionMatch choiceMatch = choiceBlockRe.match(body);
+    if (choiceMatch.hasMatch()) {
+      const QString choiceContent = choiceMatch.captured(1);
+      QRegularExpressionMatchIterator optionIt =
+          choiceOptionRe.globalMatch(choiceContent);
+
+      while (optionIt.hasNext()) {
+        const QRegularExpressionMatch optMatch = optionIt.next();
+        node.choices.append(optMatch.captured(1));
+        node.targets.append(optMatch.captured(2));
+        result.edges.append({block.id, optMatch.captured(2)});
+      }
+
+      if (!node.choices.isEmpty()) {
+        node.type = "Choice";
+      }
+    }
+
+    // Check for if statements (conditions)
+    QRegularExpressionMatch ifMatch = ifRe.match(body);
+    if (ifMatch.hasMatch() && node.type.isEmpty()) {
+      node.conditionExpr = ifMatch.captured(1).trimmed();
+      node.type = "Condition";
+      node.conditionOutputs << "true" << "false";
+    }
+
+    // Check for goto statements (for edges)
+    QRegularExpressionMatchIterator gotoIt = gotoRe.globalMatch(body);
+    while (gotoIt.hasNext()) {
+      const QRegularExpressionMatch gotoMatch = gotoIt.next();
+      const QString target = gotoMatch.captured(1);
+      if (!node.targets.contains(target)) {
+        node.targets.append(target);
+        result.edges.append({block.id, target});
+      }
+    }
+
+    // Default to Scene type if no specific type detected
+    if (node.type.isEmpty()) {
+      node.type = "Scene";
+    }
+
+    result.nodes.append(node);
+  }
+
+  // If first node is identified, set it as entry point
+  if (!result.nodes.isEmpty()) {
+    result.entryPoint = result.nodes.first().id;
+  }
+
+  return result;
+}
+
+ParseResult parseNMScriptFile(const QString &scriptPath) {
+  ParseResult result;
+
+  QFile file(scriptPath);
+  if (!file.exists()) {
+    result.success = false;
+    result.errorMessage = QString("File not found: %1").arg(scriptPath);
+    return result;
+  }
+
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    result.success = false;
+    result.errorMessage = QString("Cannot open file: %1").arg(file.errorString());
+    return result;
+  }
+
+  const QString content = QString::fromUtf8(file.readAll());
+  file.close();
+
+  return parseNMScriptContent(content);
 }
 
 } // namespace NovelMind::editor::qt::detail

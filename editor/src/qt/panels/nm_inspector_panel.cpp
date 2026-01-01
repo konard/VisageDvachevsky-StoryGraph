@@ -48,6 +48,13 @@ NMInspectorPanel::NMInspectorPanel(QWidget *parent)
   // scrolling
   setMinimumPanelSize(280, 200);
 
+  // PERF-2: Setup update timer for batching property updates
+  m_updateTimer = new QTimer(this);
+  m_updateTimer->setSingleShot(true);
+  m_updateTimer->setInterval(16); // ~60fps update rate
+  connect(m_updateTimer, &QTimer::timeout, this,
+          &NMInspectorPanel::flushPendingUpdates);
+
   setupContent();
 }
 
@@ -63,10 +70,17 @@ void NMInspectorPanel::clear() {
   // Remove all groups
   for (auto *group : m_groups) {
     m_mainLayout->removeWidget(group);
-    delete group;
+    group->deleteLater();
   }
   m_groups.clear();
   m_propertyWidgets.clear();
+
+  // PERF-2: Clear dirty flag caches when switching objects
+  m_pendingUpdates.clear();
+  m_lastKnownValues.clear();
+  if (m_updateTimer && m_updateTimer->isActive()) {
+    m_updateTimer->stop();
+  }
 
   m_headerLabel->clear();
 }
@@ -289,7 +303,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     auto *lockAspectRatioCheck = new QCheckBox(tr("Lock Aspect Ratio"));
     lockAspectRatioCheck->setChecked(m_lockAspectRatio);
     lockAspectRatioCheck->setToolTip(
-        tr("When enabled, changing one scale value will\nproportionally adjust the other"));
+        tr("When enabled, changing one scale value will\nproportionally adjust "
+           "the other"));
     connect(lockAspectRatioCheck, &QCheckBox::toggled, this,
             [this](bool checked) { m_lockAspectRatio = checked; });
     trackPropertyWidget("lock_aspect_ratio", lockAspectRatioCheck);
@@ -297,7 +312,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     // Add checkbox to group
     auto *lockRow = new QWidget(m_scrollContent);
     auto *lockLayout = new QHBoxLayout(lockRow);
-    lockLayout->setContentsMargins(100 + 8, 0, 0, 0); // Align with other controls
+    lockLayout->setContentsMargins(100 + 8, 0, 0,
+                                   0); // Align with other controls
     lockLayout->setSpacing(8);
     lockLayout->addWidget(lockAspectRatioCheck);
     lockLayout->addStretch();
@@ -503,8 +519,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       for (int i = 0; i < choiceOptions.size(); ++i) {
         const QString &option = choiceOptions[i];
         const QString target = choiceTargets.value(option);
-        QString targetDisplay = target.isEmpty() ? tr("(not connected)")
-                                                 : target;
+        QString targetDisplay =
+            target.isEmpty() ? tr("(not connected)") : target;
         // Truncate long option text for display
         QString optionDisplay = option;
         if (optionDisplay.length() > 25) {
@@ -520,7 +536,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
 
       if (m_editMode) {
-        // Show the mapping as editable multiline (format: "OptionText=TargetNodeId")
+        // Show the mapping as editable multiline (format:
+        // "OptionText=TargetNodeId")
         QString editableMapping;
         for (const QString &option : choiceOptions) {
           const QString target = choiceTargets.value(option);
@@ -538,9 +555,10 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
 
       // Add helper text
-      branchGroup->addProperty(tr("Help"),
-          tr("Connect edges from this node to target nodes.\n"
-             "Each connection is automatically mapped to the next choice option."));
+      branchGroup->addProperty(
+          tr("Help"), tr("Connect edges from this node to target nodes.\n"
+                         "Each connection is automatically mapped to the next "
+                         "choice option."));
     }
 
     connect(branchGroup, &NMPropertyGroup::propertyValueChanged, this,
@@ -618,7 +636,8 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
     }
 
     if (m_editMode) {
-      // Show the mapping as editable multiline (format: "OutputLabel=TargetNodeId")
+      // Show the mapping as editable multiline (format:
+      // "OutputLabel=TargetNodeId")
       QString editableMapping;
       for (const QString &output : outputs) {
         const QString target = conditionTargets.value(output);
@@ -829,7 +848,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
   }
 
   // Handle aspect ratio lock for scale changes
-  if (m_lockAspectRatio && (propertyName == "scale_x" || propertyName == "scale_y")) {
+  if (m_lockAspectRatio &&
+      (propertyName == "scale_x" || propertyName == "scale_y")) {
     double newScale = newValue.toDouble();
 
     // Calculate the ratio change
@@ -840,7 +860,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
       // Update scale_y proportionally
       updatePropertyValue("scale_y", QString::number(newScaleY, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_x", newValue);
-      emit propertyChanged(m_currentObjectId, "scale_y", QString::number(newScaleY, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_y",
+                           QString::number(newScaleY, 'f', 2));
 
       m_lastScale = QPointF(newScale, newScaleY);
       return;
@@ -850,7 +871,8 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
 
       // Update scale_x proportionally
       updatePropertyValue("scale_x", QString::number(newScaleX, 'f', 2));
-      emit propertyChanged(m_currentObjectId, "scale_x", QString::number(newScaleX, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_x",
+                           QString::number(newScaleX, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_y", newValue);
 
       m_lastScale = QPointF(newScaleX, newScale);
@@ -871,21 +893,33 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
 
 void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
                                            const QString &newValue) {
-  auto it = m_propertyWidgets.find(propertyName);
-  if (it == m_propertyWidgets.end()) {
+  // PERF-2: Check if value has actually changed before queuing update
+  auto lastIt = m_lastKnownValues.find(propertyName);
+  if (lastIt != m_lastKnownValues.end() && lastIt.value() == newValue) {
+    // Value hasn't changed, skip update
     return;
   }
 
-  QWidget *widget = it.value();
-  QSignalBlocker blocker(widget);
-  if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
-    // Only update if value has changed and widget doesn't have focus
-    // to preserve undo history and cursor position during user editing
-    if (lineEdit->text() != newValue && !lineEdit->hasFocus()) {
-      int cursorPos = lineEdit->cursorPosition();
-      lineEdit->setText(newValue);
-      // Restore cursor position if still valid
-      lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
+  // Store the pending update
+  m_pendingUpdates.insert(propertyName, newValue);
+  m_lastKnownValues.insert(propertyName, newValue);
+
+  // Start or restart the batching timer
+  if (m_updateTimer && !m_updateTimer->isActive()) {
+    m_updateTimer->start();
+  }
+}
+
+void NMInspectorPanel::flushPendingUpdates() {
+  // PERF-2: Process all pending updates in one batch
+  for (auto it = m_pendingUpdates.constBegin(); it != m_pendingUpdates.constEnd();
+       ++it) {
+    const QString &propertyName = it.key();
+    const QString &newValue = it.value();
+
+    auto widgetIt = m_propertyWidgets.find(propertyName);
+    if (widgetIt == m_propertyWidgets.end()) {
+      continue;
     }
   } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
     spinBox->setValue(newValue.toInt());
@@ -910,30 +944,65 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
       if (cursorPos <= newValue.length()) {
         cursor.setPosition(qMin(anchorPos, newValue.length()));
         cursor.setPosition(qMin(cursorPos, newValue.length()),
-                          QTextCursor::KeepAnchor);
+                           QTextCursor::KeepAnchor);
         textEdit->setTextCursor(cursor);
+
+    QWidget *widget = widgetIt.value();
+    QSignalBlocker blocker(widget);
+
+    if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
+      // Only update if widget doesn't have focus to preserve user editing
+      if (!lineEdit->hasFocus()) {
+        int cursorPos = lineEdit->cursorPosition();
+        lineEdit->setText(newValue);
+        lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
       }
-    }
-  } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
-    // Check if this is a curve button or asset button
-    if (button->text() == tr("Edit Curve...")) {
-      button->setProperty("curveId", newValue);
+    } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
+      spinBox->setValue(newValue.toInt());
+    } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
+      doubleSpinBox->setValue(newValue.toDouble());
+    } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
+      checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
+    } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
+      comboBox->setCurrentText(newValue);
+    } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
+      // Only update if widget doesn't have focus to preserve user editing
+      if (!textEdit->hasFocus()) {
+        QTextCursor cursor = textEdit->textCursor();
+        int cursorPos = cursor.position();
+        int anchorPos = cursor.anchor();
+
+        textEdit->setPlainText(newValue);
+
+        if (cursorPos <= newValue.length()) {
+          cursor.setPosition(qMin(anchorPos, newValue.length()));
+          cursor.setPosition(qMin(cursorPos, newValue.length()),
+                            QTextCursor::KeepAnchor);
+          textEdit->setTextCursor(cursor);
+        }
+      }
+    } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
+      if (button->text() == tr("Edit Curve...")) {
+        button->setProperty("curveId", newValue);
+      } else {
+        button->setText(newValue.isEmpty() ? "(Select Asset)" : newValue);
+      }
     } else {
-      button->setText(newValue.isEmpty() ? "(Select Asset)" : newValue);
-    }
-  } else {
-    // Handle vector widgets (Vector2/Vector3)
-    // Vector widgets are container QWidgets with child spinboxes
-    QList<QDoubleSpinBox *> spinBoxes =
-        widget->findChildren<QDoubleSpinBox *>();
-    if (!spinBoxes.isEmpty()) {
-      QStringList components = newValue.split(',');
-      for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
-        QSignalBlocker spinBoxBlocker(spinBoxes[i]);
-        spinBoxes[i]->setValue(components[i].toDouble());
+      // Handle vector widgets (Vector2/Vector3)
+      QList<QDoubleSpinBox *> spinBoxes =
+          widget->findChildren<QDoubleSpinBox *>();
+      if (!spinBoxes.isEmpty()) {
+        QStringList components = newValue.split(',');
+        for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
+          QSignalBlocker spinBoxBlocker(spinBoxes[i]);
+          spinBoxes[i]->setValue(components[i].toDouble());
+        }
       }
     }
   }
+
+  // Clear pending updates
+  m_pendingUpdates.clear();
 }
 
 void NMInspectorPanel::trackPropertyWidget(const QString &propertyName,

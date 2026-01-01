@@ -6,7 +6,7 @@
 
 namespace NovelMind::core {
 
-Application::Application() : m_running(false) {}
+Application::Application() = default;
 
 Application::~Application() { shutdown(); }
 

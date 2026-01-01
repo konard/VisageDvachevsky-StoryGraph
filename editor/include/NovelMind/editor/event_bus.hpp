@@ -626,8 +626,6 @@ private:
   static constexpr size_t MAX_HISTORY_SIZE = 100;
 
   mutable std::mutex m_mutex;
-
-  static std::unique_ptr<EventBus> s_instance;
 };
 
 /**

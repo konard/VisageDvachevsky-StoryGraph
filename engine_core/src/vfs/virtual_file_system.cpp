@@ -81,16 +81,24 @@ void VirtualFileSystem::unregisterBackend(const std::string &name) {
 
 std::unique_ptr<IFileHandle>
 VirtualFileSystem::openStream(const ResourceId &id) {
-  std::lock_guard<std::mutex> lock(m_mutex);
+  // Copy callback and open file while holding lock
+  LoadCallback callback;
+  std::unique_ptr<IFileHandle> handle;
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
 
-  IFileSystemBackend *backend = findBackend(id);
-  if (!backend) {
-    return nullptr;
+    IFileSystemBackend *backend = findBackend(id);
+    if (!backend) {
+      return nullptr;
+    }
+
+    handle = backend->open(id);
+    callback = m_loadCallback;
   }
 
-  auto handle = backend->open(id);
-  if (m_loadCallback) {
-    m_loadCallback(id, handle != nullptr);
+  // Invoke callback outside lock to avoid deadlock if callback calls VFS methods
+  if (callback) {
+    callback(id, handle != nullptr);
   }
 
   return handle;

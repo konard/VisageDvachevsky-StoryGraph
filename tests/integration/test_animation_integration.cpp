@@ -308,7 +308,8 @@ TEST_CASE("Animation Integration - RAII and resource management", "[integration]
       auto tween = std::make_unique<CallbackTween>([](f32){}, 1.0f);
       timeline.append(std::move(tween));
 
-      // tween is now null (ownership transferred)
+      // Verify ownership was transferred (tween should be null after move)
+      // cppcheck-suppress accessMoved
       CHECK(tween == nullptr);
 
       // Timeline owns the tween and will clean it up on destruction
@@ -338,7 +339,8 @@ TEST_CASE("Animation Integration - RAII and resource management", "[integration]
       auto obj = std::make_unique<MockSceneObject>("test");
       manager.addToLayer(LayerType::Characters, std::move(obj));
 
-      // obj is now null
+      // Verify ownership was transferred (obj should be null after move)
+      // cppcheck-suppress accessMoved
       CHECK(obj == nullptr);
 
       // Can find object through manager

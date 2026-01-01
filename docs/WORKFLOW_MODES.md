@@ -152,12 +152,32 @@ Copies dialogue and scene content from the Story Graph to script files.
 
 ### Sync Script to Graph (Script → Graph)
 
-*Coming soon* - This feature will parse scripts and update the Story Graph visual representation.
+Parses NMScript files and creates/updates nodes in the Story Graph.
 
-**Current workaround:**
-1. Create nodes manually in the Story Graph
-2. Copy dialogue text from scripts
-3. Use the Scene ID from your script
+**How to use:**
+1. Open the Story Graph panel
+2. Click the **Sync to Graph** button in the toolbar
+3. Confirm the import operation
+4. Review the created nodes and connections
+
+**What gets imported:**
+- Scene blocks → Graph nodes
+- Dialogue statements (`say`) → Node dialogue text
+- Choice blocks → Choice nodes with options
+- Goto statements → Node connections
+- Conditions (`if`) → Condition nodes
+
+**Use cases:**
+- Visualize existing script content
+- Review story flow visually
+- Prepare for Graph mode transition
+- Understand complex script structure
+
+**Notes:**
+- This operation replaces existing graph content
+- Connections are created based on goto/choice targets
+- Entry point is set to the first scene found
+- Unicode identifiers (Cyrillic, etc.) are fully supported
 
 ## Best Practices
 

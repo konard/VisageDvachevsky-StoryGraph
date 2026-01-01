@@ -36,6 +36,12 @@ add_executable(unit_tests
     unit/test_runtime_config.cpp
     unit/test_division_safety.cpp
     unit/test_audio_recorder.cpp
+    # Issue #179 - Comprehensive test coverage additions
+    unit/test_scene_graph.cpp
+    unit/test_audio_manager.cpp
+    unit/test_pack_reader.cpp
+    unit/test_benchmarks.cpp
+    unit/test_audio_manager.cpp
 )
 
 target_link_libraries(unit_tests
@@ -71,8 +77,10 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_project_json.cpp
         integration/test_ui_panel_features.cpp
         integration/test_playback_source_mode.cpp  # Issue #82
+        integration/test_scene_workflow.cpp  # Issue #179
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
+        unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
     )
 
     target_link_libraries(integration_tests

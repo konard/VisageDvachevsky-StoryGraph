@@ -16,9 +16,11 @@
 
 #include "NovelMind/core/result.hpp"
 #include "NovelMind/core/types.hpp"
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <queue>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -32,6 +34,25 @@ namespace NovelMind::audio {
 // Forward declarations
 class AudioSource;
 class AudioBuffer;
+
+/**
+ * @brief Custom deleter for ma_engine to ensure proper cleanup
+ * Implementation in audio_manager.cpp to avoid incomplete type issues
+ */
+struct MaEngineDeleter {
+  void operator()(ma_engine* engine) const;
+};
+
+/**
+ * @brief Custom deleter for ma_decoder to ensure proper cleanup
+ * Implementation in audio_manager.cpp to avoid incomplete type issues
+ */
+struct MaDecoderDeleter {
+  void operator()(ma_decoder* decoder) const;
+};
+
+using MaEnginePtr = std::unique_ptr<ma_engine, MaEngineDeleter>;
+using MaDecoderPtr = std::unique_ptr<ma_decoder, MaDecoderDeleter>;
 
 /**
  * @brief Audio channel types for volume control
@@ -110,6 +131,11 @@ enum class AudioTransition : u8 {
 
 /**
  * @brief Audio event for callbacks
+ *
+ * IMPORTANT: AudioCallback may be invoked from background threads.
+ * If you need to update UI elements, use thread-safe mechanisms:
+ * - Qt: Use QMetaObject::invokeMethod(..., Qt::QueuedConnection)
+ * - Other frameworks: Post to main thread event queue
  */
 struct AudioEvent {
   enum class Type : u8 {
@@ -168,7 +194,7 @@ public:
 private:
   friend class AudioManager;
 
-  PlaybackState m_state = PlaybackState::Stopped;
+  std::atomic<PlaybackState> m_state{PlaybackState::Stopped};
   f32 m_volume = 1.0f;
   f32 m_targetVolume = 1.0f;
   f32 m_pitch = 1.0f;
@@ -187,7 +213,7 @@ private:
   std::unique_ptr<ma_sound> m_sound;
   bool m_soundReady = false;
   std::vector<u8> m_memoryData;
-  std::unique_ptr<ma_decoder> m_decoder;
+  MaDecoderPtr m_decoder;
   bool m_decoderReady = false;
 };
 
@@ -447,7 +473,7 @@ private:
   f32 calculateEffectiveVolume(const AudioSource &source) const;
 
   bool m_initialized = false;
-  ma_engine *m_engine = nullptr;
+  MaEnginePtr m_engine;
   bool m_engineInitialized = false;
 
   // Channel volumes
@@ -455,7 +481,8 @@ private:
   std::unordered_map<AudioChannel, bool> m_channelMuted;
   bool m_allMuted = false;
 
-  // Active sources
+  // Active sources (protected by m_sourcesMutex for thread-safe access)
+  mutable std::shared_mutex m_sourcesMutex;
   std::vector<std::unique_ptr<AudioSource>> m_sources;
   u32 m_nextHandleId = 1;
   size_t m_maxSounds = 32;
@@ -478,6 +505,7 @@ private:
 
   // Master fade
   f32 m_masterFadeVolume = 1.0f;
+  f32 m_masterFadeStartVolume = 1.0f;
   f32 m_masterFadeTarget = 1.0f;
   f32 m_masterFadeTimer = 0.0f;
   f32 m_masterFadeDuration = 0.0f;

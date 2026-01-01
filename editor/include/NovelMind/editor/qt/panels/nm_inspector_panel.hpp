@@ -225,6 +225,16 @@ private:
   // Transform controls for aspect ratio lock
   bool m_lockAspectRatio = false;
   QPointF m_lastScale{1.0, 1.0};
+
+  // PERF-2: Dirty flag system to prevent redundant updates
+  // Stores property values that need to be flushed to widgets
+  QHash<QString, QString> m_pendingUpdates;
+  // Timer for batching updates
+  class QTimer *m_updateTimer = nullptr;
+  // Last known values to detect actual changes
+  QHash<QString, QString> m_lastKnownValues;
+  // Flush pending updates to widgets
+  void flushPendingUpdates();
 };
 
 } // namespace NovelMind::editor::qt

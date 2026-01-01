@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NovelMind/core/types.hpp"
+#include <atomic>
 #include <chrono>
 #include <fstream>
 #include <mutex>
@@ -86,9 +87,9 @@ private:
   std::unordered_map<std::string, ProfileStats> m_stats;
 
   std::chrono::steady_clock::time_point m_frameStart;
-  f64 m_lastFrameTime = 0.0;
+  std::atomic<f64> m_lastFrameTime{0.0};
   usize m_frameCount = 0;
-  bool m_enabled = false;
+  std::atomic<bool> m_enabled{false};
 };
 
 class ScopedProfileSample {

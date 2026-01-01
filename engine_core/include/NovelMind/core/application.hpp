@@ -13,6 +13,7 @@
 #include "NovelMind/save/save_manager.hpp"
 #include "NovelMind/scene/scene_graph.hpp"
 #include "NovelMind/vfs/virtual_fs.hpp"
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -63,7 +64,7 @@ protected:
 private:
   void mainLoop();
 
-  bool m_running;
+  std::atomic<bool> m_running{false};
   EngineConfig m_config;
 
   std::unique_ptr<platform::IWindow> m_window;

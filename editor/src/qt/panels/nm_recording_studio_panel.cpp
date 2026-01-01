@@ -1270,6 +1270,7 @@ void NMRecordingStudioPanel::onRecordingStateChanged(int state) {
     m_isRecording = true;
     break;
   case audio::RecordingState::Stopping:
+  case audio::RecordingState::Canceling:
   case audio::RecordingState::Processing:
     // Still recording (finishing up)
     break;

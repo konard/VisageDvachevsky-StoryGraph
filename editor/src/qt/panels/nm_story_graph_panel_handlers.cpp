@@ -6,6 +6,8 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
 #include <QDebug>
+#include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
 #include <QProgressDialog>
@@ -1141,6 +1143,238 @@ void NMStoryGraphPanel::onSyncGraphToScript() {
 
   // Start the worker thread
   workerThread->start();
+}
+
+void NMStoryGraphPanel::onSyncScriptToGraph() {
+  // Issue #127: Sync NMScript files to Story Graph
+  // This parses .nms script files and creates/updates graph nodes
+
+  if (!m_scene) {
+    NMMessageDialog::showWarning(
+        this, tr("Sync Script to Graph"),
+        tr("Story Graph scene is not initialized."));
+    return;
+  }
+
+  // Get the scripts folder path
+  const auto &pm = ProjectManager::instance();
+  if (!pm.hasOpenProject()) {
+    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"),
+                                 tr("No project is currently open."));
+    return;
+  }
+
+  const QString scriptsPath =
+      QString::fromStdString(pm.getFolderPath(ProjectFolder::Scripts));
+
+  if (scriptsPath.isEmpty()) {
+    NMMessageDialog::showWarning(
+        this, tr("Sync Script to Graph"),
+        tr("Could not find scripts folder in project."));
+    return;
+  }
+
+  // Check if scripts directory exists
+  QDir scriptsDir(scriptsPath);
+  if (!scriptsDir.exists()) {
+    NMMessageDialog::showWarning(
+        this, tr("Sync Script to Graph"),
+        tr("Scripts folder does not exist:\n%1").arg(scriptsPath));
+    return;
+  }
+
+  // Find all .nms files recursively
+  QStringList nmsFiles;
+  QDirIterator it(scriptsPath, QStringList() << "*.nms",
+                  QDir::Files | QDir::Readable,
+                  QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    nmsFiles.append(it.next());
+  }
+
+  if (nmsFiles.isEmpty()) {
+    NMMessageDialog::showInfo(
+        this, tr("Sync Script to Graph"),
+        tr("No .nms script files found in:\n%1").arg(scriptsPath));
+    return;
+  }
+
+  // Confirm with user before replacing nodes
+  auto result = NMMessageDialog::showQuestion(
+      this, tr("Sync Script to Graph"),
+      tr("This will parse %1 script file(s) and update the Story Graph.\n\n"
+         "Existing graph content will be replaced.\n\n"
+         "Do you want to continue?")
+          .arg(nmsFiles.size()),
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+
+  if (result != NMDialogButton::Yes) {
+    return;
+  }
+
+  // Parse all script files
+  QList<detail::ParsedNode> allNodes;
+  QList<QPair<QString, QString>> allEdges;
+  QString entryPoint;
+  int filesProcessed = 0;
+  int parseErrors = 0;
+  QStringList errorMessages;
+
+  for (const QString &filePath : nmsFiles) {
+    detail::ParseResult parseResult = detail::parseNMScriptFile(filePath);
+
+    if (!parseResult.success) {
+      ++parseErrors;
+      errorMessages.append(
+          QString("%1: %2").arg(QFileInfo(filePath).fileName(),
+                                parseResult.errorMessage));
+      continue;
+    }
+
+    allNodes.append(parseResult.nodes);
+    allEdges.append(parseResult.edges);
+
+    // Use first file's entry point if not set
+    if (entryPoint.isEmpty() && !parseResult.entryPoint.isEmpty()) {
+      entryPoint = parseResult.entryPoint;
+    }
+
+    ++filesProcessed;
+  }
+
+  if (allNodes.isEmpty()) {
+    QString message = tr("No scenes found in script files.");
+    if (!errorMessages.isEmpty()) {
+      message += tr("\n\nParse errors:\n") + errorMessages.join("\n");
+    }
+    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"), message);
+    return;
+  }
+
+  // Clear existing graph
+  m_isRebuilding = true;
+  m_scene->clearGraph();
+  m_layoutNodes.clear();
+  m_nodeIdToString.clear();
+
+  // Create nodes from parsed data
+  QHash<QString, NMGraphNodeItem *> nodeMap;
+  int col = 0;
+  int row = 0;
+  const qreal horizontalSpacing = 260.0;
+  const qreal verticalSpacing = 140.0;
+
+  for (const detail::ParsedNode &parsedNode : allNodes) {
+    // Calculate default position (grid layout)
+    const QPointF defaultPos(col * horizontalSpacing, row * verticalSpacing);
+    ++col;
+    if (col >= 4) {
+      col = 0;
+      ++row;
+    }
+
+    // Create node in the scene
+    QString nodeType = parsedNode.type;
+    if (nodeType.isEmpty()) {
+      nodeType = "Scene";
+    }
+
+    NMGraphNodeItem *node =
+        m_scene->addNode(parsedNode.id, nodeType, defaultPos, 0, parsedNode.id);
+
+    if (!node) {
+      continue;
+    }
+
+    // Set node properties
+    node->setSceneId(parsedNode.id);
+
+    if (!parsedNode.speaker.isEmpty()) {
+      node->setDialogueSpeaker(parsedNode.speaker);
+    }
+    if (!parsedNode.text.isEmpty()) {
+      node->setDialogueText(parsedNode.text);
+    }
+    if (!parsedNode.choices.isEmpty()) {
+      node->setChoiceOptions(parsedNode.choices);
+
+      // Build choice targets mapping
+      QHash<QString, QString> choiceTargets;
+      for (int i = 0; i < parsedNode.choices.size() &&
+                      i < parsedNode.targets.size();
+           ++i) {
+        choiceTargets.insert(parsedNode.choices[i], parsedNode.targets[i]);
+      }
+      node->setChoiceTargets(choiceTargets);
+    }
+    if (!parsedNode.conditionExpr.isEmpty()) {
+      node->setConditionExpression(parsedNode.conditionExpr);
+      node->setConditionOutputs(parsedNode.conditionOutputs);
+    }
+
+    // Mark entry node
+    if (parsedNode.id == entryPoint) {
+      node->setEntry(true);
+    }
+
+    nodeMap.insert(parsedNode.id, node);
+    m_nodeIdToString.insert(node->nodeId(), node->nodeIdString());
+
+    // Save layout node
+    m_layoutNodes.insert(parsedNode.id, detail::buildLayoutFromNode(node));
+  }
+
+  // Create connections from edges
+  int connectionsCreated = 0;
+  for (const auto &edge : allEdges) {
+    NMGraphNodeItem *fromNode = nodeMap.value(edge.first);
+    NMGraphNodeItem *toNode = nodeMap.value(edge.second);
+
+    if (fromNode && toNode) {
+      // Check if connection already exists
+      if (!m_scene->hasConnection(fromNode->nodeId(), toNode->nodeId())) {
+        m_scene->addConnection(fromNode, toNode);
+        ++connectionsCreated;
+      }
+    }
+  }
+
+  // Set entry scene
+  m_layoutEntryScene = entryPoint;
+  if (!entryPoint.isEmpty()) {
+    ProjectManager::instance().setStartScene(entryPoint.toStdString());
+  }
+
+  // Save layout
+  detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+
+  m_isRebuilding = false;
+
+  // Fit view to content
+  if (m_view && !m_scene->nodes().isEmpty()) {
+    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50),
+                      Qt::KeepAspectRatio);
+  }
+
+  // Show result
+  QString message =
+      tr("Successfully imported %1 node(s) with %2 connection(s) from %3 "
+         "file(s).")
+          .arg(allNodes.size())
+          .arg(connectionsCreated)
+          .arg(filesProcessed);
+
+  if (parseErrors > 0) {
+    message += tr("\n\n%1 file(s) had parse errors:\n%2")
+                   .arg(parseErrors)
+                   .arg(errorMessages.join("\n"));
+  }
+
+  qDebug() << "[StoryGraph] Sync Script to Graph completed:" << allNodes.size()
+           << "nodes," << connectionsCreated << "connections from"
+           << filesProcessed << "files";
+
+  NMMessageDialog::showInfo(this, tr("Sync Script to Graph"), message);
 }
 
 } // namespace NovelMind::editor::qt

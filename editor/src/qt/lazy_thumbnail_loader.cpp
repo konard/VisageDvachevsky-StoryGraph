@@ -67,15 +67,27 @@ void ThumbnailLoadTask::run() {
   QPixmap pixmap = QPixmap::fromImage(image);
 
   // Final cancellation check before delivery
-  if (m_cancelled->load() || m_receiver.isNull()) {
+  if (m_cancelled->load()) {
     return;
   }
 
   // Thread-safe delivery via queued connection
-  auto *loader = qobject_cast<LazyThumbnailLoader *>(m_receiver.data());
-  if (loader && !loader->isShuttingDown()) {
-    emit loader->thumbnailLoadedInternal(
-        m_path, pixmap, fileInfo.lastModified(), fileInfo.size());
+  // Issue #173: Use local copy of QPointer data to prevent TOCTOU race
+  // The QPointer check and subsequent use must use the same pointer value
+  if (auto *receiver = m_receiver.data()) {
+    auto *loader = qobject_cast<LazyThumbnailLoader *>(receiver);
+    if (loader && !loader->isShuttingDown()) {
+      // Use QMetaObject::invokeMethod for guaranteed thread-safe delivery
+      // This ensures the slot is called in the receiver's thread
+      QMetaObject::invokeMethod(
+          loader,
+          [loader, path = m_path, pixmap, lastModified = fileInfo.lastModified(),
+           size = fileInfo.size()]() {
+            emit loader->thumbnailLoadedInternal(path, pixmap, lastModified,
+                                                 size);
+          },
+          Qt::QueuedConnection);
+    }
   }
 }
 

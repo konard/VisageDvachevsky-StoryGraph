@@ -17,7 +17,7 @@ bool readFileToBytes(const std::string &path, std::vector<u8> &out) {
 
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
-  if (size < 0) {
+  if (size == std::streampos(-1) || size < 0) {
     return false;
   }
 

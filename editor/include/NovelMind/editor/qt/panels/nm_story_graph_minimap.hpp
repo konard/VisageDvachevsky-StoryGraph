@@ -73,6 +73,7 @@ protected:
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
   void resizeEvent(QResizeEvent *event) override;
+  void hideEvent(QHideEvent *event) override;
 
 private slots:
   void onMainViewTransformed();

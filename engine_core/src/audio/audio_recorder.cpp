@@ -4,6 +4,7 @@
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
+#include "NovelMind/core/logger.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -369,8 +370,15 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
                            m_encoder.get()) != MA_SUCCESS) {
     m_encoder.reset();
     setState(RecordingState::Error);
-    if (m_onRecordingError) {
-      m_onRecordingError("Failed to initialize encoder");
+
+    // Copy callback while holding lock
+    OnRecordingError errorCallback;
+    {
+      std::lock_guard<std::mutex> lock(m_callbackMutex);
+      errorCallback = m_onRecordingError;
+    }
+    if (errorCallback) {
+      errorCallback("Failed to initialize encoder");
     }
     return Result<void>::error("Failed to initialize encoder");
   }
@@ -474,19 +482,23 @@ f32 AudioRecorder::getRecordingDuration() const {
 // ============================================================================
 
 void AudioRecorder::setOnLevelUpdate(OnLevelUpdate callback) {
+  std::lock_guard<std::mutex> lock(m_callbackMutex);
   m_onLevelUpdate = std::move(callback);
 }
 
 void AudioRecorder::setOnRecordingStateChanged(
     OnRecordingStateChanged callback) {
+  std::lock_guard<std::mutex> lock(m_callbackMutex);
   m_onStateChanged = std::move(callback);
 }
 
 void AudioRecorder::setOnRecordingComplete(OnRecordingComplete callback) {
+  std::lock_guard<std::mutex> lock(m_callbackMutex);
   m_onRecordingComplete = std::move(callback);
 }
 
 void AudioRecorder::setOnRecordingError(OnRecordingError callback) {
+  std::lock_guard<std::mutex> lock(m_callbackMutex);
   m_onRecordingError = std::move(callback);
 }
 
@@ -560,9 +572,14 @@ void AudioRecorder::updateLevelMeter(const f32 *samples, u32 sampleCount) {
     m_currentLevel.clipping = peak >= 1.0f;
   }
 
-  // Fire callback on level update
-  if (m_onLevelUpdate) {
-    m_onLevelUpdate(m_currentLevel);
+  // Fire callback on level update (copy callback while holding lock to avoid deadlock)
+  OnLevelUpdate callback;
+  {
+    std::lock_guard<std::mutex> lock(m_callbackMutex);
+    callback = m_onLevelUpdate;
+  }
+  if (callback) {
+    callback(m_currentLevel);
   }
 }
 
@@ -652,9 +669,16 @@ void AudioRecorder::finalizeRecording() {
 
   setState(RecordingState::Idle);
 
-  // Fire callback only if not cancelled
-  if (!m_cancelRequested && m_onRecordingComplete) {
-    m_onRecordingComplete(result);
+  // Fire callback only if not cancelled (copy callback while holding lock)
+  if (!m_cancelRequested) {
+    OnRecordingComplete callback;
+    {
+      std::lock_guard<std::mutex> lock(m_callbackMutex);
+      callback = m_onRecordingComplete;
+    }
+    if (callback) {
+      callback(result);
+    }
   }
 }
 
@@ -678,8 +702,15 @@ void AudioRecorder::processRecording() {
 
 void AudioRecorder::setState(RecordingState state) {
   m_state = state;
-  if (m_onStateChanged) {
-    m_onStateChanged(state);
+
+  // Copy callback while holding lock to avoid holding mutex during callback
+  OnRecordingStateChanged callback;
+  {
+    std::lock_guard<std::mutex> lock(m_callbackMutex);
+    callback = m_onStateChanged;
+  }
+  if (callback) {
+    callback(state);
   }
 }
 

@@ -362,9 +362,11 @@ void NMFileDialog::applyFilter(const QString &filterText) {
     }
   }
 
-  auto *proxy = static_cast<NMFileFilterProxy *>(m_filterProxy);
-  if (proxy) {
-    proxy->setNameFilters(patterns);
+  if (m_filterProxy) {
+    auto *proxy = static_cast<NMFileFilterProxy *>(m_filterProxy);
+    if (proxy) {
+      proxy->setNameFilters(patterns);
+    }
   }
   updateAcceptState();
 }
@@ -499,6 +501,10 @@ void NMFileDialog::updatePreview() {
     m_previewImage->setText(tr("Multiple"));
     m_previewName->setText(tr("%1 files selected").arg(selected.size()));
     m_previewMeta->setText(tr("Preview disabled for multi-selection."));
+    return;
+  }
+
+  if (!m_filterProxy) {
     return;
   }
 
