@@ -1,0 +1,151 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev lcov
+
+    - name: Configure CMake with coverage
+      env:
+        CC: gcc
+        CXX: g++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DNM_BUILD_TESTS=ON \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_C_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+
+    - name: Generate coverage report
+      run: |
+        lcov --directory build --capture --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage.info
+        lcov --list coverage.info
+
+    - name: Display coverage summary
+      run: |
+        echo "## Code Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        lcov --summary coverage.info 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload coverage to artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage.info
+
+  coverage-with-editor:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev qt6-base-dev qt6-svg-dev qt6-multimedia-dev lcov xvfb pulseaudio
+
+    - name: Configure CMake with coverage
+      env:
+        CC: gcc
+        CXX: g++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DNM_BUILD_TESTS=ON \
+          -DNOVELMIND_BUILD_EDITOR=ON \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_C_FLAGS="--coverage -fprofile-arcs -ftest-coverage" \
+          -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests
+      env:
+        QT_QPA_PLATFORM: offscreen
+      run: |
+        pulseaudio --start --exit-idle-time=-1 || true
+        cd build
+        xvfb-run --auto-servernum ctest --output-on-failure
+
+    - name: Generate coverage report
+      run: |
+        lcov --directory build --capture --output-file coverage_full.info
+        lcov --remove coverage_full.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage_full.info
+        lcov --list coverage_full.info
+
+    - name: Generate separate coverage reports
+      run: |
+        # Coverage for engine_core
+        lcov --directory build --capture --output-file coverage_engine.info
+        lcov --extract coverage_engine.info '*/engine_core/src/*' --output-file coverage_engine.info
+        lcov --remove coverage_engine.info '*/tests/*' --output-file coverage_engine.info
+
+        # Coverage for editor
+        lcov --directory build --capture --output-file coverage_editor.info
+        lcov --extract coverage_editor.info '*/editor/src/*' --output-file coverage_editor.info
+        lcov --remove coverage_editor.info '*/tests/*' --output-file coverage_editor.info
+
+    - name: Display detailed coverage summary
+      run: |
+        echo "## Detailed Code Coverage Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Engine Core Coverage" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        if [ -f coverage_engine.info ]; then
+          lcov --summary coverage_engine.info 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        else
+          echo "No engine coverage data" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Editor Coverage" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        if [ -f coverage_editor.info ]; then
+          lcov --summary coverage_editor.info 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        else
+          echo "No editor coverage data" >> $GITHUB_STEP_SUMMARY
+        fi
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        echo "### Overall Coverage" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        lcov --summary coverage_full.info 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-reports-full
+        path: |
+          coverage_full.info
+          coverage_engine.info
+          coverage_editor.info

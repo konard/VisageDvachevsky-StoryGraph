@@ -8,12 +8,15 @@
 #include <QAction>
 #include <QApplication>
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDropEvent>
 #include <QFile>
 #include <QFileInfo>
 #include <QFrame>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
 #include <QHBoxLayout>
+#include <QHideEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -21,6 +24,7 @@
 #include <QLabel>
 #include <QLineF>
 #include <QMenu>
+#include <QMimeData>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QPushButton>
@@ -265,6 +269,167 @@ void NMStoryGraphView::drawForeground(QPainter *painter,
     painter->setPen(QPen(palette.accentPrimary, 2, Qt::DashLine));
     painter->setBrush(Qt::NoBrush);
     painter->drawPath(path);
+  }
+}
+
+// Issue #173: Drag-and-drop validation for StoryFlow editor
+// Validates that dropped files are appropriate for the story graph
+
+/**
+ * @brief Check if a URL represents a valid droppable file for the story graph
+ * @param url URL to validate
+ * @return true if the file can be dropped on the story graph
+ */
+static bool isValidDroppableFile(const QUrl &url) {
+  if (!url.isLocalFile()) {
+    return false;
+  }
+
+  const QString path = url.toLocalFile();
+  const QFileInfo fileInfo(path);
+
+  if (!fileInfo.exists() || !fileInfo.isFile()) {
+    return false;
+  }
+
+  // Accept NMScript files (.nms) for creating script nodes
+  const QString suffix = fileInfo.suffix().toLower();
+  return suffix == "nms";
+}
+
+void NMStoryGraphView::dragEnterEvent(QDragEnterEvent *event) {
+  // Validate MIME data before accepting
+  if (!event || !event->mimeData()) {
+    QGraphicsView::dragEnterEvent(event);
+    return;
+  }
+
+  const QMimeData *mimeData = event->mimeData();
+
+  // Check for valid file URLs
+  if (mimeData->hasUrls()) {
+    bool hasValidFile = false;
+    for (const QUrl &url : mimeData->urls()) {
+      if (isValidDroppableFile(url)) {
+        hasValidFile = true;
+        break;
+      }
+    }
+
+    if (hasValidFile) {
+      event->acceptProposedAction();
+      return;
+    }
+  }
+
+  // Check for internal asset path drag
+  if (mimeData->hasFormat("application/x-novelmind-asset")) {
+    const QString assetPath =
+        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
+      event->acceptProposedAction();
+      return;
+    }
+  }
+
+  QGraphicsView::dragEnterEvent(event);
+}
+
+void NMStoryGraphView::dragMoveEvent(QDragMoveEvent *event) {
+  // Continue to validate during drag move
+  if (!event || !event->mimeData()) {
+    QGraphicsView::dragMoveEvent(event);
+    return;
+  }
+
+  const QMimeData *mimeData = event->mimeData();
+
+  // Accept if we have valid files or internal assets
+  if (mimeData->hasUrls()) {
+    for (const QUrl &url : mimeData->urls()) {
+      if (isValidDroppableFile(url)) {
+        event->acceptProposedAction();
+        return;
+      }
+    }
+  }
+
+  if (mimeData->hasFormat("application/x-novelmind-asset")) {
+    const QString assetPath =
+        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
+      event->acceptProposedAction();
+      return;
+    }
+  }
+
+  QGraphicsView::dragMoveEvent(event);
+}
+
+void NMStoryGraphView::dropEvent(QDropEvent *event) {
+  // Validate drop data before processing
+  if (!event || !event->mimeData()) {
+    QGraphicsView::dropEvent(event);
+    return;
+  }
+
+  const QMimeData *mimeData = event->mimeData();
+  const QPointF scenePos = mapToScene(event->position().toPoint());
+
+  // Handle file URLs
+  if (mimeData->hasUrls()) {
+    for (const QUrl &url : mimeData->urls()) {
+      if (isValidDroppableFile(url)) {
+        const QString filePath = url.toLocalFile();
+        emit scriptFileDropped(filePath, scenePos);
+        event->acceptProposedAction();
+        return;
+      }
+    }
+  }
+
+  // Handle internal asset drag
+  if (mimeData->hasFormat("application/x-novelmind-asset")) {
+    const QString assetPath =
+        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
+      // Convert to absolute path if relative
+      QString fullPath = assetPath;
+      if (!QFileInfo(assetPath).isAbsolute()) {
+        const auto projectRoot =
+            QString::fromStdString(ProjectManager::instance().getProjectRoot());
+        if (!projectRoot.isEmpty()) {
+          fullPath = QDir(projectRoot).absoluteFilePath(assetPath);
+        }
+      }
+      emit scriptFileDropped(fullPath, scenePos);
+      event->acceptProposedAction();
+      return;
+    }
+  }
+
+  QGraphicsView::dropEvent(event);
+void NMStoryGraphView::hideEvent(QHideEvent *event) {
+  // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
+  // state if closed during a drag operation. This avoids crashes from
+  // accessing invalid state when the widget is shown again.
+  resetDragState();
+  QGraphicsView::hideEvent(event);
+}
+
+void NMStoryGraphView::resetDragState() {
+  m_isPanning = false;
+  m_isDrawingConnection = false;
+  m_connectionStartNode = nullptr;
+  m_connectionEndPoint = QPointF();
+  m_possibleDrag = false;
+  m_isDragging = false;
+  m_lastPanPoint = QPoint();
+  m_dragStartPos = QPoint();
+
+  // Reset cursor if not in persistent connection mode
+  if (!m_connectionModeEnabled) {
+    setCursor(Qt::ArrowCursor);
   }
 }
 

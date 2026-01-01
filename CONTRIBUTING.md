@@ -78,6 +78,8 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_BUILD_TESTS` | ON | Build unit tests |
 | `NOVELMIND_BUILD_EDITOR` | OFF | Build visual editor |
 | `NOVELMIND_ENABLE_ASAN` | OFF | Enable AddressSanitizer |
+| `NOVELMIND_ENABLE_TSAN` | OFF | Enable ThreadSanitizer |
+| `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
 
 ### Build Types
 
@@ -102,6 +104,29 @@ We use `clang-format` for code formatting. Before submitting:
 # Format all source files
 find engine_core -name '*.cpp' -o -name '*.hpp' | xargs clang-format -i
 ```
+
+### Pre-commit Hooks
+
+To ensure code quality, we provide pre-commit hooks that automatically check your code before commits:
+
+```bash
+# Install pre-commit (if not already installed)
+pip install pre-commit
+
+# Install the hooks
+pre-commit install
+
+# Run manually on all files (optional)
+pre-commit run --all-files
+```
+
+The pre-commit hooks will:
+- Check and fix trailing whitespace
+- Ensure files end with newline
+- Validate YAML syntax
+- Run clang-format on C++ files
+- Run cppcheck for static analysis
+- Format CMake files
 
 ### Naming Conventions
 
@@ -187,6 +212,44 @@ cd build && ctest --output-on-failure
 
 # Run with verbose output
 ./bin/unit_tests -v
+```
+
+### Static Analysis
+
+Run static analysis tools locally before submitting:
+
+```bash
+# Run cppcheck
+cppcheck --enable=warning,style,performance,portability \
+  --suppress=missingIncludeSystem \
+  --suppress=unusedFunction \
+  -I engine_core/include -I editor/include \
+  engine_core/src editor/src
+
+# Run clang-tidy (requires compile_commands.json)
+cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+clang-tidy -p build engine_core/src/*.cpp
+```
+
+### Sanitizers
+
+Test your code with sanitizers to catch memory and threading issues:
+
+```bash
+# AddressSanitizer (detects memory errors)
+cmake -B build -DNOVELMIND_ENABLE_ASAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
+
+# ThreadSanitizer (detects data races)
+cmake -B build -DNOVELMIND_ENABLE_TSAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
+
+# UndefinedBehaviorSanitizer (detects undefined behavior)
+cmake -B build -DNOVELMIND_ENABLE_UBSAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
 ```
 
 ### Writing Tests

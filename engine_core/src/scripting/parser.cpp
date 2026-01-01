@@ -868,10 +868,11 @@ std::vector<StmtPtr> Parser::parseStatementList() {
     }
     const size_t start = m_current;
     auto stmt = parseStatement();
-    if (stmt) {
+    const bool hasStmt = static_cast<bool>(stmt);
+    if (hasStmt) {
       statements.push_back(std::move(stmt));
     }
-    if (!stmt && m_current == start) {
+    if (!hasStmt && m_current == start) {
       error("Unexpected token in statement list");
       advance();
     }

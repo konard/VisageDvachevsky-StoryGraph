@@ -3,18 +3,14 @@
 
 namespace NovelMind::editor {
 
-// Static instance
-std::unique_ptr<EventBus> EventBus::s_instance = nullptr;
-
 EventBus::EventBus() = default;
 
 EventBus::~EventBus() = default;
 
 EventBus &EventBus::instance() {
-  if (!s_instance) {
-    s_instance = std::make_unique<EventBus>();
-  }
-  return *s_instance;
+  // Thread-safe in C++11+ due to magic statics
+  static EventBus instance;
+  return instance;
 }
 
 // ============================================================================

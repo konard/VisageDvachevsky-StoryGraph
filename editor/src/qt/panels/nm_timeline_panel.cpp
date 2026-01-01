@@ -79,33 +79,37 @@ static float solveBezierX(float x, float p0x, float p1x, float p2x, float p3x) {
 
 void TimelineTrack::addKeyframe(int frame, const QVariant &value,
                                 EasingType easing) {
-  // Check if keyframe already exists
-  for (auto &kf : keyframes) {
-    if (kf.frame == frame) {
-      kf.value = value;
-      kf.easing = easing;
-      return;
-    }
+  // PERF-1: Use binary search to find insertion point (O(log N) instead of O(N))
+  // Keyframes are maintained in sorted order by frame
+  auto it = std::lower_bound(
+      keyframes.begin(), keyframes.end(), frame,
+      [](const Keyframe &kf, int f) { return kf.frame < f; });
+
+  // Check if keyframe already exists at this frame
+  if (it != keyframes.end() && it->frame == frame) {
+    // Update existing keyframe
+    it->value = value;
+    it->easing = easing;
+    return;
   }
 
-  // Add new keyframe
+  // Add new keyframe at the sorted position (maintains sort order)
   Keyframe newKeyframe;
   newKeyframe.frame = frame;
   newKeyframe.value = value;
   newKeyframe.easing = easing;
-  keyframes.append(newKeyframe);
-
-  // Sort keyframes by frame
-  std::sort(
-      keyframes.begin(), keyframes.end(),
-      [](const Keyframe &a, const Keyframe &b) { return a.frame < b.frame; });
+  keyframes.insert(it, newKeyframe);
 }
 
 void TimelineTrack::removeKeyframe(int frame) {
-  keyframes.erase(
-      std::remove_if(keyframes.begin(), keyframes.end(),
-                     [frame](const Keyframe &kf) { return kf.frame == frame; }),
-      keyframes.end());
+  // PERF-1: Use binary search for O(log N) lookup
+  auto it = std::lower_bound(
+      keyframes.begin(), keyframes.end(), frame,
+      [](const Keyframe &kf, int f) { return kf.frame < f; });
+
+  if (it != keyframes.end() && it->frame == frame) {
+    keyframes.erase(it);
+  }
 }
 
 void TimelineTrack::moveKeyframe(int fromFrame, int toFrame) {
@@ -131,9 +135,13 @@ void TimelineTrack::moveKeyframe(int fromFrame, int toFrame) {
 }
 
 Keyframe *TimelineTrack::getKeyframe(int frame) {
-  for (auto &kf : keyframes) {
-    if (kf.frame == frame)
-      return &kf;
+  // PERF-1: Use binary search for O(log N) lookup
+  auto it = std::lower_bound(
+      keyframes.begin(), keyframes.end(), frame,
+      [](const Keyframe &kf, int f) { return kf.frame < f; });
+
+  if (it != keyframes.end() && it->frame == frame) {
+    return &(*it);
   }
   return nullptr;
 }
@@ -148,43 +156,30 @@ Keyframe TimelineTrack::interpolate(int frame) const {
     return keyframes.first();
   }
 
-  // Find exact match first
-  for (const auto &kf : keyframes) {
-    if (kf.frame == frame)
-      return kf;
-  }
+  // PERF-1: Use binary search for O(log N) lookup instead of O(N)
+  // Find the first keyframe with frame >= target frame
+  auto it = std::lower_bound(
+      keyframes.begin(), keyframes.end(), frame,
+      [](const Keyframe &kf, int f) { return kf.frame < f; });
 
-  // Find surrounding keyframes for interpolation
-  const Keyframe *prevKf = nullptr;
-  const Keyframe *nextKf = nullptr;
-
-  for (int i = 0; i < keyframes.size(); ++i) {
-    if (keyframes[i].frame <= frame) {
-      prevKf = &keyframes[i];
-    }
-    if (keyframes[i].frame >= frame && !nextKf) {
-      nextKf = &keyframes[i];
-      break;
-    }
+  // Exact match
+  if (it != keyframes.end() && it->frame == frame) {
+    return *it;
   }
 
   // Before first keyframe - return first
-  if (!prevKf) {
+  if (it == keyframes.begin()) {
     return keyframes.first();
   }
 
   // After last keyframe - return last
-  if (!nextKf) {
+  if (it == keyframes.end()) {
     return keyframes.last();
   }
 
-  // At exact keyframe position
-  if (prevKf->frame == frame) {
-    return *prevKf;
-  }
-  if (nextKf->frame == frame) {
-    return *nextKf;
-  }
+  // Find surrounding keyframes for interpolation
+  const Keyframe *nextKf = &(*it);
+  const Keyframe *prevKf = &(*(it - 1));
 
   // Interpolate between prevKf and nextKf
   Keyframe result;

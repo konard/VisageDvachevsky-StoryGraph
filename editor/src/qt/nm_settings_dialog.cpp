@@ -366,6 +366,7 @@ NMSettingsCategoryPage::NMSettingsCategoryPage(const std::string &category,
 void NMSettingsCategoryPage::rebuild() {
   // Clear existing widgets
   for (auto *widget : m_widgets) {
+    m_layout->removeWidget(widget);
     widget->deleteLater();
   }
   m_widgets.clear();

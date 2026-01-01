@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 
 #include <QFocusEvent>
@@ -98,12 +99,31 @@ void NMDockPanel::focusInEvent(QFocusEvent *event) {
   QDockWidget::focusInEvent(event);
   onFocusGained();
   emit focusGained();
+
+  // Issue #173: Publish focus event through EventBus for panel synchronization
+  // This allows other panels to react to focus changes without tight coupling
+  if (!m_panelId.isEmpty()) {
+    PanelFocusChangedEvent focusEvent;
+    focusEvent.panelName = m_panelId.toStdString();
+    focusEvent.hasFocus = true;
+    focusEvent.source = m_panelId.toStdString();
+    EventBus::instance().publish(focusEvent);
+  }
 }
 
 void NMDockPanel::focusOutEvent(QFocusEvent *event) {
   QDockWidget::focusOutEvent(event);
   onFocusLost();
   emit focusLost();
+
+  // Issue #173: Publish focus event through EventBus for panel synchronization
+  if (!m_panelId.isEmpty()) {
+    PanelFocusChangedEvent focusEvent;
+    focusEvent.panelName = m_panelId.toStdString();
+    focusEvent.hasFocus = false;
+    focusEvent.source = m_panelId.toStdString();
+    EventBus::instance().publish(focusEvent);
+  }
 }
 
 void NMDockPanel::resizeEvent(QResizeEvent *event) {

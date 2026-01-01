@@ -158,3 +158,133 @@ jobs:
         find engine_core -name '*.cpp' -o -name '*.hpp' | \
           xargs clang-format-14 --dry-run --Werror || \
           echo "::warning::Code formatting issues found. Run clang-format to fix."
+
+  static-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev
+
+    - name: Install static analysis tools
+      run: |
+        sudo apt-get install -y cppcheck clang-tidy-15
+
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=warning,style,performance,portability \
+          --error-exitcode=1 \
+          --suppress=missingIncludeSystem \
+          --suppress=unusedFunction \
+          --suppress=unmatchedSuppression \
+          -I engine_core/include -I editor/include \
+          --inline-suppr \
+          engine_core/src editor/src 2>&1 | tee cppcheck.log
+
+    - name: Upload cppcheck log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: cppcheck-log
+        path: cppcheck.log
+
+    - name: Configure CMake for clang-tidy
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+          -DNM_BUILD_TESTS=OFF
+
+    - name: Run clang-tidy
+      run: |
+        clang-tidy-15 -p build \
+          $(find engine_core/src compiler/src runtime/src -name "*.cpp" 2>/dev/null | head -20) \
+          --checks='-*,bugprone-*,modernize-*,performance-*,readability-*' \
+          --warnings-as-errors=bugprone-* \
+          2>&1 | tee clang-tidy.log || true
+
+    - name: Upload clang-tidy log
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: clang-tidy-log
+        path: clang-tidy.log
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer:
+          - name: asan
+            cmake_flag: NOVELMIND_ENABLE_ASAN
+          - name: tsan
+            cmake_flag: NOVELMIND_ENABLE_TSAN
+          - name: ubsan
+            cmake_flag: NOVELMIND_ENABLE_UBSAN
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev
+
+    - name: Configure CMake with ${{ matrix.sanitizer.name }}
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DNM_BUILD_TESTS=ON \
+          -D${{ matrix.sanitizer.cmake_flag }}=ON
+
+    - name: Build with ${{ matrix.sanitizer.name }}
+      run: cmake --build build
+
+    - name: Run tests with ${{ matrix.sanitizer.name }}
+      run: |
+        cd build
+        ctest --output-on-failure --timeout 300
+
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev lcov
+
+    - name: Configure CMake with coverage
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Debug \
+          -DNM_BUILD_TESTS=ON \
+          -DCMAKE_CXX_FLAGS="--coverage -fprofile-arcs -ftest-coverage"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+
+    - name: Generate coverage report
+      run: |
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
+        lcov --list coverage.info
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.info
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}

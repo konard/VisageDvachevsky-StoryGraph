@@ -2,6 +2,7 @@
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
+#include <QHideEvent>
 #include <QMouseEvent>
 #include <QPainter>
 #include <QScrollBar>
@@ -260,6 +261,14 @@ void NMStoryGraphMinimap::resizeEvent(QResizeEvent *event) {
   QGraphicsView::resizeEvent(event);
   // Refit the graph when minimap is resized
   fitGraphInView();
+}
+
+void NMStoryGraphMinimap::hideEvent(QHideEvent *event) {
+  // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
+  // state if closed during a viewport drag operation.
+  m_isDraggingViewport = false;
+  m_lastMousePos = QPointF();
+  QGraphicsView::hideEvent(event);
 }
 
 } // namespace NovelMind::editor::qt

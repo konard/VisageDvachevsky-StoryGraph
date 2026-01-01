@@ -306,6 +306,8 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_BUILD_TESTS` | ON | Собрать модульные тесты |
 | `NOVELMIND_BUILD_EDITOR` | OFF | Собрать визуальный редактор |
 | `NOVELMIND_ENABLE_ASAN` | OFF | Включить AddressSanitizer |
+| `NOVELMIND_ENABLE_TSAN` | OFF | Включить ThreadSanitizer |
+| `NOVELMIND_ENABLE_UBSAN` | OFF | Включить UndefinedBehaviorSanitizer |
 
 ### Платформенные инструкции
 
