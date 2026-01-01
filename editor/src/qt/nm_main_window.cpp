@@ -111,6 +111,8 @@ void NMMainWindow::shutdown() {
 
   if (m_updateTimer) {
     m_updateTimer->stop();
+    m_updateTimer->deleteLater();
+    m_updateTimer = nullptr;
   }
 
   // Shutdown tutorial subsystem
