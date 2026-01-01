@@ -1,0 +1,2588 @@
+engine_core/src/audio/audio_manager.cpp:1:0: information: Include file: "NovelMind/audio/audio_manager.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_manager.hpp"
+^
+engine_core/src/audio/audio_manager.cpp:2:0: information: Include file: "miniaudio/miniaudio.h" not found. [missingInclude]
+#include "miniaudio/miniaudio.h"
+^
+engine_core/src/audio/audio_manager.cpp:197:14: style: Variable 'source' can be declared as reference to const [constVariableReference]
+  for (auto &source : m_sources) {
+             ^
+engine_core/src/audio/audio_manager.cpp:460:65: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (source && source->handle.id == m_currentMusicHandle.id) {
+                                                                ^
+engine_core/src/audio/audio_manager.cpp:473:65: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (source && source->handle.id == m_currentMusicHandle.id) {
+                                                                ^
+engine_core/src/audio/audio_manager.cpp:632:51: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (source && source->handle.id == handle.id) {
+                                                  ^
+engine_core/src/audio/audio_manager.cpp:645:51: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (source && source->handle.id == handle.id) {
+                                                  ^
+engine_core/src/audio/audio_recorder.cpp:6:0: information: Include file: "NovelMind/audio/audio_recorder.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_recorder.hpp"
+^
+engine_core/src/audio/audio_recorder.cpp:14:0: information: Include file: "miniaudio/miniaudio.h" not found. [missingInclude]
+#include "miniaudio/miniaudio.h"
+^
+engine_core/src/audio/audio_recorder.cpp:130:32: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (device.id == deviceId) {
+                               ^
+engine_core/src/audio/audio_recorder.cpp:164:32: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (device.id == deviceId) {
+                               ^
+engine_core/src/audio/miniaudio_impl.cpp:7:0: information: Include file: "miniaudio/miniaudio.h" not found. [missingInclude]
+#include "miniaudio/miniaudio.h"
+^
+engine_core/src/audio/voice_manifest.cpp:6:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+engine_core/src/audio/voice_manifest.cpp:999:41: style: Condition 'fields.size()>1' is always true [knownConditionTrueFalse]
+        newLine.speaker = fields.size() > 1 ? fields[1] : "";
+                                        ^
+engine_core/src/audio/voice_manifest.cpp:983:23: note: Assuming that condition 'fields.size()>=2' is not redundant
+    if (fields.size() >= 2) {
+                      ^
+engine_core/src/audio/voice_manifest.cpp:999:41: note: Condition 'fields.size()>1' is always true
+        newLine.speaker = fields.size() > 1 ? fields[1] : "";
+                                        ^
+engine_core/src/audio/voice_manifest.cpp:784:23: style: Variable 'pattern' is assigned a value that is never used. [unreadVariable]
+  std::string pattern = "\\{[^\\{\\}]*\"id\"\\s*:\\s*\"([^\"]*)\"[^\\{\\}]*\\}";
+                      ^
+engine_core/src/core/application.cpp:1:0: information: Include file: "NovelMind/core/application.hpp" not found. [missingInclude]
+#include "NovelMind/core/application.hpp"
+^
+engine_core/src/core/application.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/core/application.cpp:3:0: information: Include file: "NovelMind/vfs/cached_file_system.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/cached_file_system.hpp"
+^
+engine_core/src/core/application.cpp:4:0: information: Include file: "NovelMind/vfs/memory_fs.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/memory_fs.hpp"
+^
+engine_core/src/core/application.cpp:5:0: information: Include file: "NovelMind/vfs/secure_pack_reader.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/secure_pack_reader.hpp"
+^
+engine_core/src/core/debug_overlay.cpp:1:0: information: Include file: "NovelMind/core/debug_overlay.hpp" not found. [missingInclude]
+#include "NovelMind/core/debug_overlay.hpp"
+^
+engine_core/src/core/file_system.cpp:1:0: information: Include file: "NovelMind/platform/file_system.hpp" not found. [missingInclude]
+#include "NovelMind/platform/file_system.hpp"
+^
+engine_core/src/core/file_system.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/core/logger.cpp:1:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/core/platform_sdl.cpp:1:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/core/platform_sdl.cpp:2:0: information: Include file: "NovelMind/platform/window.hpp" not found. [missingInclude]
+#include "NovelMind/platform/window.hpp"
+^
+engine_core/src/core/platform_sdl.cpp:49:8: style: Virtual function 'destroy' is called from destructor '~SDLWindow()' at line 15. Dynamic binding is not used. [virtualCallInConstructor]
+  void destroy() override {
+       ^
+engine_core/src/core/platform_sdl.cpp:15:27: note: Calling destroy
+  ~SDLWindow() override { destroy(); }
+                          ^
+engine_core/src/core/platform_sdl.cpp:49:8: note: destroy is a virtual function
+  void destroy() override {
+       ^
+engine_core/src/core/profiler.cpp:1:0: information: Include file: "NovelMind/core/profiler.hpp" not found. [missingInclude]
+#include "NovelMind/core/profiler.hpp"
+^
+engine_core/src/core/property_system.cpp:6:0: information: Include file: "NovelMind/core/property_system.hpp" not found. [missingInclude]
+#include "NovelMind/core/property_system.hpp"
+^
+engine_core/src/core/timer.cpp:1:0: information: Include file: "NovelMind/core/timer.hpp" not found. [missingInclude]
+#include "NovelMind/core/timer.hpp"
+^
+engine_core/src/input/input_manager.cpp:1:0: information: Include file: "NovelMind/input/input_manager.hpp" not found. [missingInclude]
+#include "NovelMind/input/input_manager.hpp"
+^
+engine_core/src/localization/localization_manager.cpp:6:0: information: Include file: "NovelMind/localization/localization_manager.hpp" not found. [missingInclude]
+#include "NovelMind/localization/localization_manager.hpp"
+^
+engine_core/src/renderer/camera.cpp:6:0: information: Include file: "NovelMind/renderer/camera.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/camera.hpp"
+^
+engine_core/src/renderer/camera.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/renderer/camera.cpp:306:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (l.id == layerId) {
+                         ^
+engine_core/src/renderer/camera.cpp:316:26: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (l.id == layerId) {
+                         ^
+engine_core/src/renderer/font.cpp:1:0: information: Include file: "NovelMind/renderer/font.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/font.hpp"
+^
+engine_core/src/renderer/font.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/renderer/renderer.cpp:1:0: information: Include file: "NovelMind/renderer/renderer.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/renderer.hpp"
+^
+engine_core/src/renderer/renderer.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/renderer/renderer.cpp:3:0: information: Include file: "NovelMind/platform/window.hpp" not found. [missingInclude]
+#include "NovelMind/platform/window.hpp"
+^
+engine_core/src/renderer/renderer.cpp:123:8: style: Virtual function 'shutdown' is called from destructor '~SDLOpenGLRenderer()' at line 86. Dynamic binding is not used. [virtualCallInConstructor]
+  void shutdown() override {
+       ^
+engine_core/src/renderer/renderer.cpp:86:35: note: Calling shutdown
+  ~SDLOpenGLRenderer() override { shutdown(); }
+                                  ^
+engine_core/src/renderer/renderer.cpp:123:8: note: shutdown is a virtual function
+  void shutdown() override {
+       ^
+engine_core/src/renderer/sprite.cpp:1:0: information: Include file: "NovelMind/renderer/sprite.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/sprite.hpp"
+^
+engine_core/src/renderer/stb_image_impl.cpp:2:0: information: Include file: "stb/stb_image.h" not found. [missingInclude]
+#include "stb/stb_image.h"
+^
+engine_core/src/renderer/text_layout.cpp:1:0: information: Include file: "NovelMind/renderer/text_layout.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/text_layout.hpp"
+^
+engine_core/src/renderer/text_layout.cpp:69:24: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+            } else if (commandStr.find("color=") == 0) {
+                       ^
+engine_core/src/renderer/texture.cpp:1:0: information: Include file: "NovelMind/renderer/texture.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/texture.hpp"
+^
+engine_core/src/renderer/texture.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/renderer/texture.cpp:3:0: information: Include file: "stb/stb_image.h" not found. [missingInclude]
+#include "stb/stb_image.h"
+^
+engine_core/src/renderer/texture.cpp:93:7: style: The if condition is the same as the previous if condition [duplicateCondition]
+  if (m_handle) {
+      ^
+engine_core/src/renderer/texture.cpp:88:7: note: First condition
+  if (m_handle) {
+      ^
+engine_core/src/renderer/texture.cpp:93:7: note: Second condition
+  if (m_handle) {
+      ^
+engine_core/src/resource/resource_manager.cpp:1:0: information: Include file: "NovelMind/resource/resource_manager.hpp" not found. [missingInclude]
+#include "NovelMind/resource/resource_manager.hpp"
+^
+engine_core/src/resource/resource_manager.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/runtime/config_manager.cpp:6:0: information: Include file: "NovelMind/runtime/config_manager.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/config_manager.hpp"
+^
+engine_core/src/runtime/config_manager.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:6:0: information: Include file: "NovelMind/runtime/game_launcher.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/game_launcher.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:8:0: information: Include file: "NovelMind/input/input_manager.hpp" not found. [missingInclude]
+#include "NovelMind/input/input_manager.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:9:0: information: Include file: "NovelMind/localization/localization_manager.hpp" not found. [missingInclude]
+#include "NovelMind/localization/localization_manager.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:10:0: information: Include file: "NovelMind/scripting/script_runtime.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/script_runtime.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:11:0: information: Include file: "NovelMind/vfs/multi_pack_manager.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/multi_pack_manager.hpp"
+^
+engine_core/src/runtime/game_launcher.cpp:952:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &keyName : binding.keys) {
+  ^
+engine_core/src/runtime/game_launcher.cpp:960:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &buttonName : binding.mouseButtons) {
+  ^
+engine_core/src/runtime/game_settings.cpp:6:0: information: Include file: "NovelMind/runtime/game_settings.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/game_settings.hpp"
+^
+engine_core/src/runtime/game_settings.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/runtime/game_settings.cpp:68:24: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (item.id == id) {
+                       ^
+engine_core/src/save/save_manager.cpp:1:0: information: Include file: "NovelMind/save/save_manager.hpp" not found. [missingInclude]
+#include "NovelMind/save/save_manager.hpp"
+^
+engine_core/src/save/save_manager.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/save/save_manager.cpp:860:9: style: Condition '!readString(kMaxStringLength)' is always false [knownConditionTrueFalse]
+    if (!readString(kMaxStringLength)) {
+        ^
+engine_core/src/save/save_manager.cpp:857:9: note: Assuming that condition '!readString(kMaxStringLength)' is not redundant
+    if (!readString(kMaxStringLength)) {
+        ^
+engine_core/src/save/save_manager.cpp:860:9: note: Condition '!readString(kMaxStringLength)' is always false
+    if (!readString(kMaxStringLength)) {
+        ^
+engine_core/src/save/save_manager.cpp:897:11: style: Condition '!readString(kMaxStringLength)' is always false [knownConditionTrueFalse]
+      if (!readString(kMaxStringLength)) {
+          ^
+engine_core/src/save/save_manager.cpp:894:11: note: Assuming that condition '!readString(kMaxStringLength)' is not redundant
+      if (!readString(kMaxStringLength)) {
+          ^
+engine_core/src/save/save_manager.cpp:897:11: note: Condition '!readString(kMaxStringLength)' is always false
+      if (!readString(kMaxStringLength)) {
+          ^
+engine_core/src/save/save_manager.cpp:363:16: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+      checksum = checksum * 31 + static_cast<u32>(c);
+               ^
+engine_core/src/save/save_manager.cpp:397:14: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+    checksum = checksum * 31 + byte;
+             ^
+engine_core/src/scene/character_sprite.cpp:1:0: information: Include file: "NovelMind/scene/character_sprite.hpp" not found. [missingInclude]
+#include "NovelMind/scene/character_sprite.hpp"
+^
+engine_core/src/scene/choice_menu.cpp:1:0: information: Include file: "NovelMind/scene/choice_menu.hpp" not found. [missingInclude]
+#include "NovelMind/scene/choice_menu.hpp"
+^
+engine_core/src/scene/choice_menu.cpp:240:9: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+      ++visibleCount;
+        ^
+engine_core/src/scene/dialogue_box.cpp:1:0: information: Include file: "NovelMind/scene/dialogue_box.hpp" not found. [missingInclude]
+#include "NovelMind/scene/dialogue_box.hpp"
+^
+engine_core/src/scene/dialogue_box.cpp:2:0: information: Include file: "NovelMind/resource/resource_manager.hpp" not found. [missingInclude]
+#include "NovelMind/resource/resource_manager.hpp"
+^
+engine_core/src/scene/scene_graph.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_graph_detail.hpp:3:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_graph_detail.cpp:50:7: style: The scope of the variable 'a' can be reduced. [variableScope]
+  int a = 255;
+      ^
+engine_core/src/scene/scene_inspector.cpp:1:0: information: Include file: "NovelMind/scene/scene_inspector.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_inspector.hpp"
+^
+engine_core/src/scene/scene_inspector.cpp:528:27: style: Variable 'oldScaleY' is assigned a value that is never used. [unreadVariable]
+    std::string oldScaleY = std::to_string(obj->getScaleY());
+                          ^
+engine_core/src/scene/scene_inspector.cpp:730:41: style: Unused variable: tempStack [unusedVariable]
+  std::stack<std::unique_ptr<ICommand>> tempStack;
+                                        ^
+engine_core/src/scene/scene_layer.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_manager.cpp:1:0: information: Include file: "NovelMind/scene/scene_manager.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_manager.hpp"
+^
+engine_core/src/scene/scene_manager.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/scene/scene_object.cpp:1:0: information: Include file: "NovelMind/scene/scene_object.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object.hpp"
+^
+engine_core/src/scene/scene_object_background.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_base.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_character.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_choice.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_choice.cpp:10:0: information: Include file: "NovelMind/localization/localization_manager.hpp" not found. [missingInclude]
+#include "NovelMind/localization/localization_manager.hpp"
+^
+engine_core/src/scene/scene_object_choice.cpp:11:0: information: Include file: "NovelMind/renderer/text_layout.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/text_layout.hpp"
+^
+engine_core/src/scene/scene_object_dialogue.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_dialogue.cpp:10:0: information: Include file: "NovelMind/localization/localization_manager.hpp" not found. [missingInclude]
+#include "NovelMind/localization/localization_manager.hpp"
+^
+engine_core/src/scene/scene_object_dialogue.cpp:11:0: information: Include file: "NovelMind/renderer/text_layout.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/text_layout.hpp"
+^
+engine_core/src/scene/scene_object_effect.cpp:6:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_handle.cpp:6:0: information: Include file: "NovelMind/scene/scene_object_handle.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object_handle.hpp"
+^
+engine_core/src/scene/scene_object_handle.cpp:7:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+engine_core/src/scene/scene_object_properties.cpp:10:0: information: Include file: "NovelMind/scene/scene_object_properties.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object_properties.hpp"
+^
+engine_core/src/scene/scene_object_properties.cpp:11:0: information: Include file: "NovelMind/renderer/color.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/color.hpp"
+^
+engine_core/src/scene/transition.cpp:1:0: information: Include file: "NovelMind/scene/transition.hpp" not found. [missingInclude]
+#include "NovelMind/scene/transition.hpp"
+^
+engine_core/src/scripting/compiler.cpp:1:0: information: Include file: "NovelMind/scripting/compiler.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/compiler.hpp"
+^
+engine_core/src/scripting/dialogue_localization.cpp:11:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+engine_core/src/scripting/interpreter.cpp:1:0: information: Include file: "NovelMind/scripting/interpreter.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/interpreter.hpp"
+^
+engine_core/src/scripting/interpreter.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/scripting/ir_conversion.cpp:6:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+engine_core/src/scripting/ir_core.cpp:6:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+engine_core/src/scripting/ir_core.cpp:384:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &conn : m_connections) {
+  ^
+engine_core/src/scripting/ir_core.cpp:478:50: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+          if (conn.target.portName == port.name) {
+                                                 ^
+engine_core/src/scripting/ir_round_trip.cpp:6:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+engine_core/src/scripting/ir_round_trip.cpp:380:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &e1 : diff1.entries) {
+  ^
+engine_core/src/scripting/ir_round_trip.cpp:383:7: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      for (const auto &e2 : diff2.entries) {
+      ^
+engine_core/src/scripting/ir_visual_graph.cpp:6:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+engine_core/src/scripting/ir_visual_graph.cpp:166:24: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (node.id == id) {
+                       ^
+engine_core/src/scripting/ir_visual_graph.cpp:175:24: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (node.id == id) {
+                       ^
+engine_core/src/scripting/lexer.cpp:1:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+engine_core/src/scripting/lexer.cpp:47:61: style: Parameter 'pos' can be declared as reference to const [constParameterReference]
+inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
+                                                            ^
+engine_core/src/scripting/parser.cpp:1:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+engine_core/src/scripting/parser.cpp:874:10: warning: Access of moved variable 'stmt'. [accessMoved]
+    if (!stmt && m_current == start) {
+         ^
+engine_core/src/scripting/parser.cpp:872:28: note: Calling std::move(stmt)
+      statements.push_back(std::move(stmt));
+                           ^
+engine_core/src/scripting/parser.cpp:874:10: note: Access of moved variable 'stmt'.
+    if (!stmt && m_current == start) {
+         ^
+engine_core/src/scripting/script_runtime.cpp:1:0: information: Include file: "NovelMind/scripting/script_runtime.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/script_runtime.hpp"
+^
+engine_core/src/scripting/script_runtime.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/scripting/script_runtime.cpp:3:0: information: Include file: "NovelMind/resource/resource_manager.hpp" not found. [missingInclude]
+#include "NovelMind/resource/resource_manager.hpp"
+^
+engine_core/src/scripting/script_runtime.cpp:502:38: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (pair.second == entryPoint) {
+                                     ^
+engine_core/src/scripting/validator.cpp:1:0: information: Include file: "NovelMind/scripting/validator.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/validator.hpp"
+^
+engine_core/src/scripting/vm.cpp:1:0: information: Include file: "NovelMind/scripting/vm.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/vm.hpp"
+^
+engine_core/src/scripting/vm.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/scripting/vm_security.cpp:1:0: information: Include file: "NovelMind/scripting/vm_security.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/vm_security.hpp"
+^
+engine_core/src/ui/ui_containers.cpp:6:0: information: Include file: "NovelMind/ui/ui_framework.hpp" not found. [missingInclude]
+#include "NovelMind/ui/ui_framework.hpp"
+^
+engine_core/src/ui/ui_controls.cpp:6:0: information: Include file: "NovelMind/ui/ui_framework.hpp" not found. [missingInclude]
+#include "NovelMind/ui/ui_framework.hpp"
+^
+engine_core/src/ui/ui_manager.cpp:6:0: information: Include file: "NovelMind/ui/ui_framework.hpp" not found. [missingInclude]
+#include "NovelMind/ui/ui_framework.hpp"
+^
+engine_core/src/ui/ui_theme.cpp:6:0: information: Include file: "NovelMind/ui/ui_framework.hpp" not found. [missingInclude]
+#include "NovelMind/ui/ui_framework.hpp"
+^
+engine_core/src/ui/ui_widget.cpp:6:0: information: Include file: "NovelMind/ui/ui_framework.hpp" not found. [missingInclude]
+#include "NovelMind/ui/ui_framework.hpp"
+^
+engine_core/src/vfs/cached_file_system.cpp:1:0: information: Include file: "NovelMind/vfs/cached_file_system.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/cached_file_system.hpp"
+^
+engine_core/src/vfs/file_handle.cpp:1:0: information: Include file: "NovelMind/vfs/file_handle.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/file_handle.hpp"
+^
+engine_core/src/vfs/file_system_backend.cpp:1:0: information: Include file: "NovelMind/vfs/file_system_backend.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/file_system_backend.hpp"
+^
+engine_core/src/vfs/memory_fs.cpp:1:0: information: Include file: "NovelMind/vfs/memory_fs.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/memory_fs.hpp"
+^
+engine_core/src/vfs/multi_pack_manager.cpp:6:0: information: Include file: "NovelMind/vfs/multi_pack_manager.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/multi_pack_manager.hpp"
+^
+engine_core/src/vfs/multi_pack_manager.cpp:757:16: style: Variable 'pack' can be declared as reference to const [constVariableReference]
+    for (auto &pack : m_packs) {
+               ^
+engine_core/src/vfs/multi_pack_manager.cpp:817:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (filename.find("base_") == 0 || filename.find("game_") == 0) {
+      ^
+engine_core/src/vfs/multi_pack_manager.cpp:819:14: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  } else if (filename.find("patch_") == 0 || filename.find("update_") == 0) {
+             ^
+engine_core/src/vfs/multi_pack_manager.cpp:821:14: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  } else if (filename.find("dlc_") == 0 || filename.find("expansion_") == 0) {
+             ^
+engine_core/src/vfs/multi_pack_manager.cpp:823:14: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  } else if (filename.find("lang_") == 0 || filename.find("locale_") == 0) {
+             ^
+engine_core/src/vfs/multi_pack_manager.cpp:825:14: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  } else if (filename.find("mod_") == 0) {
+             ^
+engine_core/src/vfs/pack_decryptor.cpp:1:0: information: Include file: "NovelMind/vfs/pack_security.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/pack_security.hpp"
+^
+engine_core/src/vfs/pack_security_detail.hpp:3:0: information: Include file: "NovelMind/core/types.hpp" not found. [missingInclude]
+#include "NovelMind/core/types.hpp"
+^
+engine_core/src/vfs/pack_integrity_checker.cpp:1:0: information: Include file: "NovelMind/vfs/pack_security.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/pack_security.hpp"
+^
+engine_core/src/vfs/pack_reader.cpp:1:0: information: Include file: "NovelMind/vfs/pack_reader.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/pack_reader.hpp"
+^
+engine_core/src/vfs/pack_reader.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+engine_core/src/vfs/pack_reader.cpp:183:7: warning: Identical condition '!file', second condition is always false [identicalConditionAfterEarlyExit]
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_reader.cpp:176:7: note: If condition '!file' is true, the function will return/exit
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_reader.cpp:183:7: note: Testing identical condition '!file'
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_reader.cpp:198:7: warning: Identical condition '!file', second condition is always false [identicalConditionAfterEarlyExit]
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_reader.cpp:176:7: note: If condition '!file' is true, the function will return/exit
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_reader.cpp:198:7: note: Testing identical condition '!file'
+  if (!file) {
+      ^
+engine_core/src/vfs/pack_security.cpp:1:0: information: Include file: "NovelMind/vfs/pack_security.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/pack_security.hpp"
+^
+engine_core/src/vfs/resource_cache.cpp:1:0: information: Include file: "NovelMind/vfs/resource_cache.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/resource_cache.hpp"
+^
+engine_core/src/vfs/resource_id.cpp:1:0: information: Include file: "NovelMind/vfs/resource_id.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/resource_id.hpp"
+^
+engine_core/src/vfs/secure_pack_reader.cpp:1:0: information: Include file: "NovelMind/vfs/secure_pack_reader.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/secure_pack_reader.hpp"
+^
+engine_core/src/vfs/virtual_file_system.cpp:1:0: information: Include file: "NovelMind/vfs/virtual_file_system.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/virtual_file_system.hpp"
+^
+engine_core/src/vfs/virtual_fs.cpp:1:0: information: Include file: "NovelMind/vfs/virtual_fs.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/virtual_fs.hpp"
+^
+editor/src/adapters/QtAudioPlayer.cpp:8:0: information: Include file: "NovelMind/editor/interfaces/QtAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+^
+editor/src/adapters/QtFileSystem.cpp:8:0: information: Include file: "NovelMind/editor/interfaces/QtFileSystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtFileSystem.hpp"
+^
+editor/src/asset_pipeline.cpp:6:0: information: Include file: "NovelMind/editor/asset_pipeline.hpp" not found. [missingInclude]
+#include "NovelMind/editor/asset_pipeline.hpp"
+^
+editor/src/asset_preview.cpp:1:0: information: Include file: "NovelMind/editor/asset_preview.hpp" not found. [missingInclude]
+#include "NovelMind/editor/asset_preview.hpp"
+^
+editor/src/build_size_analyzer.cpp:13:0: information: Include file: "NovelMind/editor/build_size_analyzer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/build_size_analyzer.hpp"
+^
+editor/src/build_size_analyzer.cpp:715:37: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+        if (asset.path == files[0]) {
+                                    ^
+editor/src/build_size_analyzer.cpp:733:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+          if (asset.path == path) {
+                                  ^
+editor/src/build_size_analyzer.cpp:810:37: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (asset.path == unusedPath) {
+                                    ^
+editor/src/build_system.cpp:14:0: information: Include file: "NovelMind/editor/build_system.hpp" not found. [missingInclude]
+#include "NovelMind/editor/build_system.hpp"
+^
+editor/src/build_system.cpp:147:19: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+        totalSize += static_cast<i64>(entry.file_size());
+                  ^
+editor/src/build_system.cpp:1015:26: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (!result.success) {
+                         ^
+editor/src/build_system.cpp:2560:12: style: Variable 'exePath' is assigned a value that is never used. [unreadVariable]
+  fs::path exePath =
+           ^
+editor/src/core/ServiceLocator.cpp:8:0: information: Include file: "NovelMind/editor/interfaces/ServiceLocator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
+^
+editor/src/core/ServiceLocator.cpp:9:0: information: Include file: "NovelMind/editor/interfaces/QtAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+^
+editor/src/core/ServiceLocator.cpp:10:0: information: Include file: "NovelMind/editor/interfaces/QtFileSystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtFileSystem.hpp"
+^
+editor/src/curve_editor.cpp:6:0: information: Include file: "NovelMind/editor/curve_editor.hpp" not found. [missingInclude]
+#include "NovelMind/editor/curve_editor.hpp"
+^
+editor/src/curve_editor.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/curve_editor_library.cpp:1:0: information: Include file: "NovelMind/editor/curve_editor.hpp" not found. [missingInclude]
+#include "NovelMind/editor/curve_editor.hpp"
+^
+editor/src/curve_editor_view.cpp:1:0: information: Include file: "NovelMind/editor/curve_editor.hpp" not found. [missingInclude]
+#include "NovelMind/editor/curve_editor.hpp"
+^
+editor/src/editor_runtime_host.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_runtime_host_breakpoints.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_runtime_host_breakpoints.cpp:15:79: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (bp.scriptPath == breakpoint.scriptPath && bp.line == breakpoint.line) {
+                                                                              ^
+editor/src/editor_runtime_host_breakpoints.cpp:36:57: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (bp.scriptPath == scriptPath && bp.line == line) {
+                                                        ^
+editor/src/editor_runtime_host_hot_reload.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_runtime_host_inspection.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_runtime_host_runtime.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_runtime_host_runtime.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/editor_runtime_host_runtime.cpp:3:0: information: Include file: "NovelMind/editor/scene_document.hpp" not found. [missingInclude]
+#include "NovelMind/editor/scene_document.hpp"
+^
+editor/src/editor_runtime_host_runtime.cpp:4:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+editor/src/editor_runtime_host_runtime.cpp:407:23: style: Variable 'title' is assigned a value that is never used. [unreadVariable]
+    std::string title = jsonGetString(node, "title");
+                      ^
+editor/src/editor_runtime_host_runtime.cpp:344:15: style: Variable 'entryScene' is assigned a value that is never used. [unreadVariable]
+  std::string entryScene = jsonGetString(graphJson, "entry");
+              ^
+editor/src/editor_runtime_host_save.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/editor_settings.cpp:6:0: information: Include file: "NovelMind/editor/editor_settings.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_settings.hpp"
+^
+editor/src/editor_state.cpp:1:0: information: Include file: "NovelMind/editor/editor_state.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_state.hpp"
+^
+editor/src/editor_state.cpp:197:50: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (layout.name == m_state.activeLayoutName) {
+                                                 ^
+editor/src/editor_state.cpp:205:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &layout : m_state.layouts) {
+  ^
+editor/src/editor_state.cpp:277:44: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (hk.action == action && hk.enabled) {
+                                           ^
+editor/src/editor_state.cpp:289:30: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (hk.action == action) {
+                             ^
+editor/src/error_reporter.cpp:1:0: information: Include file: "NovelMind/editor/error_reporter.hpp" not found. [missingInclude]
+#include "NovelMind/editor/error_reporter.hpp"
+^
+editor/src/error_reporter.cpp:284:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &diag : m_diagnostics) {
+  ^
+editor/src/error_reporter.cpp:295:3: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &diag : m_diagnostics) {
+  ^
+editor/src/event_bus.cpp:1:0: information: Include file: "NovelMind/editor/event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/event_bus.hpp"
+^
+editor/src/guided_learning/anchor_registry.cpp:6:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/guided_learning/help_overlay.cpp:6:0: information: Include file: "NovelMind/editor/guided_learning/help_overlay.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/help_overlay.hpp"
+^
+editor/src/guided_learning/help_overlay.cpp:7:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/guided_learning/tutorial_manager.cpp:6:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_manager.hpp"
+^
+editor/src/guided_learning/tutorial_manager.cpp:7:0: information: Include file: "NovelMind/editor/event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/event_bus.hpp"
+^
+editor/src/guided_learning/tutorial_manager.cpp:8:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/guided_learning/tutorial_manager.cpp:9:0: information: Include file: "NovelMind/editor/guided_learning/help_overlay.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/help_overlay.hpp"
+^
+editor/src/guided_learning/tutorial_manager.cpp:725:3: style: Consider using std::all_of or std::none_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &prereqId : it->second.prerequisiteTutorials) {
+  ^
+editor/src/guided_learning/tutorial_subsystem.cpp:6:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_subsystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
+^
+editor/src/guided_learning/tutorial_subsystem.cpp:7:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/guided_learning/tutorial_subsystem.cpp:8:0: information: Include file: "NovelMind/editor/guided_learning/help_overlay.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/help_overlay.hpp"
+^
+editor/src/guided_learning/tutorial_subsystem.cpp:9:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_manager.hpp"
+^
+editor/src/guided_learning/tutorial_subsystem.cpp:10:0: information: Include file: "NovelMind/editor/settings_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/settings_registry.hpp"
+^
+editor/src/guided_learning/tutorial_types.cpp:6:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_types.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_types.hpp"
+^
+editor/src/hotkeys_manager.cpp:6:0: information: Include file: "NovelMind/editor/hotkeys_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/hotkeys_manager.hpp"
+^
+editor/src/inspector_binding.cpp:1:0: information: Include file: "NovelMind/editor/inspector_binding.hpp" not found. [missingInclude]
+#include "NovelMind/editor/inspector_binding.hpp"
+^
+editor/src/inspector_binding.cpp:2:0: information: Include file: "NovelMind/editor/event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/event_bus.hpp"
+^
+editor/src/inspector_binding.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/inspector_binding.cpp:4:0: information: Include file: "NovelMind/editor/undo_system.hpp" not found. [missingInclude]
+#include "NovelMind/editor/undo_system.hpp"
+^
+editor/src/mediators/panel_mediators.cpp:1:0: information: Include file: "NovelMind/editor/mediators/panel_mediators.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/panel_mediators.hpp"
+^
+editor/src/mediators/playback_mediator.cpp:1:0: information: Include file: "NovelMind/editor/mediators/playback_mediator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/playback_mediator.hpp"
+^
+editor/src/mediators/playback_mediator.cpp:2:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/mediators/playback_mediator.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:1:0: information: Include file: "NovelMind/editor/mediators/property_mediator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/property_mediator.hpp"
+^
+editor/src/mediators/property_mediator.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/mediators/property_mediator.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/mediators/property_mediator.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/mediators/selection_mediator.cpp:1:0: information: Include file: "NovelMind/editor/mediators/selection_mediator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/selection_mediator.hpp"
+^
+editor/src/mediators/selection_mediator.cpp:2:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/mediators/selection_mediator.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/mediators/selection_mediator.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/mediators/selection_mediator.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:1:0: information: Include file: "NovelMind/editor/mediators/workflow_mediator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/workflow_mediator.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:9:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:10:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+editor/src/mediators/workflow_mediator.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+^
+editor/src/project_integrity.cpp:1:0: information: Include file: "NovelMind/editor/project_integrity.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_integrity.hpp"
+^
+editor/src/project_integrity.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/project_json.cpp:1:0: information: Include file: "NovelMind/editor/project_json.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_json.hpp"
+^
+editor/src/project_json.cpp:508:69: warning: Conversion of string literal "1.0.0" to bool always evaluates to true. [incorrectStringBooleanError]
+  auto versionField = getOptionalField<std::string>(obj, "version", "1.0.0");
+                                                                    ^
+editor/src/project_json.cpp:514:67: warning: Conversion of string literal "" to bool always evaluates to true. [incorrectStringBooleanError]
+  auto authorField = getOptionalField<std::string>(obj, "author", "");
+                                                                  ^
+editor/src/project_json.cpp:520:77: warning: Conversion of string literal "" to bool always evaluates to true. [incorrectStringBooleanError]
+  auto descriptionField = getOptionalField<std::string>(obj, "description", "");
+                                                                            ^
+editor/src/project_json.cpp:527:59: warning: Conversion of string literal "0.2.0" to bool always evaluates to true. [incorrectStringBooleanError]
+      getOptionalField<std::string>(obj, "engineVersion", "0.2.0");
+                                                          ^
+editor/src/project_json.cpp:533:75: warning: Conversion of string literal "" to bool always evaluates to true. [incorrectStringBooleanError]
+  auto startSceneField = getOptionalField<std::string>(obj, "startScene", "");
+                                                                          ^
+editor/src/project_json.cpp:540:59: warning: Conversion of string literal "en" to bool always evaluates to true. [incorrectStringBooleanError]
+      getOptionalField<std::string>(obj, "defaultLocale", "en");
+                                                          ^
+editor/src/project_json.cpp:547:62: warning: Conversion of string literal "1920x1080" to bool always evaluates to true. [incorrectStringBooleanError]
+      getOptionalField<std::string>(obj, "targetResolution", "1920x1080");
+                                                             ^
+editor/src/project_json.cpp:561:57: warning: Conversion of string literal "release" to bool always evaluates to true. [incorrectStringBooleanError]
+      getOptionalField<std::string>(obj, "buildPreset", "release");
+                                                        ^
+editor/src/project_json.cpp:597:64: warning: Conversion of string literal "Script" to bool always evaluates to true. [incorrectStringBooleanError]
+      getOptionalField<std::string>(obj, "playbackSourceMode", "Script");
+                                                               ^
+editor/src/project_manager.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/project_manager.cpp:2:0: information: Include file: "NovelMind/editor/project_integrity.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_integrity.hpp"
+^
+editor/src/project_manager.cpp:3:0: information: Include file: "NovelMind/editor/project_json.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_json.hpp"
+^
+editor/src/project_manager.cpp:4:0: information: Include file: "NovelMind/editor/scene_document.hpp" not found. [missingInclude]
+#include "NovelMind/editor/scene_document.hpp"
+^
+editor/src/project_manager.cpp:484:3: style: inconclusive: Found duplicate branches for 'if' and 'else'. [duplicateBranch]
+  if (fs::exists(projectFile)) {
+  ^
+editor/src/project_manager.cpp:487:5: note: Found duplicate branches for 'if' and 'else'.
+  } else {
+    ^
+editor/src/project_manager.cpp:484:3: note: Found duplicate branches for 'if' and 'else'.
+  if (fs::exists(projectFile)) {
+  ^
+editor/src/project_manager.cpp:398:3: style: Consider using std::all_of or std::none_of algorithm instead of a raw loop. [useStlAlgorithm]
+  for (const auto &folder : required) {
+  ^
+editor/src/qt/editor_capabilities_check.cpp:8:0: information: Include file: "NovelMind/editor/qt/editor_capabilities_check.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/editor_capabilities_check.hpp"
+^
+editor/src/qt/editor_capabilities_check.cpp:9:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/editor_capabilities_check.cpp:10:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/editor_capabilities_check.cpp:314:13: style: Variable 'actionId' can be declared as pointer to const [constVariablePointer]
+  for (auto actionId : actions) {
+            ^
+editor/src/qt/editor_capabilities_check.cpp:94:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Audio:") == 0 || id.find("Voice:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:97:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Localization:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:100:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Animation:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:103:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Scene:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:106:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Script:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:109:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Project:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:112:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("PlayMode:") == 0) {
+      ^
+editor/src/qt/editor_capabilities_check.cpp:115:7: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+  if (id.find("Diagnostics:") == 0) {
+      ^
+editor/src/qt/lazy_thumbnail_loader.cpp:1:0: information: Include file: "NovelMind/editor/qt/lazy_thumbnail_loader.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/lazy_thumbnail_loader.hpp"
+^
+editor/src/qt/lazy_thumbnail_loader.cpp:9:0: information: Include file: "NovelMind/core/profiler.hpp" not found. [missingInclude]
+#include "NovelMind/core/profiler.hpp"
+^
+editor/src/qt/main.cpp:15:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/main.cpp:16:0: information: Include file: "NovelMind/editor/project_integrity.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_integrity.hpp"
+^
+editor/src/qt/main.cpp:17:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/main.cpp:18:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/main.cpp:19:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/main.cpp:20:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/main.cpp:21:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/main.cpp:22:0: information: Include file: "NovelMind/editor/qt/nm_welcome_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_welcome_dialog.hpp"
+^
+editor/src/qt/main.cpp:23:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/main.cpp:24:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/qt/main.cpp:25:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/main.cpp:26:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/main.cpp:27:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/navigation_location.cpp:1:0: information: Include file: "NovelMind/editor/qt/navigation_location.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/navigation_location.hpp"
+^
+editor/src/qt/nm_color_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_color_dialog.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_dialogs_detail.cpp:8:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_dialogs_detail.cpp:237:43: style: Parameter 'dialog' can be declared as pointer to const [constParameterPointer]
+void setupDialogKeyboardBehavior(QDialog *dialog, QPushButton *primaryButton) {
+                                          ^
+editor/src/qt/nm_dock_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dock_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dock_panel.hpp"
+^
+editor/src/qt/nm_dock_panel.cpp:2:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/qt/nm_file_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_file_dialog.cpp:133:10: style: inconclusive: Found duplicate branches for 'if' and 'else'. [duplicateBranch]
+  } else if (m_mode == Mode::SaveFile) {
+         ^
+editor/src/qt/nm_file_dialog.cpp:136:5: note: Found duplicate branches for 'if' and 'else'.
+  } else {
+    ^
+editor/src/qt/nm_file_dialog.cpp:133:10: note: Found duplicate branches for 'if' and 'else'.
+  } else if (m_mode == Mode::SaveFile) {
+         ^
+editor/src/qt/nm_hotkeys_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_hotkeys_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
+^
+editor/src/qt/nm_hotkeys_dialog.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_hotkeys_dialog.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_hotkeys_dialog.cpp:621:0: information: Include file: "nm_hotkeys_dialog.moc" not found. [missingInclude]
+#include "nm_hotkeys_dialog.moc"
+^
+editor/src/qt/nm_icon_manager.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/nm_input_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_main_window.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/nm_main_window.cpp:3:0: information: Include file: "NovelMind/editor/guided_learning/anchor_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/anchor_registry.hpp"
+^
+editor/src/qt/nm_main_window.cpp:4:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_subsystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
+^
+editor/src/qt/nm_main_window.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/nm_main_window.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_settings_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_settings_dialog.hpp"
+^
+editor/src/qt/nm_main_window.cpp:7:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/nm_main_window.cpp:8:0: information: Include file: "NovelMind/editor/settings_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/settings_registry.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:1:0: information: Include file: "NovelMind/editor/mediators/panel_mediators.hpp" not found. [missingInclude]
+#include "NovelMind/editor/mediators/panel_mediators.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:2:0: information: Include file: "NovelMind/editor/project_integrity.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_integrity.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:3:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_hotkeys_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:7:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:8:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:9:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:10:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:13:0: information: Include file: "NovelMind/editor/qt/panels/nm_console_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:14:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:15:0: information: Include file: "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:16:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:17:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:18:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:19:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:20:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:21:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:22:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:23:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:24:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:25:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:26:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:27:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:28:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+editor/src/qt/nm_main_window_connections.cpp:29:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:2:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_console_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:9:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:10:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:13:0: information: Include file: "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:14:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:15:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:16:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:17:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:18:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:19:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:20:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:21:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:22:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+^
+editor/src/qt/nm_main_window_layout.cpp:201:59: information: Limiting ValueFlow analysis in function 'applyLayoutPreset' since it is too complex. Please specify --check-level=exhaustive to perform full analysis. [checkLevelNormal]
+void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
+                                                          ^
+editor/src/qt/nm_main_window_menu.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/nm_main_window_menu.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dock_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dock_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_console_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:9:0: information: Include file: "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:10:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:13:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:14:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:15:0: information: Include file: "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_play_toolbar_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:16:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:17:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:18:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:19:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:20:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:21:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:22:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:23:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+editor/src/qt/nm_main_window_panels.cpp:24:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_main_window.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_main_window.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_console_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:9:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:10:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/nm_main_window_runtime.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/nm_message_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_message_dialog.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_new_project_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_scrollable_toolbar.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_scrollable_toolbar.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
+^
+editor/src/qt/nm_scrollable_toolbar.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_settings_dialog.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_settings_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_settings_dialog.hpp"
+^
+editor/src/qt/nm_settings_dialog.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/nm_settings_dialog.cpp:8:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_style_manager.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_style_manager_stylesheet.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:673:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:835:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+editor/src/qt/nm_undo_manager.cpp:931:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/qt/nm_voice_metadata_dialog.cpp:9:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_voice_metadata_dialog.cpp:250:31: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+      if (btn->text() == tag) {
+                              ^
+editor/src/qt/nm_welcome_dialog.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_welcome_dialog.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_welcome_dialog.hpp"
+^
+editor/src/qt/nm_welcome_dialog.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/nm_welcome_dialog.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_animation_adapter.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_animation_adapter.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_animation_adapter.hpp"
+^
+editor/src/qt/panels/nm_animation_adapter.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_animation_adapter.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/performance_metrics.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/performance_metrics.hpp"
+^
+editor/src/qt/panels/nm_asset_browser_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/qt_event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
+^
+editor/src/qt/panels/nm_audio_mixer_panel.cpp:13:0: information: Include file: "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
+^
+editor/src/qt/panels/nm_audio_mixer_panel.cpp:14:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_audio_mixer_panel.cpp:15:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_audio_mixer_panel.cpp:16:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_build_settings_panel.cpp:12:0: information: Include file: "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
+^
+editor/src/qt/panels/nm_build_settings_panel.cpp:13:0: information: Include file: "NovelMind/editor/build_system.hpp" not found. [missingInclude]
+#include "NovelMind/editor/build_system.hpp"
+^
+editor/src/qt/panels/nm_build_settings_panel.cpp:14:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_build_settings_panel.cpp:777:29: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (warning.isCritical) {
+                            ^
+editor/src/qt/panels/nm_build_settings_panel.cpp:883:7: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+      criticalCount++;
+      ^
+editor/src/qt/panels/nm_console_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_console_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_console_panel.hpp"
+^
+editor/src/qt/panels/nm_console_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_console_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_curve_editor_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
+^
+editor/src/qt/panels/nm_curve_editor_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_curve_editor_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_curve_point_item.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_curve_point_item.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_curve_point_item.hpp"
+^
+editor/src/qt/panels/nm_diagnostics_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+^
+editor/src/qt/panels/nm_diagnostics_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/qt_event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
+^
+editor/src/qt/panels/nm_help_hub_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_help_hub_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_help_hub_panel.hpp"
+^
+editor/src/qt/panels/nm_help_hub_panel.cpp:7:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_manager.hpp"
+^
+editor/src/qt/panels/nm_help_hub_panel.cpp:8:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_subsystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
+^
+editor/src/qt/panels/nm_help_hub_panel.cpp:9:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_hierarchy_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp"
+^
+editor/src/qt/panels/nm_hierarchy_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_hierarchy_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_hierarchy_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:2:0: information: Include file: "NovelMind/core/property_system.hpp" not found. [missingInclude]
+#include "NovelMind/core/property_system.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:3:0: information: Include file: "NovelMind/editor/inspector_binding.hpp" not found. [missingInclude]
+#include "NovelMind/editor/inspector_binding.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:4:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:7:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_inspector_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:7:0: information: Include file: "NovelMind/editor/qt/qt_event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
+^
+editor/src/qt/panels/nm_inspector_panel_group.cpp:1048:0: information: Include file: "nm_inspector_panel_group.moc" not found. [missingInclude]
+#include "nm_inspector_panel_group.moc"
+^
+editor/src/qt/panels/nm_issues_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/panels/nm_issues_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_issues_panel.cpp:49:13: style: Redundant initialization for 'color'. The initialized value is overwritten before it is read. [redundantInitialization]
+      color = QColor(220, 90, 90);
+            ^
+editor/src/qt/panels/nm_issues_panel.cpp:47:18: note: color is initialized
+    QColor color = palette.textPrimary;
+                 ^
+editor/src/qt/panels/nm_issues_panel.cpp:49:13: note: color is overwritten
+      color = QColor(220, 90, 90);
+            ^
+editor/src/qt/panels/nm_keyframe_item.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_keyframe_item.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
+^
+editor/src/qt/panels/nm_localization_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+editor/src/qt/panels/nm_localization_panel.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_localization_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_localization_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_localization_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_project_settings_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
+^
+editor/src/qt/panels/nm_project_settings_panel.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:9:0: information: Include file: "NovelMind/audio/audio_recorder.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_recorder.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:10:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:11:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:12:0: information: Include file: "NovelMind/editor/interfaces/IAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:13:0: information: Include file: "NovelMind/editor/interfaces/QtAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+^
+editor/src/qt/panels/nm_recording_studio_panel.cpp:14:0: information: Include file: "NovelMind/editor/interfaces/ServiceLocator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_dialogue_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:7:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:8:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
+^
+editor/src/qt/panels/nm_scene_dialogue_graph_panel.cpp:506:9: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+      ++count;
+        ^
+editor/src/qt/panels/nm_scene_palette_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_palette_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_palette_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_gizmo.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_gizmo.cpp:2:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_gizmo.cpp:31:3: style: Class 'NMGizmoHandle' has a constructor with 1 argument that is not explicit. [noExplicitConstructor]
+  NMGizmoHandle(HandleType type, QGraphicsItem *parent = nullptr)
+  ^
+editor/src/qt/panels/nm_scene_view_object.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_object.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_object.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:3:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:4:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:5:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:6:0: information: Include file: "NovelMind/renderer/camera.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/camera.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:7:0: information: Include file: "NovelMind/renderer/font.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/font.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:8:0: information: Include file: "NovelMind/renderer/text_layout.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/text_layout.hpp"
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:540:14: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+      sorted.push_back(&obj);
+             ^
+editor/src/qt/panels/nm_scene_view_panel_document.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_document.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_document.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_document.cpp:4:0: information: Include file: "NovelMind/editor/scene_document.hpp" not found. [missingInclude]
+#include "NovelMind/editor/scene_document.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_objects.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_objects.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_objects.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_runtime.cpp:1:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_runtime.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_runtime.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_runtime.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_runtime.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_ui.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_ui.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_ui.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_panel_ui.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_scene.cpp:1:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_scene_view_scene.cpp:2:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_scene_view_view.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+^
+editor/src/qt/panels/nm_script_doc_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
+^
+editor/src/qt/panels/nm_script_doc_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:2:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:3:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:7:0: information: Include file: "NovelMind/scripting/compiler.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/compiler.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:8:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:9:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel.cpp:10:0: information: Include file: "NovelMind/scripting/validator.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/validator.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_detail.hpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_detail.cpp:324:13: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+    entries.push_back({word, "keyword"});
+            ^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:1:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_issues_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:7:0: information: Include file: "NovelMind/scripting/compiler.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/compiler.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:8:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:9:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:10:0: information: Include file: "NovelMind/scripting/validator.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/validator.hpp"
+^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:1302:9: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+      ++quoteCount;
+        ^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:2122:46: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+        if (region.startLine == blockNumber) {
+                                             ^
+editor/src/qt/panels/nm_script_editor_panel_editor.cpp:2152:35: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (region.startLine == line) {
+                                  ^
+editor/src/qt/panels/nm_story_graph_connection.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_connection.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_connection.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_connection.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_connection.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_connection.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_minimap.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
+^
+editor/src/qt/panels/nm_story_graph_minimap.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_minimap.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_node.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_scrollable_toolbar.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.hpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:3:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:152:21: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (c != '_') {
+                    ^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:197:19: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (c != '_') {
+                  ^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:1:0: information: Include file: "NovelMind/editor/error_reporter.hpp" not found. [missingInclude]
+#include "NovelMind/editor/error_reporter.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:2:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:1149:0: information: Include file: "nm_story_graph_panel_handlers.moc" not found. [missingInclude]
+#include "nm_story_graph_panel_handlers.moc"
+^
+editor/src/qt/panels/nm_story_graph_panel_handlers.cpp:964:8: error: There is an unknown macro here somewhere. Configuration is required. If slots is a macro then please configure it. [unknownMacro]
+public slots:
+       ^
+editor/src/qt/panels/nm_story_graph_scene.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_scene.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_scene.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_scene.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_scene.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_scene.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:1:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_play_mode_controller.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_style_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:5:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:6:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_view.cpp:222:38: style: Condition 'endNode' is always true [knownConditionTrueFalse]
+        if (m_connectionStartNode && endNode) {
+                                     ^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_voice_integration.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_voice_integration.hpp"
+^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:2:0: information: Include file: "NovelMind/audio/audio_manager.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_manager.hpp"
+^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:3:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:4:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:5:0: information: Include file: "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+^
+editor/src/qt/panels/nm_story_graph_voice_integration.cpp:6:0: information: Include file: "NovelMind/editor/voice_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/voice_manager.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_timeline_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:2:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:3:0: information: Include file: "NovelMind/editor/qt/nm_undo_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_undo_manager.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:4:0: information: Include file: "NovelMind/editor/qt/panels/nm_keyframe_item.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_keyframe_item.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:5:0: information: Include file: "NovelMind/editor/qt/performance_metrics.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/performance_metrics.hpp"
+^
+editor/src/qt/panels/nm_timeline_panel.cpp:839:1: error: Unmatched '}'. Configuration: ''. [syntaxError]
+}
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:1:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:2:0: information: Include file: "NovelMind/editor/interfaces/IAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:3:0: information: Include file: "NovelMind/editor/interfaces/QtAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:4:0: information: Include file: "NovelMind/editor/interfaces/ServiceLocator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:5:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+editor/src/qt/panels/nm_voice_manager_panel.cpp:6:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:15:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:16:0: information: Include file: "NovelMind/audio/audio_recorder.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_recorder.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:17:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:18:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:19:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:20:0: information: Include file: "NovelMind/editor/qt/nm_icon_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
+^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:622:12: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+    sample *= gain;
+           ^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:781:9: style: Consider using std::accumulate algorithm instead of a raw loop. [useStlAlgorithm]
+    sum += sample * sample;
+        ^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:1210:30: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (preset.name == name) {
+                             ^
+editor/src/qt/panels/nm_voice_studio_panel.cpp:2223:36: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (preset.name == presetName) {
+                                   ^
+editor/src/qt/performance_metrics.cpp:1:0: information: Include file: "NovelMind/editor/qt/performance_metrics.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/performance_metrics.hpp"
+^
+editor/src/qt/qt_event_bus.cpp:1:0: information: Include file: "NovelMind/editor/qt/qt_event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
+^
+editor/src/qt/qt_selection_manager.cpp:1:0: information: Include file: "NovelMind/editor/qt/qt_selection_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_selection_manager.hpp"
+^
+editor/src/qt/qt_selection_manager.cpp:2:0: information: Include file: "NovelMind/editor/qt/qt_event_bus.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/qt_event_bus.hpp"
+^
+editor/src/qt/timeline_render_cache.cpp:1:0: information: Include file: "NovelMind/editor/qt/timeline_render_cache.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/timeline_render_cache.hpp"
+^
+editor/src/qt/timeline_render_cache.cpp:4:0: information: Include file: "NovelMind/core/profiler.hpp" not found. [missingInclude]
+#include "NovelMind/core/profiler.hpp"
+^
+editor/src/scene_document.cpp:1:0: information: Include file: "NovelMind/editor/scene_document.hpp" not found. [missingInclude]
+#include "NovelMind/editor/scene_document.hpp"
+^
+editor/src/selection_system.cpp:1:0: information: Include file: "NovelMind/editor/selection_system.hpp" not found. [missingInclude]
+#include "NovelMind/editor/selection_system.hpp"
+^
+editor/src/settings_registry.cpp:6:0: information: Include file: "NovelMind/editor/settings_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/settings_registry.hpp"
+^
+editor/src/settings_registry.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/settings_registry.cpp:450:17: style: Unused variable: currentKey [unusedVariable]
+    std::string currentKey;
+                ^
+editor/src/timeline_editor.cpp:6:0: information: Include file: "NovelMind/editor/timeline_editor.hpp" not found. [missingInclude]
+#include "NovelMind/editor/timeline_editor.hpp"
+^
+editor/src/timeline_editor.cpp:7:0: information: Include file: "NovelMind/core/logger.hpp" not found. [missingInclude]
+#include "NovelMind/core/logger.hpp"
+^
+editor/src/timeline_editor.cpp:26:45: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (track.propertyName == propertyName) {
+                                            ^
+editor/src/timeline_editor.cpp:497:36: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (marker.name == markerName) {
+                                   ^
+editor/src/timeline_editor.cpp:509:46: style: Consider using std::find_if algorithm instead of a raw loop. [useStlAlgorithm]
+    if (marker.time > m_currentTime + 0.001) {
+                                             ^
+editor/src/timeline_playback.cpp:1:0: information: Include file: "NovelMind/editor/timeline_playback.hpp" not found. [missingInclude]
+#include "NovelMind/editor/timeline_playback.hpp"
+^
+editor/src/timeline_playback.cpp:504:26: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (t.second.solo) {
+                         ^
+editor/src/voice_manager.cpp:6:0: information: Include file: "NovelMind/editor/voice_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/voice_manager.hpp"
+^
+editor/src/voice_manager.cpp:169:43: performance: Inefficient usage of string::find() in condition; string::starts_with() could be faster. [stlIfStrFind]
+    if (line.empty() || line[0] == '#' || line.find("//") == 0)
+                                          ^
+editor/src/voice_manager.cpp:160:15: style: Unused variable: currentCharacter [unusedVariable]
+  std::string currentCharacter;
+              ^
+tests/integration/test_animation_integration.cpp:8:0: information: Include file: "NovelMind/scene/animation.hpp" not found. [missingInclude]
+#include "NovelMind/scene/animation.hpp"
+^
+tests/integration/test_animation_integration.cpp:9:0: information: Include file: "NovelMind/scene/scene_manager.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_manager.hpp"
+^
+tests/integration/test_animation_integration.cpp:10:0: information: Include file: "NovelMind/scene/scene_object.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object.hpp"
+^
+tests/integration/test_animation_integration.cpp:345:20: style: Variable 'found' can be declared as pointer to const [constVariablePointer]
+      SceneObject* found = manager.findObject("test");
+                   ^
+tests/integration/test_animation_integration.cpp:312:13: warning: Access of moved variable 'tween'. [accessMoved]
+      CHECK(tween == nullptr);
+            ^
+tests/integration/test_animation_integration.cpp:309:23: note: Calling std::move(tween)
+      timeline.append(std::move(tween));
+                      ^
+tests/integration/test_animation_integration.cpp:312:13: note: Access of moved variable 'tween'.
+      CHECK(tween == nullptr);
+            ^
+tests/integration/test_animation_integration.cpp:342:13: warning: Access of moved variable 'obj'. [accessMoved]
+      CHECK(obj == nullptr);
+            ^
+tests/integration/test_animation_integration.cpp:339:49: note: Calling std::move(obj)
+      manager.addToLayer(LayerType::Characters, std::move(obj));
+                                                ^
+tests/integration/test_animation_integration.cpp:342:13: note: Access of moved variable 'obj'.
+      CHECK(obj == nullptr);
+            ^
+tests/integration/test_asset_browser.cpp:3:0: information: Include file: "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+^
+tests/integration/test_editor_runtime.cpp:2:0: information: Include file: "NovelMind/editor/editor_runtime_host.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_runtime_host.hpp"
+^
+tests/integration/test_editor_runtime.cpp:3:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+tests/integration/test_editor_runtime.cpp:4:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/integration/test_editor_runtime.cpp:314:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/integration/test_editor_runtime.cpp:524:13: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+            undefinedCount++;
+            ^
+tests/integration/test_editor_settings.cpp:2:0: information: Include file: "NovelMind/editor/editor_settings.hpp" not found. [missingInclude]
+#include "NovelMind/editor/editor_settings.hpp"
+^
+tests/integration/test_editor_settings.cpp:180:28: style: Variable 'actions' can be declared as reference to const [constVariableReference]
+    [[maybe_unused]] auto& actions = manager.getAllActions();
+                           ^
+tests/integration/test_playback_source_mode.cpp:7:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+tests/integration/test_project_json.cpp:2:0: information: Include file: "NovelMind/editor/project_json.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_json.hpp"
+^
+tests/integration/test_project_json.cpp:3:0: information: Include file: "NovelMind/editor/project_manager.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_manager.hpp"
+^
+tests/integration/test_settings_registry.cpp:7:0: information: Include file: "NovelMind/editor/settings_registry.hpp" not found. [missingInclude]
+#include "NovelMind/editor/settings_registry.hpp"
+^
+tests/integration/test_ui_panel_features.cpp:14:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+tests/integration/test_ui_panel_features.cpp:15:0: information: Include file: "NovelMind/editor/project_integrity.hpp" not found. [missingInclude]
+#include "NovelMind/editor/project_integrity.hpp"
+^
+tests/integration/test_ui_panel_features.cpp:16:0: information: Include file: "NovelMind/editor/qt/nm_dialogs.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+^
+tests/integration/test_ui_panel_features.cpp:17:0: information: Include file: "NovelMind/editor/qt/panels/nm_localization_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
+^
+tests/integration/test_voice_manager.cpp:11:0: information: Include file: "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
+^
+tests/multi_object_editing_test.cpp:11:0: information: Include file: "NovelMind/core/property_system.hpp" not found. [missingInclude]
+#include "NovelMind/core/property_system.hpp"
+^
+tests/multi_object_editing_test.cpp:12:0: information: Include file: "NovelMind/editor/inspector_binding.hpp" not found. [missingInclude]
+#include "NovelMind/editor/inspector_binding.hpp"
+^
+tests/multi_object_editing_test.cpp:13:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+tests/multi_object_editing_test.cpp:14:0: information: Include file: "NovelMind/scene/scene_object_properties.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object_properties.hpp"
+^
+tests/scene_object_properties_test.cpp:6:0: information: Include file: "NovelMind/core/property_system.hpp" not found. [missingInclude]
+#include "NovelMind/core/property_system.hpp"
+^
+tests/scene_object_properties_test.cpp:7:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+tests/scene_object_properties_test.cpp:8:0: information: Include file: "NovelMind/scene/scene_object_properties.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_object_properties.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:12:0: information: Include file: "NovelMind/editor/interfaces/IAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:13:0: information: Include file: "NovelMind/editor/interfaces/IFileSystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/IFileSystem.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:14:0: information: Include file: "NovelMind/editor/interfaces/MockAudioPlayer.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/MockAudioPlayer.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:15:0: information: Include file: "NovelMind/editor/interfaces/MockFileSystem.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/MockFileSystem.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:16:0: information: Include file: "NovelMind/editor/interfaces/ServiceLocator.hpp" not found. [missingInclude]
+#include "NovelMind/editor/interfaces/ServiceLocator.hpp"
+^
+tests/unit/test_abstraction_interfaces.cpp:414:22: style: Variable 'rawPtr' can be declared as pointer to const [constVariablePointer]
+    MockAudioPlayer *rawPtr = mockPlayer.get();
+                     ^
+tests/unit/test_abstraction_interfaces.cpp:445:21: style: Variable 'rawPtr' can be declared as pointer to const [constVariablePointer]
+    MockFileSystem *rawPtr = mockFs.get();
+                    ^
+tests/unit/test_animation.cpp:3:0: information: Include file: "NovelMind/scene/animation.hpp" not found. [missingInclude]
+#include "NovelMind/scene/animation.hpp"
+^
+tests/unit/test_animation.cpp:4:0: information: Include file: "NovelMind/renderer/color.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/color.hpp"
+^
+tests/unit/test_audio_recorder.cpp:11:0: information: Include file: "NovelMind/audio/audio_recorder.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_recorder.hpp"
+^
+tests/unit/test_build_system.cpp:1:0: information: Include file: "NovelMind/editor/build_system.hpp" not found. [missingInclude]
+#include "NovelMind/editor/build_system.hpp"
+^
+tests/unit/test_build_system.cpp:451:58: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (err.find("project.json") != std::string::npos) {
+                                                         ^
+tests/unit/test_dialogue_box.cpp:9:0: information: Include file: "NovelMind/scene/dialogue_box.hpp" not found. [missingInclude]
+#include "NovelMind/scene/dialogue_box.hpp"
+^
+tests/unit/test_dialogue_localization.cpp:10:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+tests/unit/test_division_safety.cpp:10:0: information: Include file: "NovelMind/audio/audio_recorder.hpp" not found. [missingInclude]
+#include "NovelMind/audio/audio_recorder.hpp"
+^
+tests/unit/test_division_safety.cpp:11:0: information: Include file: "NovelMind/renderer/camera.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/camera.hpp"
+^
+tests/unit/test_fuzzing.cpp:1:0: information: Include file: "NovelMind/scripting/compiler.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/compiler.hpp"
+^
+tests/unit/test_fuzzing.cpp:2:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/unit/test_fuzzing.cpp:3:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+tests/unit/test_fuzzing.cpp:4:0: information: Include file: "NovelMind/scripting/validator.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/validator.hpp"
+^
+tests/unit/test_fuzzing.cpp:5:0: information: Include file: "NovelMind/scripting/vm.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/vm.hpp"
+^
+tests/unit/test_lexer.cpp:3:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/unit/test_memory_fs.cpp:2:0: information: Include file: "NovelMind/vfs/memory_fs.hpp" not found. [missingInclude]
+#include "NovelMind/vfs/memory_fs.hpp"
+^
+tests/unit/test_parser.cpp:3:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/unit/test_parser.cpp:4:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+tests/unit/test_performance_cache.cpp:4:0: information: Include file: "NovelMind/editor/qt/lazy_thumbnail_loader.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/lazy_thumbnail_loader.hpp"
+^
+tests/unit/test_performance_cache.cpp:5:0: information: Include file: "NovelMind/editor/qt/performance_metrics.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/performance_metrics.hpp"
+^
+tests/unit/test_performance_cache.cpp:6:0: information: Include file: "NovelMind/editor/qt/timeline_render_cache.hpp" not found. [missingInclude]
+#include "NovelMind/editor/qt/timeline_render_cache.hpp"
+^
+tests/unit/test_result.cpp:2:0: information: Include file: "NovelMind/core/result.hpp" not found. [missingInclude]
+#include "NovelMind/core/result.hpp"
+^
+tests/unit/test_runtime_config.cpp:6:0: information: Include file: "NovelMind/runtime/config_manager.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/config_manager.hpp"
+^
+tests/unit/test_runtime_config.cpp:7:0: information: Include file: "NovelMind/runtime/game_settings.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/game_settings.hpp"
+^
+tests/unit/test_runtime_config.cpp:8:0: information: Include file: "NovelMind/runtime/runtime_config.hpp" not found. [missingInclude]
+#include "NovelMind/runtime/runtime_config.hpp"
+^
+tests/unit/test_runtime_config.cpp:20:5: performance: Variable 'm_path' is assigned in constructor body. Consider performing initialization in initialization list. [useInitializationList]
+    m_path = fs::temp_directory_path() / "novelmind_test_config";
+    ^
+tests/unit/test_runtime_config.cpp:381:9: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+        keyBindingCount++;
+        ^
+tests/unit/test_script_runtime_transition.cpp:5:0: information: Include file: "NovelMind/scripting/compiler.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/compiler.hpp"
+^
+tests/unit/test_script_runtime_transition.cpp:6:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/unit/test_script_runtime_transition.cpp:7:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+tests/unit/test_script_runtime_transition.cpp:8:0: information: Include file: "NovelMind/scripting/script_runtime.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/script_runtime.hpp"
+^
+tests/unit/test_snapshot.cpp:2:0: information: Include file: "NovelMind/scene/scene_graph.hpp" not found. [missingInclude]
+#include "NovelMind/scene/scene_graph.hpp"
+^
+tests/unit/test_snapshot.cpp:3:0: information: Include file: "NovelMind/renderer/transform.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/transform.hpp"
+^
+tests/unit/test_snapshot.cpp:255:11: style: Variable 'restoredHero' can be declared as pointer to const [constVariablePointer]
+    auto* restoredHero = dynamic_cast<CharacterObject*>(graph.findObject("hero"));
+          ^
+tests/unit/test_snapshot.cpp:26:20: style: Consider using std::transform algorithm instead of a raw loop. [useStlAlgorithm]
+            states.push_back(obj->saveState());
+                   ^
+tests/unit/test_story_graph.cpp:126:20: style: Condition 'hasCycle==true' is always true [knownConditionTrueFalse]
+    CHECK(hasCycle == true);
+                   ^
+tests/unit/test_story_graph.cpp:125:37: note: Calling function 'wouldCreateCycle' returns 1
+    bool hasCycle = wouldCreateCycle(1, 1, adj);
+                                    ^
+tests/unit/test_story_graph.cpp:125:37: note: Assignment 'hasCycle=wouldCreateCycle(1,1,adj)', assigned value is 1
+    bool hasCycle = wouldCreateCycle(1, 1, adj);
+                                    ^
+tests/unit/test_story_graph.cpp:126:20: note: Condition 'hasCycle==true' is always true
+    CHECK(hasCycle == true);
+                   ^
+tests/unit/test_story_graph.cpp:451:30: style: Condition 'data.dialogueCount==0' is always true [knownConditionTrueFalse]
+    CHECK(data.dialogueCount == 0);
+                             ^
+tests/unit/test_story_graph.cpp:449:26: note: Assignment 'data.dialogueCount=0', assigned value is 0
+    data.dialogueCount = 0;
+                         ^
+tests/unit/test_story_graph.cpp:451:30: note: Condition 'data.dialogueCount==0' is always true
+    CHECK(data.dialogueCount == 0);
+                             ^
+tests/unit/test_story_graph.cpp:759:21: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (c != '_') {
+                    ^
+tests/unit/test_story_graph.cpp:850:19: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+    if (c != '_') {
+                  ^
+tests/unit/test_story_graph.cpp:311:15: style: struct member 'TestSceneNodeData::displayName' is never used. [unusedStructMember]
+  std::string displayName;
+              ^
+tests/unit/test_story_graph.cpp:315:15: style: struct member 'TestSceneNodeData::thumbnailPath' is never used. [unusedStructMember]
+  std::string thumbnailPath;
+              ^
+tests/unit/test_texture_loading.cpp:3:0: information: Include file: "NovelMind/renderer/texture.hpp" not found. [missingInclude]
+#include "NovelMind/renderer/texture.hpp"
+^
+tests/unit/test_timer.cpp:2:0: information: Include file: "NovelMind/core/timer.hpp" not found. [missingInclude]
+#include "NovelMind/core/timer.hpp"
+^
+tests/unit/test_tutorial_types.cpp:7:0: information: Include file: "NovelMind/editor/guided_learning/tutorial_types.hpp" not found. [missingInclude]
+#include "NovelMind/editor/guided_learning/tutorial_types.hpp"
+^
+tests/unit/test_validator.cpp:2:0: information: Include file: "NovelMind/scripting/validator.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/validator.hpp"
+^
+tests/unit/test_validator.cpp:3:0: information: Include file: "NovelMind/scripting/parser.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/parser.hpp"
+^
+tests/unit/test_validator.cpp:4:0: information: Include file: "NovelMind/scripting/lexer.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/lexer.hpp"
+^
+tests/unit/test_validator.cpp:64:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:93:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:121:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:153:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:183:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:220:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:256:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:294:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:323:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_validator.cpp:353:9: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+        {
+        ^
+tests/unit/test_value.cpp:2:0: information: Include file: "NovelMind/scripting/value.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/value.hpp"
+^
+tests/unit/test_vm.cpp:2:0: information: Include file: "NovelMind/scripting/vm.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/vm.hpp"
+^
+tests/unit/test_vm_vn.cpp:2:0: information: Include file: "NovelMind/core/types.hpp" not found. [missingInclude]
+#include "NovelMind/core/types.hpp"
+^
+tests/unit/test_vm_vn.cpp:3:0: information: Include file: "NovelMind/scripting/value.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/value.hpp"
+^
+tests/unit/test_vm_vn.cpp:4:0: information: Include file: "NovelMind/scripting/vm.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/vm.hpp"
+^
+tests/unit/test_voice_integration.cpp:7:0: information: Include file: "NovelMind/scripting/ir.hpp" not found. [missingInclude]
+#include "NovelMind/scripting/ir.hpp"
+^
+tests/unit/test_voice_integration.cpp:34:34: style: Condition 'voiceData.autoDetected==false' is always true [knownConditionTrueFalse]
+  REQUIRE(voiceData.autoDetected == false);
+                                 ^
+tests/unit/test_voice_integration.cpp:28:28: note: Assignment 'voiceData.autoDetected=false', assigned value is 0
+  voiceData.autoDetected = false;
+                           ^
+tests/unit/test_voice_integration.cpp:34:34: note: Condition 'voiceData.autoDetected==false' is always true
+  REQUIRE(voiceData.autoDetected == false);
+                                 ^
+tests/unit/test_voice_integration.cpp:44:34: style: Condition 'voiceData.autoDetected==true' is always true [knownConditionTrueFalse]
+  REQUIRE(voiceData.autoDetected == true);
+                                 ^
+tests/unit/test_voice_integration.cpp:42:28: note: Assignment 'voiceData.autoDetected=true', assigned value is 1
+  voiceData.autoDetected = true;
+                           ^
+tests/unit/test_voice_integration.cpp:44:34: note: Condition 'voiceData.autoDetected==true' is always true
+  REQUIRE(voiceData.autoDetected == true);
+                                 ^
+tests/unit/test_voice_manifest.cpp:7:0: information: Include file: "NovelMind/audio/voice_manifest.hpp" not found. [missingInclude]
+#include "NovelMind/audio/voice_manifest.hpp"
+^
+tests/unit/test_voice_manifest.cpp:85:11: style: Consider using std::count_if algorithm instead of a raw loop. [useStlAlgorithm]
+        ++count;
+          ^
+tests/unit/test_voice_manifest.cpp:405:78: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (error.type == ManifestValidationError::Type::MissingRequiredField) {
+                                                                             ^
+tests/unit/test_voice_manifest.cpp:426:71: style: Consider using std::any_of algorithm instead of a raw loop. [useStlAlgorithm]
+      if (error.type == ManifestValidationError::Type::InvalidLocale) {
+                                                                      ^
+editor/src/asset_pipeline.cpp:63:0: style: The function 'stringToAssetType' is never used. [unusedFunction]
+AssetType stringToAssetType(const std::string &str) {
+^
+editor/src/build_size_analyzer.cpp:73:0: style: The function 'getCategoryIcon' is never used. [unusedFunction]
+std::string getCategoryIcon(AssetCategory category) {
+^
+editor/src/build_size_analyzer.cpp:93:0: style: The function 'getPriorityColor' is never used. [unusedFunction]
+renderer::Color getPriorityColor(OptimizationSuggestion::Priority priority) {
+^
+editor/src/build_size_analyzer.cpp:107:0: style: The function 'buildTreemap' is never used. [unusedFunction]
+TreemapNode buildTreemap(const BuildSizeAnalysis &analysis) {
+^
+editor/src/build_system.cpp:91:0: style: The function 'getCurrentPlatform' is never used. [unusedFunction]
+BuildPlatform getCurrentPlatform() {
+^
+editor/src/build_system.cpp:156:0: style: The function 'copyDirectory' is never used. [unusedFunction]
+Result<void> copyDirectory(const std::string &source,
+^
+editor/src/error_reporter.cpp:522:0: style: The function 'severityToString' is never used. [unusedFunction]
+const char *severityToString(DiagnosticSeverity severity) {
+^
+editor/src/error_reporter.cpp:538:0: style: The function 'categoryToString' is never used. [unusedFunction]
+const char *categoryToString(DiagnosticCategory category) {
+^
+editor/src/project_integrity.cpp:1144:0: style: The function 'removeMissingSceneReference' is never used. [unusedFunction]
+Result<void> removeMissingSceneReference(const std::string & /*projectPath*/,
+^
+editor/src/project_integrity.cpp:1211:0: style: The function 'removeOrphanedReferences' is never used. [unusedFunction]
+removeOrphanedReferences(const std::string & /*projectPath*/,
+^
+editor/src/project_integrity.cpp:1223:0: style: The function 'resolveDuplicateId' is never used. [unusedFunction]
+Result<void> resolveDuplicateId(const std::string & /*projectPath*/,
+^
+editor/src/qt/editor_capabilities_check.cpp:262:0: style: The function 'checkEditorCapabilities' is never used. [unusedFunction]
+EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
+^
+editor/src/qt/editor_capabilities_check.cpp:366:0: style: The function 'logCapabilitiesReport' is never used. [unusedFunction]
+void logCapabilitiesReport(const EditorCapabilitiesReport &report) {
+^
+editor/src/qt/nm_dialogs_detail.cpp:151:0: style: The function 'createStandardButtonBar' is never used. [unusedFunction]
+QHBoxLayout *createStandardButtonBar(const QString &primaryText,
+^
+editor/src/qt/nm_dialogs_detail.cpp:205:0: style: The function 'setupInputValidation' is never used. [unusedFunction]
+void setupInputValidation(
+^
+editor/src/qt/nm_dialogs_detail.cpp:237:0: style: The function 'setupDialogKeyboardBehavior' is never used. [unusedFunction]
+void setupDialogKeyboardBehavior(QDialog *dialog, QPushButton *primaryButton) {
+^
+editor/src/qt/nm_file_dialog.cpp:75:0: style: The function 'setShowHidden' is never used. [unusedFunction]
+  void setShowHidden(bool showHidden) {
+^
+editor/src/qt/nm_file_dialog.cpp:81:0: style: The function 'filterAcceptsRow' is never used. [unusedFunction]
+  bool filterAcceptsRow(int sourceRow,
+^
+editor/src/qt/panels/nm_scene_view_gizmo.cpp:40:0: style: The function 'handleType' is never used. [unusedFunction]
+  HandleType handleType() const { return m_handleType; }
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:364:0: style: The function 'setRenderDialogue' is never used. [unusedFunction]
+  void setRenderDialogue(bool enabled) { m_renderDialogue = enabled; }
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:365:0: style: The function 'setRenderChoice' is never used. [unusedFunction]
+  void setRenderChoice(bool enabled) { m_renderChoice = enabled; }
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:368:0: style: The function 'hasFontAtlas' is never used. [unusedFunction]
+  [[nodiscard]] bool hasFontAtlas() const {
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:392:0: style: The function 'initializeGL' is never used. [unusedFunction]
+  void initializeGL() override {
+^
+editor/src/qt/panels/nm_scene_view_overlays.hpp:406:0: style: The function 'paintGL' is never used. [unusedFunction]
+  void paintGL() override {
+^
+editor/src/qt/panels/nm_script_editor_panel_detail.cpp:329:0: style: The function 'getContextCompletions' is never used. [unusedFunction]
+QList<NMScriptEditor::CompletionEntry> getContextCompletions(
+^
+editor/src/qt/panels/nm_script_editor_panel_detail.cpp:467:0: style: The function 'generateQuickFixes' is never used. [unusedFunction]
+generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:419:0: style: The function 'resolveScriptPath' is never used. [unusedFunction]
+QString resolveScriptPath(const NMGraphNodeItem *node) {
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:435:0: style: The function 'updateSceneGraphBlock' is never used. [unusedFunction]
+bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:565:0: style: The function 'updateSceneSayStatement' is never used. [unusedFunction]
+bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
+^
+editor/src/qt/panels/nm_story_graph_panel_detail.cpp:728:0: style: The function 'splitChoiceLines' is never used. [unusedFunction]
+QStringList splitChoiceLines(const QString &raw) {
+^
+engine_core/src/audio/voice_manifest.cpp:592:0: style: The function 'addBool' is never used. [unusedFunction]
+  void addBool(const std::string &key, bool value, bool last = false) {
+^
+engine_core/src/core/file_system.cpp:78:0: style: The function 'isDirectory' is never used. [unusedFunction]
+  bool isDirectory(const std::string &path) const override {
+^
+engine_core/src/core/file_system.cpp:82:0: style: The function 'getExecutablePath' is never used. [unusedFunction]
+  std::string getExecutablePath() const override {
+^
+engine_core/src/core/file_system.cpp:104:0: style: The function 'getUserDataPath' is never used. [unusedFunction]
+  std::string getUserDataPath() const override {
+^
+engine_core/src/core/platform_sdl.cpp:147:0: style: The function 'isFullscreen' is never used. [unusedFunction]
+  [[nodiscard]] bool isFullscreen() const override {
+^
+engine_core/src/core/platform_sdl.cpp:163:0: style: The function 'requestClose' is never used. [unusedFunction]
+  void requestClose() { m_shouldClose = true; }
+^
+engine_core/src/core/property_system.cpp:384:0: style: The function 'clampToRange' is never used. [unusedFunction]
+PropertyValue clampToRange(const PropertyValue &value,
+^
+engine_core/src/renderer/camera.cpp:687:0: style: The function 'createLightShake' is never used. [unusedFunction]
+CameraShake createLightShake() {
+^
+engine_core/src/renderer/camera.cpp:695:0: style: The function 'createMediumShake' is never used. [unusedFunction]
+CameraShake createMediumShake() {
+^
+engine_core/src/renderer/camera.cpp:703:0: style: The function 'createHeavyShake' is never used. [unusedFunction]
+CameraShake createHeavyShake() {
+^
+engine_core/src/renderer/camera.cpp:712:0: style: The function 'createExplosionShake' is never used. [unusedFunction]
+CameraShake createExplosionShake() {
+^
+engine_core/src/renderer/camera.cpp:721:0: style: The function 'createHeartbeatShake' is never used. [unusedFunction]
+CameraShake createHeartbeatShake() {
+^
+engine_core/src/renderer/camera.cpp:730:0: style: The function 'applySlowPan' is never used. [unusedFunction]
+void applySlowPan(Camera2D &camera, f32 targetX, f32 targetY) {
+^
+engine_core/src/renderer/camera.cpp:734:0: style: The function 'applyCinematicPan' is never used. [unusedFunction]
+void applyCinematicPan(Camera2D &camera, f32 targetX, f32 targetY) {
+^
+engine_core/src/renderer/camera.cpp:738:0: style: The function 'applyDramaticZoom' is never used. [unusedFunction]
+void applyDramaticZoom(Camera2D &camera, f32 targetZoom) {
+^
+engine_core/src/renderer/camera.cpp:742:0: style: The function 'applyCloseUp' is never used. [unusedFunction]
+void applyCloseUp(Camera2D &camera, f32 x, f32 y) {
+^
+engine_core/src/renderer/camera.cpp:746:0: style: The function 'applyEstablishingShot' is never used. [unusedFunction]
+void applyEstablishingShot(Camera2D &camera) {
+^
+engine_core/src/renderer/camera.cpp:751:0: style: The function 'createSimpleParallax' is never used. [unusedFunction]
+std::vector<ParallaxLayer> createSimpleParallax() {
+^
+engine_core/src/renderer/camera.cpp:772:0: style: The function 'createDeepParallax' is never used. [unusedFunction]
+std::vector<ParallaxLayer> createDeepParallax() {
+^
+engine_core/src/renderer/renderer.cpp:39:0: style: The function 'setBlendMode' is never used. [unusedFunction]
+  void setBlendMode(BlendMode /*mode*/) override {
+^
+engine_core/src/runtime/config_manager.cpp:21:0: style: The function 'trim' is never used. [unusedFunction]
+inline std::string trim(const std::string &s) {
+^
+engine_core/src/scene/scene_object_properties.cpp:415:0: style: The function 'registerSceneObjectProperties' is never used. [unusedFunction]
+void registerSceneObjectProperties() {
+^
+engine_core/src/scene/transition.cpp:566:0: style: The function 'parseTransitionType' is never used. [unusedFunction]
+TransitionType parseTransitionType(const std::string &name) {
+^
+engine_core/src/scene/transition.cpp:591:0: style: The function 'transitionTypeName' is never used. [unusedFunction]
+const char *transitionTypeName(TransitionType type) {
+^
+engine_core/src/vfs/virtual_file_system.cpp:221:0: style: The function 'getGlobalVFS' is never used. [unusedFunction]
+VirtualFileSystem &getGlobalVFS() {
+^
+engine_core/src/vfs/virtual_file_system.cpp:231:0: style: The function 'setGlobalVFS' is never used. [unusedFunction]
+void setGlobalVFS(std::unique_ptr<VirtualFileSystem> vfs) {
+^
+tests/unit/test_validator.cpp:9:0: style: The function 'createTestProgram' is never used. [unusedFunction]
+[[maybe_unused]] static Program createTestProgram()
+^
+nofile:0:0: information: Active checkers: There was critical errors (use --checkers-report=<filename> to see details) [checkersReport]
+

@@ -921,31 +921,6 @@ void NMInspectorPanel::flushPendingUpdates() {
     if (widgetIt == m_propertyWidgets.end()) {
       continue;
     }
-  } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
-    spinBox->setValue(newValue.toInt());
-  } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
-    doubleSpinBox->setValue(newValue.toDouble());
-  } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
-    checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
-  } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
-    comboBox->setCurrentText(newValue);
-  } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
-    // Only update if value has changed and widget doesn't have focus
-    // to preserve undo history and cursor position during user editing
-    if (textEdit->toPlainText() != newValue && !textEdit->hasFocus()) {
-      // Save cursor position and selection
-      QTextCursor cursor = textEdit->textCursor();
-      int cursorPos = cursor.position();
-      int anchorPos = cursor.anchor();
-
-      textEdit->setPlainText(newValue);
-
-      // Restore cursor position if still valid
-      if (cursorPos <= newValue.length()) {
-        cursor.setPosition(qMin(anchorPos, newValue.length()));
-        cursor.setPosition(qMin(cursorPos, newValue.length()),
-                           QTextCursor::KeepAnchor);
-        textEdit->setTextCursor(cursor);
 
     QWidget *widget = widgetIt.value();
     QSignalBlocker blocker(widget);

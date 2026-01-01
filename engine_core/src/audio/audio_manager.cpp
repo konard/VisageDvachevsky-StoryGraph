@@ -2,6 +2,7 @@
 #include "miniaudio/miniaudio.h"
 #include <algorithm>
 #include <cmath>
+#include <mutex>
 
 namespace NovelMind::audio {
 

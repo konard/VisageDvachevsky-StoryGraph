@@ -743,9 +743,9 @@ TEST_CASE("SceneGraph layer access", "[scene_graph][layers]")
     auto& fxLayer = graph.getEffectLayer();
 
     REQUIRE(bgLayer.getType() == LayerType::Background);
-    REQUIRE(charLayer.getType() == LayerType::Character);
+    REQUIRE(charLayer.getType() == LayerType::Characters);
     REQUIRE(uiLayer.getType() == LayerType::UI);
-    REQUIRE(fxLayer.getType() == LayerType::Effect);
+    REQUIRE(fxLayer.getType() == LayerType::Effects);
 }
 
 TEST_CASE("SceneGraph object management", "[scene_graph]")

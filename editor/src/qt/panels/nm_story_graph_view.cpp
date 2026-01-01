@@ -397,7 +397,7 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
       QString fullPath = assetPath;
       if (!QFileInfo(assetPath).isAbsolute()) {
         const auto projectRoot =
-            QString::fromStdString(ProjectManager::instance().getProjectRoot());
+            QString::fromStdString(ProjectManager::instance().getProjectPath());
         if (!projectRoot.isEmpty()) {
           fullPath = QDir(projectRoot).absoluteFilePath(assetPath);
         }
@@ -409,6 +409,8 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
   }
 
   QGraphicsView::dropEvent(event);
+}
+
 void NMStoryGraphView::hideEvent(QHideEvent *event) {
   // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
   // state if closed during a drag operation. This avoids crashes from

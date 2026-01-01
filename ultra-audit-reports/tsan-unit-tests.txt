@@ -1,0 +1,78 @@
+Randomness seeded to: 1112716099
+[31m[2026-01-01 10:59:09.156] [ERROR] JUMP operand out of bounds[0m
+[32m[2026-01-01 10:59:09.181] [INFO ] Jumped to scene 'node_7' at instruction 0[0m
+[32m[2026-01-01 10:59:09.181] [INFO ] Jumped to scene 'node_8' at instruction 3[0m
+[32m[2026-01-01 10:59:09.181] [INFO ] Jumped to scene 'start' at instruction 0[0m
+[32m[2026-01-01 10:59:09.181] [INFO ] Jumped to scene 'middle' at instruction 3[0m
+[32m[2026-01-01 10:59:09.182] [INFO ] Jumped to scene 'end_choice' at instruction 6[0m
+[33m[2026-01-01 10:59:09.184] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.184] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.184] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.185] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.185] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.185] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.185] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.186] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.186] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.186] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.186] [INFO ] Configuration loaded successfully[0m
+[33m[2026-01-01 10:59:09.187] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.187] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.187] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.187] [INFO ] User configuration saved to /tmp/novelmind_test_config/config/runtime_user.json[0m
+[33m[2026-01-01 10:59:09.187] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.187] [INFO ] Configuration loaded successfully[0m
+[33m[2026-01-01 10:59:09.188] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.188] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.188] [INFO ] Configuration loaded successfully[0m
+[33m[2026-01-01 10:59:09.188] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.188] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.188] [INFO ] Configuration loaded successfully[0m
+[33m[2026-01-01 10:59:09.189] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.189] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.189] [INFO ] Configuration loaded successfully[0m
+[33m[2026-01-01 10:59:09.189] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.189] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.189] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.189] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.190] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.190] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.190] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.191] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.191] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.191] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.191] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.192] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] Game settings initialized with 22 settings[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] User configuration saved to /tmp/novelmind_test_config/config/runtime_user.json[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] Settings applied and saved[0m
+[33m[2026-01-01 10:59:09.192] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.192] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.193] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.193] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.193] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.193] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.193] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.193] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.193] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.194] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.194] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.194] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.194] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.194] [INFO ] Game settings initialized with 22 settings[0m
+[33m[2026-01-01 10:59:09.195] [WARN ] Could not load runtime_config.json: File not found: /tmp/novelmind_test_config/config/runtime_config.json - using defaults[0m
+[32m[2026-01-01 10:59:09.195] [INFO ] No user config found, using base config[0m
+[32m[2026-01-01 10:59:09.195] [INFO ] Configuration loaded successfully[0m
+[32m[2026-01-01 10:59:09.195] [INFO ] Game settings initialized with 22 settings[0m
+===============================================================================
+All tests passed (1391 assertions in 220 test cases)
+

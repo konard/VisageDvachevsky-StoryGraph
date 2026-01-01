@@ -522,7 +522,6 @@ private:
   QHash<QString, QPixmap> m_textureCache;
   QString m_assetsRoot;
   QString m_currentSceneId;
-  bool m_isLoadingScene = false;
   // INVARIANT: Use atomic flags to prevent save race conditions
   std::atomic<bool> m_isLoadingScene{false};
   std::atomic<bool> m_playModeActive{false};

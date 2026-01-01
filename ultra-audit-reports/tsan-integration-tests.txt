@@ -1,0 +1,27 @@
+Randomness seeded to: 1291460264
+[32m[2026-01-01 10:59:39.569] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+[32m[2026-01-01 10:59:39.596] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+[32m[2026-01-01 10:59:39.624] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+[32m[2026-01-01 10:59:39.655] [INFO ] Jumped to scene 'ending' at instruction 7[0m
+[32m[2026-01-01 10:59:39.714] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+[32m[2026-01-01 10:59:39.741] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+[32m[2026-01-01 10:59:39.769] [INFO ] Jumped to scene 'intro' at instruction 0[0m
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+integration_tests is a Catch2 v3.4.0 host application.
+Run with -? for options
+
+-------------------------------------------------------------------------------
+Asset Browser shows imported files with uppercase extensions
+-------------------------------------------------------------------------------
+/tmp/gh-issue-solver-1767260740239/tests/integration/test_asset_browser.cpp:26
+...............................................................................
+
+/tmp/gh-issue-solver-1767260740239/tests/integration/test_asset_browser.cpp:26: FAILED:
+due to a fatal error condition:
+  SIGABRT - Abort (abnormal termination) signal
+
+===============================================================================
+test cases: 32 | 31 passed | 1 failed
+assertions: 80 | 79 passed | 1 failed
+

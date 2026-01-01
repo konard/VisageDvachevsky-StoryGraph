@@ -257,7 +257,7 @@ TEST_CASE("Scene workflow - Effects and transitions", "[integration][scene][effe
     effect->setIntensity(1.0f);
 
     auto* effectPtr = effect.get();
-    graph.addToLayer(LayerType::Effect, std::move(effect));
+    graph.addToLayer(LayerType::Effects, std::move(effect));
 
     // Start fade out
     effectPtr->startEffect(1.0f);
@@ -288,7 +288,7 @@ TEST_CASE("Scene workflow - Layer ordering and rendering", "[integration][scene]
     // Add effect overlay
     auto effect = std::make_unique<EffectOverlayObject>("overlay");
     effect->setEffectType(EffectOverlayObject::EffectType::Flash);
-    graph.addToLayer(LayerType::Effect, std::move(effect));
+    graph.addToLayer(LayerType::Effects, std::move(effect));
 
     // Render entire scene
     graph.render(renderer);

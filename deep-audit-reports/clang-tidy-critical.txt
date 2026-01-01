@@ -1,0 +1,912 @@
+[1/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp.
+31529 warnings and 1 error generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp.
+[2/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp.
+68888 warnings and 2 errors generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp.
+[3/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp.
+100810 warnings and 2 errors generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp.
+[4/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp.
+137766 warnings and 2 errors generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp.
+[5/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp.
+169937 warnings and 2 errors generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp.
+[6/6] Processing file /tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp.
+192271 warnings and 2 errors generated.
+Error while processing /tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp.
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:2:10: error: 'miniaudio/miniaudio.h' file not found [clang-diagnostic-error]
+    2 | #include "miniaudio/miniaudio.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:50:26: warning: no header providing "NovelMind::f64" is directly included [misc-include-cleaner]
+    2 | void AudioSource::update(f64 deltaTime) {
+      |                          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:58:32: warning: no header providing "NovelMind::f32" is directly included [misc-include-cleaner]
+   58 |     m_fadeTimer += static_cast<f32>(deltaTime);
+      |                                ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:70:7: warning: variable 't' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+   70 |       f32 t = m_fadeTimer / m_fadeDuration;
+      |       ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:226:7: warning: variable 't' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+  226 |       f32 t = m_masterFadeTimer / m_masterFadeDuration;
+      |       ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:270:48: warning: no header providing "std::string" is directly included [misc-include-cleaner]
+    5 | AudioHandle AudioManager::playSound(const std::string &id,
+      |                                                ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:587:30: warning: 2 adjacent parameters of 'fadeAllTo' of similar type ('f32') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  587 | void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
+      |                              ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:587:34: note: the first parameter in the range is 'targetVolume'
+  587 | void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
+      |                                  ^~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:587:52: note: the last parameter in the range is 'duration'
+  587 | void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
+      |                                                    ^~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:662:1: warning: no header providing "size_t" is directly included [misc-include-cleaner]
+    5 | size_t AudioManager::getActiveSourceCount() const {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:668:51: warning: the parameter 'callback' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  668 | void AudioManager::setEventCallback(AudioCallback callback) {
+      |                                                   ^
+      |                                     const        &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:672:49: warning: the parameter 'provider' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  672 | void AudioManager::setDataProvider(DataProvider provider) {
+      |                                                 ^
+      |                                    const       &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:685:37: warning: 2 adjacent parameters of 'setDuckingParams' of similar type ('f32') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  685 | void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
+      |                                     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:685:41: note: the first parameter in the range is 'duckVolume'
+  685 | void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
+      |                                         ^~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:685:57: note: the last parameter in the range is 'fadeDuration'
+  685 | void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
+      |                                                         ^~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_manager.cpp:793:3: warning: variable 'speed' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+  793 |   f32 speed = m_duckFadeDuration > 0.0f ? 1.0f / m_duckFadeDuration : 10.0f;
+      |   ^
+      |       const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:11:1: warning: included header fstream is not used directly [misc-include-cleaner]
+   11 | #include <fstream>
+      | ^~~~~~~~~~~~~~~~~~
+   12 | 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:14:10: error: 'miniaudio/miniaudio.h' file not found [clang-diagnostic-error]
+   14 | #include "miniaudio/miniaudio.h"
+      |          ^~~~~~~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:73:10: warning: no header providing "std::lock_guard" is directly included [misc-include-cleaner]
+   12 |     std::lock_guard<std::mutex> lock(m_resourceMutex);
+      |          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:73:26: warning: no header providing "std::mutex" is directly included [misc-include-cleaner]
+   73 |     std::lock_guard<std::mutex> lock(m_resourceMutex);
+      |                          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:126:55: warning: no header providing "std::string" is directly included [misc-include-cleaner]
+   12 | Result<void> AudioRecorder::setInputDevice(const std::string &deviceId) {
+      |                                                       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:128:3: warning: variable 'found' of type 'bool' can be declared 'const' [misc-const-correctness]
+  128 |   bool found = deviceId.empty();
+      |   ^
+      |        const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:141:3: warning: variable 'wasRecording' of type 'bool' can be declared 'const' [misc-const-correctness]
+  141 |   bool wasRecording = isRecording();
+      |   ^
+      |        const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:142:3: warning: variable 'wasMetering' of type 'bool' can be declared 'const' [misc-const-correctness]
+  142 |   bool wasMetering = isMeteringActive();
+      |   ^
+      |        const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:162:3: warning: variable 'found' of type 'bool' can be declared 'const' [misc-const-correctness]
+  162 |   bool found = deviceId.empty();
+      |   ^
+      |        const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:241:41: warning: no header providing "NovelMind::f32" is directly included [misc-include-cleaner]
+   14 | void AudioRecorder::setMonitoringVolume(f32 volume) {
+      |                                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:338:7: warning: empty catch statements hide issues; to handle exceptions appropriately, consider re-throwing, handling, or avoiding catch altogether [bugprone-empty-catch]
+  338 |     } catch (const fs::filesystem_error &e) {
+      |       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:429:7: warning: empty catch statements hide issues; to handle exceptions appropriately, consider re-throwing, handling, or avoiding catch altogether [bugprone-empty-catch]
+  429 |     } catch (...) {
+      |       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:453:52: warning: the parameter 'callback' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  453 | void AudioRecorder::setOnLevelUpdate(OnLevelUpdate callback) {
+      |                                                    ^
+      |                                      const        &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:458:29: warning: the parameter 'callback' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  458 |     OnRecordingStateChanged callback) {
+      |                             ^
+      |     const                  &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:462:64: warning: the parameter 'callback' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  462 | void AudioRecorder::setOnRecordingComplete(OnRecordingComplete callback) {
+      |                                                                ^
+      |                                            const              &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:466:58: warning: the parameter 'callback' is copied for each invocation but only used as a const reference; consider making it a const reference [performance-unnecessary-value-param]
+  466 | void AudioRecorder::setOnRecordingError(OnRecordingError callback) {
+      |                                                          ^
+      |                                         const           &
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:487:54: warning: 2 adjacent parameters of 'audioCallback' of convertible types are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  487 | void AudioRecorder::audioCallback(ma_device *device, void *output,
+      |                                                      ^~~~~~~~~~~~~
+  488 |                                   const void *input, u32 frameCount) {
+      |                                   ~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:487:60: note: the first parameter in the range is 'output'
+  487 | void AudioRecorder::audioCallback(ma_device *device, void *output,
+      |                                                            ^~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:488:47: note: the last parameter in the range is 'input'
+  488 |                                   const void *input, u32 frameCount) {
+      |                                               ^~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:488:35: note: 'void *' and 'const void *' may be implicitly converted
+  488 |                                   const void *input, u32 frameCount) {
+      |                                   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:488:54: warning: no header providing "NovelMind::u32" is directly included [misc-include-cleaner]
+  488 |                                   const void *input, u32 frameCount) {
+      |                                                      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:505:3: warning: variable 'sampleCount' of type 'u32' (aka 'unsigned int') can be declared 'const' [misc-const-correctness]
+  505 |   u32 sampleCount = frameCount * m_format.channels;
+      |   ^
+      |       const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:521:5: warning: variable 'sample' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+  521 |     f32 sample = std::abs(samples[i]);
+      |     ^
+      |         const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/audio/audio_recorder.cpp:526:3: warning: variable 'rms' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+  526 |   f32 rms = std::sqrt(sumSquares / static_cast<f32>(sampleCount));
+      |   ^
+      |       const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:17:39: warning: no header providing "NovelMind::scene::LayerType" is directly included [misc-include-cleaner]
+    7 | 
+    8 | #include <algorithm>
+    9 | 
+   10 | namespace NovelMind::scene {
+   11 | 
+   12 | // ============================================================================
+   13 | // SceneGraph Implementation
+   14 | // ============================================================================
+   15 | 
+   16 | SceneGraph::SceneGraph()
+   17 |     : m_backgroundLayer("Background", LayerType::Background),
+      |                                       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:48:34: warning: no header providing "std::unique_ptr" is directly included [misc-include-cleaner]
+    9 |                             std::unique_ptr<SceneObjectBase> object) {
+      |                                  ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:53:3: warning: variable 'id' of type 'std::string' (aka 'basic_string<char>') can be declared 'const' [misc-const-correctness]
+   53 |   std::string id = object->getId();
+      |   ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:54:3: warning: variable 'type' of type 'SceneObjectType' can be declared 'const' [misc-const-correctness]
+   54 |   SceneObjectType type = object->getType();
+      |   ^
+      |                   const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:56:34: warning: no header providing "std::move" is directly included [misc-include-cleaner]
+    9 |   getLayer(layer).addObject(std::move(object));
+      |                                  ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:85:6: warning: no header providing "std::vector" is directly included [misc-include-cleaner]
+    9 | std::vector<SceneObjectBase *>
+      |      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:123:18: warning: no header providing "std::make_unique" is directly included [misc-include-cleaner]
+  123 |   auto bg = std::make_unique<BackgroundObject>("main_background");
+      |                  ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:147:3: warning: no header providing "NovelMind::f32" is directly included [misc-include-cleaner]
+    7 |   f32 x = 640.0f;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:178:44: warning: 2 adjacent parameters of 'showDialogue' of similar type ('const std::string &') are easily swapped by mistake [bugprone-easily-swappable-parameters]
+  178 | DialogueUIObject *SceneGraph::showDialogue(const std::string &speaker,
+      |                                            ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+  179 |                                            const std::string &text) {
+      |                                            ~~~~~~~~~~~~~~~~~~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:178:63: note: the first parameter in the range is 'speaker'
+  178 | DialogueUIObject *SceneGraph::showDialogue(const std::string &speaker,
+      |                                                               ^~~~~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:179:63: note: the last parameter in the range is 'text'
+  179 |                                            const std::string &text) {
+      |                                                               ^~~~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:240:25: warning: no header providing "NovelMind::f64" is directly included [misc-include-cleaner]
+  240 | void SceneGraph::update(f64 deltaTime) {
+      |                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:247:35: warning: no header providing "NovelMind::renderer::IRenderer" is directly included [misc-include-cleaner]
+    7 | void SceneGraph::render(renderer::IRenderer &renderer) {
+      |                                   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:254:47: warning: no header providing "NovelMind::resource::ResourceManager" is directly included [misc-include-cleaner]
+    7 | void SceneGraph::setResourceManager(resource::ResourceManager *resources) {
+      |                                               ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scene/scene_graph.cpp:413:16: warning: no header providing "std::function" is directly included [misc-include-cleaner]
+    9 |     const std::function<void(ISceneObserver *)> &notify) {
+      |                ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:9:1: warning: no header providing "NovelMind::Result" is directly included [misc-include-cleaner]
+    2 | 
+    3 | namespace NovelMind::scripting {
+    4 | 
+    5 | Parser::Parser() : m_tokens(nullptr), m_current(0) {}
+    6 | 
+    7 | Parser::~Parser() = default;
+    8 | 
+    9 | Result<Program> Parser::parse(const std::vector<Token> &tokens) {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:9:8: warning: no header providing "NovelMind::scripting::Program" is directly included [misc-include-cleaner]
+    2 | 
+    3 | namespace NovelMind::scripting {
+    4 | 
+    5 | Parser::Parser() : m_tokens(nullptr), m_current(0) {}
+    6 | 
+    7 | Parser::~Parser() = default;
+    8 | 
+    9 | Result<Program> Parser::parse(const std::vector<Token> &tokens) {
+      |        ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:9:42: warning: no header providing "std::vector" is directly included [misc-include-cleaner]
+    2 | 
+    3 | namespace NovelMind::scripting {
+    4 | 
+    5 | Parser::Parser() : m_tokens(nullptr), m_current(0) {}
+    6 | 
+    7 | Parser::~Parser() = default;
+    8 | 
+    9 | Result<Program> Parser::parse(const std::vector<Token> &tokens) {
+      |                                          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:9:49: warning: no header providing "NovelMind::scripting::Token" is directly included [misc-include-cleaner]
+    2 | 
+    3 | namespace NovelMind::scripting {
+    4 | 
+    5 | Parser::Parser() : m_tokens(nullptr), m_current(0) {}
+    6 | 
+    7 | Parser::~Parser() = default;
+    8 | 
+    9 | Result<Program> Parser::parse(const std::vector<Token> &tokens) {
+      |                                                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:27:35: warning: no header providing "std::move" is directly included [misc-include-cleaner]
+    2 |   return Result<Program>::ok(std::move(m_program));
+      |                                   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:34:54: warning: no header providing "NovelMind::scripting::TokenType" is directly included [misc-include-cleaner]
+   34 | bool Parser::isAtEnd() const { return peek().type == TokenType::EndOfFile; }
+      |                                                      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:61:25: warning: no header providing "std::initializer_list" is directly included [misc-include-cleaner]
+    2 | bool Parser::match(std::initializer_list<TokenType> types) {
+      |                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:62:8: warning: variable 'type' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+   62 |   for (TokenType type : types) {
+      |        ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:71:57: warning: no header providing "std::string" is directly included [misc-include-cleaner]
+    2 | const Token &Parser::consume(TokenType type, const std::string &message) {
+      |                                                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:136:1: warning: no header providing "NovelMind::scripting::CharacterDecl" is directly included [misc-include-cleaner]
+  136 | CharacterDecl Parser::parseCharacterDecl() {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:176:1: warning: no header providing "NovelMind::scripting::SceneDecl" is directly included [misc-include-cleaner]
+  176 | SceneDecl Parser::parseSceneDecl() {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:203:1: warning: no header providing "NovelMind::scripting::StmtPtr" is directly included [misc-include-cleaner]
+  203 | StmtPtr Parser::parseStatement() {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:203:17: warning: function 'parseStatement' is within a recursive call chain [misc-no-recursion]
+  203 | StmtPtr Parser::parseStatement() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:861:30: note: example recursive call chain, starting from function 'parseStatementList'
+  861 | std::vector<StmtPtr> Parser::parseStatementList() {
+      |                              ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:870:17: note: Frame #1: function 'parseStatementList' calls function 'parseStatement' here:
+  870 |     auto stmt = parseStatement();
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:215:12: note: Frame #2: function 'parseStatement' calls function 'parseChoiceStmt' here:
+  215 |     return parseChoiceStmt();
+      |            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:387:21: note: Frame #3: function 'parseChoiceStmt' calls function 'parseStatementList' here:
+  387 |       option.body = parseStatementList();
+      |                     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:387:21: note: ... which was the starting point of the recursive call chain; there may be other cycles
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:239:7: warning: no header providing "NovelMind::scripting::SayStmt" is directly included [misc-include-cleaner]
+  239 |       SayStmt say;
+      |       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:244:14: warning: no header providing "NovelMind::scripting::makeStmt" is directly included [misc-include-cleaner]
+  244 |       return makeStmt(std::move(say), id.location);
+      |              ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:251:5: warning: no header providing "NovelMind::scripting::ExpressionStmt" is directly included [misc-include-cleaner]
+  251 |     ExpressionStmt exprStmt;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:263:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  263 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:264:3: warning: no header providing "NovelMind::scripting::ShowStmt" is directly included [misc-include-cleaner]
+  264 |   ShowStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:287:28: warning: no header providing "NovelMind::scripting::Position" is directly included [misc-include-cleaner]
+  287 |       if (stmt.position == Position::Custom) {
+      |                            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:307:41: warning: no header providing "NovelMind::f32" is directly included [misc-include-cleaner]
+    2 |                           : static_cast<f32>(dur.intValue);
+      |                                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:316:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  316 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:317:3: warning: no header providing "NovelMind::scripting::HideStmt" is directly included [misc-include-cleaner]
+  317 |   HideStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:343:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  343 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:357:17: warning: function 'parseChoiceStmt' is within a recursive call chain [misc-no-recursion]
+  357 | StmtPtr Parser::parseChoiceStmt() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:362:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  362 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:363:3: warning: no header providing "NovelMind::scripting::ChoiceStmt" is directly included [misc-include-cleaner]
+  363 |   ChoiceStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:368:5: warning: no header providing "NovelMind::scripting::ChoiceOption" is directly included [misc-include-cleaner]
+  368 |     ChoiceOption option;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:405:17: warning: function 'parseIfStmt' is within a recursive call chain [misc-no-recursion]
+  405 | StmtPtr Parser::parseIfStmt() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:407:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  407 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:408:3: warning: no header providing "NovelMind::scripting::IfStmt" is directly included [misc-include-cleaner]
+  408 |   IfStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:435:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  435 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:436:3: warning: no header providing "NovelMind::scripting::GotoStmt" is directly included [misc-include-cleaner]
+  436 |   GotoStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:446:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  446 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:447:3: warning: no header providing "NovelMind::scripting::WaitStmt" is directly included [misc-include-cleaner]
+  447 |   WaitStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:459:19: warning: std::move of the variable 'stmt' of the trivially-copyable type 'WaitStmt' has no effect; remove std::move() [performance-move-const-arg]
+  459 |   return makeStmt(std::move(stmt), loc);
+      |                   ^~~~~~~~~~    ~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:465:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  465 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:466:3: warning: no header providing "NovelMind::scripting::PlayStmt" is directly included [misc-include-cleaner]
+  466 |   PlayStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:499:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  499 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:500:3: warning: no header providing "NovelMind::scripting::StopStmt" is directly included [misc-include-cleaner]
+  500 |   StopStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:521:19: warning: std::move of the variable 'stmt' of the trivially-copyable type 'StopStmt' has no effect; remove std::move() [performance-move-const-arg]
+  521 |   return makeStmt(std::move(stmt), loc);
+      |                   ^~~~~~~~~~    ~
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:527:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  527 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:528:3: warning: no header providing "NovelMind::scripting::SetStmt" is directly included [misc-include-cleaner]
+  528 |   SetStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:549:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  549 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:550:3: warning: no header providing "NovelMind::scripting::TransitionStmt" is directly included [misc-include-cleaner]
+  550 |   TransitionStmt stmt;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:583:17: warning: function 'parseBlock' is within a recursive call chain [misc-no-recursion]
+  583 | StmtPtr Parser::parseBlock() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:584:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  584 |   SourceLocation loc = previous().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:585:3: warning: no header providing "NovelMind::scripting::BlockStmt" is directly included [misc-include-cleaner]
+  585 |   BlockStmt block;
+      |   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:596:17: warning: function 'parseExpression' is within a recursive call chain [misc-no-recursion]
+  596 | ExprPtr Parser::parseExpression() { return parseOr(); }
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:713:17: note: example recursive call chain, starting from function 'parseUnary'
+  713 | ExprPtr Parser::parseUnary() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:717:20: note: Frame #1: function 'parseUnary' calls function 'parseUnary' here:
+  717 |     auto operand = parseUnary();
+      |                    ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:717:20: note: ... which was the starting point of the recursive call chain; there may be other cycles
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:598:17: warning: function 'parseOr' is within a recursive call chain [misc-no-recursion]
+  598 | ExprPtr Parser::parseOr() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:602:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  602 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:603:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  603 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:606:5: warning: no header providing "NovelMind::scripting::BinaryExpr" is directly included [misc-include-cleaner]
+  606 |     BinaryExpr binary;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:611:12: warning: no header providing "NovelMind::scripting::makeExpr" is directly included [misc-include-cleaner]
+  611 |     expr = makeExpr(std::move(binary), loc);
+      |            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:617:17: warning: function 'parseAnd' is within a recursive call chain [misc-no-recursion]
+  617 | ExprPtr Parser::parseAnd() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:621:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  621 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:622:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  622 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:636:17: warning: function 'parseEquality' is within a recursive call chain [misc-no-recursion]
+  636 | ExprPtr Parser::parseEquality() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:640:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  640 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:641:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  641 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:655:17: warning: function 'parseComparison' is within a recursive call chain [misc-no-recursion]
+  655 | ExprPtr Parser::parseComparison() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:660:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  660 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:661:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  661 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:675:17: warning: function 'parseTerm' is within a recursive call chain [misc-no-recursion]
+  675 | ExprPtr Parser::parseTerm() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:679:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  679 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:680:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  680 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:694:17: warning: function 'parseFactor' is within a recursive call chain [misc-no-recursion]
+  694 | ExprPtr Parser::parseFactor() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:698:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  698 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:699:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  699 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:713:17: warning: function 'parseUnary' is within a recursive call chain [misc-no-recursion]
+  713 | ExprPtr Parser::parseUnary() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:715:5: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  715 |     SourceLocation loc = previous().location;
+      |     ^
+      |                    const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:716:5: warning: variable 'op' of type 'TokenType' can be declared 'const' [misc-const-correctness]
+  716 |     TokenType op = previous().type;
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:719:5: warning: no header providing "NovelMind::scripting::UnaryExpr" is directly included [misc-include-cleaner]
+  719 |     UnaryExpr unary;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:729:17: warning: function 'parseCall' is within a recursive call chain [misc-no-recursion]
+  729 | ExprPtr Parser::parseCall() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:735:7: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  735 |       SourceLocation loc = previous().location;
+      |       ^
+      |                      const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:748:24: warning: no header providing "std::holds_alternative" is directly included [misc-include-cleaner]
+    2 |       if (expr && std::holds_alternative<IdentifierExpr>(expr->data)) {
+      |                        ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:748:42: warning: no header providing "NovelMind::scripting::IdentifierExpr" is directly included [misc-include-cleaner]
+  748 |       if (expr && std::holds_alternative<IdentifierExpr>(expr->data)) {
+      |                                          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:752:7: warning: no header providing "NovelMind::scripting::CallExpr" is directly included [misc-include-cleaner]
+  752 |       CallExpr call;
+      |       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:759:7: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  759 |       SourceLocation loc = previous().location;
+      |       ^
+      |                      const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:763:7: warning: no header providing "NovelMind::scripting::PropertyExpr" is directly included [misc-include-cleaner]
+  763 |       PropertyExpr prop;
+      |       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:776:17: warning: function 'parsePrimary' is within a recursive call chain [misc-no-recursion]
+  776 | ExprPtr Parser::parsePrimary() {
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:777:3: warning: variable 'loc' of type 'SourceLocation' can be declared 'const' [misc-const-correctness]
+  777 |   SourceLocation loc = peek().location;
+      |   ^
+      |                  const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:780:5: warning: no header providing "NovelMind::scripting::LiteralExpr" is directly included [misc-include-cleaner]
+  780 |     LiteralExpr lit;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:861:30: warning: function 'parseStatementList' is within a recursive call chain [misc-no-recursion]
+  861 | std::vector<StmtPtr> Parser::parseStatementList() {
+      |                              ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/parser.cpp:869:11: warning: no header providing "size_t" is directly included [misc-include-cleaner]
+    2 |     const size_t start = m_current;
+      |           ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:14:1: warning: no header providing "NovelMind::Result" is directly included [misc-include-cleaner]
+    3 | #include <algorithm>
+    4 | #include <cstring>
+    5 | 
+    6 | namespace NovelMind::scripting {
+    7 | 
+    8 | VirtualMachine::VirtualMachine()
+    9 |     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
+   10 |       m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
+   11 | 
+   12 | VirtualMachine::~VirtualMachine() = default;
+   13 | 
+   14 | Result<void> VirtualMachine::load(const std::vector<Instruction> &program,
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:14:46: warning: no header providing "std::vector" is directly included [misc-include-cleaner]
+    5 | 
+    6 | namespace NovelMind::scripting {
+    7 | 
+    8 | VirtualMachine::VirtualMachine()
+    9 |     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
+   10 |       m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
+   11 | 
+   12 | VirtualMachine::~VirtualMachine() = default;
+   13 | 
+   14 | Result<void> VirtualMachine::load(const std::vector<Instruction> &program,
+      |                                              ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:14:53: warning: no header providing "NovelMind::scripting::Instruction" is directly included [misc-include-cleaner]
+    3 | #include <algorithm>
+    4 | #include <cstring>
+    5 | 
+    6 | namespace NovelMind::scripting {
+    7 | 
+    8 | VirtualMachine::VirtualMachine()
+    9 |     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
+   10 |       m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
+   11 | 
+   12 | VirtualMachine::~VirtualMachine() = default;
+   13 | 
+   14 | Result<void> VirtualMachine::load(const std::vector<Instruction> &program,
+      |                                                     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:15:58: warning: no header providing "std::string" is directly included [misc-include-cleaner]
+    5 | 
+    6 | namespace NovelMind::scripting {
+    7 | 
+    8 | VirtualMachine::VirtualMachine()
+    9 |     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
+   10 |       m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
+   11 | 
+   12 | VirtualMachine::~VirtualMachine() = default;
+   13 | 
+   14 | Result<void> VirtualMachine::load(const std::vector<Instruction> &program,
+   15 |                                   const std::vector<std::string> &stringTable) {
+      |                                                          ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:86:28: warning: no header providing "NovelMind::u32" is directly included [misc-include-cleaner]
+    3 | void VirtualMachine::setIP(u32 ip) {
+      |                            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:96:59: warning: no header providing "NovelMind::scripting::Value" is directly included [misc-include-cleaner]
+    3 | void VirtualMachine::setVariable(const std::string &name, Value value) {
+      |                                                           ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:97:28: warning: no header providing "std::move" is directly included [misc-include-cleaner]
+    5 |   m_variables[name] = std::move(value);
+      |                            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:105:15: warning: no header providing "std::monostate" is directly included [misc-include-cleaner]
+    5 |   return std::monostate{};
+      |               ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:124:39: warning: no header providing "NovelMind::scripting::OpCode" is directly included [misc-include-cleaner]
+  124 | void VirtualMachine::registerCallback(OpCode op, NativeCallback callback) {
+      |                                       ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:135:35: warning: no header providing "NovelMind::i32" is directly included [misc-include-cleaner]
+  135 | void VirtualMachine::signalChoice(i32 choice) {
+      |                                   ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:174:9: warning: no header providing "NovelMind::scripting::asBool" is directly included [misc-include-cleaner]
+  174 |     if (asBool(pop())) {
+      |         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:216:5: warning: no header providing "NovelMind::f32" is directly included [misc-include-cleaner]
+  216 |     f32 val;
+      |     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:257:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  257 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:258:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  258 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:259:9: warning: no header providing "NovelMind::scripting::getValueType" is directly included [misc-include-cleaner]
+  259 |     if (getValueType(a) == ValueType::String ||
+      |         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:259:28: warning: no header providing "NovelMind::scripting::ValueType" is directly included [misc-include-cleaner]
+  259 |     if (getValueType(a) == ValueType::String ||
+      |                            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:261:12: warning: no header providing "NovelMind::scripting::asString" is directly included [misc-include-cleaner]
+  261 |       push(asString(a) + asString(b));
+      |            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:264:12: warning: no header providing "NovelMind::scripting::asFloat" is directly included [misc-include-cleaner]
+  264 |       push(asFloat(a) + asFloat(b));
+      |            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:266:12: warning: no header providing "NovelMind::scripting::asInt" is directly included [misc-include-cleaner]
+  266 |       push(asInt(a) + asInt(b));
+      |            ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:272:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  272 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:273:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  273 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:284:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  284 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:285:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  285 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:296:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  296 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:297:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  297 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:298:5: warning: variable 'divisor' of type 'f32' (aka 'float') can be declared 'const' [misc-const-correctness]
+  298 |     f32 divisor = asFloat(b);
+      |     ^
+      |         const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:309:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  309 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:310:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  310 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:312:5: warning: variable 'typeA' of type 'ValueType' can be declared 'const' [misc-const-correctness]
+  312 |     ValueType typeA = getValueType(a);
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:313:5: warning: variable 'typeB' of type 'ValueType' can be declared 'const' [misc-const-correctness]
+  313 |     ValueType typeB = getValueType(b);
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:331:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  331 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:332:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  332 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:334:5: warning: variable 'typeA' of type 'ValueType' can be declared 'const' [misc-const-correctness]
+  334 |     ValueType typeA = getValueType(a);
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:335:5: warning: variable 'typeB' of type 'ValueType' can be declared 'const' [misc-const-correctness]
+  335 |     ValueType typeB = getValueType(b);
+      |     ^
+      |               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:353:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  353 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:354:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  354 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:360:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  360 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:361:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  361 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:367:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  367 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:368:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  368 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:374:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  374 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:375:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  375 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:381:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  381 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:382:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  382 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:388:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  388 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:389:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  389 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:395:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  395 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:401:5: warning: variable 'b' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  401 |     Value b = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:402:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  402 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:403:5: warning: variable 'divisor' of type 'i32' (aka 'int') can be declared 'const' [misc-const-correctness]
+  403 |     i32 divisor = asInt(b);
+      |     ^
+      |         const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:414:5: warning: variable 'a' of type 'Value' (aka 'variant<std::monostate, int, float, bool, basic_string<char>>') can be declared 'const' [misc-const-correctness]
+  414 |     Value a = pop();
+      |     ^
+      |           const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:443:12: warning: use emplace_back instead of push_back [modernize-use-emplace]
+  443 |       args.push_back(funcName);
+      |            ^~~~~~~~~~
+      |            emplace_back(
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:462:5: warning: variable 'value' of type 'bool' can be declared 'const' [misc-const-correctness]
+  462 |     bool value = asBool(pop());
+      |     ^
+      |          const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:503:18: warning: no header providing "std::holds_alternative" is directly included [misc-include-cleaner]
+  503 |         if (std::holds_alternative<std::monostate>(idVal)) {
+      |                  ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:601:61: warning: no header providing "std::to_string" is directly included [misc-include-cleaner]
+  601 |   NOVELMIND_LOG_ERROR("Invalid string table index: " + std::to_string(index) +
+      |                                                             ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/scripting/vm.cpp:602:47: warning: no header providing "std::to_string" is directly included [misc-include-cleaner]
+  602 |                       " (table size: " + std::to_string(m_stringTable.size()) +
+      |                                               ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:7:6: warning: no header providing "std::unique_ptr" is directly included [misc-include-cleaner]
+    3 | 
+    4 | namespace NovelMind::VFS {
+    5 | 
+    6 | namespace {
+    7 | std::unique_ptr<VirtualFileSystem> g_globalVFS;
+      |      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:8:6: warning: no header providing "std::mutex" is directly included [misc-include-cleaner]
+    3 | 
+    4 | namespace NovelMind::VFS {
+    5 | 
+    6 | namespace {
+    7 | std::unique_ptr<VirtualFileSystem> g_globalVFS;
+    8 | std::mutex g_globalVFSMutex;
+      |      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:13:20: warning: no header providing "std::make_unique" is directly included [misc-include-cleaner]
+   13 |       m_cache(std::make_unique<ResourceCache>(m_config.cacheMaxSize)) {}
+      |                    ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:13:32: warning: no header providing "NovelMind::VFS::ResourceCache" is directly included [misc-include-cleaner]
+    2 | #include <algorithm>
+    3 | 
+    4 | namespace NovelMind::VFS {
+    5 | 
+    6 | namespace {
+    7 | std::unique_ptr<VirtualFileSystem> g_globalVFS;
+    8 | std::mutex g_globalVFSMutex;
+    9 | } // anonymous namespace
+   10 | 
+   11 | VirtualFileSystem::VirtualFileSystem()
+   12 |     : m_config(),
+   13 |       m_cache(std::make_unique<ResourceCache>(m_config.cacheMaxSize)) {}
+      |                                ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:23:1: warning: no header providing "NovelMind::Result" is directly included [misc-include-cleaner]
+    2 | Result<void> VirtualFileSystem::initialize() {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:24:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+   24 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:24:8: warning: no header providing "std::lock_guard" is directly included [misc-include-cleaner]
+   24 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |        ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:43:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+   43 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:62:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+   62 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:68:29: warning: no header providing "std::move" is directly included [misc-include-cleaner]
+    3 |   m_backends.push_back(std::move(backend));
+      |                             ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:72:54: warning: no header providing "std::string" is directly included [misc-include-cleaner]
+    3 | void VirtualFileSystem::unregisterBackend(const std::string &name) {
+      |                                                      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:73:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+   73 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:82:17: warning: no header providing "NovelMind::VFS::IFileHandle" is directly included [misc-include-cleaner]
+    2 | std::unique_ptr<IFileHandle>
+      |                 ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:83:37: warning: no header providing "NovelMind::VFS::ResourceId" is directly included [misc-include-cleaner]
+    2 | VirtualFileSystem::openStream(const ResourceId &id) {
+      |                                     ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:84:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+   84 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:99:1: warning: no header providing "NovelMind::Result" is directly included [misc-include-cleaner]
+   99 | Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId &id) {
+      | ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:99:13: warning: no header providing "std::vector" is directly included [misc-include-cleaner]
+    3 | Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId &id) {
+      |             ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:99:20: warning: no header providing "NovelMind::u8" is directly included [misc-include-cleaner]
+    2 | Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId &id) {
+      |                    ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:129:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  129 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:144:6: warning: no header providing "std::optional" is directly included [misc-include-cleaner]
+    3 | std::optional<ResourceInfo>
+      |      ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:144:15: warning: no header providing "NovelMind::VFS::ResourceInfo" is directly included [misc-include-cleaner]
+  144 | std::optional<ResourceInfo>
+      |               ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:146:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  146 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:155:15: warning: no header providing "std::nullopt" is directly included [misc-include-cleaner]
+  155 |   return std::nullopt;
+      |               ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:159:34: warning: no header providing "NovelMind::VFS::ResourceType" is directly included [misc-include-cleaner]
+  159 | VirtualFileSystem::listResources(ResourceType type) const {
+      |                                  ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:160:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  160 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:180:41: warning: no header providing "NovelMind::usize" is directly included [misc-include-cleaner]
+  180 | void VirtualFileSystem::setCacheMaxSize(usize maxSize) {
+      |                                         ^
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:187:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  187 |   std::lock_guard<std::mutex> lock(m_mutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:222:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  222 |   std::lock_guard<std::mutex> lock(g_globalVFSMutex);
+      |   ^
+      |                               const 
+/tmp/gh-issue-solver-1767258878377/engine_core/src/vfs/virtual_file_system.cpp:232:3: warning: variable 'lock' of type 'std::lock_guard<std::mutex>' can be declared 'const' [misc-const-correctness]
+  232 |   std::lock_guard<std::mutex> lock(g_globalVFSMutex);
+      |   ^
+      |                               const 
+Suppressed 192058 warnings (192058 in non-user code).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+Found compiler error(s).

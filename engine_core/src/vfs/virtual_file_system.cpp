@@ -82,7 +82,7 @@ void VirtualFileSystem::unregisterBackend(const std::string &name) {
 std::unique_ptr<IFileHandle>
 VirtualFileSystem::openStream(const ResourceId &id) {
   // Copy callback and open file while holding lock
-  LoadCallback callback;
+  ResourceLoadCallback callback;
   std::unique_ptr<IFileHandle> handle;
   {
     std::lock_guard<std::mutex> lock(m_mutex);

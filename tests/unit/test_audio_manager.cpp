@@ -508,7 +508,7 @@ TEST_CASE("AudioManager callbacks", "[audio][manager][callback]")
 
     SECTION("Set data provider") {
         manager.setDataProvider([](const std::string& id) -> Result<std::vector<u8>> {
-            return Result<std::vector<u8>>::err("Not implemented");
+            return Result<std::vector<u8>>::error("Not implemented");
         });
 
         REQUIRE(true);
