@@ -447,6 +447,12 @@ signals:
   void nodeClicked(uint64_t nodeId);
   void nodeDoubleClicked(uint64_t nodeId);
   void requestConnection(uint64_t fromNodeId, uint64_t toNodeId);
+  /**
+   * @brief Emitted when a valid script file is dropped on the view
+   * @param scriptPath Path to the dropped script file
+   * @param position Scene position where the file was dropped
+   */
+  void scriptFileDropped(const QString &scriptPath, const QPointF &position);
 
 protected:
   void wheelEvent(QWheelEvent *event) override;
@@ -455,6 +461,10 @@ protected:
   void mouseMoveEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawForeground(QPainter *painter, const QRectF &rect) override;
+  // Issue #173: Drag-and-drop validation for StoryFlow editor
+  void dragEnterEvent(QDragEnterEvent *event) override;
+  void dragMoveEvent(QDragMoveEvent *event) override;
+  void dropEvent(QDropEvent *event) override;
 
 private:
   qreal m_zoomLevel = 1.0;
