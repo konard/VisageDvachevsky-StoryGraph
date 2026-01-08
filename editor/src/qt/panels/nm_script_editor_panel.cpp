@@ -2,7 +2,6 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
-#include "NovelMind/editor/editor_settings.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
@@ -358,9 +357,9 @@ void NMScriptEditorPanel::setupContent() {
 
   // Scene Preview Widget (issue #240)
   m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
-  m_scenePreviewEnabled = EditorSettings::instance()
-                              .value("scriptEditor/previewEnabled", false)
-                              .toBool();
+  QSettings settings;
+  m_scenePreviewEnabled =
+      settings.value("scriptEditor/previewEnabled", false).toBool();
   m_scenePreview->setVisible(m_scenePreviewEnabled);
   m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
 
