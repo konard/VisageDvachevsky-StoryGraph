@@ -428,6 +428,196 @@ TEST_CASE("ErrorList - Counts errors and warnings correctly", "[script_error]")
     CHECK(list.hasWarnings());
 }
 
+// =============================================================================
+// New tests for enhanced error messages (Issue #234)
+// =============================================================================
+
+TEST_CASE("levenshteinDistance - Calculates edit distance correctly", "[script_error]")
+{
+    SECTION("identical strings have distance 0")
+    {
+        CHECK(levenshteinDistance("hello", "hello") == 0);
+        CHECK(levenshteinDistance("", "") == 0);
+        CHECK(levenshteinDistance("Hero", "Hero") == 0);
+    }
+
+    SECTION("empty string vs non-empty string")
+    {
+        CHECK(levenshteinDistance("", "hello") == 5);
+        CHECK(levenshteinDistance("abc", "") == 3);
+    }
+
+    SECTION("single character difference")
+    {
+        CHECK(levenshteinDistance("cat", "bat") == 1);  // substitution
+        CHECK(levenshteinDistance("cat", "cats") == 1); // insertion
+        CHECK(levenshteinDistance("cats", "cat") == 1); // deletion
+    }
+
+    SECTION("multiple differences")
+    {
+        CHECK(levenshteinDistance("kitten", "sitting") == 3);
+        CHECK(levenshteinDistance("Villain", "Villian") == 2); // transposition-like
+        CHECK(levenshteinDistance("Hero", "Heroe") == 1);
+    }
+}
+
+TEST_CASE("findSimilarStrings - Finds similar candidates", "[script_error]")
+{
+    std::vector<std::string> candidates = {"Hero", "Heroine", "Villain", "NPC"};
+
+    SECTION("finds close matches within threshold")
+    {
+        auto similar = findSimilarStrings("Heroe", candidates, 2, 3);
+        REQUIRE_FALSE(similar.empty());
+        CHECK(similar[0] == "Hero"); // edit distance 1
+    }
+
+    SECTION("finds multiple matches sorted by distance")
+    {
+        auto similar = findSimilarStrings("Her", candidates, 3, 3);
+        // Should find Hero (distance 1), Heroine (distance 4 - too far)
+        REQUIRE_FALSE(similar.empty());
+        CHECK(similar[0] == "Hero");
+    }
+
+    SECTION("returns empty for no matches within threshold")
+    {
+        auto similar = findSimilarStrings("XYZ", candidates, 2, 3);
+        CHECK(similar.empty());
+    }
+
+    SECTION("common typo: Villian vs Villain")
+    {
+        auto similar = findSimilarStrings("Villian", candidates, 2, 3);
+        REQUIRE_FALSE(similar.empty());
+        CHECK(similar[0] == "Villain");
+    }
+}
+
+TEST_CASE("extractSourceContext - Extracts code context around error", "[script_error]")
+{
+    std::string source = "character Hero(name=\"Hero\")\n"
+                         "\n"
+                         "scene intro {\n"
+                         "    say Villian \"I am evil\"\n"
+                         "}\n";
+
+    SECTION("extracts lines around error location")
+    {
+        std::string context = extractSourceContext(source, 4, 9, 1);
+        CHECK(context.find("say Villian") != std::string::npos);
+        CHECK(context.find("^") != std::string::npos); // caret indicator
+    }
+
+    SECTION("handles line 1 errors")
+    {
+        std::string context = extractSourceContext(source, 1, 1, 2);
+        CHECK(context.find("character Hero") != std::string::npos);
+    }
+
+    SECTION("handles empty source")
+    {
+        std::string context = extractSourceContext("", 1, 1);
+        CHECK(context.empty());
+    }
+
+    SECTION("handles out of bounds line")
+    {
+        std::string context = extractSourceContext(source, 100, 1);
+        CHECK(context.empty());
+    }
+}
+
+TEST_CASE("ScriptError - Format with file path", "[script_error]")
+{
+    ScriptError error(
+        ErrorCode::UndefinedCharacter,
+        Severity::Error,
+        "Undefined character 'Villian'",
+        SourceLocation(23, 10)
+    );
+    error.withFilePath("scripts/intro.nms");
+
+    std::string formatted = error.format();
+
+    CHECK(formatted.find("scripts/intro.nms") != std::string::npos);
+    CHECK(formatted.find("23:10") != std::string::npos);
+    CHECK(formatted.find("E3001") != std::string::npos);
+}
+
+TEST_CASE("ScriptError - formatRich with full context", "[script_error]")
+{
+    std::string source = "character Villain(name=\"Evil\")\n"
+                         "\n"
+                         "scene intro {\n"
+                         "    say Villian \"I am evil\"\n"
+                         "}\n";
+
+    ScriptError error(
+        ErrorCode::UndefinedCharacter,
+        Severity::Error,
+        "Undefined character 'Villian'",
+        SourceLocation(4, 9)
+    );
+    error.withFilePath("scripts/intro.nms");
+    error.withSource(source);
+    error.withSuggestion("Did you mean 'Villain'?");
+    error.withRelated(SourceLocation(1, 11), "Villain was defined here");
+
+    std::string rich = error.formatRich();
+
+    // Check header
+    CHECK(rich.find("error[E3001]") != std::string::npos);
+    CHECK(rich.find("scripts/intro.nms") != std::string::npos);
+
+    // Check source context
+    CHECK(rich.find("say Villian") != std::string::npos);
+
+    // Check suggestion
+    CHECK(rich.find("Did you mean 'Villain'?") != std::string::npos);
+
+    // Check related info
+    CHECK(rich.find("Villain was defined here") != std::string::npos);
+
+    // Check help URL
+    CHECK(rich.find("https://docs.novelmind.dev/errors/E3001") != std::string::npos);
+}
+
+TEST_CASE("ScriptError - errorCodeString and helpUrl", "[script_error]")
+{
+    ScriptError error(
+        ErrorCode::UndefinedCharacter,
+        Severity::Error,
+        "Test",
+        SourceLocation(1, 1)
+    );
+
+    CHECK(error.errorCodeString() == "E3001");
+    CHECK(error.helpUrl() == "https://docs.novelmind.dev/errors/E3001");
+}
+
+TEST_CASE("Validator - Undefined character provides suggestions", "[validator]")
+{
+    Validator validator;
+    validator.setReportUnused(false);
+
+    Program program;
+
+    // Add a character "Villain"
+    CharacterDecl villain;
+    villain.id = "Villain";
+    villain.displayName = "Evil One";
+    program.characters.push_back(villain);
+
+    // Add scene with typo "Villian"
+    SceneDecl scene;
+    scene.name = "test_scene";
+
+    SayStmt sayStmt;
+    sayStmt.speaker = "Villian"; // typo!
+    sayStmt.text = "I am evil";
+    scene.body.push_back(makeStmt(sayStmt));
 // Tests for resource validation (scene objects and assets)
 
 TEST_CASE("Validator - Missing scene file warning with callback", "[validator][resources]")
@@ -542,6 +732,89 @@ TEST_CASE("Validator - Missing asset file warning for background", "[validator][
 
     auto result = validator.validate(program);
 
+    CHECK(result.errors.hasErrors());
+
+    bool foundSuggestion = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::UndefinedCharacter)
+        {
+            // Check for "Did you mean" suggestion
+            for (const auto& suggestion : error.suggestions)
+            {
+                if (suggestion.find("Villain") != std::string::npos)
+                {
+                    foundSuggestion = true;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    CHECK(foundSuggestion);
+}
+
+TEST_CASE("Validator - Undefined scene provides suggestions", "[validator]")
+{
+    Validator validator;
+    validator.setReportUnused(false);
+
+    Program program;
+
+    // Add first scene "intro"
+    SceneDecl scene1;
+    scene1.name = "intro";
+    GotoStmt gotoStmt;
+    gotoStmt.target = "introo"; // typo!
+    scene1.body.push_back(makeStmt(gotoStmt));
+    program.scenes.push_back(std::move(scene1));
+
+    // Add target scene "intro" (but we go to "introo" - wrong)
+    SceneDecl scene2;
+    scene2.name = "chapter1";
+    SayStmt sayStmt;
+    sayStmt.text = "Hello";
+    scene2.body.push_back(makeStmt(sayStmt));
+    program.scenes.push_back(std::move(scene2));
+
+    auto result = validator.validate(program);
+
+    CHECK(result.errors.hasErrors());
+
+    bool foundSuggestion = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::UndefinedScene)
+        {
+            // Check for "Did you mean" suggestion
+            for (const auto& suggestion : error.suggestions)
+            {
+                if (suggestion.find("intro") != std::string::npos)
+                {
+                    foundSuggestion = true;
+                    break;
+                }
+            }
+            break;
+        }
+    }
+    CHECK(foundSuggestion);
+}
+
+TEST_CASE("Validator - Source and file path propagate to errors", "[validator]")
+{
+    Validator validator;
+    validator.setSource("scene test { say Unknown \"hello\" }");
+    validator.setFilePath("test.nms");
+
+    Program program;
+
+    SceneDecl scene;
+    scene.name = "test";
+    SayStmt sayStmt;
+    sayStmt.speaker = "Unknown";
+    sayStmt.text = "hello";
+    scene.body.push_back(makeStmt(sayStmt));
     // Should have a warning about missing asset file
     bool foundMissingAsset = false;
     for (const auto& error : result.errors.all())
@@ -645,6 +918,19 @@ TEST_CASE("Validator - No warnings when resources exist", "[validator][resources
 
     auto result = validator.validate(program);
 
+    CHECK(result.errors.hasErrors());
+
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::UndefinedCharacter)
+        {
+            CHECK(error.filePath.has_value());
+            CHECK(error.filePath.value() == "test.nms");
+            CHECK(error.source.has_value());
+            CHECK_FALSE(error.source.value().empty());
+            break;
+        }
+    }
     // Should not have any resource warnings
     bool foundResourceWarning = false;
     for (const auto& error : result.errors.all())
