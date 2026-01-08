@@ -78,6 +78,7 @@ add_library(novelmind_editor STATIC
     src/mediators/workflow_mediator.cpp
     src/mediators/property_mediator.cpp
     src/mediators/playback_mediator.cpp
+    src/mediators/scene_registry_mediator.cpp
     src/mediators/panel_mediators.cpp
 
     # Performance optimization components

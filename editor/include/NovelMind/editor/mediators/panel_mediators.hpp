@@ -13,15 +13,21 @@
  * - WorkflowMediator: Multi-panel workflow navigation
  * - PropertyMediator: Property change propagation
  * - PlaybackMediator: Timeline/animation coordination
+ * - SceneRegistryMediator: Scene Registry auto-sync events (issue #213)
  */
 
 #include "NovelMind/editor/mediators/playback_mediator.hpp"
 #include "NovelMind/editor/mediators/property_mediator.hpp"
+#include "NovelMind/editor/mediators/scene_registry_mediator.hpp"
 #include "NovelMind/editor/mediators/selection_mediator.hpp"
 #include "NovelMind/editor/mediators/workflow_mediator.hpp"
 
 #include <QObject>
 #include <memory>
+
+namespace NovelMind::editor {
+class SceneRegistry; // Forward declaration
+}
 
 namespace NovelMind::editor::qt {
 
@@ -70,6 +76,8 @@ public:
    *
    * This replaces the ~1,500 lines of direct connect() calls
    * with mediator-based coordination.
+   *
+   * @param sceneRegistry Optional SceneRegistry for auto-sync events (issue #213)
    */
   void initialize(qt::NMSceneViewPanel *sceneView,
                   qt::NMStoryGraphPanel *storyGraph,
@@ -83,7 +91,8 @@ public:
                   qt::NMVoiceStudioPanel *voiceStudio,
                   qt::NMVoiceManagerPanel *voiceManager,
                   qt::NMDiagnosticsPanel *diagnostics,
-                  qt::NMIssuesPanel *issues);
+                  qt::NMIssuesPanel *issues,
+                  SceneRegistry *sceneRegistry = nullptr);
 
   /**
    * @brief Shutdown all mediators
@@ -108,12 +117,16 @@ public:
   [[nodiscard]] PlaybackMediator *playbackMediator() const {
     return m_playbackMediator.get();
   }
+  [[nodiscard]] SceneRegistryMediator *sceneRegistryMediator() const {
+    return m_sceneRegistryMediator.get();
+  }
 
 private:
   std::unique_ptr<SelectionMediator> m_selectionMediator;
   std::unique_ptr<WorkflowMediator> m_workflowMediator;
   std::unique_ptr<PropertyMediator> m_propertyMediator;
   std::unique_ptr<PlaybackMediator> m_playbackMediator;
+  std::unique_ptr<SceneRegistryMediator> m_sceneRegistryMediator;
 
   bool m_initialized = false;
 };
