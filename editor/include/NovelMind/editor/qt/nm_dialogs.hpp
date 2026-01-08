@@ -309,4 +309,81 @@ private:
   MetadataResult m_result;
 };
 
+// Forward declarations for NMNewSceneDialog
+namespace NovelMind::editor {
+class SceneTemplateManager;
+struct SceneTemplateMetadata;
+} // namespace NovelMind::editor
+
+/**
+ * @brief Dialog for creating a new scene from a template
+ *
+ * Provides template selection with preview thumbnails, scene name input,
+ * and "Start from blank" option. Implements issue #216.
+ */
+class NMNewSceneDialog final : public QDialog {
+  Q_OBJECT
+
+public:
+  explicit NMNewSceneDialog(QWidget *parent,
+                            NovelMind::editor::SceneTemplateManager *templateManager);
+
+  /**
+   * @brief Get the selected template ID
+   * @return Template ID or empty string if "Start from blank" selected
+   */
+  [[nodiscard]] QString selectedTemplateId() const { return m_selectedTemplateId; }
+
+  /**
+   * @brief Get the entered scene name
+   * @return Scene name
+   */
+  [[nodiscard]] QString sceneName() const;
+
+  /**
+   * @brief Get the generated scene ID (sanitized from name)
+   * @return Scene ID
+   */
+  [[nodiscard]] QString sceneId() const;
+
+  /**
+   * @brief Check if "Start from blank" was selected
+   * @return true if blank scene
+   */
+  [[nodiscard]] bool isBlankScene() const { return m_selectedTemplateId.isEmpty(); }
+
+  /**
+   * @brief Static convenience method to show dialog and get result
+   * @param parent Parent widget
+   * @param templateManager Template manager instance
+   * @param outSceneId Output: Scene ID
+   * @param outTemplateId Output: Template ID (empty for blank)
+   * @return true if user accepted, false if cancelled
+   */
+  static bool getNewScene(QWidget *parent,
+                          NovelMind::editor::SceneTemplateManager *templateManager,
+                          QString &outSceneId, QString &outTemplateId);
+
+private:
+  void buildUi();
+  void populateTemplateList();
+  void onTemplateSelected();
+  void onCategoryChanged(int index);
+  void updatePreview();
+  void updateCreateEnabled();
+
+  NovelMind::editor::SceneTemplateManager *m_templateManager = nullptr;
+  QString m_selectedTemplateId;
+
+  QLineEdit *m_nameEdit = nullptr;
+  QComboBox *m_categoryCombo = nullptr;
+  QListWidget *m_templateList = nullptr;
+  QLabel *m_previewImage = nullptr;
+  QLabel *m_previewName = nullptr;
+  QLabel *m_previewDescription = nullptr;
+  QLabel *m_sceneIdPreview = nullptr;
+  QPushButton *m_createButton = nullptr;
+  QPushButton *m_cancelButton = nullptr;
+};
+
 } // namespace NovelMind::editor::qt

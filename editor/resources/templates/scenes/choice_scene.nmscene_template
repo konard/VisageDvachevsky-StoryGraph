@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "id": "choice_scene",
+    "name": "Choice Scene",
+    "description": "Scene for player choices with background, character position, and choice menu layout.",
+    "category": "Visual Novel",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["choice", "menu", "decision", "branching"],
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Drop background image here"
+        }
+      },
+      {
+        "id": "character_center",
+        "name": "Character",
+        "type": "Character",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character speaking",
+          "position": "center"
+        }
+      },
+      {
+        "id": "choice_menu",
+        "name": "Choice Menu",
+        "type": "UI",
+        "x": 640.0,
+        "y": 400.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Choice menu area",
+          "uiType": "choice_menu"
+        }
+      }
+    ]
+  }
+}

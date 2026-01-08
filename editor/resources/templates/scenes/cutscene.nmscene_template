@@ -1,0 +1,38 @@
+{
+  "metadata": {
+    "id": "cutscene",
+    "name": "Cutscene",
+    "description": "Fullscreen cutscene with no UI elements. Perfect for dramatic moments, transitions, and cinematic sequences.",
+    "category": "Cinematic",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["cutscene", "cinematic", "fullscreen", "transition"],
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Cutscene Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Fullscreen cutscene image or video",
+          "fullscreen": "true"
+        }
+      }
+    ]
+  }
+}

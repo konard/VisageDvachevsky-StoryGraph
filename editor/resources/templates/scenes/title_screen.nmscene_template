@@ -1,0 +1,91 @@
+{
+  "metadata": {
+    "id": "title_screen",
+    "name": "Title Screen",
+    "description": "Title/menu screen with logo position and menu button layout. Ideal for game start screens and main menus.",
+    "category": "Menu",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["title", "menu", "start", "logo"],
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Title Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Title screen background"
+        }
+      },
+      {
+        "id": "logo",
+        "name": "Game Logo",
+        "type": "UI",
+        "x": 640.0,
+        "y": 180.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 50,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Game logo position",
+          "uiType": "logo"
+        }
+      },
+      {
+        "id": "menu_buttons",
+        "name": "Menu Buttons",
+        "type": "UI",
+        "x": 640.0,
+        "y": 450.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Menu button layout area",
+          "uiType": "menu"
+        }
+      },
+      {
+        "id": "version_text",
+        "name": "Version Text",
+        "type": "UI",
+        "x": 1180.0,
+        "y": 680.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Version number position",
+          "uiType": "text"
+        }
+      }
+    ]
+  }
+}

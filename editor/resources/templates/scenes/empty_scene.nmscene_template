@@ -1,0 +1,19 @@
+{
+  "metadata": {
+    "id": "empty_scene",
+    "name": "Empty Scene",
+    "description": "Blank canvas for custom scenes. Start from scratch with no pre-defined objects.",
+    "category": "Standard",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["empty", "blank", "custom"],
+    "created": "2024-01-01T00:00:00Z",
+    "modified": "2024-01-01T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": []
+  }
+}
