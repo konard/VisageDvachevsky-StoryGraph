@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QMessageBox>
 #include <QSettings>
 #include <QVariant>
 #include <algorithm>
@@ -123,6 +124,12 @@ void NMPlayModeController::play() {
     if (!ensureRuntimeLoaded()) {
       qWarning() << "[PlayMode] No project loaded for runtime";
       qWarning() << "[PlayMode] CRITICAL: Runtime initialization failed. Check project state.";
+
+      // Show user-friendly error dialog
+      QMessageBox::critical(
+          nullptr,
+          "Play Mode Error",
+          "Failed to initialize runtime. Please ensure a project is open.");
       return;
     }
     qDebug() << "[PlayMode] Runtime loaded successfully, calling play()...";
@@ -131,6 +138,49 @@ void NMPlayModeController::play() {
       qCritical() << "[PlayMode] Failed to start runtime:"
                  << QString::fromStdString(result.error());
       qCritical() << "[PlayMode] PLAYBACK FAILED - See error above for details";
+
+      // Show user-friendly error dialog with details
+      QString errorMsg = QString::fromStdString(result.error());
+      QString detailedMsg = errorMsg;
+
+      // Enhance error message for common issues
+      if (errorMsg.contains("story graph not available") ||
+          errorMsg.contains("Story graph file not found")) {
+        detailedMsg =
+            "<b>Story Graph Not Found</b><br><br>"
+            "The playback mode is set to 'Graph' but no story graph is available.<br><br>"
+            "<b>Possible solutions:</b><br>"
+            "1. Create story graph nodes in the Story Graph panel<br>"
+            "2. Switch playback mode to 'Script' in the Play Toolbar<br>"
+            "3. Add .nms script files to the Scripts folder<br><br>"
+            "<small>Technical details: " + errorMsg + "</small>";
+      } else if (errorMsg.contains("No content found")) {
+        detailedMsg =
+            "<b>No Content Available</b><br><br>"
+            "Neither story graph nor script files were found.<br><br>"
+            "<b>To fix this:</b><br>"
+            "• Add .nms script files to the Scripts folder, OR<br>"
+            "• Create story graph nodes in the Story Graph panel<br><br>"
+            "<small>Technical details: " + errorMsg + "</small>";
+      } else if (errorMsg.contains("No scenes found")) {
+        detailedMsg =
+            "<b>No Scenes Available</b><br><br>"
+            "The project was loaded but no scenes were found to play.<br><br>"
+            "<b>To fix this:</b><br>"
+            "• Ensure your scripts contain 'scene' definitions<br>"
+            "• Create scene nodes in the Story Graph<br>"
+            "• Check that script files are in the Scripts folder<br><br>"
+            "<small>Technical details: " + errorMsg + "</small>";
+      }
+
+      QMessageBox msgBox;
+      msgBox.setIcon(QMessageBox::Critical);
+      msgBox.setWindowTitle("Playback Failed");
+      msgBox.setText("Failed to start playback");
+      msgBox.setInformativeText(detailedMsg);
+      msgBox.setTextFormat(Qt::RichText);
+      msgBox.setStandardButtons(QMessageBox::Ok);
+      msgBox.exec();
       return;
     }
     qDebug() << "[PlayMode] Runtime started successfully!";
