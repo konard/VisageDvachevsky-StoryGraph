@@ -1,4 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/event_bus.hpp"
+#include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
@@ -41,7 +43,14 @@ NMStoryGraphPanel::NMStoryGraphPanel(QWidget *parent)
   setupNodePalette();
 }
 
-NMStoryGraphPanel::~NMStoryGraphPanel() = default;
+NMStoryGraphPanel::~NMStoryGraphPanel() {
+  // Unsubscribe from all events
+  auto &bus = EventBus::instance();
+  for (const auto &subId : m_eventSubscriptions) {
+    bus.unsubscribe(subId);
+  }
+  m_eventSubscriptions.clear();
+}
 
 void NMStoryGraphPanel::onInitialize() {
   if (m_scene) {
@@ -62,6 +71,27 @@ void NMStoryGraphPanel::onInitialize() {
           &NMStoryGraphPanel::onBreakpointsChanged, Qt::QueuedConnection);
   connect(&playController, &NMPlayModeController::projectLoaded, this,
           &NMStoryGraphPanel::rebuildFromProjectScripts, Qt::QueuedConnection);
+
+  // Subscribe to scene auto-sync events (Issue #223)
+  auto &bus = EventBus::instance();
+
+  m_eventSubscriptions.push_back(
+      bus.subscribe<events::SceneThumbnailUpdatedEvent>(
+          [this](const events::SceneThumbnailUpdatedEvent &event) {
+            onSceneThumbnailUpdated(event.sceneId, event.thumbnailPath);
+          }));
+
+  m_eventSubscriptions.push_back(
+      bus.subscribe<events::SceneRenamedEvent>(
+          [this](const events::SceneRenamedEvent &event) {
+            onSceneRenamed(event.sceneId, event.newName);
+          }));
+
+  m_eventSubscriptions.push_back(
+      bus.subscribe<events::SceneDeletedEvent>(
+          [this](const events::SceneDeletedEvent &event) {
+            onSceneDeleted(event.sceneId);
+          }));
 
   rebuildFromProjectScripts();
 }
@@ -781,6 +811,104 @@ void NMStoryGraphPanel::updateNodePosition(const QString &nodeIdString,
   // Update connections attached to this node
   for (auto *conn : m_scene->findConnectionsForNode(node)) {
     conn->updatePath();
+  }
+}
+
+// ============================================================================
+// Scene Auto-Sync Event Handlers (Issue #223)
+// ============================================================================
+
+void NMStoryGraphPanel::onSceneThumbnailUpdated(const QString &sceneId,
+                                                const QString &thumbnailPath) {
+  if (!m_scene || sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[StoryGraph] Scene thumbnail updated:" << sceneId << "->"
+           << thumbnailPath;
+
+  // Find all scene nodes that reference this scene
+  bool updated = false;
+  for (auto *node : m_scene->nodes()) {
+    if (node && node->isSceneNode() && node->sceneId() == sceneId) {
+      node->setThumbnailPath(thumbnailPath);
+      node->update(); // Force visual refresh
+      updated = true;
+
+      // Update layout cache
+      auto it = m_layoutNodes.find(node->nodeIdString());
+      if (it != m_layoutNodes.end()) {
+        it->thumbnailPath = thumbnailPath;
+      }
+    }
+  }
+
+  if (updated) {
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+    qDebug() << "[StoryGraph] Updated thumbnail for scene nodes referencing"
+             << sceneId;
+  }
+}
+
+void NMStoryGraphPanel::onSceneRenamed(const QString &sceneId,
+                                       const QString &newName) {
+  if (!m_scene || sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[StoryGraph] Scene renamed:" << sceneId << "to" << newName;
+
+  // Find all scene nodes that reference this scene
+  bool updated = false;
+  for (auto *node : m_scene->nodes()) {
+    if (node && node->isSceneNode() && node->sceneId() == sceneId) {
+      // Update node title to reflect new scene name
+      node->setTitle(newName);
+      node->update(); // Force visual refresh
+      updated = true;
+
+      // Update layout cache
+      auto it = m_layoutNodes.find(node->nodeIdString());
+      if (it != m_layoutNodes.end()) {
+        it->title = newName;
+      }
+    }
+  }
+
+  if (updated) {
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+    qDebug() << "[StoryGraph] Updated scene node titles for scene" << sceneId;
+  }
+}
+
+void NMStoryGraphPanel::onSceneDeleted(const QString &sceneId) {
+  if (!m_scene || sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[StoryGraph] Scene deleted:" << sceneId;
+
+  // Find all scene nodes that reference this deleted scene
+  // Mark them with validation errors (orphaned references)
+  bool hasOrphans = false;
+  for (auto *node : m_scene->nodes()) {
+    if (node && node->isSceneNode() && node->sceneId() == sceneId) {
+      // Set validation error on orphaned scene nodes
+      node->setSceneValidationError(true);
+      node->setSceneValidationMessage(
+          QString("Referenced scene '%1' has been deleted").arg(sceneId));
+      node->update(); // Force visual refresh
+      hasOrphans = true;
+
+      qDebug() << "[StoryGraph] Marked node" << node->nodeIdString()
+               << "as orphaned (references deleted scene" << sceneId << ")";
+    }
+  }
+
+  if (hasOrphans) {
+    qWarning() << "[StoryGraph] Found orphaned scene node references for"
+               << "deleted scene" << sceneId
+               << "- nodes marked with validation errors";
   }
 }
 

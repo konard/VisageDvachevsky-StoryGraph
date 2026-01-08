@@ -1,3 +1,5 @@
+#include "NovelMind/editor/event_bus.hpp"
+#include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
@@ -161,6 +163,15 @@ bool NMSceneViewPanel::saveSceneDocument() {
       QDir(scenesRoot).filePath(m_currentSceneId + ".nmscene");
   const auto result =
       ::NovelMind::editor::saveSceneDocument(doc, scenePath.toStdString());
+
+  // Emit SceneDocumentModifiedEvent to notify other panels (Issue #223)
+  if (result.isOk()) {
+    events::SceneDocumentModifiedEvent event;
+    event.sceneId = m_currentSceneId;
+    EventBus::instance().publish(event);
+    qDebug() << "[SceneView] Published SceneDocumentModifiedEvent for" << m_currentSceneId;
+  }
+
   return result.isOk();
 }
 

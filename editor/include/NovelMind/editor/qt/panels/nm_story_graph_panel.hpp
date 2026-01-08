@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 #include <QVector>
 #include <atomic>
+#include <vector>
 
 namespace NovelMind::editor::qt {
 
@@ -689,6 +690,11 @@ private slots:
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
   void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
 
+  // Scene auto-sync event handlers (Issue #223)
+  void onSceneThumbnailUpdated(const QString &sceneId, const QString &thumbnailPath);
+  void onSceneRenamed(const QString &sceneId, const QString &newName);
+  void onSceneDeleted(const QString &sceneId);
+
 private:
   void setupToolBar();
   void setupContent();
@@ -727,6 +733,9 @@ private:
   bool m_readOnly = false;
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
+
+  // Event subscriptions for scene auto-sync (Issue #223)
+  std::vector<uint64_t> m_eventSubscriptions;
 };
 
 } // namespace NovelMind::editor::qt
