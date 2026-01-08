@@ -33,6 +33,7 @@ void VirtualMachine::reset() {
   m_halted = false;
   m_skipNextIncrement = false;
   m_choiceResult = -1;
+  m_securityGuard.reset();
 }
 
 bool VirtualMachine::step() {
@@ -583,7 +584,14 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 }
 
-void VirtualMachine::push(Value value) { m_stack.push_back(std::move(value)); }
+void VirtualMachine::push(Value value) {
+  if (!m_securityGuard.checkStackPush(m_stack.size())) {
+    NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+    m_halted = true;
+    return;
+  }
+  m_stack.push_back(std::move(value));
+}
 
 Value VirtualMachine::pop() {
   if (m_stack.empty()) {
