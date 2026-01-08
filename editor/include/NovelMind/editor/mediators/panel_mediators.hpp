@@ -13,10 +13,12 @@
  * - WorkflowMediator: Multi-panel workflow navigation
  * - PropertyMediator: Property change propagation
  * - PlaybackMediator: Timeline/animation coordination
+ * - SceneMediator: Scene Registry integration (issue #211)
  */
 
 #include "NovelMind/editor/mediators/playback_mediator.hpp"
 #include "NovelMind/editor/mediators/property_mediator.hpp"
+#include "NovelMind/editor/mediators/scene_mediator.hpp"
 #include "NovelMind/editor/mediators/selection_mediator.hpp"
 #include "NovelMind/editor/mediators/workflow_mediator.hpp"
 
@@ -49,6 +51,10 @@ class NMCurveEditorPanel;
 class NMBuildSettingsPanel;
 
 } // namespace NovelMind::editor::qt
+
+namespace NovelMind::editor {
+class SceneRegistry;
+} // namespace NovelMind::editor
 
 namespace NovelMind::editor::mediators {
 
@@ -86,6 +92,20 @@ public:
                   qt::NMIssuesPanel *issues);
 
   /**
+   * @brief Initialize the Scene Mediator with a SceneRegistry
+   *
+   * This can be called after initialize() when a SceneRegistry becomes
+   * available (e.g., when a project is loaded).
+   *
+   * @param sceneRegistry The scene registry to use
+   * @param sceneView The scene view panel
+   * @param storyGraph The story graph panel
+   */
+  void initializeSceneMediator(SceneRegistry *sceneRegistry,
+                               qt::NMSceneViewPanel *sceneView,
+                               qt::NMStoryGraphPanel *storyGraph);
+
+  /**
    * @brief Shutdown all mediators
    */
   void shutdown();
@@ -108,12 +128,16 @@ public:
   [[nodiscard]] PlaybackMediator *playbackMediator() const {
     return m_playbackMediator.get();
   }
+  [[nodiscard]] SceneMediator *sceneMediator() const {
+    return m_sceneMediator.get();
+  }
 
 private:
   std::unique_ptr<SelectionMediator> m_selectionMediator;
   std::unique_ptr<WorkflowMediator> m_workflowMediator;
   std::unique_ptr<PropertyMediator> m_propertyMediator;
   std::unique_ptr<PlaybackMediator> m_playbackMediator;
+  std::unique_ptr<SceneMediator> m_sceneMediator;
 
   bool m_initialized = false;
 };
