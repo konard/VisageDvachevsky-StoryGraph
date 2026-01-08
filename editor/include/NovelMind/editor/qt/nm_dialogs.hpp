@@ -326,7 +326,7 @@ class NMNewSceneDialog final : public QDialog {
 
 public:
   explicit NMNewSceneDialog(QWidget *parent,
-                            NovelMind::editor::SceneTemplateManager *templateManager);
+                            ::NovelMind::editor::SceneTemplateManager *templateManager);
 
   /**
    * @brief Get the selected template ID
@@ -361,7 +361,7 @@ public:
    * @return true if user accepted, false if cancelled
    */
   static bool getNewScene(QWidget *parent,
-                          NovelMind::editor::SceneTemplateManager *templateManager,
+                          ::NovelMind::editor::SceneTemplateManager *templateManager,
                           QString &outSceneId, QString &outTemplateId);
 
 private:
@@ -372,7 +372,7 @@ private:
   void updatePreview();
   void updateCreateEnabled();
 
-  NovelMind::editor::SceneTemplateManager *m_templateManager = nullptr;
+  ::NovelMind::editor::SceneTemplateManager *m_templateManager = nullptr;
   QString m_selectedTemplateId;
 
   QLineEdit *m_nameEdit = nullptr;
