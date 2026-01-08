@@ -321,6 +321,89 @@ NMUndoManager::instance().pushCommand(new PropertyChangeCommand(...));
 - [ ] Горячая перезагрузка во время режима воспроизведения
 - [ ] Продвинутая отладка (условные точки останова, выражения отслеживания)
 
+### Фаза 5.5 - Scene Management System
+
+**Цели:**
+- Централизованное управление сценами
+- Автоматическая синхронизация между панелями
+- Система шаблонов для быстрого создания сцен
+- Валидация ссылок на сцены
+
+**Ключевые классы:**
+- `SceneRegistry` - Центральный реестр всех сцен в проекте
+- `SceneTemplateManager` - Управление шаблонами сцен
+- `SceneMediator` - Координация между Scene Registry и панелями
+- `NMSceneIdPicker` - Виджет выбора сцены в Inspector
+- `SceneRegistryMediator` - Преобразование Qt сигналов в EventBus события
+
+**Статус реализации (Фаза 5.5): ✅ ЗАВЕРШЕНО**
+
+#### Scene Registry System (PR #217, #210)
+- [x] Регистрация и управление сценами с уникальными ID
+- [x] API методы: registerScene, renameScene, renameSceneId, deleteScene
+- [x] Отслеживание кросс-ссылок (какие узлы используют какие сцены)
+- [x] Обнаружение orphaned .nmscene файлов (не зарегистрированные)
+- [x] Обнаружение invalid references (зарегистрированные без файла)
+- [x] Генерация и кэширование thumbnails
+- [x] Qt сигналы жизненного цикла сцен (registered, renamed, unregistered, idChanged)
+- [x] JSON persistence для метаданных и ссылок
+- [x] SceneMediator для координации с панелями
+
+#### Scene Template System (PR #222)
+- [x] SceneTemplateManager для загрузки и инстанцирования шаблонов
+- [x] 5 встроенных шаблонов:
+  - Empty Scene (пустой холст)
+  - Dialogue Scene (фон + 2 персонажа + диалоговое окно)
+  - Choice Scene (фон + персонаж + меню выбора)
+  - Cutscene (полноэкранный фон)
+  - Title Screen (фон + лого + кнопки меню)
+- [x] Поддержка пользовательских шаблонов (сохранение сцен как templates)
+- [x] NMNewSceneDialog с выбором шаблона и preview
+- [x] Категоризация шаблонов (Standard, Visual Novel, Cinematic, Menu)
+- [x] Метаданные шаблонов (name, description, category, tags, author, version)
+
+#### Scene-Story Graph Auto-Sync (PR #224, #219)
+- [x] Автоматическое обновление thumbnails в Story Graph при изменении сцен
+- [x] Автоматическое обновление названий узлов при переименовании сцен
+- [x] Автоматическая пометка orphaned references при удалении сцен
+- [x] EventBus события: SceneThumbnailUpdated, SceneRenamed, SceneDeleted
+- [x] SceneRegistryMediator для конвертации Qt signals → EventBus events
+- [x] Story Graph подписки на события для обновления UI
+- [x] Scene View эмиссия SceneDocumentModifiedEvent после сохранения
+
+#### Scene ID Picker Widget (PR #218)
+- [x] NMSceneIdPicker виджет в Inspector панели
+- [x] Dropdown со всеми зарегистрированными сценами
+- [x] Preview thumbnail с метаданными (name, path, last modified)
+- [x] Validation state indicator (✓ valid / ⚠ invalid)
+- [x] Quick action buttons: Create New, Edit Scene, Locate
+- [x] Автоматическое обновление при изменениях в SceneRegistry
+- [x] Интеграция в Inspector при выборе Scene узла
+
+#### Scene Reference Validation (PR #221)
+- [x] Валидация всех ссылок на сцены перед Play режимом
+- [x] Проверка существования .nmscene файлов
+- [x] Обнаружение empty scene IDs
+- [x] Визуальные индикаторы ошибок (красный кружок с X)
+- [x] Визуальные индикаторы предупреждений (оранжевый кружок с !)
+- [x] Tooltip сообщения с деталями ошибок
+- [x] Автоматическое обновление валидации при rebuild графа
+- [x] Интеграция в validateGraph() workflow
+
+**Критерии завершения (Фаза 5.5): ✅ ВСЕ ЗАВЕРШЕНО**
+- [x] Scene Registry отслеживает все сцены и их использование
+- [x] Scene Templates ускоряют создание типовых сцен
+- [x] Story Graph автоматически синхронизируется с изменениями сцен
+- [x] Inspector предоставляет удобный UI для выбора сцен
+- [x] Недействительные ссылки визуально обозначены с подробной информацией
+- [x] Все изменения сохраняются в project files
+
+**Будущая работа (Фаза 5.6+):**
+- [ ] Quick Fix Actions (Create Scene, Remove Reference, Browse)
+- [ ] Diagnostics Panel интеграция для централизованных ошибок
+- [ ] Circular reference detection в Story Graph
+- [ ] Thumbnail автоматическая регенерация при модификации сцен
+
 ## Спецификации панелей
 
 ### Главное окно + Докинг
@@ -483,7 +566,8 @@ editor/
 │   │   └── widgets/
 │   │       ├── nm_property_editor.hpp
 │   │       ├── nm_graph_node_item.hpp
-│   │       └── nm_timeline_track.hpp
+│   │       ├── nm_timeline_track.hpp
+│   │       └── nm_scene_id_picker.hpp
 │   └── editor_app.hpp              # Основное приложение (версия Qt)
 ├── src/
 │   ├── qt/
