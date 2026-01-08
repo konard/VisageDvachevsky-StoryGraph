@@ -63,6 +63,7 @@ add_library(novelmind_editor STATIC
     src/hotkeys_manager.cpp
     src/project_integrity.cpp
     src/project_json.cpp
+    src/scene_registry.cpp
 
     # Build System components
     src/build_system.cpp
@@ -242,6 +243,9 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/mediators/property_mediator.hpp
     include/NovelMind/editor/mediators/playback_mediator.hpp
     include/NovelMind/editor/mediators/panel_mediators.hpp
+
+    # Scene Registry (issue #206)
+    include/NovelMind/editor/scene_registry.hpp
 
     # Qt Resources
     resources/editor_resources.qrc

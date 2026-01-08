@@ -83,6 +83,7 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_ui_panel_features.cpp
         integration/test_playback_source_mode.cpp  # Issue #82
         integration/test_scene_workflow.cpp  # Issue #179
+        integration/test_scene_registry.cpp  # Issue #206
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
