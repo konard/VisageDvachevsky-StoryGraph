@@ -427,3 +427,235 @@ TEST_CASE("ErrorList - Counts errors and warnings correctly", "[script_error]")
     CHECK(list.hasErrors());
     CHECK(list.hasWarnings());
 }
+
+// Tests for resource validation (scene objects and assets)
+
+TEST_CASE("Validator - Missing scene file warning with callback", "[validator][resources]")
+{
+    Validator validator;
+
+    // Set up callback that says scene file doesn't exist
+    validator.setSceneFileExistsCallback([](const std::string& sceneId) {
+        return false; // Scene file doesn't exist
+    });
+
+    Program program;
+
+    SceneDecl scene;
+    scene.name = "intro";
+    SayStmt sayStmt;
+    sayStmt.text = "Hello";
+    scene.body.push_back(makeStmt(sayStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have a warning about missing scene file
+    bool foundMissingSceneFile = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::MissingSceneFile)
+        {
+            foundMissingSceneFile = true;
+            CHECK(error.severity == Severity::Warning);
+            break;
+        }
+    }
+    CHECK(foundMissingSceneFile);
+}
+
+TEST_CASE("Validator - Missing scene object warning with callback", "[validator][resources]")
+{
+    Validator validator;
+
+    // Set up callbacks
+    validator.setSceneFileExistsCallback([](const std::string&) {
+        return true; // Scene file exists
+    });
+
+    validator.setSceneObjectExistsCallback([](const std::string& sceneId, const std::string& objectId) {
+        // "Hero" doesn't exist in "intro" scene
+        if (sceneId == "intro" && objectId == "Hero") {
+            return false;
+        }
+        return true;
+    });
+
+    Program program;
+
+    // Define Hero character
+    CharacterDecl hero;
+    hero.id = "Hero";
+    hero.displayName = "Hero";
+    program.characters.push_back(hero);
+
+    // Create scene that tries to show Hero
+    SceneDecl scene;
+    scene.name = "intro";
+
+    ShowStmt showStmt;
+    showStmt.target = ShowStmt::Target::Character;
+    showStmt.identifier = "Hero";
+    scene.body.push_back(makeStmt(showStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have a warning about missing scene object
+    bool foundMissingSceneObject = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::MissingSceneObject)
+        {
+            foundMissingSceneObject = true;
+            CHECK(error.severity == Severity::Warning);
+            CHECK(error.message.find("Hero") != std::string::npos);
+            CHECK(error.message.find("intro") != std::string::npos);
+            break;
+        }
+    }
+    CHECK(foundMissingSceneObject);
+}
+
+TEST_CASE("Validator - Missing asset file warning for background", "[validator][resources]")
+{
+    Validator validator;
+
+    // Set up callback that says asset doesn't exist
+    validator.setAssetFileExistsCallback([](const std::string& assetPath) {
+        if (assetPath == "bg_city.png") {
+            return false; // Asset doesn't exist
+        }
+        return true;
+    });
+
+    Program program;
+
+    SceneDecl scene;
+    scene.name = "intro";
+
+    ShowStmt showStmt;
+    showStmt.target = ShowStmt::Target::Background;
+    showStmt.resource = "bg_city.png";
+    scene.body.push_back(makeStmt(showStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have a warning about missing asset file
+    bool foundMissingAsset = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::MissingAssetFile)
+        {
+            foundMissingAsset = true;
+            CHECK(error.severity == Severity::Warning);
+            CHECK(error.message.find("bg_city.png") != std::string::npos);
+            break;
+        }
+    }
+    CHECK(foundMissingAsset);
+}
+
+TEST_CASE("Validator - Missing asset file warning for play music", "[validator][resources]")
+{
+    Validator validator;
+
+    // Set up callback that says asset doesn't exist
+    validator.setAssetFileExistsCallback([](const std::string& assetPath) {
+        if (assetPath == "theme.wav") {
+            return false; // Asset doesn't exist
+        }
+        return true;
+    });
+
+    Program program;
+
+    SceneDecl scene;
+    scene.name = "intro";
+
+    PlayStmt playStmt;
+    playStmt.type = PlayStmt::MediaType::Music;
+    playStmt.resource = "theme.wav";
+    scene.body.push_back(makeStmt(playStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have a warning about missing asset file
+    bool foundMissingAsset = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::MissingAssetFile)
+        {
+            foundMissingAsset = true;
+            CHECK(error.severity == Severity::Warning);
+            CHECK(error.message.find("theme.wav") != std::string::npos);
+            break;
+        }
+    }
+    CHECK(foundMissingAsset);
+}
+
+TEST_CASE("Validator - No warnings when resources exist", "[validator][resources]")
+{
+    Validator validator;
+
+    // Set up callbacks that say resources exist
+    validator.setSceneFileExistsCallback([](const std::string&) {
+        return true;
+    });
+
+    validator.setSceneObjectExistsCallback([](const std::string&, const std::string&) {
+        return true;
+    });
+
+    validator.setAssetFileExistsCallback([](const std::string&) {
+        return true;
+    });
+
+    Program program;
+
+    // Define Hero character
+    CharacterDecl hero;
+    hero.id = "Hero";
+    hero.displayName = "Hero";
+    program.characters.push_back(hero);
+
+    // Create scene
+    SceneDecl scene;
+    scene.name = "intro";
+
+    ShowStmt showStmt;
+    showStmt.target = ShowStmt::Target::Character;
+    showStmt.identifier = "Hero";
+    scene.body.push_back(makeStmt(showStmt));
+
+    ShowStmt bgStmt;
+    bgStmt.target = ShowStmt::Target::Background;
+    bgStmt.resource = "bg_city.png";
+    scene.body.push_back(makeStmt(bgStmt));
+
+    PlayStmt playStmt;
+    playStmt.type = PlayStmt::MediaType::Music;
+    playStmt.resource = "theme.wav";
+    scene.body.push_back(makeStmt(playStmt));
+
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should not have any resource warnings
+    bool foundResourceWarning = false;
+    for (const auto& error : result.errors.all())
+    {
+        if (error.code == ErrorCode::MissingSceneFile ||
+            error.code == ErrorCode::MissingSceneObject ||
+            error.code == ErrorCode::MissingAssetFile)
+        {
+            foundResourceWarning = true;
+            break;
+        }
+    }
+    CHECK_FALSE(foundResourceWarning);
+}

@@ -89,6 +89,9 @@ enum class ErrorCode : u32 {
   // Validation errors - Resources (35xx)
   UndefinedResource = 3501,
   InvalidResourcePath = 3502,
+  MissingSceneFile = 3503,
+  MissingSceneObject = 3504,
+  MissingAssetFile = 3505,
 
   // Validation errors - Choice (36xx)
   EmptyChoiceBlock = 3601,
@@ -420,6 +423,12 @@ private:
     return "Undefined resource";
   case ErrorCode::InvalidResourcePath:
     return "Invalid resource path";
+  case ErrorCode::MissingSceneFile:
+    return "Missing scene file";
+  case ErrorCode::MissingSceneObject:
+    return "Missing scene object";
+  case ErrorCode::MissingAssetFile:
+    return "Missing asset file";
 
   // Validation - Choice
   case ErrorCode::EmptyChoiceBlock:

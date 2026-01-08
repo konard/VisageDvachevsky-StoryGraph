@@ -16,6 +16,7 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/ast.hpp"
 #include "NovelMind/scripting/script_error.hpp"
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -47,6 +48,29 @@ struct ValidationResult {
 };
 
 /**
+ * @brief Callback for checking if a scene file exists
+ * @param sceneId The scene identifier
+ * @return true if the .nmscene file exists
+ */
+using SceneFileExistsCallback = std::function<bool(const std::string &sceneId)>;
+
+/**
+ * @brief Callback for checking if an object exists in a scene
+ * @param sceneId The scene identifier
+ * @param objectId The object identifier (e.g., character name)
+ * @return true if the object exists in the scene file
+ */
+using SceneObjectExistsCallback =
+    std::function<bool(const std::string &sceneId, const std::string &objectId)>;
+
+/**
+ * @brief Callback for checking if an asset file exists
+ * @param assetPath The asset path
+ * @return true if the asset file exists
+ */
+using AssetFileExistsCallback = std::function<bool(const std::string &assetPath)>;
+
+/**
  * @brief AST Validator for semantic analysis
  *
  * Performs comprehensive validation of NM Script AST including:
@@ -54,6 +78,7 @@ struct ValidationResult {
  * - Usage tracking for unused symbol detection
  * - Control flow analysis for dead code detection
  * - Type checking for expressions
+ * - Optional resource validation (scene files, objects, assets)
  *
  * Example usage:
  * @code
@@ -87,6 +112,24 @@ public:
    * @brief Configure whether to report dead code as warnings
    */
   void setReportDeadCode(bool report);
+
+  /**
+   * @brief Set callback for checking scene file existence
+   * @param callback Function that returns true if .nmscene file exists
+   */
+  void setSceneFileExistsCallback(SceneFileExistsCallback callback);
+
+  /**
+   * @brief Set callback for checking scene object existence
+   * @param callback Function that returns true if object exists in scene
+   */
+  void setSceneObjectExistsCallback(SceneObjectExistsCallback callback);
+
+  /**
+   * @brief Set callback for checking asset file existence
+   * @param callback Function that returns true if asset file exists
+   */
+  void setAssetFileExistsCallback(AssetFileExistsCallback callback);
 
 private:
   // Reset state for new validation
@@ -163,6 +206,11 @@ private:
   // Configuration
   bool m_reportUnused = true;
   bool m_reportDeadCode = true;
+
+  // Resource validation callbacks (optional)
+  SceneFileExistsCallback m_sceneFileExistsCallback;
+  SceneObjectExistsCallback m_sceneObjectExistsCallback;
+  AssetFileExistsCallback m_assetFileExistsCallback;
 
   // Results
   ErrorList m_errors;
