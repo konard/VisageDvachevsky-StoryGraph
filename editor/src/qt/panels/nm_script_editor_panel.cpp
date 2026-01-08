@@ -64,12 +64,9 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
           &NMScriptEditorPanel::runDiagnostics);
   m_scriptWatcher = new QFileSystemWatcher(this);
   connect(m_scriptWatcher, &QFileSystemWatcher::directoryChanged, this,
-          [this](const QString &) {
-            refreshFileList();
-            refreshSymbolIndex();
-          });
+          &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
-          [this](const QString &) { refreshSymbolIndex(); });
+          &NMScriptEditorPanel::onFileChanged);
   setupContent();
 }
 
@@ -341,6 +338,7 @@ void NMScriptEditorPanel::setupContent() {
   connect(m_tabs, &QTabWidget::tabCloseRequested, this, [this](int index) {
     QWidget *widget = m_tabs->widget(index);
     m_tabPaths.remove(widget);
+    m_editorSaveTimes.remove(widget); // Clean up save time tracking (issue #246)
     m_tabs->removeTab(index);
     delete widget;
   });
@@ -563,6 +561,10 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   m_tabs->setCurrentWidget(editor);
   editor->setFocus();
   m_tabPaths.insert(editor, path);
+
+  // Initialize save time for conflict detection (issue #246)
+  setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
   pushCompletionsToEditors();
 }
 
@@ -584,6 +586,9 @@ bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
   QTextStream out(&file);
   out << editor->toPlainText();
   file.close();
+
+  // Record save time to prevent triggering conflict dialog for our own saves
+  setEditorSaveTime(editor, QFileInfo(path).lastModified());
 
   const QString name = QFileInfo(path).fileName();
   const int index = m_tabs->indexOf(editor);
@@ -1877,6 +1882,284 @@ void NMScriptEditorPanel::applySettings() {
     QFontMetrics metrics(font);
     editor->setTabStopDistance(tabSize * metrics.horizontalAdvance(' '));
   }
+}
+
+// ============================================================================
+// File Conflict Detection (Issue #246)
+// ============================================================================
+
+NMScriptEditor *
+NMScriptEditorPanel::findEditorForPath(const QString &path) const {
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    QWidget *widget = m_tabs->widget(i);
+    if (m_tabPaths.value(widget) == path) {
+      return qobject_cast<NMScriptEditor *>(widget);
+    }
+  }
+  return nullptr;
+}
+
+bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
+  if (!editor || !m_tabs) {
+    return false;
+  }
+  const int index = m_tabs->indexOf(const_cast<QWidget *>(editor));
+  if (index < 0) {
+    return false;
+  }
+  // Check if tab text has "*" suffix indicating unsaved changes
+  return m_tabs->tabText(index).endsWith("*");
+}
+
+QDateTime
+NMScriptEditorPanel::getEditorSaveTime(const QWidget *editor) const {
+  return m_editorSaveTimes.value(const_cast<QWidget *>(editor));
+}
+
+void NMScriptEditorPanel::setEditorSaveTime(QWidget *editor,
+                                            const QDateTime &time) {
+  if (editor) {
+    m_editorSaveTimes.insert(editor, time);
+  }
+}
+
+void NMScriptEditorPanel::onFileChanged(const QString &path) {
+  // Find if this file is open in an editor tab
+  NMScriptEditor *editor = findEditorForPath(path);
+  if (!editor) {
+    // File not open, just refresh symbol index
+    refreshSymbolIndex();
+    return;
+  }
+
+  // Check if tab has unsaved changes
+  const bool hasUnsaved = isTabModified(editor);
+
+  // Get file modification time
+  QFileInfo fileInfo(path);
+  if (!fileInfo.exists()) {
+    // File was deleted, handle separately if needed
+    core::Logger::instance().warning(
+        "File was deleted externally: " + path.toStdString());
+    return;
+  }
+  const QDateTime fileMTime = fileInfo.lastModified();
+
+  // Compare with last known save time
+  const QDateTime editorMTime = getEditorSaveTime(editor);
+
+  // If we have a recorded save time and file time is not newer, this was our
+  // own save
+  if (editorMTime.isValid() && fileMTime <= editorMTime) {
+    // This was our own save, ignore
+    refreshSymbolIndex();
+    return;
+  }
+
+  // External modification detected
+  if (hasUnsaved) {
+    showConflictDialog(path, editor);
+  } else {
+    showReloadPrompt(path, editor);
+  }
+}
+
+void NMScriptEditorPanel::onDirectoryChanged(const QString &path) {
+  Q_UNUSED(path);
+  // Directory changes don't affect open files, just refresh file list
+  refreshFileList();
+  refreshSymbolIndex();
+}
+
+void NMScriptEditorPanel::showConflictDialog(const QString &path,
+                                              NMScriptEditor *editor) {
+  if (!editor) {
+    return;
+  }
+
+  const QString fileName = QFileInfo(path).fileName();
+  const QString message =
+      tr("The file \"%1\" has been modified externally, but you have unsaved "
+         "changes in the editor.\n\nWhat would you like to do?")
+          .arg(fileName);
+
+  // Create custom dialog with three options
+  auto *dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("File Conflict Detected"));
+  dialog->setModal(true);
+  dialog->setMinimumWidth(450);
+
+  auto *layout = new QVBoxLayout(dialog);
+  layout->setContentsMargins(16, 16, 16, 16);
+  layout->setSpacing(12);
+
+  // Warning icon and message
+  auto *messageLayout = new QHBoxLayout();
+  auto *iconLabel = new QLabel(dialog);
+  iconLabel->setText("⚠️");
+  iconLabel->setStyleSheet("font-size: 32px;");
+  messageLayout->addWidget(iconLabel);
+
+  auto *messageLabel = new QLabel(message, dialog);
+  messageLabel->setWordWrap(true);
+  messageLayout->addWidget(messageLabel, 1);
+  layout->addLayout(messageLayout);
+
+  // Button layout
+  auto *buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+
+  auto *keepMyChangesBtn =
+      new QPushButton(tr("Keep My Changes"), dialog);
+  keepMyChangesBtn->setToolTip(
+      tr("Discard the external file version and keep your unsaved changes"));
+  buttonLayout->addWidget(keepMyChangesBtn);
+
+  auto *useFileVersionBtn =
+      new QPushButton(tr("Use File Version"), dialog);
+  useFileVersionBtn->setToolTip(
+      tr("Discard your unsaved changes and reload from disk"));
+  buttonLayout->addWidget(useFileVersionBtn);
+
+  auto *cancelBtn = new QPushButton(tr("Cancel"), dialog);
+  cancelBtn->setToolTip(tr("Do nothing for now"));
+  buttonLayout->addWidget(cancelBtn);
+
+  layout->addLayout(buttonLayout);
+
+  // Connect buttons
+  int result = 0; // 1 = Keep Mine, 2 = Use File, 0 = Cancel
+  connect(keepMyChangesBtn, &QPushButton::clicked, dialog,
+          [dialog, &result]() {
+            result = 1;
+            dialog->accept();
+          });
+  connect(useFileVersionBtn, &QPushButton::clicked, dialog,
+          [dialog, &result]() {
+            result = 2;
+            dialog->accept();
+          });
+  connect(cancelBtn, &QPushButton::clicked, dialog, [dialog]() {
+    dialog->reject();
+  });
+
+  dialog->exec();
+
+  if (result == 1) {
+    // Keep My Changes - force save over file version
+    core::Logger::instance().info(
+        "User chose to keep editor changes for: " + path.toStdString());
+    saveEditor(editor);
+  } else if (result == 2) {
+    // Use File Version - reload from disk
+    core::Logger::instance().info(
+        "User chose to reload file from disk: " + path.toStdString());
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      const QString content = QString::fromUtf8(file.readAll());
+      editor->setPlainText(content);
+      file.close();
+
+      // Update save time to prevent immediate re-trigger
+      setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
+      // Remove "*" from tab
+      const int index = m_tabs->indexOf(editor);
+      if (index >= 0) {
+        m_tabs->setTabText(index, fileName);
+      }
+
+      refreshSymbolIndex();
+      m_diagnosticsTimer.start();
+    }
+  }
+  // else: Cancel - do nothing
+
+  delete dialog;
+}
+
+void NMScriptEditorPanel::showReloadPrompt(const QString &path,
+                                            NMScriptEditor *editor) {
+  if (!editor) {
+    return;
+  }
+
+  const QString fileName = QFileInfo(path).fileName();
+  const QString message =
+      tr("The file \"%1\" has been modified externally.\n\nDo you want to "
+         "reload it from disk?")
+          .arg(fileName);
+
+  // Create simple reload dialog
+  auto *dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("File Changed Externally"));
+  dialog->setModal(true);
+  dialog->setMinimumWidth(400);
+
+  auto *layout = new QVBoxLayout(dialog);
+  layout->setContentsMargins(16, 16, 16, 16);
+  layout->setSpacing(12);
+
+  // Info icon and message
+  auto *messageLayout = new QHBoxLayout();
+  auto *iconLabel = new QLabel(dialog);
+  iconLabel->setText("ℹ️");
+  iconLabel->setStyleSheet("font-size: 28px;");
+  messageLayout->addWidget(iconLabel);
+
+  auto *messageLabel = new QLabel(message, dialog);
+  messageLabel->setWordWrap(true);
+  messageLayout->addWidget(messageLabel, 1);
+  layout->addLayout(messageLayout);
+
+  // Button layout
+  auto *buttonLayout = new QHBoxLayout();
+  buttonLayout->addStretch();
+
+  auto *reloadBtn = new QPushButton(tr("Reload"), dialog);
+  reloadBtn->setToolTip(tr("Reload the file from disk"));
+  buttonLayout->addWidget(reloadBtn);
+
+  auto *ignoreBtn = new QPushButton(tr("Ignore"), dialog);
+  ignoreBtn->setToolTip(
+      tr("Keep current version, you will be warned on save"));
+  buttonLayout->addWidget(ignoreBtn);
+
+  layout->addLayout(buttonLayout);
+
+  // Connect buttons
+  bool shouldReload = false;
+  connect(reloadBtn, &QPushButton::clicked, dialog,
+          [dialog, &shouldReload]() {
+            shouldReload = true;
+            dialog->accept();
+          });
+  connect(ignoreBtn, &QPushButton::clicked, dialog,
+          [dialog]() { dialog->reject(); });
+
+  dialog->exec();
+
+  if (shouldReload) {
+    core::Logger::instance().info("User chose to reload file: " +
+                                  path.toStdString());
+    QFile file(path);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      const QString content = QString::fromUtf8(file.readAll());
+      editor->setPlainText(content);
+      file.close();
+
+      // Update save time to prevent immediate re-trigger
+      setEditorSaveTime(editor, QFileInfo(path).lastModified());
+
+      refreshSymbolIndex();
+      m_diagnosticsTimer.start();
+    }
+  } else {
+    core::Logger::instance().info("User chose to ignore external change for: " +
+                                  path.toStdString());
+  }
+
+  delete dialog;
 }
 
 } // namespace NovelMind::editor::qt
