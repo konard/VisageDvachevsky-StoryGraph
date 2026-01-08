@@ -8,10 +8,11 @@
  * - Scene registration and unregistration
  * - Scene metadata tracking (name, path, timestamps, tags)
  * - Scene ID validation
+ * - Cross-reference tracking (which Story Graph nodes use which scenes)
  * - Thumbnail generation and caching
  * - Persistence via scene_registry.json
  *
- * Addresses issue #206: Implement Scene Registry System
+ * Addresses issues #206 and #211: Implement Scene Registry System
  */
 
 #include "NovelMind/core/result.hpp"
@@ -38,6 +39,16 @@ struct SceneMetadata {
   QDateTime modified;    ///< Last modification timestamp
   QStringList tags;      ///< Tags for categorization
   QString description;   ///< Optional description
+
+  /**
+   * @brief List of Story Graph node IDs that reference this scene
+   *
+   * Tracks which nodes in the Story Graph use this scene, enabling:
+   * - Automatic reference updates when renaming scenes
+   * - Detection of orphaned scenes (no references)
+   * - Impact analysis before scene deletion
+   */
+  QStringList referencingNodes; ///< Node IDs that reference this scene
 
   /**
    * @brief Convert metadata to JSON object
@@ -139,6 +150,26 @@ public:
   bool unregisterScene(const QString &sceneId);
 
   /**
+   * @brief Delete a scene (alias for unregisterScene for API compatibility)
+   * @param sceneId Scene ID to delete
+   * @return true on success
+   *
+   * This is an alias for unregisterScene() to match the API spec in issue #211.
+   * Note: This only removes the scene from the registry, not the actual files.
+   */
+  bool deleteScene(const QString &sceneId);
+
+  /**
+   * @brief Get absolute path to the .nmscene document
+   * @param sceneId Scene ID
+   * @return Absolute path to document, or empty if not found or no project set
+   *
+   * Unlike getSceneDocumentPath() which returns a relative path,
+   * this returns the full absolute path suitable for file operations.
+   */
+  [[nodiscard]] QString getScenePath(const QString &sceneId) const;
+
+  /**
    * @brief Get list of all registered scene IDs
    * @return List of scene IDs
    */
@@ -158,6 +189,56 @@ public:
    * @return true on success
    */
   bool updateSceneMetadata(const QString &sceneId, const SceneMetadata &metadata);
+
+  // ==========================================================================
+  // Cross-Reference Tracking (Issue #211)
+  // ==========================================================================
+
+  /**
+   * @brief Register that a Story Graph node references a scene
+   * @param sceneId The scene being referenced
+   * @param nodeIdString The Story Graph node ID (string form)
+   * @return true if the reference was added (false if already exists or scene not found)
+   */
+  bool addSceneReference(const QString &sceneId, const QString &nodeIdString);
+
+  /**
+   * @brief Remove a node's reference to a scene
+   * @param sceneId The scene being unreferenced
+   * @param nodeIdString The Story Graph node ID
+   * @return true if the reference was removed
+   */
+  bool removeSceneReference(const QString &sceneId, const QString &nodeIdString);
+
+  /**
+   * @brief Get all nodes that reference a specific scene
+   * @param sceneId The scene ID
+   * @return List of node IDs that reference this scene
+   */
+  [[nodiscard]] QStringList getSceneReferences(const QString &sceneId) const;
+
+  /**
+   * @brief Update all references when a scene ID changes
+   * @param oldSceneId The old scene ID
+   * @param newSceneId The new scene ID
+   *
+   * This is called internally by renameSceneId() to track reference updates.
+   * Note: This method only updates the registry's tracking. The actual
+   * Story Graph node updates should be handled by listening to the
+   * sceneIdChanged signal.
+   */
+  void updateSceneReferences(const QString &oldSceneId, const QString &newSceneId);
+
+  /**
+   * @brief Rename a scene's ID (not just display name)
+   * @param oldId Current scene ID
+   * @param newId New scene ID
+   * @return true on success, false if old ID not found or new ID already exists
+   *
+   * This method changes the actual scene ID, updates document paths,
+   * and emits sceneIdChanged signal so Story Graph can update references.
+   */
+  bool renameSceneId(const QString &oldId, const QString &newId);
 
   // ==========================================================================
   // Thumbnail Management
@@ -200,10 +281,26 @@ public:
   [[nodiscard]] QStringList findOrphanedScenes() const;
 
   /**
+   * @brief Get .nmscene documents that exist but aren't in the registry
+   * @return List of orphaned document paths (absolute)
+   *
+   * Alias for findOrphanedScenes() for API compatibility with issue #211.
+   */
+  [[nodiscard]] QStringList getOrphanedSceneDocuments() const;
+
+  /**
    * @brief Find scene IDs with missing .nmscene documents
    * @return List of scene IDs with broken references
    */
   [[nodiscard]] QStringList findBrokenReferences() const;
+
+  /**
+   * @brief Get scene IDs that reference non-existent .nmscene documents
+   * @return List of scene IDs with invalid/broken references
+   *
+   * Alias for findBrokenReferences() for API compatibility with issue #211.
+   */
+  [[nodiscard]] QStringList getInvalidSceneReferences() const;
 
   // ==========================================================================
   // Persistence
@@ -295,6 +392,34 @@ signals:
    * @brief Emitted when the registry is saved
    */
   void registrySaved();
+
+  // ==========================================================================
+  // Cross-Reference Signals (Issue #211)
+  // ==========================================================================
+
+  /**
+   * @brief Emitted when a scene's ID is changed (not just display name)
+   * @param oldId The previous scene ID
+   * @param newId The new scene ID
+   *
+   * Story Graph should listen to this signal to update all Scene node
+   * references from oldId to newId.
+   */
+  void sceneIdChanged(const QString &oldId, const QString &newId);
+
+  /**
+   * @brief Emitted when a node reference to a scene is added
+   * @param sceneId The scene being referenced
+   * @param nodeIdString The node that now references the scene
+   */
+  void sceneReferenceAdded(const QString &sceneId, const QString &nodeIdString);
+
+  /**
+   * @brief Emitted when a node reference to a scene is removed
+   * @param sceneId The scene being unreferenced
+   * @param nodeIdString The node that no longer references the scene
+   */
+  void sceneReferenceRemoved(const QString &sceneId, const QString &nodeIdString);
 
 private:
   /**

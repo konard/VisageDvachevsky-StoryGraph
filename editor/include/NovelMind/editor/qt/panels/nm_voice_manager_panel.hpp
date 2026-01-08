@@ -119,7 +119,7 @@ public:
   /**
    * @brief Get list of missing voice lines for current locale
    */
-  [[nodiscard]] std::vector<const NovelMind::audio::VoiceManifestLine *>
+  [[nodiscard]] std::vector<const ::NovelMind::audio::VoiceManifestLine *>
   getMissingLines() const;
 
   /**
@@ -269,7 +269,7 @@ private:
   std::unordered_map<std::string, DurationCacheEntry> m_durationCache;
 
   // Data - VoiceManifest is the single source of truth
-  std::unique_ptr<NovelMind::audio::VoiceManifest> m_manifest;
+  std::unique_ptr<::NovelMind::audio::VoiceManifest> m_manifest;
   QString m_currentLocale;
   QStringList m_voiceFiles;
   QString m_currentlyPlayingFile;

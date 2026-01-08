@@ -206,9 +206,9 @@ private:
   void importLocale();
   void exportMissingStrings();
   void importLocaleAsync(const QString &filePath,
-                         NovelMind::localization::LocalizationFormat format);
+                         ::NovelMind::localization::LocalizationFormat format);
   void exportLocaleAsync(const QString &filePath,
-                         NovelMind::localization::LocalizationFormat format);
+                         ::NovelMind::localization::LocalizationFormat format);
   bool showPluralFormsDialog(const QString &key);
   void updatePreview();
   void applyRTLLayout(bool rtl);
@@ -245,7 +245,7 @@ private:
   QString m_currentLocale;
   QString m_currentFilter;
   LocalizationFilter m_filterMode = LocalizationFilter::All;
-  NovelMind::localization::LocalizationManager m_localization;
+  ::NovelMind::localization::LocalizationManager m_localization;
   bool m_dirty = false;
 
   // PERF-4: Key to table row index mapping for O(1) row lookup

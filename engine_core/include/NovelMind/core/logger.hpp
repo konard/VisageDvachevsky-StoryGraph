@@ -55,9 +55,9 @@ private:
 
 } // namespace NovelMind::core
 
-#define NOVELMIND_LOG_TRACE(msg) NovelMind::core::Logger::instance().trace(msg)
-#define NOVELMIND_LOG_DEBUG(msg) NovelMind::core::Logger::instance().debug(msg)
-#define NOVELMIND_LOG_INFO(msg) NovelMind::core::Logger::instance().info(msg)
-#define NOVELMIND_LOG_WARN(msg) NovelMind::core::Logger::instance().warning(msg)
-#define NOVELMIND_LOG_ERROR(msg) NovelMind::core::Logger::instance().error(msg)
-#define NOVELMIND_LOG_FATAL(msg) NovelMind::core::Logger::instance().fatal(msg)
+#define NOVELMIND_LOG_TRACE(msg) ::NovelMind::core::Logger::instance().trace(msg)
+#define NOVELMIND_LOG_DEBUG(msg) ::NovelMind::core::Logger::instance().debug(msg)
+#define NOVELMIND_LOG_INFO(msg) ::NovelMind::core::Logger::instance().info(msg)
+#define NOVELMIND_LOG_WARN(msg) ::NovelMind::core::Logger::instance().warning(msg)
+#define NOVELMIND_LOG_ERROR(msg) ::NovelMind::core::Logger::instance().error(msg)
+#define NOVELMIND_LOG_FATAL(msg) ::NovelMind::core::Logger::instance().fatal(msg)

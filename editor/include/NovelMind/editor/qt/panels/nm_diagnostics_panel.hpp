@@ -20,7 +20,7 @@ class QPushButton;
 namespace NovelMind::editor::qt {
 
 class NMDiagnosticsPanel : public NMDockPanel,
-                           public NovelMind::editor::IDiagnosticListener {
+                           public ::NovelMind::editor::IDiagnosticListener {
   Q_OBJECT
 
 public:
@@ -33,7 +33,7 @@ public:
 
   // IDiagnosticListener interface
   void
-  onDiagnosticAdded(const NovelMind::editor::Diagnostic &diagnostic) override;
+  onDiagnosticAdded(const ::NovelMind::editor::Diagnostic &diagnostic) override;
   void onAllDiagnosticsCleared() override;
 
   // Legacy methods for backward compatibility
@@ -49,16 +49,16 @@ signals:
 private:
   void setupUI();
   void applyTypeFilter();
-  void addDiagnosticToTree(const NovelMind::editor::Diagnostic &diag);
+  void addDiagnosticToTree(const ::NovelMind::editor::Diagnostic &diag);
   QTreeWidgetItem *
-  createDiagnosticItem(const NovelMind::editor::Diagnostic &diag);
+  createDiagnosticItem(const ::NovelMind::editor::Diagnostic &diag);
   void createRelatedInfoItems(QTreeWidgetItem *parent,
-                              const NovelMind::editor::Diagnostic &diag);
+                              const ::NovelMind::editor::Diagnostic &diag);
   void createSuggestionItems(QTreeWidgetItem *parent,
-                             const NovelMind::editor::Diagnostic &diag);
-  QString diagnosticTypeString(const NovelMind::editor::Diagnostic &diag) const;
-  QColor severityColor(NovelMind::editor::DiagnosticSeverity severity) const;
-  QString locationString(const NovelMind::editor::SourceLocation &loc) const;
+                             const ::NovelMind::editor::Diagnostic &diag);
+  QString diagnosticTypeString(const ::NovelMind::editor::Diagnostic &diag) const;
+  QColor severityColor(::NovelMind::editor::DiagnosticSeverity severity) const;
+  QString locationString(const ::NovelMind::editor::SourceLocation &loc) const;
 
   QTreeWidget *m_diagnosticsTree = nullptr;
   QToolBar *m_toolbar = nullptr;

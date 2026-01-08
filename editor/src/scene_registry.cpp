@@ -1,5 +1,6 @@
 #include "NovelMind/editor/scene_registry.hpp"
 #include "NovelMind/editor/scene_document.hpp"
+#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -34,6 +35,15 @@ QJsonObject SceneMetadata::toJson() const {
     obj.insert("description", description);
   }
 
+  // Serialize referencing nodes (issue #211)
+  if (!referencingNodes.isEmpty()) {
+    QJsonArray refsArray;
+    for (const QString &ref : referencingNodes) {
+      refsArray.append(ref);
+    }
+    obj.insert("referencingNodes", refsArray);
+  }
+
   return obj;
 }
 
@@ -51,6 +61,13 @@ SceneMetadata SceneMetadata::fromJson(const QJsonObject &json) {
   meta.tags.reserve(tagsArray.size());
   for (const auto &value : tagsArray) {
     meta.tags.append(value.toString());
+  }
+
+  // Deserialize referencing nodes (issue #211)
+  const QJsonArray refsArray = json.value("referencingNodes").toArray();
+  meta.referencingNodes.reserve(refsArray.size());
+  for (const auto &value : refsArray) {
+    meta.referencingNodes.append(value.toString());
   }
 
   return meta;
@@ -139,6 +156,24 @@ bool SceneRegistry::unregisterScene(const QString &sceneId) {
   return true;
 }
 
+bool SceneRegistry::deleteScene(const QString &sceneId) {
+  // Alias for unregisterScene for API compatibility (issue #211)
+  return unregisterScene(sceneId);
+}
+
+QString SceneRegistry::getScenePath(const QString &sceneId) const {
+  if (m_projectPath.isEmpty() || !m_scenes.contains(sceneId)) {
+    return QString();
+  }
+
+  const QString docPath = m_scenes.value(sceneId).documentPath;
+  if (docPath.isEmpty()) {
+    return QString();
+  }
+
+  return QDir(m_projectPath).filePath(docPath);
+}
+
 QStringList SceneRegistry::getAllSceneIds() const {
   return m_scenes.keys();
 }
@@ -182,6 +217,109 @@ bool SceneRegistry::updateSceneMetadata(const QString &sceneId, const SceneMetad
   m_modified = true;
 
   emit sceneMetadataChanged(sceneId);
+  return true;
+}
+
+// ============================================================================
+// Cross-Reference Tracking (Issue #211)
+// ============================================================================
+
+bool SceneRegistry::addSceneReference(const QString &sceneId, const QString &nodeIdString) {
+  if (!m_scenes.contains(sceneId)) {
+    return false;
+  }
+
+  if (m_scenes[sceneId].referencingNodes.contains(nodeIdString)) {
+    return false; // Already exists
+  }
+
+  m_scenes[sceneId].referencingNodes.append(nodeIdString);
+  updateModifiedTime(sceneId);
+  m_modified = true;
+
+  emit sceneReferenceAdded(sceneId, nodeIdString);
+  return true;
+}
+
+bool SceneRegistry::removeSceneReference(const QString &sceneId, const QString &nodeIdString) {
+  if (!m_scenes.contains(sceneId)) {
+    return false;
+  }
+
+  int index = m_scenes[sceneId].referencingNodes.indexOf(nodeIdString);
+  if (index == -1) {
+    return false; // Not found
+  }
+
+  m_scenes[sceneId].referencingNodes.removeAt(index);
+  updateModifiedTime(sceneId);
+  m_modified = true;
+
+  emit sceneReferenceRemoved(sceneId, nodeIdString);
+  return true;
+}
+
+QStringList SceneRegistry::getSceneReferences(const QString &sceneId) const {
+  if (!m_scenes.contains(sceneId)) {
+    return QStringList();
+  }
+
+  return m_scenes.value(sceneId).referencingNodes;
+}
+
+void SceneRegistry::updateSceneReferences(const QString &oldSceneId, const QString &newSceneId) {
+  // This method is called when a scene ID is changed
+  // The references are already moved to the new ID by renameSceneId()
+  // This is just a hook for any additional reference update logic if needed
+  Q_UNUSED(oldSceneId);
+  Q_UNUSED(newSceneId);
+}
+
+bool SceneRegistry::renameSceneId(const QString &oldId, const QString &newId) {
+  if (!m_scenes.contains(oldId)) {
+    return false;
+  }
+
+  if (m_scenes.contains(newId)) {
+    return false; // New ID already exists
+  }
+
+  // Validate new ID format
+  QString sanitizedNewId = sanitizeForId(newId);
+  if (sanitizedNewId != newId) {
+    // If the new ID would be sanitized differently, reject it
+    // Caller should provide a properly formatted ID
+    return false;
+  }
+
+  // Get the scene metadata
+  SceneMetadata meta = m_scenes.take(oldId);
+
+  // Update the ID
+  meta.id = newId;
+
+  // Update the document path
+  // Replace the old ID in the path with the new ID
+  QString oldDocPath = meta.documentPath;
+  QString basePath = QFileInfo(oldDocPath).path();
+  meta.documentPath = QString("%1/%2.nmscene").arg(basePath, newId);
+
+  // Update thumbnail path
+  meta.thumbnailPath = QString("%1/%2.png").arg(THUMBNAILS_DIR, newId);
+
+  // Update modified time
+  meta.modified = QDateTime::currentDateTime();
+
+  // Insert with new ID
+  m_scenes.insert(newId, meta);
+  m_modified = true;
+
+  // Update references tracking
+  updateSceneReferences(oldId, newId);
+
+  // Emit signal so Story Graph can update its nodes
+  emit sceneIdChanged(oldId, newId);
+
   return true;
 }
 
@@ -391,6 +529,16 @@ QStringList SceneRegistry::findBrokenReferences() const {
   }
 
   return broken;
+}
+
+QStringList SceneRegistry::getOrphanedSceneDocuments() const {
+  // Alias for findOrphanedScenes for API compatibility (issue #211)
+  return findOrphanedScenes();
+}
+
+QStringList SceneRegistry::getInvalidSceneReferences() const {
+  // Alias for findBrokenReferences for API compatibility (issue #211)
+  return findBrokenReferences();
 }
 
 // ============================================================================

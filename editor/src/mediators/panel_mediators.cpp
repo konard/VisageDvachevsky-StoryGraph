@@ -1,4 +1,5 @@
 #include "NovelMind/editor/mediators/panel_mediators.hpp"
+#include "NovelMind/editor/scene_registry.hpp"
 
 #include <QDebug>
 
@@ -61,6 +62,28 @@ void PanelMediatorManager::initialize(
 
   m_initialized = true;
   qDebug() << "[PanelMediatorManager] All panel mediators initialized successfully";
+}
+
+void PanelMediatorManager::initializeSceneMediator(
+    SceneRegistry *sceneRegistry, qt::NMSceneViewPanel *sceneView,
+    qt::NMStoryGraphPanel *storyGraph) {
+  if (!sceneRegistry) {
+    qWarning() << "[PanelMediatorManager] Cannot initialize SceneMediator without SceneRegistry";
+    return;
+  }
+
+  // Shutdown existing scene mediator if any
+  if (m_sceneMediator) {
+    m_sceneMediator->shutdown();
+    m_sceneMediator.reset();
+  }
+
+  qDebug() << "[PanelMediatorManager] Initializing SceneMediator...";
+
+  m_sceneMediator = std::make_unique<SceneMediator>(this);
+  m_sceneMediator->initialize(sceneRegistry, sceneView, storyGraph);
+
+  qDebug() << "[PanelMediatorManager] SceneMediator initialized successfully";
 }
 
 void PanelMediatorManager::shutdown() {
