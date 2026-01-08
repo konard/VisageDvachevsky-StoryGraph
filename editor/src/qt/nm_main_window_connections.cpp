@@ -778,8 +778,32 @@ void NMMainWindow::showHotkeysDialog() {
 
   addStaticEntry(tr("Script Editor"), tr("Completion"), tr("Ctrl+Space"),
                  tr("Trigger code suggestions"));
+  addStaticEntry(tr("Script Editor"), tr("Command Palette"), tr("Ctrl+Shift+P"),
+                 tr("Open command palette for quick actions"));
   addStaticEntry(tr("Script Editor"), tr("Save Script"), tr("Ctrl+S"),
                  tr("Save current script tab"));
+  addStaticEntry(tr("Script Editor"), tr("Save All Scripts"), tr("Ctrl+Shift+S"),
+                 tr("Save all open script tabs"));
+  addStaticEntry(tr("Script Editor"), tr("Insert Snippet"), tr("Ctrl+J"),
+                 tr("Insert code snippet"));
+  addStaticEntry(tr("Script Editor"), tr("Go to Symbol"), tr("Ctrl+Shift+O"),
+                 tr("Navigate to symbols in current script"));
+  addStaticEntry(tr("Script Editor"), tr("Format Document"), tr("Ctrl+Shift+F"),
+                 tr("Auto-format current script"));
+  addStaticEntry(tr("Script Editor"), tr("Find"), tr("Ctrl+F"),
+                 tr("Find text in current script"));
+  addStaticEntry(tr("Script Editor"), tr("Replace"), tr("Ctrl+H"),
+                 tr("Find and replace text"));
+  addStaticEntry(tr("Script Editor"), tr("Toggle Comment"), tr("Ctrl+/"),
+                 tr("Comment/uncomment selected lines"));
+  addStaticEntry(tr("Script Editor"), tr("Go to Definition"), tr("F12"),
+                 tr("Jump to symbol definition"));
+  addStaticEntry(tr("Script Editor"), tr("Find References"), tr("Shift+F12"),
+                 tr("Find all references to symbol"));
+  addStaticEntry(tr("Script Editor"), tr("Navigate to Graph"), tr("Ctrl+Shift+G"),
+                 tr("Navigate to corresponding graph node"));
+  addStaticEntry(tr("Script Editor"), tr("Go to Line"), tr("Ctrl+G"),
+                 tr("Jump to specific line number"));
   addStaticEntry(tr("Story Graph"), tr("Connect Nodes"), tr("Ctrl+Drag"),
                  tr("Drag from output port to input"));
   addStaticEntry(tr("Story Graph"), tr("Pan View"), tr("Middle Mouse"),

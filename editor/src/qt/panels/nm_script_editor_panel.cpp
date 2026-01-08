@@ -1,6 +1,8 @@
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+#include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/editor_settings.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
@@ -31,6 +33,7 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSet>
+#include <QSettings>
 #include <QStandardItem>
 #include <QStandardItemModel>
 #include <QStringListModel>
@@ -75,6 +78,8 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
 }
 
 NMScriptEditorPanel::~NMScriptEditorPanel() {
+  // Save state on destruction
+  saveState();
   delete m_projectContext;
 }
 
@@ -86,6 +91,8 @@ void NMScriptEditorPanel::onInitialize() {
     m_projectContext->setProjectPath(QString::fromStdString(projectPath));
   }
   refreshFileList();
+  // Restore state after panels are initialized
+  restoreState();
 }
 
 void NMScriptEditorPanel::onUpdate(double /*deltaTime*/) {}
@@ -335,7 +342,10 @@ void NMScriptEditorPanel::setupContent() {
   m_leftSplitter->setStretchFactor(0, 1);
   m_leftSplitter->setStretchFactor(1, 1);
 
-  m_tabs = new QTabWidget(m_splitter);
+  // Create horizontal splitter for editor and preview (issue #240)
+  m_mainSplitter = new QSplitter(Qt::Horizontal, m_splitter);
+
+  m_tabs = new QTabWidget(m_mainSplitter);
   m_tabs->setTabsClosable(true);
   connect(m_tabs, &QTabWidget::currentChanged, this,
           &NMScriptEditorPanel::onCurrentTabChanged);
@@ -345,6 +355,19 @@ void NMScriptEditorPanel::setupContent() {
     m_tabs->removeTab(index);
     delete widget;
   });
+
+  // Scene Preview Widget (issue #240)
+  m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
+  m_scenePreviewEnabled = EditorSettings::instance()
+                              .value("scriptEditor/previewEnabled", false)
+                              .toBool();
+  m_scenePreview->setVisible(m_scenePreviewEnabled);
+  m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
+
+  m_mainSplitter->addWidget(m_tabs);
+  m_mainSplitter->addWidget(m_scenePreview);
+  m_mainSplitter->setStretchFactor(0, 6); // 60% for editor
+  m_mainSplitter->setStretchFactor(1, 4); // 40% for preview
 
   // Find/Replace widget (hidden by default)
   m_findReplaceWidget = new NMFindReplaceWidget(m_contentWidget);
@@ -357,7 +380,7 @@ void NMScriptEditorPanel::setupContent() {
   setupCommandPalette();
 
   m_splitter->addWidget(m_leftSplitter);
-  m_splitter->addWidget(m_tabs);
+  m_splitter->addWidget(m_mainSplitter);
   m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
   layout->addWidget(m_findReplaceWidget);
@@ -424,6 +447,21 @@ void NMScriptEditorPanel::setupToolBar() {
 
   m_toolBar->addSeparator();
 
+  // Toggle Preview action (issue #240)
+  m_togglePreviewAction = m_toolBar->addAction(tr("👁️ Preview"));
+  m_togglePreviewAction->setToolTip(
+      tr("Toggle live scene preview (Ctrl+Shift+V)"));
+  m_togglePreviewAction->setCheckable(true);
+  m_togglePreviewAction->setChecked(m_scenePreviewEnabled);
+  m_togglePreviewAction->setShortcut(
+      QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
+  m_togglePreviewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  addAction(m_togglePreviewAction);
+  connect(m_togglePreviewAction, &QAction::triggered, this,
+          &NMScriptEditorPanel::toggleScenePreview);
+
+  m_toolBar->addSeparator();
+
   // Snippet insertion
   QAction *actionSnippet = m_toolBar->addAction(tr("Insert"));
   actionSnippet->setToolTip(tr("Insert code snippet (Ctrl+J)"));
@@ -464,7 +502,11 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
             emit docHtmlChanged(html);
           });
   connect(editor, &QPlainTextEdit::textChanged, this,
-          [this]() { m_diagnosticsTimer.start(); });
+          [this]() {
+            m_diagnosticsTimer.start();
+            // Trigger preview update on text change (issue #240)
+            onScriptTextChanged();
+          });
 
   // IDE feature connections
   connect(editor, &NMScriptEditor::goToDefinitionRequested, this,
@@ -499,6 +541,9 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
             if (m_cursorPosLabel) {
               m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
             }
+
+            // Trigger preview update on cursor position change (issue #240)
+            onCursorPositionChanged();
 
             // Update syntax hint
             const QString hint = editor->getSyntaxHint();
@@ -1748,6 +1793,136 @@ void NMScriptEditorPanel::syncScriptToGraph() {
 
   qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total
            << "scenes with data";
+}
+
+// ============================================================================
+// State Persistence
+// ============================================================================
+
+void NMScriptEditorPanel::saveState() {
+  QSettings settings;
+
+  // Save splitter positions
+  if (m_splitter) {
+    settings.setValue("scriptEditor/splitterState", m_splitter->saveState());
+  }
+  if (m_leftSplitter) {
+    settings.setValue("scriptEditor/leftSplitterState", m_leftSplitter->saveState());
+  }
+
+  // Save open files
+  QStringList openFiles;
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    QWidget *widget = m_tabs->widget(i);
+    QString path = m_tabPaths.value(widget);
+    if (!path.isEmpty()) {
+      openFiles.append(path);
+    }
+  }
+  settings.setValue("scriptEditor/openFiles", openFiles);
+
+  // Save active file index
+  settings.setValue("scriptEditor/activeFileIndex", m_tabs->currentIndex());
+
+  // Save cursor positions for each open file
+  for (int i = 0; i < m_tabs->count(); ++i) {
+    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+      QString path = m_tabPaths.value(editor);
+      if (!path.isEmpty()) {
+        QTextCursor cursor = editor->textCursor();
+        settings.setValue(QString("scriptEditor/cursorPos/%1").arg(path), cursor.position());
+      }
+    }
+  }
+
+  // Save minimap visibility
+  settings.setValue("scriptEditor/minimapVisible", m_minimapEnabled);
+}
+
+void NMScriptEditorPanel::restoreState() {
+  QSettings settings;
+
+  // Restore splitter positions
+  if (m_splitter) {
+    QByteArray state = settings.value("scriptEditor/splitterState").toByteArray();
+    if (!state.isEmpty()) {
+      m_splitter->restoreState(state);
+    }
+  }
+  if (m_leftSplitter) {
+    QByteArray state = settings.value("scriptEditor/leftSplitterState").toByteArray();
+    if (!state.isEmpty()) {
+      m_leftSplitter->restoreState(state);
+    }
+  }
+
+  // Restore minimap visibility
+  m_minimapEnabled = settings.value("scriptEditor/minimapVisible", true).toBool();
+
+  // Restore open files if enabled
+  bool restoreOpenFiles = settings.value("editor.script.restore_open_files", true).toBool();
+  if (restoreOpenFiles) {
+    QStringList openFiles = settings.value("scriptEditor/openFiles").toStringList();
+    int activeIndex = settings.value("scriptEditor/activeFileIndex", 0).toInt();
+
+    for (const QString &path : openFiles) {
+      if (QFileInfo::exists(path)) {
+        openScript(path);
+
+        // Restore cursor position if enabled
+        bool restoreCursor = settings.value("editor.script.restore_cursor_position", true).toBool();
+        if (restoreCursor) {
+          if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget())) {
+            int cursorPos = settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
+            QTextCursor cursor = editor->textCursor();
+            cursor.setPosition(cursorPos);
+            editor->setTextCursor(cursor);
+          }
+        }
+      }
+    }
+
+    // Restore active tab
+    if (activeIndex >= 0 && activeIndex < m_tabs->count()) {
+      m_tabs->setCurrentIndex(activeIndex);
+    }
+  }
+
+  // Apply settings from registry
+  applySettings();
+}
+
+void NMScriptEditorPanel::applySettings() {
+  QSettings settings;
+
+  // Apply diagnostic delay
+  int diagnosticDelay = settings.value("editor.script.diagnostic_delay", 600).toInt();
+  m_diagnosticsTimer.setInterval(diagnosticDelay);
+
+  // Apply settings to all open editors
+  for (auto *editor : editors()) {
+    if (!editor) continue;
+
+    // Font settings
+    QString fontFamily = settings.value("editor.script.font_family", "monospace").toString();
+    int fontSize = settings.value("editor.script.font_size", 14).toInt();
+    QFont font(fontFamily, fontSize);
+    editor->setFont(font);
+
+    // Display settings
+    bool showMinimap = settings.value("editor.script.show_minimap", true).toBool();
+    editor->setMinimapEnabled(showMinimap);
+    m_minimapEnabled = showMinimap;
+
+    // Word wrap
+    bool wordWrap = settings.value("editor.script.word_wrap", false).toBool();
+    editor->setLineWrapMode(wordWrap ? QPlainTextEdit::WidgetWidth : QPlainTextEdit::NoWrap);
+
+    // Tab size (note: the editor already has a tab size property)
+    int tabSize = settings.value("editor.script.tab_size", 4).toInt();
+    QFontMetrics metrics(font);
+    editor->setTabStopDistance(tabSize * metrics.horizontalAdvance(' '));
+  }
 }
 
 } // namespace NovelMind::editor::qt
