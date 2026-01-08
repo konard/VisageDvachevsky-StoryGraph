@@ -28,6 +28,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
+#include <QMutexLocker>
 #include <QPainter>
 #include <QPushButton>
 #include <QRegularExpression>
@@ -727,6 +728,7 @@ void NMScriptEditorPanel::rebuildWatchList() {
 }
 
 void NMScriptEditorPanel::refreshSymbolIndex() {
+  QMutexLocker locker(&m_symbolIndexMutex);
   m_symbolIndex = {};
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
@@ -982,6 +984,7 @@ void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
 
 QList<NMScriptEditor::CompletionEntry>
 NMScriptEditorPanel::buildProjectCompletionEntries() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QList<NMScriptEditor::CompletionEntry> entries;
 
   auto addEntries = [&entries](const QStringList &list, const QString &detail) {
@@ -1002,6 +1005,7 @@ NMScriptEditorPanel::buildProjectCompletionEntries() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
   auto relPath = [](const QString &path) {
     if (path.isEmpty()) {
@@ -1042,6 +1046,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
 }
 
 QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
 
   auto relPath = [](const QString &path) {
@@ -1155,12 +1160,14 @@ NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
 }
 
 bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+  QMutexLocker locker(&m_symbolIndexMutex);
   const QString key = sceneName.toLower();
   for (auto it = m_symbolIndex.scenes.constBegin();
        it != m_symbolIndex.scenes.constEnd(); ++it) {
     if (it.key().toLower() == key) {
       const QString filePath = it.value();
       const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
+      locker.unlock();  // Unlock before calling goToLocation to avoid deadlock
       goToLocation(filePath, line);
       return true;
     }
@@ -1272,6 +1279,7 @@ void NMScriptEditorPanel::refreshSymbolList() {
   }
   m_symbolList->clear();
 
+  QMutexLocker locker(&m_symbolIndexMutex);
   const auto &palette = NMStyleManager::instance().palette();
   auto addItems = [this, &palette](const QHash<QString, QString> &map,
                                    const QString &typeLabel,
@@ -1360,6 +1368,7 @@ void NMScriptEditorPanel::showReferencesDialog(
 
 QHash<QString, SymbolLocation>
 NMScriptEditorPanel::buildSymbolLocations() const {
+  QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, SymbolLocation> locations;
 
   // Add scenes
