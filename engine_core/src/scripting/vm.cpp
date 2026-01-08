@@ -1,5 +1,6 @@
 #include "NovelMind/scripting/vm.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
 #include <cstring>
 
@@ -7,7 +8,8 @@ namespace NovelMind::scripting {
 
 VirtualMachine::VirtualMachine()
     : m_ip(0), m_running(false), m_paused(false), m_waiting(false),
-      m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1) {}
+      m_halted(false), m_skipNextIncrement(false), m_choiceResult(-1),
+      m_debugger(nullptr) {}
 
 VirtualMachine::~VirtualMachine() = default;
 
@@ -45,7 +47,21 @@ bool VirtualMachine::step() {
     return false;
   }
 
+  // Debugger hook: check breakpoints and step modes before execution
+  if (m_debugger) {
+    if (!m_debugger->beforeInstruction(m_ip)) {
+      // Debugger requested pause (breakpoint hit or step complete)
+      m_paused = true;
+      return false;
+    }
+  }
+
   executeInstruction(m_program[m_ip]);
+
+  // Debugger hook: notify after instruction execution
+  if (m_debugger) {
+    m_debugger->afterInstruction(m_ip);
+  }
 
   // Skip increment if a JUMP to address 0 set m_ip directly
   if (!m_skipNextIncrement) {
@@ -94,6 +110,11 @@ void VirtualMachine::setIP(u32 ip) {
 }
 
 void VirtualMachine::setVariable(const std::string &name, Value value) {
+  // Track variable changes for debugger
+  if (m_debugger) {
+    Value oldValue = getVariable(name);
+    m_debugger->trackVariableChange(name, oldValue, value);
+  }
   m_variables[name] = std::move(value);
 }
 
@@ -603,6 +624,20 @@ const std::string &VirtualMachine::getString(u32 index) const {
                       ")");
   m_halted = true;
   return empty;
+}
+
+// =========================================================================
+// Debugger Integration
+// =========================================================================
+
+void VirtualMachine::attachDebugger(VMDebugger *debugger) {
+  m_debugger = debugger;
+  NOVELMIND_LOG_DEBUG("Debugger attached to VM");
+}
+
+void VirtualMachine::detachDebugger() {
+  m_debugger = nullptr;
+  NOVELMIND_LOG_DEBUG("Debugger detached from VM");
 }
 
 } // namespace NovelMind::scripting

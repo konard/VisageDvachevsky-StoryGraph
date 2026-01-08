@@ -11,6 +11,9 @@
 
 namespace NovelMind::scripting {
 
+// Forward declaration for debugger integration
+class VMDebugger;
+
 class VirtualMachine {
 public:
   using NativeCallback = std::function<void(const std::vector<Value> &)>;
@@ -55,6 +58,69 @@ public:
   void signalContinue();
   void signalChoice(i32 choice);
 
+  // =========================================================================
+  // Debugger Integration
+  // =========================================================================
+
+  /**
+   * @brief Attach a debugger to this VM
+   * @param debugger Pointer to debugger (ownership not transferred)
+   */
+  void attachDebugger(VMDebugger *debugger);
+
+  /**
+   * @brief Detach the current debugger
+   */
+  void detachDebugger();
+
+  /**
+   * @brief Check if a debugger is attached
+   */
+  [[nodiscard]] bool hasDebugger() const { return m_debugger != nullptr; }
+
+  /**
+   * @brief Get the attached debugger
+   */
+  [[nodiscard]] VMDebugger *debugger() const { return m_debugger; }
+
+  /**
+   * @brief Get the current instruction at IP (for debugging display)
+   * @return Pointer to instruction, or nullptr if invalid
+   */
+  [[nodiscard]] const Instruction *getCurrentInstruction() const {
+    if (m_ip < m_program.size()) {
+      return &m_program[m_ip];
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Get instruction at specified IP
+   * @param ip Instruction pointer
+   * @return Pointer to instruction, or nullptr if invalid
+   */
+  [[nodiscard]] const Instruction *getInstructionAt(u32 ip) const {
+    if (ip < m_program.size()) {
+      return &m_program[ip];
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Get current stack contents (for debugging)
+   */
+  [[nodiscard]] const std::vector<Value> &getStack() const { return m_stack; }
+
+  /**
+   * @brief Get string from string table (for debugging)
+   */
+  [[nodiscard]] std::string getStringAt(u32 index) const {
+    if (index < m_stringTable.size()) {
+      return m_stringTable[index];
+    }
+    return "";
+  }
+
 private:
   void executeInstruction(const Instruction &instr);
   void push(Value value);
@@ -75,6 +141,9 @@ private:
   mutable bool m_halted;  // mutable to allow setting in const getString() on error
   bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
+
+  // Debugger integration
+  VMDebugger *m_debugger = nullptr; ///< Attached debugger (not owned)
 };
 
 } // namespace NovelMind::scripting
