@@ -1,0 +1,342 @@
+// Tutorial 5: Complete Demo
+// Полноценная детективная визуальная новелла
+
+// === ОБЪЯВЛЕНИЯ ===
+
+// Персонажи
+character Detective(name="Детектив Морган", color="#4A90D9")
+character Suspect(name="Мистер Блэк", color="#D94A4A")
+character Witness(name="Миссис Уайт", color="#D9D94A")
+character Narrator(name="", color="#CCCCCC")
+
+// Переменные игры
+var investigation = 0  // Очки расследования
+var clues_found = 0    // Найденные улики
+var suspect_trust = 0  // Доверие подозреваемого
+var time_spent = 0     // Потраченное время
+
+// === ПРОЛОГ ===
+
+scene prologue {
+    transition fade 2.0
+
+    show background "bg_mansion_exterior"
+
+    say Narrator "Тёмная и дождливая ночь..."
+    say Narrator "Вы - детектив Морган, вызванный для расследования загадочного дела."
+    say Narrator "Особняк семьи Блэк. Произошло убийство."
+
+    wait 1.0
+
+    goto intro
+}
+
+scene intro {
+    show background "bg_mansion_hall"
+
+    show Detective at center
+
+    say Detective "Итак, начнём расследование."
+    say Detective "Нужно быть внимательным к деталям."
+
+    goto investigation_start
+}
+
+// === РАССЛЕДОВАНИЕ ===
+
+scene investigation_start {
+    show background "bg_mansion_hall"
+    show Detective at center
+
+    say Detective "С чего начать?"
+
+    choice {
+        "Осмотреть место преступления" -> {
+            set investigation = investigation + 5
+            set time_spent = time_spent + 1
+            goto crime_scene
+        }
+        "Опросить подозреваемого" -> {
+            set time_spent = time_spent + 1
+            goto interrogate_suspect
+        }
+        "Поговорить со свидетелем" -> {
+            set time_spent = time_spent + 1
+            goto talk_witness
+        }
+    }
+}
+
+scene crime_scene {
+    show background "bg_crime_scene"
+    show Detective at center
+
+    say Detective "Осмотрим место преступления..."
+
+    choice {
+        "Тщательно исследовать" -> {
+            set investigation = investigation + 10
+            set clues_found = clues_found + 1
+            goto find_clue1
+        }
+        "Быстро осмотреть" -> {
+            set investigation = investigation + 3
+            goto quick_look
+        }
+    }
+}
+
+scene find_clue1 {
+    say Detective "Что это? Странный след на ковре!"
+
+    set clues_found = clues_found + 1
+
+    say Detective "Улика #{clues_found}. Это может быть важно."
+
+    goto library_choice
+}
+
+scene quick_look {
+    say Detective "Ничего особенного не вижу."
+    say Detective "Может, стоило осмотреть внимательнее?"
+
+    goto library_choice
+}
+
+scene library_choice {
+    show background "bg_mansion_hall"
+    show Detective at center
+
+    say Detective "Что дальше?"
+
+    choice {
+        "Исследовать библиотеку" -> {
+            set investigation = investigation + 5
+            goto library_scene
+        }
+        "Продолжить допрос" -> goto interrogate_suspect
+    }
+}
+
+scene library_scene {
+    show background "bg_library"
+    show Detective at center
+
+    say Detective "Большая библиотека... Здесь есть подсказки?"
+
+    choice {
+        "Поискать в книгах" -> {
+            set investigation = investigation + 8
+            set clues_found = clues_found + 1
+            goto find_diary
+        }
+        "Осмотреть стол" -> {
+            set investigation = investigation + 4
+            goto check_desk
+        }
+    }
+}
+
+scene find_diary {
+    say Detective "Дневник! Здесь записано..."
+
+    set clues_found = clues_found + 1
+
+    say Detective "Это объясняет многое!"
+    say Detective "Улика #{clues_found} найдена."
+
+    goto interrogate_suspect
+}
+
+scene check_desk {
+    say Detective "На столе письма и документы."
+    say Detective "Ничего криминального, но интересно..."
+
+    goto interrogate_suspect
+}
+
+scene interrogate_suspect {
+    show background "bg_interrogation"
+
+    show Detective at left
+    show Suspect at right
+
+    say Detective "Мистер Блэк, расскажите, где вы были вчера вечером?"
+    say Suspect "Я был дома, в своей комнате."
+
+    choice {
+        "Говорить дружелюбно" -> {
+            set suspect_trust = suspect_trust + 5
+            goto friendly_approach
+        }
+        "Давить на подозреваемого" -> {
+            set suspect_trust = suspect_trust - 5
+            goto aggressive_approach
+        }
+        "Показать улики" if clues_found >= 2 -> {
+            set investigation = investigation + 10
+            goto show_evidence
+        }
+    }
+}
+
+scene friendly_approach {
+    say Detective "Я понимаю, это тяжёлое время для всех."
+    say Suspect "Спасибо за понимание..."
+    say Suspect "Я расскажу вам кое-что..."
+
+    set investigation = investigation + 5
+
+    goto talk_witness
+}
+
+scene aggressive_approach {
+    say Detective "Не играйте со мной! Я знаю, что вы скрываете!"
+    say Suspect "Я ничего не скрываю!"
+    say Suspect "Я не буду больше говорить!"
+
+    goto talk_witness
+}
+
+scene show_evidence {
+    say Detective "Объясните это!"
+
+    say Suspect "Это... Хорошо, я скажу правду."
+    say Suspect "Но это не то, что вы думаете..."
+
+    set investigation = investigation + 15
+
+    goto revelation
+}
+
+scene talk_witness {
+    show background "bg_witness_room"
+
+    show Detective at left
+    show Witness at right
+
+    say Witness "Детектив, я так рада вас видеть!"
+    say Detective "Миссис Уайт, расскажите, что вы видели?"
+
+    say Witness "Я слышала громкие голоса около 8 вечера..."
+    say Witness "А потом тишина..."
+
+    set investigation = investigation + 5
+
+    goto final_decision
+}
+
+// === РАЗВЯЗКА ===
+
+scene revelation {
+    show background "bg_mansion_hall"
+
+    show Detective at left
+    show Suspect at right
+
+    say Suspect "Хорошо, я скажу правду..."
+    say Suspect "Но вы должны понять - это был несчастный случай!"
+
+    set investigation = investigation + 10
+
+    goto final_decision
+}
+
+scene final_decision {
+    show background "bg_detective_office"
+    show Detective at center
+
+    say Detective "Пора принять решение..."
+    say Detective "Что я узнал?"
+
+    goto determine_ending
+}
+
+// === КОНЦОВКИ ===
+
+scene determine_ending {
+    // Проверяем условия для разных концовок
+
+    if investigation >= 40 && clues_found >= 3 {
+        goto true_ending
+    } else if investigation >= 25 {
+        goto good_ending
+    } else if investigation >= 15 {
+        goto neutral_ending
+    } else {
+        goto bad_ending
+    }
+}
+
+scene true_ending {
+    show background "bg_courtroom"
+
+    transition fade 1.5
+
+    say Narrator "=== ИСТИННАЯ КОНЦОВКА ==="
+
+    show Detective at center
+
+    say Detective "Я раскрыл всю правду!"
+    say Detective "Все улики указывают на одно..."
+
+    say Narrator "Благодаря вашему блестящему расследованию:"
+    say Narrator "- Найдено улик: {clues_found}"
+    say Narrator "- Очки расследования: {investigation}"
+
+    say Detective "Справедливость восторжествовала!"
+
+    say Narrator "Дело закрыто. Вы получили повышение!"
+}
+
+scene good_ending {
+    show background "bg_detective_office"
+
+    say Narrator "=== ХОРОШАЯ КОНЦОВКА ==="
+
+    show Detective at center
+
+    say Detective "Я раскрыл основные факты дела."
+    say Detective "Хотя некоторые вопросы остались без ответа..."
+
+    say Narrator "Результаты расследования:"
+    say Narrator "- Найдено улик: {clues_found}"
+    say Narrator "- Очки расследования: {investigation}"
+
+    say Detective "Дело можно считать раскрытым."
+}
+
+scene neutral_ending {
+    show background "bg_detective_office"
+
+    say Narrator "=== НЕЙТРАЛЬНАЯ КОНЦОВКА ==="
+
+    show Detective at center
+
+    say Detective "У меня есть только часть картины..."
+    say Detective "Этого недостаточно для полного раскрытия."
+
+    say Narrator "Результаты расследования:"
+    say Narrator "- Найдено улик: {clues_found}"
+    say Narrator "- Очки расследования: {investigation}"
+
+    say Detective "Мне нужно было быть внимательнее..."
+}
+
+scene bad_ending {
+    show background "bg_detective_office"
+
+    say Narrator "=== ПЛОХАЯ КОНЦОВКА ==="
+
+    show Detective at center
+
+    say Detective "Я не смог раскрыть это дело..."
+    say Detective "Слишком мало улик, слишком много вопросов."
+
+    say Narrator "Результаты расследования:"
+    say Narrator "- Найдено улик: {clues_found}"
+    say Narrator "- Очки расследования: {investigation}"
+
+    say Detective "Дело остаётся нераскрытым."
+    say Narrator "Возможно, стоит попробовать ещё раз?"
+}
