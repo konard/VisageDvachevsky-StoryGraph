@@ -166,6 +166,8 @@ void Compiler::compileStatement(const Statement &stmt) {
           compileSetStmt(s);
         } else if constexpr (std::is_same_v<T, TransitionStmt>) {
           compileTransitionStmt(s);
+        } else if constexpr (std::is_same_v<T, MoveStmt>) {
+          compileMoveStmt(s);
         } else if constexpr (std::is_same_v<T, BlockStmt>) {
           compileBlockStmt(s);
         } else if constexpr (std::is_same_v<T, ExpressionStmt>) {
@@ -452,6 +454,50 @@ void Compiler::compileTransitionStmt(const TransitionStmt &stmt) {
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
   emitOp(OpCode::PUSH_INT, durInt);
   emitOp(OpCode::TRANSITION, typeIndex);
+}
+
+void Compiler::compileMoveStmt(const MoveStmt &stmt) {
+  // Push character ID string
+  u32 charIndex = addString(stmt.characterId);
+  emitOp(OpCode::PUSH_STRING, charIndex);
+
+  // Push position (encoded as int: 0=left, 1=center, 2=right, 3=custom)
+  i32 posCode = 1; // Default center
+  switch (stmt.position) {
+  case Position::Left:
+    posCode = 0;
+    break;
+  case Position::Center:
+    posCode = 1;
+    break;
+  case Position::Right:
+    posCode = 2;
+    break;
+  case Position::Custom:
+    posCode = 3;
+    break;
+  }
+  emitOp(OpCode::PUSH_INT, static_cast<u32>(posCode));
+
+  // Push custom coordinates if position is custom
+  if (stmt.position == Position::Custom) {
+    f32 x = stmt.customX.value_or(0.5f);
+    f32 y = stmt.customY.value_or(0.5f);
+    u32 xInt = 0;
+    u32 yInt = 0;
+    std::memcpy(&xInt, &x, sizeof(f32));
+    std::memcpy(&yInt, &y, sizeof(f32));
+    emitOp(OpCode::PUSH_FLOAT, xInt);
+    emitOp(OpCode::PUSH_FLOAT, yInt);
+  }
+
+  // Push duration (convert float to int representation)
+  u32 durInt = 0;
+  std::memcpy(&durInt, &stmt.duration, sizeof(f32));
+  emitOp(OpCode::PUSH_INT, durInt);
+
+  // Emit the MOVE_CHARACTER opcode with character string index
+  emitOp(OpCode::MOVE_CHARACTER, charIndex);
 }
 
 void Compiler::compileBlockStmt(const BlockStmt &stmt) {

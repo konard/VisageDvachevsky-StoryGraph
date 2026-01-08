@@ -475,6 +475,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::SHOW_BACKGROUND:
   case OpCode::SHOW_CHARACTER:
   case OpCode::HIDE_CHARACTER:
+  case OpCode::MOVE_CHARACTER:
   case OpCode::CHOICE:
   case OpCode::PLAY_SOUND:
   case OpCode::PLAY_MUSIC:
@@ -513,6 +514,35 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::HIDE_CHARACTER:
         args.emplace_back(getString(instr.operand));
         break;
+      case OpCode::MOVE_CHARACTER: {
+        // Stack layout: duration, [customY, customX if custom], posCode, charId
+        Value durVal = popArg();
+        Value posVal = popArg();
+
+        // Check if position is custom (posCode == 3)
+        i32 posCode = std::holds_alternative<i32>(posVal) ? std::get<i32>(posVal) : 1;
+        Value customY;
+        Value customX;
+        if (posCode == 3) {
+          // Custom position: need to pop Y and X coordinates
+          customY = popArg();
+          customX = popArg();
+        }
+
+        Value idVal = popArg();
+        if (std::holds_alternative<std::monostate>(idVal)) {
+          idVal = getString(instr.operand);
+        }
+
+        args.push_back(std::move(idVal));
+        args.push_back(std::move(posVal));
+        if (posCode == 3) {
+          args.push_back(std::move(customX));
+          args.push_back(std::move(customY));
+        }
+        args.push_back(std::move(durVal));
+        break;
+      }
       case OpCode::SAY: {
         Value speakerVal = popArg();
         args.emplace_back(getString(instr.operand));
@@ -563,7 +593,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
     // These commands typically wait for user input or cause execution to pause
     if (instr.opcode == OpCode::SAY || instr.opcode == OpCode::CHOICE ||
-        instr.opcode == OpCode::WAIT) {
+        instr.opcode == OpCode::WAIT || instr.opcode == OpCode::MOVE_CHARACTER) {
       m_waiting = true;
     }
     // GOTO_SCENE causes a scene transition which resets VM state

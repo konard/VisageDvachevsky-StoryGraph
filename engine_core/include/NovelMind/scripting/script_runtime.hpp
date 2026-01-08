@@ -61,6 +61,7 @@ enum class ScriptEventType : u8 {
   BackgroundChanged,  // Background image changed
   CharacterShow,      // Character was shown
   CharacterHide,      // Character was hidden
+  CharacterMove,      // Character was moved to a new position
   DialogueStart,      // Dialogue started
   DialogueComplete,   // Dialogue finished (typewriter complete)
   ChoiceStart,        // Choice menu shown
@@ -331,6 +332,7 @@ private:
   void onPlayMusic(const std::vector<Value> &args);
   void onStopMusic(const std::vector<Value> &args);
   void onTransition(const std::vector<Value> &args);
+  void onMoveCharacter(const std::vector<Value> &args);
 
   // Internal helpers
   void registerCallbacks();

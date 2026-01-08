@@ -101,6 +101,7 @@ void Parser::synchronize() {
     case TokenType::Stop:
     case TokenType::Set:
     case TokenType::Transition:
+    case TokenType::Move:
       return;
     default:
       break;
@@ -227,6 +228,8 @@ StmtPtr Parser::parseStatement() {
     return parseSetStmt();
   if (match(TokenType::Transition))
     return parseTransitionStmt();
+  if (match(TokenType::Move))
+    return parseMoveStmt();
   if (match(TokenType::LeftBrace))
     return parseBlock();
 
@@ -575,6 +578,45 @@ StmtPtr Parser::parseTransitionStmt() {
   if (check(TokenType::String)) {
     const Token &color = advance();
     stmt.color = color.lexeme;
+  }
+
+  return makeStmt(std::move(stmt), loc);
+}
+
+StmtPtr Parser::parseMoveStmt() {
+  // move <character> to <position> duration=<float>
+  SourceLocation loc = previous().location;
+  MoveStmt stmt;
+
+  const Token &id =
+      consume(TokenType::Identifier, "Expected character identifier after 'move'");
+  stmt.characterId = id.lexeme;
+
+  consume(TokenType::To, "Expected 'to' after character name");
+
+  stmt.position = parsePosition();
+
+  if (stmt.position == Position::Custom) {
+    const Token &x = consume(TokenType::Float, "Expected X coordinate");
+    stmt.customX = x.floatValue;
+    consume(TokenType::Comma, "Expected ',' between coordinates");
+    const Token &y = consume(TokenType::Float, "Expected Y coordinate");
+    stmt.customY = y.floatValue;
+  }
+
+  // Optional duration parameter: duration=<float>
+  if (match(TokenType::Duration)) {
+    consume(TokenType::Assign, "Expected '=' after 'duration'");
+
+    const Token &dur = advance();
+    if (dur.type == TokenType::Float) {
+      stmt.duration = dur.floatValue;
+    } else if (dur.type == TokenType::Integer) {
+      stmt.duration = static_cast<f32>(dur.intValue);
+    } else {
+      error("Expected number after 'duration='");
+      stmt.duration = 0.5f;
+    }
   }
 
   return makeStmt(std::move(stmt), loc);
