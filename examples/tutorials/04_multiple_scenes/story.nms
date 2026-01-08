@@ -1,0 +1,206 @@
+// Tutorial 4: Multiple Scenes
+// Полноценная мини-история с несколькими сценами
+
+// === ОБЪЯВЛЕНИЯ ===
+
+character Hero(name="Герой", color="#4A90D9")
+character Mentor(name="Наставник", color="#D9A94A")
+character Villain(name="Злодей", color="#D94A4A")
+
+var courage = 0
+var kindness = 0
+var chapter = 1
+
+// === ВСТУПЛЕНИЕ ===
+
+scene intro {
+    show background "bg_village"
+
+    say "Давным-давно в далёкой стране..."
+    say "Жил один герой, которому предстоит совершить выбор..."
+
+    show Hero at center
+    say Hero "Меня зовут Алекс. Я обычный житель деревни."
+    say Hero "Но сегодня всё изменится..."
+
+    goto chapter1_start
+}
+
+// === ГЛАВА 1: НАЧАЛО ПУТИ ===
+
+scene chapter1_start {
+    set chapter = 1
+
+    show background "bg_forest"
+    show Hero at left
+    show Mentor at right
+
+    say Mentor "Здравствуй, путник!"
+    say Mentor "Я вижу в тебе потенциал."
+    say Hero "Кто вы?"
+    say Mentor "Я наставник. Хочешь ли ты пройти испытание?"
+
+    choice {
+        "Да, я готов!" -> chapter1_accept
+        "Нет, я боюсь..." -> chapter1_refuse
+    }
+}
+
+scene chapter1_accept {
+    set courage = courage + 10
+
+    say Hero "Я готов к испытаниям!"
+    say Mentor "Отлично! Твоя смелость похвальна."
+
+    goto chapter1_trial
+}
+
+scene chapter1_refuse {
+    say Hero "Я не уверен... Мне страшно."
+    say Mentor "Понимаю. Но помни - иногда нужно рискнуть."
+    say Mentor "Дам тебе ещё один шанс."
+
+    choice {
+        "Хорошо, я попробую" -> {
+            set courage = courage + 5
+            goto chapter1_trial
+        }
+        "Нет, извините" -> chapter1_leave
+    }
+}
+
+scene chapter1_leave {
+    say Mentor "Жаль. До свидания."
+    hide Mentor
+
+    say Hero "Может, я упустил свой шанс..."
+
+    goto bad_ending
+}
+
+scene chapter1_trial {
+    show background "bg_cave"
+    hide Mentor
+
+    show Hero at center
+
+    say Hero "Вот и пещера испытаний..."
+    say "На земле лежит раненый путник."
+
+    choice {
+        "Помочь путнику" -> {
+            set kindness = kindness + 10
+            goto chapter1_help
+        }
+        "Пройти мимо" -> chapter1_ignore
+    }
+}
+
+scene chapter1_help {
+    say Hero "Я должен помочь!"
+    say "Вы перевязали раны путника."
+    say "Путник: Спасибо, добрый человек!"
+
+    goto chapter2
+}
+
+scene chapter1_ignore {
+    say Hero "У меня нет времени..."
+    say "Вы прошли мимо."
+
+    goto chapter2
+}
+
+// === ГЛАВА 2: ВЫБОР ===
+
+scene chapter2 {
+    set chapter = 2
+
+    show background "bg_castle"
+    show Hero at left
+    show Villain at right
+
+    say "Вы достигли замка злодея."
+    say Villain "Наконец-то достойный противник!"
+    say Hero "Я остановлю тебя!"
+
+    goto final_choice
+}
+
+scene final_choice {
+    show background "bg_castle"
+    show Hero at left
+    show Villain at right
+
+    say Villain "У тебя есть выбор:"
+    say Villain "Сразиться со мной или присоединиться к моей армии!"
+
+    choice {
+        "Сразиться!" -> {
+            set courage = courage + 10
+            goto fight_ending
+        }
+        "Попытаться убедить" -> {
+            set kindness = kindness + 5
+            goto persuade_ending
+        }
+        "Присоединиться" -> betray_ending
+    }
+}
+
+// === КОНЦОВКИ ===
+
+scene fight_ending {
+    show background "bg_battle"
+
+    if courage >= 15 {
+        say "Благодаря вашей храбрости вы победили злодея!"
+        say Hero "Справедливость восторжествовала!"
+
+        show background "bg_village"
+        say "Деревня спасена. Вы стали легендой!"
+        say "=== ХОРОШАЯ КОНЦОВКА: ГЕРОЙ ==="
+    } else {
+        say "Вам не хватило смелости..."
+        say Hero "Я... проиграл..."
+        say "=== ПЛОХАЯ КОНЦОВКА: ПОРАЖЕНИЕ ==="
+    }
+}
+
+scene persuade_ending {
+    show background "bg_castle"
+
+    if kindness >= 10 {
+        say Hero "Подумай о всех людях, которым ты причинил боль!"
+        say Villain "Я... я не думал об этом..."
+        say Villain "Возможно, ты прав..."
+
+        say "Злодей раскаялся и сдался."
+        say "=== ЛУЧШАЯ КОНЦОВКА: МИР ==="
+    } else {
+        say Hero "Сдавайся!"
+        say Villain "Ха! Твои слова пусты!"
+
+        say "Злодей не поверил вам."
+        goto fight_ending
+    }
+}
+
+scene betray_ending {
+    say Hero "Я... присоединюсь к тебе."
+    say Villain "Отлично! Вместе мы завоюем мир!"
+
+    show background "bg_dark"
+    say "Вы стали приспешником злодея."
+    say "Мир погрузился во тьму..."
+    say "=== ЗЛАЯ КОНЦОВКА: ПРЕДАТЕЛЬСТВО ==="
+}
+
+scene bad_ending {
+    show background "bg_village"
+
+    say "Вы вернулись в деревню."
+    say "Жизнь продолжается как обычно..."
+    say "Но вы всегда будете задаваться вопросом: а что если бы?"
+    say "=== НЕЙТРАЛЬНАЯ КОНЦОВКА: УПУЩЕННЫЙ ШАНС ==="
+}

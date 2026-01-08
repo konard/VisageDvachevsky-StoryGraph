@@ -1,0 +1,19 @@
+// Tutorial 1: Hello World
+// Простейший пример NM Script
+
+// Объявление персонажа
+character Hero(name="Алекс")
+
+// Первая сцена
+scene intro {
+    // Показываем фон
+    show background "bg_room"
+
+    // Показываем персонажа в центре
+    show Hero at center
+
+    // Персонаж говорит
+    say Hero "Привет, мир!"
+    say Hero "Добро пожаловать в мою первую визуальную новеллу!"
+    say Hero "Это простой пример того, как работает NM Script."
+}
