@@ -107,6 +107,34 @@ public:
     dialogueLayout->addWidget(m_namePlate);
     dialogueLayout->addWidget(m_textLabel);
 
+    // Navigation controls
+    m_navControls = new QWidget(m_dialogueBox);
+    m_navControls->setObjectName("NavControls");
+    auto *navLayout = new QHBoxLayout(m_navControls);
+    navLayout->setContentsMargins(0, 8, 0, 0);
+    navLayout->setSpacing(8);
+
+    m_prevButton = new QPushButton(tr("◄ Prev"), m_navControls);
+    m_prevButton->setObjectName("NavButton");
+    m_prevButton->setMinimumHeight(32);
+    m_prevButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    connect(m_prevButton, &QPushButton::clicked, this,
+            &NMPlayPreviewOverlay::previousRequested);
+
+    m_nextButton = new QPushButton(tr("Next ►"), m_navControls);
+    m_nextButton->setObjectName("NavButton");
+    m_nextButton->setMinimumHeight(32);
+    m_nextButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    connect(m_nextButton, &QPushButton::clicked, this,
+            &NMPlayPreviewOverlay::nextRequested);
+
+    navLayout->addWidget(m_prevButton);
+    navLayout->addWidget(m_nextButton);
+    navLayout->addStretch();
+    m_navControls->hide(); // Hidden by default, shown during play mode
+
+    dialogueLayout->addWidget(m_navControls);
+
     m_choicesBox = new QWidget(this);
     m_choicesBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_choicesLayout = new QVBoxLayout(m_choicesBox);
@@ -160,6 +188,21 @@ public:
                 "QPushButton#ChoiceButton:hover {"
                 "  border-color: %2;"
                 "  background-color: rgba(28, 28, 36, 230);"
+                "}"
+                "QPushButton#NavButton {"
+                "  background-color: rgba(30, 30, 38, 200);"
+                "  color: %3;"
+                "  border: 1px solid %1;"
+                "  border-radius: 6px;"
+                "  padding: 6px 12px;"
+                "  font-size: 12px;"
+                "}"
+                "QPushButton#NavButton:hover {"
+                "  border-color: %2;"
+                "  background-color: rgba(40, 40, 50, 220);"
+                "}"
+                "QPushButton#NavButton:pressed {"
+                "  background-color: rgba(50, 50, 60, 240);"
                 "}")
             .arg(palette.borderLight.name())
             .arg(palette.accentPrimary.name())
@@ -204,6 +247,15 @@ public:
       m_typeTimer->start(m_typeIntervalMs);
     } else {
       m_typeTimer->stop();
+    }
+  }
+
+  void setSpeakerColor(const QColor &color) {
+    if (color.isValid()) {
+      m_nameLabel->setStyleSheet(
+          QString("QLabel#NameLabel { color: %1; }").arg(color.name()));
+    } else {
+      m_nameLabel->setStyleSheet(QString());
     }
   }
 
@@ -263,9 +315,17 @@ public:
     }
   }
 
+  void setNavigationVisible(bool visible) {
+    if (m_navControls) {
+      m_navControls->setVisible(visible);
+    }
+  }
+
 signals:
   void choiceSelected(int index);
   void advanceRequested();
+  void previousRequested();
+  void nextRequested();
 
 protected:
   void mousePressEvent(QMouseEvent *event) override {
@@ -279,6 +339,17 @@ protected:
     if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return ||
         event->key() == Qt::Key_Enter) {
       emit advanceRequested();
+      event->accept();
+      return;
+    }
+    // Navigation with arrow keys
+    if (event->key() == Qt::Key_Left) {
+      emit previousRequested();
+      event->accept();
+      return;
+    }
+    if (event->key() == Qt::Key_Right) {
+      emit nextRequested();
       event->accept();
       return;
     }
@@ -307,6 +378,9 @@ private:
   QLabel *m_textLabel = nullptr;
   QWidget *m_choicesBox = nullptr;
   QVBoxLayout *m_choicesLayout = nullptr;
+  QWidget *m_navControls = nullptr;
+  QPushButton *m_prevButton = nullptr;
+  QPushButton *m_nextButton = nullptr;
   QTimer *m_typeTimer = nullptr;
   QString m_fullText;
   int m_typeIndex = 0;
