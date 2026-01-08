@@ -4,6 +4,7 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/opcode.hpp"
 #include "NovelMind/scripting/value.hpp"
+#include "NovelMind/scripting/vm_security.hpp"
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -119,6 +120,9 @@ public:
       return m_stringTable[index];
     }
     return "";
+  [[nodiscard]] VMSecurityGuard &securityGuard() { return m_securityGuard; }
+  [[nodiscard]] const VMSecurityGuard &securityGuard() const {
+    return m_securityGuard;
   }
 
 private:
@@ -133,6 +137,8 @@ private:
   std::unordered_map<std::string, Value> m_variables;
   std::unordered_map<std::string, bool> m_flags;
   std::unordered_map<OpCode, NativeCallback> m_callbacks;
+
+  VMSecurityGuard m_securityGuard;
 
   u32 m_ip;
   bool m_running;

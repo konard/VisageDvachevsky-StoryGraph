@@ -117,6 +117,7 @@ private:
   void compileStopStmt(const StopStmt &stmt);
   void compileSetStmt(const SetStmt &stmt);
   void compileTransitionStmt(const TransitionStmt &stmt);
+  void compileMoveStmt(const MoveStmt &stmt);
   void compileBlockStmt(const BlockStmt &stmt);
   void compileExpressionStmt(const ExpressionStmt &stmt);
 

@@ -183,6 +183,9 @@ void Lexer::initKeywords() {
   m_keywords["sound"] = TokenType::Sound;
   m_keywords["transition"] = TokenType::Transition;
   m_keywords["fade"] = TokenType::Fade;
+  m_keywords["move"] = TokenType::Move;
+  m_keywords["to"] = TokenType::To;
+  m_keywords["duration"] = TokenType::Duration;
 }
 
 void Lexer::reset() {

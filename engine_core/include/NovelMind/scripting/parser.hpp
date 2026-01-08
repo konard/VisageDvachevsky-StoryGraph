@@ -96,6 +96,7 @@ private:
   StmtPtr parseStopStmt();
   StmtPtr parseSetStmt();
   StmtPtr parseTransitionStmt();
+  StmtPtr parseMoveStmt();
   StmtPtr parseBlock();
 
   // Grammar rules - expressions

@@ -606,6 +606,71 @@ void ScriptRuntime::onTransition(const std::vector<Value> &args) {
   }
 }
 
+void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
+  // Args layout: [0]=charId, [1]=posCode, [2]=customX (if custom), [3]=customY (if custom), [N-1]=duration
+  if (args.size() < 3) {
+    NOVELMIND_LOG_WARN("MOVE_CHARACTER called with insufficient arguments");
+    m_state = RuntimeState::Running;
+    return;
+  }
+
+  std::string charId = asString(args[0]);
+  i32 posCode = asInt(args[1]);
+  Scene::CharacterPosition position = parsePosition(posCode);
+
+  // Extract custom coordinates if position is custom
+  f32 customX = 0.5f;
+  f32 customY = 0.5f;
+  size_t durationIdx = 2;
+
+  if (posCode == 3 && args.size() >= 5) {
+    // Custom position: args[2]=customX, args[3]=customY, args[4]=duration
+    if (std::holds_alternative<f32>(args[2])) {
+      customX = std::get<f32>(args[2]);
+    }
+    if (std::holds_alternative<f32>(args[3])) {
+      customY = std::get<f32>(args[3]);
+    }
+    durationIdx = 4;
+  }
+
+  // Extract duration from raw bits
+  f32 duration = 0.5f;
+  if (durationIdx < args.size()) {
+    u32 durBits = static_cast<u32>(asInt(args[durationIdx]));
+    std::memcpy(&duration, &durBits, sizeof(f32));
+  }
+
+  // Verify character is visible
+  auto it = std::find(m_visibleCharacters.begin(), m_visibleCharacters.end(), charId);
+  if (it == m_visibleCharacters.end()) {
+    NOVELMIND_LOG_WARN("MOVE_CHARACTER: Character '" + charId + "' is not visible");
+    m_state = RuntimeState::Running;
+    return;
+  }
+
+  // Create and start the move animation
+  if (m_animationManager) {
+    // Create a move animation for the character
+    // The scene manager or animation manager should handle the actual movement
+    // For now, we trigger the event and set the state to wait for animation
+    fireEvent(ScriptEventType::CharacterMove, charId, Value{posCode});
+    m_state = RuntimeState::WaitingAnimation;
+
+    NOVELMIND_LOG_INFO("Moving character '" + charId + "' to position " +
+                       std::to_string(posCode) + " over " +
+                       std::to_string(duration) + " seconds");
+  } else {
+    // No animation manager, just fire event and continue
+    fireEvent(ScriptEventType::CharacterMove, charId, Value{posCode});
+    m_state = RuntimeState::Running;
+  }
+
+  (void)position; // Will be used when scene manager integration is implemented
+  (void)customX;
+  (void)customY;
+}
+
 // Internal helpers
 
 void ScriptRuntime::registerCallbacks() {
@@ -640,6 +705,9 @@ void ScriptRuntime::registerCallbacks() {
 
   m_vm.registerCallback(OpCode::TRANSITION,
                         [this](const auto &args) { onTransition(args); });
+
+  m_vm.registerCallback(OpCode::MOVE_CHARACTER,
+                        [this](const auto &args) { onMoveCharacter(args); });
 }
 
 void ScriptRuntime::fireEvent(ScriptEventType type, const std::string &name,

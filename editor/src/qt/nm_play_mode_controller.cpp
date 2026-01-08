@@ -538,6 +538,84 @@ void NMPlayModeController::clearAllBreakpoints() {
   qDebug() << "[Breakpoint] Cleared all breakpoints";
 }
 
+// === Source-Level Breakpoints (file:line) ===
+
+void NMPlayModeController::toggleSourceBreakpoint(const QString &filePath,
+                                                  int line) {
+  if (hasSourceBreakpoint(filePath, line)) {
+    m_sourceBreakpoints[filePath].remove(line);
+    if (m_sourceBreakpoints[filePath].isEmpty()) {
+      m_sourceBreakpoints.remove(filePath);
+    }
+    qDebug() << "[SourceBreakpoint] Removed from" << filePath << ":" << line;
+  } else {
+    m_sourceBreakpoints[filePath].insert(line);
+    qDebug() << "[SourceBreakpoint] Added to" << filePath << ":" << line;
+  }
+  emit sourceBreakpointsChanged();
+}
+
+void NMPlayModeController::setSourceBreakpoint(const QString &filePath, int line,
+                                               bool enabled) {
+  if (enabled) {
+    m_sourceBreakpoints[filePath].insert(line);
+  } else {
+    m_sourceBreakpoints[filePath].remove(line);
+    if (m_sourceBreakpoints[filePath].isEmpty()) {
+      m_sourceBreakpoints.remove(filePath);
+    }
+  }
+  emit sourceBreakpointsChanged();
+}
+
+bool NMPlayModeController::hasSourceBreakpoint(const QString &filePath,
+                                               int line) const {
+  auto it = m_sourceBreakpoints.find(filePath);
+  if (it != m_sourceBreakpoints.end()) {
+    return it->contains(line);
+  }
+  return false;
+}
+
+QSet<int>
+NMPlayModeController::sourceBreakpointsForFile(const QString &filePath) const {
+  auto it = m_sourceBreakpoints.find(filePath);
+  if (it != m_sourceBreakpoints.end()) {
+    return *it;
+  }
+  return {};
+}
+
+QList<NMPlayModeController::SourceBreakpoint>
+NMPlayModeController::allSourceBreakpoints() const {
+  QList<SourceBreakpoint> result;
+  for (auto it = m_sourceBreakpoints.constBegin();
+       it != m_sourceBreakpoints.constEnd(); ++it) {
+    const QString &filePath = it.key();
+    for (int line : it.value()) {
+      SourceBreakpoint bp;
+      bp.filePath = filePath;
+      bp.line = line;
+      bp.enabled = true;
+      result.append(bp);
+    }
+  }
+  return result;
+}
+
+void NMPlayModeController::clearAllSourceBreakpoints() {
+  m_sourceBreakpoints.clear();
+  emit sourceBreakpointsChanged();
+  qDebug() << "[SourceBreakpoint] Cleared all source breakpoints";
+}
+
+void NMPlayModeController::clearSourceBreakpointsForFile(
+    const QString &filePath) {
+  m_sourceBreakpoints.remove(filePath);
+  emit sourceBreakpointsChanged();
+  qDebug() << "[SourceBreakpoint] Cleared breakpoints for" << filePath;
+}
+
 // === Variable Inspection ===
 
 void NMPlayModeController::setVariable(const QString &name,

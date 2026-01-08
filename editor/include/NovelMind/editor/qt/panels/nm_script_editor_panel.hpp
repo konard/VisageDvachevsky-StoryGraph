@@ -54,6 +54,11 @@ class QCheckBox;
 class QPushButton;
 class NMIssuesPanel;
 
+// Forward declaration for ScriptProjectContext (in NovelMind::editor namespace)
+namespace NovelMind::editor {
+class ScriptProjectContext;
+}
+
 namespace NovelMind::editor::qt {
 
 /**
@@ -511,6 +516,54 @@ public:
    */
   [[nodiscard]] NMScriptMinimap *minimap() const { return m_minimap; }
 
+  // === Breakpoint Support ===
+
+  /**
+   * @brief Set breakpoints for this editor
+   * @param lines Set of line numbers (1-based) with breakpoints
+   */
+  void setBreakpoints(const QSet<int> &lines);
+
+  /**
+   * @brief Get breakpoints for this editor
+   */
+  [[nodiscard]] QSet<int> breakpoints() const { return m_breakpoints; }
+
+  /**
+   * @brief Check if a line has a breakpoint
+   */
+  [[nodiscard]] bool hasBreakpoint(int line) const {
+    return m_breakpoints.contains(line);
+  }
+
+  /**
+   * @brief Toggle breakpoint at line
+   */
+  void toggleBreakpoint(int line);
+
+  /**
+   * @brief Set the current execution line for debugging highlight
+   * @param line The current execution line (1-based), or 0 to clear
+   */
+  void setCurrentExecutionLine(int line);
+
+  /**
+   * @brief Get the current execution line
+   */
+  [[nodiscard]] int currentExecutionLine() const {
+    return m_currentExecutionLine;
+  }
+
+  /**
+   * @brief Paint breakpoint gutter (called by line number area widget)
+   */
+  void breakpointGutterPaintEvent(QPaintEvent *event);
+
+  /**
+   * @brief Get breakpoint gutter width
+   */
+  [[nodiscard]] int breakpointGutterWidth() const { return 16; }
+
 signals:
   void requestSave();
   void hoverDocChanged(const QString &token, const QString &html);
@@ -565,6 +618,12 @@ signals:
    * @brief Emitted when quick fixes are available for current position
    */
   void quickFixesAvailable(const QList<QuickFix> &fixes);
+
+  /**
+   * @brief Emitted when a breakpoint is toggled in the gutter
+   * @param line The line number (1-based)
+   */
+  void breakpointToggled(int line);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -629,6 +688,11 @@ private:
 
   // Quick fixes for current diagnostics
   QHash<int, QList<QuickFix>> m_quickFixes; // line -> fixes
+
+  // Breakpoint support
+  QSet<int> m_breakpoints;      // Set of lines with breakpoints (1-based)
+  int m_currentExecutionLine = 0; // Current execution line for debug highlight
+  QWidget *m_breakpointGutter = nullptr;
 };
 
 /**
@@ -865,6 +929,9 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Project context for asset validation (issue #241)
+  NovelMind::editor::ScriptProjectContext *m_projectContext = nullptr;
 
   // Live scene preview (issue #240)
   bool m_scenePreviewEnabled = false;

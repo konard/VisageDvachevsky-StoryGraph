@@ -65,6 +65,7 @@ add_library(novelmind_editor STATIC
     src/project_json.cpp
     src/scene_registry.cpp
     src/scene_template_manager.cpp
+    src/script_project_context.cpp
 
     # Build System components
     src/build_system.cpp
@@ -171,6 +172,7 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_debug_overlay_panel.cpp
     src/qt/panels/nm_script_runtime_inspector_panel.cpp
     src/qt/panels/nm_issues_panel.cpp
+    src/qt/panels/nm_script_inspector_panel.cpp
 
     # Phase 6 - Guided Learning System Panel
     src/qt/panels/nm_help_hub_panel.cpp
@@ -229,6 +231,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_debug_overlay_panel.hpp
     include/NovelMind/editor/qt/panels/nm_script_runtime_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_issues_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_script_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp
     include/NovelMind/editor/qt/panels/nm_animation_adapter.hpp
     include/NovelMind/editor/qt/panels/nm_help_hub_panel.hpp
@@ -261,6 +264,10 @@ add_library(novelmind_editor STATIC
 
     # Scene Template System (issue #216)
     include/NovelMind/editor/scene_template_manager.hpp
+
+    # Script Project Context (issue #241)
+    include/NovelMind/editor/script_project_context.hpp
+
     # Custom Widget headers
     include/NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp
 

@@ -63,7 +63,8 @@ enum class OpCode : u8 {
   STOP_MUSIC = 0x69,
   WAIT = 0x6A,
   TRANSITION = 0x6B,
-  GOTO_SCENE = 0x6C
+  GOTO_SCENE = 0x6C,
+  MOVE_CHARACTER = 0x6D
 };
 
 struct Instruction {

@@ -3,7 +3,6 @@
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
-#include "NovelMind/editor/editor_settings.hpp"
 #include <QSettings>
 #include <QTextCursor>
 
@@ -44,8 +43,8 @@ void NMScriptEditorPanel::toggleScenePreview() {
   }
 
   // Save preference to settings
-  EditorSettings::instance().setValue("scriptEditor/previewEnabled",
-                                       m_scenePreviewEnabled);
+  QSettings settings;
+  settings.setValue("scriptEditor/previewEnabled", m_scenePreviewEnabled);
 }
 
 bool NMScriptEditorPanel::isScenePreviewEnabled() const {
@@ -71,9 +70,10 @@ void NMScriptEditorPanel::onScriptTextChanged() {
   int cursorLine = cursor.blockNumber() + 1; // 1-based line number
   int cursorColumn = cursor.columnNumber();
 
-  // Set assets root from project
+  // Set assets root from project (project_path/assets)
+  std::string projectPath = ProjectManager::instance().getProjectPath();
   QString assetsRoot =
-      QString::fromStdString(ProjectManager::instance().getAssetsPath());
+      QString::fromStdString(projectPath.empty() ? "" : projectPath + "/assets");
   m_scenePreview->setAssetsRoot(assetsRoot);
 
   // Update preview content

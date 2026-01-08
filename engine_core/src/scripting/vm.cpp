@@ -35,6 +35,7 @@ void VirtualMachine::reset() {
   m_halted = false;
   m_skipNextIncrement = false;
   m_choiceResult = -1;
+  m_securityGuard.reset();
 }
 
 bool VirtualMachine::step() {
@@ -43,6 +44,9 @@ bool VirtualMachine::step() {
   }
 
   if (m_ip >= m_program.size()) {
+    NOVELMIND_LOG_ERROR("VM Error: Instruction pointer out of bounds: " +
+                        std::to_string(m_ip) + " >= " +
+                        std::to_string(m_program.size()));
     m_halted = true;
     return false;
   }
@@ -496,6 +500,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::SHOW_BACKGROUND:
   case OpCode::SHOW_CHARACTER:
   case OpCode::HIDE_CHARACTER:
+  case OpCode::MOVE_CHARACTER:
   case OpCode::CHOICE:
   case OpCode::PLAY_SOUND:
   case OpCode::PLAY_MUSIC:
@@ -534,6 +539,35 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       case OpCode::HIDE_CHARACTER:
         args.emplace_back(getString(instr.operand));
         break;
+      case OpCode::MOVE_CHARACTER: {
+        // Stack layout: duration, [customY, customX if custom], posCode, charId
+        Value durVal = popArg();
+        Value posVal = popArg();
+
+        // Check if position is custom (posCode == 3)
+        i32 posCode = std::holds_alternative<i32>(posVal) ? std::get<i32>(posVal) : 1;
+        Value customY;
+        Value customX;
+        if (posCode == 3) {
+          // Custom position: need to pop Y and X coordinates
+          customY = popArg();
+          customX = popArg();
+        }
+
+        Value idVal = popArg();
+        if (std::holds_alternative<std::monostate>(idVal)) {
+          idVal = getString(instr.operand);
+        }
+
+        args.push_back(std::move(idVal));
+        args.push_back(std::move(posVal));
+        if (posCode == 3) {
+          args.push_back(std::move(customX));
+          args.push_back(std::move(customY));
+        }
+        args.push_back(std::move(durVal));
+        break;
+      }
       case OpCode::SAY: {
         Value speakerVal = popArg();
         args.emplace_back(getString(instr.operand));
@@ -584,7 +618,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
     // These commands typically wait for user input or cause execution to pause
     if (instr.opcode == OpCode::SAY || instr.opcode == OpCode::CHOICE ||
-        instr.opcode == OpCode::WAIT) {
+        instr.opcode == OpCode::WAIT || instr.opcode == OpCode::MOVE_CHARACTER) {
       m_waiting = true;
     }
     // GOTO_SCENE causes a scene transition which resets VM state
@@ -601,7 +635,14 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 }
 
-void VirtualMachine::push(Value value) { m_stack.push_back(std::move(value)); }
+void VirtualMachine::push(Value value) {
+  if (!m_securityGuard.checkStackPush(m_stack.size())) {
+    NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+    m_halted = true;
+    return;
+  }
+  m_stack.push_back(std::move(value));
+}
 
 Value VirtualMachine::pop() {
   if (m_stack.empty()) {

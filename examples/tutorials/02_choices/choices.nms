@@ -1,0 +1,56 @@
+// Tutorial 2: Choices
+// Пример использования выборов игрока
+
+// Объявление персонажей
+character Hero(name="Алекс", color="#4A90D9")
+character Friend(name="Саша", color="#D94A4A")
+
+// Начальная сцена с выбором
+scene intro {
+    show background "bg_room"
+    show Hero at center
+
+    say Hero "Привет! Что мне сегодня делать?"
+
+    // Меню выбора
+    choice {
+        "Поговорить с другом" -> talk_scene
+        "Пойти на прогулку" -> walk_scene
+    }
+}
+
+// Сцена разговора с другом
+scene talk_scene {
+    show background "bg_room"
+
+    // Два персонажа: один слева, один справа
+    show Hero at left
+    show Friend at right
+
+    say Friend "Привет! Рад тебя видеть!"
+    say Hero "Я тоже!"
+    say Friend "Как дела?"
+    say Hero "Отлично! Спасибо, что спросил."
+
+    goto ending
+}
+
+// Сцена прогулки
+scene walk_scene {
+    show background "bg_park"
+    show Hero at center
+
+    say Hero "Какая прекрасная погода!"
+    say Hero "Хорошо иногда просто пройтись."
+    say Hero "Свежий воздух помогает думать."
+
+    goto ending
+}
+
+// Финальная сцена
+scene ending {
+    show background "bg_room"
+    show Hero at center
+
+    say Hero "Это был хороший день!"
+}
