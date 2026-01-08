@@ -4,6 +4,9 @@
 #include "NovelMind/scripting/ir.hpp"
 #include "editor_runtime_host_detail.hpp"
 
+#include <QDebug>
+#include <QString>
+
 #include <chrono>
 #include <exception>
 #include <filesystem>
@@ -756,14 +759,20 @@ std::string generateScriptFromGraphJson(const JsonValue &graphJson) {
  */
 Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
   fs::path graphPath = fs::path(projectPath) / ".novelmind" / "story_graph.json";
+  qDebug() << "[loadStoryGraphScript] Looking for graph at:" << QString::fromStdString(graphPath.string());
 
   if (!fs::exists(graphPath)) {
+    qWarning() << "[loadStoryGraphScript] Story graph file NOT FOUND!";
+    qWarning() << "[loadStoryGraphScript] Expected location:" << QString::fromStdString(graphPath.string());
+    qWarning() << "[loadStoryGraphScript] This file should be created when you modify nodes in Story Graph panel";
     return Result<std::string>::error("Story graph file not found: " +
                                       graphPath.string());
   }
 
+  qDebug() << "[loadStoryGraphScript] File exists, opening...";
   std::ifstream file(graphPath);
   if (!file) {
+    qCritical() << "[loadStoryGraphScript] Failed to open file (permissions?)";
     return Result<std::string>::error("Failed to open story graph file: " +
                                       graphPath.string());
   }
@@ -773,19 +782,27 @@ Result<std::string> loadStoryGraphScript(const std::string &projectPath) {
   std::string jsonContent = buffer.str();
   file.close();
 
+  qDebug() << "[loadStoryGraphScript] File loaded, size:" << jsonContent.size() << "bytes";
+
   // Parse JSON
+  qDebug() << "[loadStoryGraphScript] Parsing JSON...";
   auto parseResult = SimpleJsonParser::parse(jsonContent);
   if (!parseResult.isOk()) {
+    qCritical() << "[loadStoryGraphScript] JSON parse error:" << QString::fromStdString(parseResult.error());
     return Result<std::string>::error("Failed to parse story graph JSON: " +
                                       parseResult.error());
   }
 
+  qDebug() << "[loadStoryGraphScript] JSON parsed successfully, converting to script...";
   // Convert to script
   std::string script = generateScriptFromGraphJson(parseResult.value());
   if (script.empty()) {
+    qCritical() << "[loadStoryGraphScript] No scene nodes found in story graph!";
+    qCritical() << "[loadStoryGraphScript] The JSON file exists but has no valid scene nodes";
     return Result<std::string>::error("No scene nodes found in story graph");
   }
 
+  qDebug() << "[loadStoryGraphScript] Script generated successfully, length:" << script.size() << "characters";
   return Result<std::string>::ok(std::move(script));
 }
 
@@ -838,6 +855,10 @@ Result<void> EditorRuntimeHost::compileProject() {
   try {
     // Determine the playback source mode from project settings
     PlaybackSourceMode sourceMode = getPlaybackSourceMode();
+    qDebug() << "[EditorRuntimeHost] === COMPILING PROJECT ===";
+    qDebug() << "[EditorRuntimeHost] Playback source mode:" << static_cast<int>(sourceMode)
+             << "(0=Script, 1=Graph, 2=Mixed)";
+    qDebug() << "[EditorRuntimeHost] Project path:" << QString::fromStdString(m_project.path);
 
     std::string allScripts;
     m_sceneNames.clear();
@@ -845,17 +866,22 @@ Result<void> EditorRuntimeHost::compileProject() {
     // Handle different playback source modes (Issue #94)
     switch (sourceMode) {
     case PlaybackSourceMode::Graph: {
+      qDebug() << "[EditorRuntimeHost] Graph mode: Loading story graph...";
       // Load story graph and convert to script
       auto graphScriptResult = loadStoryGraphScript(m_project.path);
       if (!graphScriptResult.isOk()) {
+        qCritical() << "[EditorRuntimeHost] GRAPH LOAD FAILED:" << QString::fromStdString(graphScriptResult.error());
+        qCritical() << "[EditorRuntimeHost] Expected file:" << QString::fromStdString(m_project.path) << "/.novelmind/story_graph.json";
         // Fall back to script mode if graph is not available
         return Result<void>::error(
             "Graph mode selected but story graph not available: " +
             graphScriptResult.error() +
             ". Switch to Script mode or create a Story Graph.");
       }
+      qDebug() << "[EditorRuntimeHost] Story graph loaded successfully, converting to script...";
       allScripts = "// Generated from Story Graph (Graph Mode)\n";
       allScripts += graphScriptResult.value();
+      qDebug() << "[EditorRuntimeHost] Generated script length:" << allScripts.size() << "characters";
 
       // Use graph entry scene if available
       std::string graphEntry = getGraphEntryScene(m_project.path);
@@ -949,23 +975,33 @@ Result<void> EditorRuntimeHost::compileProject() {
     }
 
     if (allScripts.empty()) {
+      qCritical() << "[EditorRuntimeHost] No content found for playback!";
+      qCritical() << "[EditorRuntimeHost] Check your scripts or Story Graph";
       return Result<void>::error("No content found for playback. "
                                  "Check your scripts or Story Graph.");
     }
 
+    qDebug() << "[EditorRuntimeHost] Total script content:" << allScripts.size() << "characters";
+    qDebug() << "[EditorRuntimeHost] Starting compilation pipeline...";
+
     // Lexer
+    qDebug() << "[EditorRuntimeHost] Step 1/4: Lexer tokenization...";
     scripting::Lexer lexer;
     auto tokensResult = lexer.tokenize(allScripts);
 
     if (!tokensResult.isOk()) {
+      qCritical() << "[EditorRuntimeHost] Lexer error:" << QString::fromStdString(tokensResult.error());
       return Result<void>::error("Lexer error: " + tokensResult.error());
     }
+    qDebug() << "[EditorRuntimeHost] Lexer: Generated" << tokensResult.value().size() << "tokens";
 
     // Parser
+    qDebug() << "[EditorRuntimeHost] Step 2/4: Parser...";
     scripting::Parser parser;
     auto parseResult = parser.parse(tokensResult.value());
 
     if (!parseResult.isOk()) {
+      qCritical() << "[EditorRuntimeHost] Parse error:" << QString::fromStdString(parseResult.error());
       return Result<void>::error("Parse error: " + parseResult.error());
     }
 
@@ -976,8 +1012,10 @@ Result<void> EditorRuntimeHost::compileProject() {
     for (const auto &scene : m_program->scenes) {
       m_sceneNames.push_back(scene.name);
     }
+    qDebug() << "[EditorRuntimeHost] Parser: Found" << m_sceneNames.size() << "scenes";
 
     // Validator
+    qDebug() << "[EditorRuntimeHost] Step 3/4: Validator...";
     scripting::Validator validator;
     auto validationResult = validator.validate(*m_program);
 
@@ -985,21 +1023,27 @@ Result<void> EditorRuntimeHost::compileProject() {
       std::string errorMsg = "Validation errors:\n";
       for (const auto &err : validationResult.errors.errors()) {
         errorMsg += "  " + err.format() + "\n";
+        qCritical() << "[EditorRuntimeHost] Validation error:" << QString::fromStdString(err.format());
       }
       return Result<void>::error(errorMsg);
     }
+    qDebug() << "[EditorRuntimeHost] Validator: No errors";
 
     // Compiler
+    qDebug() << "[EditorRuntimeHost] Step 4/4: Compiler...";
     scripting::Compiler compiler;
     auto compileResult = compiler.compile(*m_program);
 
     if (!compileResult.isOk()) {
+      qCritical() << "[EditorRuntimeHost] Compilation error:" << QString::fromStdString(compileResult.error());
       return Result<void>::error("Compilation error: " + compileResult.error());
     }
 
     m_compiledScript = std::make_unique<scripting::CompiledScript>(
         std::move(compileResult.value()));
 
+    qDebug() << "[EditorRuntimeHost] === COMPILATION SUCCESSFUL ===";
+    qDebug() << "[EditorRuntimeHost] Scenes available:" << m_sceneNames.size();
     return Result<void>::ok();
   } catch (const std::exception &e) {
     return Result<void>::error(std::string("Exception during compilation: ") +
