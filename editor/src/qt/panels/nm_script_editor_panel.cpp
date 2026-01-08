@@ -1,6 +1,8 @@
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+#include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/editor_settings.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_issues_panel.hpp"
@@ -329,7 +331,10 @@ void NMScriptEditorPanel::setupContent() {
   m_leftSplitter->setStretchFactor(0, 1);
   m_leftSplitter->setStretchFactor(1, 1);
 
-  m_tabs = new QTabWidget(m_splitter);
+  // Create horizontal splitter for editor and preview (issue #240)
+  m_mainSplitter = new QSplitter(Qt::Horizontal, m_splitter);
+
+  m_tabs = new QTabWidget(m_mainSplitter);
   m_tabs->setTabsClosable(true);
   connect(m_tabs, &QTabWidget::currentChanged, this,
           &NMScriptEditorPanel::onCurrentTabChanged);
@@ -339,6 +344,19 @@ void NMScriptEditorPanel::setupContent() {
     m_tabs->removeTab(index);
     delete widget;
   });
+
+  // Scene Preview Widget (issue #240)
+  m_scenePreview = new NMScenePreviewWidget(m_mainSplitter);
+  m_scenePreviewEnabled = EditorSettings::instance()
+                              .value("scriptEditor/previewEnabled", false)
+                              .toBool();
+  m_scenePreview->setVisible(m_scenePreviewEnabled);
+  m_scenePreview->setPreviewEnabled(m_scenePreviewEnabled);
+
+  m_mainSplitter->addWidget(m_tabs);
+  m_mainSplitter->addWidget(m_scenePreview);
+  m_mainSplitter->setStretchFactor(0, 6); // 60% for editor
+  m_mainSplitter->setStretchFactor(1, 4); // 40% for preview
 
   // Find/Replace widget (hidden by default)
   m_findReplaceWidget = new NMFindReplaceWidget(m_contentWidget);
@@ -351,7 +369,7 @@ void NMScriptEditorPanel::setupContent() {
   setupCommandPalette();
 
   m_splitter->addWidget(m_leftSplitter);
-  m_splitter->addWidget(m_tabs);
+  m_splitter->addWidget(m_mainSplitter);
   m_splitter->setStretchFactor(0, 0);
   m_splitter->setStretchFactor(1, 1);
   layout->addWidget(m_findReplaceWidget);
@@ -418,6 +436,21 @@ void NMScriptEditorPanel::setupToolBar() {
 
   m_toolBar->addSeparator();
 
+  // Toggle Preview action (issue #240)
+  m_togglePreviewAction = m_toolBar->addAction(tr("👁️ Preview"));
+  m_togglePreviewAction->setToolTip(
+      tr("Toggle live scene preview (Ctrl+Shift+V)"));
+  m_togglePreviewAction->setCheckable(true);
+  m_togglePreviewAction->setChecked(m_scenePreviewEnabled);
+  m_togglePreviewAction->setShortcut(
+      QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_V));
+  m_togglePreviewAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+  addAction(m_togglePreviewAction);
+  connect(m_togglePreviewAction, &QAction::triggered, this,
+          &NMScriptEditorPanel::toggleScenePreview);
+
+  m_toolBar->addSeparator();
+
   // Snippet insertion
   QAction *actionSnippet = m_toolBar->addAction(tr("Insert"));
   actionSnippet->setToolTip(tr("Insert code snippet (Ctrl+J)"));
@@ -458,7 +491,11 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
             emit docHtmlChanged(html);
           });
   connect(editor, &QPlainTextEdit::textChanged, this,
-          [this]() { m_diagnosticsTimer.start(); });
+          [this]() {
+            m_diagnosticsTimer.start();
+            // Trigger preview update on text change (issue #240)
+            onScriptTextChanged();
+          });
 
   // IDE feature connections
   connect(editor, &NMScriptEditor::goToDefinitionRequested, this,
@@ -493,6 +530,9 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
             if (m_cursorPosLabel) {
               m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
             }
+
+            // Trigger preview update on cursor position change (issue #240)
+            onCursorPositionChanged();
 
             // Update syntax hint
             const QString hint = editor->getSyntaxHint();

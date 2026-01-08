@@ -154,6 +154,7 @@ class NMScriptEditor;
 class NMScriptMinimap;
 class NMFindReplaceWidget;
 class NMScriptCommandPalette;
+class NMScenePreviewWidget;
 
 /**
  * @brief Minimap widget for code overview (VSCode-like)
@@ -706,6 +707,16 @@ public:
   void showCommandPalette();
 
   /**
+   * @brief Toggle the live scene preview split-view mode
+   */
+  void toggleScenePreview();
+
+  /**
+   * @brief Check if scene preview is currently enabled
+   */
+  [[nodiscard]] bool isScenePreviewEnabled() const;
+
+  /**
    * @brief Set read-only mode for workflow enforcement
    *
    * When in read-only mode (e.g., Graph Mode workflow):
@@ -775,6 +786,8 @@ private slots:
   void onBreadcrumbsChanged(const QStringList &breadcrumbs);
   void onQuickFixRequested();
   void showQuickFixMenu(const QList<QuickFix> &fixes);
+  void onScriptTextChanged();
+  void onCursorPositionChanged();
 
 private:
   void setupContent();
@@ -808,12 +821,14 @@ private:
   QWidget *m_contentWidget = nullptr;
   QSplitter *m_splitter = nullptr;
   QSplitter *m_leftSplitter = nullptr;
+  QSplitter *m_mainSplitter = nullptr; // Horizontal splitter for editor and preview
   QTreeWidget *m_fileTree = nullptr;
   QListWidget *m_symbolList = nullptr;
   QTabWidget *m_tabs = nullptr;
   QToolBar *m_toolBar = nullptr;
   NMFindReplaceWidget *m_findReplaceWidget = nullptr;
   NMScriptCommandPalette *m_commandPalette = nullptr;
+  NMScenePreviewWidget *m_scenePreview = nullptr;
 
   QHash<QWidget *, QString> m_tabPaths;
   QPointer<QFileSystemWatcher> m_scriptWatcher;
@@ -850,6 +865,10 @@ private:
   QWidget *m_readOnlyBanner = nullptr;
   QLabel *m_readOnlyLabel = nullptr;
   QPushButton *m_syncToGraphBtn = nullptr;
+
+  // Live scene preview (issue #240)
+  bool m_scenePreviewEnabled = false;
+  QAction *m_togglePreviewAction = nullptr;
 };
 
 } // namespace NovelMind::editor::qt
