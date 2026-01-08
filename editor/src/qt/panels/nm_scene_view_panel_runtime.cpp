@@ -369,6 +369,8 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
   if (m_playOverlay) {
     m_playOverlay->setInteractionEnabled(playMode !=
                                          NMPlayModeController::Stopped);
+    // Show navigation controls during play mode
+    m_playOverlay->setNavigationVisible(playMode != NMPlayModeController::Stopped);
     if (playMode != NMPlayModeController::Stopped) {
       m_playOverlay->setFocus();
     }
