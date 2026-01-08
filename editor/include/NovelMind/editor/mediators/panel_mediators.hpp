@@ -19,6 +19,7 @@
 
 #include "NovelMind/editor/mediators/playback_mediator.hpp"
 #include "NovelMind/editor/mediators/property_mediator.hpp"
+#include "NovelMind/editor/mediators/scene_mediator.hpp"
 #include "NovelMind/editor/mediators/scene_registry_mediator.hpp"
 #include "NovelMind/editor/mediators/selection_mediator.hpp"
 #include "NovelMind/editor/mediators/workflow_mediator.hpp"
@@ -139,12 +140,16 @@ public:
   [[nodiscard]] SceneRegistryMediator *sceneRegistryMediator() const {
     return m_sceneRegistryMediator.get();
   }
+  [[nodiscard]] SceneMediator *sceneMediator() const {
+    return m_sceneMediator.get();
+  }
 
 private:
   std::unique_ptr<SelectionMediator> m_selectionMediator;
   std::unique_ptr<WorkflowMediator> m_workflowMediator;
   std::unique_ptr<PropertyMediator> m_propertyMediator;
   std::unique_ptr<PlaybackMediator> m_playbackMediator;
+  std::unique_ptr<SceneMediator> m_sceneMediator;
   std::unique_ptr<SceneRegistryMediator> m_sceneRegistryMediator;
 
   bool m_initialized = false;
