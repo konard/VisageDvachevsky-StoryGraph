@@ -105,6 +105,12 @@ private:
   // Scene document loading
   void onLoadSceneDocumentRequested(const events::LoadSceneDocumentRequestedEvent &event);
 
+  // Scene auto-sync events (issue #213)
+  void onSceneDocumentModified(const events::SceneDocumentModifiedEvent &event);
+  void onSceneThumbnailUpdated(const events::SceneThumbnailUpdatedEvent &event);
+  void onSceneRenamed(const events::SceneRenamedEvent &event);
+  void onSceneDeleted(const events::SceneDeletedEvent &event);
+
   qt::NMSceneViewPanel *m_sceneView = nullptr;
   qt::NMStoryGraphPanel *m_storyGraph = nullptr;
   qt::NMSceneDialogueGraphPanel *m_dialogueGraph = nullptr;
