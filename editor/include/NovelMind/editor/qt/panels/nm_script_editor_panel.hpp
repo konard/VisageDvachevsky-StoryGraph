@@ -35,6 +35,7 @@
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
+#include <QMutex>
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QRegularExpression>
@@ -846,6 +847,9 @@ private:
     QHash<QString, int> sceneLines;     // name -> line number
     QHash<QString, int> characterLines; // name -> line number
   } m_symbolIndex;
+
+  // Mutex to protect m_symbolIndex from concurrent access (issue #245)
+  mutable QMutex m_symbolIndexMutex;
 
   QTimer m_diagnosticsTimer;
   class NMIssuesPanel *m_issuesPanel = nullptr;
