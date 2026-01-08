@@ -17,7 +17,8 @@ void PanelMediatorManager::initialize(
     qt::NMScriptEditorPanel *scriptEditor, qt::NMScriptDocPanel *scriptDoc,
     qt::NMTimelinePanel *timeline, qt::NMCurveEditorPanel *curveEditor,
     qt::NMVoiceStudioPanel *voiceStudio, qt::NMVoiceManagerPanel *voiceManager,
-    qt::NMDiagnosticsPanel *diagnostics, qt::NMIssuesPanel *issues) {
+    qt::NMDiagnosticsPanel *diagnostics, qt::NMIssuesPanel *issues,
+    SceneRegistry *sceneRegistry) {
 
   if (m_initialized) {
     qWarning() << "[PanelMediatorManager] Already initialized, shutting down first";
@@ -48,8 +49,16 @@ void PanelMediatorManager::initialize(
       sceneView, timeline, this);
   m_playbackMediator->initialize();
 
-  // Note: SceneMediator is initialized separately via initializeSceneMediator()
-  // when a SceneRegistry becomes available (e.g., when a project is loaded)
+  // Create and initialize Scene Registry Mediator (issue #213)
+  if (sceneRegistry) {
+    m_sceneRegistryMediator = std::make_unique<SceneRegistryMediator>(
+        sceneRegistry, this);
+    m_sceneRegistryMediator->initialize();
+    qDebug() << "[PanelMediatorManager] Scene Registry Mediator initialized";
+  } else {
+    qDebug() << "[PanelMediatorManager] Scene Registry not provided, skipping "
+                "Scene Registry Mediator";
+  }
 
   m_initialized = true;
   qDebug() << "[PanelMediatorManager] All panel mediators initialized successfully";
@@ -84,10 +93,9 @@ void PanelMediatorManager::shutdown() {
 
   qDebug() << "[PanelMediatorManager] Shutting down panel mediators...";
 
-  // Shutdown SceneMediator first (issue #211)
-  if (m_sceneMediator) {
-    m_sceneMediator->shutdown();
-    m_sceneMediator.reset();
+  if (m_sceneRegistryMediator) {
+    m_sceneRegistryMediator->shutdown();
+    m_sceneRegistryMediator.reset();
   }
 
   if (m_playbackMediator) {

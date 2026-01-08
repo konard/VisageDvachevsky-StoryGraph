@@ -129,6 +129,16 @@ public:
     return m_nodeType.compare("Scene", Qt::CaseInsensitive) == 0;
   }
 
+  // Scene validation state
+  void setSceneValidationError(bool hasError);
+  [[nodiscard]] bool hasSceneValidationError() const { return m_hasSceneValidationError; }
+
+  void setSceneValidationWarning(bool hasWarning);
+  [[nodiscard]] bool hasSceneValidationWarning() const { return m_hasSceneValidationWarning; }
+
+  void setSceneValidationMessage(const QString &message);
+  [[nodiscard]] QString sceneValidationMessage() const { return m_sceneValidationMessage; }
+
   // Condition Node specific properties
   void setConditionExpression(const QString &expr) {
     m_conditionExpression = expr;
@@ -203,6 +213,7 @@ protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
 
 private:
+  void updateTooltip();
   QString m_title;
   QString m_nodeType;
   uint64_t m_nodeId = 0;
@@ -232,6 +243,11 @@ private:
   bool m_hasEmbeddedDialogue = false;
   int m_dialogueCount = 0;
   QString m_thumbnailPath;
+
+  // Scene validation state
+  bool m_hasSceneValidationError = false;
+  bool m_hasSceneValidationWarning = false;
+  QString m_sceneValidationMessage;
 
   // Condition Node specific properties
   QString m_conditionExpression;
@@ -375,6 +391,19 @@ public:
    * @return List of validation error messages
    */
   [[nodiscard]] QStringList validateGraph() const;
+
+  /**
+   * @brief Validate scene references in all scene nodes
+   * @param projectPath Project root path for finding .nmscene files
+   * @return List of validation error messages
+   */
+  [[nodiscard]] QStringList validateSceneReferences(const QString &projectPath) const;
+
+  /**
+   * @brief Update validation state for all scene nodes
+   * @param projectPath Project root path for finding .nmscene files
+   */
+  void updateSceneValidationState(const QString &projectPath);
 
   /**
    * @brief Set read-only mode for workflow enforcement

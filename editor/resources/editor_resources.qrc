@@ -120,5 +120,11 @@
         <file>icons/lucide/zap.svg</file>
         <file>icons/lucide/zoom-in.svg</file>
         <file>icons/lucide/zoom-out.svg</file>
+        <!-- Scene Templates (issue #216) -->
+        <file>templates/scenes/empty_scene.nmscene_template</file>
+        <file>templates/scenes/dialogue_scene.nmscene_template</file>
+        <file>templates/scenes/choice_scene.nmscene_template</file>
+        <file>templates/scenes/cutscene.nmscene_template</file>
+        <file>templates/scenes/title_screen.nmscene_template</file>
     </qresource>
 </RCC>

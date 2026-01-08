@@ -64,6 +64,7 @@ add_library(novelmind_editor STATIC
     src/project_integrity.cpp
     src/project_json.cpp
     src/scene_registry.cpp
+    src/scene_template_manager.cpp
 
     # Build System components
     src/build_system.cpp
@@ -79,6 +80,7 @@ add_library(novelmind_editor STATIC
     src/mediators/property_mediator.cpp
     src/mediators/playback_mediator.cpp
     src/mediators/scene_mediator.cpp
+    src/mediators/scene_registry_mediator.cpp
     src/mediators/panel_mediators.cpp
 
     # Performance optimization components
@@ -100,6 +102,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_new_project_dialog.cpp
     src/qt/nm_voice_metadata_dialog.cpp
     src/qt/nm_bezier_curve_editor_dialog.cpp
+    src/qt/nm_new_scene_dialog.cpp
     src/qt/nm_main_window.cpp
     src/qt/nm_main_window_menu.cpp
     src/qt/nm_main_window_panels.cpp
@@ -169,6 +172,9 @@ add_library(novelmind_editor STATIC
 
     # Phase 6 - Guided Learning System Panel
     src/qt/panels/nm_help_hub_panel.cpp
+
+    # Custom Widgets
+    src/qt/widgets/nm_scene_id_picker.cpp
 
     # Performance optimization headers
     include/NovelMind/editor/qt/lazy_thumbnail_loader.hpp
@@ -247,6 +253,11 @@ add_library(novelmind_editor STATIC
 
     # Scene Registry (issue #206)
     include/NovelMind/editor/scene_registry.hpp
+
+    # Scene Template System (issue #216)
+    include/NovelMind/editor/scene_template_manager.hpp
+    # Custom Widget headers
+    include/NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp
 
     # Qt Resources
     resources/editor_resources.qrc

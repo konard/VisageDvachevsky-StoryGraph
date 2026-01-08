@@ -139,6 +139,29 @@ void WorkflowMediator::initialize() {
             onLoadSceneDocumentRequested(event);
           }));
 
+  // Scene auto-sync events (issue #213)
+  m_subscriptions.push_back(
+      bus.subscribe<events::SceneDocumentModifiedEvent>(
+          [this](const events::SceneDocumentModifiedEvent &event) {
+            onSceneDocumentModified(event);
+          }));
+
+  m_subscriptions.push_back(
+      bus.subscribe<events::SceneThumbnailUpdatedEvent>(
+          [this](const events::SceneThumbnailUpdatedEvent &event) {
+            onSceneThumbnailUpdated(event);
+          }));
+
+  m_subscriptions.push_back(bus.subscribe<events::SceneRenamedEvent>(
+      [this](const events::SceneRenamedEvent &event) {
+        onSceneRenamed(event);
+      }));
+
+  m_subscriptions.push_back(bus.subscribe<events::SceneDeletedEvent>(
+      [this](const events::SceneDeletedEvent &event) {
+        onSceneDeleted(event);
+      }));
+
   qDebug() << "[WorkflowMediator] Initialized with"
            << m_subscriptions.size() << "subscriptions";
 }
@@ -553,6 +576,65 @@ void WorkflowMediator::onLoadSceneDocumentRequested(
     qDebug() << "[WorkflowMediator] Loading scene document:" << event.sceneId;
     m_sceneView->loadSceneDocument(event.sceneId);
   }
+}
+
+// ============================================================================
+// Scene Auto-Sync Event Handlers (Issue #213)
+// ============================================================================
+
+void WorkflowMediator::onSceneDocumentModified(
+    const events::SceneDocumentModifiedEvent &event) {
+  if (event.sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[WorkflowMediator] Scene document modified:" << event.sceneId
+           << "- triggering thumbnail regeneration";
+
+  // Note: Thumbnail regeneration will be handled by SceneRegistry
+  // which will emit sceneThumbnailUpdated signal, which in turn
+  // will trigger onSceneThumbnailUpdated() below to update Story Graph
+}
+
+void WorkflowMediator::onSceneThumbnailUpdated(
+    const events::SceneThumbnailUpdatedEvent &event) {
+  if (!m_storyGraph || event.sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[WorkflowMediator] Scene thumbnail updated:" << event.sceneId
+           << "- updating Story Graph nodes";
+
+  // Request Story Graph to update all nodes referencing this scene
+  // This will be handled by the Story Graph panel's own event subscription
+  // The Story Graph panel will update thumbnails for all scene nodes with this sceneId
+}
+
+void WorkflowMediator::onSceneRenamed(
+    const events::SceneRenamedEvent &event) {
+  if (!m_storyGraph || event.sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[WorkflowMediator] Scene renamed:" << event.sceneId
+           << "(" << event.oldName << "->" << event.newName << ")";
+
+  // The Story Graph panel will handle updating node display names
+  // via its own event subscription to SceneRenamedEvent
+}
+
+void WorkflowMediator::onSceneDeleted(
+    const events::SceneDeletedEvent &event) {
+  if (!m_storyGraph || event.sceneId.isEmpty()) {
+    return;
+  }
+
+  qDebug() << "[WorkflowMediator] Scene deleted:" << event.sceneId
+           << "- Story Graph should validate references";
+
+  // The Story Graph panel will handle validation of orphaned references
+  // via its own event subscription to SceneDeletedEvent
+  // It will show warnings on nodes with broken scene references
 }
 
 } // namespace NovelMind::editor::mediators

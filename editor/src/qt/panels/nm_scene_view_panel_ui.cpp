@@ -464,6 +464,10 @@ void NMSceneViewPanel::setupContent() {
       [](int index) { NMPlayModeController::instance().selectChoice(index); });
   connect(m_playOverlay, &NMPlayPreviewOverlay::advanceRequested, this,
           []() { NMPlayModeController::instance().advanceDialogue(); });
+  connect(m_playOverlay, &NMPlayPreviewOverlay::previousRequested, this,
+          []() { NMPlayModeController::instance().stepBackward(); });
+  connect(m_playOverlay, &NMPlayPreviewOverlay::nextRequested, this,
+          []() { NMPlayModeController::instance().stepForward(); });
 
   updateRuntimePreviewVisibility();
 }

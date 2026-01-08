@@ -272,6 +272,13 @@ void NMStoryGraphPanel::rebuildFromProjectScripts() {
   updateNodeBreakpoints();
   updateCurrentNode(QString());
 
+  // Update scene validation state for all scene nodes
+  const QString projectPath = QString::fromStdString(
+      ProjectManager::instance().getProjectPath());
+  if (!projectPath.isEmpty() && m_scene) {
+    m_scene->updateSceneValidationState(projectPath);
+  }
+
   detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   m_isRebuilding = false;
 }

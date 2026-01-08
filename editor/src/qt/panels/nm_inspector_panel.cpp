@@ -6,6 +6,8 @@
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp"
+#include "NovelMind/editor/scene_registry.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -576,6 +578,91 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
     }
     connect(scriptGroup, &NMPropertyGroup::propertyValueChanged, this,
+            &NMInspectorPanel::onGroupPropertyChanged);
+  }
+
+  // Scene node handling - provides Scene ID picker with quick actions
+  if (node->isSceneNode()) {
+    auto *sceneGroup = addGroup(tr("Scene Properties"));
+
+    if (m_editMode && m_sceneRegistry) {
+      // Use the dedicated Scene ID picker widget
+      auto *scenePicker =
+          new NMSceneIdPicker(m_sceneRegistry, this);
+      scenePicker->setSceneId(node->sceneId());
+
+      // Track value changes
+      connect(scenePicker, &NMSceneIdPicker::sceneIdChanged, this,
+              [this, node](const QString &newSceneId) {
+                if (!m_updating) {
+                  emit propertyChanged(node->nodeIdString(), "sceneId",
+                                       newSceneId);
+                }
+              });
+
+      // Connect quick action signals to appropriate handlers
+      connect(scenePicker, &NMSceneIdPicker::createNewSceneRequested, this,
+              [this]() {
+                // Emit signal that can be handled by the main editor
+                // to open Scene View with a new scene
+                qDebug() << "Create new scene requested";
+                // TODO: Connect to editor's scene creation workflow
+              });
+
+      connect(scenePicker, &NMSceneIdPicker::editSceneRequested, this,
+              [this](const QString &sceneId) {
+                // Emit signal to open Scene View with the selected scene
+                qDebug() << "Edit scene requested:" << sceneId;
+                // TODO: Connect to editor's scene editing workflow
+              });
+
+      connect(scenePicker, &NMSceneIdPicker::locateSceneRequested, this,
+              [this](const QString &sceneId) {
+                // Highlight nodes using this scene in Story Graph
+                qDebug() << "Locate scene requested:" << sceneId;
+                // TODO: Connect to story graph's node highlighting
+              });
+
+      trackPropertyWidget("sceneId", scenePicker);
+      sceneGroup->addProperty(tr("Scene ID"), scenePicker);
+    } else {
+      // Read-only mode - show scene ID as text
+      const QString sceneId = node->sceneId();
+      QString displayValue = sceneId.isEmpty() ? tr("(not set)") : sceneId;
+
+      // Add validation indicator
+      if (!sceneId.isEmpty() && m_sceneRegistry &&
+          !m_sceneRegistry->sceneExists(sceneId)) {
+        displayValue += " ⚠ (not found)";
+      }
+
+      sceneGroup->addProperty(tr("Scene ID"), displayValue);
+    }
+
+    // Additional scene properties
+    if (m_editMode) {
+      if (auto *embeddedEdit = sceneGroup->addEditableProperty(
+              "hasEmbeddedDialogue", tr("Has Embedded Dialogue"),
+              NMPropertyType::Boolean,
+              node->hasEmbeddedDialogue() ? "true" : "false")) {
+        trackPropertyWidget("hasEmbeddedDialogue", embeddedEdit);
+      }
+    } else {
+      sceneGroup->addProperty(
+          tr("Has Embedded Dialogue"),
+          node->hasEmbeddedDialogue() ? tr("Yes") : tr("No"));
+    }
+
+    // Dialogue count (read-only informational property)
+    sceneGroup->addProperty(tr("Dialogue Count"),
+                            QString::number(node->dialogueCount()));
+
+    // Thumbnail path (usually managed by SceneRegistry, but can be shown)
+    if (!node->thumbnailPath().isEmpty()) {
+      sceneGroup->addProperty(tr("Thumbnail"), node->thumbnailPath());
+    }
+
+    connect(sceneGroup, &NMPropertyGroup::propertyValueChanged, this,
             &NMInspectorPanel::onGroupPropertyChanged);
   }
 

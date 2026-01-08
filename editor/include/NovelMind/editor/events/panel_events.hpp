@@ -488,4 +488,128 @@ struct SetAnimationPreviewModeEvent : EditorEvent {
   SetAnimationPreviewModeEvent() : EditorEvent(EditorEventType::Custom) {}
 };
 
+// ============================================================================
+// Scene Registry Auto-Sync Events (Issue #213)
+// ============================================================================
+
+/**
+ * @brief Emitted when a new scene is created and registered
+ *
+ * This event allows panels to respond to new scenes being added to the project.
+ * For example, the Story Graph can add the scene to its scene picker dropdown.
+ */
+struct SceneCreatedEvent : EditorEvent {
+  QString sceneId;   ///< ID of the newly created scene
+  QString sceneName; ///< Display name of the scene
+
+  SceneCreatedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene created: " + sceneId.toStdString();
+  }
+};
+
+/**
+ * @brief Emitted when a scene is renamed in the Scene Registry
+ *
+ * This event triggers automatic updates of all Story Graph nodes that reference
+ * the renamed scene, ensuring consistency across the project.
+ */
+struct SceneRenamedEvent : EditorEvent {
+  QString sceneId;  ///< Scene ID (unchanged)
+  QString oldName;  ///< Previous display name
+  QString newName;  ///< New display name
+
+  SceneRenamedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene renamed: " + sceneId.toStdString() + " (" +
+           oldName.toStdString() + " -> " + newName.toStdString() + ")";
+  }
+};
+
+/**
+ * @brief Emitted when a scene is deleted/unregistered from the project
+ *
+ * This event allows panels to validate references and show warnings for
+ * orphaned scene references in the Story Graph.
+ */
+struct SceneDeletedEvent : EditorEvent {
+  QString sceneId; ///< ID of the deleted scene
+
+  SceneDeletedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene deleted: " + sceneId.toStdString();
+  }
+};
+
+/**
+ * @brief Emitted when a scene document (.nmscene file) is modified
+ *
+ * This event triggers thumbnail regeneration and updates in the Story Graph
+ * to reflect the latest scene content.
+ */
+struct SceneDocumentModifiedEvent : EditorEvent {
+  QString sceneId; ///< ID of the modified scene
+
+  SceneDocumentModifiedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene document modified: " + sceneId.toStdString();
+  }
+};
+
+/**
+ * @brief Emitted when a scene's thumbnail is updated
+ *
+ * This event notifies the Story Graph to refresh the thumbnail display
+ * for all nodes referencing this scene.
+ */
+struct SceneThumbnailUpdatedEvent : EditorEvent {
+  QString sceneId;       ///< ID of the scene
+  QString thumbnailPath; ///< Path to the updated thumbnail image
+
+  SceneThumbnailUpdatedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene thumbnail updated: " + sceneId.toStdString();
+  }
+};
+
+/**
+ * @brief Emitted when scene metadata changes (tags, description, etc.)
+ *
+ * This event allows panels to update their displays when scene metadata
+ * is modified through the Inspector or other panels.
+ */
+struct SceneMetadataUpdatedEvent : EditorEvent {
+  QString sceneId; ///< ID of the scene with updated metadata
+
+  SceneMetadataUpdatedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Scene metadata updated: " + sceneId.toStdString();
+  }
+};
+
+/**
+ * @brief Request to sync thumbnails for all scene nodes in Story Graph
+ *
+ * This event can be manually triggered to force a refresh of all
+ * scene thumbnails in the Story Graph.
+ */
+struct SyncSceneToGraphEvent : EditorEvent {
+  QString sceneId; ///< Specific scene to sync, or empty for all scenes
+
+  SyncSceneToGraphEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    if (sceneId.isEmpty()) {
+      return "Sync all scenes to Story Graph";
+    }
+    return "Sync scene to Story Graph: " + sceneId.toStdString();
+  }
+};
+
 } // namespace NovelMind::editor::events

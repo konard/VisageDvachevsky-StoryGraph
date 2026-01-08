@@ -17,6 +17,10 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 
+namespace NovelMind::editor {
+class SceneRegistry;
+}
+
 namespace NovelMind::editor::qt {
 
 /**
@@ -193,6 +197,13 @@ public:
   void setEditMode(bool enabled) { m_editMode = enabled; }
   [[nodiscard]] bool editMode() const { return m_editMode; }
 
+  /**
+   * @brief Set the scene registry for Scene ID picker
+   */
+  void setSceneRegistry(editor::SceneRegistry *registry) {
+    m_sceneRegistry = registry;
+  }
+
 signals:
   void propertyChanged(const QString &objectId, const QString &propertyName,
                        const QString &newValue);
@@ -222,6 +233,9 @@ private:
   bool m_multiEditMode = false;
   QHash<QString, QString> m_clipboardProperties;
 
+  // Scene registry for Scene ID picker
+  editor::SceneRegistry *m_sceneRegistry = nullptr;
+
   // Transform controls for aspect ratio lock
   bool m_lockAspectRatio = false;
   QPointF m_lastScale{1.0, 1.0};
@@ -235,6 +249,8 @@ private:
   QHash<QString, QString> m_lastKnownValues;
   // Flush pending updates to widgets
   void flushPendingUpdates();
+  // Update flag for preventing circular updates
+  bool m_updating = false;
 };
 
 } // namespace NovelMind::editor::qt

@@ -81,12 +81,15 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_voice_manager.cpp
         integration/test_project_json.cpp
         integration/test_ui_panel_features.cpp
-        integration/test_playback_source_mode.cpp  # Issue #82
-        integration/test_scene_workflow.cpp  # Issue #179
-        integration/test_scene_registry.cpp  # Issue #206
+        integration/test_playback_source_mode.cpp  
+        integration/test_scene_workflow.cpp  
+        integration/test_scene_registry.cpp 
+        integration/test_scene_template_manager.cpp  
+        integration/test_scene_validation.cpp 
+        integration/test_scene_id_picker.cpp  
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
-        unit/test_state_machine_robustness.cpp  # Issue #173: State machine fixes
+        unit/test_state_machine_robustness.cpp  
     )
 
     target_link_libraries(integration_tests

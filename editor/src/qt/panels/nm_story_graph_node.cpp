@@ -97,6 +97,46 @@ void NMGraphNodeItem::setEntry(bool isEntry) {
   }
 }
 
+void NMGraphNodeItem::setSceneValidationError(bool hasError) {
+  if (m_hasSceneValidationError != hasError) {
+    prepareGeometryChange();
+    m_hasSceneValidationError = hasError;
+    updateTooltip();
+    update();
+  }
+}
+
+void NMGraphNodeItem::setSceneValidationWarning(bool hasWarning) {
+  if (m_hasSceneValidationWarning != hasWarning) {
+    prepareGeometryChange();
+    m_hasSceneValidationWarning = hasWarning;
+    updateTooltip();
+    update();
+  }
+}
+
+void NMGraphNodeItem::setSceneValidationMessage(const QString &message) {
+  m_sceneValidationMessage = message;
+  updateTooltip();
+}
+
+void NMGraphNodeItem::updateTooltip() {
+  QString tooltip = m_title;
+
+  if (isSceneNode()) {
+    if (!m_sceneId.isEmpty()) {
+      tooltip += QString("\nScene ID: %1").arg(m_sceneId);
+    }
+
+    if (m_hasSceneValidationError || m_hasSceneValidationWarning) {
+      const QString prefix = m_hasSceneValidationError ? "\n⚠️ Error: " : "\n⚠️ Warning: ";
+      tooltip += prefix + m_sceneValidationMessage;
+    }
+  }
+
+  setToolTip(tooltip);
+}
+
 QPointF NMGraphNodeItem::inputPortPosition() const {
   const qreal height = isSceneNode() ? SCENE_NODE_HEIGHT : NODE_HEIGHT;
   return mapToScene(QPointF(0, height / 2));
@@ -528,6 +568,39 @@ void NMGraphNodeItem::paint(QPainter *painter,
     painter->setBrush(QColor(60, 220, 120));
     painter->setPen(QPen(QColor(40, 180, 90), 2));
     painter->drawPath(arrowPath);
+  }
+
+  // Scene validation indicator (error/warning icon for scene nodes)
+  if (isScene && (m_hasSceneValidationError || m_hasSceneValidationWarning)) {
+    const qreal iconSize = 20.0;
+    const QPointF iconCenter(NODE_WIDTH - iconSize / 2 - 4, iconSize / 2 + 4);
+
+    // Draw background circle
+    QColor bgColor = m_hasSceneValidationError ? QColor(220, 60, 60)   // Red for errors
+                                                : QColor(255, 180, 60); // Orange for warnings
+    painter->setBrush(bgColor);
+    painter->setPen(QPen(bgColor.darker(130), 2));
+    painter->drawEllipse(iconCenter, iconSize / 2, iconSize / 2);
+
+    // Draw warning/error symbol
+    if (m_hasSceneValidationError) {
+      // Draw X for errors
+      painter->setPen(QPen(Qt::white, 2, Qt::SolidLine, Qt::RoundCap));
+      const qreal crossSize = iconSize * 0.3;
+      painter->drawLine(iconCenter - QPointF(crossSize, crossSize),
+                        iconCenter + QPointF(crossSize, crossSize));
+      painter->drawLine(iconCenter - QPointF(crossSize, -crossSize),
+                        iconCenter + QPointF(crossSize, -crossSize));
+    } else {
+      // Draw ! for warnings
+      painter->setPen(QPen(Qt::white, 2, Qt::SolidLine, Qt::RoundCap));
+      const qreal exclamHeight = iconSize * 0.35;
+      painter->drawLine(iconCenter - QPointF(0, exclamHeight),
+                        iconCenter + QPointF(0, exclamHeight * 0.2));
+      painter->drawPoint(iconCenter + QPointF(0, exclamHeight * 0.6));
+    }
+
+    // Tooltip will be handled by Qt's tooltip system based on m_sceneValidationMessage
   }
 
   // Restore painter state

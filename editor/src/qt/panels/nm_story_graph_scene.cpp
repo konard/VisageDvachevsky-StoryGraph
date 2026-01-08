@@ -7,8 +7,10 @@
 
 #include <QAction>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QSet>
 #include <QFrame>
 #include <QGraphicsSceneContextMenuEvent>
 #include <QGraphicsSceneMouseEvent>
@@ -583,7 +585,132 @@ QStringList NMStoryGraphScene::validateGraph() const {
     }
   }
 
+  // Validate scene references from project manager
+  const QString projectPath = QString::fromStdString(
+      ProjectManager::instance().getProjectPath());
+  if (!projectPath.isEmpty()) {
+    errors.append(validateSceneReferences(projectPath));
+  }
+
   return errors;
+}
+
+QStringList NMStoryGraphScene::validateSceneReferences(const QString &projectPath) const {
+  QStringList errors;
+
+  if (projectPath.isEmpty()) {
+    return errors;
+  }
+
+  // Build path to Scenes folder
+  const QString scenesPath = projectPath + "/Scenes";
+  QDir scenesDir(scenesPath);
+
+  if (!scenesDir.exists()) {
+    // If Scenes folder doesn't exist yet, don't report errors
+    return errors;
+  }
+
+  // Collect all available .nmscene files
+  QSet<QString> availableScenes;
+  QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files, QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    QString filePath = it.next();
+    QFileInfo fileInfo(filePath);
+    // Get scene ID from filename (without extension)
+    QString sceneId = fileInfo.completeBaseName();
+    availableScenes.insert(sceneId);
+  }
+
+  // Check each scene node for valid references
+  for (auto *node : m_nodes) {
+    if (!node->isSceneNode()) {
+      continue;
+    }
+
+    const QString sceneId = node->sceneId();
+
+    // Check if scene ID is empty
+    if (sceneId.isEmpty()) {
+      errors.append(tr("Scene node '%1' has no scene ID assigned")
+                        .arg(node->title()));
+      continue;
+    }
+
+    // Check if .nmscene file exists
+    if (!availableScenes.contains(sceneId)) {
+      errors.append(tr("Scene '%1' not found - Missing file: Scenes/%2.nmscene")
+                        .arg(node->title(), sceneId));
+    }
+  }
+
+  return errors;
+}
+
+void NMStoryGraphScene::updateSceneValidationState(const QString &projectPath) {
+  if (projectPath.isEmpty()) {
+    // Clear validation state if no project
+    for (auto *node : m_nodes) {
+      if (node->isSceneNode()) {
+        node->setSceneValidationError(false);
+        node->setSceneValidationWarning(false);
+        node->setSceneValidationMessage(QString());
+      }
+    }
+    return;
+  }
+
+  // Build path to Scenes folder
+  const QString scenesPath = projectPath + "/Scenes";
+  QDir scenesDir(scenesPath);
+
+  // Collect all available .nmscene files
+  QSet<QString> availableScenes;
+  if (scenesDir.exists()) {
+    QDirIterator it(scenesPath, QStringList() << "*.nmscene", QDir::Files, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+      QString filePath = it.next();
+      QFileInfo fileInfo(filePath);
+      QString sceneId = fileInfo.completeBaseName();
+      availableScenes.insert(sceneId);
+    }
+  }
+
+  // Update validation state for each scene node
+  for (auto *node : m_nodes) {
+    if (!node->isSceneNode()) {
+      // Clear validation for non-scene nodes
+      node->setSceneValidationError(false);
+      node->setSceneValidationWarning(false);
+      node->setSceneValidationMessage(QString());
+      continue;
+    }
+
+    const QString sceneId = node->sceneId();
+
+    // Check if scene ID is empty
+    if (sceneId.isEmpty()) {
+      node->setSceneValidationError(true);
+      node->setSceneValidationWarning(false);
+      node->setSceneValidationMessage(tr("No scene ID assigned"));
+      continue;
+    }
+
+    // Check if .nmscene file exists
+    if (!availableScenes.contains(sceneId)) {
+      node->setSceneValidationError(true);
+      node->setSceneValidationWarning(false);
+      node->setSceneValidationMessage(tr("Scene file not found: Scenes/%1.nmscene").arg(sceneId));
+    } else {
+      // Scene is valid
+      node->setSceneValidationError(false);
+      node->setSceneValidationWarning(false);
+      node->setSceneValidationMessage(QString());
+    }
+  }
+
+  // Trigger visual update
+  update();
 }
 
 void NMStoryGraphScene::setReadOnly(bool readOnly) {
