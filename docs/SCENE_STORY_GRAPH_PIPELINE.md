@@ -1,8 +1,17 @@
 # Scene Preview ↔ Story Graph Integration Pipeline
 
-> **Status**: Design Document (Issue #205)
+> **Status**: ✅ IMPLEMENTED (Originally Design Document for Issue #205)
+>
+> **Implementation PRs**:
+> - PR #210, #217: Scene Registry System
+> - PR #222: Scene Template System
+> - PR #224, #219: Scene-Story Graph Auto-Sync
+> - PR #218: Scene ID Picker Widget
+> - PR #221: Scene Reference Validation
+> - PR #220: Story Preview Navigation
+>
 > **See also**: [architecture_overview.md](architecture_overview.md) — Architecture overview
-> **See also**: [gui_architecture.md](gui_architecture.md) — GUI architecture
+> **See also**: [gui_architecture.md](gui_architecture.md) — GUI architecture (Фаза 5.5)
 > **See also**: [workflow_pipeline.md](workflow_pipeline.md) — Workflow pipeline
 > **See also**: [scene_node_workflows.md](scene_node_workflows.md) — Scene node workflows
 
@@ -13,7 +22,67 @@ This document defines the complete pipeline for integrating **Scene Preview** (S
 1. How scenes are created and edited in Scene Preview
 2. How Story Graph manages the sequence of scenes, dialogues, and choices
 3. How these components synchronize
-4. Current implementation gaps and proposed solutions
+4. ~~Current implementation gaps and proposed solutions~~ → **✅ IMPLEMENTED**
+
+---
+
+## Implementation Status (2026-01-08)
+
+The Scene-Story Graph integration pipeline has been **fully implemented** through multiple PRs:
+
+### ✅ Implemented Features
+
+#### Scene Registry System (PR #210, #217)
+- ✅ Centralized scene management with unique IDs
+- ✅ Cross-reference tracking (which Story Graph nodes use which scenes)
+- ✅ Scene lifecycle management (register, rename, delete)
+- ✅ Orphaned file detection and invalid reference detection
+- ✅ Thumbnail generation and caching
+- ✅ Qt signals for scene events (registered, renamed, deleted, idChanged)
+- ✅ SceneMediator for panel coordination
+
+#### Scene Template System (PR #222)
+- ✅ 5 built-in templates: Empty, Dialogue Scene, Choice Scene, Cutscene, Title Screen
+- ✅ Template instantiation with automatic scene ID replacement
+- ✅ User-defined template support (save scenes as templates)
+- ✅ NMNewSceneDialog with template preview and category filtering
+- ✅ Template metadata (name, description, category, tags, author, version)
+
+#### Scene-Story Graph Auto-Sync (PR #224, #219)
+- ✅ Automatic thumbnail refresh in Story Graph when scenes modified
+- ✅ Automatic node title updates when scenes renamed
+- ✅ Automatic orphaned reference marking when scenes deleted
+- ✅ EventBus integration (SceneThumbnailUpdated, SceneRenamed, SceneDeleted)
+- ✅ SceneRegistryMediator for Qt signals → EventBus conversion
+- ✅ Story Graph event subscriptions for UI updates
+- ✅ Scene View emits SceneDocumentModifiedEvent on save
+
+#### Scene ID Picker (PR #218)
+- ✅ Dedicated widget in Inspector panel for Scene nodes
+- ✅ Dropdown with all registered scenes
+- ✅ Thumbnail preview with metadata (name, path, modified time)
+- ✅ Validation state indicator (✓ valid / ⚠ invalid)
+- ✅ Quick action buttons (Create New, Edit Scene, Locate)
+- ✅ Automatic updates when SceneRegistry changes
+
+#### Scene Reference Validation (PR #221)
+- ✅ Pre-Play validation of all scene references
+- ✅ Missing .nmscene file detection
+- ✅ Empty scene ID detection
+- ✅ Visual error indicators (red circle with X)
+- ✅ Visual warning indicators (orange circle with !)
+- ✅ Detailed tooltips with error messages
+- ✅ Integration with validateGraph() workflow
+
+### 🚧 Future Enhancements
+
+Features planned for future iterations:
+
+- ⏳ Quick Fix Actions (Create Scene Document, Remove Invalid Reference, Browse for Scene)
+- ⏳ Diagnostics Panel integration for centralized error reporting
+- ⏳ Circular reference detection in Story Graph flow
+- ⏳ Automatic thumbnail regeneration on scene modifications
+- ⏳ Advanced scene metadata (tags, descriptions, categories)
 
 ---
 
