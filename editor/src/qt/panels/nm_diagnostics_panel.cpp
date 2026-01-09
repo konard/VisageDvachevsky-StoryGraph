@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/qt_event_bus.hpp"
 
 #include <QApplication>
@@ -39,14 +40,22 @@ void NMDiagnosticsPanel::setupUI() {
   QVBoxLayout *layout = new QVBoxLayout(contentWidget());
   layout->setContentsMargins(0, 0, 0, 0);
 
+  // Get icon manager instance
+  auto &iconMgr = NMIconManager::instance();
+
   m_toolbar = new QToolBar(contentWidget());
   auto *clearButton = new QPushButton("Clear All", m_toolbar);
+  clearButton->setIcon(iconMgr.getIcon("delete", 16));
   m_toolbar->addWidget(clearButton);
   m_toolbar->addSeparator();
   auto *allButton = new QPushButton("All", m_toolbar);
+  allButton->setIcon(iconMgr.getIcon("filter", 16));
   auto *errorButton = new QPushButton("Errors", m_toolbar);
+  errorButton->setIcon(iconMgr.getIcon("status-error", 16));
   auto *warningButton = new QPushButton("Warnings", m_toolbar);
+  warningButton->setIcon(iconMgr.getIcon("status-warning", 16));
   auto *infoButton = new QPushButton("Info", m_toolbar);
+  infoButton->setIcon(iconMgr.getIcon("status-info", 16));
   m_toolbar->addWidget(allButton);
   m_toolbar->addWidget(errorButton);
   m_toolbar->addWidget(warningButton);
