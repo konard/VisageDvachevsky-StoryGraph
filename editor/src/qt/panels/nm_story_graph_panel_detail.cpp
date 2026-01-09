@@ -1,6 +1,7 @@
 #include "nm_story_graph_panel_detail.hpp"
 
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 
 #include <QDateTime>
 #include <QDir>
@@ -15,10 +16,10 @@
 namespace NovelMind::editor::qt::detail {
 namespace {
 
-constexpr const char *kGraphLayoutFile = ".novelmind/story_graph.json";
+constexpr const char* kGraphLayoutFile = ".novelmind/story_graph.json";
 
 QString graphLayoutPath() {
-  const auto &pm = ProjectManager::instance();
+  const auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return {};
   }
@@ -38,7 +39,7 @@ void ensureGraphLayoutDir() {
   }
 }
 
-QString buildGraphBlock(const QStringList &targets) {
+QString buildGraphBlock(const QStringList& targets) {
   const QString indent("    ");
   QStringList lines;
   lines << indent + "// @graph-begin";
@@ -50,9 +51,8 @@ QString buildGraphBlock(const QStringList &targets) {
     lines << indent + QString("goto %1").arg(targets.front());
   } else {
     lines << indent + "choice {";
-    for (const auto &target : targets) {
-      lines << indent + "    " +
-                   QString("\"%1\" -> goto %2").arg(target, target);
+    for (const auto& target : targets) {
+      lines << indent + "    " + QString("\"%1\" -> goto %2").arg(target, target);
     }
     lines << indent + "}";
   }
@@ -65,8 +65,7 @@ QString buildGraphBlock(const QStringList &targets) {
 /// Matches the same rules as the NMScript lexer for consistency.
 bool isUnicodeIdentifierStart(uint codePoint) {
   // ASCII letters
-  if ((codePoint >= 'A' && codePoint <= 'Z') ||
-      (codePoint >= 'a' && codePoint <= 'z')) {
+  if ((codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z')) {
     return true;
   }
   // Latin Extended-A, Extended-B, Extended Additional
@@ -120,7 +119,7 @@ bool isUnicodeIdentifierPart(uint codePoint) {
 
 } // namespace
 
-bool isValidSpeakerIdentifier(const QString &speaker) {
+bool isValidSpeakerIdentifier(const QString& speaker) {
   if (speaker.isEmpty()) {
     return false;
   }
@@ -142,7 +141,7 @@ bool isValidSpeakerIdentifier(const QString &speaker) {
   return true;
 }
 
-QString sanitizeSpeakerIdentifier(const QString &speaker) {
+QString sanitizeSpeakerIdentifier(const QString& speaker) {
   if (speaker.isEmpty()) {
     return QStringLiteral("Narrator");
   }
@@ -150,7 +149,7 @@ QString sanitizeSpeakerIdentifier(const QString &speaker) {
   // If already valid, check if it has meaningful content (not just underscores)
   if (isValidSpeakerIdentifier(speaker)) {
     bool hasNonUnderscore = false;
-    for (const QChar &c : speaker) {
+    for (const QChar& c : speaker) {
       if (c != '_') {
         hasNonUnderscore = true;
         break;
@@ -195,7 +194,7 @@ QString sanitizeSpeakerIdentifier(const QString &speaker) {
   // Ensure result contains at least one non-underscore character
   // A speaker name consisting only of underscores is not meaningful
   bool hasNonUnderscore = false;
-  for (const QChar &c : result) {
+  for (const QChar& c : result) {
     if (c != '_') {
       hasNonUnderscore = true;
       break;
@@ -209,8 +208,7 @@ QString sanitizeSpeakerIdentifier(const QString &speaker) {
   return result;
 }
 
-bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
-                     QString &entryScene) {
+bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode>& nodes, QString& entryScene) {
   nodes.clear();
   entryScene.clear();
 
@@ -240,15 +238,14 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
   entryScene = root.value("entry").toString();
 
   const QJsonArray nodeArray = root.value("nodes").toArray();
-  for (const auto &value : nodeArray) {
+  for (const auto& value : nodeArray) {
     const QJsonObject obj = value.toObject();
     const QString id = obj.value("id").toString();
     if (id.isEmpty()) {
       continue;
     }
     NMStoryGraphPanel::LayoutNode node;
-    node.position =
-        QPointF(obj.value("x").toDouble(), obj.value("y").toDouble());
+    node.position = QPointF(obj.value("x").toDouble(), obj.value("y").toDouble());
     node.type = obj.value("type").toString();
     node.scriptPath = obj.value("scriptPath").toString();
     node.title = obj.value("title").toString();
@@ -258,7 +255,7 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
       node.dialogueText = obj.value("text").toString();
     }
     const QJsonArray choicesArray = obj.value("choices").toArray();
-    for (const auto &choiceValue : choicesArray) {
+    for (const auto& choiceValue : choicesArray) {
       const QString choice = choiceValue.toString();
       if (!choice.isEmpty()) {
         node.choices.push_back(choice);
@@ -277,9 +274,8 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
 
     // Condition Node specific properties
     node.conditionExpression = obj.value("conditionExpression").toString();
-    const QJsonArray conditionOutputsArray =
-        obj.value("conditionOutputs").toArray();
-    for (const auto &outputValue : conditionOutputsArray) {
+    const QJsonArray conditionOutputsArray = obj.value("conditionOutputs").toArray();
+    for (const auto& outputValue : conditionOutputsArray) {
       const QString output = outputValue.toString();
       if (!output.isEmpty()) {
         node.conditionOutputs.push_back(output);
@@ -288,16 +284,13 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
 
     // Choice branching mappings
     const QJsonObject choiceTargetsObj = obj.value("choiceTargets").toObject();
-    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end();
-         ++it) {
+    for (auto it = choiceTargetsObj.begin(); it != choiceTargetsObj.end(); ++it) {
       node.choiceTargets.insert(it.key(), it.value().toString());
     }
 
     // Condition branching mappings
-    const QJsonObject conditionTargetsObj =
-        obj.value("conditionTargets").toObject();
-    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end();
-         ++it) {
+    const QJsonObject conditionTargetsObj = obj.value("conditionTargets").toObject();
+    for (auto it = conditionTargetsObj.begin(); it != conditionTargetsObj.end(); ++it) {
       node.conditionTargets.insert(it.key(), it.value().toString());
     }
 
@@ -307,8 +300,8 @@ bool loadGraphLayout(QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
   return true;
 }
 
-void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
-                     const QString &entryScene) {
+void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode>& nodes,
+                     const QString& entryScene) {
   const QString path = graphLayoutPath();
   if (path.isEmpty()) {
     return;
@@ -344,7 +337,7 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     }
     if (!it.value().choices.isEmpty()) {
       QJsonArray choicesArray;
-      for (const auto &choice : it.value().choices) {
+      for (const auto& choice : it.value().choices) {
         choicesArray.append(choice);
       }
       obj.insert("choices", choicesArray);
@@ -380,7 +373,7 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
     }
     if (!it.value().conditionOutputs.isEmpty()) {
       QJsonArray conditionOutputsArray;
-      for (const auto &output : it.value().conditionOutputs) {
+      for (const auto& output : it.value().conditionOutputs) {
         conditionOutputsArray.append(output);
       }
       obj.insert("conditionOutputs", conditionOutputsArray);
@@ -418,7 +411,7 @@ void saveGraphLayout(const QHash<QString, NMStoryGraphPanel::LayoutNode> &nodes,
   file.close();
 }
 
-QString resolveScriptPath(const NMGraphNodeItem *node) {
+QString resolveScriptPath(const NMGraphNodeItem* node) {
   if (!node) {
     return {};
   }
@@ -434,8 +427,8 @@ QString resolveScriptPath(const NMGraphNodeItem *node) {
   return scriptPath;
 }
 
-bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
-                           const QStringList &targets) {
+bool updateSceneGraphBlock(const QString& sceneId, const QString& scriptPath,
+                           const QStringList& targets) {
   if (sceneId.isEmpty() || scriptPath.isEmpty()) {
     return false;
   }
@@ -527,8 +520,7 @@ bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
   const qsizetype bodyEnd = sceneEnd;
   QString body = content.mid(bodyStart, bodyEnd - bodyStart);
 
-  const QRegularExpression graphRe(
-      "//\\s*@graph-begin[\\s\\S]*?//\\s*@graph-end");
+  const QRegularExpression graphRe("//\\s*@graph-begin[\\s\\S]*?//\\s*@graph-end");
   const bool hasGraphBlock = body.contains(graphRe);
 
   if (targets.isEmpty()) {
@@ -555,8 +547,7 @@ bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
   updated += body;
   updated += content.mid(bodyEnd);
 
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
-                 QIODevice::Truncate)) {
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
     return false;
   }
   file.write(updated.toUtf8());
@@ -564,8 +555,8 @@ bool updateSceneGraphBlock(const QString &sceneId, const QString &scriptPath,
   return true;
 }
 
-bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
-                             const QString &speaker, const QString &text) {
+bool updateSceneSayStatement(const QString& sceneId, const QString& scriptPath,
+                             const QString& speaker, const QString& text) {
   if (sceneId.isEmpty() || scriptPath.isEmpty()) {
     return false;
   }
@@ -585,8 +576,7 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   // Find the scene block
   // Use Unicode-aware pattern to support Cyrillic and other non-ASCII scene IDs
   const QRegularExpression sceneRe(
-      QString("\\bscene\\s+%1(?![\\p{L}\\p{N}_])")
-          .arg(QRegularExpression::escape(sceneId)),
+      QString("\\bscene\\s+%1(?![\\p{L}\\p{N}_])").arg(QRegularExpression::escape(sceneId)),
       QRegularExpression::UseUnicodePropertiesOption);
   const QRegularExpressionMatch match = sceneRe.match(content);
   if (!match.hasMatch()) {
@@ -671,20 +661,19 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   // Pattern: say <speaker> "<text>" OR say "<text>"
   // We need to match say statements with or without speaker
   // Use Unicode-aware pattern to match Cyrillic and other non-ASCII identifiers
-  const QRegularExpression sayRe(
-      "\\bsay\\s+(?:([\\p{L}_][\\p{L}\\p{N}_]*)\\s+)?\"([^\"]*)\"",
-      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression sayRe("\\bsay\\s+(?:([\\p{L}_][\\p{L}\\p{N}_]*)\\s+)?\"([^\"]*)\"",
+                                 QRegularExpression::UseUnicodePropertiesOption);
 
   QRegularExpressionMatch sayMatch = sayRe.match(body);
 
   // Escape special characters in the text for NMScript string literals
   // Order matters: escape backslash first, then other characters
   QString escapedText = text;
-  escapedText.replace("\\", "\\\\");  // Must be first
+  escapedText.replace("\\", "\\\\"); // Must be first
   escapedText.replace("\"", "\\\"");
-  escapedText.replace("\n", "\\n");   // Newlines
-  escapedText.replace("\r", "\\r");   // Carriage returns
-  escapedText.replace("\t", "\\t");   // Tabs
+  escapedText.replace("\n", "\\n"); // Newlines
+  escapedText.replace("\r", "\\r"); // Carriage returns
+  escapedText.replace("\t", "\\t"); // Tabs
 
   // Sanitize the speaker name to be a valid NMScript identifier (issue #92)
   // This prevents runtime errors like "Undefined character 'rfsfsddsf' [E3001]"
@@ -694,8 +683,7 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
     // No say statement found in the scene - add one at the beginning
     // But first check if the body already has this exact content to avoid
     // duplication
-    const QString newSay =
-        QString("\n    say %1 \"%2\"").arg(speakerToUse, escapedText);
+    const QString newSay = QString("\n    say %1 \"%2\"").arg(speakerToUse, escapedText);
 
     // Check if this say statement already exists to prevent duplication
     if (!body.contains(QString("say %1 \"%2\"").arg(speakerToUse, escapedText),
@@ -704,8 +692,7 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
     }
   } else {
     // Replace the existing say statement
-    const QString newSay =
-        QString("say %1 \"%2\"").arg(speakerToUse, escapedText);
+    const QString newSay = QString("say %1 \"%2\"").arg(speakerToUse, escapedText);
 
     // Only replace if it's actually different to prevent redundant writes
     const QString existingSay = sayMatch.captured(0);
@@ -718,8 +705,7 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   updated += body;
   updated += content.mid(bodyEnd);
 
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
-                 QIODevice::Truncate)) {
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
     return false;
   }
   file.write(updated.toUtf8());
@@ -727,12 +713,11 @@ bool updateSceneSayStatement(const QString &sceneId, const QString &scriptPath,
   return true;
 }
 
-QStringList splitChoiceLines(const QString &raw) {
-  const QStringList lines =
-      raw.split(QRegularExpression("[\\r\\n]+"), Qt::SkipEmptyParts);
+QStringList splitChoiceLines(const QString& raw) {
+  const QStringList lines = raw.split(QRegularExpression("[\\r\\n]+"), Qt::SkipEmptyParts);
   QStringList filtered;
   filtered.reserve(lines.size());
-  for (const QString &line : lines) {
+  for (const QString& line : lines) {
     const QString trimmed = line.trimmed();
     if (!trimmed.isEmpty()) {
       filtered.push_back(trimmed);
@@ -741,7 +726,7 @@ QStringList splitChoiceLines(const QString &raw) {
   return filtered;
 }
 
-NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
+NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem* node) {
   NMStoryGraphPanel::LayoutNode layout;
   if (!node) {
     return layout;
@@ -775,7 +760,7 @@ NMStoryGraphPanel::LayoutNode buildLayoutFromNode(const NMGraphNodeItem *node) {
 // NMScript Generator (Graph -> Script conversion) - Issue #127
 // ============================================================================
 
-QString escapeNMScriptString(const QString &str) {
+QString escapeNMScriptString(const QString& str) {
   QString escaped = str;
   escaped.replace("\\", "\\\\"); // Must be first
   escaped.replace("\"", "\\\"");
@@ -785,7 +770,7 @@ QString escapeNMScriptString(const QString &str) {
   return escaped;
 }
 
-QString generateSceneBlock(const NMGraphNodeItem *node) {
+QString generateSceneBlock(const NMGraphNodeItem* node) {
   if (!node) {
     return {};
   }
@@ -804,30 +789,28 @@ QString generateSceneBlock(const NMGraphNodeItem *node) {
     const QString text = node->dialogueText();
 
     if (!text.isEmpty() && text.trimmed() != "New scene") {
-      out << "    say " << speaker << " \"" << escapeNMScriptString(text)
-          << "\"\n";
+      out << "    say " << speaker << " \"" << escapeNMScriptString(text) << "\"\n";
     }
   } else if (node->isChoiceNode()) {
-    const QStringList &choices = node->choiceOptions();
-    const auto &targets = node->choiceTargets();
+    const QStringList& choices = node->choiceOptions();
+    const auto& targets = node->choiceTargets();
 
     if (!choices.isEmpty()) {
       out << "    choice {\n";
-      for (const QString &choice : choices) {
+      for (const QString& choice : choices) {
         QString target = targets.value(choice);
         if (target.isEmpty()) {
           // Use choice text as label if no explicit target
           target = sceneId + "_choice";
         }
-        out << "        \"" << escapeNMScriptString(choice) << "\" -> goto "
-            << target << "\n";
+        out << "        \"" << escapeNMScriptString(choice) << "\" -> goto " << target << "\n";
       }
       out << "    }\n";
     }
   } else if (node->isConditionNode()) {
     const QString expr = node->conditionExpression();
-    const QStringList &outputs = node->conditionOutputs();
-    const auto &targets = node->conditionTargets();
+    const QStringList& outputs = node->conditionOutputs();
+    const auto& targets = node->conditionTargets();
 
     if (!expr.isEmpty()) {
       out << "    if " << expr << " {\n";
@@ -851,8 +834,7 @@ QString generateSceneBlock(const NMGraphNodeItem *node) {
       const QString speaker = sanitizeSpeakerIdentifier(node->dialogueSpeaker());
       const QString text = node->dialogueText();
       if (!text.isEmpty()) {
-        out << "    say " << speaker << " \"" << escapeNMScriptString(text)
-            << "\"\n";
+        out << "    say " << speaker << " \"" << escapeNMScriptString(text) << "\"\n";
       }
     } else {
       out << "    // Scene: " << node->title() << "\n";
@@ -862,8 +844,7 @@ QString generateSceneBlock(const NMGraphNodeItem *node) {
     const QString speaker = sanitizeSpeakerIdentifier(node->dialogueSpeaker());
     const QString text = node->dialogueText();
     if (!text.isEmpty() && text.trimmed() != "New scene") {
-      out << "    say " << speaker << " \"" << escapeNMScriptString(text)
-          << "\"\n";
+      out << "    say " << speaker << " \"" << escapeNMScriptString(text) << "\"\n";
     }
   }
 
@@ -871,16 +852,14 @@ QString generateSceneBlock(const NMGraphNodeItem *node) {
   return block;
 }
 
-QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
-                                  const QString &entryScene) {
+QString generateNMScriptFromNodes(const QList<NMGraphNodeItem*>& nodes, const QString& entryScene) {
   QString script;
   QTextStream out(&script);
 
   // Header comment
   out << "// ========================================\n";
   out << "// Generated from Story Graph\n";
-  out << "// Generated: " << QDateTime::currentDateTime().toString(Qt::ISODate)
-      << "\n";
+  out << "// Generated: " << QDateTime::currentDateTime().toString(Qt::ISODate) << "\n";
   out << "// Do not edit manually - changes may be overwritten\n";
   out << "// ========================================\n\n";
 
@@ -891,7 +870,7 @@ QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
 
   // Collect unique speakers for character declarations
   QSet<QString> speakers;
-  for (const auto *node : nodes) {
+  for (const auto* node : nodes) {
     if (node && !node->dialogueSpeaker().isEmpty()) {
       speakers.insert(sanitizeSpeakerIdentifier(node->dialogueSpeaker()));
     }
@@ -900,7 +879,7 @@ QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
   // Generate character declarations
   if (!speakers.isEmpty()) {
     out << "// Character declarations\n";
-    for (const QString &speaker : speakers) {
+    for (const QString& speaker : speakers) {
       if (speaker != "Narrator") {
         out << "character " << speaker << "(name=\"" << speaker << "\")\n";
       }
@@ -910,7 +889,7 @@ QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
   }
 
   // Generate scene blocks
-  for (const auto *node : nodes) {
+  for (const auto* node : nodes) {
     if (node) {
       out << generateSceneBlock(node) << "\n";
     }
@@ -919,8 +898,30 @@ QString generateNMScriptFromNodes(const QList<NMGraphNodeItem *> &nodes,
   return script;
 }
 
-bool writeGeneratedScript(const QString &scriptContent, const QString &filename) {
-  const auto &pm = ProjectManager::instance();
+namespace {
+
+/// Attempts to write script content to a file.
+/// @return Empty QString on success, error message on failure
+QString tryWriteScriptToFile(const QString& scriptContent, const QString& filePath) {
+  QFile file(filePath);
+  if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
+    return file.errorString();
+  }
+
+  if (file.write(scriptContent.toUtf8()) == -1) {
+    QString error = file.errorString();
+    file.close();
+    return error;
+  }
+
+  file.close();
+  return QString(); // Success
+}
+
+} // namespace
+
+bool writeGeneratedScript(const QString& scriptContent, const QString& filename) {
+  const auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return false;
   }
@@ -935,31 +936,90 @@ bool writeGeneratedScript(const QString &scriptContent, const QString &filename)
   // Ensure directory exists
   QDir dir(generatedPath);
   if (!dir.exists()) {
-    dir.mkpath(".");
+    if (!dir.mkpath(".")) {
+      qWarning() << "[StoryGraph] Failed to create directory:" << generatedPath;
+      NMMessageDialog::showError(nullptr, QObject::tr("Save Failed"),
+                                 QObject::tr("Failed to create directory:\n%1").arg(generatedPath));
+      return false;
+    }
   }
 
   const QString filePath = dir.filePath(filename);
 
-  QFile file(filePath);
-  if (!file.open(QIODevice::WriteOnly | QIODevice::Text |
-                 QIODevice::Truncate)) {
-    qWarning() << "[StoryGraph] Failed to write generated script:" << filePath
-               << file.errorString();
-    return false;
+  // Attempt to write the file
+  QString error = tryWriteScriptToFile(scriptContent, filePath);
+
+  // If write succeeded, log and return success
+  if (error.isEmpty()) {
+    qDebug() << "[StoryGraph] Generated script written to:" << filePath;
+    return true;
   }
 
-  file.write(scriptContent.toUtf8());
-  file.close();
+  // Write failed - show error dialog with retry and save-as options
+  qWarning() << "[StoryGraph] Failed to write generated script:" << filePath << error;
 
-  qDebug() << "[StoryGraph] Generated script written to:" << filePath;
-  return true;
+  while (true) {
+    const auto choice = NMMessageDialog::showQuestion(
+        nullptr, QObject::tr("Save Generated Script Failed"),
+        QObject::tr("Failed to save generated script to:\n%1\n\n"
+                    "Error: %2\n\n"
+                    "What would you like to do?")
+            .arg(filePath, error),
+        {NMDialogButton::Save, NMDialogButton::Cancel}, NMDialogButton::Save);
+
+    if (choice == NMDialogButton::Cancel) {
+      return false;
+    }
+
+    if (choice == NMDialogButton::Save) {
+      // Show file dialog to select alternative location
+      const QString altPath =
+          NMFileDialog::getSaveFileName(nullptr, QObject::tr("Save Generated Script"), filePath,
+                                        QObject::tr("NMScript Files (*.nms);;All Files (*)"));
+
+      if (altPath.isEmpty()) {
+        // User cancelled the file dialog
+        continue;
+      }
+
+      // Ensure the directory exists for the alternative path
+      QFileInfo altFileInfo(altPath);
+      QDir altDir = altFileInfo.absoluteDir();
+      if (!altDir.exists()) {
+        if (!altDir.mkpath(".")) {
+          NMMessageDialog::showError(
+              nullptr, QObject::tr("Save Failed"),
+              QObject::tr("Failed to create directory:\n%1").arg(altDir.absolutePath()));
+          continue;
+        }
+      }
+
+      // Try writing to alternative location
+      QString altError = tryWriteScriptToFile(scriptContent, altPath);
+      if (altError.isEmpty()) {
+        qDebug() << "[StoryGraph] Generated script written to alternative "
+                    "location:"
+                 << altPath;
+        NMMessageDialog::showInfo(nullptr, QObject::tr("Save Successful"),
+                                  QObject::tr("Generated script saved to:\n%1").arg(altPath));
+        return true;
+      }
+
+      // Alternative location also failed
+      error = altError;
+      // Loop will show the error dialog again with the new error message
+      NMMessageDialog::showError(
+          nullptr, QObject::tr("Save Failed"),
+          QObject::tr("Failed to save to:\n%1\n\nError: %2").arg(altPath, altError));
+    }
+  }
 }
 
 // ============================================================================
 // NMScript Parser (Script -> Graph conversion) - Issue #127
 // ============================================================================
 
-ParseResult parseNMScriptContent(const QString &content) {
+ParseResult parseNMScriptContent(const QString& content) {
   ParseResult result;
   result.success = true;
 
@@ -973,30 +1033,25 @@ ParseResult parseNMScriptContent(const QString &content) {
   const QStringList lines = content.split('\n');
 
   // Use Unicode-aware patterns matching the existing codebase style
-  const QRegularExpression sceneRe(
-      "\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
-      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression sceneRe("\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
+                                   QRegularExpression::UseUnicodePropertiesOption);
 
-  const QRegularExpression sayRe(
-      "\\bsay\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s+\"([^\"]*)\"",
-      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression sayRe("\\bsay\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s+\"([^\"]*)\"",
+                                 QRegularExpression::UseUnicodePropertiesOption);
 
-  const QRegularExpression gotoRe(
-      "\\bgoto\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
-      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression gotoRe("\\bgoto\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+                                  QRegularExpression::UseUnicodePropertiesOption);
 
-  const QRegularExpression choiceBlockRe(
-      "\\bchoice\\s*\\{([^}]*)\\}",
-      QRegularExpression::UseUnicodePropertiesOption |
-          QRegularExpression::DotMatchesEverythingOption);
+  const QRegularExpression choiceBlockRe("\\bchoice\\s*\\{([^}]*)\\}",
+                                         QRegularExpression::UseUnicodePropertiesOption |
+                                             QRegularExpression::DotMatchesEverythingOption);
 
   const QRegularExpression choiceOptionRe(
       "\"([^\"]+)\"\\s*(?:if\\s+[^-]+)?->\\s*(?:goto\\s+)?([\\p{L}_][\\p{L}\\p{N}_]*)",
       QRegularExpression::UseUnicodePropertiesOption);
 
-  const QRegularExpression ifRe(
-      "\\bif\\s+([^{]+)\\s*\\{",
-      QRegularExpression::UseUnicodePropertiesOption);
+  const QRegularExpression ifRe("\\bif\\s+([^{]+)\\s*\\{",
+                                QRegularExpression::UseUnicodePropertiesOption);
 
   // Track scene blocks
   struct SceneBlock {
@@ -1036,7 +1091,7 @@ ParseResult parseNMScriptContent(const QString &content) {
   }
 
   // Second pass: parse each scene block
-  for (const auto &block : sceneBlocks) {
+  for (const auto& block : sceneBlocks) {
     ParsedNode node;
     node.id = block.id;
     node.sourceLineNumber = block.lineNumber;
@@ -1098,8 +1153,7 @@ ParseResult parseNMScriptContent(const QString &content) {
     QRegularExpressionMatch choiceMatch = choiceBlockRe.match(body);
     if (choiceMatch.hasMatch()) {
       const QString choiceContent = choiceMatch.captured(1);
-      QRegularExpressionMatchIterator optionIt =
-          choiceOptionRe.globalMatch(choiceContent);
+      QRegularExpressionMatchIterator optionIt = choiceOptionRe.globalMatch(choiceContent);
 
       while (optionIt.hasNext()) {
         const QRegularExpressionMatch optMatch = optionIt.next();
@@ -1148,7 +1202,7 @@ ParseResult parseNMScriptContent(const QString &content) {
   return result;
 }
 
-ParseResult parseNMScriptFile(const QString &scriptPath) {
+ParseResult parseNMScriptFile(const QString& scriptPath) {
   ParseResult result;
 
   QFile file(scriptPath);
