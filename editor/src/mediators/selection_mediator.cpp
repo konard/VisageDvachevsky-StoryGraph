@@ -76,6 +76,19 @@ void SelectionMediator::initialize() {
 
               EventBus::instance().publish(event);
             });
+
+    // Issue #239: Connect navigateToScriptDefinitionRequested signal
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::navigateToScriptDefinitionRequested,
+            this, [](const QString &sceneId, const QString &scriptPath) {
+              qDebug() << "[SelectionMediator] Publishing "
+                          "NavigateToScriptDefinitionEvent for scene:"
+                       << sceneId << "script:" << scriptPath;
+
+              events::NavigateToScriptDefinitionEvent event;
+              event.sceneId = sceneId;
+              event.scriptPath = scriptPath;
+              EventBus::instance().publish(event);
+            });
   }
 
   qDebug() << "[SelectionMediator] Initialized with"

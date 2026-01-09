@@ -248,6 +248,104 @@ private:
   NMScriptEditor *m_editor = nullptr;
 };
 
+/**
+ * @brief Graph integration gutter widget - shows indicators for graph-connected scenes
+ *
+ * Issue #239: Visual indicators showing which script scenes are connected to Story Graph.
+ * Click to navigate to the corresponding graph node.
+ *
+ * Indicator colors:
+ * - Green: Scene is connected to a Story Graph node (valid)
+ * - Yellow: Scene may have warnings (orphaned node reference)
+ */
+class NMScriptEditorGraphGutter : public QWidget {
+public:
+  explicit NMScriptEditorGraphGutter(NMScriptEditor *editor)
+      : QWidget(editor), m_editor(editor) {
+    setCursor(Qt::PointingHandCursor);
+    setMouseTracking(true);
+    setToolTip(tr("Click to navigate to Story Graph node"));
+  }
+
+  [[nodiscard]] QSize sizeHint() const override {
+    return QSize(m_editor->graphGutterWidth(), 0);
+  }
+
+protected:
+  void paintEvent(QPaintEvent *event) override {
+    m_editor->graphGutterPaintEvent(event);
+  }
+
+  void mousePressEvent(QMouseEvent *event) override {
+    if (event->button() == Qt::LeftButton) {
+      // Calculate which line was clicked
+      QTextBlock block = m_editor->getFirstVisibleBlock();
+      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
+                                     .translated(m_editor->getContentOffset())
+                                     .top());
+      int bottom = top + static_cast<int>(
+                             m_editor->getBlockBoundingRect(block).height());
+
+      while (block.isValid() && top <= event->pos().y()) {
+        if (block.isVisible() && bottom >= event->pos().y()) {
+          const int line = block.blockNumber() + 1;
+          if (m_editor->hasGraphConnectedScene(line)) {
+            const QString sceneId = m_editor->sceneIdAtLine(line);
+            emit m_editor->graphIndicatorClicked(sceneId);
+          }
+          break;
+        }
+        block = block.next();
+        top = bottom;
+        bottom = top + static_cast<int>(
+                           m_editor->getBlockBoundingRect(block).height());
+      }
+    }
+    QWidget::mousePressEvent(event);
+  }
+
+  void mouseMoveEvent(QMouseEvent *event) override {
+    // Update tooltip based on hovered line
+    QTextBlock block = m_editor->getFirstVisibleBlock();
+    int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
+                                   .translated(m_editor->getContentOffset())
+                                   .top());
+    int bottom = top + static_cast<int>(
+                           m_editor->getBlockBoundingRect(block).height());
+
+    while (block.isValid() && top <= event->pos().y()) {
+      if (block.isVisible() && bottom >= event->pos().y()) {
+        const int line = block.blockNumber() + 1;
+        if (m_editor->hasGraphConnectedScene(line)) {
+          const QString sceneId = m_editor->sceneIdAtLine(line);
+          setToolTip(tr("Scene '%1' connected to Story Graph\n"
+                        "Click to navigate to graph node")
+                         .arg(sceneId));
+        } else {
+          setToolTip(QString());
+        }
+        break;
+      }
+      block = block.next();
+      top = bottom;
+      bottom = top + static_cast<int>(
+                         m_editor->getBlockBoundingRect(block).height());
+    }
+
+    update();
+    QWidget::mouseMoveEvent(event);
+  }
+
+  void leaveEvent(QEvent *event) override {
+    setToolTip(QString());
+    update();
+    QWidget::leaveEvent(event);
+  }
+
+private:
+  NMScriptEditor *m_editor = nullptr;
+};
+
 } // namespace
 
 // ============================================================================
@@ -1079,6 +1177,7 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
                     .arg(palette.bgDarkest.name()));
 
   m_breakpointGutter = new NMScriptEditorBreakpointGutter(this);
+  m_graphGutter = new NMScriptEditorGraphGutter(this);  // Issue #239
   m_lineNumberArea = new NMScriptEditorLineNumberArea(this);
   m_foldingArea = new NMScriptEditorFoldingArea(this);
 
@@ -1882,8 +1981,9 @@ int NMScriptEditor::lineNumberAreaWidth() const {
 void NMScriptEditor::updateLineNumberAreaWidth(int newBlockCount) {
   Q_UNUSED(newBlockCount);
   const int rightMargin = m_minimapEnabled && m_minimap ? 120 : 0;
+  // Issue #239: Include graph gutter width in left margin
   setViewportMargins(
-      breakpointGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
+      breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
       rightMargin, 0);
 }
 
@@ -1891,6 +1991,10 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
   if (dy) {
     if (m_breakpointGutter) {
       m_breakpointGutter->scroll(0, dy);
+    }
+    // Issue #239: Scroll graph gutter
+    if (m_graphGutter) {
+      m_graphGutter->scroll(0, dy);
     }
     if (m_lineNumberArea) {
       m_lineNumberArea->scroll(0, dy);
@@ -1902,6 +2006,10 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
     if (m_breakpointGutter) {
       m_breakpointGutter->update(0, rect.y(), m_breakpointGutter->width(),
                                  rect.height());
+    }
+    // Issue #239: Update graph gutter
+    if (m_graphGutter) {
+      m_graphGutter->update(0, rect.y(), m_graphGutter->width(), rect.height());
     }
     if (m_lineNumberArea) {
       m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
@@ -1927,6 +2035,13 @@ void NMScriptEditor::resizeEvent(QResizeEvent *event) {
     m_breakpointGutter->setGeometry(
         QRect(xOffset, cr.top(), breakpointGutterWidth(), cr.height()));
     xOffset += breakpointGutterWidth();
+  }
+
+  // Issue #239: Position graph gutter after breakpoint gutter
+  if (m_graphGutter) {
+    m_graphGutter->setGeometry(
+        QRect(xOffset, cr.top(), graphGutterWidth(), cr.height()));
+    xOffset += graphGutterWidth();
   }
 
   if (m_lineNumberArea) {
@@ -2311,11 +2426,13 @@ void NMScriptEditor::updateMinimapGeometry() {
     m_minimap->show();
 
     // Adjust viewport margins to make room for minimap
-    setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0,
+    // Issue #239: Include graph gutter width
+    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
                        minimapWidth, 0);
   } else {
     m_minimap->hide();
-    setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0, 0, 0);
+    // Issue #239: Include graph gutter width
+    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0, 0, 0);
   }
 }
 
@@ -2575,5 +2692,70 @@ void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent *event) {
 }
 
 // ============================================================================
+// Issue #239: Graph Integration Gutter Methods
+// ============================================================================
+
+void NMScriptEditor::setGraphConnectedScenes(
+    const QHash<int, QString> &sceneLines) {
+  m_graphConnectedScenes = sceneLines;
+  if (m_graphGutter) {
+    m_graphGutter->update();
+  }
+  qDebug() << "[ScriptEditor] Graph-connected scenes updated:"
+           << sceneLines.size() << "scenes";
+}
+
+void NMScriptEditor::graphGutterPaintEvent(QPaintEvent *event) {
+  if (!m_graphGutter) {
+    return;
+  }
+
+  QPainter painter(m_graphGutter);
+  const auto &palette = NMStyleManager::instance().palette();
+
+  // Fill background
+  painter.fillRect(event->rect(), palette.bgMedium);
+
+  if (m_graphConnectedScenes.isEmpty()) {
+    return; // No connected scenes to display
+  }
+
+  QTextBlock block = firstVisibleBlock();
+  int blockNumber = block.blockNumber();
+  int top = static_cast<int>(
+      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+  const int gutterWidth = graphGutterWidth();
+
+  while (block.isValid() && top <= event->rect().bottom()) {
+    if (block.isVisible() && bottom >= event->rect().top()) {
+      const int lineNumber = blockNumber + 1; // 1-based
+
+      // Draw graph-connected scene indicator (green diamond)
+      if (m_graphConnectedScenes.contains(lineNumber)) {
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setBrush(QColor("#4CAF50")); // Green
+        painter.setPen(QPen(QColor("#2E7D32"), 1));
+
+        // Draw diamond shape to differentiate from breakpoint circle
+        const int size = 8;
+        const int centerX = gutterWidth / 2;
+        const int centerY = top + fontMetrics().height() / 2;
+
+        QPolygonF diamond;
+        diamond << QPointF(centerX, centerY - size / 2)      // Top
+                << QPointF(centerX + size / 2, centerY)      // Right
+                << QPointF(centerX, centerY + size / 2)      // Bottom
+                << QPointF(centerX - size / 2, centerY);     // Left
+        painter.drawPolygon(diamond);
+      }
+    }
+
+    block = block.next();
+    top = bottom;
+    bottom = top + static_cast<int>(blockBoundingRect(block).height());
+    ++blockNumber;
+  }
+}
 
 } // namespace NovelMind::editor::qt

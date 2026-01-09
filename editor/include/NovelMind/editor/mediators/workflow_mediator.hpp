@@ -86,6 +86,7 @@ private:
   // Script navigation
   void onOpenSceneScriptRequested(const events::OpenSceneScriptRequestedEvent &event);
   void onGoToScriptLocation(const events::GoToScriptLocationEvent &event);
+  void onNavigateToScriptDefinition(const events::NavigateToScriptDefinitionEvent &event);
 
   // Voice recording workflow
   void onVoiceClipAssignRequested(const events::VoiceClipAssignRequestedEvent &event);

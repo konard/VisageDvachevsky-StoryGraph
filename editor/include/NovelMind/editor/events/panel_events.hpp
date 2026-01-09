@@ -340,6 +340,25 @@ struct GoToScriptLocationEvent : EditorEvent {
   GoToScriptLocationEvent() : EditorEvent(EditorEventType::Custom) {}
 };
 
+/**
+ * @brief Emitted to navigate from Story Graph node to script definition (Issue #239)
+ *
+ * This event enables bidirectional navigation between Story Graph and Script Editor.
+ * When a user requests to "Open Script Definition" from a graph node, this event
+ * is published to navigate to the exact line where the scene is defined.
+ */
+struct NavigateToScriptDefinitionEvent : EditorEvent {
+  QString sceneId;    ///< The scene ID to find in scripts
+  QString scriptPath; ///< Optional: known script path if available
+  int line = -1;      ///< Optional: line number if known
+
+  NavigateToScriptDefinitionEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Navigate to script definition: " + sceneId.toStdString();
+  }
+};
+
 // ============================================================================
 // Timeline/Animation Events
 // ============================================================================
