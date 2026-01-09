@@ -89,6 +89,18 @@ void SelectionMediator::initialize() {
               event.scriptPath = scriptPath;
               EventBus::instance().publish(event);
             });
+
+    // Issue #344: Connect sceneNodeDoubleClicked signal to navigate to Scene View
+    connect(m_storyGraph, &qt::NMStoryGraphPanel::sceneNodeDoubleClicked,
+            this, [](const QString &sceneId) {
+              qDebug() << "[SelectionMediator] Publishing "
+                          "SceneNodeDoubleClickedEvent for scene:"
+                       << sceneId;
+
+              events::SceneNodeDoubleClickedEvent event;
+              event.sceneId = sceneId;
+              EventBus::instance().publish(event);
+            });
   }
 
   qDebug() << "[SelectionMediator] Initialized with"
