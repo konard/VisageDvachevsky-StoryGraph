@@ -361,6 +361,33 @@ void NMPlayModeController::stepForward() {
   emit sceneSnapshotUpdated();
 }
 
+void NMPlayModeController::stepBackward() {
+  if (!ensureRuntimeLoaded()) {
+    return;
+  }
+
+  // Runtime does not currently support reverse stepping.
+  qWarning() << "[PlayMode] Step backward is not supported yet";
+}
+
+void NMPlayModeController::stepOver() {
+  if (!ensureRuntimeLoaded()) {
+    return;
+  }
+
+  // Placeholder until step-over is supported by the runtime.
+  qWarning() << "[PlayMode] Step over is not supported yet";
+}
+
+void NMPlayModeController::stepOut() {
+  if (!ensureRuntimeLoaded()) {
+    return;
+  }
+
+  // Placeholder until step-out is supported by the runtime.
+  qWarning() << "[PlayMode] Step out is not supported yet";
+}
+
 void NMPlayModeController::selectChoice(int index) {
   if (!ensureRuntimeLoaded()) {
     return;

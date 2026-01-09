@@ -648,7 +648,7 @@ TEST_CASE("Validator - Missing scene file warning with callback", "[validator][r
     Validator validator;
 
     // Set up callback that says scene file doesn't exist
-    validator.setSceneFileExistsCallback([](const std::string& sceneId) {
+    validator.setSceneFileExistsCallback([]([[maybe_unused]] const std::string& sceneId) {
         return false; // Scene file doesn't exist
     });
 

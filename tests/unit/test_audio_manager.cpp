@@ -297,13 +297,13 @@ TEST_CASE("AudioManager sound playback API", "[audio][manager][sound]")
         config.volume = 0.5f;
         config.loop = false;
 
-        auto handle = manager.playSound("test_sound", config);
+        [[maybe_unused]] auto handle = manager.playSound("test_sound", config);
         // May be invalid if sound file doesn't exist, but shouldn't crash
         REQUIRE(true);
     }
 
     SECTION("Play sound simple") {
-        auto handle = manager.playSound("test_sound", 0.8f, false);
+        [[maybe_unused]] auto handle = manager.playSound("test_sound", 0.8f, false);
         REQUIRE(true);
     }
 
@@ -337,7 +337,7 @@ TEST_CASE("AudioManager music playback API", "[audio][manager][music]")
         config.volume = 0.7f;
         config.loop = true;
 
-        auto handle = manager.playMusic("background_music", config);
+        [[maybe_unused]] auto handle = manager.playMusic("background_music", config);
         REQUIRE(true);
     }
 
@@ -370,7 +370,7 @@ TEST_CASE("AudioManager music playback API", "[audio][manager][music]")
     SECTION("Current music ID") {
         manager.playMusic("test_music");
         // May not actually play without real file
-        const auto& id = manager.getCurrentMusicId();
+        [[maybe_unused]] const auto& id = manager.getCurrentMusicId();
         REQUIRE(true);
     }
 
@@ -391,7 +391,7 @@ TEST_CASE("AudioManager voice playback API", "[audio][manager][voice]")
         config.volume = 1.0f;
         config.duckMusic = true;
 
-        auto handle = manager.playVoice("voice_line", config);
+        [[maybe_unused]] auto handle = manager.playVoice("voice_line", config);
         REQUIRE(true);
     }
 
@@ -499,7 +499,7 @@ TEST_CASE("AudioManager callbacks", "[audio][manager][callback]")
     SECTION("Set event callback") {
         bool callbackFired = false;
 
-        manager.setEventCallback([&](const AudioEvent& event) {
+        manager.setEventCallback([&]([[maybe_unused]] const AudioEvent& event) {
             callbackFired = true;
         });
 
@@ -507,7 +507,7 @@ TEST_CASE("AudioManager callbacks", "[audio][manager][callback]")
     }
 
     SECTION("Set data provider") {
-        manager.setDataProvider([](const std::string& id) -> Result<std::vector<u8>> {
+        manager.setDataProvider([]([[maybe_unused]] const std::string& id) -> Result<std::vector<u8>> {
             return Result<std::vector<u8>>::error("Not implemented");
         });
 
@@ -534,13 +534,13 @@ TEST_CASE("AudioManager error handling - uninitialized operations", "[audio][man
     // Do not initialize
 
     SECTION("Play sound without initialization") {
-        auto handle = manager.playSound("test");
+        [[maybe_unused]] auto handle = manager.playSound("test");
         // Should return invalid handle or handle operation gracefully
         REQUIRE(true);
     }
 
     SECTION("Play music without initialization") {
-        auto handle = manager.playMusic("test");
+        [[maybe_unused]] auto handle = manager.playMusic("test");
         REQUIRE(true);
     }
 
@@ -595,9 +595,9 @@ TEST_CASE("AudioManager error handling - invalid parameters", "[audio][manager][
         for (int i = 0; i < 10; ++i) {
             AudioChannel ch = static_cast<AudioChannel>(i);
             manager.setChannelVolume(ch, 0.5f);
-            manager.getChannelVolume(ch);
+            [[maybe_unused]] auto volume = manager.getChannelVolume(ch);
             manager.setChannelMuted(ch, true);
-            manager.isChannelMuted(ch);
+            [[maybe_unused]] auto muted = manager.isChannelMuted(ch);
         }
         REQUIRE(true);
     }
@@ -623,9 +623,10 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
             threads.emplace_back([&]() {
                 for (int j = 0; j < 10; ++j) {
                     manager.setMasterVolume(0.5f);
-                    manager.getMasterVolume();
+                    [[maybe_unused]] auto masterVolume = manager.getMasterVolume();
                     manager.setChannelVolume(AudioChannel::Music, 0.7f);
-                    manager.getChannelVolume(AudioChannel::Music);
+                    [[maybe_unused]] auto musicVolume =
+                        manager.getChannelVolume(AudioChannel::Music);
                 }
             });
         }
@@ -645,7 +646,8 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
                 for (int j = 0; j < 10; ++j) {
                     manager.setChannelMuted(AudioChannel::Sound, true);
                     manager.setChannelMuted(AudioChannel::Sound, false);
-                    manager.isChannelMuted(AudioChannel::Sound);
+                    [[maybe_unused]] auto muted =
+                        manager.isChannelMuted(AudioChannel::Sound);
                 }
             });
         }

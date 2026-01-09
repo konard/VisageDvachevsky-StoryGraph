@@ -2,6 +2,7 @@
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/scripting/vm.hpp"
 #include <algorithm>
+#include <iterator>
 #include <regex>
 #include <sstream>
 
@@ -241,11 +242,12 @@ u32 VMDebugger::getCurrentIP() const {
   return m_vm ? m_vm->getIP() : 0;
 }
 
-std::optional<SourceLocation> VMDebugger::getCurrentSourceLocation() const {
+std::optional<DebugSourceLocation>
+VMDebugger::getCurrentSourceLocation() const {
   return getSourceLocation(getCurrentIP());
 }
 
-std::optional<SourceLocation> VMDebugger::getSourceLocation(u32 ip) const {
+std::optional<DebugSourceLocation> VMDebugger::getSourceLocation(u32 ip) const {
   auto it = m_sourceMappings.find(ip);
   if (it != m_sourceMappings.end()) {
     return it->second;
@@ -290,12 +292,13 @@ VMDebugger::getRecentVariableChanges(u32 count) const {
 // Source Location Mapping
 // =========================================================================
 
-void VMDebugger::setSourceMapping(u32 ip, const SourceLocation &location) {
+void VMDebugger::setSourceMapping(u32 ip,
+                                  const DebugSourceLocation &location) {
   m_sourceMappings[ip] = location;
 }
 
 void VMDebugger::loadSourceMappings(
-    const std::unordered_map<u32, SourceLocation> &mappings) {
+    const std::unordered_map<u32, DebugSourceLocation> &mappings) {
   m_sourceMappings = mappings;
   NOVELMIND_LOG_DEBUG("Loaded " + std::to_string(mappings.size()) + " source mappings");
 }
@@ -582,8 +585,10 @@ VMDebugger::formatLogpointMessage(const std::string &message) const {
 
   while (std::regex_search(searchStart, result.cend(), match, varPattern)) {
     // Append text before the match
-    size_t matchPos =
-        static_cast<size_t>(match.position()) + (searchStart - result.cbegin());
+    const auto searchOffset =
+        static_cast<size_t>(std::distance(result.cbegin(), searchStart));
+    const auto matchOffset = static_cast<size_t>(match.position());
+    size_t matchPos = matchOffset + searchOffset;
     formatted += result.substr(lastPos, matchPos - lastPos);
 
     // Get variable value
@@ -591,7 +596,7 @@ VMDebugger::formatLogpointMessage(const std::string &message) const {
     Value val = m_vm->getVariable(varName);
     formatted += asString(val);
 
-    lastPos = matchPos + match.length();
+    lastPos = matchPos + static_cast<size_t>(match.length());
     searchStart = match.suffix().first;
   }
 

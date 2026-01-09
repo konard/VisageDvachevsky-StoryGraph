@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QTemporaryDir>
 
@@ -519,7 +520,8 @@ TEST_CASE("SceneTemplateManager signals", "[scene_template]") {
 
   SECTION("userTemplateCreated signal emitted") {
     SceneDocument doc;
-    manager.saveAsUserTemplate(doc, "Test", "Test", tempDir.path());
+    [[maybe_unused]] auto saveResult =
+        manager.saveAsUserTemplate(doc, "Test", "Test", tempDir.path());
     REQUIRE(userCreated);
   }
 
@@ -528,7 +530,8 @@ TEST_CASE("SceneTemplateManager signals", "[scene_template]") {
     auto result = manager.saveAsUserTemplate(doc, "Test", "Test", tempDir.path());
     REQUIRE(result.isOk());
 
-    manager.deleteUserTemplate(result.value(), tempDir.path());
+    [[maybe_unused]] auto deleteResult =
+        manager.deleteUserTemplate(result.value(), tempDir.path());
     REQUIRE(userDeleted);
   }
 
@@ -537,7 +540,8 @@ TEST_CASE("SceneTemplateManager signals", "[scene_template]") {
     auto result = manager.saveAsUserTemplate(doc, "Test", "Test", tempDir.path());
     REQUIRE(result.isOk());
 
-    manager.updateUserTemplate(result.value(), doc, tempDir.path());
+    [[maybe_unused]] auto updateResult =
+        manager.updateUserTemplate(result.value(), doc, tempDir.path());
     REQUIRE(userUpdated);
   }
 }

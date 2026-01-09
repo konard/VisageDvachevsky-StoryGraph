@@ -576,10 +576,11 @@ void NMGraphNodeItem::paint(QPainter *painter,
     const QPointF iconCenter(NODE_WIDTH - iconSize / 2 - 4, iconSize / 2 + 4);
 
     // Draw background circle
-    QColor bgColor = m_hasSceneValidationError ? QColor(220, 60, 60)   // Red for errors
-                                                : QColor(255, 180, 60); // Orange for warnings
-    painter->setBrush(bgColor);
-    painter->setPen(QPen(bgColor.darker(130), 2));
+    QColor validationBgColor =
+        m_hasSceneValidationError ? QColor(220, 60, 60)   // Red for errors
+                                  : QColor(255, 180, 60); // Orange for warnings
+    painter->setBrush(validationBgColor);
+    painter->setPen(QPen(validationBgColor.darker(130), 2));
     painter->drawEllipse(iconCenter, iconSize / 2, iconSize / 2);
 
     // Draw warning/error symbol

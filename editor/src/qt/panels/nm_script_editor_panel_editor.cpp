@@ -1356,7 +1356,7 @@ void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
 
   // Replace ${N:placeholder} with placeholder and record positions
   QRegularExpression re("\\$\\{(\\d+):([^}]*)\\}");
-  int offset = 0;
+  qsizetype offset = 0;
 
   QRegularExpressionMatchIterator it = re.globalMatch(body);
   QList<QPair<int, QRegularExpressionMatch>> matches;
@@ -1383,13 +1383,14 @@ void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
   while (it2.hasNext()) {
     QRegularExpressionMatch match = it2.next();
     const QString placeholder = match.captured(2);
-    const int originalPos = match.capturedStart() - offset;
+    const qsizetype originalPos = match.capturedStart() - offset;
 
     // Calculate actual position in document
-    const int docPos = startPos + originalPos;
-    m_tabstopPositions.append({docPos, static_cast<int>(placeholder.length())});
+    const int docPos = startPos + static_cast<int>(originalPos);
+    m_tabstopPositions.append(
+        {docPos, static_cast<int>(placeholder.length())});
 
-    offset += match.capturedLength() - static_cast<int>(placeholder.length());
+    offset += match.capturedLength() - placeholder.length();
     ++tabstopIndex;
   }
 
@@ -1454,7 +1455,7 @@ CompletionContext NMScriptEditor::getCompletionContext() const {
   }
 
   // Get the current line up to cursor
-  const int lineStart = text.lastIndexOf('\n', pos - 1) + 1;
+  const int lineStart = clampToInt(text.lastIndexOf('\n', pos - 1)) + 1;
   const QString lineBeforeCursor = text.mid(lineStart, pos - lineStart);
 
   // Check if inside a string
@@ -1508,10 +1509,10 @@ CompletionContext NMScriptEditor::getCompletionContext() const {
   }
 
   // Check if inside choice block
-  const int choiceStart = text.lastIndexOf("choice", pos);
+  const int choiceStart = clampToInt(text.lastIndexOf("choice", pos));
   if (choiceStart >= 0) {
-    const int braceAfterChoice = text.indexOf('{', choiceStart);
-    const int closingBrace = text.indexOf('}', braceAfterChoice);
+    const int braceAfterChoice = clampToInt(text.indexOf('{', choiceStart));
+    const int closingBrace = clampToInt(text.indexOf('}', braceAfterChoice));
     if (braceAfterChoice >= 0 && pos > braceAfterChoice &&
         (closingBrace < 0 || pos < closingBrace)) {
       return CompletionContext::AfterChoice;
@@ -1590,10 +1591,10 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
 
   while (sceneIt.hasNext()) {
     QRegularExpressionMatch match = sceneIt.next();
-    if (match.capturedStart() < pos) {
+    if (clampToInt(match.capturedStart()) < pos) {
       // Check if we're still inside this scene
       int braceCount = 1;
-      int searchPos = match.capturedEnd();
+      int searchPos = clampToInt(match.capturedEnd());
       while (searchPos < static_cast<int>(text.size()) && braceCount > 0) {
         if (text.at(searchPos) == '{') {
           ++braceCount;
@@ -1604,7 +1605,7 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
       }
       if (searchPos >= pos) {
         currentScene = match.captured(1);
-        sceneStart = match.capturedStart();
+        sceneStart = clampToInt(match.capturedStart());
       }
     }
   }
@@ -1615,9 +1616,9 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
 
   // Find enclosing choice block
   if (sceneStart >= 0) {
-    int choicePos = text.lastIndexOf("choice", pos);
+    int choicePos = clampToInt(text.lastIndexOf("choice", pos));
     if (choicePos > sceneStart) {
-      const int braceAfterChoice = text.indexOf('{', choicePos);
+      const int braceAfterChoice = clampToInt(text.indexOf('{', choicePos));
       if (braceAfterChoice >= 0 && braceAfterChoice < pos) {
         // Check if still inside
         int braceCount = 1;
@@ -1638,9 +1639,10 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
     }
 
     // Find enclosing if block
-    int ifPos = text.lastIndexOf("if ", pos);
-    if (ifPos > sceneStart && ifPos > text.lastIndexOf("choice", pos)) {
-      const int braceAfterIf = text.indexOf('{', ifPos);
+    int ifPos = clampToInt(text.lastIndexOf("if ", pos));
+    if (ifPos > sceneStart &&
+        ifPos > clampToInt(text.lastIndexOf("choice", pos))) {
+      const int braceAfterIf = clampToInt(text.indexOf('{', ifPos));
       if (braceAfterIf >= 0 && braceAfterIf < pos) {
         breadcrumbs.append("if");
       }
@@ -2348,6 +2350,7 @@ void NMScriptEditor::toggleFold(int line) {
       // Hide or show the lines in the region
       QTextBlock startBlock = document()->findBlockByNumber(line + 1);
       QTextBlock endBlock = document()->findBlockByNumber(region.endLine);
+      (void)endBlock;
 
       while (startBlock.isValid() &&
              startBlock.blockNumber() <= region.endLine) {

@@ -58,7 +58,7 @@ void createTestPack(const std::string& path, bool valid = true) {
         file.write(reinterpret_cast<const char*>(hash), 16);
 
         // Pad to resource table offset
-        file.seekp(resourceTableOffset);
+        file.seekp(static_cast<std::streamoff>(resourceTableOffset));
 
         // Write one resource entry
         u32 idStringOffset = 0;
@@ -80,12 +80,12 @@ void createTestPack(const std::string& path, bool valid = true) {
         file.write(reinterpret_cast<const char*>(iv), 8);
 
         // Write string table
-        file.seekp(stringTableOffset);
+        file.seekp(static_cast<std::streamoff>(stringTableOffset));
         const char* resId = "test_resource\0";
         file.write(resId, 14);
 
         // Write data
-        file.seekp(dataOffset);
+        file.seekp(static_cast<std::streamoff>(dataOffset));
         const u8 data[] = {1, 2, 3, 4, 5};
         file.write(reinterpret_cast<const char*>(data), 5);
     } else {
@@ -453,7 +453,8 @@ TEST_CASE("PackReader stress test - many operations", "[vfs][pack][stress]")
 
     SECTION("Many exists checks") {
         for (int i = 0; i < 1000; ++i) {
-            reader.exists("resource_" + std::to_string(i));
+            [[maybe_unused]] bool exists =
+                reader.exists("resource_" + std::to_string(i));
         }
         REQUIRE(true);
     }

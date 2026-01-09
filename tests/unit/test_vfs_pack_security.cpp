@@ -27,7 +27,7 @@ TEST_CASE("PackReader - Header validation", "[vfs][pack][security]") {
   }
 
   SECTION("Pack header structure size is reasonable") {
-    PackHeader header;
+    [[maybe_unused]] PackHeader header;
     // Header should contain all fields without excessive padding
     CHECK(sizeof(PackHeader) <= 128);
   }

@@ -1189,7 +1189,7 @@ Result<void> BuildSystem::processAssets() {
           auto hash = calculateSha256(data.data(), data.size());
           std::ostringstream oss;
           oss << std::hex << std::setfill('0');
-          for (int i = 0; i < 16; ++i) {
+          for (size_t i = 0; i < 16; ++i) {
             oss << std::setw(2) << static_cast<int>(hash[i]);
           }
           hashHex = oss.str();
@@ -1396,7 +1396,7 @@ Result<void> BuildSystem::packResources() {
         auto hash = calculateSha256(data.data(), data.size());
         std::ostringstream oss;
         oss << std::hex << std::setfill('0');
-        for (int i = 0; i < 16; ++i) {
+        for (size_t i = 0; i < 16; ++i) {
           oss << std::setw(2) << static_cast<int>(hash[i]);
         }
         hashHex += oss.str() + "...";
@@ -3309,9 +3309,9 @@ IntegrityChecker::checkScripts(const std::string &projectPath) {
           continue;
         }
 
-        std::string content((std::istreambuf_iterator<char>(file)),
-                            std::istreambuf_iterator<char>());
-        file.close();
+        std::ostringstream buffer;
+        buffer << file.rdbuf();
+        std::string content = buffer.str();
 
         // Check for balanced braces
         i32 braceCount = 0;

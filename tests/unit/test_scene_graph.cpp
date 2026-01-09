@@ -28,23 +28,31 @@ using namespace NovelMind;
 // Mock renderer for testing
 class MockRenderer : public renderer::IRenderer {
 public:
-    Result<void> initialize(platform::IWindow& window) override {
+    Result<void> initialize([[maybe_unused]] platform::IWindow& window) override {
         return Result<void>::ok();
     }
     void shutdown() override {}
     void beginFrame() override {}
     void endFrame() override {}
-    void clear(const renderer::Color& color) override {}
-    void setBlendMode(renderer::BlendMode mode) override {}
-    void drawSprite(const renderer::Texture& texture, const renderer::Transform2D& transform,
-                    const renderer::Color& tint) override {}
-    void drawSprite(const renderer::Texture& texture, const renderer::Rect& sourceRect,
-                    const renderer::Transform2D& transform, const renderer::Color& tint) override {}
-    void drawRect(const renderer::Rect& rect, const renderer::Color& color) override {}
-    void fillRect(const renderer::Rect& rect, const renderer::Color& color) override {}
-    void drawText(const renderer::Font& font, const std::string& text, f32 x, f32 y,
-                  const renderer::Color& color) override {}
-    void setFade(f32 alpha, const renderer::Color& color) override {}
+    void clear([[maybe_unused]] const renderer::Color& color) override {}
+    void setBlendMode([[maybe_unused]] renderer::BlendMode mode) override {}
+    void drawSprite([[maybe_unused]] const renderer::Texture& texture,
+                    [[maybe_unused]] const renderer::Transform2D& transform,
+                    [[maybe_unused]] const renderer::Color& tint) override {}
+    void drawSprite([[maybe_unused]] const renderer::Texture& texture,
+                    [[maybe_unused]] const renderer::Rect& sourceRect,
+                    [[maybe_unused]] const renderer::Transform2D& transform,
+                    [[maybe_unused]] const renderer::Color& tint) override {}
+    void drawRect([[maybe_unused]] const renderer::Rect& rect,
+                  [[maybe_unused]] const renderer::Color& color) override {}
+    void fillRect([[maybe_unused]] const renderer::Rect& rect,
+                  [[maybe_unused]] const renderer::Color& color) override {}
+    void drawText([[maybe_unused]] const renderer::Font& font,
+                  [[maybe_unused]] const std::string& text,
+                  [[maybe_unused]] f32 x, [[maybe_unused]] f32 y,
+                  [[maybe_unused]] const renderer::Color& color) override {}
+    void setFade([[maybe_unused]] f32 alpha,
+                 [[maybe_unused]] const renderer::Color& color) override {}
     [[nodiscard]] i32 getWidth() const override { return 1920; }
     [[nodiscard]] i32 getHeight() const override { return 1080; }
 };
@@ -55,7 +63,7 @@ public:
     explicit TestSceneObject(const std::string& id)
         : SceneObjectBase(id, SceneObjectType::Custom) {}
 
-    void render(renderer::IRenderer& renderer) override {
+    void render([[maybe_unused]] renderer::IRenderer& renderer) override {
         renderCalled = true;
     }
 
@@ -547,7 +555,7 @@ TEST_CASE("ChoiceUIObject callback", "[scene_graph][choice]")
         selectedId = id;
     });
 
-    choice.confirm();
+    [[maybe_unused]] bool confirmed = choice.confirm();
 
     REQUIRE(callbackFired);
     REQUIRE(selectedIndex == 0);

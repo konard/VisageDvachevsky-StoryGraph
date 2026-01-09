@@ -255,7 +255,7 @@ Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
     // Determine value type by checking if it's a quoted string (match[4])
     // We check if the match was captured, not if it's empty (empty strings are
     // valid!)
-    if (match[4].matched) {
+    if (match.size() > 4 && match[4].matched) {
       // String value (even if empty)
       obj[key] = unescapeJsonString(match[4].str());
     } else {

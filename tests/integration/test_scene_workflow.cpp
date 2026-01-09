@@ -23,34 +23,42 @@ using namespace NovelMind;
 // Mock renderer for integration tests
 class IntegrationMockRenderer : public renderer::IRenderer {
 public:
-    Result<void> initialize(platform::IWindow& window) override {
+    Result<void> initialize([[maybe_unused]] platform::IWindow& window) override {
         return Result<void>::ok();
     }
     void shutdown() override {}
     void beginFrame() override {}
     void endFrame() override {}
-    void clear(const renderer::Color& color) override { clearCalls++; }
-    void setBlendMode(renderer::BlendMode mode) override {}
-    void drawSprite(const renderer::Texture& texture, const renderer::Transform2D& transform,
-                    const renderer::Color& tint) override {
+    void clear([[maybe_unused]] const renderer::Color& color) override { clearCalls++; }
+    void setBlendMode([[maybe_unused]] renderer::BlendMode mode) override {}
+    void drawSprite([[maybe_unused]] const renderer::Texture& texture,
+                    [[maybe_unused]] const renderer::Transform2D& transform,
+                    [[maybe_unused]] const renderer::Color& tint) override {
         drawTextureCalls++;
     }
-    void drawSprite(const renderer::Texture& texture, const renderer::Rect& sourceRect,
-                    const renderer::Transform2D& transform, const renderer::Color& tint) override {
+    void drawSprite([[maybe_unused]] const renderer::Texture& texture,
+                    [[maybe_unused]] const renderer::Rect& sourceRect,
+                    [[maybe_unused]] const renderer::Transform2D& transform,
+                    [[maybe_unused]] const renderer::Color& tint) override {
         drawTextureCalls++;
     }
-    void drawRect(const renderer::Rect& rect, const renderer::Color& color) override {
+    void drawRect([[maybe_unused]] const renderer::Rect& rect,
+                  [[maybe_unused]] const renderer::Color& color) override {
         drawQuadCalls++;
     }
-    void fillRect(const renderer::Rect& rect, const renderer::Color& color) override {
+    void fillRect([[maybe_unused]] const renderer::Rect& rect,
+                  [[maybe_unused]] const renderer::Color& color) override {
         drawQuadCalls++;
     }
-    void drawText(const renderer::Font& font, const std::string& text, f32 x, f32 y,
-                  const renderer::Color& color) override {
+    void drawText([[maybe_unused]] const renderer::Font& font,
+                  const std::string& text,
+                  [[maybe_unused]] f32 x, [[maybe_unused]] f32 y,
+                  [[maybe_unused]] const renderer::Color& color) override {
         drawTextCalls++;
         lastText = text;
     }
-    void setFade(f32 alpha, const renderer::Color& color) override {}
+    void setFade([[maybe_unused]] f32 alpha,
+                 [[maybe_unused]] const renderer::Color& color) override {}
     [[nodiscard]] i32 getWidth() const override { return 1920; }
     [[nodiscard]] i32 getHeight() const override { return 1080; }
 
@@ -109,7 +117,8 @@ TEST_CASE("Scene workflow - Save and load cycle", "[integration][scene][serializ
     char1->setExpression("sad");
     char1->setAlpha(0.8f);
 
-    auto* dialogue = graph1.showDialogue("Bob", "I need to save this state.");
+    [[maybe_unused]] auto* dialogue =
+        graph1.showDialogue("Bob", "I need to save this state.");
 
     // Save state
     auto state = graph1.saveState();
@@ -233,12 +242,12 @@ TEST_CASE("Scene workflow - Choices and branching", "[integration][scene][choice
     bool choiceMade = false;
     std::string selectedChoice;
 
-    choiceUI->setOnSelect([&](i32 idx, const std::string& id) {
+    choiceUI->setOnSelect([&]([[maybe_unused]] i32 idx, const std::string& id) {
         choiceMade = true;
         selectedChoice = id;
     });
 
-    choiceUI->confirm();
+    [[maybe_unused]] bool confirmed = choiceUI->confirm();
 
     REQUIRE(choiceMade);
     REQUIRE(selectedChoice == "choice_b");
@@ -297,7 +306,7 @@ TEST_CASE("Scene workflow - Layer ordering and rendering", "[integration][scene]
     REQUIRE(renderer.drawTextureCalls > 0);
 
     // Clear counter
-    int initialCalls = renderer.drawTextureCalls;
+    [[maybe_unused]] int initialCalls = renderer.drawTextureCalls;
 
     // Hide a layer and verify rendering changes
     graph.getCharacterLayer().setVisible(false);

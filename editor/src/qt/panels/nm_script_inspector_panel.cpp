@@ -328,7 +328,7 @@ void NMScriptInspectorPanel::onCurrentNodeChanged(const QString &nodeId) {
   QString sceneName = nodeId;
   if (sceneName.contains('_')) {
     // Try to get the scene part
-    int lastUnderscore = sceneName.lastIndexOf('_');
+    qsizetype lastUnderscore = sceneName.lastIndexOf('_');
     QString suffix = sceneName.mid(lastUnderscore + 1);
     bool isNumber = false;
     suffix.toInt(&isNumber);
@@ -500,12 +500,15 @@ void NMScriptInspectorPanel::updateWatchTree() {
 void NMScriptInspectorPanel::updateSceneHistoryList() {
   m_sceneHistoryList->clear();
 
-  for (int i = m_sceneHistory.size() - 1; i >= 0; --i) {
+  const qsizetype historyCount = m_sceneHistory.size();
+  for (qsizetype i = historyCount - 1; i >= 0; --i) {
     const QString &scene = m_sceneHistory[i];
     auto *item = new QListWidgetItem(
-        QString("%1. %2").arg(m_sceneHistory.size() - i).arg(scene));
+        QString("%1. %2")
+            .arg(static_cast<int>(historyCount - i))
+            .arg(scene));
 
-    if (i == m_sceneHistory.size() - 1) {
+    if (i == historyCount - 1) {
       // Current scene
       item->setForeground(QBrush(QColor("#4caf50")));
       auto &iconMgr = NMIconManager::instance();
@@ -514,6 +517,9 @@ void NMScriptInspectorPanel::updateSceneHistoryList() {
 
     item->setData(Qt::UserRole, scene);
     m_sceneHistoryList->addItem(item);
+    if (i == 0) {
+      break;
+    }
   }
 
   if (m_sceneHistory.isEmpty()) {

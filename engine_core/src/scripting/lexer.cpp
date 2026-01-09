@@ -55,13 +55,13 @@ inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
     return c;
   }
 
-  int seqLen = utf8SequenceLength(c);
+  size_t seqLen = static_cast<size_t>(utf8SequenceLength(c));
   if (seqLen == 0 || pos + seqLen > source.size()) {
     return 0; // Invalid sequence
   }
 
   // Verify continuation bytes
-  for (int i = 1; i < seqLen; ++i) {
+  for (size_t i = 1; i < seqLen; ++i) {
     if (!isUtf8Continuation(static_cast<unsigned char>(source[pos + i]))) {
       return 0; // Invalid continuation byte
     }
@@ -71,19 +71,28 @@ inline uint32_t decodeUtf8(std::string_view source, size_t &pos) {
   uint32_t codePoint = 0;
   switch (seqLen) {
   case 2:
-    codePoint = (c & 0x1F) << 6;
-    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F);
+    codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
+    codePoint |= static_cast<uint32_t>(
+        static_cast<unsigned char>(source[pos + 1]) & 0x3F);
     break;
   case 3:
-    codePoint = (c & 0x0F) << 12;
-    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 6;
-    codePoint |= (static_cast<unsigned char>(source[pos + 2]) & 0x3F);
+    codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
+    codePoint |= static_cast<uint32_t>(
+                     static_cast<unsigned char>(source[pos + 1]) & 0x3F)
+                 << 6;
+    codePoint |= static_cast<uint32_t>(
+        static_cast<unsigned char>(source[pos + 2]) & 0x3F);
     break;
   case 4:
-    codePoint = (c & 0x07) << 18;
-    codePoint |= (static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 12;
-    codePoint |= (static_cast<unsigned char>(source[pos + 2]) & 0x3F) << 6;
-    codePoint |= (static_cast<unsigned char>(source[pos + 3]) & 0x3F);
+    codePoint = static_cast<uint32_t>(c & 0x07) << 18;
+    codePoint |= static_cast<uint32_t>(
+                     static_cast<unsigned char>(source[pos + 1]) & 0x3F)
+                 << 12;
+    codePoint |= static_cast<uint32_t>(
+                     static_cast<unsigned char>(source[pos + 2]) & 0x3F)
+                 << 6;
+    codePoint |= static_cast<uint32_t>(
+        static_cast<unsigned char>(source[pos + 3]) & 0x3F);
     break;
   default:
     return 0;

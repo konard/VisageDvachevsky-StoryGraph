@@ -119,7 +119,8 @@ TEST_CASE("Scene reference validation", "[scene_validation]") {
     NMStoryGraphScene graphScene;
 
     // Add scene node without scene ID
-    auto *node = graphScene.addNode("Unnamed Scene", "Scene", QPointF(0, 0));
+    [[maybe_unused]] auto *node =
+        graphScene.addNode("Unnamed Scene", "Scene", QPointF(0, 0));
     // Don't set scene ID
 
     QStringList errors = graphScene.validateSceneReferences(projectPath);

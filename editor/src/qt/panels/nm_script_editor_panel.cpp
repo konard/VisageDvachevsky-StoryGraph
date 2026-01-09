@@ -111,8 +111,8 @@ void NMScriptEditorPanel::onInitialize() {
 
       if (welcomeDialog.exec() == QDialog::Accepted) {
         if (welcomeDialog.shouldSkipInFuture()) {
-          QSettings settings("NovelMind", "Editor");
-          settings.setValue("scriptEditor/showWelcome", false);
+          QSettings welcomeSettings("NovelMind", "Editor");
+          welcomeSettings.setValue("scriptEditor/showWelcome", false);
         }
       }
     });
@@ -1323,6 +1323,7 @@ void NMScriptEditorPanel::onSymbolNavigatorRequested() {
 
 void NMScriptEditorPanel::onGoToDefinition(const QString &symbol,
                                            const SymbolLocation &location) {
+  (void)symbol;
   if (!location.filePath.isEmpty()) {
     goToLocation(location.filePath, location.line);
   }

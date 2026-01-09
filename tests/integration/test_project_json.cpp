@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 
 using namespace NovelMind;
 using namespace NovelMind::editor;
@@ -407,9 +408,9 @@ TEST_CASE("ProjectJson - Atomic write preserves existing file on error", "[proje
 
   // Read initial content
   std::ifstream initialFile(projectFile);
-  std::string initialContent((std::istreambuf_iterator<char>(initialFile)),
-                              std::istreambuf_iterator<char>());
-  initialFile.close();
+  std::ostringstream initialBuffer;
+  initialBuffer << initialFile.rdbuf();
+  std::string initialContent = initialBuffer.str();
 
   // Try to save invalid metadata (should fail validation)
   ProjectMetadata invalid;
@@ -423,8 +424,9 @@ TEST_CASE("ProjectJson - Atomic write preserves existing file on error", "[proje
   CHECK(fs::exists(projectFile));
 
   std::ifstream finalFile(projectFile);
-  std::string finalContent((std::istreambuf_iterator<char>(finalFile)),
-                            std::istreambuf_iterator<char>());
+  std::ostringstream finalBuffer;
+  finalBuffer << finalFile.rdbuf();
+  std::string finalContent = finalBuffer.str();
 
   CHECK(initialContent == finalContent);
 }

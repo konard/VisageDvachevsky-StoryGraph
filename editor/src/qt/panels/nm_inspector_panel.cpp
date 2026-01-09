@@ -1016,8 +1016,9 @@ void NMInspectorPanel::flushPendingUpdates() {
       // Only update if widget doesn't have focus to preserve user editing
       if (!lineEdit->hasFocus()) {
         int cursorPos = lineEdit->cursorPosition();
+        int newLength = static_cast<int>(newValue.length());
         lineEdit->setText(newValue);
-        lineEdit->setCursorPosition(qMin(cursorPos, newValue.length()));
+        lineEdit->setCursorPosition(qMin(cursorPos, newLength));
       }
     } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
       spinBox->setValue(newValue.toInt());
@@ -1033,12 +1034,13 @@ void NMInspectorPanel::flushPendingUpdates() {
         QTextCursor cursor = textEdit->textCursor();
         int cursorPos = cursor.position();
         int anchorPos = cursor.anchor();
+        int newLength = static_cast<int>(newValue.length());
 
         textEdit->setPlainText(newValue);
 
-        if (cursorPos <= newValue.length()) {
-          cursor.setPosition(qMin(anchorPos, newValue.length()));
-          cursor.setPosition(qMin(cursorPos, newValue.length()),
+        if (cursorPos <= newLength) {
+          cursor.setPosition(qMin(anchorPos, newLength));
+          cursor.setPosition(qMin(cursorPos, newLength),
                             QTextCursor::KeepAnchor);
           textEdit->setTextCursor(cursor);
         }

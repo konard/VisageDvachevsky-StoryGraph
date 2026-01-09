@@ -246,7 +246,8 @@ bool SceneRegistry::removeSceneReference(const QString &sceneId, const QString &
     return false;
   }
 
-  int index = m_scenes[sceneId].referencingNodes.indexOf(nodeIdString);
+  int index = static_cast<int>(
+      m_scenes[sceneId].referencingNodes.indexOf(nodeIdString));
   if (index == -1) {
     return false; // Not found
   }

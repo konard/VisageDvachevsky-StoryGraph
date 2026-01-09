@@ -45,6 +45,7 @@ NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget *parent,
                                          IAudioPlayer *audioPlayer)
     : NMDockPanel("Voice Manager", parent),
       m_manifest(std::make_unique<NovelMind::audio::VoiceManifest>()) {
+  (void)audioPlayer;
   // Initialize manifest with default locale
   m_manifest->setDefaultLocale("en");
   m_manifest->addLocale("en");
@@ -1833,10 +1834,10 @@ void NMVoiceManagerPanel::flashRow(int row) {
     if (!m_voiceTree || row >= m_voiceTree->topLevelItemCount()) {
       return;
     }
-    auto *item = m_voiceTree->topLevelItem(row);
-    if (item) {
+    auto *resetItem = m_voiceTree->topLevelItem(row);
+    if (resetItem) {
       for (int col = 0; col < m_voiceTree->columnCount(); ++col) {
-        item->setBackground(col, originalBrush);
+        resetItem->setBackground(col, originalBrush);
       }
     }
   });

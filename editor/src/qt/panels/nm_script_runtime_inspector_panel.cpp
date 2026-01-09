@@ -8,6 +8,7 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QLineEdit>
+#include <QMetaType>
 #include <QMessageBox>
 #include <QPushButton>
 
@@ -542,7 +543,7 @@ void NMScriptRuntimeInspectorPanel::onBreakpointItemDoubleClicked(
     // Navigate to breakpoint location
     QString location = item->text(1);
     // Parse "file:line" format
-    int colonPos = location.lastIndexOf(':');
+    qsizetype colonPos = location.lastIndexOf(':');
     if (colonPos > 0) {
       QString file = location.left(colonPos);
       int line = location.mid(colonPos + 1).toInt();
@@ -560,10 +561,10 @@ void NMScriptRuntimeInspectorPanel::onCallStackItemDoubleClicked(
   // Parse call stack item to extract location
   // Format: "sceneName (file:line)"
   QString text = item->text();
-  int parenPos = text.indexOf('(');
+  qsizetype parenPos = text.indexOf('(');
   if (parenPos > 0) {
     QString location = text.mid(parenPos + 1, text.length() - parenPos - 2);
-    int colonPos = location.lastIndexOf(':');
+    qsizetype colonPos = location.lastIndexOf(':');
     if (colonPos > 0) {
       QString file = location.left(colonPos);
       int line = location.mid(colonPos + 1).toInt();
@@ -590,18 +591,19 @@ void NMScriptRuntimeInspectorPanel::onHistoryItemClicked(QTreeWidgetItem *item,
 void NMScriptRuntimeInspectorPanel::onAddBreakpointClicked() {
   // Show dialog to add breakpoint at specific location
   bool ok = false;
-  QString input = NMDialogs::inputText(this, "Add Breakpoint",
-                                       "Enter file:line or instruction address:",
-                                       "", &ok);
+  QString input = NMInputDialog::getText(
+      this, "Add Breakpoint", "Enter file:line or instruction address:",
+      QLineEdit::Normal, QString(), &ok);
   if (!ok || input.isEmpty()) {
     return;
   }
 
   // Try to parse as file:line
-  int colonPos = input.lastIndexOf(':');
+  qsizetype colonPos = input.lastIndexOf(':');
   if (colonPos > 0) {
     QString file = input.left(colonPos);
     int line = input.mid(colonPos + 1).toInt();
+    (void)line;
     // Would need to map file:line to IP through source mappings
     // For now, just show as pending
     auto *newItem = new QTreeWidgetItem(m_breakpointsTree);
@@ -614,7 +616,7 @@ void NMScriptRuntimeInspectorPanel::onAddBreakpointClicked() {
     bool ipOk = false;
     quint32 ip = input.toUInt(&ipOk);
     if (ipOk && m_debugger) {
-      quint32 bpId = m_debugger->addBreakpoint(ip);
+      [[maybe_unused]] quint32 bpId = m_debugger->addBreakpoint(ip);
       updateBreakpointsDisplay();
     }
   }
@@ -649,8 +651,8 @@ void NMScriptRuntimeInspectorPanel::updateControlsState() {
   bool isPaused = m_executionState == DebugExecutionState::PausedBreakpoint ||
                   m_executionState == DebugExecutionState::PausedStep ||
                   m_executionState == DebugExecutionState::PausedUser;
-  bool isIdle = m_executionState == DebugExecutionState::Idle ||
-                m_executionState == DebugExecutionState::Halted;
+  [[maybe_unused]] bool isIdle = m_executionState == DebugExecutionState::Idle ||
+                                 m_executionState == DebugExecutionState::Halted;
 
   m_continueBtn->setEnabled(isPaused);
   m_pauseBtn->setEnabled(isRunning);
@@ -819,10 +821,9 @@ void NMScriptRuntimeInspectorPanel::updatePerformanceMetrics(
 void NMScriptRuntimeInspectorPanel::editVariable(
     const QString &name, const QVariant &currentValue) {
   bool ok = false;
-  QString newValueStr = NMDialogs::inputText(
-      this, "Edit Variable",
-      QString("Enter new value for '%1':").arg(name),
-      formatValue(currentValue), &ok);
+  QString newValueStr = NMInputDialog::getText(
+      this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
+      QLineEdit::Normal, formatValue(currentValue), &ok);
 
   if (!ok || newValueStr.isEmpty()) {
     return;
@@ -857,7 +858,7 @@ void NMScriptRuntimeInspectorPanel::editVariable(
 }
 
 QString NMScriptRuntimeInspectorPanel::formatValue(const QVariant &value) const {
-  if (value.type() == QVariant::Bool) {
+  if (value.typeId() == QMetaType::Bool) {
     return value.toBool() ? "true" : "false";
   }
   return value.toString();
@@ -865,14 +866,14 @@ QString NMScriptRuntimeInspectorPanel::formatValue(const QVariant &value) const 
 
 QString NMScriptRuntimeInspectorPanel::getValueTypeString(
     const QVariant &value) const {
-  switch (value.type()) {
-  case QVariant::Int:
+  switch (value.typeId()) {
+  case QMetaType::Int:
     return "int";
-  case QVariant::Double:
+  case QMetaType::Double:
     return "float";
-  case QVariant::Bool:
+  case QMetaType::Bool:
     return "bool";
-  case QVariant::String:
+  case QMetaType::QString:
     return "string";
   default:
     return "unknown";

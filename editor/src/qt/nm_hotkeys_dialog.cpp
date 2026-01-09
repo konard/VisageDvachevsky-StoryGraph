@@ -76,13 +76,13 @@ protected:
 
     int combo = key;
     if (modifiers & Qt::ControlModifier)
-      combo |= Qt::CTRL;
+      combo |= static_cast<int>(Qt::CTRL);
     if (modifiers & Qt::ShiftModifier)
-      combo |= Qt::SHIFT;
+      combo |= static_cast<int>(Qt::SHIFT);
     if (modifiers & Qt::AltModifier)
-      combo |= Qt::ALT;
+      combo |= static_cast<int>(Qt::ALT);
     if (modifiers & Qt::MetaModifier)
-      combo |= Qt::META;
+      combo |= static_cast<int>(Qt::META);
 
     m_sequence = QKeySequence(combo);
     m_shortcutLabel->setText(m_sequence.toString(QKeySequence::NativeText));

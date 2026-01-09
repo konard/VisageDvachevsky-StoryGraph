@@ -349,7 +349,7 @@ public:
    * @brief Get the number of registered scenes
    * @return Number of scenes
    */
-  [[nodiscard]] int sceneCount() const { return m_scenes.size(); }
+  [[nodiscard]] int sceneCount() const { return static_cast<int>(m_scenes.size()); }
 
 signals:
   /**

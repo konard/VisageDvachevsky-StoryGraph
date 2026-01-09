@@ -1,5 +1,5 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp"
-#include "NovelMind/editor/qt/style/nm_style_manager.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/scene_registry.hpp"
 #include <QDateTime>
 #include <QDir>
@@ -44,12 +44,11 @@ void NMSceneIdPicker::setupUI() {
   m_sceneCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
   // Style the combo box
-  const QColor bgColor = NMStyleManager::getColor(NMStyleColor::BackgroundDark);
-  const QColor textColor = NMStyleManager::getColor(NMStyleColor::TextPrimary);
-  const QColor borderColor =
-      NMStyleManager::getColor(NMStyleColor::BorderLight);
-  const QColor highlightColor =
-      NMStyleManager::getColor(NMStyleColor::AccentPrimary);
+  const auto &palette = NMStyleManager::instance().palette();
+  const QColor bgColor = palette.bgDark;
+  const QColor textColor = palette.textPrimary;
+  const QColor borderColor = palette.borderLight;
+  const QColor highlightColor = palette.accentPrimary;
 
   m_sceneCombo->setStyleSheet(QString("QComboBox {"
                                       "  background-color: %1;"
@@ -109,7 +108,7 @@ void NMSceneIdPicker::setupUI() {
   m_sceneInfoLabel->setWordWrap(true);
   m_sceneInfoLabel->setStyleSheet(
       QString("QLabel { color: %1; font-size: 11px; }")
-          .arg(NMStyleManager::getColor(NMStyleColor::TextSecondary).name()));
+          .arg(palette.textSecondary.name()));
 
   m_previewLayout->addWidget(m_thumbnailLabel);
   m_previewLayout->addWidget(m_sceneInfoLabel, 1);

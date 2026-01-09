@@ -699,7 +699,7 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
     QHash<QString, QString> targets;
     const QStringList lines = detail::splitChoiceLines(newValue);
     for (const QString &line : lines) {
-      int eqPos = line.indexOf('=');
+      qsizetype eqPos = line.indexOf('=');
       if (eqPos > 0) {
         QString option = line.left(eqPos).trimmed();
         QString target = line.mid(eqPos + 1).trimmed();
@@ -714,7 +714,7 @@ void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
     QHash<QString, QString> targets;
     const QStringList lines = detail::splitChoiceLines(newValue);
     for (const QString &line : lines) {
-      int eqPos = line.indexOf('=');
+      qsizetype eqPos = line.indexOf('=');
       if (eqPos > 0) {
         QString output = line.left(eqPos).trimmed();
         QString target = line.mid(eqPos + 1).trimmed();

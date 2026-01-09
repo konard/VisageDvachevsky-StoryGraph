@@ -195,7 +195,9 @@ public:
    * @brief Get number of loaded templates
    * @return Template count
    */
-  [[nodiscard]] int templateCount() const { return m_templates.size(); }
+  [[nodiscard]] int templateCount() const {
+    return static_cast<int>(m_templates.size());
+  }
 
   // ==========================================================================
   // Template Instantiation

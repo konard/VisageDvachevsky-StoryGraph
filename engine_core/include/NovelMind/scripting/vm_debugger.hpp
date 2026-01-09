@@ -85,14 +85,14 @@ struct Breakpoint {
 /**
  * @brief Source location mapping from IP to source code
  */
-struct SourceLocation {
+struct DebugSourceLocation {
   std::string filePath;  ///< Path to source file
   u32 line;              ///< Line number (1-based)
   u32 column;            ///< Column number (1-based)
   std::string sceneName; ///< Scene name at this location
 
-  SourceLocation() : line(0), column(0) {}
-  SourceLocation(const std::string &path, u32 l, u32 c = 1)
+  DebugSourceLocation() : line(0), column(0) {}
+  DebugSourceLocation(const std::string &path, u32 l, u32 c = 1)
       : filePath(path), line(l), column(c) {}
 
   bool isValid() const { return line > 0; }
@@ -279,14 +279,15 @@ public:
    * @brief Get the current source location
    * @return Source location if mapping exists
    */
-  [[nodiscard]] std::optional<SourceLocation> getCurrentSourceLocation() const;
+  [[nodiscard]] std::optional<DebugSourceLocation>
+  getCurrentSourceLocation() const;
 
   /**
    * @brief Get source location for a given IP
    * @param ip Instruction pointer
    * @return Source location if mapping exists
    */
-  [[nodiscard]] std::optional<SourceLocation> getSourceLocation(u32 ip) const;
+  [[nodiscard]] std::optional<DebugSourceLocation> getSourceLocation(u32 ip) const;
 
   /**
    * @brief Get the call stack
@@ -332,13 +333,14 @@ public:
    * @param ip Instruction pointer
    * @param location Source location
    */
-  void setSourceMapping(u32 ip, const SourceLocation &location);
+  void setSourceMapping(u32 ip, const DebugSourceLocation &location);
 
   /**
    * @brief Load source mappings from compiled script metadata
    * @param mappings Map of IP to source location
    */
-  void loadSourceMappings(const std::unordered_map<u32, SourceLocation> &mappings);
+  void loadSourceMappings(
+      const std::unordered_map<u32, DebugSourceLocation> &mappings);
 
   /**
    * @brief Clear all source mappings
@@ -450,7 +452,7 @@ private:
   VirtualMachine *m_vm;                              ///< Associated VM
   std::unordered_map<u32, Breakpoint> m_breakpoints; ///< All breakpoints by ID
   std::set<u32> m_breakpointIPs;                     ///< Set of IPs with breakpoints (for fast lookup)
-  std::unordered_map<u32, SourceLocation> m_sourceMappings; ///< IP to source location mapping
+  std::unordered_map<u32, DebugSourceLocation> m_sourceMappings; ///< IP to source location mapping
   std::vector<CallStackFrame> m_callStack;           ///< Current call stack
   std::vector<VariableChangeEvent> m_variableHistory;///< Recent variable changes
   u32 m_nextBreakpointId;                            ///< Next breakpoint ID to assign

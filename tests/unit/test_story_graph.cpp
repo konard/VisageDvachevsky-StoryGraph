@@ -710,19 +710,28 @@ bool isValidSpeakerIdentifier(const std::string &speaker) {
       codePoint = c;
       charLen = 1;
     } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
-      codePoint = (c & 0x1F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
       charLen = 2;
     } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
-      codePoint = (c & 0x0F) << 12;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
+                   << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
       charLen = 3;
     } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
-      codePoint = (c & 0x07) << 18;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x07) << 18;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
+                   << 12;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 2]) & 0x3F)
+                   << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
       charLen = 4;
     } else {
       return false; // Invalid UTF-8
@@ -781,7 +790,7 @@ std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
 
     // Handle underscore
     if (c == '_') {
-      result += c;
+      result.push_back(static_cast<char>(c));
       ++i;
       isFirst = false;
       continue;
@@ -792,19 +801,28 @@ std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
       codePoint = c;
       charLen = 1;
     } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
-      codePoint = (c & 0x1F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
       charLen = 2;
     } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
-      codePoint = (c & 0x0F) << 12;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
+                   << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
       charLen = 3;
     } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
-      codePoint = (c & 0x07) << 18;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
-      codePoint |= (static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      codePoint = static_cast<uint32_t>(c & 0x07) << 18;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
+                   << 12;
+      codePoint |= static_cast<uint32_t>(
+                       static_cast<unsigned char>(speaker[i + 2]) & 0x3F)
+                   << 6;
+      codePoint |= static_cast<uint32_t>(
+          static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
       charLen = 4;
     } else {
       // Invalid UTF-8, replace with underscore

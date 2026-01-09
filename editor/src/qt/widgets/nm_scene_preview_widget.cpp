@@ -1,6 +1,6 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_overlays.hpp"
+#include "../panels/nm_scene_view_overlays.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
@@ -12,6 +12,7 @@
 #include <QMessageBox>
 #include <QPixmap>
 #include <QToolButton>
+#include <type_traits>
 
 namespace NovelMind::editor::qt {
 
@@ -125,11 +126,11 @@ void NMScenePreviewWidget::setupUI() {
       color: %5;
     }
   )")
-                    .arg(palette["panel.background"])
-                    .arg(palette["panel.border"])
-                    .arg(palette["text.muted"])
-                    .arg(palette["editor.background"])
-                    .arg(palette["text.muted"]));
+                    .arg(palette.bgDark.name())
+                    .arg(palette.borderDefault.name())
+                    .arg(palette.textMuted.name())
+                    .arg(palette.bgDarkest.name())
+                    .arg(palette.textMuted.name()));
 }
 
 void NMScenePreviewWidget::setupConnections() {
@@ -285,10 +286,10 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
   std::string scriptText = m_scriptContent.toStdString();
 
   // Lex the script
-  scripting::Lexer lexer(scriptText);
-  auto tokens = lexer.tokenize();
+  scripting::Lexer lexer;
+  auto tokensResult = lexer.tokenize(scriptText);
 
-  if (lexer.hasErrors()) {
+  if (tokensResult.isError()) {
     const auto &errors = lexer.getErrors();
     if (!errors.empty()) {
       state.errorMessage = errors[0].message;
@@ -299,10 +300,11 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
   }
 
   // Parse the script
-  scripting::Parser parser(tokens);
-  auto program = parser.parse();
+  const auto &tokens = tokensResult.value();
+  scripting::Parser parser;
+  auto programResult = parser.parse(tokens);
 
-  if (parser.hasErrors()) {
+  if (programResult.isError()) {
     const auto &errors = parser.getErrors();
     if (!errors.empty()) {
       state.errorMessage = errors[0].message;
@@ -312,19 +314,16 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
     return state;
   }
 
-  if (!program) {
-    state.errorMessage = "Failed to parse program";
-    return state;
-  }
+  const auto &program = programResult.value();
 
   // Find the scene definition containing the cursor line
   std::string currentSceneName;
-  const scripting::SceneDefinition *currentSceneDef = nullptr;
+  const scripting::SceneDecl *currentSceneDef = nullptr;
+  const u32 cursorLine = static_cast<u32>(m_cursorLine);
 
-  for (const auto &scene : program->scenes) {
-    if (scene.location.line <= static_cast<u32>(m_cursorLine)) {
-      // Check if cursor is within this scene's range
-      // For simplicity, we assume scenes are sequential
+  for (const auto &scene : program.scenes) {
+    if (!scene.body.empty() &&
+        scene.body.front()->location.line <= cursorLine) {
       currentSceneName = scene.name;
       currentSceneDef = &scene;
     }
@@ -338,32 +337,57 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
 
   state.currentScene = currentSceneName;
 
+  auto positionToString = [](scripting::Position position) -> std::string {
+    switch (position) {
+    case scripting::Position::Left:
+      return "left";
+    case scripting::Position::Center:
+      return "center";
+    case scripting::Position::Right:
+      return "right";
+    case scripting::Position::Custom:
+      return "custom";
+    }
+    return "center";
+  };
+
   // Extract scene state by simulating execution up to cursor line
   // This is a simplified version - Phase 1 implementation
   for (const auto &stmt : currentSceneDef->body) {
     // Only process statements before cursor line
-    if (stmt->location.line > static_cast<u32>(m_cursorLine)) {
+    if (stmt->location.line > cursorLine) {
       break;
     }
 
     // Handle different statement types
-    if (auto *showStmt = dynamic_cast<const scripting::ShowStatement *>(stmt.get())) {
-      if (showStmt->objectType == "background" || showStmt->objectType == "bg") {
-        state.backgroundAsset = showStmt->objectId;
-      } else if (showStmt->objectType == "character") {
-        std::string position = showStmt->position.value_or("center");
-        state.characters.push_back({showStmt->objectId, position});
-      }
-    } else if (auto *sayStmt = dynamic_cast<const scripting::SayStatement *>(stmt.get())) {
-      state.dialogueSpeaker = sayStmt->speaker.value_or("Narrator");
-      state.dialogueText = sayStmt->text;
-      state.hasDialogue = true;
-    } else if (auto *choiceStmt = dynamic_cast<const scripting::ChoiceStatement *>(stmt.get())) {
-      state.hasChoices = true;
-      for (const auto &option : choiceStmt->options) {
-        state.choices.push_back(option.text);
-      }
-    }
+    std::visit(
+        [&](const auto &stmtData) {
+          using T = std::decay_t<decltype(stmtData)>;
+          if constexpr (std::is_same_v<T, scripting::ShowStmt>) {
+            if (stmtData.target == scripting::ShowStmt::Target::Background) {
+              if (stmtData.resource) {
+                state.backgroundAsset = *stmtData.resource;
+              }
+            } else if (stmtData.target == scripting::ShowStmt::Target::Character ||
+                       stmtData.target == scripting::ShowStmt::Target::Sprite) {
+              std::string position = "center";
+              if (stmtData.position) {
+                position = positionToString(*stmtData.position);
+              }
+              state.characters.push_back({stmtData.identifier, position});
+            }
+          } else if constexpr (std::is_same_v<T, scripting::SayStmt>) {
+            state.dialogueSpeaker = stmtData.speaker.value_or("Narrator");
+            state.dialogueText = stmtData.text;
+            state.hasDialogue = true;
+          } else if constexpr (std::is_same_v<T, scripting::ChoiceStmt>) {
+            state.hasChoices = true;
+            for (const auto &option : stmtData.options) {
+              state.choices.push_back(option.text);
+            }
+          }
+        },
+        stmt->data);
   }
 
   state.isValid = true;

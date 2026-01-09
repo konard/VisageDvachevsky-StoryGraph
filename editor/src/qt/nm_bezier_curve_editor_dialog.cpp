@@ -207,7 +207,7 @@ void NMBezierCurveEditorDialog::buildUi() {
   m_curveScene->setSceneRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
   // Draw grid
-  QRectF rect = usableRect();
+  [[maybe_unused]] QRectF rect = usableRect();
   QPen gridPen(QColor("#404040"), 1);
   QPen axisPen(QColor("#606060"), 1);
 
@@ -445,7 +445,7 @@ void NMBezierCurveEditorDialog::updateCurveVisualization() {
   if (!m_curvePathItem)
     return;
 
-  QRectF rect = usableRect();
+  [[maybe_unused]] QRectF rect = usableRect();
   QPointF startScenePos = normalizedToScene(0.0, 0.0);
   QPointF endScenePos = normalizedToScene(1.0, 1.0);
   QPointF cp1Scene =
