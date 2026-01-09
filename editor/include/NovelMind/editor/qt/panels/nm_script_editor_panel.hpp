@@ -978,7 +978,9 @@ private:
   } m_symbolIndex;
 
   // Mutex to protect m_symbolIndex from concurrent access (issue #245)
-  mutable QMutex m_symbolIndexMutex;
+  // Changed to QRecursiveMutex to allow recursive locking when pushCompletionsToEditors
+  // is called from refreshSymbolIndex (issue #271)
+  mutable QRecursiveMutex m_symbolIndexMutex;
 
   QTimer m_diagnosticsTimer;
   class NMIssuesPanel *m_issuesPanel = nullptr;
