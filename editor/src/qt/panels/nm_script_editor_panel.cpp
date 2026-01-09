@@ -151,13 +151,16 @@ void NMScriptEditorPanel::openScript(const QString &path) {
 }
 
 void NMScriptEditorPanel::refreshFileList() {
+  core::Logger::instance().info("applyProjectToPanels: refreshFileList starting");
   m_fileTree->clear();
 
   const QString rootPath = scriptsRootPath();
+  core::Logger::instance().info("applyProjectToPanels: Scripts root path: " + rootPath.toStdString());
   if (rootPath.isEmpty()) {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
     }
+    core::Logger::instance().info("applyProjectToPanels: refreshFileList completed (empty path)");
     return;
   }
 
@@ -168,11 +171,17 @@ void NMScriptEditorPanel::refreshFileList() {
   namespace fs = std::filesystem;
   fs::path base(rootPath.toStdString());
   if (!fs::exists(base)) {
+    core::Logger::instance().warning("applyProjectToPanels: Scripts path does not exist: " + base.string());
+    core::Logger::instance().info("applyProjectToPanels: refreshFileList completed (path not exists)");
     return;
   }
 
+  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for scripts");
+  int fileCount = 0;
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+    // Use skip_permission_denied to avoid hanging on problematic directories
+    auto options = fs::directory_options::skip_permission_denied;
+    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file()) {
         continue;
       }
@@ -180,6 +189,7 @@ void NMScriptEditorPanel::refreshFileList() {
         continue;
       }
 
+      fileCount++;
       const fs::path rel = fs::relative(entry.path(), base);
       QTreeWidgetItem *parentItem = rootItem;
 
@@ -206,15 +216,20 @@ void NMScriptEditorPanel::refreshFileList() {
       fileItem->setData(0, Qt::UserRole,
                         QString::fromStdString(entry.path().string()));
     }
+    core::Logger::instance().info("applyProjectToPanels: Directory iteration completed, found " + std::to_string(fileCount) + " script files");
   } catch (const std::exception &e) {
     core::Logger::instance().warning(
         std::string("Failed to scan scripts folder: ") + e.what());
   }
 
+  core::Logger::instance().info("applyProjectToPanels: Expanding file tree");
   m_fileTree->expandAll();
 
+  core::Logger::instance().info("applyProjectToPanels: Calling rebuildWatchList");
   rebuildWatchList();
+  core::Logger::instance().info("applyProjectToPanels: Calling refreshSymbolIndex");
   refreshSymbolIndex();
+  core::Logger::instance().info("applyProjectToPanels: refreshFileList completed");
 }
 
 void NMScriptEditorPanel::onFileActivated(QTreeWidgetItem *item, int column) {
@@ -752,7 +767,9 @@ QString NMScriptEditorPanel::scriptsRootPath() const {
 }
 
 void NMScriptEditorPanel::rebuildWatchList() {
+  core::Logger::instance().info("applyProjectToPanels: rebuildWatchList starting");
   if (!m_scriptWatcher) {
+    core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed (no watcher)");
     return;
   }
 
@@ -767,6 +784,7 @@ void NMScriptEditorPanel::rebuildWatchList() {
   }
 
   if (root.isEmpty() || !QFileInfo::exists(root)) {
+    core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed (root invalid)");
     return;
   }
 
@@ -776,8 +794,11 @@ void NMScriptEditorPanel::rebuildWatchList() {
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
+  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for watch list");
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+    // Use skip_permission_denied to avoid hanging on problematic directories
+    auto options = fs::directory_options::skip_permission_denied;
+    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
       if (entry.is_directory()) {
         directories.append(QString::fromStdString(entry.path().string()));
       } else if (entry.is_regular_file() &&
@@ -785,6 +806,7 @@ void NMScriptEditorPanel::rebuildWatchList() {
         files.append(QString::fromStdString(entry.path().string()));
       }
     }
+    core::Logger::instance().info("applyProjectToPanels: Directory iteration for watch list completed");
   } catch (const std::exception &e) {
     core::Logger::instance().warning(
         std::string("Failed to rebuild script watcher: ") + e.what());
@@ -796,9 +818,11 @@ void NMScriptEditorPanel::rebuildWatchList() {
   if (!files.isEmpty()) {
     m_scriptWatcher->addPaths(files);
   }
+  core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed");
 }
 
 void NMScriptEditorPanel::refreshSymbolIndex() {
+  core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex starting");
   QMutexLocker locker(&m_symbolIndexMutex);
   m_symbolIndex = {};
   const QString root = scriptsRootPath();
@@ -808,6 +832,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
     }
+    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (empty root)");
     return;
   }
 
@@ -816,6 +841,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   if (!fs::exists(base)) {
     pushCompletionsToEditors();
     refreshSymbolList();
+    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (root not exists)");
     return;
   }
 
@@ -861,11 +887,16 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
 
   QList<NMScriptIssue> issues;
 
+  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for symbol index");
+  int filesProcessed = 0;
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+    // Use skip_permission_denied to avoid hanging on problematic directories
+    auto options = fs::directory_options::skip_permission_denied;
+    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
         continue;
       }
+      filesProcessed++;
 
       const QString path = QString::fromStdString(entry.path().string());
       QFile file(path);
@@ -930,11 +961,13 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         insertList(m_symbolIndex.music, seenMusic, value);
       });
     }
+    core::Logger::instance().info("applyProjectToPanels: Directory iteration for symbol index completed, processed " + std::to_string(filesProcessed) + " files");
   } catch (const std::exception &e) {
     core::Logger::instance().warning(
         std::string("Failed to build script symbols: ") + e.what());
   }
 
+  core::Logger::instance().info("applyProjectToPanels: Adding project context assets");
   // Add all available assets from project file system
   if (m_projectContext) {
     // Add available backgrounds
@@ -965,11 +998,14 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     }
   }
 
+  core::Logger::instance().info("applyProjectToPanels: Pushing completions to editors");
   pushCompletionsToEditors();
+  core::Logger::instance().info("applyProjectToPanels: Refreshing symbol list");
   refreshSymbolList();
   if (m_issuesPanel) {
     m_issuesPanel->setIssues(issues);
   }
+  core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed");
 }
 
 QList<NMScriptIssue>
