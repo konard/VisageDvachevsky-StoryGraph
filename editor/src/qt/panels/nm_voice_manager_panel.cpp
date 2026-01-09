@@ -4,6 +4,7 @@
 #include "NovelMind/editor/interfaces/ServiceLocator.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -115,13 +116,17 @@ void NMVoiceManagerPanel::setupToolBar() {
   m_toolbar = new QToolBar(this);
   m_toolbar->setIconSize(QSize(16, 16));
 
+  auto &iconMgr = NMIconManager::instance();
+
   auto *scanBtn = new QPushButton(tr("Scan"), m_toolbar);
+  scanBtn->setIcon(iconMgr.getIcon("search", 16));
   scanBtn->setToolTip(tr("Scan project for dialogue lines and voice files"));
   connect(scanBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onScanClicked);
   m_toolbar->addWidget(scanBtn);
 
   auto *autoMatchBtn = new QPushButton(tr("Auto-Match"), m_toolbar);
+  autoMatchBtn->setIcon(iconMgr.getIcon("refresh", 16));
   autoMatchBtn->setToolTip(
       tr("Automatically match voice files to dialogue lines"));
   connect(autoMatchBtn, &QPushButton::clicked, this,
@@ -131,18 +136,21 @@ void NMVoiceManagerPanel::setupToolBar() {
   m_toolbar->addSeparator();
 
   auto *importBtn = new QPushButton(tr("Import"), m_toolbar);
+  importBtn->setIcon(iconMgr.getIcon("import", 16));
   importBtn->setToolTip(tr("Import voice mapping from CSV"));
   connect(importBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onImportClicked);
   m_toolbar->addWidget(importBtn);
 
   auto *exportBtn = new QPushButton(tr("Export"), m_toolbar);
+  exportBtn->setIcon(iconMgr.getIcon("export", 16));
   exportBtn->setToolTip(tr("Export voice manifest"));
   connect(exportBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onExportClicked);
   m_toolbar->addWidget(exportBtn);
 
   auto *exportTemplateBtn = new QPushButton(tr("Export Template"), m_toolbar);
+  exportTemplateBtn->setIcon(iconMgr.getIcon("export", 16));
   exportTemplateBtn->setToolTip(
       tr("Export VO template for recording workflow"));
   connect(exportTemplateBtn, &QPushButton::clicked, this,
@@ -152,6 +160,7 @@ void NMVoiceManagerPanel::setupToolBar() {
   m_toolbar->addSeparator();
 
   auto *validateBtn = new QPushButton(tr("Validate"), m_toolbar);
+  validateBtn->setIcon(iconMgr.getIcon("status-info", 16));
   validateBtn->setToolTip(tr("Validate manifest for errors"));
   connect(validateBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onValidateManifestClicked);
@@ -160,6 +169,7 @@ void NMVoiceManagerPanel::setupToolBar() {
   m_toolbar->addSeparator();
 
   auto *openFolderBtn = new QPushButton(tr("Open Folder"), m_toolbar);
+  openFolderBtn->setIcon(iconMgr.getIcon("folder-open", 16));
   openFolderBtn->setToolTip(tr("Open the voice files folder"));
   connect(openFolderBtn, &QPushButton::clicked, this,
           &NMVoiceManagerPanel::onOpenVoiceFolder);
