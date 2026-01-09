@@ -214,29 +214,37 @@ int main(int argc, char *argv[]) {
   };
 
   auto applyProjectToPanels = [&mainWindow]() {
+    core::Logger::instance().info("applyProjectToPanels: Starting");
     auto &projectManager = NovelMind::editor::ProjectManager::instance();
     if (!projectManager.hasOpenProject()) {
+      core::Logger::instance().info("applyProjectToPanels: No open project");
       return;
     }
 
     const QString projectName =
         QString::fromStdString(projectManager.getProjectName());
+    core::Logger::instance().info("applyProjectToPanels: Updating window title");
     mainWindow.updateWindowTitle(projectName);
 
     const QString assetsRoot = QString::fromStdString(
         projectManager.getFolderPath(NovelMind::editor::ProjectFolder::Assets));
+    core::Logger::instance().info("applyProjectToPanels: Setting up asset panel");
     if (auto *assetPanel = mainWindow.assetBrowserPanel()) {
       assetPanel->setRootPath(assetsRoot);
     }
+    core::Logger::instance().info("applyProjectToPanels: Refreshing script panel");
     if (auto *scriptPanel = mainWindow.scriptEditorPanel()) {
       scriptPanel->refreshFileList();
     }
+    core::Logger::instance().info("applyProjectToPanels: Refreshing hierarchy panel");
     if (auto *hierarchyPanel = mainWindow.hierarchyPanel()) {
       hierarchyPanel->refresh();
     }
+    core::Logger::instance().info("applyProjectToPanels: Loading scene document");
     if (auto *sceneView = mainWindow.sceneViewPanel()) {
       const std::string startScene = projectManager.getStartScene();
       if (!startScene.empty()) {
+        core::Logger::instance().info("applyProjectToPanels: Loading start scene: " + startScene);
         sceneView->loadSceneDocument(QString::fromStdString(startScene));
       } else {
         const QString scenesRoot =
@@ -247,19 +255,38 @@ int main(int argc, char *argv[]) {
             scenesDir.entryList(QStringList() << "*.nmscene", QDir::Files);
         if (!scenes.isEmpty()) {
           const QString sceneId = QFileInfo(scenes.first()).completeBaseName();
+          core::Logger::instance().info("applyProjectToPanels: Loading first scene: " + sceneId.toStdString());
           sceneView->loadSceneDocument(sceneId);
+        } else {
+          core::Logger::instance().info("applyProjectToPanels: No scenes found to load");
         }
       }
+    } else {
+      core::Logger::instance().info("applyProjectToPanels: SceneViewPanel not available");
     }
+    core::Logger::instance().info("applyProjectToPanels: Completed");
   };
 
   auto applyProjectAndRemember = [&applyProjectToPanels, &updateRecentProjects,
                                   &mainWindow]() {
+    core::Logger::instance().info("applyProjectAndRemember: Starting");
     auto &projectManager = NovelMind::editor::ProjectManager::instance();
-    applyProjectToPanels();
-    updateRecentProjects(
-        QString::fromStdString(projectManager.getProjectPath()),
-        QString::fromStdString(projectManager.getProjectName()));
+    try {
+      applyProjectToPanels();
+    } catch (const std::exception &e) {
+      core::Logger::instance().error(
+          std::string("applyProjectAndRemember: Exception in applyProjectToPanels: ") + e.what());
+    }
+    core::Logger::instance().info("applyProjectAndRemember: Updating recent projects");
+    try {
+      updateRecentProjects(
+          QString::fromStdString(projectManager.getProjectPath()),
+          QString::fromStdString(projectManager.getProjectName()));
+    } catch (const std::exception &e) {
+      core::Logger::instance().error(
+          std::string("applyProjectAndRemember: Exception in updateRecentProjects: ") + e.what());
+    }
+    core::Logger::instance().info("applyProjectAndRemember: Scheduling PlayMode load");
     QTimer::singleShot(0, &mainWindow, []() {
       try {
         if (!NMPlayModeController::instance().loadCurrentProject()) {
@@ -271,6 +298,7 @@ int main(int argc, char *argv[]) {
             std::string("PlayMode runtime exception: ") + e.what());
       }
     });
+    core::Logger::instance().info("applyProjectAndRemember: Completed");
   };
 
   const QStringList templateOptions = {"Blank Project", "Visual Novel",
