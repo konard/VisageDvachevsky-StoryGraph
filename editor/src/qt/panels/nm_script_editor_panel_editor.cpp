@@ -683,13 +683,16 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   connect(m_searchEdit, &QLineEdit::returnPressed, this,
           &NMFindReplaceWidget::findNext);
 
-  auto *findPrevBtn = new QPushButton(tr("<"), this);
+  auto& iconMgr = NMIconManager::instance();
+  auto *findPrevBtn = new QPushButton(this);
+  findPrevBtn->setIcon(iconMgr.getIcon("arrow-left", 16));
   findPrevBtn->setToolTip(tr("Find Previous (Shift+Enter)"));
   findPrevBtn->setFixedWidth(30);
   connect(findPrevBtn, &QPushButton::clicked, this,
           &NMFindReplaceWidget::findPrevious);
 
-  auto *findNextBtn = new QPushButton(tr(">"), this);
+  auto *findNextBtn = new QPushButton(this);
+  findNextBtn->setIcon(iconMgr.getIcon("arrow-right", 16));
   findNextBtn->setToolTip(tr("Find Next (Enter)"));
   findNextBtn->setFixedWidth(30);
   connect(findNextBtn, &QPushButton::clicked, this,
@@ -699,7 +702,8 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   m_matchCountLabel->setStyleSheet(
       QString("color: %1; padding: 0 8px;").arg(palette.textSecondary.name()));
 
-  m_closeBtn = new QPushButton(tr("X"), this);
+  m_closeBtn = new QPushButton(this);
+  m_closeBtn->setIcon(iconMgr.getIcon("file-close", 16));
   m_closeBtn->setFixedWidth(24);
   m_closeBtn->setToolTip(tr("Close (Escape)"));
   connect(m_closeBtn, &QPushButton::clicked, this,
@@ -742,10 +746,12 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   m_replaceEdit->setPlaceholderText(tr("Replace"));
 
   auto *replaceBtn = new QPushButton(tr("Replace"), m_replaceRow);
+  replaceBtn->setIcon(iconMgr.getIcon("edit-paste", 16));
   connect(replaceBtn, &QPushButton::clicked, this,
           &NMFindReplaceWidget::replaceNext);
 
   auto *replaceAllBtn = new QPushButton(tr("Replace All"), m_replaceRow);
+  replaceAllBtn->setIcon(iconMgr.getIcon("edit-paste", 16));
   connect(replaceAllBtn, &QPushButton::clicked, this,
           &NMFindReplaceWidget::replaceAll);
 
