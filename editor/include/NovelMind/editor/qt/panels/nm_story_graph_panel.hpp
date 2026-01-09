@@ -727,6 +727,11 @@ private:
   NMNodePalette *m_nodePalette = nullptr;
   QString m_currentExecutingNode;
 
+  // Issue #339: Deferred centering and follow mode
+  QString m_pendingCenterNode;        // Node ID to center when view becomes visible
+  bool m_followCurrentNode = true;    // Whether to auto-center on current node
+  QAction *m_followNodeAction = nullptr;
+
   QHash<QString, LayoutNode> m_layoutNodes;
   QHash<uint64_t, QString> m_nodeIdToString;
   QString m_layoutEntryScene;

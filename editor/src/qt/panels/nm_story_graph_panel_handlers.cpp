@@ -785,12 +785,20 @@ void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
         qDebug() << "[StoryGraph] Setting execution state on" << nodeId;
         currentNode->setCurrentlyExecuting(true);
 
-        // Center view on executing node with safety check
-        if (m_view && !m_view->isHidden()) {
-          qDebug() << "[StoryGraph] Centering view on" << nodeId;
-          m_view->centerOn(currentNode);
+        // Issue #339: Deferred centering with follow mode support
+        // Only center if follow mode is enabled
+        if (m_followCurrentNode) {
+          if (m_view && !m_view->isHidden()) {
+            qDebug() << "[StoryGraph] Centering view on" << nodeId;
+            m_view->centerOn(currentNode);
+            m_pendingCenterNode.clear(); // Clear any pending operation
+          } else {
+            // View is hidden, queue the centering operation
+            qDebug() << "[StoryGraph] View is hidden, queueing center operation for" << nodeId;
+            m_pendingCenterNode = nodeId;
+          }
         } else {
-          qWarning() << "[StoryGraph] View is null or hidden, cannot center!";
+          qDebug() << "[StoryGraph] Follow mode disabled, skipping center";
         }
       } else {
         qWarning() << "[StoryGraph] Current node" << nodeId
@@ -802,6 +810,7 @@ void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
     }
   } else {
     qDebug() << "[StoryGraph] Clearing current node (empty nodeId)";
+    m_pendingCenterNode.clear(); // Clear any pending operation
   }
 }
 

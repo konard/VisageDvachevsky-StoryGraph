@@ -73,6 +73,34 @@ void NMStoryGraphPanel::onInitialize() {
   connect(&playController, &NMPlayModeController::projectLoaded, this,
           &NMStoryGraphPanel::rebuildFromProjectScripts, Qt::QueuedConnection);
 
+  // Issue #339: Auto-show panel when debugging starts
+  connect(&playController, &NMPlayModeController::playModeChanged, this,
+          [this](NMPlayModeController::PlayMode mode) {
+            if (mode == NMPlayModeController::Playing ||
+                mode == NMPlayModeController::Paused) {
+              // Debugging started, show and raise the Story Graph panel
+              if (!isVisible()) {
+                qDebug() << "[StoryGraph] Auto-showing panel for debugging";
+                show();
+                raise();
+              }
+            }
+          }, Qt::QueuedConnection);
+
+  // Issue #339: Handle visibility changes to process queued centering operations
+  connect(this, &QDockWidget::visibilityChanged, this,
+          [this](bool visible) {
+            if (visible && !m_pendingCenterNode.isEmpty() && m_followCurrentNode) {
+              qDebug() << "[StoryGraph] Panel became visible, processing pending center operation";
+              auto *node = findNodeByIdString(m_pendingCenterNode);
+              if (node && m_view) {
+                qDebug() << "[StoryGraph] Centering on" << m_pendingCenterNode;
+                m_view->centerOn(node);
+              }
+              m_pendingCenterNode.clear();
+            }
+          });
+
   // Subscribe to scene auto-sync events (Issue #223)
   auto &bus = EventBus::instance();
 
@@ -352,6 +380,27 @@ void NMStoryGraphPanel::setupToolBar() {
   actionFit->setToolTip(tr("Fit Graph to View"));
   connect(actionFit, &QAction::triggered, this,
           &NMStoryGraphPanel::onFitToGraph);
+
+  // Issue #339: Follow Current Node toggle
+  m_followNodeAction = m_toolBar->addAction(tr("Follow"));
+  m_followNodeAction->setToolTip(
+      tr("Auto-center view on current executing node during debugging"));
+  m_followNodeAction->setCheckable(true);
+  m_followNodeAction->setChecked(m_followCurrentNode);
+  connect(m_followNodeAction, &QAction::toggled, this, [this](bool enabled) {
+    m_followCurrentNode = enabled;
+    qDebug() << "[StoryGraph] Follow current node:" << enabled;
+
+    // If enabling and we have a pending center operation, execute it now
+    if (enabled && !m_pendingCenterNode.isEmpty() && m_view && !m_view->isHidden()) {
+      auto *node = findNodeByIdString(m_pendingCenterNode);
+      if (node) {
+        qDebug() << "[StoryGraph] Executing pending center on" << m_pendingCenterNode;
+        m_view->centerOn(node);
+      }
+      m_pendingCenterNode.clear();
+    }
+  });
 
   m_toolBar->addSeparator();
 
