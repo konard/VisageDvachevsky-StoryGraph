@@ -174,6 +174,39 @@ void WorkflowMediator::initialize() {
         onSceneDeleted(event);
       }));
 
+  // Issue #329: Inspector panel scene workflow connections
+  if (m_inspector) {
+    // Scene creation request from inspector
+    QObject::connect(m_inspector, &qt::NMInspectorPanel::createNewSceneRequested,
+                     [this]() {
+                       qDebug() << "[WorkflowMediator] Scene creation requested from inspector";
+                       // Publish event for main window/project manager to handle
+                       EventBus::instance().publish(events::CreateSceneRequestedEvent{});
+                     });
+
+    // Scene editing request from inspector
+    QObject::connect(m_inspector, &qt::NMInspectorPanel::editSceneRequested,
+                     [this](const QString &sceneId) {
+                       qDebug() << "[WorkflowMediator] Scene editing requested from inspector:" << sceneId;
+                       if (m_sceneView) {
+                         m_sceneView->loadSceneDocument(sceneId);
+                         m_sceneView->show();
+                         m_sceneView->raise();
+                       }
+                     });
+
+    // Scene location request from inspector (highlight in Story Graph)
+    QObject::connect(m_inspector, &qt::NMInspectorPanel::locateSceneInGraphRequested,
+                     [this](const QString &sceneId) {
+                       qDebug() << "[WorkflowMediator] Scene locate requested from inspector:" << sceneId;
+                       if (m_storyGraph) {
+                         // Navigate to the node that references this scene
+                         // The sceneId is actually the node ID in the Story Graph
+                         m_storyGraph->navigateToNode(sceneId);
+                       }
+                     });
+  }
+
   qDebug() << "[WorkflowMediator] Initialized with"
            << m_subscriptions.size() << "subscriptions";
 }

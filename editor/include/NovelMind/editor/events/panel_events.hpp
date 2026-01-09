@@ -499,6 +499,21 @@ struct LoadSceneDocumentRequestedEvent : EditorEvent {
 };
 
 /**
+ * @brief Emitted to request creating a new scene (Issue #329)
+ *
+ * This event is published when the Inspector panel or other UI triggers
+ * the new scene creation workflow. The main window or project manager
+ * should handle this by showing the new scene dialog.
+ */
+struct CreateSceneRequestedEvent : EditorEvent {
+  CreateSceneRequestedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override {
+    return "Create new scene requested";
+  }
+};
+
+/**
  * @brief Emitted to request enabling/disabling animation preview mode
  */
 struct SetAnimationPreviewModeEvent : EditorEvent {

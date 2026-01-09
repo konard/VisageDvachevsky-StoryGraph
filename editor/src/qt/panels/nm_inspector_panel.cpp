@@ -606,21 +606,21 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
                 // Emit signal that can be handled by the main editor
                 // to open Scene View with a new scene
                 qDebug() << "Create new scene requested";
-                // TODO: Connect to editor's scene creation workflow
+                emit createNewSceneRequested();
               });
 
       connect(scenePicker, &NMSceneIdPicker::editSceneRequested, this,
               [this](const QString &sceneId) {
                 // Emit signal to open Scene View with the selected scene
                 qDebug() << "Edit scene requested:" << sceneId;
-                // TODO: Connect to editor's scene editing workflow
+                emit editSceneRequested(sceneId);
               });
 
       connect(scenePicker, &NMSceneIdPicker::locateSceneRequested, this,
               [this](const QString &sceneId) {
                 // Highlight nodes using this scene in Story Graph
                 qDebug() << "Locate scene requested:" << sceneId;
-                // TODO: Connect to story graph's node highlighting
+                emit locateSceneInGraphRequested(sceneId);
               });
 
       trackPropertyWidget("sceneId", scenePicker);

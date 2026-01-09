@@ -210,6 +210,24 @@ signals:
   /// ERR-1 fix: Signal emitted when property setting fails
   void propertyError(const QString &propertyName, const QString &errorMessage);
 
+  // Issue #329: Scene workflow signals
+  /**
+   * @brief Emitted when scene creation is requested from inspector
+   */
+  void createNewSceneRequested();
+
+  /**
+   * @brief Emitted when scene editing is requested from inspector
+   * @param sceneId The scene ID to edit
+   */
+  void editSceneRequested(const QString &sceneId);
+
+  /**
+   * @brief Emitted when scene node highlighting is requested from inspector
+   * @param sceneId The scene ID to locate in Story Graph
+   */
+  void locateSceneInGraphRequested(const QString &sceneId);
+
 private slots:
   void onGroupPropertyChanged(const QString &propertyName,
                               const QString &newValue);
