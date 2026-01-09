@@ -266,6 +266,10 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
         warning(ErrorCode::UndefinedResource,
                 "Character sprite asset for '" + stmt.identifier +
                     "' not found in project",
+                m_currentLocation);
+      }
+    }
+
     // Check if character object exists in current scene (if callback provided)
     if (m_sceneObjectExistsCallback && !m_currentScene.empty()) {
       if (!m_sceneObjectExistsCallback(m_currentScene, stmt.identifier)) {
@@ -287,6 +291,10 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
       if (!bgId.empty() && !m_projectContext->backgroundExists(bgId)) {
         warning(ErrorCode::UndefinedResource,
                 "Background asset '" + bgId + "' not found in project",
+                m_currentLocation);
+      }
+    }
+
     // Validate background asset if resource is specified
     if (stmt.resource.has_value() && m_assetFileExistsCallback) {
       const std::string &assetPath = stmt.resource.value();
