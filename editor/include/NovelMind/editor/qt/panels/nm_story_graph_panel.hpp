@@ -646,6 +646,17 @@ signals:
   void editDialogueFlowRequested(const QString &sceneId);
   void openSceneScriptRequested(const QString &sceneId,
                                 const QString &scriptPath);
+  /**
+   * @brief Emitted when user requests to navigate to script definition (Issue #239)
+   *
+   * This signal enables bidirectional navigation from Story Graph to Script Editor.
+   * The handler should find the scene definition in the script and navigate to it.
+   *
+   * @param sceneId The scene ID to find
+   * @param scriptPath The script file path (may be empty if unknown)
+   */
+  void navigateToScriptDefinitionRequested(const QString &sceneId,
+                                           const QString &scriptPath);
   // Voice-over specific signals (for Dialogue nodes)
   void voiceClipAssignRequested(const QString &nodeIdString,
                                 const QString &currentPath);

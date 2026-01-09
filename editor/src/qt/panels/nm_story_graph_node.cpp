@@ -668,6 +668,18 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
     menu.addSeparator();
   }
 
+  // Issue #239: Open Script Definition action for bidirectional navigation
+  // This navigates to the exact line where the scene is defined in the script
+  QAction *openScriptDefinitionAction = nullptr;
+  if (!m_scriptPath.isEmpty() || !m_nodeIdString.isEmpty()) {
+    openScriptDefinitionAction = menu.addAction("Open Script Definition");
+    openScriptDefinitionAction->setIcon(iconMgr.getIcon("goto-definition", 16));
+    openScriptDefinitionAction->setToolTip(
+        "Navigate to scene definition in Script Editor (Ctrl+Shift+S)");
+    openScriptDefinitionAction->setShortcut(
+        QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_S));
+  }
+
   // Dialogue-specific voice-over actions
   QAction *assignVoiceAction = nullptr;
   QAction *previewVoiceAction = nullptr;
@@ -848,6 +860,42 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
       }
     }
     qDebug() << "[StoryGraph] Open script:" << m_scriptPath;
+  } else if (openScriptDefinitionAction &&
+             selectedAction == openScriptDefinitionAction) {
+    // Issue #239: Navigate to script definition (bidirectional navigation)
+    // Emit signal to open Script Editor at the scene definition line
+    if (scene() && !scene()->views().isEmpty()) {
+      if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+        // Find the parent panel to emit the signal
+        for (QObject *obj = graphScene; obj; obj = obj->parent()) {
+          if (auto *panel = qobject_cast<NMStoryGraphPanel *>(obj)) {
+            const QString sceneId =
+                m_sceneId.isEmpty() ? m_nodeIdString : m_sceneId;
+            emit panel->navigateToScriptDefinitionRequested(sceneId,
+                                                            m_scriptPath);
+            break;
+          }
+        }
+        // Fallback: try via views parent chain
+        if (!scene()->views().isEmpty()) {
+          for (QGraphicsView *view : graphScene->views()) {
+            for (QWidget *widget = view->parentWidget(); widget;
+                 widget = widget->parentWidget()) {
+              if (auto *panel = qobject_cast<NMStoryGraphPanel *>(widget)) {
+                const QString sceneId =
+                    m_sceneId.isEmpty() ? m_nodeIdString : m_sceneId;
+                emit panel->navigateToScriptDefinitionRequested(sceneId,
+                                                                m_scriptPath);
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    qDebug() << "[StoryGraph] Navigate to script definition for scene:"
+             << (m_sceneId.isEmpty() ? m_nodeIdString : m_sceneId)
+             << "script:" << m_scriptPath;
   } else if (isScene && duplicateAction && selectedAction == duplicateAction) {
     // Implement scene duplication
     if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {

@@ -1,4 +1,5 @@
 #include "NovelMind/editor/mediators/workflow_mediator.hpp"
+#include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_inspector_panel.hpp"
@@ -12,7 +13,11 @@
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
 
 #include <QDebug>
+#include <QFile>
 #include <QFileInfo>
+#include <QRegularExpression>
+#include <QTextStream>
+#include <filesystem>
 
 namespace NovelMind::editor::mediators {
 
@@ -80,6 +85,13 @@ void WorkflowMediator::initialize() {
       [this](const events::GoToScriptLocationEvent &event) {
         onGoToScriptLocation(event);
       }));
+
+  // Issue #239: Navigate to script definition (bidirectional navigation)
+  m_subscriptions.push_back(
+      bus.subscribe<events::NavigateToScriptDefinitionEvent>(
+          [this](const events::NavigateToScriptDefinitionEvent &event) {
+            onNavigateToScriptDefinition(event);
+          }));
 
   // Voice recording workflow
   m_subscriptions.push_back(
@@ -324,6 +336,124 @@ void WorkflowMediator::onGoToScriptLocation(
   m_scriptEditor->goToLocation(event.filePath, event.line);
   m_scriptEditor->show();
   m_scriptEditor->raise();
+}
+
+void WorkflowMediator::onNavigateToScriptDefinition(
+    const events::NavigateToScriptDefinitionEvent &event) {
+  // Issue #239: Bidirectional navigation from Story Graph to Script Editor
+  // Find the scene definition in script files and navigate to that line
+  if (!m_scriptEditor) {
+    return;
+  }
+
+  qDebug() << "[WorkflowMediator] Navigate to script definition for scene:"
+           << event.sceneId << "script:" << event.scriptPath;
+
+  // If line is already known, navigate directly
+  if (event.line > 0 && !event.scriptPath.isEmpty()) {
+    m_scriptEditor->goToLocation(event.scriptPath, event.line);
+    m_scriptEditor->show();
+    m_scriptEditor->raise();
+    return;
+  }
+
+  // Otherwise, find the scene definition in the script
+  QString scriptPath = event.scriptPath;
+  int lineNumber = -1;
+
+  // If script path is provided, search in that file
+  if (!scriptPath.isEmpty()) {
+    QString absolutePath = scriptPath;
+    if (!QFileInfo(scriptPath).isAbsolute()) {
+      absolutePath = QString::fromStdString(
+          ProjectManager::instance().toAbsolutePath(scriptPath.toStdString()));
+    }
+
+    QFile file(absolutePath);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+      QTextStream in(&file);
+      int currentLine = 1;
+      const QRegularExpression sceneRe(
+          QString("\\bscene\\s+%1\\b").arg(QRegularExpression::escape(event.sceneId)));
+
+      while (!in.atEnd()) {
+        QString line = in.readLine();
+        if (sceneRe.match(line).hasMatch()) {
+          lineNumber = currentLine;
+          break;
+        }
+        currentLine++;
+      }
+      file.close();
+    }
+  } else {
+    // Search all script files for the scene definition
+    const QString scriptsRoot = QString::fromStdString(
+        ProjectManager::instance().getFolderPath(ProjectFolder::Scripts));
+
+    if (!scriptsRoot.isEmpty()) {
+      namespace fs = std::filesystem;
+      fs::path base(scriptsRoot.toStdString());
+
+      if (fs::exists(base)) {
+        const QRegularExpression sceneRe(
+            QString("\\bscene\\s+%1\\b").arg(QRegularExpression::escape(event.sceneId)));
+
+        for (const auto &entry : fs::recursive_directory_iterator(base)) {
+          if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
+            continue;
+          }
+
+          QFile file(QString::fromStdString(entry.path().string()));
+          if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            continue;
+          }
+
+          QTextStream in(&file);
+          int currentLine = 1;
+
+          while (!in.atEnd()) {
+            QString line = in.readLine();
+            if (sceneRe.match(line).hasMatch()) {
+              scriptPath = QString::fromStdString(
+                  ProjectManager::instance().toRelativePath(entry.path().string()));
+              lineNumber = currentLine;
+              break;
+            }
+            currentLine++;
+          }
+          file.close();
+
+          if (lineNumber > 0) {
+            break; // Found the scene definition
+          }
+        }
+      }
+    }
+  }
+
+  if (lineNumber > 0 && !scriptPath.isEmpty()) {
+    m_scriptEditor->goToLocation(scriptPath, lineNumber);
+    m_scriptEditor->show();
+    m_scriptEditor->raise();
+
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message = QObject::tr("Navigated to scene '%1' at line %2")
+                              .arg(event.sceneId)
+                              .arg(lineNumber);
+    statusEvent.timeoutMs = 3000;
+    EventBus::instance().publish(statusEvent);
+  } else {
+    // Scene not found in any script
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message =
+        QObject::tr("Scene '%1' not found in script files").arg(event.sceneId);
+    statusEvent.timeoutMs = 5000;
+    EventBus::instance().publish(statusEvent);
+
+    qWarning() << "[WorkflowMediator] Scene definition not found:"
+               << event.sceneId;
+  }
 }
 
 void WorkflowMediator::onVoiceClipAssignRequested(

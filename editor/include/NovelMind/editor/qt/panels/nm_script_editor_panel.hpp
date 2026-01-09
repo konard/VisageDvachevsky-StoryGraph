@@ -565,6 +565,49 @@ public:
    */
   [[nodiscard]] int breakpointGutterWidth() const { return 16; }
 
+  // === Issue #239: Graph Integration Gutter ===
+
+  /**
+   * @brief Set graph-connected scenes for visual indicators
+   *
+   * This enables the gutter to show which lines define scenes that are
+   * connected to Story Graph nodes.
+   *
+   * @param sceneLines Map of line number (1-based) to scene ID
+   */
+  void setGraphConnectedScenes(const QHash<int, QString> &sceneLines);
+
+  /**
+   * @brief Get graph-connected scenes
+   */
+  [[nodiscard]] QHash<int, QString> graphConnectedScenes() const {
+    return m_graphConnectedScenes;
+  }
+
+  /**
+   * @brief Check if a line has a graph-connected scene
+   */
+  [[nodiscard]] bool hasGraphConnectedScene(int line) const {
+    return m_graphConnectedScenes.contains(line);
+  }
+
+  /**
+   * @brief Get scene ID at a line
+   */
+  [[nodiscard]] QString sceneIdAtLine(int line) const {
+    return m_graphConnectedScenes.value(line);
+  }
+
+  /**
+   * @brief Paint graph integration gutter
+   */
+  void graphGutterPaintEvent(QPaintEvent *event);
+
+  /**
+   * @brief Get graph integration gutter width
+   */
+  [[nodiscard]] int graphGutterWidth() const { return 16; }
+
 signals:
   void requestSave();
   void hoverDocChanged(const QString &token, const QString &html);
@@ -625,6 +668,12 @@ signals:
    * @param line The line number (1-based)
    */
   void breakpointToggled(int line);
+
+  /**
+   * @brief Emitted when user clicks on a graph-connected scene indicator (Issue #239)
+   * @param sceneId The scene ID to navigate to
+   */
+  void graphIndicatorClicked(const QString &sceneId);
 
 protected:
   void keyPressEvent(QKeyEvent *event) override;
@@ -694,6 +743,10 @@ private:
   QSet<int> m_breakpoints;      // Set of lines with breakpoints (1-based)
   int m_currentExecutionLine = 0; // Current execution line for debug highlight
   QWidget *m_breakpointGutter = nullptr;
+
+  // Issue #239: Graph integration gutter
+  QHash<int, QString> m_graphConnectedScenes; // line -> scene ID
+  QWidget *m_graphGutter = nullptr;
 };
 
 /**
