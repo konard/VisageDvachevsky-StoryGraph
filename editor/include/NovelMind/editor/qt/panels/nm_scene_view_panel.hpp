@@ -374,6 +374,13 @@ public:
   bool renameObject(const QString &id, const QString &name);
 
   /**
+   * @brief Duplicate an object by ID.
+   * @param id Object ID to duplicate
+   * @return true if successful, false otherwise
+   */
+  bool duplicateObject(const QString &id);
+
+  /**
    * @brief Select object by ID.
    */
   void selectObjectById(const QString &id);
