@@ -618,6 +618,29 @@ TEST_CASE("Validator - Undefined character provides suggestions", "[validator]")
     sayStmt.speaker = "Villian"; // typo!
     sayStmt.text = "I am evil";
     scene.body.push_back(makeStmt(sayStmt));
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have error for undefined character
+    REQUIRE(result.errors.hasErrors());
+
+    // Find the undefined character error
+    bool foundSuggestion = false;
+    for (const auto& err : result.errors.all()) {
+        if (err.code == ErrorCode::UndefinedCharacter) {
+            // Should suggest "Villain" as the correct spelling
+            for (const auto& suggestion : err.suggestions) {
+                if (suggestion.find("Villain") != std::string::npos) {
+                    foundSuggestion = true;
+                    break;
+                }
+            }
+        }
+    }
+    CHECK(foundSuggestion);
+}
+
 // Tests for resource validation (scene objects and assets)
 
 TEST_CASE("Validator - Missing scene file warning with callback", "[validator][resources]")
