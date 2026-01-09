@@ -120,6 +120,8 @@ public:
       return m_stringTable[index];
     }
     return "";
+  }
+
   [[nodiscard]] VMSecurityGuard &securityGuard() { return m_securityGuard; }
   [[nodiscard]] const VMSecurityGuard &securityGuard() const {
     return m_securityGuard;
