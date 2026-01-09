@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 
 #include <QApplication>
@@ -46,6 +47,7 @@ public:
     layout->addWidget(m_shortcutLabel);
 
     auto *clearBtn = new QPushButton(tr("Clear"), this);
+    clearBtn->setIcon(NMIconManager::instance().getIcon("delete", 16));
     connect(clearBtn, &QPushButton::clicked, this, [this]() {
       m_sequence = QKeySequence();
       accept();
@@ -202,23 +204,30 @@ void NMHotkeysDialog::buildUi(const QList<NMHotkeyEntry> &entries) {
   auto *actionLayout = new QHBoxLayout();
   actionLayout->setSpacing(8);
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_recordBtn = new QPushButton(tr("Record Shortcut"), this);
+  m_recordBtn->setIcon(iconMgr.getIcon("record", 16));
   m_recordBtn->setEnabled(false);
   actionLayout->addWidget(m_recordBtn);
 
   m_resetBtn = new QPushButton(tr("Reset to Default"), this);
+  m_resetBtn->setIcon(iconMgr.getIcon("property-reset", 16));
   m_resetBtn->setEnabled(false);
   actionLayout->addWidget(m_resetBtn);
 
   m_resetAllBtn = new QPushButton(tr("Reset All"), this);
+  m_resetAllBtn->setIcon(iconMgr.getIcon("refresh", 16));
   actionLayout->addWidget(m_resetAllBtn);
 
   actionLayout->addStretch();
 
   m_exportBtn = new QPushButton(tr("Export..."), this);
+  m_exportBtn->setIcon(iconMgr.getIcon("export", 16));
   actionLayout->addWidget(m_exportBtn);
 
   m_importBtn = new QPushButton(tr("Import..."), this);
+  m_importBtn->setIcon(iconMgr.getIcon("import", 16));
   actionLayout->addWidget(m_importBtn);
 
   layout->addLayout(actionLayout);
