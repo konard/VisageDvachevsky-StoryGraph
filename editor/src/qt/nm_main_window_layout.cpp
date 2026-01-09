@@ -1,4 +1,6 @@
 #include "NovelMind/editor/qt/nm_main_window.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_audio_mixer_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
@@ -71,7 +73,7 @@ QString NMMainWindow::currentWorkspacePresetName() const {
   return tr("Custom");
 }
 
-void NMMainWindow::saveWorkspacePreset(const QString &name) {
+void NMMainWindow::saveWorkspacePreset(const QString& name) {
   if (name.isEmpty()) {
     return;
   }
@@ -85,7 +87,7 @@ void NMMainWindow::saveWorkspacePreset(const QString &name) {
   setStatusMessage(tr("Workspace preset '%1' saved").arg(name), 2000);
 }
 
-bool NMMainWindow::loadWorkspacePreset(const QString &name) {
+bool NMMainWindow::loadWorkspacePreset(const QString& name) {
   if (name.isEmpty()) {
     return false;
   }
@@ -111,9 +113,8 @@ QStringList NMMainWindow::availableWorkspacePresets() const {
   QStringList presets;
 
   // Built-in presets
-  presets << tr("Default") << tr("Story / Script") << tr("Scene / Animation")
-          << tr("Audio / Voice") << tr("Story") << tr("Scene") << tr("Script")
-          << tr("Developer") << tr("Compact");
+  presets << tr("Default") << tr("Story / Script") << tr("Scene / Animation") << tr("Audio / Voice")
+          << tr("Story") << tr("Scene") << tr("Script") << tr("Developer") << tr("Compact");
 
   // Custom presets from settings
   QSettings settings("NovelMind", "Editor");
@@ -136,6 +137,8 @@ void NMMainWindow::focusNextDock(bool reverse) {
   docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
   docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
   docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptInspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptRuntimeInspectorPanel));
   docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
   docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
   docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
@@ -169,7 +172,7 @@ void NMMainWindow::focusNextDock(bool reverse) {
   const qsizetype size = visible.size();
   idx = reverse ? (idx - 1 + size) % size : (idx + 1) % size;
 
-  auto *target = visible.at(idx);
+  auto* target = visible.at(idx);
   if (!target) {
     return;
   }
@@ -181,9 +184,9 @@ void NMMainWindow::focusNextDock(bool reverse) {
   m_lastFocusedDock = target;
 }
 
-bool NMMainWindow::eventFilter(QObject *watched, QEvent *event) {
+bool NMMainWindow::eventFilter(QObject* watched, QEvent* event) {
   if (event->type() == QEvent::FocusIn) {
-    if (auto *dock = qobject_cast<QDockWidget *>(watched)) {
+    if (auto* dock = qobject_cast<QDockWidget*>(watched)) {
       if (m_lastFocusedDock && m_lastFocusedDock != dock) {
         m_lastFocusedDock->setProperty("focusedDock", false);
         m_lastFocusedDock->style()->unpolish(m_lastFocusedDock);
@@ -210,6 +213,8 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
   docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
   docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
   docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptInspectorPanel));
+  docks.append(static_cast<QDockWidget *>(m_scriptRuntimeInspectorPanel));
   docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
   docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
   docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
@@ -247,7 +252,7 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     // D2: Default workspace - balanced layout for general editing
     // Left: Hierarchy, Scene Palette
     // Center: Scene View (main), Story Graph (tab)
-    // Right: Inspector
+    // Right: Inspector Group (Inspector, Scene Palette)
     // Bottom: Console, Asset Browser, Timeline
 
     if (m_scenePalettePanel)
@@ -268,15 +273,8 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_timelinePanel->show();
 
     // Left area
-    if (m_scenePalettePanel) {
-      addDockWidget(Qt::LeftDockWidgetArea, m_scenePalettePanel);
-    }
     if (m_hierarchyPanel) {
       addDockWidget(Qt::LeftDockWidgetArea, m_hierarchyPanel);
-    }
-    if (m_scenePalettePanel && m_hierarchyPanel) {
-      tabifyDockWidget(m_scenePalettePanel, m_hierarchyPanel);
-      m_hierarchyPanel->raise();
     }
 
     // Center area
@@ -292,9 +290,16 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_sceneViewPanel->raise();
     }
 
-    // Right area
+    // Right area - Inspector Group
     if (m_inspectorPanel) {
       addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
+    }
+    if (m_scenePalettePanel) {
+      addDockWidget(Qt::RightDockWidgetArea, m_scenePalettePanel);
+    }
+    if (m_inspectorPanel && m_scenePalettePanel) {
+      tabifyDockWidget(m_inspectorPanel, m_scenePalettePanel);
+      m_inspectorPanel->raise();
     }
 
     // Bottom area
@@ -332,10 +337,10 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
 
   case LayoutPreset::StoryScript: {
     // D2: Story/Script focused workspace
-    // Left: Script Documentation
+    // Left: Script Debugging Group (Script Inspector, Runtime Inspector, Documentation)
     // Center: Story Graph (main), Script Editor (tab)
     // Right: Inspector, Voice Manager, Localization
-    // Bottom: Console, Issues, Diagnostics
+    // Bottom: Console, Issues, Diagnostics, Build Settings
 
     if (m_storyGraphPanel)
       m_storyGraphPanel->show();
@@ -343,6 +348,10 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_scriptEditorPanel->show();
     if (m_scriptDocPanel)
       m_scriptDocPanel->show();
+    if (m_scriptInspectorPanel)
+      m_scriptInspectorPanel->show();
+    if (m_scriptRuntimeInspectorPanel)
+      m_scriptRuntimeInspectorPanel->show();
     if (m_inspectorPanel)
       m_inspectorPanel->show();
     if (m_voiceManagerPanel)
@@ -355,10 +364,27 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_issuesPanel->show();
     if (m_diagnosticsPanel)
       m_diagnosticsPanel->show();
+    if (m_buildSettingsPanel)
+      m_buildSettingsPanel->show();
 
-    // Left area
+    // Left area - Script Debugging Group
+    if (m_scriptInspectorPanel) {
+      addDockWidget(Qt::LeftDockWidgetArea, m_scriptInspectorPanel);
+    }
+    if (m_scriptRuntimeInspectorPanel) {
+      addDockWidget(Qt::LeftDockWidgetArea, m_scriptRuntimeInspectorPanel);
+    }
     if (m_scriptDocPanel) {
       addDockWidget(Qt::LeftDockWidgetArea, m_scriptDocPanel);
+    }
+    if (m_scriptInspectorPanel && m_scriptRuntimeInspectorPanel) {
+      tabifyDockWidget(m_scriptInspectorPanel, m_scriptRuntimeInspectorPanel);
+    }
+    if (m_scriptInspectorPanel && m_scriptDocPanel) {
+      tabifyDockWidget(m_scriptInspectorPanel, m_scriptDocPanel);
+    }
+    if (m_scriptInspectorPanel) {
+      m_scriptInspectorPanel->raise();
     }
 
     // Center area
@@ -394,7 +420,7 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_inspectorPanel->raise();
     }
 
-    // Bottom area
+    // Bottom area - Output Group
     if (m_consolePanel) {
       addDockWidget(Qt::BottomDockWidgetArea, m_consolePanel);
     }
@@ -404,19 +430,25 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     if (m_diagnosticsPanel) {
       addDockWidget(Qt::BottomDockWidgetArea, m_diagnosticsPanel);
     }
+    if (m_buildSettingsPanel) {
+      addDockWidget(Qt::BottomDockWidgetArea, m_buildSettingsPanel);
+    }
     if (m_consolePanel && m_issuesPanel) {
       tabifyDockWidget(m_consolePanel, m_issuesPanel);
     }
     if (m_consolePanel && m_diagnosticsPanel) {
       tabifyDockWidget(m_consolePanel, m_diagnosticsPanel);
     }
+    if (m_consolePanel && m_buildSettingsPanel) {
+      tabifyDockWidget(m_consolePanel, m_buildSettingsPanel);
+    }
     if (m_consolePanel) {
       m_consolePanel->raise();
     }
 
     // Resize
-    if (m_scriptDocPanel) {
-      resizeDocks({m_scriptDocPanel}, {260}, Qt::Horizontal);
+    if (m_scriptInspectorPanel) {
+      resizeDocks({m_scriptInspectorPanel}, {260}, Qt::Horizontal);
     }
     if (m_inspectorPanel) {
       resizeDocks({m_inspectorPanel}, {300}, Qt::Horizontal);
@@ -429,10 +461,10 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
 
   case LayoutPreset::SceneAnimation: {
     // D2: Scene/Animation focused workspace
-    // Left: Hierarchy, Scene Palette
+    // Left: Hierarchy
     // Center: Scene View (main)
-    // Right: Inspector, Curve Editor
-    // Bottom: Timeline (large), Asset Browser
+    // Right: Inspector Group (Inspector, Scene Palette)
+    // Bottom: Animation Group (Timeline, Curve Editor), Asset Browser
 
     if (m_sceneViewPanel)
       m_sceneViewPanel->show();
@@ -453,13 +485,6 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
     if (m_hierarchyPanel) {
       addDockWidget(Qt::LeftDockWidgetArea, m_hierarchyPanel);
     }
-    if (m_scenePalettePanel) {
-      addDockWidget(Qt::LeftDockWidgetArea, m_scenePalettePanel);
-    }
-    if (m_hierarchyPanel && m_scenePalettePanel) {
-      tabifyDockWidget(m_hierarchyPanel, m_scenePalettePanel);
-      m_hierarchyPanel->raise();
-    }
 
     // Center area
     if (m_sceneViewPanel) {
@@ -467,28 +492,35 @@ void NMMainWindow::applyLayoutPreset(LayoutPreset preset) {
       m_sceneViewPanel->raise();
     }
 
-    // Right area
+    // Right area - Inspector Group
     if (m_inspectorPanel) {
       addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
     }
-    if (m_curveEditorPanel) {
-      addDockWidget(Qt::RightDockWidgetArea, m_curveEditorPanel);
+    if (m_scenePalettePanel) {
+      addDockWidget(Qt::RightDockWidgetArea, m_scenePalettePanel);
     }
-    if (m_inspectorPanel && m_curveEditorPanel) {
-      tabifyDockWidget(m_inspectorPanel, m_curveEditorPanel);
+    if (m_inspectorPanel && m_scenePalettePanel) {
+      tabifyDockWidget(m_inspectorPanel, m_scenePalettePanel);
       m_inspectorPanel->raise();
     }
 
-    // Bottom area - Timeline gets more space
+    // Bottom area - Animation Group (Timeline, Curve Editor), Asset Browser
     if (m_timelinePanel) {
       addDockWidget(Qt::BottomDockWidgetArea, m_timelinePanel);
-      m_timelinePanel->raise();
+    }
+    if (m_curveEditorPanel) {
+      addDockWidget(Qt::BottomDockWidgetArea, m_curveEditorPanel);
     }
     if (m_assetBrowserPanel) {
       addDockWidget(Qt::BottomDockWidgetArea, m_assetBrowserPanel);
     }
+    if (m_timelinePanel && m_curveEditorPanel) {
+      tabifyDockWidget(m_timelinePanel, m_curveEditorPanel);
+    }
     if (m_timelinePanel && m_assetBrowserPanel) {
       tabifyDockWidget(m_timelinePanel, m_assetBrowserPanel);
+    }
+    if (m_timelinePanel) {
       m_timelinePanel->raise();
     }
 
@@ -1035,30 +1067,30 @@ void NMMainWindow::toggleFocusMode(bool enabled) {
 }
 
 void NMMainWindow::applyFocusModeLayout() {
-  QList<QDockWidget *> docks;
-  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
-  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
-  docks.append(static_cast<QDockWidget *>(m_consolePanel));
-  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
-  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
-  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
-  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
-  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
-  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
-  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
-  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
-  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
-  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
-  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
+  QList<QDockWidget*> docks;
+  docks.append(static_cast<QDockWidget*>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget*>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget*>(m_consolePanel));
+  docks.append(static_cast<QDockWidget*>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget*>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget*>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget*>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget*>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget*>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget*>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget*>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget*>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget*>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget*>(m_diagnosticsPanel));
 
-  for (auto *dock : docks) {
+  for (auto* dock : docks) {
     if (!dock) {
       continue;
     }
@@ -1102,30 +1134,30 @@ void NMMainWindow::applyFocusModeLayout() {
 void NMMainWindow::applyDockLockState(bool locked) {
   m_layoutLocked = locked;
 
-  QList<QDockWidget *> docks;
-  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
-  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
-  docks.append(static_cast<QDockWidget *>(m_consolePanel));
-  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
-  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
-  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
-  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
-  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
-  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
-  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
-  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
-  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
-  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
-  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
+  QList<QDockWidget*> docks;
+  docks.append(static_cast<QDockWidget*>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget*>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget*>(m_consolePanel));
+  docks.append(static_cast<QDockWidget*>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget*>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget*>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget*>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget*>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget*>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget*>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget*>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget*>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget*>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget*>(m_diagnosticsPanel));
 
-  for (auto *dock : docks) {
+  for (auto* dock : docks) {
     if (!dock) {
       continue;
     }
@@ -1145,8 +1177,7 @@ void NMMainWindow::applyTabbedDockMode(bool enabled) {
   if (m_tabbedDockOnly) {
     setDockOptions(QMainWindow::AllowTabbedDocks | QMainWindow::AnimatedDocks);
   } else {
-    setDockOptions(QMainWindow::AllowTabbedDocks |
-                   QMainWindow::AllowNestedDocks |
+    setDockOptions(QMainWindow::AllowTabbedDocks | QMainWindow::AllowNestedDocks |
                    QMainWindow::GroupedDragging | QMainWindow::AnimatedDocks);
   }
 
@@ -1154,31 +1185,31 @@ void NMMainWindow::applyTabbedDockMode(bool enabled) {
     return;
   }
 
-  QList<QDockWidget *> docks;
-  docks.append(static_cast<QDockWidget *>(m_sceneViewPanel));
-  docks.append(static_cast<QDockWidget *>(m_storyGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_sceneDialogueGraphPanel));
-  docks.append(static_cast<QDockWidget *>(m_inspectorPanel));
-  docks.append(static_cast<QDockWidget *>(m_consolePanel));
-  docks.append(static_cast<QDockWidget *>(m_assetBrowserPanel));
-  docks.append(static_cast<QDockWidget *>(m_hierarchyPanel));
-  docks.append(static_cast<QDockWidget *>(m_scenePalettePanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_scriptDocPanel));
-  docks.append(static_cast<QDockWidget *>(m_playToolbarPanel));
-  docks.append(static_cast<QDockWidget *>(m_debugOverlayPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceManagerPanel));
-  docks.append(static_cast<QDockWidget *>(m_voiceStudioPanel));
-  docks.append(static_cast<QDockWidget *>(m_audioMixerPanel));
-  docks.append(static_cast<QDockWidget *>(m_localizationPanel));
-  docks.append(static_cast<QDockWidget *>(m_timelinePanel));
-  docks.append(static_cast<QDockWidget *>(m_curveEditorPanel));
-  docks.append(static_cast<QDockWidget *>(m_buildSettingsPanel));
-  docks.append(static_cast<QDockWidget *>(m_issuesPanel));
-  docks.append(static_cast<QDockWidget *>(m_diagnosticsPanel));
+  QList<QDockWidget*> docks;
+  docks.append(static_cast<QDockWidget*>(m_sceneViewPanel));
+  docks.append(static_cast<QDockWidget*>(m_storyGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_sceneDialogueGraphPanel));
+  docks.append(static_cast<QDockWidget*>(m_inspectorPanel));
+  docks.append(static_cast<QDockWidget*>(m_consolePanel));
+  docks.append(static_cast<QDockWidget*>(m_assetBrowserPanel));
+  docks.append(static_cast<QDockWidget*>(m_hierarchyPanel));
+  docks.append(static_cast<QDockWidget*>(m_scenePalettePanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_scriptDocPanel));
+  docks.append(static_cast<QDockWidget*>(m_playToolbarPanel));
+  docks.append(static_cast<QDockWidget*>(m_debugOverlayPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceManagerPanel));
+  docks.append(static_cast<QDockWidget*>(m_voiceStudioPanel));
+  docks.append(static_cast<QDockWidget*>(m_audioMixerPanel));
+  docks.append(static_cast<QDockWidget*>(m_localizationPanel));
+  docks.append(static_cast<QDockWidget*>(m_timelinePanel));
+  docks.append(static_cast<QDockWidget*>(m_curveEditorPanel));
+  docks.append(static_cast<QDockWidget*>(m_buildSettingsPanel));
+  docks.append(static_cast<QDockWidget*>(m_issuesPanel));
+  docks.append(static_cast<QDockWidget*>(m_diagnosticsPanel));
 
-  QHash<Qt::DockWidgetArea, QDockWidget *> anchors;
-  for (auto *dock : docks) {
+  QHash<Qt::DockWidgetArea, QDockWidget*> anchors;
+  for (auto* dock : docks) {
     if (!dock || !dock->isVisible()) {
       continue;
     }
@@ -1205,8 +1236,7 @@ void NMMainWindow::saveCustomLayout() {
 
 void NMMainWindow::loadCustomLayout() {
   QSettings settings("NovelMind", "Editor");
-  const QByteArray geometry =
-      settings.value("layout/custom/geometry").toByteArray();
+  const QByteArray geometry = settings.value("layout/custom/geometry").toByteArray();
   const QByteArray state = settings.value("layout/custom/state").toByteArray();
   if (geometry.isEmpty() || state.isEmpty()) {
     setStatusMessage(tr("No saved layout found"), 2000);
@@ -1302,6 +1332,153 @@ void NMMainWindow::resetToDefaultLayout() {
     m_actionFocusMode->setChecked(false);
   }
   createDefaultLayout();
+}
+
+// ============================================================================
+// D2: Workspace Management UI Implementation
+// ============================================================================
+
+void NMMainWindow::populateWorkspaceMenu() {
+  if (!m_workspaceMenu) {
+    return;
+  }
+
+  // Get list of all workspace actions before the separator
+  const QList<QAction*> allActions = m_workspaceMenu->actions();
+
+  // Find the separator that marks the start of custom workspace section
+  int customSectionIndex = -1;
+  int managementSectionIndex = -1;
+  for (int i = 0; i < allActions.size(); ++i) {
+    if (allActions[i]->isSeparator()) {
+      if (customSectionIndex == -1 && i > 0 && allActions[i - 1]->text().contains("Legacy")) {
+        customSectionIndex = i;
+      } else if (customSectionIndex != -1 && managementSectionIndex == -1) {
+        managementSectionIndex = i;
+        break;
+      }
+    }
+  }
+
+  if (customSectionIndex == -1 || managementSectionIndex == -1) {
+    return;
+  }
+
+  // Remove existing custom workspace actions (between the two separators)
+  for (int i = managementSectionIndex - 1; i > customSectionIndex; --i) {
+    QAction* action = allActions[i];
+    if (!action->isSeparator()) {
+      m_workspaceMenu->removeAction(action);
+      delete action;
+    }
+  }
+
+  // Get custom presets from settings
+  QSettings settings("NovelMind", "Editor");
+  settings.beginGroup("workspace/custom");
+  const QStringList customPresets = settings.childGroups();
+  settings.endGroup();
+
+  // Add custom workspace actions
+  if (!customPresets.isEmpty()) {
+    QAction* separatorAction = allActions[customSectionIndex];
+    auto& iconMgr = NMIconManager::instance();
+
+    for (const QString& presetName : customPresets) {
+      QAction* customAction =
+          new QAction(iconMgr.getIcon("panel-scene", 16), presetName, m_workspaceMenu);
+      customAction->setToolTip(tr("Load custom workspace: %1").arg(presetName));
+
+      connect(customAction, &QAction::triggered, this,
+              [this, presetName]() { onLoadCustomWorkspace(presetName); });
+
+      m_workspaceMenu->insertAction(separatorAction, customAction);
+      separatorAction = customAction; // Insert after this action next time
+    }
+  }
+}
+
+void NMMainWindow::onSaveWorkspaceAs() {
+  bool ok = false;
+  const QString name = NMInputDialog::getText(this, tr("Save Workspace As"),
+                                              tr("Enter a name for this workspace preset:"),
+                                              QLineEdit::Normal, QString(), &ok);
+
+  if (!ok || name.isEmpty()) {
+    return;
+  }
+
+  // Check if name conflicts with built-in presets
+  const QStringList builtInNames = {
+      tr("Default"),       tr("Story / Script"), tr("Scene / Animation"),
+      tr("Audio / Voice"), tr("Story"),          tr("Scene"),
+      tr("Script"),        tr("Developer"),      tr("Compact")};
+
+  if (builtInNames.contains(name)) {
+    NMMessageDialog::showWarning(this, tr("Invalid Name"),
+                                 tr("The name '%1' is reserved for a built-in workspace. "
+                                    "Please choose a different name.")
+                                     .arg(name));
+    return;
+  }
+
+  // Save the current workspace
+  saveWorkspacePreset(name);
+
+  // Refresh the menu
+  populateWorkspaceMenu();
+}
+
+void NMMainWindow::onLoadCustomWorkspace(const QString& name) {
+  if (!loadWorkspacePreset(name)) {
+    NMMessageDialog::showError(this, tr("Load Failed"),
+                               tr("Failed to load workspace preset '%1'.").arg(name));
+  }
+}
+
+void NMMainWindow::showManageWorkspacesDialog() {
+  // Get custom presets from settings
+  QSettings settings("NovelMind", "Editor");
+  settings.beginGroup("workspace/custom");
+  const QStringList customPresets = settings.childGroups();
+  settings.endGroup();
+
+  if (customPresets.isEmpty()) {
+    NMMessageDialog::showInfo(this, tr("No Custom Workspaces"),
+                              tr("You have not created any custom workspace presets yet.\n\n"
+                                 "Use 'Save Current Layout As...' to create a custom workspace."));
+    return;
+  }
+
+  // Create a simple list dialog for managing workspaces
+  bool ok = false;
+  const QString selected = NMInputDialog::getItem(this, tr("Manage Workspaces"),
+                                                  tr("Select a custom workspace to delete:"),
+                                                  customPresets, 0, false, &ok);
+
+  if (!ok || selected.isEmpty()) {
+    return;
+  }
+
+  // Confirm deletion
+  const auto result =
+      NMMessageDialog::showQuestion(this, tr("Delete Workspace"),
+                                    tr("Are you sure you want to delete the workspace '%1'?\n\n"
+                                       "This action cannot be undone.")
+                                        .arg(selected),
+                                    {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+
+  if (result == NMDialogButton::Yes) {
+    // Delete the workspace
+    settings.beginGroup("workspace/custom");
+    settings.remove(selected);
+    settings.endGroup();
+
+    setStatusMessage(tr("Workspace '%1' deleted").arg(selected), 2000);
+
+    // Refresh the menu
+    populateWorkspaceMenu();
+  }
 }
 
 } // namespace NovelMind::editor::qt

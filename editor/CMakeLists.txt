@@ -114,6 +114,7 @@ add_library(novelmind_editor STATIC
     src/qt/nm_main_window_layout.cpp
     src/qt/nm_main_window_runtime.cpp
     src/qt/nm_dock_panel.cpp
+    src/qt/nm_dock_title_bar.cpp
     src/qt/nm_welcome_dialog.cpp
     src/qt/nm_hotkeys_dialog.cpp
     src/qt/nm_settings_dialog.cpp
@@ -199,6 +200,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/nm_dialogs.hpp
     include/NovelMind/editor/qt/nm_main_window.hpp
     include/NovelMind/editor/qt/nm_dock_panel.hpp
+    include/NovelMind/editor/qt/nm_dock_title_bar.hpp
     include/NovelMind/editor/qt/nm_welcome_dialog.hpp
     include/NovelMind/editor/qt/dialogs/nm_script_welcome_dialog.hpp
     include/NovelMind/editor/qt/nm_hotkeys_dialog.hpp

@@ -73,7 +73,7 @@ public:
    * @brief Construct the main window
    * @param parent Parent widget (usually nullptr for main window)
    */
-  explicit NMMainWindow(QWidget *parent = nullptr);
+  explicit NMMainWindow(QWidget* parent = nullptr);
 
   /**
    * @brief Destructor
@@ -95,66 +95,30 @@ public:
   // Panel Access
   // =========================================================================
 
-  [[nodiscard]] NMSceneViewPanel *sceneViewPanel() const {
-    return m_sceneViewPanel;
-  }
-  [[nodiscard]] NMStoryGraphPanel *storyGraphPanel() const {
-    return m_storyGraphPanel;
-  }
-  [[nodiscard]] NMInspectorPanel *inspectorPanel() const {
-    return m_inspectorPanel;
-  }
-  [[nodiscard]] NMConsolePanel *consolePanel() const { return m_consolePanel; }
-  [[nodiscard]] NMAssetBrowserPanel *assetBrowserPanel() const {
-    return m_assetBrowserPanel;
-  }
-  [[nodiscard]] NMScenePalettePanel *scenePalettePanel() const {
-    return m_scenePalettePanel;
-  }
-  [[nodiscard]] NMIssuesPanel *issuesPanel() const { return m_issuesPanel; }
-  [[nodiscard]] NMDiagnosticsPanel *diagnosticsPanel() const {
-    return m_diagnosticsPanel;
-  }
-  [[nodiscard]] NMHierarchyPanel *hierarchyPanel() const {
-    return m_hierarchyPanel;
-  }
-  [[nodiscard]] NMScriptEditorPanel *scriptEditorPanel() const {
-    return m_scriptEditorPanel;
-  }
-  [[nodiscard]] NMScriptDocPanel *scriptDocPanel() const {
-    return m_scriptDocPanel;
-  }
-  [[nodiscard]] NMPlayToolbarPanel *playToolbarPanel() const {
-    return m_playToolbarPanel;
-  }
-  [[nodiscard]] NMDebugOverlayPanel *debugOverlayPanel() const {
-    return m_debugOverlayPanel;
-  }
-  [[nodiscard]] NMVoiceManagerPanel *voiceManagerPanel() const {
-    return m_voiceManagerPanel;
-  }
-  [[nodiscard]] NMLocalizationPanel *localizationPanel() const {
-    return m_localizationPanel;
-  }
-  [[nodiscard]] NMTimelinePanel *timelinePanel() const {
-    return m_timelinePanel;
-  }
-  [[nodiscard]] NMCurveEditorPanel *curveEditorPanel() const {
-    return m_curveEditorPanel;
-  }
-  [[nodiscard]] NMBuildSettingsPanel *buildSettingsPanel() const {
-    return m_buildSettingsPanel;
-  }
-  [[nodiscard]] NMVoiceStudioPanel *voiceStudioPanel() const {
-    return m_voiceStudioPanel;
-  }
-  [[nodiscard]] NMAudioMixerPanel *audioMixerPanel() const {
-    return m_audioMixerPanel;
-  }
-  [[nodiscard]] NMProjectSettingsPanel *projectSettingsPanel() const {
+  [[nodiscard]] NMSceneViewPanel* sceneViewPanel() const { return m_sceneViewPanel; }
+  [[nodiscard]] NMStoryGraphPanel* storyGraphPanel() const { return m_storyGraphPanel; }
+  [[nodiscard]] NMInspectorPanel* inspectorPanel() const { return m_inspectorPanel; }
+  [[nodiscard]] NMConsolePanel* consolePanel() const { return m_consolePanel; }
+  [[nodiscard]] NMAssetBrowserPanel* assetBrowserPanel() const { return m_assetBrowserPanel; }
+  [[nodiscard]] NMScenePalettePanel* scenePalettePanel() const { return m_scenePalettePanel; }
+  [[nodiscard]] NMIssuesPanel* issuesPanel() const { return m_issuesPanel; }
+  [[nodiscard]] NMDiagnosticsPanel* diagnosticsPanel() const { return m_diagnosticsPanel; }
+  [[nodiscard]] NMHierarchyPanel* hierarchyPanel() const { return m_hierarchyPanel; }
+  [[nodiscard]] NMScriptEditorPanel* scriptEditorPanel() const { return m_scriptEditorPanel; }
+  [[nodiscard]] NMScriptDocPanel* scriptDocPanel() const { return m_scriptDocPanel; }
+  [[nodiscard]] NMPlayToolbarPanel* playToolbarPanel() const { return m_playToolbarPanel; }
+  [[nodiscard]] NMDebugOverlayPanel* debugOverlayPanel() const { return m_debugOverlayPanel; }
+  [[nodiscard]] NMVoiceManagerPanel* voiceManagerPanel() const { return m_voiceManagerPanel; }
+  [[nodiscard]] NMLocalizationPanel* localizationPanel() const { return m_localizationPanel; }
+  [[nodiscard]] NMTimelinePanel* timelinePanel() const { return m_timelinePanel; }
+  [[nodiscard]] NMCurveEditorPanel* curveEditorPanel() const { return m_curveEditorPanel; }
+  [[nodiscard]] NMBuildSettingsPanel* buildSettingsPanel() const { return m_buildSettingsPanel; }
+  [[nodiscard]] NMVoiceStudioPanel* voiceStudioPanel() const { return m_voiceStudioPanel; }
+  [[nodiscard]] NMAudioMixerPanel* audioMixerPanel() const { return m_audioMixerPanel; }
+  [[nodiscard]] NMProjectSettingsPanel* projectSettingsPanel() const {
     return m_projectSettingsPanel;
   }
-  [[nodiscard]] NMScriptRuntimeInspectorPanel *scriptRuntimeInspectorPanel() const {
+  [[nodiscard]] NMScriptRuntimeInspectorPanel* scriptRuntimeInspectorPanel() const {
     return m_scriptRuntimeInspectorPanel;
   }
 
@@ -232,21 +196,21 @@ public slots:
   /**
    * @brief Toggle panel visibility
    */
-  void togglePanel(NMDockPanel *panel);
+  void togglePanel(NMDockPanel* panel);
 
   /**
    * @brief Set status bar message
    */
-  void setStatusMessage(const QString &message, int timeout = 0);
+  void setStatusMessage(const QString& message, int timeout = 0);
 
   /**
    * @brief Update the window title with project name
    */
-  void updateWindowTitle(const QString &projectName = QString());
+  void updateWindowTitle(const QString& projectName = QString());
 
 protected:
-  void closeEvent(QCloseEvent *event) override;
-  bool eventFilter(QObject *watched, QEvent *event) override;
+  void closeEvent(QCloseEvent* event) override;
+  bool eventFilter(QObject* watched, QEvent* event) override;
 
 public:
   /**
@@ -288,14 +252,14 @@ public:
    * @brief Save the current layout as a named preset
    * @param name The name for the preset
    */
-  void saveWorkspacePreset(const QString &name);
+  void saveWorkspacePreset(const QString& name);
 
   /**
    * @brief Load a named workspace preset
    * @param name The name of the preset to load
    * @return true if loaded successfully
    */
-  bool loadWorkspacePreset(const QString &name);
+  bool loadWorkspacePreset(const QString& name);
 
   /**
    * @brief Get list of available workspace presets
@@ -342,109 +306,116 @@ private:
   // Dialog helpers
   void showHotkeysDialog();
   void onValidateProject();
+  void showManageWorkspacesDialog();
+  void onSaveWorkspaceAs();
+  void onLoadCustomWorkspace(const QString& name);
+  void populateWorkspaceMenu();
 
   // =========================================================================
   // Menu Actions
   // =========================================================================
 
   // File menu
-  QAction *m_actionNewProject = nullptr;
-  QAction *m_actionOpenProject = nullptr;
-  QAction *m_actionSaveProject = nullptr;
-  QAction *m_actionSaveProjectAs = nullptr;
-  QAction *m_actionCloseProject = nullptr;
-  QAction *m_actionExit = nullptr;
+  QAction* m_actionNewProject = nullptr;
+  QAction* m_actionOpenProject = nullptr;
+  QAction* m_actionSaveProject = nullptr;
+  QAction* m_actionSaveProjectAs = nullptr;
+  QAction* m_actionCloseProject = nullptr;
+  QAction* m_actionExit = nullptr;
 
   // Project menu
-  QAction *m_actionValidateProject = nullptr;
+  QAction* m_actionValidateProject = nullptr;
 
   // Edit menu
-  QAction *m_actionUndo = nullptr;
-  QAction *m_actionRedo = nullptr;
-  QAction *m_actionCut = nullptr;
-  QAction *m_actionCopy = nullptr;
-  QAction *m_actionPaste = nullptr;
-  QAction *m_actionDelete = nullptr;
-  QAction *m_actionSelectAll = nullptr;
-  QAction *m_actionPreferences = nullptr;
+  QAction* m_actionUndo = nullptr;
+  QAction* m_actionRedo = nullptr;
+  QAction* m_actionCut = nullptr;
+  QAction* m_actionCopy = nullptr;
+  QAction* m_actionPaste = nullptr;
+  QAction* m_actionDelete = nullptr;
+  QAction* m_actionSelectAll = nullptr;
+  QAction* m_actionPreferences = nullptr;
 
   // View menu
-  QAction *m_actionToggleSceneView = nullptr;
-  QAction *m_actionToggleStoryGraph = nullptr;
-  QAction *m_actionToggleInspector = nullptr;
-  QAction *m_actionToggleConsole = nullptr;
-  QAction *m_actionToggleAssetBrowser = nullptr;
-  QAction *m_actionToggleScenePalette = nullptr;
-  QAction *m_actionToggleHierarchy = nullptr;
-  QAction *m_actionToggleScriptEditor = nullptr;
-  QAction *m_actionToggleScriptDocs = nullptr;
-  QAction *m_actionToggleIssues = nullptr;
-  QAction *m_actionToggleDiagnostics = nullptr;
-  QAction *m_actionToggleDebugOverlay = nullptr;
-  QAction *m_actionToggleScriptRuntimeInspector = nullptr;
-  QAction *m_actionToggleVoiceManager = nullptr;
-  QAction *m_actionToggleVoiceStudio = nullptr;
-  QAction *m_actionToggleAudioMixer = nullptr;
-  QAction *m_actionToggleLocalization = nullptr;
-  QAction *m_actionToggleTimeline = nullptr;
-  QAction *m_actionToggleCurveEditor = nullptr;
-  QAction *m_actionToggleBuildSettings = nullptr;
-  QAction *m_actionLayoutStory = nullptr;
-  QAction *m_actionLayoutScene = nullptr;
-  QAction *m_actionLayoutScript = nullptr;
-  QAction *m_actionLayoutDeveloper = nullptr;
-  QAction *m_actionLayoutCompact = nullptr;
+  QAction* m_actionToggleSceneView = nullptr;
+  QAction* m_actionToggleStoryGraph = nullptr;
+  QAction* m_actionToggleInspector = nullptr;
+  QAction* m_actionToggleConsole = nullptr;
+  QAction* m_actionToggleAssetBrowser = nullptr;
+  QAction* m_actionToggleScenePalette = nullptr;
+  QAction* m_actionToggleHierarchy = nullptr;
+  QAction* m_actionToggleScriptEditor = nullptr;
+  QAction* m_actionToggleScriptDocs = nullptr;
+  QAction* m_actionToggleIssues = nullptr;
+  QAction* m_actionToggleDiagnostics = nullptr;
+  QAction* m_actionToggleDebugOverlay = nullptr;
+  QAction* m_actionToggleScriptRuntimeInspector = nullptr;
+  QAction* m_actionToggleVoiceManager = nullptr;
+  QAction* m_actionToggleVoiceStudio = nullptr;
+  QAction* m_actionToggleAudioMixer = nullptr;
+  QAction* m_actionToggleLocalization = nullptr;
+  QAction* m_actionToggleTimeline = nullptr;
+  QAction* m_actionToggleCurveEditor = nullptr;
+  QAction* m_actionToggleBuildSettings = nullptr;
+  QAction* m_actionLayoutStory = nullptr;
+  QAction* m_actionLayoutScene = nullptr;
+  QAction* m_actionLayoutScript = nullptr;
+  QAction* m_actionLayoutDeveloper = nullptr;
+  QAction* m_actionLayoutCompact = nullptr;
 
   // D2: New workspace presets
-  QAction *m_actionLayoutDefault = nullptr;
-  QAction *m_actionLayoutStoryScript = nullptr;
-  QAction *m_actionLayoutSceneAnimation = nullptr;
-  QAction *m_actionLayoutAudioVoice = nullptr;
-  QAction *m_actionResetLayout = nullptr;
-  QAction *m_actionSaveLayout = nullptr;
-  QAction *m_actionLoadLayout = nullptr;
-  QAction *m_actionFocusMode = nullptr;
-  QAction *m_actionFocusIncludeHierarchy = nullptr;
-  QAction *m_actionLockLayout = nullptr;
-  QAction *m_actionTabbedDockOnly = nullptr;
-  QAction *m_actionFloatAllowed = nullptr;
-  QAction *m_actionUiScaleDown = nullptr;
-  QAction *m_actionUiScaleUp = nullptr;
-  QAction *m_actionUiScaleReset = nullptr;
-  QAction *m_actionUiScaleCompact = nullptr;
-  QAction *m_actionUiScaleDefault = nullptr;
-  QAction *m_actionUiScaleComfort = nullptr;
+  QAction* m_actionLayoutDefault = nullptr;
+  QAction* m_actionLayoutStoryScript = nullptr;
+  QAction* m_actionLayoutSceneAnimation = nullptr;
+  QAction* m_actionLayoutAudioVoice = nullptr;
+  QAction* m_actionResetLayout = nullptr;
+  QAction* m_actionSaveLayout = nullptr;
+  QAction* m_actionLoadLayout = nullptr;
+  QAction* m_actionSaveWorkspaceAs = nullptr;
+  QAction* m_actionManageWorkspaces = nullptr;
+  QMenu* m_workspaceMenu = nullptr;
+  QAction* m_actionFocusMode = nullptr;
+  QAction* m_actionFocusIncludeHierarchy = nullptr;
+  QAction* m_actionLockLayout = nullptr;
+  QAction* m_actionTabbedDockOnly = nullptr;
+  QAction* m_actionFloatAllowed = nullptr;
+  QAction* m_actionUiScaleDown = nullptr;
+  QAction* m_actionUiScaleUp = nullptr;
+  QAction* m_actionUiScaleReset = nullptr;
+  QAction* m_actionUiScaleCompact = nullptr;
+  QAction* m_actionUiScaleDefault = nullptr;
+  QAction* m_actionUiScaleComfort = nullptr;
 
   // Play menu
-  QAction *m_actionPlay = nullptr;
-  QAction *m_actionPause = nullptr;
-  QAction *m_actionStop = nullptr;
-  QAction *m_actionStepFrame = nullptr;
-  QAction *m_actionSaveState = nullptr;
-  QAction *m_actionLoadState = nullptr;
-  QAction *m_actionAutoSaveState = nullptr;
-  QAction *m_actionAutoLoadState = nullptr;
+  QAction* m_actionPlay = nullptr;
+  QAction* m_actionPause = nullptr;
+  QAction* m_actionStop = nullptr;
+  QAction* m_actionStepFrame = nullptr;
+  QAction* m_actionSaveState = nullptr;
+  QAction* m_actionLoadState = nullptr;
+  QAction* m_actionAutoSaveState = nullptr;
+  QAction* m_actionAutoLoadState = nullptr;
 
   // Help menu
-  QAction *m_actionAbout = nullptr;
-  QAction *m_actionDocumentation = nullptr;
-  QAction *m_actionHotkeys = nullptr;
+  QAction* m_actionAbout = nullptr;
+  QAction* m_actionDocumentation = nullptr;
+  QAction* m_actionHotkeys = nullptr;
 
   // Status bar segments
-  QLabel *m_statusLabel = nullptr;
-  QLabel *m_statusPlay = nullptr;
-  QLabel *m_statusNode = nullptr;
-  QLabel *m_statusSelection = nullptr;
-  QLabel *m_statusAsset = nullptr;
-  QLabel *m_statusUnsaved = nullptr;
-  QLabel *m_statusFps = nullptr;
-  QLabel *m_statusCache = nullptr;
+  QLabel* m_statusLabel = nullptr;
+  QLabel* m_statusPlay = nullptr;
+  QLabel* m_statusNode = nullptr;
+  QLabel* m_statusSelection = nullptr;
+  QLabel* m_statusAsset = nullptr;
+  QLabel* m_statusUnsaved = nullptr;
+  QLabel* m_statusFps = nullptr;
+  QLabel* m_statusCache = nullptr;
 
   // =========================================================================
   // UI Components
   // =========================================================================
 
-  QToolBar *m_mainToolBar = nullptr;
+  QToolBar* m_mainToolBar = nullptr;
   bool m_focusModeEnabled = false;
   bool m_focusIncludeHierarchy = true;
   QByteArray m_focusState;
@@ -466,43 +437,43 @@ private:
   int m_fpsFrameCount = 0;
   qint64 m_fpsLastSample = 0;
   double m_lastFps = 0.0;
-  QDockWidget *m_lastFocusedDock = nullptr;
+  QDockWidget* m_lastFocusedDock = nullptr;
 
   // =========================================================================
   // Panels
   // =========================================================================
 
-  NMSceneViewPanel *m_sceneViewPanel = nullptr;
-  NMStoryGraphPanel *m_storyGraphPanel = nullptr;
-  NMSceneDialogueGraphPanel *m_sceneDialogueGraphPanel = nullptr;
-  NMInspectorPanel *m_inspectorPanel = nullptr;
-  NMConsolePanel *m_consolePanel = nullptr;
-  NMAssetBrowserPanel *m_assetBrowserPanel = nullptr;
-  NMScenePalettePanel *m_scenePalettePanel = nullptr;
-  NMHierarchyPanel *m_hierarchyPanel = nullptr;
-  NMScriptEditorPanel *m_scriptEditorPanel = nullptr;
-  NMScriptDocPanel *m_scriptDocPanel = nullptr;
-  NMPlayToolbarPanel *m_playToolbarPanel = nullptr;
-  NMDebugOverlayPanel *m_debugOverlayPanel = nullptr;
-  NMScriptInspectorPanel *m_scriptInspectorPanel = nullptr;
-  NMIssuesPanel *m_issuesPanel = nullptr;
-  NMDiagnosticsPanel *m_diagnosticsPanel = nullptr;
-  NMVoiceManagerPanel *m_voiceManagerPanel = nullptr;
-  NMLocalizationPanel *m_localizationPanel = nullptr;
-  NMTimelinePanel *m_timelinePanel = nullptr;
-  NMCurveEditorPanel *m_curveEditorPanel = nullptr;
-  NMBuildSettingsPanel *m_buildSettingsPanel = nullptr;
-  NMVoiceStudioPanel *m_voiceStudioPanel = nullptr;
-  NMAudioMixerPanel *m_audioMixerPanel = nullptr;
-  NMAnimationAdapter *m_animationAdapter = nullptr;
-  NMProjectSettingsPanel *m_projectSettingsPanel = nullptr;
-  NMScriptRuntimeInspectorPanel *m_scriptRuntimeInspectorPanel = nullptr;
+  NMSceneViewPanel* m_sceneViewPanel = nullptr;
+  NMStoryGraphPanel* m_storyGraphPanel = nullptr;
+  NMSceneDialogueGraphPanel* m_sceneDialogueGraphPanel = nullptr;
+  NMInspectorPanel* m_inspectorPanel = nullptr;
+  NMConsolePanel* m_consolePanel = nullptr;
+  NMAssetBrowserPanel* m_assetBrowserPanel = nullptr;
+  NMScenePalettePanel* m_scenePalettePanel = nullptr;
+  NMHierarchyPanel* m_hierarchyPanel = nullptr;
+  NMScriptEditorPanel* m_scriptEditorPanel = nullptr;
+  NMScriptDocPanel* m_scriptDocPanel = nullptr;
+  NMPlayToolbarPanel* m_playToolbarPanel = nullptr;
+  NMDebugOverlayPanel* m_debugOverlayPanel = nullptr;
+  NMScriptInspectorPanel* m_scriptInspectorPanel = nullptr;
+  NMIssuesPanel* m_issuesPanel = nullptr;
+  NMDiagnosticsPanel* m_diagnosticsPanel = nullptr;
+  NMVoiceManagerPanel* m_voiceManagerPanel = nullptr;
+  NMLocalizationPanel* m_localizationPanel = nullptr;
+  NMTimelinePanel* m_timelinePanel = nullptr;
+  NMCurveEditorPanel* m_curveEditorPanel = nullptr;
+  NMBuildSettingsPanel* m_buildSettingsPanel = nullptr;
+  NMVoiceStudioPanel* m_voiceStudioPanel = nullptr;
+  NMAudioMixerPanel* m_audioMixerPanel = nullptr;
+  NMAnimationAdapter* m_animationAdapter = nullptr;
+  NMProjectSettingsPanel* m_projectSettingsPanel = nullptr;
+  NMScriptRuntimeInspectorPanel* m_scriptRuntimeInspectorPanel = nullptr;
 
   // =========================================================================
   // State
   // =========================================================================
 
-  QTimer *m_updateTimer = nullptr;
+  QTimer* m_updateTimer = nullptr;
   bool m_initialized = false;
   static constexpr int UPDATE_INTERVAL_MS = 16; // ~60 FPS
 

@@ -7,13 +7,18 @@
         <file>icons/float.svg</file>
         <file>icons/lucide/activity.svg</file>
         <file>icons/lucide/arrow-down.svg</file>
+        <file>icons/lucide/arrow-down-to-line.svg</file>
+        <file>icons/lucide/arrow-left-right.svg</file>
         <file>icons/lucide/arrow-left.svg</file>
         <file>icons/lucide/arrow-right.svg</file>
+        <file>icons/lucide/arrow-right-to-line.svg</file>
         <file>icons/lucide/arrow-up-right.svg</file>
         <file>icons/lucide/arrow-up.svg</file>
+        <file>icons/lucide/arrow-up-to-line.svg</file>
         <file>icons/lucide/audio-waveform.svg</file>
         <file>icons/lucide/book-open.svg</file>
         <file>icons/lucide/box.svg</file>
+        <file>icons/lucide/check.svg</file>
         <file>icons/lucide/chevron-down.svg</file>
         <file>icons/lucide/chevron-left.svg</file>
         <file>icons/lucide/chevron-right.svg</file>
@@ -42,17 +47,20 @@
         <file>icons/lucide/file-plus.svg</file>
         <file>icons/lucide/file.svg</file>
         <file>icons/lucide/film.svg</file>
+        <file>icons/lucide/flag.svg</file>
         <file>icons/lucide/folder-open.svg</file>
         <file>icons/lucide/folder.svg</file>
         <file>icons/lucide/frame.svg</file>
         <file>icons/lucide/git-branch.svg</file>
         <file>icons/lucide/git-graph.svg</file>
         <file>icons/lucide/globe.svg</file>
+        <file>icons/lucide/graduation-cap.svg</file>
         <file>icons/lucide/grid-3x3.svg</file>
         <file>icons/lucide/hammer.svg</file>
         <file>icons/lucide/hand.svg</file>
         <file>icons/lucide/hash.svg</file>
         <file>icons/lucide/heart.svg</file>
+        <file>icons/lucide/history.svg</file>
         <file>icons/lucide/image.svg</file>
         <file>icons/lucide/info.svg</file>
         <file>icons/lucide/key.svg</file>
@@ -63,6 +71,7 @@
         <file>icons/lucide/list-filter.svg</file>
         <file>icons/lucide/list-tree.svg</file>
         <file>icons/lucide/list.svg</file>
+        <file>icons/lucide/loader.svg</file>
         <file>icons/lucide/lock-open.svg</file>
         <file>icons/lucide/lock.svg</file>
         <file>icons/lucide/magnet.svg</file>
@@ -85,6 +94,7 @@
         <file>icons/lucide/redo.svg</file>
         <file>icons/lucide/refresh-cw.svg</file>
         <file>icons/lucide/repeat.svg</file>
+        <file>icons/lucide/rocket.svg</file>
         <file>icons/lucide/rotate-ccw.svg</file>
         <file>icons/lucide/rotate-cw.svg</file>
         <file>icons/lucide/save.svg</file>
@@ -117,14 +127,34 @@
         <file>icons/lucide/volume-2.svg</file>
         <file>icons/lucide/volume-x.svg</file>
         <file>icons/lucide/x.svg</file>
+        <file>icons/lucide/x-circle.svg</file>
         <file>icons/lucide/zap.svg</file>
         <file>icons/lucide/zoom-in.svg</file>
         <file>icons/lucide/zoom-out.svg</file>
-        <!-- Scene Templates (issue #216) -->
+        <!-- Scene Templates (issue #216, #292) -->
         <file>templates/scenes/empty_scene.nmscene_template</file>
         <file>templates/scenes/dialogue_scene.nmscene_template</file>
         <file>templates/scenes/choice_scene.nmscene_template</file>
         <file>templates/scenes/cutscene.nmscene_template</file>
         <file>templates/scenes/title_screen.nmscene_template</file>
+        <!-- New templates (issue #292) - Dialogue -->
+        <file>templates/scenes/two_character_dialogue.nmscene_template</file>
+        <file>templates/scenes/multi_character_scene.nmscene_template</file>
+        <file>templates/scenes/interrogation.nmscene_template</file>
+        <file>templates/scenes/phone_call.nmscene_template</file>
+        <!-- Scene Types -->
+        <file>templates/scenes/establishing_shot.nmscene_template</file>
+        <file>templates/scenes/closeup.nmscene_template</file>
+        <file>templates/scenes/reaction_shot.nmscene_template</file>
+        <file>templates/scenes/transition.nmscene_template</file>
+        <!-- Location Templates -->
+        <file>templates/scenes/indoor_scene.nmscene_template</file>
+        <file>templates/scenes/outdoor_scene.nmscene_template</file>
+        <file>templates/scenes/vehicle_interior.nmscene_template</file>
+        <file>templates/scenes/abstract_space.nmscene_template</file>
+        <!-- Special Templates -->
+        <file>templates/scenes/title_card.nmscene_template</file>
+        <file>templates/scenes/credits.nmscene_template</file>
+        <file>templates/scenes/flashback.nmscene_template</file>
     </qresource>
 </RCC>

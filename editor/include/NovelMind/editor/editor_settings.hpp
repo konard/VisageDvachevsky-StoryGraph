@@ -537,6 +537,12 @@ struct EditorPreferences {
   f32 uiScale = 1.0f;
   bool showTooltips = true;
 
+  // Dock Panel Title Bars (Issue #293)
+  i32 titleBarHeight = 22;         // Height in pixels (18-32)
+  bool compactTitleBars = true;    // Use compact mode
+  bool autoHideTitleBars = false;  // Auto-hide when maximized
+  bool showPanelIcons = true;      // Show icons in title bars
+
   // Layout
   std::string defaultLayout = "default";
   bool rememberLayout = true;

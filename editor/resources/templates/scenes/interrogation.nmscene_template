@@ -1,0 +1,111 @@
+{
+  "metadata": {
+    "id": "interrogation",
+    "name": "Interrogation",
+    "description": "One character seated, one standing. Perfect for interrogation scenes, interviews, and power dynamics.",
+    "category": "Dialogue",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["interrogation", "interview", "tension", "power-dynamic"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Drop background image here"
+        }
+      },
+      {
+        "id": "character_seated",
+        "name": "Seated Character",
+        "type": "Character",
+        "x": 800.0,
+        "y": 420.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character being questioned (seated)",
+          "position": "seated",
+          "posture": "seated"
+        }
+      },
+      {
+        "id": "character_standing",
+        "name": "Standing Character",
+        "type": "Character",
+        "x": 400.0,
+        "y": 320.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 11,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Interrogator (standing)",
+          "position": "standing",
+          "posture": "standing"
+        }
+      },
+      {
+        "id": "table",
+        "name": "Table/Desk",
+        "type": "Prop",
+        "x": 640.0,
+        "y": 480.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 9,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Table or desk between characters",
+          "propType": "furniture"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

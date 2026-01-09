@@ -4,6 +4,7 @@
  */
 
 #include "NovelMind/editor/qt/nm_bezier_curve_editor_dialog.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 
 #include <QDialogButtonBox>
@@ -285,22 +286,28 @@ void NMBezierCurveEditorDialog::buildUi() {
 void NMBezierCurveEditorDialog::setupPresetButtons(QWidget *container) {
   auto *layout = new QHBoxLayout(container);
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_linearBtn = new QPushButton(tr("Linear"), container);
+  m_linearBtn->setIcon(iconMgr.getIcon("easing-linear", 16));
   connect(m_linearBtn, &QPushButton::clicked, this,
           &NMBezierCurveEditorDialog::onPresetLinear);
   layout->addWidget(m_linearBtn);
 
   m_easeInBtn = new QPushButton(tr("Ease In"), container);
+  m_easeInBtn->setIcon(iconMgr.getIcon("easing-ease-in", 16));
   connect(m_easeInBtn, &QPushButton::clicked, this,
           &NMBezierCurveEditorDialog::onPresetEaseIn);
   layout->addWidget(m_easeInBtn);
 
   m_easeOutBtn = new QPushButton(tr("Ease Out"), container);
+  m_easeOutBtn->setIcon(iconMgr.getIcon("easing-ease-out", 16));
   connect(m_easeOutBtn, &QPushButton::clicked, this,
           &NMBezierCurveEditorDialog::onPresetEaseOut);
   layout->addWidget(m_easeOutBtn);
 
   m_easeInOutBtn = new QPushButton(tr("Ease In-Out"), container);
+  m_easeInOutBtn->setIcon(iconMgr.getIcon("easing-ease-in-out", 16));
   connect(m_easeInOutBtn, &QPushButton::clicked, this,
           &NMBezierCurveEditorDialog::onPresetEaseInOut);
   layout->addWidget(m_easeInOutBtn);

@@ -24,7 +24,7 @@ void NMIconManager::initializeIcons() {
   //
   // Icon Pack: Lucide (https://lucide.dev)
   // License: ISC License
-  // Total Icons: 138 mapped icons
+  // Total Icons: 146 mapped icons
 
   // Icon name mapping to Lucide icon files
   // Format: m_iconFilePaths["icon-name"] = ":/icons/lucide/icon-file.svg";
@@ -38,6 +38,11 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["chevron-left"] = ":/icons/lucide/chevron-left.svg";
   m_iconFilePaths["chevron-right"] = ":/icons/lucide/chevron-right.svg";
   m_iconFilePaths["chevron-up"] = ":/icons/lucide/chevron-up.svg";
+
+  // Sync Icons
+  m_iconFilePaths["sync"] = ":/icons/lucide/arrow-left-right.svg";
+  m_iconFilePaths["sync-to-script"] = ":/icons/lucide/arrow-right.svg";
+  m_iconFilePaths["sync-to-graph"] = ":/icons/lucide/arrow-left.svg";
 
   // Asset Type Icons
   m_iconFilePaths["asset-audio"] = ":/icons/lucide/music.svg";
@@ -57,6 +62,16 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["microphone"] = ":/icons/lucide/mic.svg";
   m_iconFilePaths["microphone-off"] = ":/icons/lucide/mic-off.svg";
 
+  // Debug and Script Inspector Icons
+  m_iconFilePaths["check"] = ":/icons/lucide/check.svg";
+  m_iconFilePaths["clear"] = ":/icons/lucide/x-circle.svg";
+  m_iconFilePaths["flag"] = ":/icons/lucide/flag.svg";
+  m_iconFilePaths["history"] = ":/icons/lucide/history.svg";
+  m_iconFilePaths["step-into"] = ":/icons/lucide/arrow-down-to-line.svg";
+  m_iconFilePaths["step-out"] = ":/icons/lucide/arrow-up-to-line.svg";
+  m_iconFilePaths["step-over"] = ":/icons/lucide/arrow-right-to-line.svg";
+  m_iconFilePaths["wait"] = ":/icons/lucide/loader.svg";
+
   // Edit Operations
   m_iconFilePaths["copy"] = ":/icons/lucide/copy.svg";
   m_iconFilePaths["delete"] = ":/icons/lucide/trash-2.svg";
@@ -66,6 +81,8 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["edit-paste"] = ":/icons/lucide/clipboard.svg";
   m_iconFilePaths["edit-redo"] = ":/icons/lucide/redo.svg";
   m_iconFilePaths["edit-undo"] = ":/icons/lucide/undo.svg";
+  m_iconFilePaths["replace"] = ":/icons/lucide/clipboard.svg";
+  m_iconFilePaths["replace-all"] = ":/icons/lucide/clipboard.svg";
 
   // File Operations
   m_iconFilePaths["file-close"] = ":/icons/lucide/x.svg";
@@ -206,6 +223,10 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["welcome-open"] = ":/icons/lucide/folder-open.svg";
   m_iconFilePaths["welcome-recent"] = ":/icons/lucide/clock.svg";
 
+  // Tutorial Icons
+  m_iconFilePaths["take-tour"] = ":/icons/lucide/graduation-cap.svg";
+  m_iconFilePaths["quick-start"] = ":/icons/lucide/rocket.svg";
+
   // Zoom and View Controls
   m_iconFilePaths["zoom-fit"] = ":/icons/lucide/maximize.svg";
   m_iconFilePaths["zoom-in"] = ":/icons/lucide/zoom-in.svg";
@@ -232,7 +253,7 @@ void NMIconManager::initializeIcons() {
   // Edit Actions
   m_iconFilePaths["edit-rename"] = ":/icons/lucide/pencil.svg";
 
-  // Total icons mapped: 150
+  // Total icons mapped: 158
 }
 
 QIcon NMIconManager::getIcon(const QString &iconName, int size,

@@ -12,6 +12,7 @@
 #include "NovelMind/editor/qt/panels/nm_build_settings_panel.hpp"
 #include "NovelMind/editor/build_system.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QCheckBox>
 #include <QComboBox>
@@ -134,6 +135,7 @@ void NMBuildSettingsPanel::setupUI() {
   QHBoxLayout *buttonLayout = new QHBoxLayout();
 
   m_buildButton = new QPushButton("Build Project", statusWidget);
+  m_buildButton->setIcon(NMIconManager::instance().getIcon("panel-build", 16));
   m_buildButton->setMinimumHeight(36);
   m_buildButton->setStyleSheet(
       "QPushButton { background-color: #0078d4; color: white; font-weight: "
@@ -147,6 +149,7 @@ void NMBuildSettingsPanel::setupUI() {
   buttonLayout->addWidget(m_buildButton);
 
   m_cancelButton = new QPushButton("Cancel", statusWidget);
+  m_cancelButton->setIcon(NMIconManager::instance().getIcon("file-close", 16));
   m_cancelButton->setMinimumHeight(36);
   m_cancelButton->setEnabled(false);
   m_cancelButton->setStyleSheet(
@@ -210,6 +213,7 @@ void NMBuildSettingsPanel::setupBuildSettings() {
   outputPathLayout->addWidget(m_outputPathEdit);
 
   m_browseBtn = new QPushButton("Browse...", outputGroup);
+  m_browseBtn->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
   connect(m_browseBtn, &QPushButton::clicked, this,
           &NMBuildSettingsPanel::onBrowseOutput);
   outputPathLayout->addWidget(m_browseBtn);

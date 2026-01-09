@@ -1,7 +1,9 @@
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/qt/nm_dock_title_bar.hpp"
 #include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 
+#include <QDockWidget>
 #include <QFocusEvent>
 #include <QResizeEvent>
 #include <QShowEvent>
@@ -27,6 +29,9 @@ NMDockPanel::NMDockPanel(const QString &title, QWidget *parent)
 
   // Ensure every panel has a concrete content widget by default.
   setContentWidget(new QWidget(this));
+
+  // Setup custom title bar (Issue #293)
+  setupCustomTitleBar();
 }
 
 NMDockPanel::~NMDockPanel() {
@@ -100,6 +105,11 @@ void NMDockPanel::focusInEvent(QFocusEvent *event) {
   onFocusGained();
   emit focusGained();
 
+  // Update custom title bar active state (Issue #293)
+  if (m_customTitleBar) {
+    m_customTitleBar->setActive(true);
+  }
+
   // Issue #173: Publish focus event through EventBus for panel synchronization
   // This allows other panels to react to focus changes without tight coupling
   if (!m_panelId.isEmpty()) {
@@ -115,6 +125,11 @@ void NMDockPanel::focusOutEvent(QFocusEvent *event) {
   QDockWidget::focusOutEvent(event);
   onFocusLost();
   emit focusLost();
+
+  // Update custom title bar active state (Issue #293)
+  if (m_customTitleBar) {
+    m_customTitleBar->setActive(false);
+  }
 
   // Issue #173: Publish focus event through EventBus for panel synchronization
   if (!m_panelId.isEmpty()) {
@@ -160,6 +175,77 @@ void NMDockPanel::setMinimumPanelSize(const QSize &size) {
   // This provides a hint to the layout system
   if (m_contentWidget) {
     m_contentWidget->setMinimumSize(size.width() - 4, size.height() - 4);
+  }
+}
+
+void NMDockPanel::setupCustomTitleBar() {
+  // Create custom title bar widget
+  m_customTitleBar = new NMDockTitleBar(this);
+  m_customTitleBar->setTitle(windowTitle());
+
+  // Set as the dock widget's title bar
+  setTitleBarWidget(m_customTitleBar);
+
+  // Connect signals
+  connectTitleBarSignals();
+}
+
+void NMDockPanel::connectTitleBarSignals() {
+  if (!m_customTitleBar) {
+    return;
+  }
+
+  // Float button
+  connect(m_customTitleBar, &NMDockTitleBar::floatClicked, this, [this]() {
+    setFloating(!isFloating());
+  });
+
+  // Close button
+  connect(m_customTitleBar, &NMDockTitleBar::closeClicked, this,
+          &QDockWidget::close);
+
+  // Pin button - prevent panel from being moved/floated
+  connect(m_customTitleBar, &NMDockTitleBar::pinClicked, this,
+          [this](bool pinned) {
+            if (pinned) {
+              // Disable moving and floating when pinned
+              setFeatures(QDockWidget::DockWidgetClosable);
+            } else {
+              // Restore normal features
+              setFeatures(QDockWidget::DockWidgetClosable |
+                          QDockWidget::DockWidgetMovable |
+                          QDockWidget::DockWidgetFloatable);
+            }
+          });
+
+  // Minimize button - collapse to title bar only
+  connect(m_customTitleBar, &NMDockTitleBar::minimizeClicked, this,
+          [this](bool minimized) {
+            if (m_contentWidget) {
+              m_contentWidget->setVisible(!minimized);
+            }
+          });
+
+  // Double-click title bar to toggle float
+  connect(m_customTitleBar, &NMDockTitleBar::titleDoubleClicked, this,
+          [this]() { setFloating(!isFloating()); });
+}
+
+void NMDockPanel::setPanelIcon(const QIcon &icon) {
+  if (m_customTitleBar) {
+    m_customTitleBar->setIcon(icon);
+  }
+}
+
+void NMDockPanel::setShowSettingsButton(bool show) {
+  if (m_customTitleBar) {
+    m_customTitleBar->setShowSettings(show);
+  }
+}
+
+void NMDockPanel::setTitleBarHeight(int height) {
+  if (m_customTitleBar) {
+    m_customTitleBar->setTitleBarHeight(height);
   }
 }
 

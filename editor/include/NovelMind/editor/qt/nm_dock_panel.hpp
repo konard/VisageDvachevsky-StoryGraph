@@ -11,6 +11,7 @@
  * - Title and icon management
  * - Visibility toggle
  * - Focus tracking
+ * - Custom compact title bar (Issue #293)
  */
 
 #include <QDockWidget>
@@ -23,6 +24,11 @@
 // Forward declaration for guided learning integration
 namespace NovelMind::editor::guided_learning {
 class ScopedAnchorRegistration;
+}
+
+// Forward declaration for custom title bar
+namespace NovelMind::editor::qt {
+class NMDockTitleBar;
 }
 
 namespace NovelMind::editor::qt {
@@ -61,6 +67,29 @@ public:
    * allowing the tutorial system to show hints attached to this panel.
    */
   void setPanelId(const QString &id);
+
+  /**
+   * @brief Set panel icon (displayed in title bar)
+   * @param icon The icon to display
+   */
+  void setPanelIcon(const QIcon &icon);
+
+  /**
+   * @brief Enable/disable settings button in title bar
+   * @param show Whether to show settings button
+   */
+  void setShowSettingsButton(bool show);
+
+  /**
+   * @brief Set title bar height
+   * @param height Height in pixels (18-32, default: 22)
+   */
+  void setTitleBarHeight(int height);
+
+  /**
+   * @brief Get custom title bar widget
+   */
+  [[nodiscard]] NMDockTitleBar *titleBar() const { return m_customTitleBar; }
 
   /**
    * @brief Called when the panel should update its contents
@@ -162,10 +191,16 @@ protected:
                       const std::string &description = "");
 
 private:
+  void setupCustomTitleBar();
+  void connectTitleBarSignals();
+
   QString m_panelId;
   QWidget *m_contentWidget = nullptr;
   bool m_initialized = false;
   bool m_inShowEvent = false; // Re-entrance guard for showEvent
+
+  // Custom title bar (Issue #293)
+  NMDockTitleBar *m_customTitleBar = nullptr;
 
   // Anchor registration for guided learning system
   std::unique_ptr<guided_learning::ScopedAnchorRegistration> m_panelAnchor;

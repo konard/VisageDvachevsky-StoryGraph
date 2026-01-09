@@ -70,37 +70,27 @@ void NMMainWindow::setupConnections() {
   // =========================================================================
 
   // File menu
-  connect(m_actionNewProject, &QAction::triggered, this,
-          &NMMainWindow::newProjectRequested);
-  connect(m_actionOpenProject, &QAction::triggered, this,
-          &NMMainWindow::openProjectRequested);
-  connect(m_actionSaveProject, &QAction::triggered, this,
-          &NMMainWindow::saveProjectRequested);
+  connect(m_actionNewProject, &QAction::triggered, this, &NMMainWindow::newProjectRequested);
+  connect(m_actionOpenProject, &QAction::triggered, this, &NMMainWindow::openProjectRequested);
+  connect(m_actionSaveProject, &QAction::triggered, this, &NMMainWindow::saveProjectRequested);
   connect(m_actionExit, &QAction::triggered, this, &QMainWindow::close);
 
   // Project menu - validation
-  connect(m_actionValidateProject, &QAction::triggered, this,
-          &NMMainWindow::onValidateProject);
+  connect(m_actionValidateProject, &QAction::triggered, this, &NMMainWindow::onValidateProject);
 
   // Edit menu - undo/redo
-  connect(m_actionUndo, &QAction::triggered, &NMUndoManager::instance(),
-          &NMUndoManager::undo);
-  connect(m_actionRedo, &QAction::triggered, &NMUndoManager::instance(),
-          &NMUndoManager::redo);
-  connect(&NMUndoManager::instance(), &NMUndoManager::canUndoChanged,
-          m_actionUndo, &QAction::setEnabled);
-  connect(&NMUndoManager::instance(), &NMUndoManager::canRedoChanged,
-          m_actionRedo, &QAction::setEnabled);
-  connect(&NMUndoManager::instance(), &NMUndoManager::undoTextChanged,
-          [this](const QString &text) {
-            m_actionUndo->setText(text.isEmpty() ? tr("&Undo")
-                                                 : tr("&Undo %1").arg(text));
-          });
-  connect(&NMUndoManager::instance(), &NMUndoManager::redoTextChanged,
-          [this](const QString &text) {
-            m_actionRedo->setText(text.isEmpty() ? tr("&Redo")
-                                                 : tr("&Redo %1").arg(text));
-          });
+  connect(m_actionUndo, &QAction::triggered, &NMUndoManager::instance(), &NMUndoManager::undo);
+  connect(m_actionRedo, &QAction::triggered, &NMUndoManager::instance(), &NMUndoManager::redo);
+  connect(&NMUndoManager::instance(), &NMUndoManager::canUndoChanged, m_actionUndo,
+          &QAction::setEnabled);
+  connect(&NMUndoManager::instance(), &NMUndoManager::canRedoChanged, m_actionRedo,
+          &QAction::setEnabled);
+  connect(&NMUndoManager::instance(), &NMUndoManager::undoTextChanged, [this](const QString& text) {
+    m_actionUndo->setText(text.isEmpty() ? tr("&Undo") : tr("&Undo %1").arg(text));
+  });
+  connect(&NMUndoManager::instance(), &NMUndoManager::redoTextChanged, [this](const QString& text) {
+    m_actionRedo->setText(text.isEmpty() ? tr("&Redo") : tr("&Redo %1").arg(text));
+  });
   m_actionUndo->setEnabled(NMUndoManager::instance().canUndo());
   m_actionRedo->setEnabled(NMUndoManager::instance().canRedo());
 
@@ -108,8 +98,7 @@ void NMMainWindow::setupConnections() {
   setupClipboardConnections();
 
   // Preferences
-  connect(m_actionPreferences, &QAction::triggered, this,
-          &NMMainWindow::showSettingsDialog);
+  connect(m_actionPreferences, &QAction::triggered, this, &NMMainWindow::showSettingsDialog);
 
   // View menu - panel toggles
   setupPanelToggleConnections();
@@ -131,60 +120,60 @@ void NMMainWindow::setupConnections() {
 
 void NMMainWindow::setupClipboardConnections() {
   connect(m_actionCut, &QAction::triggered, this, []() {
-    if (QWidget *focused = QApplication::focusWidget()) {
-      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+    if (QWidget* focused = QApplication::focusWidget()) {
+      if (auto* lineEdit = qobject_cast<QLineEdit*>(focused)) {
         lineEdit->cut();
-      } else if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+      } else if (auto* textEdit = qobject_cast<QTextEdit*>(focused)) {
         textEdit->cut();
-      } else if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+      } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(focused)) {
         plainTextEdit->cut();
       }
     }
   });
 
   connect(m_actionCopy, &QAction::triggered, this, []() {
-    if (QWidget *focused = QApplication::focusWidget()) {
-      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+    if (QWidget* focused = QApplication::focusWidget()) {
+      if (auto* lineEdit = qobject_cast<QLineEdit*>(focused)) {
         lineEdit->copy();
-      } else if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+      } else if (auto* textEdit = qobject_cast<QTextEdit*>(focused)) {
         textEdit->copy();
-      } else if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+      } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(focused)) {
         plainTextEdit->copy();
       }
     }
   });
 
   connect(m_actionPaste, &QAction::triggered, this, []() {
-    if (QWidget *focused = QApplication::focusWidget()) {
-      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+    if (QWidget* focused = QApplication::focusWidget()) {
+      if (auto* lineEdit = qobject_cast<QLineEdit*>(focused)) {
         lineEdit->paste();
-      } else if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+      } else if (auto* textEdit = qobject_cast<QTextEdit*>(focused)) {
         textEdit->paste();
-      } else if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+      } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(focused)) {
         plainTextEdit->paste();
       }
     }
   });
 
   connect(m_actionDelete, &QAction::triggered, this, []() {
-    if (QWidget *focused = QApplication::focusWidget()) {
-      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+    if (QWidget* focused = QApplication::focusWidget()) {
+      if (auto* lineEdit = qobject_cast<QLineEdit*>(focused)) {
         lineEdit->del();
-      } else if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+      } else if (auto* textEdit = qobject_cast<QTextEdit*>(focused)) {
         textEdit->textCursor().removeSelectedText();
-      } else if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+      } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(focused)) {
         plainTextEdit->textCursor().removeSelectedText();
       }
     }
   });
 
   connect(m_actionSelectAll, &QAction::triggered, this, []() {
-    if (QWidget *focused = QApplication::focusWidget()) {
-      if (auto *lineEdit = qobject_cast<QLineEdit *>(focused)) {
+    if (QWidget* focused = QApplication::focusWidget()) {
+      if (auto* lineEdit = qobject_cast<QLineEdit*>(focused)) {
         lineEdit->selectAll();
-      } else if (auto *textEdit = qobject_cast<QTextEdit *>(focused)) {
+      } else if (auto* textEdit = qobject_cast<QTextEdit*>(focused)) {
         textEdit->selectAll();
-      } else if (auto *plainTextEdit = qobject_cast<QPlainTextEdit *>(focused)) {
+      } else if (auto* plainTextEdit = qobject_cast<QPlainTextEdit*>(focused)) {
         plainTextEdit->selectAll();
       }
     }
@@ -193,16 +182,11 @@ void NMMainWindow::setupClipboardConnections() {
 
 void NMMainWindow::setupPanelToggleConnections() {
   // Panel visibility toggles
-  connect(m_actionToggleSceneView, &QAction::toggled, m_sceneViewPanel,
-          &QDockWidget::setVisible);
-  connect(m_actionToggleStoryGraph, &QAction::toggled, m_storyGraphPanel,
-          &QDockWidget::setVisible);
-  connect(m_actionToggleInspector, &QAction::toggled, m_inspectorPanel,
-          &QDockWidget::setVisible);
-  connect(m_actionToggleConsole, &QAction::toggled, m_consolePanel,
-          &QDockWidget::setVisible);
-  connect(m_actionToggleIssues, &QAction::toggled, m_issuesPanel,
-          &QDockWidget::setVisible);
+  connect(m_actionToggleSceneView, &QAction::toggled, m_sceneViewPanel, &QDockWidget::setVisible);
+  connect(m_actionToggleStoryGraph, &QAction::toggled, m_storyGraphPanel, &QDockWidget::setVisible);
+  connect(m_actionToggleInspector, &QAction::toggled, m_inspectorPanel, &QDockWidget::setVisible);
+  connect(m_actionToggleConsole, &QAction::toggled, m_consolePanel, &QDockWidget::setVisible);
+  connect(m_actionToggleIssues, &QAction::toggled, m_issuesPanel, &QDockWidget::setVisible);
   connect(m_actionToggleDiagnostics, &QAction::toggled, m_diagnosticsPanel,
           &QDockWidget::setVisible);
   connect(m_actionToggleVoiceStudio, &QAction::toggled, this,
@@ -213,8 +197,7 @@ void NMMainWindow::setupPanelToggleConnections() {
           [this](bool checked) { toggleAudioMixerPanel(checked); });
   connect(m_actionToggleLocalization, &QAction::toggled, m_localizationPanel,
           &QDockWidget::setVisible);
-  connect(m_actionToggleTimeline, &QAction::toggled, m_timelinePanel,
-          &QDockWidget::setVisible);
+  connect(m_actionToggleTimeline, &QAction::toggled, m_timelinePanel, &QDockWidget::setVisible);
   connect(m_actionToggleCurveEditor, &QAction::toggled, m_curveEditorPanel,
           &QDockWidget::setVisible);
   connect(m_actionToggleBuildSettings, &QAction::toggled, m_buildSettingsPanel,
@@ -223,12 +206,10 @@ void NMMainWindow::setupPanelToggleConnections() {
           &QDockWidget::setVisible);
   connect(m_actionToggleScenePalette, &QAction::toggled, m_scenePalettePanel,
           &QDockWidget::setVisible);
-  connect(m_actionToggleHierarchy, &QAction::toggled, m_hierarchyPanel,
-          &QDockWidget::setVisible);
+  connect(m_actionToggleHierarchy, &QAction::toggled, m_hierarchyPanel, &QDockWidget::setVisible);
   connect(m_actionToggleScriptEditor, &QAction::toggled, m_scriptEditorPanel,
           &QDockWidget::setVisible);
-  connect(m_actionToggleScriptDocs, &QAction::toggled, m_scriptDocPanel,
-          &QDockWidget::setVisible);
+  connect(m_actionToggleScriptDocs, &QAction::toggled, m_scriptDocPanel, &QDockWidget::setVisible);
   connect(m_actionToggleDebugOverlay, &QAction::toggled, m_debugOverlayPanel,
           &QDockWidget::setVisible);
 
@@ -237,14 +218,13 @@ void NMMainWindow::setupPanelToggleConnections() {
 }
 
 void NMMainWindow::setupPanelVisibilitySync() {
-  auto syncVisibility = [](QDockWidget *panel, QAction *action) {
-    QObject::connect(panel, &QDockWidget::visibilityChanged, action,
-                     [action](bool visible) {
-                       if (action->isChecked() != visible) {
-                         QSignalBlocker blocker(action);
-                         action->setChecked(visible);
-                       }
-                     });
+  auto syncVisibility = [](QDockWidget* panel, QAction* action) {
+    QObject::connect(panel, &QDockWidget::visibilityChanged, action, [action](bool visible) {
+      if (action->isChecked() != visible) {
+        QSignalBlocker blocker(action);
+        action->setChecked(visible);
+      }
+    });
   };
 
   syncVisibility(m_sceneViewPanel, m_actionToggleSceneView);
@@ -268,17 +248,15 @@ void NMMainWindow::setupPanelVisibilitySync() {
   syncVisibility(m_debugOverlayPanel, m_actionToggleDebugOverlay);
 
   // Special: Clear story preview when leaving story graph
-  connect(m_storyGraphPanel, &QDockWidget::visibilityChanged, this,
-          [this](bool visible) {
-            if (!visible && m_sceneViewPanel) {
-              m_sceneViewPanel->clearStoryPreview();
-            }
-          });
+  connect(m_storyGraphPanel, &QDockWidget::visibilityChanged, this, [this](bool visible) {
+    if (!visible && m_sceneViewPanel) {
+      m_sceneViewPanel->clearStoryPreview();
+    }
+  });
 }
 
 void NMMainWindow::setupLayoutConnections() {
-  connect(m_actionResetLayout, &QAction::triggered, this,
-          &NMMainWindow::resetToDefaultLayout);
+  connect(m_actionResetLayout, &QAction::triggered, this, &NMMainWindow::resetToDefaultLayout);
 
   // Workspace presets
   connect(m_actionLayoutDefault, &QAction::triggered, this,
@@ -302,17 +280,18 @@ void NMMainWindow::setupLayoutConnections() {
   connect(m_actionLayoutCompact, &QAction::triggered, this,
           [this]() { applyLayoutPreset(LayoutPreset::Compact); });
 
-  connect(m_actionSaveLayout, &QAction::triggered, this,
-          &NMMainWindow::saveCustomLayout);
-  connect(m_actionLoadLayout, &QAction::triggered, this,
-          &NMMainWindow::loadCustomLayout);
+  connect(m_actionSaveLayout, &QAction::triggered, this, &NMMainWindow::saveCustomLayout);
+  connect(m_actionLoadLayout, &QAction::triggered, this, &NMMainWindow::loadCustomLayout);
+
+  // Custom workspace management
+  connect(m_actionSaveWorkspaceAs, &QAction::triggered, this, &NMMainWindow::onSaveWorkspaceAs);
+  connect(m_actionManageWorkspaces, &QAction::triggered, this,
+          &NMMainWindow::showManageWorkspacesDialog);
 
   // UI scale
-  auto &styleManager = NMStyleManager::instance();
+  auto& styleManager = NMStyleManager::instance();
   auto updateScaleActions = [this](double scale) {
-    auto isNear = [](double value, double target) {
-      return std::abs(value - target) < 0.01;
-    };
+    auto isNear = [](double value, double target) { return std::abs(value - target) < 0.01; };
     if (m_actionUiScaleCompact)
       m_actionUiScaleCompact->setChecked(isNear(scale, 0.9));
     if (m_actionUiScaleDefault)
@@ -328,11 +307,11 @@ void NMMainWindow::setupLayoutConnections() {
   connect(m_actionUiScaleComfort, &QAction::triggered, this,
           []() { NMStyleManager::instance().setUiScale(1.1); });
   connect(m_actionUiScaleDown, &QAction::triggered, this, []() {
-    auto &manager = NMStyleManager::instance();
+    auto& manager = NMStyleManager::instance();
     manager.setUiScale(manager.uiScale() - 0.1);
   });
   connect(m_actionUiScaleUp, &QAction::triggered, this, []() {
-    auto &manager = NMStyleManager::instance();
+    auto& manager = NMStyleManager::instance();
     manager.setUiScale(manager.uiScale() + 0.1);
   });
   connect(m_actionUiScaleReset, &QAction::triggered, this,
@@ -340,15 +319,19 @@ void NMMainWindow::setupLayoutConnections() {
   connect(&styleManager, &NMStyleManager::scaleChanged, this, updateScaleActions);
   updateScaleActions(styleManager.uiScale());
 
+  // Theme switching
+  connect(m_actionThemeDark, &QAction::triggered, this,
+          []() { NMStyleManager::instance().applyDarkTheme(); });
+  connect(m_actionThemeLight, &QAction::triggered, this,
+          []() { NMStyleManager::instance().applyLightTheme(); });
+
   // Focus mode and dock options
-  connect(m_actionFocusMode, &QAction::toggled, this,
-          &NMMainWindow::toggleFocusMode);
-  connect(m_actionFocusIncludeHierarchy, &QAction::toggled, this,
-          [this](bool enabled) {
-            m_focusIncludeHierarchy = enabled;
-            if (m_focusModeEnabled)
-              applyFocusModeLayout();
-          });
+  connect(m_actionFocusMode, &QAction::toggled, this, &NMMainWindow::toggleFocusMode);
+  connect(m_actionFocusIncludeHierarchy, &QAction::toggled, this, [this](bool enabled) {
+    m_focusIncludeHierarchy = enabled;
+    if (m_focusModeEnabled)
+      applyFocusModeLayout();
+  });
   connect(m_actionLockLayout, &QAction::toggled, this,
           [this](bool locked) { applyDockLockState(locked); });
   connect(m_actionTabbedDockOnly, &QAction::toggled, this,
@@ -358,47 +341,38 @@ void NMMainWindow::setupLayoutConnections() {
 }
 
 void NMMainWindow::setupPlayConnections() {
-  connect(m_actionPlay, &QAction::triggered, this,
-          &NMMainWindow::playRequested);
-  connect(m_actionStop, &QAction::triggered, this,
-          &NMMainWindow::stopRequested);
+  connect(m_actionPlay, &QAction::triggered, this, &NMMainWindow::playRequested);
+  connect(m_actionStop, &QAction::triggered, this, &NMMainWindow::stopRequested);
 
-  auto &playController = NMPlayModeController::instance();
-  connect(m_actionPlay, &QAction::triggered, &playController,
-          &NMPlayModeController::play);
-  connect(m_actionPause, &QAction::triggered, &playController,
-          &NMPlayModeController::pause);
-  connect(m_actionStop, &QAction::triggered, &playController,
-          &NMPlayModeController::stop);
+  auto& playController = NMPlayModeController::instance();
+  connect(m_actionPlay, &QAction::triggered, &playController, &NMPlayModeController::play);
+  connect(m_actionPause, &QAction::triggered, &playController, &NMPlayModeController::pause);
+  connect(m_actionStop, &QAction::triggered, &playController, &NMPlayModeController::stop);
   connect(m_actionStepFrame, &QAction::triggered, &playController,
           &NMPlayModeController::stepForward);
 
   connect(m_actionSaveState, &QAction::triggered, this, [this, &playController]() {
     if (!playController.saveSlot(0)) {
-      NMMessageDialog::showError(this, tr("Save Failed"),
-                                 tr("Failed to save runtime state."));
+      NMMessageDialog::showError(this, tr("Save Failed"), tr("Failed to save runtime state."));
     }
   });
   connect(m_actionLoadState, &QAction::triggered, this, [this, &playController]() {
     if (!playController.loadSlot(0)) {
-      NMMessageDialog::showError(this, tr("Load Failed"),
-                                 tr("Failed to load runtime state."));
+      NMMessageDialog::showError(this, tr("Load Failed"), tr("Failed to load runtime state."));
     }
   });
-  connect(m_actionAutoSaveState, &QAction::triggered, this,
-          [this, &playController]() {
-            if (!playController.saveAuto()) {
-              NMMessageDialog::showError(this, tr("Auto-Save Failed"),
-                                         tr("Failed to auto-save runtime state."));
-            }
-          });
-  connect(m_actionAutoLoadState, &QAction::triggered, this,
-          [this, &playController]() {
-            if (!playController.loadAuto()) {
-              NMMessageDialog::showError(this, tr("Auto-Load Failed"),
-                                         tr("Failed to auto-load runtime state."));
-            }
-          });
+  connect(m_actionAutoSaveState, &QAction::triggered, this, [this, &playController]() {
+    if (!playController.saveAuto()) {
+      NMMessageDialog::showError(this, tr("Auto-Save Failed"),
+                                 tr("Failed to auto-save runtime state."));
+    }
+  });
+  connect(m_actionAutoLoadState, &QAction::triggered, this, [this, &playController]() {
+    if (!playController.loadAuto()) {
+      NMMessageDialog::showError(this, tr("Auto-Load Failed"),
+                                 tr("Failed to auto-load runtime state."));
+    }
+  });
 
   auto updatePlayActions = [this](NMPlayModeController::PlayMode mode) {
     const bool isPlaying = (mode == NMPlayModeController::Playing);
@@ -415,28 +389,24 @@ void NMMainWindow::setupPlayConnections() {
     m_actionAutoLoadState->setEnabled(runtimeReady && hasAutoSave);
   };
 
-  connect(&playController, &NMPlayModeController::playModeChanged, this,
-          updatePlayActions);
+  connect(&playController, &NMPlayModeController::playModeChanged, this, updatePlayActions);
   updatePlayActions(playController.playMode());
 
   connect(&playController, &NMPlayModeController::playModeChanged, this,
           [this](NMPlayModeController::PlayMode) { updateStatusBarContext(); });
   connect(&playController, &NMPlayModeController::currentNodeChanged, this,
-          [this](const QString &nodeId) {
+          [this](const QString& nodeId) {
             m_activeNodeId = nodeId;
             updateStatusBarContext();
           });
 }
 
 void NMMainWindow::setupHelpConnections() {
-  connect(m_actionAbout, &QAction::triggered, this,
-          &NMMainWindow::showAboutDialog);
+  connect(m_actionAbout, &QAction::triggered, this, &NMMainWindow::showAboutDialog);
   connect(m_actionDocumentation, &QAction::triggered, []() {
-    QDesktopServices::openUrl(
-        QUrl("https://github.com/VisageDvachevsky/StoryGraph"));
+    QDesktopServices::openUrl(QUrl("https://github.com/VisageDvachevsky/StoryGraph"));
   });
-  connect(m_actionHotkeys, &QAction::triggered, this,
-          &NMMainWindow::showHotkeysDialog);
+  connect(m_actionHotkeys, &QAction::triggered, this, &NMMainWindow::showHotkeysDialog);
 }
 
 void NMMainWindow::setupPanelMediators() {
@@ -444,19 +414,9 @@ void NMMainWindow::setupPanelMediators() {
   // This replaces ~1,400 lines of direct panel-to-panel connections
   m_mediatorManager = std::make_unique<mediators::PanelMediatorManager>(this);
   m_mediatorManager->initialize(
-      m_sceneViewPanel,
-      m_storyGraphPanel,
-      m_sceneDialogueGraphPanel,
-      m_inspectorPanel,
-      m_hierarchyPanel,
-      m_scriptEditorPanel,
-      m_scriptDocPanel,
-      m_timelinePanel,
-      m_curveEditorPanel,
-      m_voiceStudioPanel,
-      m_voiceManagerPanel,
-      m_diagnosticsPanel,
-      m_issuesPanel);
+      m_sceneViewPanel, m_storyGraphPanel, m_sceneDialogueGraphPanel, m_inspectorPanel,
+      m_hierarchyPanel, m_scriptEditorPanel, m_scriptDocPanel, m_timelinePanel, m_curveEditorPanel,
+      m_voiceStudioPanel, m_voiceManagerPanel, m_diagnosticsPanel, m_issuesPanel);
 
   qDebug() << "[NMMainWindow] Panel mediators initialized - replaces ~1,400 lines"
            << "of direct connections with EventBus pattern";
@@ -465,9 +425,8 @@ void NMMainWindow::setupPanelMediators() {
 void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
   if (checked) {
     if (!m_voiceStudioPanel->isVisible() || m_voiceStudioPanel->isFloating()) {
-      QList<QDockWidget *> docks = this->findChildren<QDockWidget *>();
-      if (!docks.contains(m_voiceStudioPanel) ||
-          m_voiceStudioPanel->parent() != this) {
+      QList<QDockWidget*> docks = this->findChildren<QDockWidget*>();
+      if (!docks.contains(m_voiceStudioPanel) || m_voiceStudioPanel->parent() != this) {
         addDockWidget(Qt::RightDockWidgetArea, m_voiceStudioPanel);
         if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
           tabifyDockWidget(m_inspectorPanel, m_voiceStudioPanel);
@@ -482,10 +441,9 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
 
   // Issue #117: Workflow Mode Enforcement - Connect PlayToolbar's source mode
   // change to update panel read-only states
-  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
-          this, [this](PlaybackSourceMode mode) {
-            qDebug() << "[WorkflowMode] Playback source mode changed to:"
-                     << static_cast<int>(mode);
+  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged, this,
+          [this](PlaybackSourceMode mode) {
+            qDebug() << "[WorkflowMode] Playback source mode changed to:" << static_cast<int>(mode);
 
             switch (mode) {
             case PlaybackSourceMode::Script:
@@ -496,8 +454,7 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
               if (m_scriptEditorPanel) {
                 m_scriptEditorPanel->setReadOnly(false);
               }
-              setStatusMessage(
-                  tr("Script Mode: NMScript files are authoritative"), 3000);
+              setStatusMessage(tr("Script Mode: NMScript files are authoritative"), 3000);
               break;
 
             case PlaybackSourceMode::Graph:
@@ -508,8 +465,7 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
               if (m_scriptEditorPanel) {
                 m_scriptEditorPanel->setReadOnly(true, tr("Graph Mode"));
               }
-              setStatusMessage(tr("Graph Mode: Story Graph is authoritative"),
-                               3000);
+              setStatusMessage(tr("Graph Mode: Story Graph is authoritative"), 3000);
               break;
 
             case PlaybackSourceMode::Mixed:
@@ -521,42 +477,36 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
               if (m_scriptEditorPanel) {
                 m_scriptEditorPanel->setReadOnly(false);
               }
-              setStatusMessage(
-                  tr("Mixed Mode: Both sources are editable, Graph wins on "
-                     "conflicts"),
-                  3000);
+              setStatusMessage(tr("Mixed Mode: Both sources are editable, Graph wins on "
+                                  "conflicts"),
+                               3000);
               break;
             }
           });
 
   // Issue #117: Connect Script Editor sync to Story Graph
   connect(m_scriptEditorPanel, &NMScriptEditorPanel::syncToGraphRequested, this,
-          [this](const QString &sceneName, const QString &speaker,
-                 const QString &dialogueText, const QStringList &choices) {
+          [this](const QString& sceneName, const QString& speaker, const QString& dialogueText,
+                 const QStringList& choices) {
             if (!m_storyGraphPanel) {
               return;
             }
 
             // Find the node corresponding to this scene
-            auto *node = m_storyGraphPanel->findNodeByIdString(sceneName);
+            auto* node = m_storyGraphPanel->findNodeByIdString(sceneName);
             if (!node) {
-              qDebug() << "[WorkflowMode] No graph node found for scene:"
-                       << sceneName;
+              qDebug() << "[WorkflowMode] No graph node found for scene:" << sceneName;
               return;
             }
 
             // Update node properties from script
-            m_storyGraphPanel->applyNodePropertyChange(sceneName, "speaker",
-                                                       speaker);
-            m_storyGraphPanel->applyNodePropertyChange(sceneName, "text",
-                                                       dialogueText);
+            m_storyGraphPanel->applyNodePropertyChange(sceneName, "speaker", speaker);
+            m_storyGraphPanel->applyNodePropertyChange(sceneName, "text", dialogueText);
             if (!choices.isEmpty()) {
-              m_storyGraphPanel->applyNodePropertyChange(sceneName, "choices",
-                                                         choices.join("\n"));
+              m_storyGraphPanel->applyNodePropertyChange(sceneName, "choices", choices.join("\n"));
             }
 
-            qDebug() << "[WorkflowMode] Synced script scene to graph:"
-                     << sceneName;
+            qDebug() << "[WorkflowMode] Synced script scene to graph:" << sceneName;
           });
 
   // Timeline Panel ↔ Scene View Panel synchronization
@@ -564,22 +514,20 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
     // When Timeline frame changes, update Scene View preview
     connect(m_timelinePanel, &NMTimelinePanel::frameChanged, this,
             [this]([[maybe_unused]] int frame) {
-              if (!m_sceneViewPanel ||
-                  !m_sceneViewPanel->isAnimationPreviewMode()) {
+              if (!m_sceneViewPanel || !m_sceneViewPanel->isAnimationPreviewMode()) {
                 return;
               }
               // Note: Animation adapter would apply interpolated values to
               // scene objects For now, we just trigger a viewport update to
               // redraw with current state
-              if (auto *view = m_sceneViewPanel->graphicsView()) {
+              if (auto* view = m_sceneViewPanel->graphicsView()) {
                 view->viewport()->update();
               }
             });
 
     // Connect asset updated signal for when Voice Studio updates manifest
     connect(m_voiceStudioPanel, &NMVoiceStudioPanel::assetUpdated, this,
-            [this](const QString &lineId,
-                   [[maybe_unused]] const QString &filePath) {
+            [this](const QString& lineId, [[maybe_unused]] const QString& filePath) {
               // Notify Voice Manager panel of the file status change
               m_voiceManagerPanel->onFileStatusChanged(lineId, "en");
             });
@@ -589,9 +537,8 @@ void NMMainWindow::toggleVoiceStudioPanel(bool checked) {
 void NMMainWindow::toggleAudioMixerPanel(bool checked) {
   if (checked) {
     if (!m_audioMixerPanel->isVisible() || m_audioMixerPanel->isFloating()) {
-      QList<QDockWidget *> docks = this->findChildren<QDockWidget *>();
-      if (!docks.contains(m_audioMixerPanel) ||
-          m_audioMixerPanel->parent() != this) {
+      QList<QDockWidget*> docks = this->findChildren<QDockWidget*>();
+      if (!docks.contains(m_audioMixerPanel) || m_audioMixerPanel->parent() != this) {
         addDockWidget(Qt::RightDockWidgetArea, m_audioMixerPanel);
         if (m_inspectorPanel && m_inspectorPanel->parent() == this) {
           tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
@@ -606,7 +553,7 @@ void NMMainWindow::toggleAudioMixerPanel(bool checked) {
 }
 
 void NMMainWindow::onValidateProject() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     setStatusMessage(tr("No project is open"), 3000);
     return;
@@ -635,7 +582,7 @@ void NMMainWindow::onValidateProject() {
 
   IntegrityReport report = checker.runFullCheck();
 
-  for (const auto &issue : report.issues) {
+  for (const auto& issue : report.issues) {
     QString type;
     switch (issue.severity) {
     case IssueSeverity::Critical:
@@ -656,8 +603,7 @@ void NMMainWindow::onValidateProject() {
     }
 
     QString location;
-    if (issue.category == IssueCategory::Script ||
-        issue.category == IssueCategory::Scene) {
+    if (issue.category == IssueCategory::Script || issue.category == IssueCategory::Scene) {
       location = "Script:" + QString::fromStdString(issue.filePath);
       if (issue.lineNumber > 0) {
         location += ":" + QString::number(issue.lineNumber);
@@ -677,25 +623,24 @@ void NMMainWindow::onValidateProject() {
   if (report.passed) {
     setStatusMessage(tr("Validation passed - no critical issues found"), 5000);
   } else {
-    setStatusMessage(
-        tr("Validation found %1 error(s) and %2 warning(s)")
-            .arg(report.summary.errorCount + report.summary.criticalCount)
-            .arg(report.summary.warningCount),
-        5000);
+    setStatusMessage(tr("Validation found %1 error(s) and %2 warning(s)")
+                         .arg(report.summary.errorCount + report.summary.criticalCount)
+                         .arg(report.summary.warningCount),
+                     5000);
   }
 }
 
 void NMMainWindow::showHotkeysDialog() {
-  auto shortcutText = [](QAction *action) {
+  auto shortcutText = [](QAction* action) {
     if (!action)
       return QString();
     return action->shortcut().toString(QKeySequence::NativeText);
   };
 
   QList<NMHotkeyEntry> entries;
-  auto addActionEntry = [&entries, &shortcutText](
-                            const QString &section, const QString &actionName,
-                            QAction *action, const QString &notes = QString()) {
+  auto addActionEntry = [&entries, &shortcutText](const QString& section, const QString& actionName,
+                                                  QAction* action,
+                                                  const QString& notes = QString()) {
     const QString shortcut = shortcutText(action);
     NMHotkeyEntry entry;
     entry.id = action ? action->objectName() : actionName;
@@ -764,8 +709,8 @@ void NMMainWindow::showHotkeysDialog() {
   addActionEntry(tr("UI Scale"), tr("Scale Reset"), m_actionUiScaleReset);
 
   // Static entries for context-sensitive shortcuts
-  auto addStaticEntry = [&entries](const QString &section, const QString &action,
-                                   const QString &shortcut, const QString &notes) {
+  auto addStaticEntry = [&entries](const QString& section, const QString& action,
+                                   const QString& shortcut, const QString& notes) {
     NMHotkeyEntry entry;
     entry.id = section + "." + action;
     entry.section = section;
@@ -790,10 +735,8 @@ void NMMainWindow::showHotkeysDialog() {
                  tr("Navigate to symbols in current script"));
   addStaticEntry(tr("Script Editor"), tr("Format Document"), tr("Ctrl+Shift+F"),
                  tr("Auto-format current script"));
-  addStaticEntry(tr("Script Editor"), tr("Find"), tr("Ctrl+F"),
-                 tr("Find text in current script"));
-  addStaticEntry(tr("Script Editor"), tr("Replace"), tr("Ctrl+H"),
-                 tr("Find and replace text"));
+  addStaticEntry(tr("Script Editor"), tr("Find"), tr("Ctrl+F"), tr("Find text in current script"));
+  addStaticEntry(tr("Script Editor"), tr("Replace"), tr("Ctrl+H"), tr("Find and replace text"));
   addStaticEntry(tr("Script Editor"), tr("Toggle Comment"), tr("Ctrl+/"),
                  tr("Comment/uncomment selected lines"));
   addStaticEntry(tr("Script Editor"), tr("Go to Definition"), tr("F12"),
@@ -806,30 +749,20 @@ void NMMainWindow::showHotkeysDialog() {
                  tr("Jump to specific line number"));
   addStaticEntry(tr("Story Graph"), tr("Connect Nodes"), tr("Ctrl+Drag"),
                  tr("Drag from output port to input"));
-  addStaticEntry(tr("Story Graph"), tr("Pan View"), tr("Middle Mouse"),
-                 tr("Hold and drag to pan"));
-  addStaticEntry(tr("Story Graph"), tr("Zoom"), tr("Mouse Wheel"),
-                 tr("Scroll to zoom in/out"));
-  addStaticEntry(tr("Scene View"), tr("Pan View"), tr("Middle Mouse"),
-                 tr("Hold and drag to pan"));
-  addStaticEntry(tr("Scene View"), tr("Zoom"), tr("Mouse Wheel"),
-                 tr("Scroll to zoom in/out"));
+  addStaticEntry(tr("Story Graph"), tr("Pan View"), tr("Middle Mouse"), tr("Hold and drag to pan"));
+  addStaticEntry(tr("Story Graph"), tr("Zoom"), tr("Mouse Wheel"), tr("Scroll to zoom in/out"));
+  addStaticEntry(tr("Scene View"), tr("Pan View"), tr("Middle Mouse"), tr("Hold and drag to pan"));
+  addStaticEntry(tr("Scene View"), tr("Zoom"), tr("Mouse Wheel"), tr("Scroll to zoom in/out"));
   addStaticEntry(tr("Scene View"), tr("Frame Selected"), tr("F"),
                  tr("Focus camera on selected object"));
-  addStaticEntry(tr("Scene View"), tr("Frame All"), tr("A"),
-                 tr("Frame everything in view"));
-  addStaticEntry(tr("Scene View"), tr("Toggle Grid"), tr("G"),
-                 tr("Show/hide grid"));
-  addStaticEntry(tr("Scene View"), tr("Copy Object"), tr("Ctrl+C"),
-                 tr("Copy selected object"));
-  addStaticEntry(tr("Scene View"), tr("Paste Object"), tr("Ctrl+V"),
-                 tr("Paste copied object"));
+  addStaticEntry(tr("Scene View"), tr("Frame All"), tr("A"), tr("Frame everything in view"));
+  addStaticEntry(tr("Scene View"), tr("Toggle Grid"), tr("G"), tr("Show/hide grid"));
+  addStaticEntry(tr("Scene View"), tr("Copy Object"), tr("Ctrl+C"), tr("Copy selected object"));
+  addStaticEntry(tr("Scene View"), tr("Paste Object"), tr("Ctrl+V"), tr("Paste copied object"));
   addStaticEntry(tr("Scene View"), tr("Duplicate Object"), tr("Ctrl+D"),
                  tr("Duplicate selected object"));
-  addStaticEntry(tr("Scene View"), tr("Rename Object"), tr("F2"),
-                 tr("Rename selected object"));
-  addStaticEntry(tr("Scene View"), tr("Delete Object"), tr("Del"),
-                 tr("Delete selected object"));
+  addStaticEntry(tr("Scene View"), tr("Rename Object"), tr("F2"), tr("Rename selected object"));
+  addStaticEntry(tr("Scene View"), tr("Delete Object"), tr("Del"), tr("Delete selected object"));
   addStaticEntry(tr("Docking"), tr("Move Panel"), QString(),
                  tr("Drag panel tabs to dock anywhere"));
   addStaticEntry(tr("Docking"), tr("Tab Panels"), QString(),
@@ -839,7 +772,7 @@ void NMMainWindow::showHotkeysDialog() {
   dialog.exec();
 }
 
-void NMMainWindow::handleNavigationRequest(const QString &locationString) {
+void NMMainWindow::handleNavigationRequest(const QString& locationString) {
   // Delegate to workflow mediator via EventBus
   events::NavigationRequestedEvent event;
   event.locationString = locationString;

@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "id": "establishing_shot",
+    "name": "Establishing Shot",
+    "description": "Wide background-only scene. Sets the location and atmosphere without characters.",
+    "category": "Scene Types",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["establishing", "location", "wide", "background-only"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Wide Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Wide establishing shot image",
+          "shotType": "establishing"
+        }
+      },
+      {
+        "id": "location_text",
+        "name": "Location Text",
+        "type": "UI",
+        "x": 640.0,
+        "y": 600.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Location/time text overlay (optional)",
+          "uiType": "text",
+          "textType": "location"
+        }
+      }
+    ]
+  }
+}

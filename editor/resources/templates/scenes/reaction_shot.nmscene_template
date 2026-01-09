@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "id": "reaction_shot",
+    "name": "Reaction Shot",
+    "description": "Multiple character reactions. Shows simultaneous emotional responses.",
+    "category": "Scene Types",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["reaction", "emotion", "multiple-characters", "response"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Drop background image here"
+        }
+      },
+      {
+        "id": "character_left",
+        "name": "Reacting Character 1",
+        "type": "Character",
+        "x": 320.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.2,
+        "scaleY": 1.2,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "First character's reaction",
+          "position": "left",
+          "shotType": "reaction"
+        }
+      },
+      {
+        "id": "character_center",
+        "name": "Reacting Character 2",
+        "type": "Character",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.2,
+        "scaleY": 1.2,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 11,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Second character's reaction",
+          "position": "center",
+          "shotType": "reaction"
+        }
+      },
+      {
+        "id": "character_right",
+        "name": "Reacting Character 3",
+        "type": "Character",
+        "x": 960.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.2,
+        "scaleY": 1.2,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Third character's reaction",
+          "position": "right",
+          "shotType": "reaction"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area (optional)",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

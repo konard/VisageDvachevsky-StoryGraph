@@ -7,6 +7,7 @@
 #include "NovelMind/editor/guided_learning/tutorial_manager.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include <QComboBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -112,17 +113,22 @@ void NMHelpHubPanel::setupUi() {
   // Action buttons
   auto *buttonLayout = new QHBoxLayout();
 
+  auto &iconMgr = NMIconManager::instance();
+
   m_startButton = new QPushButton(tr("Start Tutorial"));
+  m_startButton->setIcon(iconMgr.getIcon("play", 16));
   m_startButton->setEnabled(false);
   m_startButton->setStyleSheet("QPushButton { background-color: #0a84ff; "
                                "color: white; padding: 6px 16px; }");
   buttonLayout->addWidget(m_startButton);
 
   m_resetProgressButton = new QPushButton(tr("Reset Progress"));
+  m_resetProgressButton->setIcon(iconMgr.getIcon("property-reset", 16));
   m_resetProgressButton->setEnabled(false);
   buttonLayout->addWidget(m_resetProgressButton);
 
   m_disableButton = new QPushButton(tr("Disable"));
+  m_disableButton->setIcon(iconMgr.getIcon("file-close", 16));
   m_disableButton->setEnabled(false);
   buttonLayout->addWidget(m_disableButton);
 
@@ -138,11 +144,13 @@ void NMHelpHubPanel::setupUi() {
   auto *footerLayout = new QHBoxLayout();
 
   m_resetAllButton = new QPushButton(tr("Reset All Progress"));
+  m_resetAllButton->setIcon(iconMgr.getIcon("refresh", 16));
   footerLayout->addWidget(m_resetAllButton);
 
   footerLayout->addStretch();
 
   m_settingsButton = new QPushButton(tr("Settings"));
+  m_settingsButton->setIcon(iconMgr.getIcon("settings", 16));
   footerLayout->addWidget(m_settingsButton);
 
   mainLayout->addLayout(footerLayout);

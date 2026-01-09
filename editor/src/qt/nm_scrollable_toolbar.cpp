@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 
 #include <QHBoxLayout>
@@ -92,6 +93,7 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
   mainLayout->setSpacing(0);
 
   const auto &palette = NMStyleManager::instance().palette();
+  const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
 
   // Create header with toggle button
   m_headerWidget = new QWidget(this);
@@ -100,16 +102,17 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
   headerLayout->setContentsMargins(4, 2, 4, 2);
   headerLayout->setSpacing(4);
 
+  auto& iconMgr = NMIconManager::instance();
   m_toggleButton = new QPushButton(this);
   m_toggleButton->setFlat(true);
-  m_toggleButton->setFixedSize(16, 16);
+  NMStyleManager::configureSquareButton(m_toggleButton, buttonSizes.squareSmall);
   m_toggleButton->setText(m_collapsed ? "▶" : "▼");
+  m_toggleButton->setFixedSize(16, 16);
+  m_toggleButton->setIcon(iconMgr.getIcon(m_collapsed ? "chevron-right" : "chevron-down", 16));
   m_toggleButton->setStyleSheet(
-      QString("QPushButton { background: transparent; color: %1; border: none; "
-              "font-size: 10px; }"
-              "QPushButton:hover { color: %2; }")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
-          .arg(NMStyleManager::colorToStyleString(palette.textPrimary)));
+      QString("QPushButton { background: transparent; border: none; }"
+              "QPushButton:hover { background: %1; }")
+          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
 
   auto *titleLabel = new QLabel(title, m_headerWidget);
   titleLabel->setStyleSheet(
@@ -170,7 +173,8 @@ void NMCollapsiblePanel::toggle() { setCollapsed(!m_collapsed); }
 
 void NMCollapsiblePanel::updateVisibility() {
   if (m_toggleButton) {
-    m_toggleButton->setText(m_collapsed ? "▶" : "▼");
+    auto& iconMgr = NMIconManager::instance();
+    m_toggleButton->setIcon(iconMgr.getIcon(m_collapsed ? "chevron-right" : "chevron-down", 16));
   }
 
   if (m_contentContainer) {

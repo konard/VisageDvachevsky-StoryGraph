@@ -104,6 +104,7 @@ void NMWelcomeDialog::setupUI() {
           [this](bool checked) { m_skipInFuture = checked; });
 
   m_btnClose = new QPushButton("Close", m_footer);
+  m_btnClose->setIcon(NMIconManager::instance().getIcon("file-close", 16));
   m_btnClose->setMinimumWidth(100);
   connect(m_btnClose, &QPushButton::clicked, this, &QDialog::reject);
 
@@ -130,8 +131,11 @@ void NMWelcomeDialog::setupLeftPanel() {
   quickActionsLabel->setFont(sectionFont);
   m_leftLayout->addWidget(quickActionsLabel);
 
+  auto& iconMgr = NMIconManager::instance();
+
   // New Project button
   m_btnNewProject = new QPushButton("New Project", m_leftPanel);
+  m_btnNewProject->setIcon(iconMgr.getIcon("welcome-new", 16));
   m_btnNewProject->setObjectName("PrimaryActionButton");
   m_btnNewProject->setMinimumHeight(48);
   connect(m_btnNewProject, &QPushButton::clicked, this,
@@ -140,6 +144,7 @@ void NMWelcomeDialog::setupLeftPanel() {
 
   // Open Project button
   m_btnOpenProject = new QPushButton("Open Project", m_leftPanel);
+  m_btnOpenProject->setIcon(iconMgr.getIcon("welcome-open", 16));
   m_btnOpenProject->setObjectName("SecondaryActionButton");
   m_btnOpenProject->setMinimumHeight(48);
   connect(m_btnOpenProject, &QPushButton::clicked, this,
@@ -148,6 +153,7 @@ void NMWelcomeDialog::setupLeftPanel() {
 
   // Browse Examples button
   m_btnBrowseExamples = new QPushButton("Browse Examples", m_leftPanel);
+  m_btnBrowseExamples->setIcon(iconMgr.getIcon("welcome-examples", 16));
   m_btnBrowseExamples->setObjectName("SecondaryActionButton");
   m_btnBrowseExamples->setMinimumHeight(48);
   connect(m_btnBrowseExamples, &QPushButton::clicked, this,

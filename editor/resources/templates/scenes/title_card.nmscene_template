@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "id": "title_card",
+    "name": "Title Card",
+    "description": "Text overlay template. Display chapter titles, location names, or narrative text.",
+    "category": "Special",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["title", "text", "chapter", "overlay"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.5,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Background (often darkened or blurred)",
+          "style": "darkened"
+        }
+      },
+      {
+        "id": "title_text",
+        "name": "Title Text",
+        "type": "UI",
+        "x": 640.0,
+        "y": 300.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Main title text",
+          "uiType": "text",
+          "textType": "title",
+          "size": "large"
+        }
+      },
+      {
+        "id": "subtitle_text",
+        "name": "Subtitle Text",
+        "type": "UI",
+        "x": 640.0,
+        "y": 400.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Subtitle or description (optional)",
+          "uiType": "text",
+          "textType": "subtitle",
+          "size": "medium"
+        }
+      }
+    ]
+  }
+}

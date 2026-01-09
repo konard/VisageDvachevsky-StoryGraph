@@ -86,7 +86,7 @@ QDockWidget::title {
     background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
       stop:0 %2, stop:1 %4);
     color: %1;
-    padding: 5px 6px;
+    padding: 3px 6px;
     border-bottom: 1px solid %5;
     font-weight: 600;
 }
@@ -95,8 +95,8 @@ QDockWidget::float-button, QDockWidget::close-button {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 2px;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 QDockWidget::float-button:hover, QDockWidget::close-button:hover {
@@ -245,7 +245,7 @@ QDockWidget {
 
 QDockWidget::title {
     background-color: %4;
-    padding: 5px 6px;
+    padding: 3px 6px;
     border-bottom: 1px solid %5;
     border-left: 3px solid transparent;
     text-align: left;

@@ -18,6 +18,11 @@
 #include <QObject>
 #include <QString>
 
+class QAbstractButton;
+class QPushButton;
+class QToolButton;
+class QIcon;
+
 namespace NovelMind::editor::qt {
 
 /**
@@ -61,6 +66,34 @@ struct TypographyTokens {
 };
 
 /**
+ * @brief Standard button sizes for consistent UI
+ */
+struct ButtonSizeTokens {
+  // Standard button heights (width varies by content)
+  int small = 22;  // Compact toolbars, toggle buttons, icon-only buttons
+  int medium = 28; // Standard toolbar buttons, most UI buttons
+  int large = 34;  // Primary action buttons, important actions
+  int xlarge = 44; // Touch-friendly or prominent actions
+
+  // Icon sizes for buttons (match icon to button size)
+  int iconSmall = 14;
+  int iconMedium = 16;
+  int iconLarge = 20;
+  int iconXLarge = 24;
+
+  // Common square button sizes (width = height)
+  int squareSmall = 16;  // Tiny toggles, collapse buttons
+  int squareMedium = 24; // Mute/solo buttons, small controls
+  int squareLarge = 32;  // Standard square buttons
+  int squareXLarge = 40; // Record button, prominent square actions
+
+  // Special purpose sizes
+  int toolbarButton = 28; // Standard toolbar button
+  int paletteButton = 72; // Scene palette creation buttons (height)
+  int paletteButtonWidth = 84; // Scene palette creation buttons (width)
+};
+
+/**
  * @brief Panel-specific accent colors for visual identity
  */
 struct PanelAccents {
@@ -78,6 +111,14 @@ struct PanelAccents {
   QColor diagnostics{0xe1, 0x4e, 0x43};  // Red (for warnings/errors)
   QColor hierarchy{0x7c, 0xb3, 0x42};    // Lime
   QColor scenePalette{0xd6, 0x8f, 0xd6}; // Lavender
+};
+
+/**
+ * @brief Theme selection
+ */
+enum class Theme {
+  Dark,  // Dark theme (default)
+  Light  // Light theme
 };
 
 /**
@@ -194,6 +235,22 @@ public:
   void applyDarkTheme();
 
   /**
+   * @brief Apply the light theme to the application
+   */
+  void applyLightTheme();
+
+  /**
+   * @brief Apply a specific theme to the application
+   * @param theme Theme to apply
+   */
+  void applyTheme(Theme theme);
+
+  /**
+   * @brief Get the current theme
+   */
+  [[nodiscard]] Theme currentTheme() const { return m_currentTheme; }
+
+  /**
    * @brief Get the current color palette
    */
   [[nodiscard]] const EditorPalette &palette() const { return m_palette; }
@@ -213,6 +270,13 @@ public:
    */
   [[nodiscard]] const TypographyTokens &typography() const {
     return m_typography;
+  }
+
+  /**
+   * @brief Get button size tokens
+   */
+  [[nodiscard]] const ButtonSizeTokens &buttonSizes() const {
+    return m_buttonSizes;
   }
 
   /**
@@ -268,6 +332,32 @@ public:
    */
   static QString colorToRgbaString(const QColor &color, int alpha = 255);
 
+  /**
+   * @brief Configure a toolbar button with standard size and icon
+   * @param button Button to configure (QPushButton or QToolButton)
+   * @param icon Icon to set on the button
+   */
+  static void configureToolbarButton(QAbstractButton *button,
+                                       const QIcon &icon = QIcon());
+
+  /**
+   * @brief Configure a square button with standard size
+   * @param button Button to configure
+   * @param size Size variant (squareSmall, squareMedium, squareLarge,
+   * squareXLarge)
+   * @param icon Optional icon to set
+   */
+  static void configureSquareButton(QAbstractButton *button, int size,
+                                     const QIcon &icon = QIcon());
+
+  /**
+   * @brief Set button to a standard size
+   * @param button Button to configure
+   * @param width Width in pixels
+   * @param height Height in pixels
+   */
+  static void setButtonSize(QAbstractButton *button, int width, int height);
+
 signals:
   /**
    * @brief Emitted when the theme changes
@@ -289,12 +379,16 @@ private:
 
   void setupFonts();
   void setupHighDpi();
+  EditorPalette createDarkPalette() const;
+  EditorPalette createLightPalette() const;
 
   QApplication *m_app = nullptr;
+  Theme m_currentTheme = Theme::Dark;
   EditorPalette m_palette;
   SpacingTokens m_spacing;
   RadiusTokens m_radius;
   TypographyTokens m_typography;
+  ButtonSizeTokens m_buttonSizes;
   PanelAccents m_panelAccents;
   QFont m_defaultFont;
   QFont m_monospaceFont;

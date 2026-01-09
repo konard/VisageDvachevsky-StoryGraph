@@ -1,0 +1,127 @@
+{
+  "metadata": {
+    "id": "multi_character_scene",
+    "name": "Multi Character Scene",
+    "description": "3-4 characters in group conversation. Perfect for party scenes, meetings, and group discussions.",
+    "category": "Dialogue",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["dialogue", "group", "multiple-characters", "conversation"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Drop background image here"
+        }
+      },
+      {
+        "id": "character_far_left",
+        "name": "Character 1 (Far Left)",
+        "type": "Character",
+        "x": 150.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 0.9,
+        "scaleY": 0.9,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "First character position",
+          "position": "far_left"
+        }
+      },
+      {
+        "id": "character_left",
+        "name": "Character 2 (Left)",
+        "type": "Character",
+        "x": 400.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 11,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Second character position",
+          "position": "left"
+        }
+      },
+      {
+        "id": "character_right",
+        "name": "Character 3 (Right)",
+        "type": "Character",
+        "x": 880.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 11,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Third character position",
+          "position": "right"
+        }
+      },
+      {
+        "id": "character_far_right",
+        "name": "Character 4 (Far Right)",
+        "type": "Character",
+        "x": 1130.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 0.9,
+        "scaleY": 0.9,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Fourth character position",
+          "position": "far_right"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

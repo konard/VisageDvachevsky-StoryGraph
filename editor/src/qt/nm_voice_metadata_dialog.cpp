@@ -7,6 +7,7 @@
  */
 
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "nm_dialogs_detail.hpp"
 
 #include <QComboBox>
@@ -107,7 +108,10 @@ void NMVoiceMetadataDialog::buildUi(
   m_tagInput->setPlaceholderText(tr("Enter a tag and press Add..."));
   tagInputLayout->addWidget(m_tagInput, 1);
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_addTagBtn = new QPushButton(tr("Add"), this);
+  m_addTagBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addTagBtn->setObjectName("NMSecondaryButton");
   connect(m_addTagBtn, &QPushButton::clicked, this,
           &NMVoiceMetadataDialog::onAddTag);
@@ -116,6 +120,7 @@ void NMVoiceMetadataDialog::buildUi(
   tagInputLayout->addWidget(m_addTagBtn);
 
   m_removeTagBtn = new QPushButton(tr("Remove"), this);
+  m_removeTagBtn->setIcon(iconMgr.getIcon("remove", 16));
   m_removeTagBtn->setObjectName("NMSecondaryButton");
   m_removeTagBtn->setEnabled(false);
   connect(m_removeTagBtn, &QPushButton::clicked, this,

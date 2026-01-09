@@ -1,0 +1,93 @@
+{
+  "metadata": {
+    "id": "abstract_space",
+    "name": "Abstract Space",
+    "description": "Minimal/symbolic setting. Simple, abstract background for symbolic or dream sequences.",
+    "category": "Location",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["abstract", "minimal", "symbolic", "dream"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Abstract Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Abstract or minimal background",
+          "locationType": "abstract",
+          "style": "minimal"
+        }
+      },
+      {
+        "id": "character_center",
+        "name": "Character",
+        "type": "Character",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character in abstract space",
+          "position": "center"
+        }
+      },
+      {
+        "id": "symbolic_element",
+        "name": "Symbolic Element",
+        "type": "Prop",
+        "x": 640.0,
+        "y": 500.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.7,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Optional symbolic prop or effect",
+          "propType": "symbolic"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area (optional)",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

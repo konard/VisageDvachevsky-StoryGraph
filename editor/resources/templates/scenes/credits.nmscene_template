@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "id": "credits",
+    "name": "Credits",
+    "description": "Rolling credits setup. End credits scene with scrolling text area.",
+    "category": "Special",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["credits", "ending", "staff", "roll"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Credits Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Background for credits",
+          "style": "credits"
+        }
+      },
+      {
+        "id": "credits_text",
+        "name": "Credits Text Area",
+        "type": "UI",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Scrolling credits text area",
+          "uiType": "text",
+          "textType": "credits",
+          "scrolling": "true"
+        }
+      },
+      {
+        "id": "title_text",
+        "name": "Game Title",
+        "type": "UI",
+        "x": 640.0,
+        "y": 150.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 101,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Game title at top (optional)",
+          "uiType": "text",
+          "textType": "title",
+          "size": "large"
+        }
+      }
+    ]
+  }
+}
