@@ -121,6 +121,8 @@ add_library(novelmind_editor STATIC
     src/qt/nm_undo_manager.cpp
     src/qt/nm_icon_manager.cpp
     src/qt/nm_scrollable_toolbar.cpp
+    src/qt/nm_fuzzy_matcher.cpp
+    src/qt/nm_command_palette.cpp
 
     # Phase 0 & 1 panels
     src/qt/panels/nm_scene_view_panel.cpp
@@ -208,6 +210,8 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/nm_play_mode_controller.hpp
     include/NovelMind/editor/qt/nm_scrollable_toolbar.hpp
     include/NovelMind/editor/qt/nm_bezier_curve_editor_dialog.hpp
+    include/NovelMind/editor/qt/nm_fuzzy_matcher.hpp
+    include/NovelMind/editor/qt/nm_command_palette.hpp
     include/NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp
 
     # Panel headers

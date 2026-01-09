@@ -1,4 +1,5 @@
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_command_palette.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_main_window.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
@@ -29,107 +30,6 @@
 #include <chrono>
 
 namespace NovelMind::editor::qt {
-namespace {
-
-class NMCommandPalette : public QDialog {
-public:
-  explicit NMCommandPalette(QWidget *parent, const QList<QAction *> &actions)
-      : QDialog(parent), m_actions(actions) {
-    setWindowFlag(Qt::FramelessWindowHint);
-    setWindowModality(Qt::ApplicationModal);
-    setAttribute(Qt::WA_DeleteOnClose);
-    setMinimumWidth(420);
-    setObjectName("CommandPalette");
-
-    auto *layout = new QVBoxLayout(this);
-    layout->setContentsMargins(12, 12, 12, 12);
-    layout->setSpacing(8);
-
-    m_input = new QLineEdit(this);
-    m_input->setObjectName("CommandPaletteInput");
-    m_input->setPlaceholderText(tr("Type a command..."));
-    layout->addWidget(m_input);
-
-    m_list = new QListWidget(this);
-    m_list->setObjectName("CommandPaletteList");
-    layout->addWidget(m_list, 1);
-
-    connect(m_input, &QLineEdit::textChanged, this,
-            &NMCommandPalette::onFilterChanged);
-    connect(m_list, &QListWidget::itemActivated, this,
-            &NMCommandPalette::onItemActivated);
-
-    populate();
-    m_input->setFocus();
-  }
-
-  void openCentered(QWidget *anchor) {
-    if (!anchor) {
-      show();
-      return;
-    }
-    const QRect geom = anchor->geometry();
-    const QPoint globalCenter = anchor->mapToGlobal(geom.center());
-    move(globalCenter.x() - width() / 2, globalCenter.y() - height() / 2);
-    show();
-  }
-
-private:
-  void onFilterChanged(const QString &text) {
-    for (int i = 0; i < m_list->count(); ++i) {
-      auto *item = m_list->item(i);
-      const bool match = item->data(Qt::UserRole)
-                             .toString()
-                             .contains(text, Qt::CaseInsensitive);
-      item->setHidden(!match);
-    }
-    if (m_list->currentItem() && m_list->currentItem()->isHidden()) {
-      m_list->setCurrentItem(nullptr);
-    }
-  }
-
-  void onItemActivated(QListWidgetItem *item) {
-    if (!item) {
-      return;
-    }
-    QVariant actionPtrVar = item->data(Qt::UserRole + 1);
-    auto *action = reinterpret_cast<QAction *>(actionPtrVar.value<quintptr>());
-    if (action && action->isEnabled()) {
-      action->trigger();
-    }
-    accept();
-  }
-
-  void populate() {
-    for (auto *action : m_actions) {
-      if (!action || action->text().isEmpty()) {
-        continue;
-      }
-      auto *item = new QListWidgetItem(action->text(), m_list);
-      QString meta = action->toolTip();
-      if (meta.isEmpty()) {
-        meta = action->statusTip();
-      }
-      QString shortcut = action->shortcut().toString();
-      if (!shortcut.isEmpty()) {
-        meta += meta.isEmpty() ? shortcut : (" | " + shortcut);
-      }
-      item->setToolTip(meta);
-      item->setData(Qt::UserRole, action->text() + " " + meta);
-      item->setData(Qt::UserRole + 1, quintptr(action));
-      m_list->addItem(item);
-    }
-    if (m_list->count() > 0) {
-      m_list->setCurrentRow(0);
-    }
-  }
-
-  QList<QAction *> m_actions;
-  QLineEdit *m_input = nullptr;
-  QListWidget *m_list = nullptr;
-};
-
-} // namespace
 
 void NMMainWindow::setupShortcuts() {
   // Shortcuts are already set on the actions in setupMenuBar()
@@ -143,9 +43,17 @@ void NMMainWindow::setupShortcuts() {
   connect(prevDockShortcut, &QShortcut::activated, this,
           [this]() { focusNextDock(true); });
 
-  auto *paletteShortcut = new QShortcut(QKeySequence("Ctrl+Shift+P"), this);
-  connect(paletteShortcut, &QShortcut::activated, this,
-          &NMMainWindow::showCommandPalette);
+  // Ctrl+P: Quick panel switcher (panels only)
+  auto *panelSwitcherShortcut = new QShortcut(QKeySequence("Ctrl+P"), this);
+  connect(panelSwitcherShortcut, &QShortcut::activated, this, [this]() {
+    showCommandPalette(true); // panels only
+  });
+
+  // Ctrl+Shift+P: Full command palette (all commands)
+  auto *commandPaletteShortcut = new QShortcut(QKeySequence("Ctrl+Shift+P"), this);
+  connect(commandPaletteShortcut, &QShortcut::activated, this, [this]() {
+    showCommandPalette(false); // all commands
+  });
 
   auto *focusShortcut = new QShortcut(QKeySequence("Ctrl+Shift+F"), this);
   connect(focusShortcut, &QShortcut::activated, this, [this]() {
@@ -296,7 +204,7 @@ void NMMainWindow::updateWindowTitle(const QString &projectName) {
   updateStatusBarContext();
 }
 
-void NMMainWindow::showCommandPalette() {
+void NMMainWindow::showCommandPalette(bool panelsOnly) {
   QList<QAction *> actions;
 
   // Collect menu actions
@@ -308,6 +216,7 @@ void NMMainWindow::showCommandPalette() {
     }
   }
 
+  // Add panel toggle actions explicitly
   actions << m_actionToggleSceneView << m_actionToggleStoryGraph
           << m_actionToggleInspector << m_actionToggleConsole
           << m_actionToggleIssues << m_actionToggleDiagnostics
@@ -316,13 +225,19 @@ void NMMainWindow::showCommandPalette() {
           << m_actionToggleBuildSettings << m_actionToggleAssetBrowser
           << m_actionToggleScenePalette << m_actionToggleHierarchy
           << m_actionToggleScriptEditor << m_actionToggleScriptDocs
-          << m_actionToggleDebugOverlay << m_actionLayoutStory
-          << m_actionLayoutScene << m_actionLayoutScript
+          << m_actionToggleDebugOverlay << m_actionToggleVoiceStudio
+          << m_actionToggleAudioMixer << m_actionToggleScriptRuntimeInspector;
+
+  // Add layout/workspace actions
+  actions << m_actionLayoutStory << m_actionLayoutScene << m_actionLayoutScript
           << m_actionLayoutDeveloper << m_actionLayoutCompact
+          << m_actionLayoutDefault << m_actionLayoutStoryScript
+          << m_actionLayoutSceneAnimation << m_actionLayoutAudioVoice
           << m_actionFocusMode << m_actionLockLayout << m_actionUiScaleDown
           << m_actionUiScaleUp << m_actionUiScaleReset;
 
-  auto *palette = new NMCommandPalette(this, actions);
+  auto mode = panelsOnly ? NMCommandPalette::Mode::Panels : NMCommandPalette::Mode::All;
+  auto *palette = new NMCommandPalette(this, actions, mode);
   palette->openCentered(this);
 }
 
