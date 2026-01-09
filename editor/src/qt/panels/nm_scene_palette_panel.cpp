@@ -102,13 +102,15 @@ void NMScenePalettePanel::setupContent() {
   grid->setSpacing(6);
 
   auto &iconMgr = NMIconManager::instance();
+  const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
   auto makeButton = [&](const QString &label, const QString &iconName,
                         NMSceneObjectType type, int row, int col) {
     auto *btn = new QToolButton(m_contentWidget);
     btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     btn->setIcon(iconMgr.getIcon(iconName, 24));
     btn->setText(label);
-    btn->setMinimumSize(84, 72);
+    btn->setMinimumSize(buttonSizes.paletteButtonWidth,
+                        buttonSizes.paletteButton);
     connect(btn, &QToolButton::clicked, this,
             [this, type]() { emit createObjectRequested(type); });
     grid->addWidget(btn, row, col);

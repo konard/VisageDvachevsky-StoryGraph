@@ -12,6 +12,7 @@
 #include "NovelMind/editor/interfaces/IAudioPlayer.hpp"
 #include "NovelMind/editor/interfaces/QtAudioPlayer.hpp"
 #include "NovelMind/editor/interfaces/ServiceLocator.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QApplication>
 #include <QAudioOutput>
@@ -462,7 +463,11 @@ void NMRecordingStudioPanel::setupRecordingControls() {
   // Button row
   auto *btnLayout = new QHBoxLayout();
 
+  // Get icon manager for button icons
+  auto &iconMgr = NMIconManager::instance();
+
   m_recordBtn = new QPushButton(tr("Record"), group);
+  m_recordBtn->setIcon(iconMgr.getIcon("record", 16));
   m_recordBtn->setStyleSheet(
       "QPushButton { background-color: #c44; color: white; font-weight: bold; "
       "padding: 8px 16px; }"
@@ -473,12 +478,14 @@ void NMRecordingStudioPanel::setupRecordingControls() {
   btnLayout->addWidget(m_recordBtn);
 
   m_stopBtn = new QPushButton(tr("Stop"), group);
+  m_stopBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopBtn->setEnabled(false);
   connect(m_stopBtn, &QPushButton::clicked, this,
           &NMRecordingStudioPanel::onStopClicked);
   btnLayout->addWidget(m_stopBtn);
 
   m_cancelBtn = new QPushButton(tr("Cancel"), group);
+  m_cancelBtn->setIcon(iconMgr.getIcon("file-close", 16));
   m_cancelBtn->setEnabled(false);
   connect(m_cancelBtn, &QPushButton::clicked, this,
           &NMRecordingStudioPanel::onCancelClicked);

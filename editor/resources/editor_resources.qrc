@@ -7,6 +7,7 @@
         <file>icons/float.svg</file>
         <file>icons/lucide/activity.svg</file>
         <file>icons/lucide/arrow-down.svg</file>
+        <file>icons/lucide/arrow-left-right.svg</file>
         <file>icons/lucide/arrow-left.svg</file>
         <file>icons/lucide/arrow-right.svg</file>
         <file>icons/lucide/arrow-up-right.svg</file>
@@ -48,6 +49,7 @@
         <file>icons/lucide/git-branch.svg</file>
         <file>icons/lucide/git-graph.svg</file>
         <file>icons/lucide/globe.svg</file>
+        <file>icons/lucide/graduation-cap.svg</file>
         <file>icons/lucide/grid-3x3.svg</file>
         <file>icons/lucide/hammer.svg</file>
         <file>icons/lucide/hand.svg</file>
@@ -85,6 +87,7 @@
         <file>icons/lucide/redo.svg</file>
         <file>icons/lucide/refresh-cw.svg</file>
         <file>icons/lucide/repeat.svg</file>
+        <file>icons/lucide/rocket.svg</file>
         <file>icons/lucide/rotate-ccw.svg</file>
         <file>icons/lucide/rotate-cw.svg</file>
         <file>icons/lucide/save.svg</file>

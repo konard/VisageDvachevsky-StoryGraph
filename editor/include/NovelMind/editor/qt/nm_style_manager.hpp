@@ -18,6 +18,11 @@
 #include <QObject>
 #include <QString>
 
+class QAbstractButton;
+class QPushButton;
+class QToolButton;
+class QIcon;
+
 namespace NovelMind::editor::qt {
 
 /**
@@ -58,6 +63,34 @@ struct TypographyTokens {
   int titleSize = 14;
   int headingSize = 18;
   int displaySize = 24;
+};
+
+/**
+ * @brief Standard button sizes for consistent UI
+ */
+struct ButtonSizeTokens {
+  // Standard button heights (width varies by content)
+  int small = 22;  // Compact toolbars, toggle buttons, icon-only buttons
+  int medium = 28; // Standard toolbar buttons, most UI buttons
+  int large = 34;  // Primary action buttons, important actions
+  int xlarge = 44; // Touch-friendly or prominent actions
+
+  // Icon sizes for buttons (match icon to button size)
+  int iconSmall = 14;
+  int iconMedium = 16;
+  int iconLarge = 20;
+  int iconXLarge = 24;
+
+  // Common square button sizes (width = height)
+  int squareSmall = 16;  // Tiny toggles, collapse buttons
+  int squareMedium = 24; // Mute/solo buttons, small controls
+  int squareLarge = 32;  // Standard square buttons
+  int squareXLarge = 40; // Record button, prominent square actions
+
+  // Special purpose sizes
+  int toolbarButton = 28; // Standard toolbar button
+  int paletteButton = 72; // Scene palette creation buttons (height)
+  int paletteButtonWidth = 84; // Scene palette creation buttons (width)
 };
 
 /**
@@ -240,6 +273,13 @@ public:
   }
 
   /**
+   * @brief Get button size tokens
+   */
+  [[nodiscard]] const ButtonSizeTokens &buttonSizes() const {
+    return m_buttonSizes;
+  }
+
+  /**
    * @brief Get panel accent colors
    */
   [[nodiscard]] const PanelAccents &panelAccents() const {
@@ -292,6 +332,32 @@ public:
    */
   static QString colorToRgbaString(const QColor &color, int alpha = 255);
 
+  /**
+   * @brief Configure a toolbar button with standard size and icon
+   * @param button Button to configure (QPushButton or QToolButton)
+   * @param icon Icon to set on the button
+   */
+  static void configureToolbarButton(QAbstractButton *button,
+                                       const QIcon &icon = QIcon());
+
+  /**
+   * @brief Configure a square button with standard size
+   * @param button Button to configure
+   * @param size Size variant (squareSmall, squareMedium, squareLarge,
+   * squareXLarge)
+   * @param icon Optional icon to set
+   */
+  static void configureSquareButton(QAbstractButton *button, int size,
+                                     const QIcon &icon = QIcon());
+
+  /**
+   * @brief Set button to a standard size
+   * @param button Button to configure
+   * @param width Width in pixels
+   * @param height Height in pixels
+   */
+  static void setButtonSize(QAbstractButton *button, int width, int height);
+
 signals:
   /**
    * @brief Emitted when the theme changes
@@ -322,6 +388,7 @@ private:
   SpacingTokens m_spacing;
   RadiusTokens m_radius;
   TypographyTokens m_typography;
+  ButtonSizeTokens m_buttonSizes;
   PanelAccents m_panelAccents;
   QFont m_defaultFont;
   QFont m_monospaceFont;

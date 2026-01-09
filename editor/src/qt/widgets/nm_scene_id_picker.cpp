@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_id_picker.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/scene_registry.hpp"
 #include <QDateTime>
@@ -118,11 +119,15 @@ void NMSceneIdPicker::setupUI() {
   m_actionsLayout = new QHBoxLayout();
   m_actionsLayout->setSpacing(4);
 
+  auto& iconMgr = NMIconManager::instance();
   m_createButton = new QPushButton("Create New", this);
+  m_createButton->setIcon(iconMgr.getIcon("file-new", 16));
   m_createButton->setMaximumWidth(100);
   m_editButton = new QPushButton("Edit Scene", this);
+  m_editButton->setIcon(iconMgr.getIcon("edit-rename", 16));
   m_editButton->setMaximumWidth(100);
   m_locateButton = new QPushButton("Locate", this);
+  m_locateButton->setIcon(iconMgr.getIcon("search", 16));
   m_locateButton->setMaximumWidth(80);
 
   // Style buttons

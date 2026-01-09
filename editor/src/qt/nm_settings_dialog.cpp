@@ -6,6 +6,7 @@
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDoubleSpinBox>
@@ -318,6 +319,7 @@ NMPathSettingWidget::NMPathSettingWidget(const SettingDefinition &def,
   layout->addWidget(m_lineEdit, 1);
 
   m_browseButton = new QPushButton("Browse...", this);
+  m_browseButton->setIcon(qt::NMIconManager::instance().getIcon("folder-open", 16));
   layout->addWidget(m_browseButton);
 
   connect(m_lineEdit, &QLineEdit::textChanged, this,
@@ -525,15 +527,22 @@ void NMSettingsDialog::setupUI() {
   auto *buttonLayout = new QHBoxLayout(buttonWidget);
   buttonLayout->setContentsMargins(8, 8, 8, 8);
 
+  auto& iconMgr = qt::NMIconManager::instance();
+
   m_resetButton = new QPushButton("Reset to Defaults", this);
+  m_resetButton->setIcon(iconMgr.getIcon("refresh", 16));
   buttonLayout->addWidget(m_resetButton);
 
   buttonLayout->addStretch();
 
   m_applyButton = new QPushButton("Apply", this);
+  m_applyButton->setIcon(iconMgr.getIcon("file-save", 16));
   m_revertButton = new QPushButton("Revert", this);
+  m_revertButton->setIcon(iconMgr.getIcon("property-reset", 16));
   m_okButton = new QPushButton("OK", this);
+  m_okButton->setIcon(iconMgr.getIcon("status-success", 16));
   m_cancelButton = new QPushButton("Cancel", this);
+  m_cancelButton->setIcon(iconMgr.getIcon("file-close", 16));
 
   buttonLayout->addWidget(m_applyButton);
   buttonLayout->addWidget(m_revertButton);
