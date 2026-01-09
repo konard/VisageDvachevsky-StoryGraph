@@ -200,16 +200,34 @@ NMGraphNodeItem *NMStoryGraphScene::addNode(const QString &title,
 
           // Verify the file was written successfully
           if (scriptFile.error() != QFile::NoError) {
+            const QString errorMsg = scriptFile.errorString();
             qWarning() << "[StoryGraph] Failed to write script file for node"
                        << node->nodeIdString() << ":"
-                       << scriptFile.errorString();
+                       << errorMsg;
+
+            // Mark the node with an error state
+            node->setScriptFileError(true);
+            node->setScriptFileErrorMessage(
+                QString("Failed to write script file: %1").arg(errorMsg));
+
+            // Emit signal to notify that there was an error
+            emit scriptFileCreationFailed(node->nodeId(), node->nodeIdString(), errorMsg);
           } else {
             qDebug() << "[StoryGraph] Successfully created script file:"
                      << scriptPathRel;
           }
         } else {
+          const QString errorMsg = scriptFile.errorString();
           qWarning() << "[StoryGraph] Failed to open script file for writing:"
-                     << scriptPathAbs << "-" << scriptFile.errorString();
+                     << scriptPathAbs << "-" << errorMsg;
+
+          // Mark the node with an error state
+          node->setScriptFileError(true);
+          node->setScriptFileErrorMessage(
+              QString("Failed to create script file: %1").arg(errorMsg));
+
+          // Emit signal to notify that there was an error
+          emit scriptFileCreationFailed(node->nodeId(), node->nodeIdString(), errorMsg);
         }
       }
     }

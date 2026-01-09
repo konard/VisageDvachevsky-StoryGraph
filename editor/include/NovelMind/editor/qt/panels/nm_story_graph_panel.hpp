@@ -141,6 +141,13 @@ public:
   void setSceneValidationMessage(const QString &message);
   [[nodiscard]] QString sceneValidationMessage() const { return m_sceneValidationMessage; }
 
+  // Script file creation state
+  void setScriptFileError(bool hasError);
+  [[nodiscard]] bool hasScriptFileError() const { return m_hasScriptFileError; }
+
+  void setScriptFileErrorMessage(const QString &message);
+  [[nodiscard]] QString scriptFileErrorMessage() const { return m_scriptFileErrorMessage; }
+
   // Condition Node specific properties
   void setConditionExpression(const QString &expr) {
     m_conditionExpression = expr;
@@ -250,6 +257,10 @@ private:
   bool m_hasSceneValidationError = false;
   bool m_hasSceneValidationWarning = false;
   QString m_sceneValidationMessage;
+
+  // Script file creation state
+  bool m_hasScriptFileError = false;
+  QString m_scriptFileErrorMessage;
 
   // Condition Node specific properties
   QString m_conditionExpression;
@@ -434,6 +445,8 @@ signals:
   void entryNodeRequested(const QString &nodeIdString);
   void deleteSelectionRequested();
   void nodesMoved(const QVector<GraphNodeMove> &moves);
+  void scriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
+                                const QString &errorMessage);
 
 protected:
   void drawBackground(QPainter *painter, const QRectF &rect) override;
@@ -704,6 +717,8 @@ private slots:
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
   void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
+  void onScriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
+                                  const QString &errorMessage);
 
   // Scene auto-sync event handlers (Issue #223)
   void onSceneThumbnailUpdated(const QString &sceneId, const QString &thumbnailPath);
