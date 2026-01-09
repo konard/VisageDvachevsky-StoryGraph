@@ -91,7 +91,10 @@ void NMScriptWelcomeDialog::setupMainContent() {
   auto *actionsRow = new QHBoxLayout();
   actionsRow->setSpacing(16);
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_takeTourBtn = new QPushButton(tr("Take a 2-Minute Tour"), m_contentWidget);
+  m_takeTourBtn->setIcon(iconMgr.getIcon("play", 16));
   m_takeTourBtn->setObjectName("PrimaryActionButton");
   m_takeTourBtn->setMinimumHeight(48);
   m_takeTourBtn->setToolTip(tr("Interactive tour of Script Editor features"));
@@ -99,6 +102,7 @@ void NMScriptWelcomeDialog::setupMainContent() {
           &NMScriptWelcomeDialog::onTakeTourClicked);
 
   m_quickStartBtn = new QPushButton(tr("View Quick Start Guide"), m_contentWidget);
+  m_quickStartBtn->setIcon(iconMgr.getIcon("help", 16));
   m_quickStartBtn->setObjectName("SecondaryActionButton");
   m_quickStartBtn->setMinimumHeight(48);
   m_quickStartBtn->setToolTip(tr("Open documentation in browser"));
@@ -106,6 +110,7 @@ void NMScriptWelcomeDialog::setupMainContent() {
           &NMScriptWelcomeDialog::onQuickStartClicked);
 
   auto *shortcutsBtn = new QPushButton(tr("Keyboard Shortcuts"), m_contentWidget);
+  shortcutsBtn->setIcon(iconMgr.getIcon("settings", 16));
   shortcutsBtn->setObjectName("SecondaryActionButton");
   shortcutsBtn->setMinimumHeight(48);
   shortcutsBtn->setToolTip(tr("View all keyboard shortcuts"));
@@ -216,6 +221,7 @@ void NMScriptWelcomeDialog::setupFooter() {
           [this](bool checked) { m_skipInFuture = checked; });
 
   m_closeBtn = new QPushButton(tr("Close"), m_footerWidget);
+  m_closeBtn->setIcon(NMIconManager::instance().getIcon("file-close", 16));
   m_closeBtn->setMinimumWidth(100);
   connect(m_closeBtn, &QPushButton::clicked, this, &QDialog::accept);
 
@@ -321,6 +327,7 @@ QWidget *NMScriptWelcomeDialog::createSampleCard(const QString &title,
 
   // Open button
   auto *openBtn = new QPushButton(tr("Open Sample"), card);
+  openBtn->setIcon(NMIconManager::instance().getIcon("file-open", 16));
   openBtn->setObjectName("SampleOpenButton");
   connect(openBtn, &QPushButton::clicked, this,
           [this, sampleId]() { onSampleClicked(sampleId); });

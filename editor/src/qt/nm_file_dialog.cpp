@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "nm_dialogs_detail.hpp"
 
 #include <QAbstractItemView>
@@ -158,7 +159,10 @@ void NMFileDialog::buildUi() {
   auto *pathLayout = new QHBoxLayout();
   pathLayout->setSpacing(6);
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_upButton = new QPushButton(tr("Up"), this);
+  m_upButton->setIcon(iconMgr.getIcon("arrow-up", 16));
   m_upButton->setObjectName("NMSecondaryButton");
   connect(m_upButton, &QPushButton::clicked, this, [this]() {
     QDir dir(m_currentDir);
@@ -319,11 +323,13 @@ void NMFileDialog::buildUi() {
     acceptText = tr("Open");
   }
   m_acceptButton = new QPushButton(acceptText, this);
+  m_acceptButton->setIcon(NMIconManager::instance().getIcon("status-success", 16));
   m_acceptButton->setObjectName("NMPrimaryButton");
   connect(m_acceptButton, &QPushButton::clicked, this,
           &NMFileDialog::acceptSelection);
 
   m_cancelButton = new QPushButton(tr("Cancel"), this);
+  m_cancelButton->setIcon(NMIconManager::instance().getIcon("file-close", 16));
   m_cancelButton->setObjectName("NMSecondaryButton");
   connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
 

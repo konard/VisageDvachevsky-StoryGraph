@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/scene_template_manager.hpp"
 #include "nm_dialogs_detail.hpp"
 
@@ -168,11 +169,15 @@ void NMNewSceneDialog::buildUi() {
   auto *buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_cancelButton = new QPushButton(tr("Cancel"), this);
+  m_cancelButton->setIcon(iconMgr.getIcon("file-close", 16));
   m_cancelButton->setObjectName("NMSecondaryButton");
   connect(m_cancelButton, &QPushButton::clicked, this, &QDialog::reject);
 
   m_createButton = new QPushButton(tr("Create Scene"), this);
+  m_createButton->setIcon(iconMgr.getIcon("file-new", 16));
   m_createButton->setObjectName("NMPrimaryButton");
   m_createButton->setDefault(true);
   m_createButton->setEnabled(false);

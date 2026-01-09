@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "nm_dialogs_detail.hpp"
 
 #include <QComboBox>
@@ -51,11 +52,15 @@ NMInputDialog::NMInputDialog(QWidget *parent, const QString &title,
   auto *buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
+  auto& iconMgr = NMIconManager::instance();
+
   m_okButton = new QPushButton(tr("OK"), this);
+  m_okButton->setIcon(iconMgr.getIcon("status-success", 16));
   m_okButton->setObjectName("NMPrimaryButton");
   m_okButton->setDefault(true);
 
   m_cancelButton = new QPushButton(tr("Cancel"), this);
+  m_cancelButton->setIcon(iconMgr.getIcon("file-close", 16));
   m_cancelButton->setObjectName("NMSecondaryButton");
 
   connect(m_okButton, &QPushButton::clicked, this, &QDialog::accept);
