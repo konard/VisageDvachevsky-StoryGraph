@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "id": "phone_call",
+    "name": "Phone Call",
+    "description": "Split screen with two characters. Perfect for phone calls and remote conversations.",
+    "category": "Dialogue",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["phone", "call", "split-screen", "remote"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background_left",
+        "name": "Left Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 0.5,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Left side background",
+          "split": "left"
+        }
+      },
+      {
+        "id": "background_right",
+        "name": "Right Background",
+        "type": "Background",
+        "x": 640.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 0.5,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Right side background",
+          "split": "right"
+        }
+      },
+      {
+        "id": "character_left",
+        "name": "Character 1 (Left)",
+        "type": "Character",
+        "x": 320.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "First character on phone",
+          "position": "left",
+          "split": "left"
+        }
+      },
+      {
+        "id": "character_right",
+        "name": "Character 2 (Right)",
+        "type": "Character",
+        "x": 960.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Second character on phone",
+          "position": "right",
+          "split": "right"
+        }
+      },
+      {
+        "id": "split_divider",
+        "name": "Split Screen Divider",
+        "type": "UI",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 50,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Divider line for split screen",
+          "uiType": "divider"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

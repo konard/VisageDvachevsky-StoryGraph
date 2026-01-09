@@ -1,0 +1,112 @@
+{
+  "metadata": {
+    "id": "indoor_scene",
+    "name": "Indoor Scene",
+    "description": "Room with furniture props. Complete indoor environment setup with furniture and character positions.",
+    "category": "Location",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["indoor", "room", "furniture", "interior"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Room Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Indoor room background",
+          "locationType": "indoor"
+        }
+      },
+      {
+        "id": "furniture_left",
+        "name": "Left Furniture",
+        "type": "Prop",
+        "x": 200.0,
+        "y": 450.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Furniture prop (table, chair, etc.)",
+          "propType": "furniture",
+          "position": "left"
+        }
+      },
+      {
+        "id": "furniture_right",
+        "name": "Right Furniture",
+        "type": "Prop",
+        "x": 1080.0,
+        "y": 450.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Furniture prop (lamp, shelf, etc.)",
+          "propType": "furniture",
+          "position": "right"
+        }
+      },
+      {
+        "id": "character_center",
+        "name": "Character",
+        "type": "Character",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character in room",
+          "position": "center"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

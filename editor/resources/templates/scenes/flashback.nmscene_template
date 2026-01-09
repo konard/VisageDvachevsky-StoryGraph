@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "id": "flashback",
+    "name": "Flashback",
+    "description": "Sepia/filtered template. Scene with visual effects to indicate past events or memories.",
+    "category": "Special",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["flashback", "memory", "past", "sepia", "filter"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.9,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Background with sepia or desaturated effect",
+          "filter": "sepia",
+          "style": "flashback"
+        }
+      },
+      {
+        "id": "filter_overlay",
+        "name": "Visual Filter Overlay",
+        "type": "UI",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.3,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Color overlay (sepia, desaturated, etc.)",
+          "uiType": "overlay",
+          "filterType": "sepia"
+        }
+      },
+      {
+        "id": "character_left",
+        "name": "Character 1",
+        "type": "Character",
+        "x": 400.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.9,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Left character in flashback",
+          "position": "left",
+          "filter": "sepia"
+        }
+      },
+      {
+        "id": "character_right",
+        "name": "Character 2",
+        "type": "Character",
+        "x": 880.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.9,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Right character in flashback",
+          "position": "right",
+          "filter": "sepia"
+        }
+      },
+      {
+        "id": "flashback_indicator",
+        "name": "Flashback Indicator",
+        "type": "UI",
+        "x": 640.0,
+        "y": 50.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.8,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Optional text indicator (e.g., 'Five years ago...')",
+          "uiType": "text",
+          "textType": "indicator"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

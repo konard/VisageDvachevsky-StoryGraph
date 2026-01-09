@@ -127,6 +127,41 @@ TEST_CASE("SceneTemplateManager built-in templates", "[scene_template]") {
     REQUIRE(manager.hasTemplate("title_screen"));
   }
 
+  SECTION("loadBuiltInTemplates includes new dialogue templates") {
+    manager.loadBuiltInTemplates();
+
+    REQUIRE(manager.hasTemplate("two_character_dialogue"));
+    REQUIRE(manager.hasTemplate("multi_character_scene"));
+    REQUIRE(manager.hasTemplate("interrogation"));
+    REQUIRE(manager.hasTemplate("phone_call"));
+  }
+
+  SECTION("loadBuiltInTemplates includes new scene type templates") {
+    manager.loadBuiltInTemplates();
+
+    REQUIRE(manager.hasTemplate("establishing_shot"));
+    REQUIRE(manager.hasTemplate("closeup"));
+    REQUIRE(manager.hasTemplate("reaction_shot"));
+    REQUIRE(manager.hasTemplate("transition"));
+  }
+
+  SECTION("loadBuiltInTemplates includes new location templates") {
+    manager.loadBuiltInTemplates();
+
+    REQUIRE(manager.hasTemplate("indoor_scene"));
+    REQUIRE(manager.hasTemplate("outdoor_scene"));
+    REQUIRE(manager.hasTemplate("vehicle_interior"));
+    REQUIRE(manager.hasTemplate("abstract_space"));
+  }
+
+  SECTION("loadBuiltInTemplates includes new special templates") {
+    manager.loadBuiltInTemplates();
+
+    REQUIRE(manager.hasTemplate("title_card"));
+    REQUIRE(manager.hasTemplate("credits"));
+    REQUIRE(manager.hasTemplate("flashback"));
+  }
+
   SECTION("getAvailableTemplateIds returns all templates") {
     manager.loadBuiltInTemplates();
 
@@ -223,6 +258,87 @@ TEST_CASE("SceneTemplateManager template content", "[scene_template]") {
     REQUIRE(tmpl->content.objects[0].type == "Background");
     REQUIRE(tmpl->content.objects[0].properties.count("fullscreen") == 1);
   }
+
+  SECTION("two_character_dialogue has facing characters") {
+    auto tmpl = manager.getTemplate("two_character_dialogue");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Dialogue");
+    REQUIRE(tmpl->content.objects.size() >= 3);
+  }
+
+  SECTION("multi_character_scene has 4 characters") {
+    auto tmpl = manager.getTemplate("multi_character_scene");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Dialogue");
+    // Should have background + 4 characters + dialogue box
+    REQUIRE(tmpl->content.objects.size() >= 6);
+  }
+
+  SECTION("interrogation has seated and standing positions") {
+    auto tmpl = manager.getTemplate("interrogation");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Dialogue");
+    bool hasSeated = false;
+    bool hasStanding = false;
+    for (const auto &obj : tmpl->content.objects) {
+      if (obj.id == "character_seated") hasSeated = true;
+      if (obj.id == "character_standing") hasStanding = true;
+    }
+    REQUIRE(hasSeated);
+    REQUIRE(hasStanding);
+  }
+
+  SECTION("phone_call has split screen setup") {
+    auto tmpl = manager.getTemplate("phone_call");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Dialogue");
+    bool hasSplitDivider = false;
+    for (const auto &obj : tmpl->content.objects) {
+      if (obj.id == "split_divider") hasSplitDivider = true;
+    }
+    REQUIRE(hasSplitDivider);
+  }
+
+  SECTION("establishing_shot is background only scene") {
+    auto tmpl = manager.getTemplate("establishing_shot");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Scene Types");
+  }
+
+  SECTION("closeup has scaled character") {
+    auto tmpl = manager.getTemplate("closeup");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Scene Types");
+    bool hasCloseup = false;
+    for (const auto &obj : tmpl->content.objects) {
+      if (obj.id == "character_closeup" && obj.scaleX > 1.0f) {
+        hasCloseup = true;
+      }
+    }
+    REQUIRE(hasCloseup);
+  }
+
+  SECTION("indoor_scene has furniture props") {
+    auto tmpl = manager.getTemplate("indoor_scene");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Location");
+    bool hasFurniture = false;
+    for (const auto &obj : tmpl->content.objects) {
+      if (obj.type == "Prop") hasFurniture = true;
+    }
+    REQUIRE(hasFurniture);
+  }
+
+  SECTION("flashback has visual filter") {
+    auto tmpl = manager.getTemplate("flashback");
+    REQUIRE(tmpl.has_value());
+    REQUIRE(tmpl->metadata.category == "Special");
+    bool hasFilter = false;
+    for (const auto &obj : tmpl->content.objects) {
+      if (obj.id == "filter_overlay") hasFilter = true;
+    }
+    REQUIRE(hasFilter);
+  }
 }
 
 TEST_CASE("SceneTemplateManager categories", "[scene_template]") {
@@ -238,6 +354,10 @@ TEST_CASE("SceneTemplateManager categories", "[scene_template]") {
     REQUIRE(categories.contains("Visual Novel"));
     REQUIRE(categories.contains("Cinematic"));
     REQUIRE(categories.contains("Menu"));
+    REQUIRE(categories.contains("Dialogue"));
+    REQUIRE(categories.contains("Scene Types"));
+    REQUIRE(categories.contains("Location"));
+    REQUIRE(categories.contains("Special"));
   }
 
   SECTION("getAvailableTemplates filters by category") {

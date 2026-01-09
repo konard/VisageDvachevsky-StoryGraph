@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "id": "closeup",
+    "name": "Close-up",
+    "description": "Single character close-up. Emphasizes emotion and facial expressions.",
+    "category": "Scene Types",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["closeup", "close-up", "emotion", "single-character"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.7,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Background (often blurred for closeup)",
+          "blurred": "true"
+        }
+      },
+      {
+        "id": "character_closeup",
+        "name": "Character (Close-up)",
+        "type": "Character",
+        "x": 640.0,
+        "y": 300.0,
+        "rotation": 0.0,
+        "scaleX": 1.5,
+        "scaleY": 1.5,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character in close-up",
+          "position": "center",
+          "shotType": "closeup"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}
