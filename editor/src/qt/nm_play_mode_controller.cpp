@@ -391,8 +391,9 @@ void NMPlayModeController::stepOver() {
     return;
   }
 
-  // Placeholder until step-over is supported by the runtime.
-  qWarning() << "[PlayMode] Step over is not supported yet";
+  m_runtimeHost.stepOver();
+  m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
+  emit sceneSnapshotUpdated();
 }
 
 void NMPlayModeController::stepOut() {
@@ -400,8 +401,9 @@ void NMPlayModeController::stepOut() {
     return;
   }
 
-  // Placeholder until step-out is supported by the runtime.
-  qWarning() << "[PlayMode] Step out is not supported yet";
+  m_runtimeHost.stepOut();
+  m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
+  emit sceneSnapshotUpdated();
 }
 
 void NMPlayModeController::selectChoice(int index) {
