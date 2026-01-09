@@ -236,6 +236,24 @@ public:
   void stepLine();
 
   /**
+   * @brief Step over the current instruction
+   *
+   * Executes the current instruction without stepping into function calls.
+   * For the current VM implementation where CALL opcodes execute native
+   * callbacks, this behaves similarly to stepScriptInstruction().
+   */
+  void stepOver();
+
+  /**
+   * @brief Step out of the current function/scene
+   *
+   * Continues execution until a RETURN opcode is encountered or the
+   * scene changes, then pauses. Useful for quickly exiting the current
+   * function context.
+   */
+  void stepOut();
+
+  /**
    * @brief Continue until the next breakpoint or end
    */
   void continueExecution();
@@ -451,6 +469,10 @@ private:
   EditorRuntimeState m_state = EditorRuntimeState::Unloaded;
   bool m_singleStepping = false;
   u32 m_targetInstructionPointer = 0;
+
+  // Step-out tracking
+  bool m_steppingOut = false;
+  std::string m_stepOutScene;
 
   // Breakpoints
   std::vector<Breakpoint> m_breakpoints;
