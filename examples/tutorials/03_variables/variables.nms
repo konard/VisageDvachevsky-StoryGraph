@@ -1,0 +1,79 @@
+// Tutorial 3: Variables
+// Пример использования переменных и условий
+
+// Объявление персонажей
+character Hero(name="Алекс", color="#4A90D9")
+character Friend(name="Саша", color="#D94A4A")
+
+// Объявление переменных
+var friendship = 0
+var gold = 100
+
+// Начальная сцена
+scene intro {
+    show background "bg_room"
+    show Hero at center
+
+    say Hero "У меня есть {gold} золотых монет."
+    say Hero "Мой уровень дружбы с Сашей: {friendship}"
+
+    choice {
+        "Подарить другу 50 монет" -> give_gold
+        "Оставить деньги себе" -> keep_gold
+    }
+}
+
+// Сцена дарения денег
+scene give_gold {
+    // Изменяем переменные
+    set gold = gold - 50
+    set friendship = friendship + 10
+
+    show background "bg_room"
+    show Friend at right
+    show Hero at left
+
+    say Hero "Вот, возьми 50 монет!"
+    say Friend "Спасибо! Ты настоящий друг!"
+    say Hero "Теперь у меня {gold} монет."
+
+    goto ending
+}
+
+// Сцена сохранения денег
+scene keep_gold {
+    show background "bg_room"
+    show Hero at center
+
+    say Hero "Мне нужны эти деньги..."
+    say Hero "У меня всё ещё {gold} монет."
+
+    goto ending
+}
+
+// Финальная сцена с условием
+scene ending {
+    show background "bg_room"
+    show Hero at center
+
+    // Условие на основе переменной friendship
+    if friendship >= 10 {
+        say Hero "Приятно иметь хороших друзей!"
+        say Hero "Дружба дороже денег."
+
+        show Friend at right
+        say Friend "Спасибо, что помог!"
+    } else {
+        say Hero "Может, я был слишком жадным?"
+        say Hero "Но у меня есть {gold} монет..."
+    }
+
+    // Ещё одно условие для демонстрации
+    if gold >= 100 {
+        say Hero "Я богат!"
+    } else if gold >= 50 {
+        say Hero "У меня достаточно денег."
+    } else {
+        say Hero "Нужно больше зарабатывать..."
+    }
+}

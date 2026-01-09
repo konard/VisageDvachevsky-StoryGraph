@@ -4,12 +4,16 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/opcode.hpp"
 #include "NovelMind/scripting/value.hpp"
+#include "NovelMind/scripting/vm_security.hpp"
 #include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace NovelMind::scripting {
+
+// Forward declaration for debugger integration
+class VMDebugger;
 
 class VirtualMachine {
 public:
@@ -55,6 +59,72 @@ public:
   void signalContinue();
   void signalChoice(i32 choice);
 
+  // =========================================================================
+  // Debugger Integration
+  // =========================================================================
+
+  /**
+   * @brief Attach a debugger to this VM
+   * @param debugger Pointer to debugger (ownership not transferred)
+   */
+  void attachDebugger(VMDebugger *debugger);
+
+  /**
+   * @brief Detach the current debugger
+   */
+  void detachDebugger();
+
+  /**
+   * @brief Check if a debugger is attached
+   */
+  [[nodiscard]] bool hasDebugger() const { return m_debugger != nullptr; }
+
+  /**
+   * @brief Get the attached debugger
+   */
+  [[nodiscard]] VMDebugger *debugger() const { return m_debugger; }
+
+  /**
+   * @brief Get the current instruction at IP (for debugging display)
+   * @return Pointer to instruction, or nullptr if invalid
+   */
+  [[nodiscard]] const Instruction *getCurrentInstruction() const {
+    if (m_ip < m_program.size()) {
+      return &m_program[m_ip];
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Get instruction at specified IP
+   * @param ip Instruction pointer
+   * @return Pointer to instruction, or nullptr if invalid
+   */
+  [[nodiscard]] const Instruction *getInstructionAt(u32 ip) const {
+    if (ip < m_program.size()) {
+      return &m_program[ip];
+    }
+    return nullptr;
+  }
+
+  /**
+   * @brief Get current stack contents (for debugging)
+   */
+  [[nodiscard]] const std::vector<Value> &getStack() const { return m_stack; }
+
+  /**
+   * @brief Get string from string table (for debugging)
+   */
+  [[nodiscard]] std::string getStringAt(u32 index) const {
+    if (index < m_stringTable.size()) {
+      return m_stringTable[index];
+    }
+    return "";
+  [[nodiscard]] VMSecurityGuard &securityGuard() { return m_securityGuard; }
+  [[nodiscard]] const VMSecurityGuard &securityGuard() const {
+    return m_securityGuard;
+  }
+
 private:
   void executeInstruction(const Instruction &instr);
   void push(Value value);
@@ -68,6 +138,8 @@ private:
   std::unordered_map<std::string, bool> m_flags;
   std::unordered_map<OpCode, NativeCallback> m_callbacks;
 
+  VMSecurityGuard m_securityGuard;
+
   u32 m_ip;
   bool m_running;
   bool m_paused;
@@ -75,6 +147,9 @@ private:
   mutable bool m_halted;  // mutable to allow setting in const getString() on error
   bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
+
+  // Debugger integration
+  VMDebugger *m_debugger = nullptr; ///< Attached debugger (not owned)
 };
 
 } // namespace NovelMind::scripting

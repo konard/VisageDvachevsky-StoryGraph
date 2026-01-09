@@ -47,6 +47,7 @@ class NMScriptEditorPanel;
 class NMScriptDocPanel;
 class NMPlayToolbarPanel;
 class NMDebugOverlayPanel;
+class NMScriptInspectorPanel;
 class NMIssuesPanel;
 class NMDiagnosticsPanel;
 class NMVoiceManagerPanel;
@@ -58,6 +59,7 @@ class NMVoiceStudioPanel;
 class NMAudioMixerPanel;
 class NMAnimationAdapter;
 class NMProjectSettingsPanel;
+class NMScriptRuntimeInspectorPanel;
 
 /**
  * @brief Main application window for the NovelMind Editor
@@ -150,6 +152,9 @@ public:
   }
   [[nodiscard]] NMProjectSettingsPanel *projectSettingsPanel() const {
     return m_projectSettingsPanel;
+  }
+  [[nodiscard]] NMScriptRuntimeInspectorPanel *scriptRuntimeInspectorPanel() const {
+    return m_scriptRuntimeInspectorPanel;
   }
 
   // =========================================================================
@@ -375,6 +380,7 @@ private:
   QAction *m_actionToggleIssues = nullptr;
   QAction *m_actionToggleDiagnostics = nullptr;
   QAction *m_actionToggleDebugOverlay = nullptr;
+  QAction *m_actionToggleScriptRuntimeInspector = nullptr;
   QAction *m_actionToggleVoiceManager = nullptr;
   QAction *m_actionToggleVoiceStudio = nullptr;
   QAction *m_actionToggleAudioMixer = nullptr;
@@ -477,6 +483,7 @@ private:
   NMScriptDocPanel *m_scriptDocPanel = nullptr;
   NMPlayToolbarPanel *m_playToolbarPanel = nullptr;
   NMDebugOverlayPanel *m_debugOverlayPanel = nullptr;
+  NMScriptInspectorPanel *m_scriptInspectorPanel = nullptr;
   NMIssuesPanel *m_issuesPanel = nullptr;
   NMDiagnosticsPanel *m_diagnosticsPanel = nullptr;
   NMVoiceManagerPanel *m_voiceManagerPanel = nullptr;
@@ -488,6 +495,7 @@ private:
   NMAudioMixerPanel *m_audioMixerPanel = nullptr;
   NMAnimationAdapter *m_animationAdapter = nullptr;
   NMProjectSettingsPanel *m_projectSettingsPanel = nullptr;
+  NMScriptRuntimeInspectorPanel *m_scriptRuntimeInspectorPanel = nullptr;
 
   // =========================================================================
   // State

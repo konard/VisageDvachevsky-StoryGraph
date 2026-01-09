@@ -51,6 +51,9 @@ enum class TokenType : u8 {
   Sound,      // sound
   Transition, // transition
   Fade,       // fade
+  Move,       // move
+  To,         // to
+  Duration,   // duration
 
   // Operators
   Assign,       // =
@@ -116,7 +119,7 @@ struct Token {
       : type(t), lexeme(std::move(lex)), location(loc), intValue(0) {}
 
   [[nodiscard]] bool isKeyword() const {
-    return type >= TokenType::Character && type <= TokenType::Fade;
+    return type >= TokenType::Character && type <= TokenType::Duration;
   }
 
   [[nodiscard]] bool isOperator() const {
@@ -195,6 +198,12 @@ struct Token {
     return "transition";
   case TokenType::Fade:
     return "fade";
+  case TokenType::Move:
+    return "move";
+  case TokenType::To:
+    return "to";
+  case TokenType::Duration:
+    return "duration";
   case TokenType::Assign:
     return "=";
   case TokenType::Plus:

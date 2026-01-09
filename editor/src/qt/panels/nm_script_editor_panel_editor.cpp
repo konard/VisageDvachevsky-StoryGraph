@@ -186,6 +186,68 @@ private:
   NMScriptEditor *m_editor = nullptr;
 };
 
+/**
+ * @brief Breakpoint gutter widget - shows red dots for breakpoints
+ *
+ * Click to toggle breakpoints at line positions.
+ */
+class NMScriptEditorBreakpointGutter : public QWidget {
+public:
+  explicit NMScriptEditorBreakpointGutter(NMScriptEditor *editor)
+      : QWidget(editor), m_editor(editor) {
+    setCursor(Qt::PointingHandCursor);
+    setMouseTracking(true);
+  }
+
+  [[nodiscard]] QSize sizeHint() const override {
+    return QSize(m_editor->breakpointGutterWidth(), 0);
+  }
+
+protected:
+  void paintEvent(QPaintEvent *event) override {
+    m_editor->breakpointGutterPaintEvent(event);
+  }
+
+  void mousePressEvent(QMouseEvent *event) override {
+    if (event->button() == Qt::LeftButton) {
+      // Calculate which line was clicked
+      QTextBlock block = m_editor->getFirstVisibleBlock();
+      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
+                                     .translated(m_editor->getContentOffset())
+                                     .top());
+      int bottom = top + static_cast<int>(
+                             m_editor->getBlockBoundingRect(block).height());
+
+      while (block.isValid() && top <= event->pos().y()) {
+        if (block.isVisible() && bottom >= event->pos().y()) {
+          // Toggle breakpoint at this line (1-based line number)
+          m_editor->toggleBreakpoint(block.blockNumber() + 1);
+          break;
+        }
+        block = block.next();
+        top = bottom;
+        bottom = top + static_cast<int>(
+                           m_editor->getBlockBoundingRect(block).height());
+      }
+    }
+    QWidget::mousePressEvent(event);
+  }
+
+  void mouseMoveEvent(QMouseEvent *event) override {
+    // Update for potential hover effect
+    update();
+    QWidget::mouseMoveEvent(event);
+  }
+
+  void leaveEvent(QEvent *event) override {
+    update();
+    QWidget::leaveEvent(event);
+  }
+
+private:
+  NMScriptEditor *m_editor = nullptr;
+};
+
 } // namespace
 
 // ============================================================================
@@ -1016,6 +1078,7 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
                     .arg(palette.accentPrimary.name())
                     .arg(palette.bgDarkest.name()));
 
+  m_breakpointGutter = new NMScriptEditorBreakpointGutter(this);
   m_lineNumberArea = new NMScriptEditorLineNumberArea(this);
   m_foldingArea = new NMScriptEditorFoldingArea(this);
 
@@ -1819,12 +1882,16 @@ int NMScriptEditor::lineNumberAreaWidth() const {
 void NMScriptEditor::updateLineNumberAreaWidth(int newBlockCount) {
   Q_UNUSED(newBlockCount);
   const int rightMargin = m_minimapEnabled && m_minimap ? 120 : 0;
-  setViewportMargins(lineNumberAreaWidth() + foldingAreaWidth(), 0, rightMargin,
-                     0);
+  setViewportMargins(
+      breakpointGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
+      rightMargin, 0);
 }
 
 void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
   if (dy) {
+    if (m_breakpointGutter) {
+      m_breakpointGutter->scroll(0, dy);
+    }
     if (m_lineNumberArea) {
       m_lineNumberArea->scroll(0, dy);
     }
@@ -1832,6 +1899,10 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
       m_foldingArea->scroll(0, dy);
     }
   } else {
+    if (m_breakpointGutter) {
+      m_breakpointGutter->update(0, rect.y(), m_breakpointGutter->width(),
+                                 rect.height());
+    }
     if (m_lineNumberArea) {
       m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
                                rect.height());
@@ -1850,16 +1921,23 @@ void NMScriptEditor::resizeEvent(QResizeEvent *event) {
   QPlainTextEdit::resizeEvent(event);
 
   QRect cr = contentsRect();
+  int xOffset = cr.left();
+
+  if (m_breakpointGutter) {
+    m_breakpointGutter->setGeometry(
+        QRect(xOffset, cr.top(), breakpointGutterWidth(), cr.height()));
+    xOffset += breakpointGutterWidth();
+  }
 
   if (m_lineNumberArea) {
     m_lineNumberArea->setGeometry(
-        QRect(cr.left(), cr.top(), lineNumberAreaWidth(), cr.height()));
+        QRect(xOffset, cr.top(), lineNumberAreaWidth(), cr.height()));
+    xOffset += lineNumberAreaWidth();
   }
 
   if (m_foldingArea) {
-    m_foldingArea->setGeometry(QRect(cr.left() + lineNumberAreaWidth(),
-                                     cr.top(), foldingAreaWidth(),
-                                     cr.height()));
+    m_foldingArea->setGeometry(
+        QRect(xOffset, cr.top(), foldingAreaWidth(), cr.height()));
   }
 
   if (m_minimap && m_minimapEnabled) {
@@ -2395,6 +2473,105 @@ void NMScriptEditor::paintEvent(QPaintEvent *event) {
 void NMScriptEditor::scrollContentsBy(int dx, int dy) {
   QPlainTextEdit::scrollContentsBy(dx, dy);
   emitViewportChanged();
+}
+
+// ============================================================================
+// Breakpoint Support
+// ============================================================================
+
+void NMScriptEditor::setBreakpoints(const QSet<int> &lines) {
+  m_breakpoints = lines;
+  if (m_breakpointGutter) {
+    m_breakpointGutter->update();
+  }
+}
+
+void NMScriptEditor::toggleBreakpoint(int line) {
+  if (m_breakpoints.contains(line)) {
+    m_breakpoints.remove(line);
+  } else {
+    m_breakpoints.insert(line);
+  }
+  if (m_breakpointGutter) {
+    m_breakpointGutter->update();
+  }
+  emit breakpointToggled(line);
+}
+
+void NMScriptEditor::setCurrentExecutionLine(int line) {
+  m_currentExecutionLine = line;
+  if (m_breakpointGutter) {
+    m_breakpointGutter->update();
+  }
+  // Scroll to the execution line if it's not visible
+  if (line > 0) {
+    QTextBlock block = document()->findBlockByNumber(line - 1);
+    if (block.isValid()) {
+      QTextCursor cursor(block);
+      setTextCursor(cursor);
+      centerCursor();
+    }
+  }
+  // Trigger repaint to show execution highlight
+  viewport()->update();
+}
+
+void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent *event) {
+  if (!m_breakpointGutter) {
+    return;
+  }
+
+  QPainter painter(m_breakpointGutter);
+  const auto &palette = NMStyleManager::instance().palette();
+
+  // Fill background
+  painter.fillRect(event->rect(), palette.bgMedium);
+
+  QTextBlock block = firstVisibleBlock();
+  int blockNumber = block.blockNumber();
+  int top = static_cast<int>(
+      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int bottom = top + static_cast<int>(blockBoundingRect(block).height());
+  const int gutterWidth = breakpointGutterWidth();
+
+  while (block.isValid() && top <= event->rect().bottom()) {
+    if (block.isVisible() && bottom >= event->rect().top()) {
+      const int lineNumber = blockNumber + 1; // 1-based
+
+      // Draw current execution marker (yellow arrow)
+      if (m_currentExecutionLine == lineNumber) {
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setBrush(QColor("#ffeb3b")); // Yellow
+        painter.setPen(QPen(QColor("#f57c00"), 1));
+
+        // Draw arrow pointing right
+        QPolygonF arrow;
+        const int centerY = top + fontMetrics().height() / 2;
+        const int arrowSize = 5;
+        arrow << QPointF(2, centerY - arrowSize)
+              << QPointF(gutterWidth - 2, centerY)
+              << QPointF(2, centerY + arrowSize);
+        painter.drawPolygon(arrow);
+      }
+
+      // Draw breakpoint indicator (red circle)
+      if (m_breakpoints.contains(lineNumber)) {
+        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setBrush(QColor("#f44336")); // Red
+        painter.setPen(QPen(QColor("#b71c1c"), 1));
+
+        const int diameter = 10;
+        const int x = (gutterWidth - diameter) / 2;
+        const int y = top + (fontMetrics().height() - diameter) / 2;
+        painter.drawEllipse(x, y, diameter, diameter);
+      }
+    }
+
+    block = block.next();
+    top = bottom;
+    bottom = top + static_cast<int>(blockBoundingRect(block).height());
+    ++blockNumber;
+  }
 }
 
 // ============================================================================
