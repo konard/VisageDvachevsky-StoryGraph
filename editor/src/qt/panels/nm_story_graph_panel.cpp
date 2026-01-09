@@ -2,6 +2,7 @@
 #include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_scrollable_toolbar.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_minimap.hpp"
@@ -379,6 +380,8 @@ void NMStoryGraphPanel::setupToolBar() {
 
   // Generate localization keys button
   m_generateKeysBtn = new QPushButton(tr("Gen Keys"), m_toolBar);
+  m_generateKeysBtn->setIcon(
+      NMIconManager::instance().getIcon("locale-key", 16));
   m_generateKeysBtn->setToolTip(
       tr("Generate localization keys for all dialogue nodes"));
   connect(m_generateKeysBtn, &QPushButton::clicked, this,
@@ -387,6 +390,7 @@ void NMStoryGraphPanel::setupToolBar() {
 
   // Export dialogue button
   m_exportDialogueBtn = new QPushButton(tr("Export"), m_toolBar);
+  m_exportDialogueBtn->setIcon(NMIconManager::instance().getIcon("export", 16));
   m_exportDialogueBtn->setToolTip(
       tr("Export all dialogue to localization files"));
   connect(m_exportDialogueBtn, &QPushButton::clicked, this,
@@ -397,6 +401,8 @@ void NMStoryGraphPanel::setupToolBar() {
   m_toolBar->addSeparator();
 
   m_syncGraphToScriptBtn = new QPushButton(tr("Sync to Script"), m_toolBar);
+  m_syncGraphToScriptBtn->setIcon(
+      NMIconManager::instance().getIcon("refresh", 16));
   m_syncGraphToScriptBtn->setToolTip(
       tr("Synchronize Story Graph changes to NMScript files.\n"
          "This writes graph node data (speaker, dialogue) to .nms files.\n"
@@ -407,6 +413,8 @@ void NMStoryGraphPanel::setupToolBar() {
 
   // Issue #127: Sync Script to Graph button
   m_syncScriptToGraphBtn = new QPushButton(tr("Sync to Graph"), m_toolBar);
+  m_syncScriptToGraphBtn->setIcon(
+      NMIconManager::instance().getIcon("refresh", 16));
   m_syncScriptToGraphBtn->setToolTip(
       tr("Import NMScript content to Story Graph.\n"
          "This parses .nms script files and creates/updates graph nodes.\n"
