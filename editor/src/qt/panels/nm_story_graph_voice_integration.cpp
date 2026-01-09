@@ -8,6 +8,7 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QMessageBox>
 
 namespace NovelMind::editor::qt {
 
@@ -33,6 +34,9 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString,
                                                    const QString &currentPath) {
   if (!m_graphPanel) {
     qWarning() << "[VoiceIntegration] Graph panel is null";
+    QString errorMsg = tr("Voice feature unavailable: Graph panel is not initialized.");
+    emit errorOccurred(errorMsg);
+    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
     return;
   }
 
@@ -80,8 +84,11 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString,
 void NMStoryGraphVoiceIntegration::autoDetectVoice(
     const QString &nodeIdString, const QString &localizationKey) {
   if (!m_voiceManager) {
-    emit errorOccurred("Voice Manager not available");
+    QString errorMsg = tr("Voice feature unavailable: Voice Manager is not initialized.\n\n"
+                          "To enable voice features, ensure the Voice Manager is properly configured in your project settings.");
+    emit errorOccurred(errorMsg);
     qWarning() << "[VoiceIntegration] Voice Manager is null";
+    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
     return;
   }
 
@@ -189,12 +196,16 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
 void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
                                                 const QString &voicePath) {
   if (voicePath.isEmpty()) {
-    emit errorOccurred("No voice clip assigned to preview");
+    QString errorMsg = tr("No voice clip assigned to preview.");
+    emit errorOccurred(errorMsg);
+    QMessageBox::information(m_graphPanel, tr("No Voice Clip"), errorMsg);
     return;
   }
 
   if (!QFileInfo::exists(voicePath)) {
-    emit errorOccurred(QString("Voice file not found: %1").arg(voicePath));
+    QString errorMsg = tr("Voice file not found: %1").arg(voicePath);
+    emit errorOccurred(errorMsg);
+    QMessageBox::warning(m_graphPanel, tr("File Not Found"), errorMsg);
     return;
   }
 
@@ -203,7 +214,11 @@ void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
     m_voiceManager->previewVoiceFile(voicePath.toStdString());
     qDebug() << "[VoiceIntegration] Previewing voice:" << voicePath;
   } else {
-    emit errorOccurred("Voice Manager not available for preview");
+    QString errorMsg = tr("Voice feature unavailable: Voice Manager is not initialized.\n\n"
+                          "To enable voice preview, ensure the Voice Manager is properly configured in your project settings.");
+    emit errorOccurred(errorMsg);
+    qWarning() << "[VoiceIntegration] Voice Manager is null";
+    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
   }
 }
 
@@ -240,6 +255,23 @@ int NMStoryGraphVoiceIntegration::determineBindingStatus(
   }
 
   return 1; // Bound
+}
+
+bool NMStoryGraphVoiceIntegration::isVoiceSystemAvailable() const {
+  return m_voiceManager != nullptr && m_graphPanel != nullptr;
+}
+
+QString NMStoryGraphVoiceIntegration::getUnavailabilityReason() const {
+  if (!m_graphPanel && !m_voiceManager) {
+    return tr("Voice features are not available: Graph panel and Voice Manager are not initialized.");
+  }
+  if (!m_graphPanel) {
+    return tr("Voice features are not available: Graph panel is not initialized.");
+  }
+  if (!m_voiceManager) {
+    return tr("Voice features are not available: Voice Manager is not initialized.");
+  }
+  return QString(); // Available
 }
 
 } // namespace NovelMind::editor::qt
