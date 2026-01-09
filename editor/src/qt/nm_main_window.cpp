@@ -3,6 +3,7 @@
 #include "NovelMind/editor/guided_learning/anchor_registry.hpp"
 #include "NovelMind/editor/guided_learning/tutorial_subsystem.hpp"
 #include "NovelMind/editor/mediators/panel_mediators.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_settings_dialog.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
@@ -35,6 +36,11 @@ bool NMMainWindow::initialize() {
   m_settingsRegistry = std::make_unique<editor::NMSettingsRegistry>();
   m_settingsRegistry->registerEditorDefaults();
   m_settingsRegistry->registerProjectDefaults();
+
+  // Log registered settings count for debugging
+  NOVELMIND_LOG_INFO("Registered " +
+                     std::to_string(m_settingsRegistry->getAllDefinitions().size()) +
+                     " settings");
 
   // Load user settings
   QString configPath =
@@ -143,6 +149,17 @@ void NMMainWindow::shutdown() {
 void NMMainWindow::showSettingsDialog() {
   if (!m_settingsRegistry) {
     NOVELMIND_LOG_ERROR("Settings registry not initialized");
+    NMMessageDialog::showError(
+        this, tr("Settings Error"),
+        tr("The settings system failed to initialize. Please restart the "
+           "editor."));
+    return;
+  }
+
+  if (m_settingsRegistry->getAllDefinitions().empty()) {
+    NOVELMIND_LOG_WARN("No settings registered");
+    NMMessageDialog::showWarning(this, tr("No Settings"),
+                                 tr("No settings are currently available."));
     return;
   }
 
