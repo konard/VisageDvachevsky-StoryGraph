@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QButtonGroup>
 #include <QCheckBox>
@@ -72,13 +73,17 @@ void NMProjectSettingsPanel::setupUI() {
   auto *buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
+  auto &iconMgr = NMIconManager::instance();
+
   m_revertButton = new QPushButton(tr("Revert"), mainWidget);
+  m_revertButton->setIcon(iconMgr.getIcon("property-reset", 16));
   m_revertButton->setEnabled(false);
   m_revertButton->setToolTip(tr("Discard all unsaved changes"));
   connect(m_revertButton, &QPushButton::clicked, this,
           &NMProjectSettingsPanel::onRevertClicked);
 
   m_applyButton = new QPushButton(tr("Apply"), mainWidget);
+  m_applyButton->setIcon(iconMgr.getIcon("file-save", 16));
   m_applyButton->setEnabled(false);
   m_applyButton->setObjectName("NMPrimaryButton");
   m_applyButton->setToolTip(tr("Save all settings to project"));
@@ -310,6 +315,8 @@ void NMProjectSettingsPanel::setupBuildProfilesTab(QWidget *parent) {
   auto *profileGroup = new QGroupBox(tr("Build Profiles"), parent);
   auto *profileLayout = new QVBoxLayout(profileGroup);
 
+  auto &iconMgr = NMIconManager::instance();
+
   auto *profileSelectRow = new QHBoxLayout();
   m_buildProfileCombo = new QComboBox(profileGroup);
   m_buildProfileCombo->addItems(
@@ -318,11 +325,13 @@ void NMProjectSettingsPanel::setupBuildProfilesTab(QWidget *parent) {
   profileSelectRow->addWidget(m_buildProfileCombo, 1);
 
   m_addProfileBtn = new QPushButton("+", profileGroup);
+  m_addProfileBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addProfileBtn->setMaximumWidth(30);
   m_addProfileBtn->setToolTip(tr("Add new profile"));
   profileSelectRow->addWidget(m_addProfileBtn);
 
   m_removeProfileBtn = new QPushButton("-", profileGroup);
+  m_removeProfileBtn->setIcon(iconMgr.getIcon("remove", 16));
   m_removeProfileBtn->setMaximumWidth(30);
   m_removeProfileBtn->setToolTip(tr("Remove selected profile"));
   profileSelectRow->addWidget(m_removeProfileBtn);
