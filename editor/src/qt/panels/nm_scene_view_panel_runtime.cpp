@@ -371,6 +371,8 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
                                          NMPlayModeController::Stopped);
     // Show navigation controls during play mode
     m_playOverlay->setNavigationVisible(playMode != NMPlayModeController::Stopped);
+    // Explicitly hide preview badge during play mode, show only in editor preview
+    m_playOverlay->setPreviewMode(playMode == NMPlayModeController::Stopped && m_editorPreviewActive);
     if (playMode != NMPlayModeController::Stopped) {
       m_playOverlay->setFocus();
     }
