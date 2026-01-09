@@ -1,6 +1,7 @@
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 
@@ -48,6 +49,7 @@ void NMLocalizationPanel::setupUI() {
   auto &style = NMStyleManager::instance();
   const auto &palette = style.palette();
   const auto &spacing = style.spacing();
+  auto &iconMgr = NMIconManager::instance();
 
   QVBoxLayout *layout = new QVBoxLayout(contentWidget());
   layout->setContentsMargins(spacing.xs, spacing.xs, spacing.xs, spacing.xs);
@@ -78,18 +80,21 @@ void NMLocalizationPanel::setupUI() {
 
   // File operations group (Import/Export/Save)
   m_importButton = new QPushButton(tr("Import..."), topToolbar);
+  m_importButton->setIcon(iconMgr.getIcon("import", 16));
   m_importButton->setToolTip(tr("Import localization file"));
   connect(m_importButton, &QPushButton::clicked, this,
           &NMLocalizationPanel::importLocale);
   topLayout->addWidget(m_importButton);
 
   m_exportButton = new QPushButton(tr("Export..."), topToolbar);
+  m_exportButton->setIcon(iconMgr.getIcon("export", 16));
   m_exportButton->setToolTip(tr("Export current locale to file"));
   connect(m_exportButton, &QPushButton::clicked, this,
           &NMLocalizationPanel::exportLocale);
   topLayout->addWidget(m_exportButton);
 
   m_exportMissingBtn = new QPushButton(tr("Export Missing..."), topToolbar);
+  m_exportMissingBtn->setIcon(iconMgr.getIcon("export", 16));
   m_exportMissingBtn->setToolTip(
       tr("Export missing translations for current locale"));
   connect(m_exportMissingBtn, &QPushButton::clicked, this,
@@ -97,6 +102,7 @@ void NMLocalizationPanel::setupUI() {
   topLayout->addWidget(m_exportMissingBtn);
 
   m_saveBtn = new QPushButton(tr("Save"), topToolbar);
+  m_saveBtn->setIcon(iconMgr.getIcon("file-save", 16));
   m_saveBtn->setEnabled(false);
   m_saveBtn->setToolTip(tr("Save all changes"));
   m_saveBtn->setStyleSheet(
@@ -154,6 +160,7 @@ void NMLocalizationPanel::setupUI() {
 
   // Edit operations group (Add/Delete)
   m_addKeyBtn = new QPushButton(tr("+ Add Key"), filterToolbar);
+  m_addKeyBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addKeyBtn->setToolTip(tr("Add new localization key"));
   m_addKeyBtn->setStyleSheet(
       QString(
@@ -167,6 +174,7 @@ void NMLocalizationPanel::setupUI() {
   filterLayout->addWidget(m_addKeyBtn);
 
   m_deleteKeyBtn = new QPushButton(tr("Delete Key"), filterToolbar);
+  m_deleteKeyBtn->setIcon(iconMgr.getIcon("delete", 16));
   m_deleteKeyBtn->setToolTip(tr("Delete selected key(s)"));
   m_deleteKeyBtn->setStyleSheet(
       QString("QPushButton { background-color: %1; color: %2; }"
@@ -190,6 +198,7 @@ void NMLocalizationPanel::setupUI() {
 
   // Plural Forms button
   m_pluralFormsBtn = new QPushButton(tr("Plural Forms..."), filterToolbar);
+  m_pluralFormsBtn->setIcon(iconMgr.getIcon("settings", 16));
   m_pluralFormsBtn->setToolTip(tr("Edit plural forms for selected key"));
   connect(m_pluralFormsBtn, &QPushButton::clicked, this,
           &NMLocalizationPanel::onEditPluralFormsClicked);
