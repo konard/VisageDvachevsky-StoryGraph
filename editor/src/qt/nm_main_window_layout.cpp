@@ -18,6 +18,8 @@
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_doc_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_script_editor_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_script_inspector_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_script_runtime_inspector_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"

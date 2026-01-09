@@ -40,7 +40,6 @@ void NMDockTitleBar::setupUi() {
   m_layout->addWidget(m_titleLabel, 1); // Stretch factor 1
 
   // Create buttons
-  auto &iconManager = NMIconManager::instance();
   QColor buttonColor(180, 180, 180); // Light gray for buttons
 
   // Pin button
