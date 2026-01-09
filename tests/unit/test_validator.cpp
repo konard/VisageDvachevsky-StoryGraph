@@ -838,19 +838,24 @@ TEST_CASE("Validator - Source and file path propagate to errors", "[validator]")
     sayStmt.speaker = "Unknown";
     sayStmt.text = "hello";
     scene.body.push_back(makeStmt(sayStmt));
-    // Should have a warning about missing asset file
-    bool foundMissingAsset = false;
-    for (const auto& error : result.errors.all())
-    {
-        if (error.code == ErrorCode::MissingAssetFile)
-        {
-            foundMissingAsset = true;
-            CHECK(error.severity == Severity::Warning);
-            CHECK(error.message.find("bg_city.png") != std::string::npos);
+    program.scenes.push_back(std::move(scene));
+
+    auto result = validator.validate(program);
+
+    // Should have error for undefined character
+    REQUIRE(result.errors.hasErrors());
+
+    // Check that source and file path are propagated to errors
+    bool foundError = false;
+    for (const auto& error : result.errors.all()) {
+        if (error.code == ErrorCode::UndefinedCharacter) {
+            CHECK(error.source == "scene test { say Unknown \"hello\" }");
+            CHECK(error.filePath == "test.nms");
+            foundError = true;
             break;
         }
     }
-    CHECK(foundMissingAsset);
+    CHECK(foundError);
 }
 
 TEST_CASE("Validator - Missing asset file warning for play music", "[validator][resources]")

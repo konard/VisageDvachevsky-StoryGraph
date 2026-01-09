@@ -71,6 +71,7 @@ NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
           &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           &NMScriptEditorPanel::onFileChanged);
+  connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           [this](const QString &) { refreshSymbolIndex(); });
 
   // Initialize project context for asset validation
