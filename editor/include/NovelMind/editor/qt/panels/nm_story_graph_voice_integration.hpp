@@ -68,6 +68,18 @@ public:
    */
   void stopPreview();
 
+  /**
+   * @brief Check if voice features are available
+   * @return true if both VoiceManager and GraphPanel are available
+   */
+  [[nodiscard]] bool isVoiceSystemAvailable() const;
+
+  /**
+   * @brief Get human-readable message explaining why voice features are unavailable
+   * @return Empty string if available, or error message if not available
+   */
+  [[nodiscard]] QString getUnavailabilityReason() const;
+
 signals:
   /**
    * @brief Emitted when voice clip assignment changes
