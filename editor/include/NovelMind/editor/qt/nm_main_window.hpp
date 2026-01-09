@@ -11,6 +11,8 @@
  * - Status bar with editor state information
  */
 
+#include "NovelMind/editor/project_manager.hpp"
+
 #include <QMainWindow>
 #include <QTimer>
 #include <QToolBar>
@@ -208,6 +210,15 @@ public slots:
    */
   void updateWindowTitle(const QString& projectName = QString());
 
+  /**
+   * @brief Update panel visibility based on workflow mode (issue #327)
+   *
+   * In Script-only mode: Story Graph panel is hidden
+   * In Graph-only mode: Script Editor panel is hidden (read-only view allowed)
+   * In Mixed mode: Both panels are visible
+   */
+  void onWorkflowModeChanged(PlaybackSourceMode mode);
+
 protected:
   void closeEvent(QCloseEvent* event) override;
   bool eventFilter(QObject* watched, QEvent* event) override;
@@ -302,6 +313,10 @@ private:
   // Panel toggle helpers
   void toggleVoiceStudioPanel(bool checked);
   void toggleAudioMixerPanel(bool checked);
+
+  // Workflow mode panel visibility (issue #327)
+  void applyWorkflowModePanelVisibility(PlaybackSourceMode mode);
+  void updateMenuActionsForWorkflowMode(PlaybackSourceMode mode);
 
   // Dialog helpers
   void showHotkeysDialog();

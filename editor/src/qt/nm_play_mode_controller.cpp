@@ -217,6 +217,7 @@ void NMPlayModeController::stop() {
   m_stackFrames.clear();
   m_flags.clear();
   m_callStack.clear();
+  m_stateHistory.clear(); // Clear backward navigation history
   m_playMode = Stopped;
 
   emit currentNodeChanged(QString()); // Clear current node
@@ -355,6 +356,9 @@ void NMPlayModeController::stepForward() {
     return;
   }
 
+  // Capture current state before stepping forward
+  captureCurrentState();
+
   m_runtimeHost.simulateClick();
   m_runtimeHost.stepFrame();
   m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
@@ -366,8 +370,20 @@ void NMPlayModeController::stepBackward() {
     return;
   }
 
-  // Runtime does not currently support reverse stepping.
-  qWarning() << "[PlayMode] Step backward is not supported yet";
+  // Check if we have any history to go back to
+  if (m_stateHistory.empty()) {
+    qWarning() << "[PlayMode] No previous state available for backward navigation";
+    return;
+  }
+
+  // Pop the most recent state from history
+  scripting::RuntimeSaveState previousState = m_stateHistory.back();
+  m_stateHistory.pop_back();
+
+  // Restore the previous state
+  restoreState(previousState);
+
+  qDebug() << "[PlayMode] Stepped backward to previous state";
 }
 
 void NMPlayModeController::stepOver() {
@@ -375,8 +391,9 @@ void NMPlayModeController::stepOver() {
     return;
   }
 
-  // Placeholder until step-over is supported by the runtime.
-  qWarning() << "[PlayMode] Step over is not supported yet";
+  m_runtimeHost.stepOver();
+  m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
+  emit sceneSnapshotUpdated();
 }
 
 void NMPlayModeController::stepOut() {
@@ -384,8 +401,9 @@ void NMPlayModeController::stepOut() {
     return;
   }
 
-  // Placeholder until step-out is supported by the runtime.
-  qWarning() << "[PlayMode] Step out is not supported yet";
+  m_runtimeHost.stepOut();
+  m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
+  emit sceneSnapshotUpdated();
 }
 
 void NMPlayModeController::selectChoice(int index) {
@@ -836,6 +854,49 @@ void NMPlayModeController::checkBreakpoint() {
     emit breakpointHit(m_currentNodeId);
     emit playModeChanged(Paused);
   }
+}
+
+void NMPlayModeController::captureCurrentState() {
+  auto *scriptRuntime = m_runtimeHost.getScriptRuntime();
+  if (!scriptRuntime) {
+    return;
+  }
+
+  // Save the current runtime state
+  scripting::RuntimeSaveState currentState = scriptRuntime->saveState();
+
+  // Add to history
+  m_stateHistory.push_back(currentState);
+
+  // Enforce maximum history size
+  if (m_stateHistory.size() > MAX_HISTORY_SIZE) {
+    m_stateHistory.pop_front();
+  }
+
+  qDebug() << "[PlayMode] Captured state (history size:" << m_stateHistory.size()
+           << ")";
+}
+
+void NMPlayModeController::restoreState(
+    const scripting::RuntimeSaveState &state) {
+  auto *scriptRuntime = m_runtimeHost.getScriptRuntime();
+  if (!scriptRuntime) {
+    qWarning() << "[PlayMode] Cannot restore state: script runtime not available";
+    return;
+  }
+
+  // Restore the state to the script runtime
+  auto result = scriptRuntime->loadState(state);
+  if (result.isError()) {
+    qWarning() << "[PlayMode] Failed to restore state:"
+               << QString::fromStdString(result.error());
+    return;
+  }
+
+  // Update the UI cache
+  refreshRuntimeCache();
+
+  qDebug() << "[PlayMode] State restored successfully";
 }
 
 } // namespace NovelMind::editor::qt

@@ -1,5 +1,6 @@
 #include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 
 #include <QButtonGroup>
@@ -685,6 +686,58 @@ void NMProjectSettingsPanel::saveToProject() {
 
   // Check if mode actually changed
   const bool modeChanged = (meta.playbackSourceMode != newMode);
+
+  // Issue #327: Show warning dialog when workflow mode is about to change
+  if (modeChanged) {
+    QString oldModeStr, newModeStr;
+    switch (meta.playbackSourceMode) {
+    case PlaybackSourceMode::Script:
+      oldModeStr = tr("Script-only (Code-First)");
+      break;
+    case PlaybackSourceMode::Graph:
+      oldModeStr = tr("Graph-only (Visual-First)");
+      break;
+    case PlaybackSourceMode::Mixed:
+      oldModeStr = tr("Mixed (Hybrid)");
+      break;
+    }
+    switch (newMode) {
+    case PlaybackSourceMode::Script:
+      newModeStr = tr("Script-only (Code-First)");
+      break;
+    case PlaybackSourceMode::Graph:
+      newModeStr = tr("Graph-only (Visual-First)");
+      break;
+    case PlaybackSourceMode::Mixed:
+      newModeStr = tr("Mixed (Hybrid)");
+      break;
+    }
+
+    QString warningMsg = tr(
+        "You are about to change the workflow mode from <b>%1</b> to <b>%2</b>.\n\n"
+        "This will affect which panels are available and how your story content is managed.\n\n"
+        "<b>Important:</b>\n"
+        "• In Script-only mode, the Story Graph panel will be hidden\n"
+        "• In Graph-only mode, the Script Editor panel will be hidden\n"
+        "• In Mixed mode, both panels will be visible\n\n"
+        "Make sure you have backed up your project before changing modes.\n\n"
+        "Do you want to continue?")
+            .arg(oldModeStr)
+            .arg(newModeStr);
+
+    NMDialogButton result = NMMessageDialog::showQuestion(
+        this, tr("Confirm Workflow Mode Change"), warningMsg,
+        {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+
+    if (result != NMDialogButton::Yes) {
+      // User cancelled, revert the radio button selection to the current mode
+      loadFromProject();
+      m_hasUnsavedChanges = false;
+      updateApplyButton();
+      return;
+    }
+  }
+
   meta.playbackSourceMode = newMode;
 
   // Save resolution

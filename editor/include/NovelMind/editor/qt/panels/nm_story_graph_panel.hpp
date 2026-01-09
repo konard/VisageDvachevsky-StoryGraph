@@ -294,6 +294,9 @@ public:
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
              QWidget *widget) override;
 
+protected:
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+
 private:
   NMGraphNodeItem *m_startNode;
   NMGraphNodeItem *m_endNode;

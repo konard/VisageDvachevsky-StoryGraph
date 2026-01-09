@@ -1,6 +1,9 @@
+#include "NovelMind/editor/event_bus.hpp"
+#include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/mediators/panel_mediators.hpp"
 #include "NovelMind/editor/project_integrity.hpp"
 #include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/qt/panels/nm_project_settings_panel.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_hotkeys_dialog.hpp"
 #include "NovelMind/editor/qt/nm_main_window.hpp"
@@ -777,6 +780,127 @@ void NMMainWindow::handleNavigationRequest(const QString& locationString) {
   events::NavigationRequestedEvent event;
   event.locationString = locationString;
   EventBus::instance().publish(event);
+}
+
+// ============================================================================
+// Issue #327: Workflow Mode Panel Visibility Control
+// ============================================================================
+
+void NMMainWindow::onWorkflowModeChanged(PlaybackSourceMode mode) {
+  qDebug() << "[Issue #327] Workflow mode changed to:" << static_cast<int>(mode);
+  applyWorkflowModePanelVisibility(mode);
+  updateMenuActionsForWorkflowMode(mode);
+}
+
+void NMMainWindow::applyWorkflowModePanelVisibility(PlaybackSourceMode mode) {
+  // Issue #327: Apply strict mode separation for panel visibility
+  // - Script-only mode: Story Graph panel is hidden
+  // - Graph-only mode: Script Editor panel is hidden (but can be shown read-only)
+  // - Mixed mode: Both panels are visible
+
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    // Script-only mode: Hide Story Graph panel, show Script Editor
+    if (m_storyGraphPanel) {
+      m_storyGraphPanel->hide();
+      qDebug() << "[Issue #327] Script mode: Story Graph panel hidden";
+    }
+    if (m_scriptEditorPanel) {
+      m_scriptEditorPanel->show();
+      m_scriptEditorPanel->setReadOnly(false);
+      qDebug() << "[Issue #327] Script mode: Script Editor panel shown (editable)";
+    }
+    break;
+
+  case PlaybackSourceMode::Graph:
+    // Graph-only mode: Hide Script Editor panel, show Story Graph
+    if (m_scriptEditorPanel) {
+      m_scriptEditorPanel->hide();
+      qDebug() << "[Issue #327] Graph mode: Script Editor panel hidden";
+    }
+    if (m_storyGraphPanel) {
+      m_storyGraphPanel->show();
+      m_storyGraphPanel->setReadOnly(false);
+      qDebug() << "[Issue #327] Graph mode: Story Graph panel shown (editable)";
+    }
+    break;
+
+  case PlaybackSourceMode::Mixed:
+    // Mixed mode: Both panels are visible and editable
+    if (m_storyGraphPanel) {
+      m_storyGraphPanel->show();
+      m_storyGraphPanel->setReadOnly(false);
+      qDebug() << "[Issue #327] Mixed mode: Story Graph panel shown (editable)";
+    }
+    if (m_scriptEditorPanel) {
+      m_scriptEditorPanel->show();
+      m_scriptEditorPanel->setReadOnly(false);
+      qDebug() << "[Issue #327] Mixed mode: Script Editor panel shown (editable)";
+    }
+    break;
+  }
+
+  // Update status message
+  QString modeStr;
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    modeStr = tr("Script-only mode: Script Editor is the source of truth");
+    break;
+  case PlaybackSourceMode::Graph:
+    modeStr = tr("Graph-only mode: Story Graph is the source of truth");
+    break;
+  case PlaybackSourceMode::Mixed:
+    modeStr = tr("Mixed mode: Both Script and Graph are available");
+    break;
+  }
+  setStatusMessage(modeStr, 5000);
+}
+
+void NMMainWindow::updateMenuActionsForWorkflowMode(PlaybackSourceMode mode) {
+  // Issue #327: Update menu action enabled/checked states based on workflow mode
+  // Hide/disable menu actions for panels that shouldn't be accessible in current mode
+
+  switch (mode) {
+  case PlaybackSourceMode::Script:
+    // Script-only mode: Disable Story Graph toggle
+    if (m_actionToggleStoryGraph) {
+      m_actionToggleStoryGraph->setEnabled(false);
+      m_actionToggleStoryGraph->setChecked(false);
+      m_actionToggleStoryGraph->setToolTip(
+          tr("Story Graph is unavailable in Script-only mode"));
+    }
+    if (m_actionToggleScriptEditor) {
+      m_actionToggleScriptEditor->setEnabled(true);
+      m_actionToggleScriptEditor->setChecked(true);
+    }
+    break;
+
+  case PlaybackSourceMode::Graph:
+    // Graph-only mode: Disable Script Editor toggle
+    if (m_actionToggleScriptEditor) {
+      m_actionToggleScriptEditor->setEnabled(false);
+      m_actionToggleScriptEditor->setChecked(false);
+      m_actionToggleScriptEditor->setToolTip(
+          tr("Script Editor is unavailable in Graph-only mode"));
+    }
+    if (m_actionToggleStoryGraph) {
+      m_actionToggleStoryGraph->setEnabled(true);
+      m_actionToggleStoryGraph->setChecked(true);
+    }
+    break;
+
+  case PlaybackSourceMode::Mixed:
+    // Mixed mode: Both toggles enabled
+    if (m_actionToggleStoryGraph) {
+      m_actionToggleStoryGraph->setEnabled(true);
+      m_actionToggleStoryGraph->setToolTip(tr("Toggle Story Graph panel"));
+    }
+    if (m_actionToggleScriptEditor) {
+      m_actionToggleScriptEditor->setEnabled(true);
+      m_actionToggleScriptEditor->setToolTip(tr("Toggle Script Editor panel"));
+    }
+    break;
+  }
 }
 
 } // namespace NovelMind::editor::qt

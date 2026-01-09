@@ -1,9 +1,11 @@
 {
   "id": "kinetic_novel",
   "name": "Kinetic Novel",
-  "description": "A linear story without player choices. Perfect for visual novels with a single storyline that focuses on narrative and character development.",
+  "description": "A linear story without player choices. Perfect for visual novels with a single storyline that focuses on narrative and character development. Uses Script workflow for straightforward linear storytelling.",
   "category": "Beginner-Friendly",
   "difficulty": "Easy",
+  "workflowMode": "Script",
+  "workflowDescription": "Script editing - write your story using NMScript in the Script Editor panel",
   "features": [
     "Linear Story Graph",
     "Sample Characters (3)",

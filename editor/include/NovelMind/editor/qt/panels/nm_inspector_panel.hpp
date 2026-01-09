@@ -64,57 +64,52 @@ class NMPropertyGroup : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMPropertyGroup(const QString &title, QWidget *parent = nullptr);
+  explicit NMPropertyGroup(const QString& title, QWidget* parent = nullptr);
 
   void setExpanded(bool expanded);
   [[nodiscard]] bool isExpanded() const { return m_expanded; }
 
-  void addProperty(const QString &name, const QString &value);
-  void addProperty(const QString &name, QWidget *widget);
+  void addProperty(const QString& name, const QString& value);
+  void addProperty(const QString& name, QWidget* widget);
 
   /**
    * @brief Add an editable property
    */
-  QWidget *addEditableProperty(const QString &propertyName,
-                               const QString &label, NMPropertyType type,
-                               const QString &currentValue,
-                               const QStringList &enumValues = {});
-  QWidget *addEditableProperty(const QString &name, NMPropertyType type,
-                               const QString &currentValue,
-                               const QStringList &enumValues = {});
+  QWidget* addEditableProperty(const QString& propertyName, const QString& label,
+                               NMPropertyType type, const QString& currentValue,
+                               const QStringList& enumValues = {});
+  QWidget* addEditableProperty(const QString& name, NMPropertyType type,
+                               const QString& currentValue, const QStringList& enumValues = {});
 
   /**
    * @brief Add an editable property with metadata
    */
-  QWidget *addEditablePropertyWithMetadata(const QString &propertyName,
-                                           NMPropertyType type,
-                                           const QString &currentValue,
-                                           const NMPropertyMetadata &metadata);
+  QWidget* addEditablePropertyWithMetadata(const QString& propertyName, NMPropertyType type,
+                                           const QString& currentValue,
+                                           const NMPropertyMetadata& metadata);
 
   /**
    * @brief Add a reset button for a property
    */
-  void addResetButton(const QString &propertyName,
-                      const QVariant &defaultValue);
+  void addResetButton(const QString& propertyName, const QVariant& defaultValue);
 
   void clearProperties();
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
 signals:
-  void propertyValueChanged(const QString &propertyName,
-                            const QString &newValue);
+  void propertyValueChanged(const QString& propertyName, const QString& newValue);
 
 private slots:
   void onHeaderClicked();
   void onPropertyEdited();
 
 private:
-  QWidget *m_header = nullptr;
-  QWidget *m_content = nullptr;
-  QVBoxLayout *m_contentLayout = nullptr;
-  QLabel *m_expandIcon = nullptr;
+  QWidget* m_header = nullptr;
+  QWidget* m_content = nullptr;
+  QVBoxLayout* m_contentLayout = nullptr;
+  QLabel* m_expandIcon = nullptr;
   bool m_expanded = true;
 };
 
@@ -125,7 +120,7 @@ class NMInspectorPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMInspectorPanel(QWidget *parent = nullptr);
+  explicit NMInspectorPanel(QWidget* parent = nullptr);
   ~NMInspectorPanel() override;
 
   void onInitialize() override;
@@ -142,16 +137,14 @@ public:
    * @param objectId ID of the object
    * @param editable Whether properties should be editable
    */
-  void inspectObject(const QString &objectType, const QString &objectId,
-                     bool editable = true);
-  void inspectSceneObject(class NMSceneObject *object, bool editable = true);
-  void inspectStoryGraphNode(class NMGraphNodeItem *node, bool editable = true);
+  void inspectObject(const QString& objectType, const QString& objectId, bool editable = true);
+  void inspectSceneObject(class NMSceneObject* object, bool editable = true);
+  void inspectStoryGraphNode(class NMGraphNodeItem* node, bool editable = true);
 
   /**
    * @brief Inspect multiple objects for multi-edit
    */
-  void inspectMultipleObjects(const QList<class NMSceneObject *> &objects,
-                              bool editable = true);
+  void inspectMultipleObjects(const QList<class NMSceneObject*>& objects, bool editable = true);
 
   /**
    * @brief Copy all visible properties to clipboard
@@ -166,25 +159,22 @@ public:
   /**
    * @brief Reset property to default value
    */
-  void resetProperty(const QString &propertyName);
+  void resetProperty(const QString& propertyName);
 
   /**
    * @brief Reset all properties to default values
    */
   void resetAllProperties();
 
-  void updatePropertyValue(const QString &propertyName,
-                           const QString &newValue);
+  void updatePropertyValue(const QString& propertyName, const QString& newValue);
   [[nodiscard]] QString currentObjectId() const { return m_currentObjectId; }
-  [[nodiscard]] QStringList currentObjectIds() const {
-    return m_currentObjectIds;
-  }
+  [[nodiscard]] QStringList currentObjectIds() const { return m_currentObjectIds; }
   [[nodiscard]] bool isMultiEditMode() const { return m_multiEditMode; }
 
   /**
    * @brief Add a property group
    */
-  NMPropertyGroup *addGroup(const QString &title);
+  NMPropertyGroup* addGroup(const QString& title);
 
   /**
    * @brief Show "nothing selected" message
@@ -200,31 +190,46 @@ public:
   /**
    * @brief Set the scene registry for Scene ID picker
    */
-  void setSceneRegistry(editor::SceneRegistry *registry) {
-    m_sceneRegistry = registry;
-  }
+  void setSceneRegistry(editor::SceneRegistry* registry) { m_sceneRegistry = registry; }
 
 signals:
-  void propertyChanged(const QString &objectId, const QString &propertyName,
-                       const QString &newValue);
+  void propertyChanged(const QString& objectId, const QString& propertyName,
+                       const QString& newValue);
   /// ERR-1 fix: Signal emitted when property setting fails
-  void propertyError(const QString &propertyName, const QString &errorMessage);
+  void propertyError(const QString& propertyName, const QString& errorMessage);
+
+  // Issue #329: Scene workflow signals
+  /**
+   * @brief Emitted when scene creation is requested from inspector
+   */
+  void createNewSceneRequested();
+
+  /**
+   * @brief Emitted when scene editing is requested from inspector
+   * @param sceneId The scene ID to edit
+   */
+  void editSceneRequested(const QString& sceneId);
+
+  /**
+   * @brief Emitted when scene node highlighting is requested from inspector
+   * @param sceneId The scene ID to locate in Story Graph
+   */
+  void locateSceneInGraphRequested(const QString& sceneId);
 
 private slots:
-  void onGroupPropertyChanged(const QString &propertyName,
-                              const QString &newValue);
+  void onGroupPropertyChanged(const QString& propertyName, const QString& newValue);
 
 private:
   void setupContent();
-  void trackPropertyWidget(const QString &propertyName, QWidget *widget);
+  void trackPropertyWidget(const QString& propertyName, QWidget* widget);
 
-  QScrollArea *m_scrollArea = nullptr;
-  QWidget *m_scrollContent = nullptr;
-  QVBoxLayout *m_mainLayout = nullptr;
-  QLabel *m_headerLabel = nullptr;
-  QLabel *m_noSelectionLabel = nullptr;
-  QList<NMPropertyGroup *> m_groups;
-  QHash<QString, QWidget *> m_propertyWidgets;
+  QScrollArea* m_scrollArea = nullptr;
+  QWidget* m_scrollContent = nullptr;
+  QVBoxLayout* m_mainLayout = nullptr;
+  QLabel* m_headerLabel = nullptr;
+  QLabel* m_noSelectionLabel = nullptr;
+  QList<NMPropertyGroup*> m_groups;
+  QHash<QString, QWidget*> m_propertyWidgets;
   QHash<QString, NMPropertyMetadata> m_propertyMetadata;
   QHash<QString, QVariant> m_defaultValues;
   QString m_currentObjectId;
@@ -234,7 +239,7 @@ private:
   QHash<QString, QString> m_clipboardProperties;
 
   // Scene registry for Scene ID picker
-  editor::SceneRegistry *m_sceneRegistry = nullptr;
+  editor::SceneRegistry* m_sceneRegistry = nullptr;
 
   // Transform controls for aspect ratio lock
   bool m_lockAspectRatio = false;
@@ -244,7 +249,7 @@ private:
   // Stores property values that need to be flushed to widgets
   QHash<QString, QString> m_pendingUpdates;
   // Timer for batching updates
-  class QTimer *m_updateTimer = nullptr;
+  class QTimer* m_updateTimer = nullptr;
   // Last known values to detect actual changes
   QHash<QString, QString> m_lastKnownValues;
   // Flush pending updates to widgets

@@ -22,165 +22,162 @@
 namespace NovelMind::editor::mediators {
 
 WorkflowMediator::WorkflowMediator(
-    qt::NMSceneViewPanel *sceneView, qt::NMStoryGraphPanel *storyGraph,
-    qt::NMSceneDialogueGraphPanel *dialogueGraph,
-    qt::NMScriptEditorPanel *scriptEditor, qt::NMTimelinePanel *timeline,
-    qt::NMVoiceStudioPanel *voiceStudio, qt::NMVoiceManagerPanel *voiceManager,
-    qt::NMInspectorPanel *inspector, qt::NMDiagnosticsPanel *diagnostics,
-    qt::NMIssuesPanel *issues, QObject *parent)
+    qt::NMSceneViewPanel* sceneView, qt::NMStoryGraphPanel* storyGraph,
+    qt::NMSceneDialogueGraphPanel* dialogueGraph, qt::NMScriptEditorPanel* scriptEditor,
+    qt::NMTimelinePanel* timeline, qt::NMVoiceStudioPanel* voiceStudio,
+    qt::NMVoiceManagerPanel* voiceManager, qt::NMInspectorPanel* inspector,
+    qt::NMDiagnosticsPanel* diagnostics, qt::NMIssuesPanel* issues, QObject* parent)
     : QObject(parent), m_sceneView(sceneView), m_storyGraph(storyGraph),
-      m_dialogueGraph(dialogueGraph), m_scriptEditor(scriptEditor),
-      m_timeline(timeline), m_voiceStudio(voiceStudio),
-      m_voiceManager(voiceManager), m_inspector(inspector),
+      m_dialogueGraph(dialogueGraph), m_scriptEditor(scriptEditor), m_timeline(timeline),
+      m_voiceStudio(voiceStudio), m_voiceManager(voiceManager), m_inspector(inspector),
       m_diagnostics(diagnostics), m_issues(issues) {}
 
-WorkflowMediator::~WorkflowMediator() { shutdown(); }
+WorkflowMediator::~WorkflowMediator() {
+  shutdown();
+}
 
 void WorkflowMediator::initialize() {
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Story graph navigation
-  m_subscriptions.push_back(
-      bus.subscribe<events::StoryGraphNodeActivatedEvent>(
-          [this](const events::StoryGraphNodeActivatedEvent &event) {
-            onStoryGraphNodeActivated(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::StoryGraphNodeActivatedEvent>(
+      [this](const events::StoryGraphNodeActivatedEvent& event) {
+        onStoryGraphNodeActivated(event);
+      }));
 
   m_subscriptions.push_back(bus.subscribe<events::SceneNodeDoubleClickedEvent>(
-      [this](const events::SceneNodeDoubleClickedEvent &event) {
+      [this](const events::SceneNodeDoubleClickedEvent& event) {
         onSceneNodeDoubleClicked(event);
       }));
 
   m_subscriptions.push_back(bus.subscribe<events::ScriptNodeRequestedEvent>(
-      [this](const events::ScriptNodeRequestedEvent &event) {
-        onScriptNodeRequested(event);
-      }));
+      [this](const events::ScriptNodeRequestedEvent& event) { onScriptNodeRequested(event); }));
 
   // Dialogue graph navigation
-  m_subscriptions.push_back(
-      bus.subscribe<events::EditDialogueFlowRequestedEvent>(
-          [this](const events::EditDialogueFlowRequestedEvent &event) {
-            onEditDialogueFlowRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::EditDialogueFlowRequestedEvent>(
+      [this](const events::EditDialogueFlowRequestedEvent& event) {
+        onEditDialogueFlowRequested(event);
+      }));
 
-  m_subscriptions.push_back(
-      bus.subscribe<events::ReturnToStoryGraphRequestedEvent>(
-          [this](const events::ReturnToStoryGraphRequestedEvent &event) {
-            onReturnToStoryGraphRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::ReturnToStoryGraphRequestedEvent>(
+      [this](const events::ReturnToStoryGraphRequestedEvent& event) {
+        onReturnToStoryGraphRequested(event);
+      }));
 
   m_subscriptions.push_back(bus.subscribe<events::DialogueCountChangedEvent>(
-      [this](const events::DialogueCountChangedEvent &event) {
-        onDialogueCountChanged(event);
-      }));
+      [this](const events::DialogueCountChangedEvent& event) { onDialogueCountChanged(event); }));
 
   // Script navigation
-  m_subscriptions.push_back(
-      bus.subscribe<events::OpenSceneScriptRequestedEvent>(
-          [this](const events::OpenSceneScriptRequestedEvent &event) {
-            onOpenSceneScriptRequested(event);
-          }));
-
-  m_subscriptions.push_back(bus.subscribe<events::GoToScriptLocationEvent>(
-      [this](const events::GoToScriptLocationEvent &event) {
-        onGoToScriptLocation(event);
+  m_subscriptions.push_back(bus.subscribe<events::OpenSceneScriptRequestedEvent>(
+      [this](const events::OpenSceneScriptRequestedEvent& event) {
+        onOpenSceneScriptRequested(event);
       }));
 
+  m_subscriptions.push_back(bus.subscribe<events::GoToScriptLocationEvent>(
+      [this](const events::GoToScriptLocationEvent& event) { onGoToScriptLocation(event); }));
+
   // Issue #239: Navigate to script definition (bidirectional navigation)
-  m_subscriptions.push_back(
-      bus.subscribe<events::NavigateToScriptDefinitionEvent>(
-          [this](const events::NavigateToScriptDefinitionEvent &event) {
-            onNavigateToScriptDefinition(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::NavigateToScriptDefinitionEvent>(
+      [this](const events::NavigateToScriptDefinitionEvent& event) {
+        onNavigateToScriptDefinition(event);
+      }));
 
   // Voice recording workflow
-  m_subscriptions.push_back(
-      bus.subscribe<events::VoiceClipAssignRequestedEvent>(
-          [this](const events::VoiceClipAssignRequestedEvent &event) {
-            onVoiceClipAssignRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::VoiceClipAssignRequestedEvent>(
+      [this](const events::VoiceClipAssignRequestedEvent& event) {
+        onVoiceClipAssignRequested(event);
+      }));
 
-  m_subscriptions.push_back(
-      bus.subscribe<events::VoiceAutoDetectRequestedEvent>(
-          [this](const events::VoiceAutoDetectRequestedEvent &event) {
-            onVoiceAutoDetectRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::VoiceAutoDetectRequestedEvent>(
+      [this](const events::VoiceAutoDetectRequestedEvent& event) {
+        onVoiceAutoDetectRequested(event);
+      }));
 
-  m_subscriptions.push_back(
-      bus.subscribe<events::VoiceClipPreviewRequestedEvent>(
-          [this](const events::VoiceClipPreviewRequestedEvent &event) {
-            onVoiceClipPreviewRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::VoiceClipPreviewRequestedEvent>(
+      [this](const events::VoiceClipPreviewRequestedEvent& event) {
+        onVoiceClipPreviewRequested(event);
+      }));
 
   m_subscriptions.push_back(bus.subscribe<events::VoiceRecordingRequestedEvent>(
-      [this](const events::VoiceRecordingRequestedEvent &event) {
+      [this](const events::VoiceRecordingRequestedEvent& event) {
         onVoiceRecordingRequested(event);
       }));
 
   // Issue/diagnostic navigation
   m_subscriptions.push_back(bus.subscribe<events::IssueActivatedEvent>(
-      [this](const events::IssueActivatedEvent &event) {
-        onIssueActivated(event);
-      }));
+      [this](const events::IssueActivatedEvent& event) { onIssueActivated(event); }));
 
   m_subscriptions.push_back(bus.subscribe<events::DiagnosticActivatedEvent>(
-      [this](const events::DiagnosticActivatedEvent &event) {
-        onDiagnosticActivated(event);
-      }));
+      [this](const events::DiagnosticActivatedEvent& event) { onDiagnosticActivated(event); }));
 
   m_subscriptions.push_back(bus.subscribe<events::NavigationRequestedEvent>(
-      [this](const events::NavigationRequestedEvent &event) {
-        onNavigationRequested(event);
-      }));
+      [this](const events::NavigationRequestedEvent& event) { onNavigationRequested(event); }));
 
   // Asset workflow
   m_subscriptions.push_back(bus.subscribe<events::AssetDoubleClickedEvent>(
-      [this](const events::AssetDoubleClickedEvent &event) {
-        onAssetDoubleClicked(event);
-      }));
+      [this](const events::AssetDoubleClickedEvent& event) { onAssetDoubleClicked(event); }));
 
   m_subscriptions.push_back(bus.subscribe<events::AssetsDroppedEvent>(
-      [this](const events::AssetsDroppedEvent &event) {
-        onAssetsDropped(event);
-      }));
+      [this](const events::AssetsDroppedEvent& event) { onAssetsDropped(event); }));
 
   // Scene document loading
-  m_subscriptions.push_back(
-      bus.subscribe<events::LoadSceneDocumentRequestedEvent>(
-          [this](const events::LoadSceneDocumentRequestedEvent &event) {
-            onLoadSceneDocumentRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::LoadSceneDocumentRequestedEvent>(
+      [this](const events::LoadSceneDocumentRequestedEvent& event) {
+        onLoadSceneDocumentRequested(event);
+      }));
 
   // Scene auto-sync events (issue #213)
-  m_subscriptions.push_back(
-      bus.subscribe<events::SceneDocumentModifiedEvent>(
-          [this](const events::SceneDocumentModifiedEvent &event) {
-            onSceneDocumentModified(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::SceneDocumentModifiedEvent>(
+      [this](const events::SceneDocumentModifiedEvent& event) { onSceneDocumentModified(event); }));
 
-  m_subscriptions.push_back(
-      bus.subscribe<events::SceneThumbnailUpdatedEvent>(
-          [this](const events::SceneThumbnailUpdatedEvent &event) {
-            onSceneThumbnailUpdated(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::SceneThumbnailUpdatedEvent>(
+      [this](const events::SceneThumbnailUpdatedEvent& event) { onSceneThumbnailUpdated(event); }));
 
   m_subscriptions.push_back(bus.subscribe<events::SceneRenamedEvent>(
-      [this](const events::SceneRenamedEvent &event) {
-        onSceneRenamed(event);
-      }));
+      [this](const events::SceneRenamedEvent& event) { onSceneRenamed(event); }));
 
   m_subscriptions.push_back(bus.subscribe<events::SceneDeletedEvent>(
-      [this](const events::SceneDeletedEvent &event) {
-        onSceneDeleted(event);
-      }));
+      [this](const events::SceneDeletedEvent& event) { onSceneDeleted(event); }));
 
-  qDebug() << "[WorkflowMediator] Initialized with"
-           << m_subscriptions.size() << "subscriptions";
+  // Issue #329: Inspector panel scene workflow connections
+  if (m_inspector) {
+    // Scene creation request from inspector
+    QObject::connect(m_inspector, &qt::NMInspectorPanel::createNewSceneRequested, [this]() {
+      qDebug() << "[WorkflowMediator] Scene creation requested from inspector";
+      // Publish event for main window/project manager to handle
+      EventBus::instance().publish(events::CreateSceneRequestedEvent{});
+    });
+
+    // Scene editing request from inspector
+    QObject::connect(
+        m_inspector, &qt::NMInspectorPanel::editSceneRequested, [this](const QString& sceneId) {
+          qDebug() << "[WorkflowMediator] Scene editing requested from inspector:" << sceneId;
+          if (m_sceneView) {
+            m_sceneView->loadSceneDocument(sceneId);
+            m_sceneView->show();
+            m_sceneView->raise();
+          }
+        });
+
+    // Scene location request from inspector (highlight in Story Graph)
+    QObject::connect(m_inspector, &qt::NMInspectorPanel::locateSceneInGraphRequested,
+                     [this](const QString& sceneId) {
+                       qDebug() << "[WorkflowMediator] Scene locate requested from inspector:"
+                                << sceneId;
+                       if (m_storyGraph) {
+                         // Navigate to the node that references this scene
+                         // The sceneId is actually the node ID in the Story Graph
+                         m_storyGraph->navigateToNode(sceneId);
+                       }
+                     });
+  }
+
+  qDebug() << "[WorkflowMediator] Initialized with" << m_subscriptions.size() << "subscriptions";
 }
 
 void WorkflowMediator::shutdown() {
-  auto &bus = EventBus::instance();
-  for (const auto &sub : m_subscriptions) {
+  auto& bus = EventBus::instance();
+  for (const auto& sub : m_subscriptions) {
     bus.unsubscribe(sub);
   }
   m_subscriptions.clear();
@@ -188,15 +185,14 @@ void WorkflowMediator::shutdown() {
 }
 
 void WorkflowMediator::onStoryGraphNodeActivated(
-    const events::StoryGraphNodeActivatedEvent &event) {
+    const events::StoryGraphNodeActivatedEvent& event) {
   if (!m_sceneView || event.nodeIdString.isEmpty()) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Story graph node activated:"
-           << event.nodeIdString;
+  qDebug() << "[WorkflowMediator] Story graph node activated:" << event.nodeIdString;
 
-  auto &playController = qt::NMPlayModeController::instance();
+  auto& playController = qt::NMPlayModeController::instance();
   if (!playController.isPlaying() && !playController.isPaused()) {
     m_sceneView->loadSceneDocument(event.nodeIdString);
   }
@@ -206,8 +202,7 @@ void WorkflowMediator::onStoryGraphNodeActivated(
   m_sceneView->setFocus();
 }
 
-void WorkflowMediator::onSceneNodeDoubleClicked(
-    const events::SceneNodeDoubleClickedEvent &event) {
+void WorkflowMediator::onSceneNodeDoubleClicked(const events::SceneNodeDoubleClickedEvent& event) {
   if (!m_sceneView || !m_timeline) {
     return;
   }
@@ -215,7 +210,7 @@ void WorkflowMediator::onSceneNodeDoubleClicked(
   qDebug() << "[WorkflowMediator] Scene node double-clicked:" << event.sceneId;
 
   // Load scene in Scene View
-  auto &playController = qt::NMPlayModeController::instance();
+  auto& playController = qt::NMPlayModeController::instance();
   if (!playController.isPlaying() && !playController.isPaused()) {
     m_sceneView->loadSceneDocument(event.sceneId);
   }
@@ -238,8 +233,7 @@ void WorkflowMediator::onSceneNodeDoubleClicked(
   EventBus::instance().publish(statusEvent);
 }
 
-void WorkflowMediator::onScriptNodeRequested(
-    const events::ScriptNodeRequestedEvent &event) {
+void WorkflowMediator::onScriptNodeRequested(const events::ScriptNodeRequestedEvent& event) {
   if (!m_scriptEditor) {
     return;
   }
@@ -253,27 +247,25 @@ void WorkflowMediator::onScriptNodeRequested(
 }
 
 void WorkflowMediator::onEditDialogueFlowRequested(
-    const events::EditDialogueFlowRequestedEvent &event) {
+    const events::EditDialogueFlowRequestedEvent& event) {
   if (!m_dialogueGraph) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Edit dialogue flow requested:"
-           << event.sceneId;
+  qDebug() << "[WorkflowMediator] Edit dialogue flow requested:" << event.sceneId;
 
   m_dialogueGraph->loadSceneDialogue(event.sceneId);
   m_dialogueGraph->show();
   m_dialogueGraph->raise();
 
   events::StatusMessageEvent statusEvent;
-  statusEvent.message =
-      QObject::tr("Editing dialogue flow: %1").arg(event.sceneId);
+  statusEvent.message = QObject::tr("Editing dialogue flow: %1").arg(event.sceneId);
   statusEvent.timeoutMs = 3000;
   EventBus::instance().publish(statusEvent);
 }
 
 void WorkflowMediator::onReturnToStoryGraphRequested(
-    const events::ReturnToStoryGraphRequestedEvent &) {
+    const events::ReturnToStoryGraphRequestedEvent&) {
   if (!m_storyGraph) {
     return;
   }
@@ -289,30 +281,28 @@ void WorkflowMediator::onReturnToStoryGraphRequested(
   EventBus::instance().publish(statusEvent);
 }
 
-void WorkflowMediator::onDialogueCountChanged(
-    const events::DialogueCountChangedEvent &event) {
-  qDebug() << "[WorkflowMediator] Dialogue count changed for scene:"
-           << event.sceneId << "count:" << event.count;
+void WorkflowMediator::onDialogueCountChanged(const events::DialogueCountChangedEvent& event) {
+  qDebug() << "[WorkflowMediator] Dialogue count changed for scene:" << event.sceneId
+           << "count:" << event.count;
 
   if (m_storyGraph) {
-    auto *node = m_storyGraph->findNodeByIdString(event.sceneId);
+    auto* node = m_storyGraph->findNodeByIdString(event.sceneId);
     if (node) {
       node->setDialogueCount(event.count);
       node->setHasEmbeddedDialogue(event.count > 0);
-      qDebug() << "[WorkflowMediator] Updated dialogue count badge for scene:"
-               << event.sceneId;
+      qDebug() << "[WorkflowMediator] Updated dialogue count badge for scene:" << event.sceneId;
     }
   }
 }
 
 void WorkflowMediator::onOpenSceneScriptRequested(
-    const events::OpenSceneScriptRequestedEvent &event) {
+    const events::OpenSceneScriptRequestedEvent& event) {
   if (!m_scriptEditor) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Open scene script requested for scene:"
-           << event.sceneId << "script:" << event.scriptPath;
+  qDebug() << "[WorkflowMediator] Open scene script requested for scene:" << event.sceneId
+           << "script:" << event.scriptPath;
 
   m_scriptEditor->openScript(event.scriptPath);
   m_scriptEditor->show();
@@ -324,8 +314,7 @@ void WorkflowMediator::onOpenSceneScriptRequested(
   EventBus::instance().publish(statusEvent);
 }
 
-void WorkflowMediator::onGoToScriptLocation(
-    const events::GoToScriptLocationEvent &event) {
+void WorkflowMediator::onGoToScriptLocation(const events::GoToScriptLocationEvent& event) {
   if (!m_scriptEditor) {
     return;
   }
@@ -339,15 +328,15 @@ void WorkflowMediator::onGoToScriptLocation(
 }
 
 void WorkflowMediator::onNavigateToScriptDefinition(
-    const events::NavigateToScriptDefinitionEvent &event) {
+    const events::NavigateToScriptDefinitionEvent& event) {
   // Issue #239: Bidirectional navigation from Story Graph to Script Editor
   // Find the scene definition in script files and navigate to that line
   if (!m_scriptEditor) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Navigate to script definition for scene:"
-           << event.sceneId << "script:" << event.scriptPath;
+  qDebug() << "[WorkflowMediator] Navigate to script definition for scene:" << event.sceneId
+           << "script:" << event.scriptPath;
 
   // If line is already known, navigate directly
   if (event.line > 0 && !event.scriptPath.isEmpty()) {
@@ -388,8 +377,8 @@ void WorkflowMediator::onNavigateToScriptDefinition(
     }
   } else {
     // Search all script files for the scene definition
-    const QString scriptsRoot = QString::fromStdString(
-        ProjectManager::instance().getFolderPath(ProjectFolder::Scripts));
+    const QString scriptsRoot =
+        QString::fromStdString(ProjectManager::instance().getFolderPath(ProjectFolder::Scripts));
 
     if (!scriptsRoot.isEmpty()) {
       namespace fs = std::filesystem;
@@ -399,7 +388,7 @@ void WorkflowMediator::onNavigateToScriptDefinition(
         const QRegularExpression sceneRe(
             QString("\\bscene\\s+%1\\b").arg(QRegularExpression::escape(event.sceneId)));
 
-        for (const auto &entry : fs::recursive_directory_iterator(base)) {
+        for (const auto& entry : fs::recursive_directory_iterator(base)) {
           if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
             continue;
           }
@@ -438,32 +427,29 @@ void WorkflowMediator::onNavigateToScriptDefinition(
     m_scriptEditor->raise();
 
     events::StatusMessageEvent statusEvent;
-    statusEvent.message = QObject::tr("Navigated to scene '%1' at line %2")
-                              .arg(event.sceneId)
-                              .arg(lineNumber);
+    statusEvent.message =
+        QObject::tr("Navigated to scene '%1' at line %2").arg(event.sceneId).arg(lineNumber);
     statusEvent.timeoutMs = 3000;
     EventBus::instance().publish(statusEvent);
   } else {
     // Scene not found in any script
     events::StatusMessageEvent statusEvent;
-    statusEvent.message =
-        QObject::tr("Scene '%1' not found in script files").arg(event.sceneId);
+    statusEvent.message = QObject::tr("Scene '%1' not found in script files").arg(event.sceneId);
     statusEvent.timeoutMs = 5000;
     EventBus::instance().publish(statusEvent);
 
-    qWarning() << "[WorkflowMediator] Scene definition not found:"
-               << event.sceneId;
+    qWarning() << "[WorkflowMediator] Scene definition not found:" << event.sceneId;
   }
 }
 
 void WorkflowMediator::onVoiceClipAssignRequested(
-    const events::VoiceClipAssignRequestedEvent &event) {
+    const events::VoiceClipAssignRequestedEvent& event) {
   if (!m_voiceStudio) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Voice clip assign requested for node:"
-           << event.nodeIdString << "current:" << event.currentPath;
+  qDebug() << "[WorkflowMediator] Voice clip assign requested for node:" << event.nodeIdString
+           << "current:" << event.currentPath;
 
   m_voiceStudio->show();
   m_voiceStudio->raise();
@@ -476,13 +462,12 @@ void WorkflowMediator::onVoiceClipAssignRequested(
 }
 
 void WorkflowMediator::onVoiceAutoDetectRequested(
-    const events::VoiceAutoDetectRequestedEvent &event) {
-  qDebug() << "[WorkflowMediator] Voice auto-detect requested for node:"
-           << event.nodeIdString << "key:" << event.localizationKey;
+    const events::VoiceAutoDetectRequestedEvent& event) {
+  qDebug() << "[WorkflowMediator] Voice auto-detect requested for node:" << event.nodeIdString
+           << "key:" << event.localizationKey;
 
   events::StatusMessageEvent statusEvent;
-  statusEvent.message =
-      QObject::tr("Auto-detecting voice for key: %1").arg(event.localizationKey);
+  statusEvent.message = QObject::tr("Auto-detecting voice for key: %1").arg(event.localizationKey);
   statusEvent.timeoutMs = 3000;
   EventBus::instance().publish(statusEvent);
 
@@ -493,13 +478,12 @@ void WorkflowMediator::onVoiceAutoDetectRequested(
 }
 
 void WorkflowMediator::onVoiceClipPreviewRequested(
-    const events::VoiceClipPreviewRequestedEvent &event) {
-  qDebug() << "[WorkflowMediator] Voice preview requested for node:"
-           << event.nodeIdString << "voice:" << event.voicePath;
+    const events::VoiceClipPreviewRequestedEvent& event) {
+  qDebug() << "[WorkflowMediator] Voice preview requested for node:" << event.nodeIdString
+           << "voice:" << event.voicePath;
 
   events::StatusMessageEvent statusEvent;
-  statusEvent.message =
-      QObject::tr("Previewing voice: %1").arg(event.voicePath);
+  statusEvent.message = QObject::tr("Previewing voice: %1").arg(event.voicePath);
   statusEvent.timeoutMs = 3000;
   EventBus::instance().publish(statusEvent);
 
@@ -510,14 +494,13 @@ void WorkflowMediator::onVoiceClipPreviewRequested(
 }
 
 void WorkflowMediator::onVoiceRecordingRequested(
-    const events::VoiceRecordingRequestedEvent &event) {
+    const events::VoiceRecordingRequestedEvent& event) {
   if (!m_voiceStudio) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Voice recording requested for node:"
-           << event.nodeIdString << "speaker:" << event.speaker
-           << "text:" << event.dialogueText;
+  qDebug() << "[WorkflowMediator] Voice recording requested for node:" << event.nodeIdString
+           << "speaker:" << event.speaker << "text:" << event.dialogueText;
 
   m_voiceStudio->show();
   m_voiceStudio->raise();
@@ -529,22 +512,19 @@ void WorkflowMediator::onVoiceRecordingRequested(
   EventBus::instance().publish(statusEvent);
 }
 
-void WorkflowMediator::onIssueActivated(
-    const events::IssueActivatedEvent &event) {
+void WorkflowMediator::onIssueActivated(const events::IssueActivatedEvent& event) {
   if (!m_scriptEditor) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Issue activated:" << event.file
-           << "line:" << event.line;
+  qDebug() << "[WorkflowMediator] Issue activated:" << event.file << "line:" << event.line;
 
   m_scriptEditor->goToLocation(event.file, event.line);
   m_scriptEditor->show();
   m_scriptEditor->raise();
 }
 
-void WorkflowMediator::onDiagnosticActivated(
-    const events::DiagnosticActivatedEvent &event) {
+void WorkflowMediator::onDiagnosticActivated(const events::DiagnosticActivatedEvent& event) {
   qDebug() << "[WorkflowMediator] Diagnostic activated:" << event.location;
 
   // Re-publish as navigation request for unified handling
@@ -553,8 +533,7 @@ void WorkflowMediator::onDiagnosticActivated(
   EventBus::instance().publish(navEvent);
 }
 
-void WorkflowMediator::onNavigationRequested(
-    const events::NavigationRequestedEvent &event) {
+void WorkflowMediator::onNavigationRequested(const events::NavigationRequestedEvent& event) {
   if (event.locationString.isEmpty()) {
     qWarning() << "[WorkflowMediator] Empty location string";
     return;
@@ -562,8 +541,7 @@ void WorkflowMediator::onNavigationRequested(
 
   QStringList parts = event.locationString.split(':');
   if (parts.size() < 2) {
-    qWarning() << "[WorkflowMediator] Invalid location format:"
-               << event.locationString;
+    qWarning() << "[WorkflowMediator] Invalid location format:" << event.locationString;
     return;
   }
 
@@ -587,9 +565,7 @@ void WorkflowMediator::onNavigationRequested(
       qWarning() << "[WorkflowMediator] Failed to navigate to node:" << nodeId;
       if (m_diagnostics) {
         m_diagnostics->addDiagnosticWithLocation(
-            "Warning",
-            QObject::tr("Could not find node '%1'").arg(nodeId),
-            event.locationString);
+            "Warning", QObject::tr("Could not find node '%1'").arg(nodeId), event.locationString);
       }
     }
     return;
@@ -617,8 +593,7 @@ void WorkflowMediator::onNavigationRequested(
       }
     }
 
-    qDebug() << "[WorkflowMediator] Navigating to Script:" << filePath
-             << "line:" << lineNumber;
+    qDebug() << "[WorkflowMediator] Navigating to Script:" << filePath << "line:" << lineNumber;
     m_scriptEditor->goToLocation(filePath, lineNumber);
     m_scriptEditor->show();
     m_scriptEditor->raise();
@@ -637,8 +612,7 @@ void WorkflowMediator::onNavigationRequested(
   qWarning() << "[WorkflowMediator] Unknown location type:" << typeStr;
 }
 
-void WorkflowMediator::onAssetDoubleClicked(
-    const events::AssetDoubleClickedEvent &event) {
+void WorkflowMediator::onAssetDoubleClicked(const events::AssetDoubleClickedEvent& event) {
   qDebug() << "[WorkflowMediator] Asset double-clicked:" << event.path;
 
   // Open scripts in script editor
@@ -652,12 +626,12 @@ void WorkflowMediator::onAssetDoubleClicked(
   // For images, add to scene view
   QFileInfo info(event.path);
   const QString ext = info.suffix().toLower();
-  const bool isImage = (ext == "png" || ext == "jpg" || ext == "jpeg" ||
-                        ext == "bmp" || ext == "gif");
+  const bool isImage =
+      (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "gif");
 
   if (isImage && m_sceneView) {
-    if (auto *scene = m_sceneView->graphicsScene()) {
-      if (auto *selected = scene->selectedObject()) {
+    if (auto* scene = m_sceneView->graphicsScene()) {
+      if (auto* selected = scene->selectedObject()) {
         m_sceneView->setObjectAsset(selected->id(), event.path);
         m_sceneView->selectObjectById(selected->id());
         return;
@@ -667,8 +641,7 @@ void WorkflowMediator::onAssetDoubleClicked(
   }
 }
 
-void WorkflowMediator::onAssetsDropped(
-    const events::AssetsDroppedEvent &event) {
+void WorkflowMediator::onAssetsDropped(const events::AssetsDroppedEvent& event) {
   if (!m_sceneView || event.paths.isEmpty()) {
     return;
   }
@@ -677,31 +650,31 @@ void WorkflowMediator::onAssetsDropped(
            << "items, typeHint:" << event.typeHint;
 
   QPointF basePos(0, 0);
-  if (auto *view = m_sceneView->graphicsView()) {
+  if (auto* view = m_sceneView->graphicsView()) {
     basePos = view->mapToScene(view->viewport()->rect().center());
   }
 
   QPointF pos = basePos;
   const QPointF offset(32.0, 32.0);
 
-  for (const QString &path : event.paths) {
+  for (const QString& path : event.paths) {
     if (event.typeHint < 0) {
       m_sceneView->addObjectFromAsset(path, pos);
     } else {
-      m_sceneView->addObjectFromAsset(
-          path, pos, static_cast<qt::NMSceneObjectType>(event.typeHint));
+      m_sceneView->addObjectFromAsset(path, pos,
+                                      static_cast<qt::NMSceneObjectType>(event.typeHint));
     }
     pos += offset;
   }
 }
 
 void WorkflowMediator::onLoadSceneDocumentRequested(
-    const events::LoadSceneDocumentRequestedEvent &event) {
+    const events::LoadSceneDocumentRequestedEvent& event) {
   if (!m_sceneView || event.sceneId.isEmpty()) {
     return;
   }
 
-  auto &playController = qt::NMPlayModeController::instance();
+  auto& playController = qt::NMPlayModeController::instance();
   if (!playController.isPlaying() && !playController.isPaused()) {
     qDebug() << "[WorkflowMediator] Loading scene document:" << event.sceneId;
     m_sceneView->loadSceneDocument(event.sceneId);
@@ -712,8 +685,7 @@ void WorkflowMediator::onLoadSceneDocumentRequested(
 // Scene Auto-Sync Event Handlers (Issue #213)
 // ============================================================================
 
-void WorkflowMediator::onSceneDocumentModified(
-    const events::SceneDocumentModifiedEvent &event) {
+void WorkflowMediator::onSceneDocumentModified(const events::SceneDocumentModifiedEvent& event) {
   if (event.sceneId.isEmpty()) {
     return;
   }
@@ -726,8 +698,7 @@ void WorkflowMediator::onSceneDocumentModified(
   // will trigger onSceneThumbnailUpdated() below to update Story Graph
 }
 
-void WorkflowMediator::onSceneThumbnailUpdated(
-    const events::SceneThumbnailUpdatedEvent &event) {
+void WorkflowMediator::onSceneThumbnailUpdated(const events::SceneThumbnailUpdatedEvent& event) {
   if (!m_storyGraph || event.sceneId.isEmpty()) {
     return;
   }
@@ -740,21 +711,19 @@ void WorkflowMediator::onSceneThumbnailUpdated(
   // The Story Graph panel will update thumbnails for all scene nodes with this sceneId
 }
 
-void WorkflowMediator::onSceneRenamed(
-    const events::SceneRenamedEvent &event) {
+void WorkflowMediator::onSceneRenamed(const events::SceneRenamedEvent& event) {
   if (!m_storyGraph || event.sceneId.isEmpty()) {
     return;
   }
 
-  qDebug() << "[WorkflowMediator] Scene renamed:" << event.sceneId
-           << "(" << event.oldName << "->" << event.newName << ")";
+  qDebug() << "[WorkflowMediator] Scene renamed:" << event.sceneId << "(" << event.oldName << "->"
+           << event.newName << ")";
 
   // The Story Graph panel will handle updating node display names
   // via its own event subscription to SceneRenamedEvent
 }
 
-void WorkflowMediator::onSceneDeleted(
-    const events::SceneDeletedEvent &event) {
+void WorkflowMediator::onSceneDeleted(const events::SceneDeletedEvent& event) {
   if (!m_storyGraph || event.sceneId.isEmpty()) {
     return;
   }

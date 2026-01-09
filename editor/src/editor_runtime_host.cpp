@@ -254,6 +254,51 @@ void EditorRuntimeHost::stepLine() {
   stepScriptInstruction();
 }
 
+void EditorRuntimeHost::stepOver() {
+  if (!m_projectLoaded || !m_scriptRuntime) {
+    return;
+  }
+
+  if (m_state == EditorRuntimeState::Stopped) {
+    // Start in stepping mode
+    play();
+  }
+
+  // For the current VM implementation, CALL opcodes execute native callbacks
+  // rather than script functions, so step-over is effectively the same as
+  // stepping one instruction. In a future implementation with script-to-script
+  // calls, this would track call depth and step until returning to the same depth.
+  stepScriptInstruction();
+}
+
+void EditorRuntimeHost::stepOut() {
+  if (!m_projectLoaded || !m_scriptRuntime) {
+    return;
+  }
+
+  if (m_state == EditorRuntimeState::Stopped) {
+    // Start in stepping mode
+    play();
+  }
+
+  // Track the current scene to detect scene changes
+  m_stepOutScene = m_scriptRuntime->getCurrentScene();
+  m_steppingOut = true;
+
+  // Continue execution until RETURN or scene change
+  m_state = EditorRuntimeState::Stepping;
+  m_singleStepping = false;
+
+  if (m_scriptRuntime) {
+    m_scriptRuntime->resume();
+  }
+
+  // The update() method or runtime will need to check for RETURN opcodes
+  // and pause when encountered. For now, we execute until the scene changes
+  // or a RETURN is hit (which currently halts execution).
+  fireStateChanged(m_state);
+}
+
 void EditorRuntimeHost::continueExecution() {
   if (m_state == EditorRuntimeState::Paused ||
       m_state == EditorRuntimeState::Stepping) {
@@ -270,7 +315,7 @@ void EditorRuntimeHost::continueExecution() {
 EditorRuntimeState EditorRuntimeHost::getState() const { return m_state; }
 
 void EditorRuntimeHost::update(f64 deltaTime) {
-  if (m_state != EditorRuntimeState::Running) {
+  if (m_state != EditorRuntimeState::Running && m_state != EditorRuntimeState::Stepping) {
     return;
   }
 
@@ -282,6 +327,23 @@ void EditorRuntimeHost::update(f64 deltaTime) {
   // Update script runtime
   if (m_scriptRuntime) {
     m_scriptRuntime->update(deltaTime);
+
+    // Check for step-out condition: scene changed or script completed
+    if (m_steppingOut) {
+      std::string currentScene = m_scriptRuntime->getCurrentScene();
+      bool sceneChanged = (currentScene != m_stepOutScene);
+      bool runtimeComplete = m_scriptRuntime->isComplete();
+
+      // Also check if we hit a RETURN opcode (which currently halts the VM)
+      // Since RETURN halts execution, isComplete() will be true
+      if (sceneChanged || runtimeComplete) {
+        m_steppingOut = false;
+        m_state = EditorRuntimeState::Paused;
+        m_scriptRuntime->pause();
+        fireStateChanged(m_state);
+        return;
+      }
+    }
 
     // Check if runtime completed
     if (m_scriptRuntime->isComplete()) {

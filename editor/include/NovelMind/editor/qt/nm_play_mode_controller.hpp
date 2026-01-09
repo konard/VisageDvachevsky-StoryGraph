@@ -2,6 +2,7 @@
 #define NOVELMIND_EDITOR_NM_PLAY_MODE_CONTROLLER_HPP
 
 #include "NovelMind/editor/editor_runtime_host.hpp"
+#include "NovelMind/scripting/script_runtime.hpp"
 #include <QElapsedTimer>
 #include <QObject>
 #include <QSet>
@@ -9,6 +10,7 @@
 #include <QThread>
 #include <QTimer>
 #include <QVariantMap>
+#include <deque>
 #include <limits>
 
 namespace NovelMind::editor::qt {
@@ -286,6 +288,12 @@ private:
   /// Sync cached UI data from runtime
   void refreshRuntimeCache();
 
+  /// Capture current runtime state for history
+  void captureCurrentState();
+
+  /// Restore state from history
+  void restoreState(const scripting::RuntimeSaveState &state);
+
   // === State ===
   PlayMode m_playMode = Stopped;
   QString m_currentNodeId;
@@ -309,6 +317,10 @@ private:
   EditorRuntimeHost m_runtimeHost;
   QTimer *m_runtimeTimer = nullptr;
   QElapsedTimer m_deltaTimer;
+
+  // State history for backward navigation
+  std::deque<scripting::RuntimeSaveState> m_stateHistory;
+  static constexpr size_t MAX_HISTORY_SIZE = 100;
 };
 
 } // namespace NovelMind::editor::qt

@@ -95,5 +95,5 @@
     "compression": true,
     "encryptScripts": false
   },
-  "playbackSourceMode": "Script"
+  "playbackSourceMode": "Graph"
 }

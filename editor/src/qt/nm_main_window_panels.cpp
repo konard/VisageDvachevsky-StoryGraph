@@ -160,6 +160,13 @@ void NMMainWindow::setupPanels() {
   connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
           m_projectSettingsPanel, &NMProjectSettingsPanel::setWorkflowMode);
 
+  // Issue #327: Connect workflow mode changes to main window for panel visibility control
+  // Both Project Settings and Play Toolbar can change the mode, both should trigger visibility update
+  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged,
+          this, &NMMainWindow::onWorkflowModeChanged);
+  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
+          this, &NMMainWindow::onWorkflowModeChanged);
+
   // Add panels to the main window
   addDockWidget(Qt::LeftDockWidgetArea, m_scenePalettePanel);
   addDockWidget(Qt::LeftDockWidgetArea, m_hierarchyPanel);

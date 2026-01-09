@@ -33,8 +33,7 @@ struct SceneObjectSelectedEvent : EditorEvent {
   QString sourcePanel; // e.g., "SceneView", "Hierarchy"
   bool editable = true;
 
-  SceneObjectSelectedEvent()
-      : EditorEvent(EditorEventType::SelectionChanged) {}
+  SceneObjectSelectedEvent() : EditorEvent(EditorEventType::SelectionChanged) {}
 
   [[nodiscard]] std::string getDescription() const override {
     return "Scene object selected: " + objectId.toStdString();
@@ -48,8 +47,7 @@ struct SceneObjectPositionChangedEvent : EditorEvent {
   QString objectId;
   QPointF newPosition;
 
-  SceneObjectPositionChangedEvent()
-      : EditorEvent(EditorEventType::SceneObjectMoved) {}
+  SceneObjectPositionChangedEvent() : EditorEvent(EditorEventType::SceneObjectMoved) {}
 };
 
 /**
@@ -66,8 +64,7 @@ struct SceneObjectTransformFinishedEvent : EditorEvent {
   qreal oldScaleY = 1.0;
   qreal newScaleY = 1.0;
 
-  SceneObjectTransformFinishedEvent()
-      : EditorEvent(EditorEventType::SceneObjectTransformed) {}
+  SceneObjectTransformFinishedEvent() : EditorEvent(EditorEventType::SceneObjectTransformed) {}
 };
 
 /**
@@ -85,8 +82,7 @@ struct CreateSceneObjectRequestedEvent : EditorEvent {
   QPointF position;
   QString assetPath;
 
-  CreateSceneObjectRequestedEvent()
-      : EditorEvent(EditorEventType::Custom) {}
+  CreateSceneObjectRequestedEvent() : EditorEvent(EditorEventType::Custom) {}
 };
 
 // ============================================================================
@@ -103,8 +99,7 @@ struct StoryGraphNodeSelectedEvent : EditorEvent {
   QString dialogueText;
   QStringList choiceOptions;
 
-  StoryGraphNodeSelectedEvent()
-      : EditorEvent(EditorEventType::SelectionChanged) {}
+  StoryGraphNodeSelectedEvent() : EditorEvent(EditorEventType::SelectionChanged) {}
 
   [[nodiscard]] std::string getDescription() const override {
     return "Story graph node selected: " + nodeIdString.toStdString();
@@ -231,12 +226,10 @@ struct InspectorPropertyChangedEvent : EditorEvent {
   QString propertyName;
   QString newValue;
 
-  InspectorPropertyChangedEvent()
-      : EditorEvent(EditorEventType::PropertyChanged) {}
+  InspectorPropertyChangedEvent() : EditorEvent(EditorEventType::PropertyChanged) {}
 
   [[nodiscard]] std::string getDescription() const override {
-    return "Property '" + propertyName.toStdString() + "' changed on " +
-           objectId.toStdString();
+    return "Property '" + propertyName.toStdString() + "' changed on " + objectId.toStdString();
   }
 };
 
@@ -248,8 +241,7 @@ struct UpdateInspectorPropertyEvent : EditorEvent {
   QString propertyName;
   QString value;
 
-  UpdateInspectorPropertyEvent()
-      : EditorEvent(EditorEventType::PropertyChanged) {}
+  UpdateInspectorPropertyEvent() : EditorEvent(EditorEventType::PropertyChanged) {}
 };
 
 // ============================================================================
@@ -369,8 +361,7 @@ struct NavigateToScriptDefinitionEvent : EditorEvent {
 struct TimelineFrameChangedEvent : EditorEvent {
   int frame = 0;
 
-  TimelineFrameChangedEvent()
-      : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
+  TimelineFrameChangedEvent() : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
 };
 
 /**
@@ -379,8 +370,7 @@ struct TimelineFrameChangedEvent : EditorEvent {
 struct TimelinePlaybackStateChangedEvent : EditorEvent {
   bool playing = false;
 
-  TimelinePlaybackStateChangedEvent()
-      : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
+  TimelinePlaybackStateChangedEvent() : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
 };
 
 /**
@@ -434,8 +424,7 @@ struct ShowPanelRequestedEvent : EditorEvent {
   bool raisePanel = true;
   bool focusPanel = false;
 
-  ShowPanelRequestedEvent()
-      : EditorEvent(EditorEventType::PanelFocusChanged) {}
+  ShowPanelRequestedEvent() : EditorEvent(EditorEventType::PanelFocusChanged) {}
 };
 
 // ============================================================================
@@ -499,6 +488,19 @@ struct LoadSceneDocumentRequestedEvent : EditorEvent {
 };
 
 /**
+ * @brief Emitted to request creating a new scene (Issue #329)
+ *
+ * This event is published when the Inspector panel or other UI triggers
+ * the new scene creation workflow. The main window or project manager
+ * should handle this by showing the new scene dialog.
+ */
+struct CreateSceneRequestedEvent : EditorEvent {
+  CreateSceneRequestedEvent() : EditorEvent(EditorEventType::Custom) {}
+
+  [[nodiscard]] std::string getDescription() const override { return "Create new scene requested"; }
+};
+
+/**
  * @brief Emitted to request enabling/disabling animation preview mode
  */
 struct SetAnimationPreviewModeEvent : EditorEvent {
@@ -535,15 +537,15 @@ struct SceneCreatedEvent : EditorEvent {
  * the renamed scene, ensuring consistency across the project.
  */
 struct SceneRenamedEvent : EditorEvent {
-  QString sceneId;  ///< Scene ID (unchanged)
-  QString oldName;  ///< Previous display name
-  QString newName;  ///< New display name
+  QString sceneId; ///< Scene ID (unchanged)
+  QString oldName; ///< Previous display name
+  QString newName; ///< New display name
 
   SceneRenamedEvent() : EditorEvent(EditorEventType::Custom) {}
 
   [[nodiscard]] std::string getDescription() const override {
-    return "Scene renamed: " + sceneId.toStdString() + " (" +
-           oldName.toStdString() + " -> " + newName.toStdString() + ")";
+    return "Scene renamed: " + sceneId.toStdString() + " (" + oldName.toStdString() + " -> " +
+           newName.toStdString() + ")";
   }
 };
 

@@ -1,9 +1,11 @@
 {
   "id": "tutorial_project",
   "name": "Interactive Tutorial",
-  "description": "Learn NovelMind step-by-step with comprehensive examples and detailed comments explaining every feature.",
+  "description": "Learn NovelMind step-by-step with comprehensive examples and detailed comments explaining every feature. Uses Script workflow to teach scripting fundamentals.",
   "category": "Learning",
   "difficulty": "Beginner",
+  "workflowMode": "Script",
+  "workflowDescription": "Script editing - learn NMScript basics in the Script Editor panel",
   "features": [
     "Step-by-Step Instructions",
     "Commented Code Examples",

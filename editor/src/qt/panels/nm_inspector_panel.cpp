@@ -41,8 +41,7 @@ namespace NovelMind::editor::qt {
 // NMInspectorPanel
 // ============================================================================
 
-NMInspectorPanel::NMInspectorPanel(QWidget *parent)
-    : NMDockPanel(tr("Inspector"), parent) {
+NMInspectorPanel::NMInspectorPanel(QWidget* parent) : NMDockPanel(tr("Inspector"), parent) {
   setPanelId("Inspector");
 
   // Inspector needs adequate width for property labels and edit controls
@@ -54,15 +53,16 @@ NMInspectorPanel::NMInspectorPanel(QWidget *parent)
   m_updateTimer = new QTimer(this);
   m_updateTimer->setSingleShot(true);
   m_updateTimer->setInterval(16); // ~60fps update rate
-  connect(m_updateTimer, &QTimer::timeout, this,
-          &NMInspectorPanel::flushPendingUpdates);
+  connect(m_updateTimer, &QTimer::timeout, this, &NMInspectorPanel::flushPendingUpdates);
 
   setupContent();
 }
 
 NMInspectorPanel::~NMInspectorPanel() = default;
 
-void NMInspectorPanel::onInitialize() { showNoSelection(); }
+void NMInspectorPanel::onInitialize() {
+  showNoSelection();
+}
 
 void NMInspectorPanel::onUpdate(double /*deltaTime*/) {
   // No continuous update needed
@@ -70,7 +70,7 @@ void NMInspectorPanel::onUpdate(double /*deltaTime*/) {
 
 void NMInspectorPanel::clear() {
   // Remove all groups
-  for (auto *group : m_groups) {
+  for (auto* group : m_groups) {
     m_mainLayout->removeWidget(group);
     group->deleteLater();
   }
@@ -87,8 +87,8 @@ void NMInspectorPanel::clear() {
   m_headerLabel->clear();
 }
 
-void NMInspectorPanel::inspectObject(const QString &objectType,
-                                     const QString &objectId, bool editable) {
+void NMInspectorPanel::inspectObject(const QString& objectType, const QString& objectId,
+                                     bool editable) {
   clear();
   m_noSelectionLabel->hide();
   m_currentObjectId = objectId;
@@ -96,25 +96,18 @@ void NMInspectorPanel::inspectObject(const QString &objectType,
 
   // Set header
   m_headerLabel->setText(
-      QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
-          .arg(objectType)
-          .arg(objectId));
+      QString("<b>%1</b><br><span style='color: gray;'>%2</span>").arg(objectType).arg(objectId));
   m_headerLabel->show();
 
   // Add demo properties based on type
-  auto *transformGroup = addGroup(tr("Transform"));
+  auto* transformGroup = addGroup(tr("Transform"));
 
   if (m_editMode) {
-    transformGroup->addEditableProperty(tr("Position X"), NMPropertyType::Float,
-                                        "0.0");
-    transformGroup->addEditableProperty(tr("Position Y"), NMPropertyType::Float,
-                                        "0.0");
-    transformGroup->addEditableProperty(tr("Rotation"), NMPropertyType::Float,
-                                        "0.0");
-    transformGroup->addEditableProperty(tr("Scale X"), NMPropertyType::Float,
-                                        "1.0");
-    transformGroup->addEditableProperty(tr("Scale Y"), NMPropertyType::Float,
-                                        "1.0");
+    transformGroup->addEditableProperty(tr("Position X"), NMPropertyType::Float, "0.0");
+    transformGroup->addEditableProperty(tr("Position Y"), NMPropertyType::Float, "0.0");
+    transformGroup->addEditableProperty(tr("Rotation"), NMPropertyType::Float, "0.0");
+    transformGroup->addEditableProperty(tr("Scale X"), NMPropertyType::Float, "1.0");
+    transformGroup->addEditableProperty(tr("Scale Y"), NMPropertyType::Float, "1.0");
   } else {
     transformGroup->addProperty(tr("Position X"), "0.0");
     transformGroup->addProperty(tr("Position Y"), "0.0");
@@ -126,19 +119,15 @@ void NMInspectorPanel::inspectObject(const QString &objectType,
   connect(transformGroup, &NMPropertyGroup::propertyValueChanged, this,
           &NMInspectorPanel::onGroupPropertyChanged);
 
-  auto *renderGroup = addGroup(tr("Rendering"));
+  auto* renderGroup = addGroup(tr("Rendering"));
 
   if (m_editMode) {
-    renderGroup->addEditableProperty(tr("Visible"), NMPropertyType::Boolean,
-                                     "true");
+    renderGroup->addEditableProperty(tr("Visible"), NMPropertyType::Boolean, "true");
     renderGroup->addEditableProperty(tr("Alpha"), NMPropertyType::Float, "1.0");
-    renderGroup->addEditableProperty(tr("Z-Order"), NMPropertyType::Integer,
-                                     "0");
-    renderGroup->addEditableProperty(
-        tr("Blend Mode"), NMPropertyType::Enum, "Normal",
-        {"Normal", "Additive", "Multiply", "Screen", "Overlay"});
-    renderGroup->addEditableProperty(tr("Tint Color"), NMPropertyType::Color,
-                                     "#FFFFFF");
+    renderGroup->addEditableProperty(tr("Z-Order"), NMPropertyType::Integer, "0");
+    renderGroup->addEditableProperty(tr("Blend Mode"), NMPropertyType::Enum, "Normal",
+                                     {"Normal", "Additive", "Multiply", "Screen", "Overlay"});
+    renderGroup->addEditableProperty(tr("Tint Color"), NMPropertyType::Color, "#FFFFFF");
   } else {
     renderGroup->addProperty(tr("Visible"), "true");
     renderGroup->addProperty(tr("Alpha"), "1.0");
@@ -149,15 +138,12 @@ void NMInspectorPanel::inspectObject(const QString &objectType,
           &NMInspectorPanel::onGroupPropertyChanged);
 
   if (objectType == "Dialogue" || objectType == "Choice") {
-    auto *dialogueGroup = addGroup(tr("Dialogue"));
+    auto* dialogueGroup = addGroup(tr("Dialogue"));
 
     if (m_editMode) {
-      dialogueGroup->addEditableProperty(tr("Speaker"), NMPropertyType::String,
-                                         "Narrator");
-      dialogueGroup->addEditableProperty(tr("Text"), NMPropertyType::String,
-                                         objectId);
-      dialogueGroup->addEditableProperty(tr("Voice Clip"),
-                                         NMPropertyType::Asset, "");
+      dialogueGroup->addEditableProperty(tr("Speaker"), NMPropertyType::String, "Narrator");
+      dialogueGroup->addEditableProperty(tr("Text"), NMPropertyType::String, objectId);
+      dialogueGroup->addEditableProperty(tr("Voice Clip"), NMPropertyType::Asset, "");
     } else {
       dialogueGroup->addProperty(tr("Speaker"), "Narrator");
       dialogueGroup->addProperty(tr("Text"), objectId);
@@ -172,8 +158,7 @@ void NMInspectorPanel::inspectObject(const QString &objectType,
   m_mainLayout->addStretch();
 }
 
-void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
-                                          bool editable) {
+void NMInspectorPanel::inspectSceneObject(NMSceneObject* object, bool editable) {
   if (!object) {
     showNoSelection();
     return;
@@ -201,19 +186,17 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
   }();
 
   m_headerLabel->setText(
-      QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
-          .arg(typeName)
-          .arg(object->id()));
+      QString("<b>%1</b><br><span style='color: gray;'>%2</span>").arg(typeName).arg(object->id()));
   m_headerLabel->show();
 
-  auto *generalGroup = addGroup(tr("General"));
+  auto* generalGroup = addGroup(tr("General"));
   generalGroup->addProperty(tr("ID"), object->id());
   if (m_editMode) {
-    if (auto *nameEdit = generalGroup->addEditableProperty(
+    if (auto* nameEdit = generalGroup->addEditableProperty(
             "name", tr("Name"), NMPropertyType::String, object->name())) {
       trackPropertyWidget("name", nameEdit);
     }
-    if (auto *assetEdit = generalGroup->addEditableProperty(
+    if (auto* assetEdit = generalGroup->addEditableProperty(
             "asset", tr("Asset"), NMPropertyType::Asset, object->assetPath())) {
       trackPropertyWidget("asset", assetEdit);
     }
@@ -224,7 +207,7 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
   connect(generalGroup, &NMPropertyGroup::propertyValueChanged, this,
           &NMInspectorPanel::onGroupPropertyChanged);
 
-  auto *transformGroup = addGroup(tr("Transform"));
+  auto* transformGroup = addGroup(tr("Transform"));
   const QPointF pos = object->pos();
 
   // Store last scale for aspect ratio lock
@@ -232,23 +215,21 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
 
   if (m_editMode) {
     // Position controls
-    if (auto *xEdit = transformGroup->addEditableProperty(
-            "position_x", tr("Position X"), NMPropertyType::Float,
-            QString::number(pos.x()))) {
+    if (auto* xEdit = transformGroup->addEditableProperty(
+            "position_x", tr("Position X"), NMPropertyType::Float, QString::number(pos.x()))) {
       trackPropertyWidget("position_x", xEdit);
       // Configure spinbox for position
-      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(xEdit)) {
+      if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(xEdit)) {
         spinBox->setRange(-10000.0, 10000.0);
         spinBox->setSingleStep(1.0);
         spinBox->setDecimals(1);
         spinBox->setToolTip(tr("X position in pixels"));
       }
     }
-    if (auto *yEdit = transformGroup->addEditableProperty(
-            "position_y", tr("Position Y"), NMPropertyType::Float,
-            QString::number(pos.y()))) {
+    if (auto* yEdit = transformGroup->addEditableProperty(
+            "position_y", tr("Position Y"), NMPropertyType::Float, QString::number(pos.y()))) {
       trackPropertyWidget("position_y", yEdit);
-      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(yEdit)) {
+      if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(yEdit)) {
         spinBox->setRange(-10000.0, 10000.0);
         spinBox->setSingleStep(1.0);
         spinBox->setDecimals(1);
@@ -260,11 +241,11 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     transformGroup->addResetButton("reset_position", QVariant("0,0"));
 
     // Rotation control
-    if (auto *rotEdit = transformGroup->addEditableProperty(
-            "rotation", tr("Rotation"), NMPropertyType::Float,
-            QString::number(object->rotation()))) {
+    if (auto* rotEdit =
+            transformGroup->addEditableProperty("rotation", tr("Rotation"), NMPropertyType::Float,
+                                                QString::number(object->rotation()))) {
       trackPropertyWidget("rotation", rotEdit);
-      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(rotEdit)) {
+      if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(rotEdit)) {
         spinBox->setRange(-360.0, 360.0);
         spinBox->setSingleStep(1.0);
         spinBox->setDecimals(1);
@@ -278,22 +259,20 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     transformGroup->addResetButton("reset_rotation", QVariant("0"));
 
     // Scale controls
-    if (auto *sxEdit = transformGroup->addEditableProperty(
-            "scale_x", tr("Scale X"), NMPropertyType::Float,
-            QString::number(object->scaleX()))) {
+    if (auto* sxEdit = transformGroup->addEditableProperty(
+            "scale_x", tr("Scale X"), NMPropertyType::Float, QString::number(object->scaleX()))) {
       trackPropertyWidget("scale_x", sxEdit);
-      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(sxEdit)) {
+      if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(sxEdit)) {
         spinBox->setRange(0.01, 100.0);
         spinBox->setSingleStep(0.1);
         spinBox->setDecimals(2);
         spinBox->setToolTip(tr("Scale on X axis (1.0 = original size)"));
       }
     }
-    if (auto *syEdit = transformGroup->addEditableProperty(
-            "scale_y", tr("Scale Y"), NMPropertyType::Float,
-            QString::number(object->scaleY()))) {
+    if (auto* syEdit = transformGroup->addEditableProperty(
+            "scale_y", tr("Scale Y"), NMPropertyType::Float, QString::number(object->scaleY()))) {
       trackPropertyWidget("scale_y", syEdit);
-      if (auto *spinBox = qobject_cast<QDoubleSpinBox *>(syEdit)) {
+      if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(syEdit)) {
         spinBox->setRange(0.01, 100.0);
         spinBox->setSingleStep(0.1);
         spinBox->setDecimals(2);
@@ -302,7 +281,7 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     }
 
     // Add lock aspect ratio checkbox
-    auto *lockAspectRatioCheck = new QCheckBox(tr("Lock Aspect Ratio"));
+    auto* lockAspectRatioCheck = new QCheckBox(tr("Lock Aspect Ratio"));
     lockAspectRatioCheck->setChecked(m_lockAspectRatio);
     lockAspectRatioCheck->setToolTip(
         tr("When enabled, changing one scale value will\nproportionally adjust "
@@ -312,8 +291,8 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     trackPropertyWidget("lock_aspect_ratio", lockAspectRatioCheck);
 
     // Add checkbox to group
-    auto *lockRow = new QWidget(m_scrollContent);
-    auto *lockLayout = new QHBoxLayout(lockRow);
+    auto* lockRow = new QWidget(m_scrollContent);
+    auto* lockLayout = new QHBoxLayout(lockRow);
     lockLayout->setContentsMargins(100 + 8, 0, 0,
                                    0); // Align with other controls
     lockLayout->setSpacing(8);
@@ -326,69 +305,62 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
   } else {
     transformGroup->addProperty(tr("Position X"), QString::number(pos.x()));
     transformGroup->addProperty(tr("Position Y"), QString::number(pos.y()));
-    transformGroup->addProperty(tr("Rotation"),
-                                QString::number(object->rotation()));
-    transformGroup->addProperty(tr("Scale X"),
-                                QString::number(object->scaleX()));
-    transformGroup->addProperty(tr("Scale Y"),
-                                QString::number(object->scaleY()));
+    transformGroup->addProperty(tr("Rotation"), QString::number(object->rotation()));
+    transformGroup->addProperty(tr("Scale X"), QString::number(object->scaleX()));
+    transformGroup->addProperty(tr("Scale Y"), QString::number(object->scaleY()));
   }
   connect(transformGroup, &NMPropertyGroup::propertyValueChanged, this,
           &NMInspectorPanel::onGroupPropertyChanged);
 
-  auto *renderGroup = addGroup(tr("Rendering"));
+  auto* renderGroup = addGroup(tr("Rendering"));
   if (m_editMode) {
-    if (auto *visibleEdit = renderGroup->addEditableProperty(
-            "visible", tr("Visible"), NMPropertyType::Boolean,
-            object->isVisible() ? "true" : "false")) {
+    if (auto* visibleEdit =
+            renderGroup->addEditableProperty("visible", tr("Visible"), NMPropertyType::Boolean,
+                                             object->isVisible() ? "true" : "false")) {
       trackPropertyWidget("visible", visibleEdit);
     }
-    if (auto *alphaEdit = renderGroup->addEditableProperty(
-            "alpha", tr("Alpha"), NMPropertyType::Float,
-            QString::number(object->opacity()))) {
+    if (auto* alphaEdit = renderGroup->addEditableProperty(
+            "alpha", tr("Alpha"), NMPropertyType::Float, QString::number(object->opacity()))) {
       trackPropertyWidget("alpha", alphaEdit);
     }
-    if (auto *zEdit = renderGroup->addEditableProperty(
-            "z", tr("Z-Order"), NMPropertyType::Integer,
-            QString::number(object->zValue()))) {
+    if (auto* zEdit = renderGroup->addEditableProperty("z", tr("Z-Order"), NMPropertyType::Integer,
+                                                       QString::number(object->zValue()))) {
       trackPropertyWidget("z", zEdit);
     }
-    if (auto *lockEdit = renderGroup->addEditableProperty(
-            "locked", tr("Locked"), NMPropertyType::Boolean,
-            object->isLocked() ? "true" : "false")) {
+    if (auto* lockEdit =
+            renderGroup->addEditableProperty("locked", tr("Locked"), NMPropertyType::Boolean,
+                                             object->isLocked() ? "true" : "false")) {
       trackPropertyWidget("locked", lockEdit);
     }
   } else {
-    renderGroup->addProperty(tr("Visible"),
-                             object->isVisible() ? "true" : "false");
+    renderGroup->addProperty(tr("Visible"), object->isVisible() ? "true" : "false");
     renderGroup->addProperty(tr("Alpha"), QString::number(object->opacity()));
     renderGroup->addProperty(tr("Z-Order"), QString::number(object->zValue()));
-    renderGroup->addProperty(tr("Locked"),
-                             object->isLocked() ? "true" : "false");
+    renderGroup->addProperty(tr("Locked"), object->isLocked() ? "true" : "false");
   }
   connect(renderGroup, &NMPropertyGroup::propertyValueChanged, this,
           &NMInspectorPanel::onGroupPropertyChanged);
 
   // Tags group for tag editing
-  auto *tagsGroup = addGroup(tr("Tags"));
+  auto* tagsGroup = addGroup(tr("Tags"));
   if (m_editMode) {
     // Create a widget for tag editing with add/remove functionality
-    auto *tagsWidget = new QWidget(m_scrollContent);
-    auto *tagsLayout = new QVBoxLayout(tagsWidget);
+    auto* tagsWidget = new QWidget(m_scrollContent);
+    auto* tagsLayout = new QVBoxLayout(tagsWidget);
     tagsLayout->setContentsMargins(0, 0, 0, 0);
 
     // Display current tags
     const QStringList tags = object->tags();
-    auto *tagsListLabel = new QLabel(
-        tags.isEmpty() ? tr("(no tags)") : tags.join(", "), tagsWidget);
+    auto* tagsListLabel =
+        new QLabel(tags.isEmpty() ? tr("(no tags)") : tags.join(", "), tagsWidget);
     tagsListLabel->setWordWrap(true);
     tagsLayout->addWidget(tagsListLabel);
 
     // Add tag input
-    auto *addTagLayout = new QHBoxLayout();
-    auto *tagInput = new QLineEdit(tagsWidget);
+    auto* addTagLayout = new QHBoxLayout();
+    auto* tagInput = new QLineEdit(tagsWidget);
     tagInput->setPlaceholderText(tr("Add tag..."));
-    auto *addButton = new QPushButton(tr("Add"), tagsWidget);
+    auto* addButton = new QPushButton(tr("Add"), tagsWidget);
     addTagLayout->addWidget(tagInput);
     addTagLayout->addWidget(addButton);
     tagsLayout->addLayout(addTagLayout);
@@ -405,10 +377,10 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     });
 
     // Remove tag buttons for each existing tag
-    for (const QString &tag : tags) {
-      auto *tagLayout = new QHBoxLayout();
-      auto *tagLabel = new QLabel(tag, tagsWidget);
-      auto *removeButton = new QPushButton(tr("Remove"), tagsWidget);
+    for (const QString& tag : tags) {
+      auto* tagLayout = new QHBoxLayout();
+      auto* tagLabel = new QLabel(tag, tagsWidget);
+      auto* removeButton = new QPushButton(tr("Remove"), tagsWidget);
       removeButton->setMaximumWidth(80);
       tagLayout->addWidget(tagLabel);
       tagLayout->addWidget(removeButton);
@@ -424,15 +396,13 @@ void NMInspectorPanel::inspectSceneObject(NMSceneObject *object,
     tagsGroup->addProperty(tr("Tag Editor"), tagsWidget);
   } else {
     const QStringList tags = object->tags();
-    tagsGroup->addProperty(tr("Tags"),
-                           tags.isEmpty() ? tr("(no tags)") : tags.join(", "));
+    tagsGroup->addProperty(tr("Tags"), tags.isEmpty() ? tr("(no tags)") : tags.join(", "));
   }
 
   m_mainLayout->addStretch();
 }
 
-void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
-                                             bool editable) {
+void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem* node, bool editable) {
   if (!node) {
     showNoSelection();
     return;
@@ -445,20 +415,19 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
   m_currentObjectIds.clear();
   m_editMode = editable;
 
-  m_headerLabel->setText(
-      QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
-          .arg(node->nodeType())
-          .arg(node->nodeIdString()));
+  m_headerLabel->setText(QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
+                             .arg(node->nodeType())
+                             .arg(node->nodeIdString()));
   m_headerLabel->show();
 
-  auto *generalGroup = addGroup(tr("General"));
+  auto* generalGroup = addGroup(tr("General"));
   generalGroup->addProperty(tr("ID"), node->nodeIdString());
   if (m_editMode) {
-    if (auto *titleEdit = generalGroup->addEditableProperty(
+    if (auto* titleEdit = generalGroup->addEditableProperty(
             "title", tr("Title"), NMPropertyType::String, node->title())) {
       trackPropertyWidget("title", titleEdit);
     }
-    if (auto *typeEdit = generalGroup->addEditableProperty(
+    if (auto* typeEdit = generalGroup->addEditableProperty(
             "type", tr("Type"), NMPropertyType::String, node->nodeType())) {
       trackPropertyWidget("type", typeEdit);
     }
@@ -471,31 +440,29 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
 
   if (node->nodeType().contains("Dialogue", Qt::CaseInsensitive) ||
       node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
-    auto *contentGroup = addGroup(tr("Content"));
+    auto* contentGroup = addGroup(tr("Content"));
     const QString speakerValue = node->dialogueSpeaker();
     const QString textValue = node->dialogueText();
     const QString choicesValue = node->choiceOptions().join("\n");
 
     if (m_editMode) {
-      if (auto *speakerEdit = contentGroup->addEditableProperty(
+      if (auto* speakerEdit = contentGroup->addEditableProperty(
               "speaker", tr("Speaker"), NMPropertyType::String, speakerValue)) {
         trackPropertyWidget("speaker", speakerEdit);
       }
-      if (auto *textEdit = contentGroup->addEditableProperty(
+      if (auto* textEdit = contentGroup->addEditableProperty(
               "text", tr("Text"), NMPropertyType::MultiLine, textValue)) {
         trackPropertyWidget("text", textEdit);
       }
       if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
-        if (auto *choicesEdit = contentGroup->addEditableProperty(
-                "choices", tr("Choices"), NMPropertyType::MultiLine,
-                choicesValue)) {
+        if (auto* choicesEdit = contentGroup->addEditableProperty(
+                "choices", tr("Choices"), NMPropertyType::MultiLine, choicesValue)) {
           trackPropertyWidget("choices", choicesEdit);
         }
       }
     } else {
-      contentGroup->addProperty(tr("Speaker"), speakerValue.isEmpty()
-                                                   ? tr("Narrator")
-                                                   : speakerValue);
+      contentGroup->addProperty(tr("Speaker"),
+                                speakerValue.isEmpty() ? tr("Narrator") : speakerValue);
       contentGroup->addProperty(tr("Text"), textValue);
       if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
         contentGroup->addProperty(tr("Choices"), choicesValue);
@@ -507,31 +474,26 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
 
   // Choice node branching UI - shows which choice option leads to which target
   if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
-    auto *branchGroup = addGroup(tr("Branch Mapping"));
+    auto* branchGroup = addGroup(tr("Branch Mapping"));
 
     const QStringList choiceOptions = node->choiceOptions();
     const QHash<QString, QString> choiceTargets = node->choiceTargets();
 
     if (choiceOptions.isEmpty()) {
-      branchGroup->addProperty(tr("Info"),
-                               tr("Add choices above to configure branching"));
+      branchGroup->addProperty(tr("Info"), tr("Add choices above to configure branching"));
     } else {
       // Build a display string showing choice → target mappings
       QString mappingDisplay;
       for (int i = 0; i < choiceOptions.size(); ++i) {
-        const QString &option = choiceOptions[i];
+        const QString& option = choiceOptions[i];
         const QString target = choiceTargets.value(option);
-        QString targetDisplay =
-            target.isEmpty() ? tr("(not connected)") : target;
+        QString targetDisplay = target.isEmpty() ? tr("(not connected)") : target;
         // Truncate long option text for display
         QString optionDisplay = option;
         if (optionDisplay.length() > 25) {
           optionDisplay = optionDisplay.left(22) + "...";
         }
-        mappingDisplay += QString("%1. %2 → %3")
-                              .arg(i + 1)
-                              .arg(optionDisplay)
-                              .arg(targetDisplay);
+        mappingDisplay += QString("%1. %2 → %3").arg(i + 1).arg(optionDisplay).arg(targetDisplay);
         if (i < choiceOptions.size() - 1) {
           mappingDisplay += "\n";
         }
@@ -541,15 +503,15 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
         // Show the mapping as editable multiline (format:
         // "OptionText=TargetNodeId")
         QString editableMapping;
-        for (const QString &option : choiceOptions) {
+        for (const QString& option : choiceOptions) {
           const QString target = choiceTargets.value(option);
           editableMapping += option + "=" + target + "\n";
         }
         editableMapping = editableMapping.trimmed();
 
-        if (auto *mappingEdit = branchGroup->addEditableProperty(
-                "choiceTargets", tr("Choice → Target"),
-                NMPropertyType::MultiLine, editableMapping)) {
+        if (auto* mappingEdit =
+                branchGroup->addEditableProperty("choiceTargets", tr("Choice → Target"),
+                                                 NMPropertyType::MultiLine, editableMapping)) {
           trackPropertyWidget("choiceTargets", mappingEdit);
         }
       } else {
@@ -557,10 +519,9 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       }
 
       // Add helper text
-      branchGroup->addProperty(
-          tr("Help"), tr("Connect edges from this node to target nodes.\n"
-                         "Each connection is automatically mapped to the next "
-                         "choice option."));
+      branchGroup->addProperty(tr("Help"), tr("Connect edges from this node to target nodes.\n"
+                                              "Each connection is automatically mapped to the next "
+                                              "choice option."));
     }
 
     connect(branchGroup, &NMPropertyGroup::propertyValueChanged, this,
@@ -568,12 +529,11 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
   }
 
   if (node->nodeType().contains("Script", Qt::CaseInsensitive)) {
-    auto *scriptGroup = addGroup(tr("Script"));
+    auto* scriptGroup = addGroup(tr("Script"));
     scriptGroup->addProperty(tr("File"), node->scriptPath());
     if (m_editMode) {
-      if (auto *scriptEdit = scriptGroup->addEditableProperty(
-              "scriptPath", tr("Path"), NMPropertyType::Asset,
-              node->scriptPath())) {
+      if (auto* scriptEdit = scriptGroup->addEditableProperty(
+              "scriptPath", tr("Path"), NMPropertyType::Asset, node->scriptPath())) {
         trackPropertyWidget("scriptPath", scriptEdit);
       }
     }
@@ -583,44 +543,41 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
 
   // Scene node handling - provides Scene ID picker with quick actions
   if (node->isSceneNode()) {
-    auto *sceneGroup = addGroup(tr("Scene Properties"));
+    auto* sceneGroup = addGroup(tr("Scene Properties"));
 
     if (m_editMode && m_sceneRegistry) {
       // Use the dedicated Scene ID picker widget
-      auto *scenePicker =
-          new NMSceneIdPicker(m_sceneRegistry, this);
+      auto* scenePicker = new NMSceneIdPicker(m_sceneRegistry, this);
       scenePicker->setSceneId(node->sceneId());
 
       // Track value changes
       connect(scenePicker, &NMSceneIdPicker::sceneIdChanged, this,
-              [this, node](const QString &newSceneId) {
+              [this, node](const QString& newSceneId) {
                 if (!m_updating) {
-                  emit propertyChanged(node->nodeIdString(), "sceneId",
-                                       newSceneId);
+                  emit propertyChanged(node->nodeIdString(), "sceneId", newSceneId);
                 }
               });
 
       // Connect quick action signals to appropriate handlers
-      connect(scenePicker, &NMSceneIdPicker::createNewSceneRequested, this,
-              [this]() {
-                // Emit signal that can be handled by the main editor
-                // to open Scene View with a new scene
-                qDebug() << "Create new scene requested";
-                // TODO: Connect to editor's scene creation workflow
-              });
+      connect(scenePicker, &NMSceneIdPicker::createNewSceneRequested, this, [this]() {
+        // Emit signal that can be handled by the main editor
+        // to open Scene View with a new scene
+        qDebug() << "Create new scene requested";
+        emit createNewSceneRequested();
+      });
 
       connect(scenePicker, &NMSceneIdPicker::editSceneRequested, this,
-              [this](const QString &sceneId) {
+              [this](const QString& sceneId) {
                 // Emit signal to open Scene View with the selected scene
                 qDebug() << "Edit scene requested:" << sceneId;
-                // TODO: Connect to editor's scene editing workflow
+                emit editSceneRequested(sceneId);
               });
 
       connect(scenePicker, &NMSceneIdPicker::locateSceneRequested, this,
-              [this](const QString &sceneId) {
+              [this](const QString& sceneId) {
                 // Highlight nodes using this scene in Story Graph
                 qDebug() << "Locate scene requested:" << sceneId;
-                // TODO: Connect to story graph's node highlighting
+                emit locateSceneInGraphRequested(sceneId);
               });
 
       trackPropertyWidget("sceneId", scenePicker);
@@ -631,8 +588,7 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       QString displayValue = sceneId.isEmpty() ? tr("(not set)") : sceneId;
 
       // Add validation indicator
-      if (!sceneId.isEmpty() && m_sceneRegistry &&
-          !m_sceneRegistry->sceneExists(sceneId)) {
+      if (!sceneId.isEmpty() && m_sceneRegistry && !m_sceneRegistry->sceneExists(sceneId)) {
         displayValue += " ⚠ (not found)";
       }
 
@@ -641,21 +597,18 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
 
     // Additional scene properties
     if (m_editMode) {
-      if (auto *embeddedEdit = sceneGroup->addEditableProperty(
-              "hasEmbeddedDialogue", tr("Has Embedded Dialogue"),
-              NMPropertyType::Boolean,
+      if (auto* embeddedEdit = sceneGroup->addEditableProperty(
+              "hasEmbeddedDialogue", tr("Has Embedded Dialogue"), NMPropertyType::Boolean,
               node->hasEmbeddedDialogue() ? "true" : "false")) {
         trackPropertyWidget("hasEmbeddedDialogue", embeddedEdit);
       }
     } else {
-      sceneGroup->addProperty(
-          tr("Has Embedded Dialogue"),
-          node->hasEmbeddedDialogue() ? tr("Yes") : tr("No"));
+      sceneGroup->addProperty(tr("Has Embedded Dialogue"),
+                              node->hasEmbeddedDialogue() ? tr("Yes") : tr("No"));
     }
 
     // Dialogue count (read-only informational property)
-    sceneGroup->addProperty(tr("Dialogue Count"),
-                            QString::number(node->dialogueCount()));
+    sceneGroup->addProperty(tr("Dialogue Count"), QString::number(node->dialogueCount()));
 
     // Thumbnail path (usually managed by SceneRegistry, but can be shown)
     if (!node->thumbnailPath().isEmpty()) {
@@ -669,51 +622,48 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
   // Condition node handling - provides UI for editing condition expression and
   // output branches
   if (node->nodeType().contains("Condition", Qt::CaseInsensitive)) {
-    auto *conditionGroup = addGroup(tr("Condition"));
+    auto* conditionGroup = addGroup(tr("Condition"));
     const QString expressionValue = node->conditionExpression();
     const QString outputsValue = node->conditionOutputs().join("\n");
 
     if (m_editMode) {
       // Expression editor for entering condition logic
-      if (auto *exprEdit = conditionGroup->addEditableProperty(
-              "conditionExpression", tr("Expression"),
-              NMPropertyType::MultiLine, expressionValue)) {
+      if (auto* exprEdit =
+              conditionGroup->addEditableProperty("conditionExpression", tr("Expression"),
+                                                  NMPropertyType::MultiLine, expressionValue)) {
         trackPropertyWidget("conditionExpression", exprEdit);
       }
 
       // Output path labels (branch names like "true", "false", or custom)
-      if (auto *outputsEdit = conditionGroup->addEditableProperty(
-              "conditionOutputs", tr("Output Paths (one per line)"),
-              NMPropertyType::MultiLine, outputsValue)) {
+      if (auto* outputsEdit = conditionGroup->addEditableProperty(
+              "conditionOutputs", tr("Output Paths (one per line)"), NMPropertyType::MultiLine,
+              outputsValue)) {
         trackPropertyWidget("conditionOutputs", outputsEdit);
       }
     } else {
-      conditionGroup->addProperty(tr("Expression"), expressionValue.isEmpty()
-                                                        ? tr("(no expression)")
-                                                        : expressionValue);
-      conditionGroup->addProperty(tr("Outputs"), outputsValue.isEmpty()
-                                                     ? tr("true, false")
-                                                     : outputsValue);
+      conditionGroup->addProperty(
+          tr("Expression"), expressionValue.isEmpty() ? tr("(no expression)") : expressionValue);
+      conditionGroup->addProperty(tr("Outputs"),
+                                  outputsValue.isEmpty() ? tr("true, false") : outputsValue);
     }
 
     connect(conditionGroup, &NMPropertyGroup::propertyValueChanged, this,
             &NMInspectorPanel::onGroupPropertyChanged);
 
     // Condition branch mapping UI - shows which output leads to which target
-    auto *branchGroup = addGroup(tr("Branch Mapping"));
+    auto* branchGroup = addGroup(tr("Branch Mapping"));
 
     const QStringList conditionOutputs = node->conditionOutputs();
     const QHash<QString, QString> conditionTargets = node->conditionTargets();
 
     // Use default "true/false" if no outputs defined
-    QStringList outputs = conditionOutputs.isEmpty()
-                              ? QStringList{"true", "false"}
-                              : conditionOutputs;
+    QStringList outputs =
+        conditionOutputs.isEmpty() ? QStringList{"true", "false"} : conditionOutputs;
 
     // Build display showing output → target mappings
     QString mappingDisplay;
     for (int i = 0; i < outputs.size(); ++i) {
-      const QString &output = outputs[i];
+      const QString& output = outputs[i];
       const QString target = conditionTargets.value(output);
       QString targetDisplay = target.isEmpty() ? tr("(not connected)") : target;
       mappingDisplay += QString("%1 → %2").arg(output).arg(targetDisplay);
@@ -726,15 +676,15 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
       // Show the mapping as editable multiline (format:
       // "OutputLabel=TargetNodeId")
       QString editableMapping;
-      for (const QString &output : outputs) {
+      for (const QString& output : outputs) {
         const QString target = conditionTargets.value(output);
         editableMapping += output + "=" + target + "\n";
       }
       editableMapping = editableMapping.trimmed();
 
-      if (auto *mappingEdit = branchGroup->addEditableProperty(
-              "conditionTargets", tr("Output → Target"),
-              NMPropertyType::MultiLine, editableMapping)) {
+      if (auto* mappingEdit =
+              branchGroup->addEditableProperty("conditionTargets", tr("Output → Target"),
+                                               NMPropertyType::MultiLine, editableMapping)) {
         trackPropertyWidget("conditionTargets", mappingEdit);
       }
     } else {
@@ -754,8 +704,7 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem *node,
   m_mainLayout->addStretch();
 }
 
-void NMInspectorPanel::inspectMultipleObjects(
-    const QList<NMSceneObject *> &objects, bool editable) {
+void NMInspectorPanel::inspectMultipleObjects(const QList<NMSceneObject*>& objects, bool editable) {
   if (objects.isEmpty()) {
     showNoSelection();
     return;
@@ -768,28 +717,27 @@ void NMInspectorPanel::inspectMultipleObjects(
 
   // Store object IDs
   m_currentObjectIds.clear();
-  for (auto *obj : objects) {
+  for (auto* obj : objects) {
     if (obj) {
       m_currentObjectIds.append(obj->id());
     }
   }
 
   // Set header showing multi-selection
-  m_headerLabel->setText(
-      QString("<b>%1 Objects Selected</b>").arg(objects.size()));
+  m_headerLabel->setText(QString("<b>%1 Objects Selected</b>").arg(objects.size()));
   m_headerLabel->show();
 
   // Use InspectorBindingManager to handle multi-object editing
-  auto &inspector = InspectorBindingManager::instance();
+  auto& inspector = InspectorBindingManager::instance();
 
   // Prepare targets for binding manager
   std::vector<std::string> objectIds;
-  std::vector<void *> objectPtrs;
+  std::vector<void*> objectPtrs;
 
-  for (auto *obj : objects) {
+  for (auto* obj : objects) {
     if (obj) {
       objectIds.push_back(obj->id().toStdString());
-      objectPtrs.push_back(static_cast<void *>(obj));
+      objectPtrs.push_back(static_cast<void*>(obj));
     }
   }
 
@@ -798,14 +746,14 @@ void NMInspectorPanel::inspectMultipleObjects(
   // Get property groups from binding manager
   auto groups = inspector.getPropertyGroups();
 
-  for (const auto &group : groups) {
-    auto *uiGroup = addGroup(QString::fromStdString(group.name));
+  for (const auto& group : groups) {
+    auto* uiGroup = addGroup(QString::fromStdString(group.name));
 
-    for (const auto *prop : group.properties) {
+    for (const auto* prop : group.properties) {
       if (!prop)
         continue;
 
-      const auto &meta = prop->getMeta();
+      const auto& meta = prop->getMeta();
 
       // Skip hidden or ID properties
       if (hasFlag(meta.flags, PropertyFlags::Hidden) || meta.name == "id") {
@@ -857,20 +805,19 @@ void NMInspectorPanel::inspectMultipleObjects(
         // Add editable property
         QStringList enumOptions;
         if (meta.type == PropertyType::Enum) {
-          for (const auto &opt : meta.enumOptions) {
+          for (const auto& opt : meta.enumOptions) {
             enumOptions.append(QString::fromStdString(opt.second));
           }
         }
 
-        if (auto *widget = uiGroup->addEditableProperty(
-                QString::fromStdString(meta.name),
-                QString::fromStdString(meta.displayName), propType, valueStr,
-                enumOptions)) {
+        if (auto* widget = uiGroup->addEditableProperty(QString::fromStdString(meta.name),
+                                                        QString::fromStdString(meta.displayName),
+                                                        propType, valueStr, enumOptions)) {
           trackPropertyWidget(QString::fromStdString(meta.name), widget);
 
           // Special styling for "multiple values" placeholder
           if (valueStr == "<multiple values>") {
-            if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
+            if (auto* lineEdit = qobject_cast<QLineEdit*>(widget)) {
               lineEdit->setPlaceholderText("<multiple values>");
               lineEdit->clear();
             }
@@ -878,8 +825,7 @@ void NMInspectorPanel::inspectMultipleObjects(
         }
       } else {
         // Read-only property
-        uiGroup->addProperty(QString::fromStdString(meta.displayName),
-                             valueStr);
+        uiGroup->addProperty(QString::fromStdString(meta.displayName), valueStr);
       }
     }
 
@@ -890,19 +836,18 @@ void NMInspectorPanel::inspectMultipleObjects(
   m_mainLayout->addStretch();
 }
 
-void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
-                                              const QString &newValue) {
+void NMInspectorPanel::onGroupPropertyChanged(const QString& propertyName,
+                                              const QString& newValue) {
   // In multi-edit mode, apply changes through InspectorBindingManager
   if (m_multiEditMode) {
-    auto &inspector = InspectorBindingManager::instance();
-    auto error = inspector.setPropertyValueFromString(
-        propertyName.toStdString(), newValue.toStdString());
+    auto& inspector = InspectorBindingManager::instance();
+    auto error =
+        inspector.setPropertyValueFromString(propertyName.toStdString(), newValue.toStdString());
 
     if (error.has_value()) {
       // ERR-1 fix: Show error to user via status bar instead of just logging
       QString errorMsg = QString::fromStdString(error.value());
-      qWarning() << "Failed to set property:" << propertyName
-                 << "Error:" << errorMsg;
+      qWarning() << "Failed to set property:" << propertyName << "Error:" << errorMsg;
       // Emit signal for status bar or use inline notification
       emit propertyError(propertyName, errorMsg);
     }
@@ -935,8 +880,7 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
   }
 
   // Handle aspect ratio lock for scale changes
-  if (m_lockAspectRatio &&
-      (propertyName == "scale_x" || propertyName == "scale_y")) {
+  if (m_lockAspectRatio && (propertyName == "scale_x" || propertyName == "scale_y")) {
     double newScale = newValue.toDouble();
 
     // Calculate the ratio change
@@ -947,8 +891,7 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
       // Update scale_y proportionally
       updatePropertyValue("scale_y", QString::number(newScaleY, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_x", newValue);
-      emit propertyChanged(m_currentObjectId, "scale_y",
-                           QString::number(newScaleY, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_y", QString::number(newScaleY, 'f', 2));
 
       m_lastScale = QPointF(newScale, newScaleY);
       return;
@@ -958,8 +901,7 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
 
       // Update scale_x proportionally
       updatePropertyValue("scale_x", QString::number(newScaleX, 'f', 2));
-      emit propertyChanged(m_currentObjectId, "scale_x",
-                           QString::number(newScaleX, 'f', 2));
+      emit propertyChanged(m_currentObjectId, "scale_x", QString::number(newScaleX, 'f', 2));
       emit propertyChanged(m_currentObjectId, "scale_y", newValue);
 
       m_lastScale = QPointF(newScaleX, newScale);
@@ -978,8 +920,7 @@ void NMInspectorPanel::onGroupPropertyChanged(const QString &propertyName,
   emit propertyChanged(m_currentObjectId, propertyName, newValue);
 }
 
-void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
-                                           const QString &newValue) {
+void NMInspectorPanel::updatePropertyValue(const QString& propertyName, const QString& newValue) {
   // PERF-2: Check if value has actually changed before queuing update
   auto lastIt = m_lastKnownValues.find(propertyName);
   if (lastIt != m_lastKnownValues.end() && lastIt.value() == newValue) {
@@ -999,20 +940,19 @@ void NMInspectorPanel::updatePropertyValue(const QString &propertyName,
 
 void NMInspectorPanel::flushPendingUpdates() {
   // PERF-2: Process all pending updates in one batch
-  for (auto it = m_pendingUpdates.constBegin(); it != m_pendingUpdates.constEnd();
-       ++it) {
-    const QString &propertyName = it.key();
-    const QString &newValue = it.value();
+  for (auto it = m_pendingUpdates.constBegin(); it != m_pendingUpdates.constEnd(); ++it) {
+    const QString& propertyName = it.key();
+    const QString& newValue = it.value();
 
     auto widgetIt = m_propertyWidgets.find(propertyName);
     if (widgetIt == m_propertyWidgets.end()) {
       continue;
     }
 
-    QWidget *widget = widgetIt.value();
+    QWidget* widget = widgetIt.value();
     QSignalBlocker blocker(widget);
 
-    if (auto *lineEdit = qobject_cast<QLineEdit *>(widget)) {
+    if (auto* lineEdit = qobject_cast<QLineEdit*>(widget)) {
       // Only update if widget doesn't have focus to preserve user editing
       if (!lineEdit->hasFocus()) {
         int cursorPos = lineEdit->cursorPosition();
@@ -1020,15 +960,15 @@ void NMInspectorPanel::flushPendingUpdates() {
         lineEdit->setText(newValue);
         lineEdit->setCursorPosition(qMin(cursorPos, newLength));
       }
-    } else if (auto *spinBox = qobject_cast<QSpinBox *>(widget)) {
+    } else if (auto* spinBox = qobject_cast<QSpinBox*>(widget)) {
       spinBox->setValue(newValue.toInt());
-    } else if (auto *doubleSpinBox = qobject_cast<QDoubleSpinBox *>(widget)) {
+    } else if (auto* doubleSpinBox = qobject_cast<QDoubleSpinBox*>(widget)) {
       doubleSpinBox->setValue(newValue.toDouble());
-    } else if (auto *checkBox = qobject_cast<QCheckBox *>(widget)) {
+    } else if (auto* checkBox = qobject_cast<QCheckBox*>(widget)) {
       checkBox->setChecked(newValue.toLower() == "true" || newValue == "1");
-    } else if (auto *comboBox = qobject_cast<QComboBox *>(widget)) {
+    } else if (auto* comboBox = qobject_cast<QComboBox*>(widget)) {
       comboBox->setCurrentText(newValue);
-    } else if (auto *textEdit = qobject_cast<QPlainTextEdit *>(widget)) {
+    } else if (auto* textEdit = qobject_cast<QPlainTextEdit*>(widget)) {
       // Only update if widget doesn't have focus to preserve user editing
       if (!textEdit->hasFocus()) {
         QTextCursor cursor = textEdit->textCursor();
@@ -1040,12 +980,11 @@ void NMInspectorPanel::flushPendingUpdates() {
 
         if (cursorPos <= newLength) {
           cursor.setPosition(qMin(anchorPos, newLength));
-          cursor.setPosition(qMin(cursorPos, newLength),
-                            QTextCursor::KeepAnchor);
+          cursor.setPosition(qMin(cursorPos, newLength), QTextCursor::KeepAnchor);
           textEdit->setTextCursor(cursor);
         }
       }
-    } else if (auto *button = qobject_cast<QPushButton *>(widget)) {
+    } else if (auto* button = qobject_cast<QPushButton*>(widget)) {
       if (button->text() == tr("Edit Curve...")) {
         button->setProperty("curveId", newValue);
       } else {
@@ -1053,8 +992,7 @@ void NMInspectorPanel::flushPendingUpdates() {
       }
     } else {
       // Handle vector widgets (Vector2/Vector3)
-      QList<QDoubleSpinBox *> spinBoxes =
-          widget->findChildren<QDoubleSpinBox *>();
+      QList<QDoubleSpinBox*> spinBoxes = widget->findChildren<QDoubleSpinBox*>();
       if (!spinBoxes.isEmpty()) {
         QStringList components = newValue.split(',');
         for (int i = 0; i < spinBoxes.size() && i < components.size(); ++i) {
@@ -1069,15 +1007,14 @@ void NMInspectorPanel::flushPendingUpdates() {
   m_pendingUpdates.clear();
 }
 
-void NMInspectorPanel::trackPropertyWidget(const QString &propertyName,
-                                           QWidget *widget) {
+void NMInspectorPanel::trackPropertyWidget(const QString& propertyName, QWidget* widget) {
   if (!propertyName.isEmpty() && widget) {
     m_propertyWidgets.insert(propertyName, widget);
   }
 }
 
-NMPropertyGroup *NMInspectorPanel::addGroup(const QString &title) {
-  auto *group = new NMPropertyGroup(title, m_scrollContent);
+NMPropertyGroup* NMInspectorPanel::addGroup(const QString& title) {
+  auto* group = new NMPropertyGroup(title, m_scrollContent);
   m_mainLayout->addWidget(group);
   m_groups.append(group);
   return group;
@@ -1090,8 +1027,8 @@ void NMInspectorPanel::showNoSelection() {
 }
 
 void NMInspectorPanel::setupContent() {
-  auto *container = new QWidget(this);
-  auto *containerLayout = new QVBoxLayout(container);
+  auto* container = new QWidget(this);
+  auto* containerLayout = new QVBoxLayout(container);
   containerLayout->setContentsMargins(0, 0, 0, 0);
   containerLayout->setSpacing(0);
 
@@ -1119,13 +1056,12 @@ void NMInspectorPanel::setupContent() {
   containerLayout->addWidget(m_scrollArea, 1);
 
   // No selection label
-  m_noSelectionLabel =
-      new QLabel(tr("Select an object to view its properties"), container);
+  m_noSelectionLabel = new QLabel(tr("Select an object to view its properties"), container);
   m_noSelectionLabel->setObjectName("InspectorEmptyState");
   m_noSelectionLabel->setAlignment(Qt::AlignCenter);
   m_noSelectionLabel->setWordWrap(true);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   m_noSelectionLabel->setStyleSheet(
       QString("color: %1; padding: 20px;")
           .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));

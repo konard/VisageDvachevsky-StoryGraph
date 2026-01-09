@@ -149,6 +149,26 @@ bool NMSceneViewPanel::renameObject(const QString &id, const QString &name) {
   return true;
 }
 
+bool NMSceneViewPanel::duplicateObject(const QString &id) {
+  if (!canEditScene() || !m_scene || id.isEmpty()) {
+    return false;
+  }
+
+  auto *obj = m_scene->findSceneObject(id);
+  if (!obj) {
+    return false;
+  }
+
+  SceneObjectSnapshot snapshot = snapshotFromObject(obj);
+  snapshot.id = generateObjectId(snapshot.type);
+  snapshot.name =
+      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
+  snapshot.position = obj->pos() + QPointF(32.0, 32.0);
+
+  NMUndoManager::instance().pushCommand(new AddObjectCommand(this, snapshot));
+  return true;
+}
+
 void NMSceneViewPanel::selectObjectById(const QString &id) {
   if (!m_scene) {
     return;

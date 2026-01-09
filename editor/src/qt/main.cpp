@@ -286,6 +286,20 @@ int main(int argc, char *argv[]) {
       core::Logger::instance().error(
           std::string("applyProjectAndRemember: Exception in updateRecentProjects: ") + e.what());
     }
+
+    // Issue #327: Apply workflow mode panel visibility when project is opened
+    core::Logger::instance().info("applyProjectAndRemember: Applying workflow mode panel visibility");
+    try {
+      const auto &metadata = projectManager.getMetadata();
+      mainWindow.onWorkflowModeChanged(metadata.playbackSourceMode);
+      core::Logger::instance().info(
+          "applyProjectAndRemember: Workflow mode applied: " +
+          std::to_string(static_cast<int>(metadata.playbackSourceMode)));
+    } catch (const std::exception &e) {
+      core::Logger::instance().error(
+          std::string("applyProjectAndRemember: Exception applying workflow mode: ") + e.what());
+    }
+
     core::Logger::instance().info("applyProjectAndRemember: Scheduling PlayMode load");
     QTimer::singleShot(0, &mainWindow, []() {
       try {

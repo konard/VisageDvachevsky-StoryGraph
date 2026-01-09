@@ -494,19 +494,13 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   const bool canEdit = hasValidSelection && !isRuntime;
 
   // Duplicate action
-  // Note: Duplication requires selecting the object first and using internal
-  // duplication logic. For now, we select the object and show a message that
-  // the user can use Ctrl+D in the scene view to duplicate.
   QAction *duplicateAction = contextMenu.addAction(tr("Duplicate"));
   duplicateAction->setEnabled(canEdit && m_sceneViewPanel);
   duplicateAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
   connect(duplicateAction, &QAction::triggered, this, [this, objectId]() {
     if (m_sceneViewPanel && m_scene) {
-      // Select the object first so scene view's duplicate shortcut works
-      m_sceneViewPanel->selectObjectById(objectId);
-      // Note: Actual duplication is handled by scene view panel's internal
-      // keyboard shortcut (Ctrl+D). User needs to press Ctrl+D in scene view.
-      // TODO: Expose duplicateSelectedObject() as public API for full support.
+      m_sceneViewPanel->duplicateObject(objectId);
+      refresh();
     }
   });
 
