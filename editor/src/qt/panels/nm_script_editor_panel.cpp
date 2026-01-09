@@ -2141,6 +2141,9 @@ scene learning_ending {
   } else {
     core::Logger::instance().error("Failed to create sample script: " +
                                    fullPath.toStdString());
+  }
+}
+
 // ============================================================================
 // State Persistence
 // ============================================================================
