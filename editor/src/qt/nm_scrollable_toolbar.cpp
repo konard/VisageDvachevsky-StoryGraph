@@ -93,6 +93,7 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
   mainLayout->setSpacing(0);
 
   const auto &palette = NMStyleManager::instance().palette();
+  const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
 
   // Create header with toggle button
   m_headerWidget = new QWidget(this);
@@ -104,6 +105,8 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
   auto& iconMgr = NMIconManager::instance();
   m_toggleButton = new QPushButton(this);
   m_toggleButton->setFlat(true);
+  NMStyleManager::configureSquareButton(m_toggleButton, buttonSizes.squareSmall);
+  m_toggleButton->setText(m_collapsed ? "▶" : "▼");
   m_toggleButton->setFixedSize(16, 16);
   m_toggleButton->setIcon(iconMgr.getIcon(m_collapsed ? "chevron-right" : "chevron-down", 16));
   m_toggleButton->setStyleSheet(

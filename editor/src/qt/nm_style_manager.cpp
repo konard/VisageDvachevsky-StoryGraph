@@ -1,9 +1,12 @@
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 
+#include <QAbstractButton>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QPushButton>
 #include <QScreen>
 #include <QStyleFactory>
+#include <QToolButton>
 
 namespace NovelMind::editor::qt {
 
@@ -101,6 +104,41 @@ void NMStyleManager::setUiScale(double scale) {
   applyDarkTheme();
 
   emit scaleChanged(m_uiScale);
+}
+
+void NMStyleManager::configureToolbarButton(QAbstractButton *button,
+                                             const QIcon &icon) {
+  if (!button)
+    return;
+
+  const auto &sizes = instance().buttonSizes();
+  button->setMinimumSize(sizes.toolbarButton, sizes.toolbarButton);
+  button->setMaximumSize(sizes.toolbarButton, sizes.toolbarButton);
+
+  if (!icon.isNull()) {
+    button->setIcon(icon);
+  }
+}
+
+void NMStyleManager::configureSquareButton(QAbstractButton *button, int size,
+                                            const QIcon &icon) {
+  if (!button)
+    return;
+
+  button->setFixedSize(size, size);
+
+  if (!icon.isNull()) {
+    button->setIcon(icon);
+  }
+}
+
+void NMStyleManager::setButtonSize(QAbstractButton *button, int width,
+                                    int height) {
+  if (!button)
+    return;
+
+  button->setMinimumSize(width, height);
+  button->setMaximumSize(width, height);
 }
 
 } // namespace NovelMind::editor::qt
