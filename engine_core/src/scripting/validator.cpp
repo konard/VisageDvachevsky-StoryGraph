@@ -32,6 +32,28 @@ void Validator::setReportUnused(bool report) { m_reportUnused = report; }
 
 void Validator::setReportDeadCode(bool report) { m_reportDeadCode = report; }
 
+void Validator::setProjectContext(IProjectContext *context) {
+  m_projectContext = context;
+}
+
+void Validator::setValidateAssets(bool validate) {
+  m_validateAssets = validate;
+void Validator::setSource(const std::string &source) { m_source = source; }
+
+void Validator::setFilePath(const std::string &path) { m_filePath = path; }
+void Validator::setSceneFileExistsCallback(SceneFileExistsCallback callback) {
+  m_sceneFileExistsCallback = std::move(callback);
+}
+
+void Validator::setSceneObjectExistsCallback(
+    SceneObjectExistsCallback callback) {
+  m_sceneObjectExistsCallback = std::move(callback);
+}
+
+void Validator::setAssetFileExistsCallback(AssetFileExistsCallback callback) {
+  m_assetFileExistsCallback = std::move(callback);
+}
+
 void Validator::reset() {
   m_characters.clear();
   m_scenes.clear();
@@ -116,6 +138,16 @@ void Validator::validateProgram(const Program &program) {
 
 void Validator::validateScene(const SceneDecl &decl) {
   m_currentScene = decl.name;
+
+  // Check if scene file exists (if callback is provided)
+  if (m_sceneFileExistsCallback) {
+    if (!m_sceneFileExistsCallback(decl.name)) {
+      warning(ErrorCode::MissingSceneFile,
+              "Scene file '" + decl.name +
+                  ".nmscene' not found - scene objects cannot be validated",
+              m_currentLocation);
+    }
+  }
 
   // Check for empty scene
   if (decl.body.empty()) {
@@ -206,16 +238,62 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
   case ShowStmt::Target::Character:
   case ShowStmt::Target::Sprite: {
     if (!isCharacterDefined(stmt.identifier)) {
-      error(ErrorCode::UndefinedCharacter,
-            "Undefined character '" + stmt.identifier + "'", m_currentLocation);
+      // Find similar character names for "Did you mean?" suggestions
+      auto allCharacters = getAllCharacterNames();
+      auto similar = findSimilarStrings(stmt.identifier, allCharacters);
+
+      std::vector<std::string> suggestions;
+      if (!similar.empty()) {
+        // Add "Did you mean?" suggestion for the first match
+        suggestions.push_back("Did you mean '" + similar[0] + "'?");
+      }
+      // Add declaration suggestion
+      suggestions.push_back("Add declaration: character " + stmt.identifier +
+                            "(name=\"" + stmt.identifier + "\")");
+
+      errorWithSuggestions(ErrorCode::UndefinedCharacter,
+                           "Undefined character '" + stmt.identifier + "'",
+                           m_currentLocation, suggestions);
     } else {
       markCharacterUsed(stmt.identifier, m_currentLocation);
+    }
+
+    // Validate character sprite asset exists
+    if (m_validateAssets && m_projectContext) {
+      if (!m_projectContext->characterSpriteExists(stmt.identifier)) {
+        warning(ErrorCode::UndefinedResource,
+                "Character sprite asset for '" + stmt.identifier +
+                    "' not found in project",
+    // Check if character object exists in current scene (if callback provided)
+    if (m_sceneObjectExistsCallback && !m_currentScene.empty()) {
+      if (!m_sceneObjectExistsCallback(m_currentScene, stmt.identifier)) {
+        warning(ErrorCode::MissingSceneObject,
+                "Object '" + stmt.identifier + "' not found in scene '" +
+                    m_currentScene + "'",
+                m_currentLocation);
+      }
     }
     break;
   }
 
   case ShowStmt::Target::Background:
-    // Background resources are validated at compile time
+    // Validate background asset exists
+    if (m_validateAssets && m_projectContext) {
+      // The resource field contains the background identifier
+      const std::string &bgId =
+          stmt.resource.has_value() ? stmt.resource.value() : stmt.identifier;
+      if (!bgId.empty() && !m_projectContext->backgroundExists(bgId)) {
+        warning(ErrorCode::UndefinedResource,
+                "Background asset '" + bgId + "' not found in project",
+    // Validate background asset if resource is specified
+    if (stmt.resource.has_value() && m_assetFileExistsCallback) {
+      const std::string &assetPath = stmt.resource.value();
+      if (!m_assetFileExistsCallback(assetPath)) {
+        warning(ErrorCode::MissingAssetFile,
+                "Asset '" + assetPath + "' not found in project",
+                m_currentLocation);
+      }
+    }
     break;
   }
 
@@ -234,8 +312,20 @@ void Validator::validateShowStmt(const ShowStmt &stmt) {
 
 void Validator::validateHideStmt(const HideStmt &stmt) {
   if (!isCharacterDefined(stmt.identifier)) {
-    error(ErrorCode::UndefinedCharacter,
-          "Undefined character '" + stmt.identifier + "'", m_currentLocation);
+    // Find similar character names for "Did you mean?" suggestions
+    auto allCharacters = getAllCharacterNames();
+    auto similar = findSimilarStrings(stmt.identifier, allCharacters);
+
+    std::vector<std::string> suggestions;
+    if (!similar.empty()) {
+      suggestions.push_back("Did you mean '" + similar[0] + "'?");
+    }
+    suggestions.push_back("Add declaration: character " + stmt.identifier +
+                          "(name=\"" + stmt.identifier + "\")");
+
+    errorWithSuggestions(ErrorCode::UndefinedCharacter,
+                         "Undefined character '" + stmt.identifier + "'",
+                         m_currentLocation, suggestions);
   } else {
     markCharacterUsed(stmt.identifier, m_currentLocation);
   }
@@ -245,8 +335,20 @@ void Validator::validateSayStmt(const SayStmt &stmt) {
   if (stmt.speaker.has_value()) {
     const std::string &speaker = stmt.speaker.value();
     if (!isCharacterDefined(speaker)) {
-      error(ErrorCode::UndefinedCharacter,
-            "Undefined character '" + speaker + "'", m_currentLocation);
+      // Find similar character names for "Did you mean?" suggestions
+      auto allCharacters = getAllCharacterNames();
+      auto similar = findSimilarStrings(speaker, allCharacters);
+
+      std::vector<std::string> suggestions;
+      if (!similar.empty()) {
+        suggestions.push_back("Did you mean '" + similar[0] + "'?");
+      }
+      suggestions.push_back("Add declaration: character " + speaker +
+                            "(name=\"" + speaker + "\")");
+
+      errorWithSuggestions(ErrorCode::UndefinedCharacter,
+                           "Undefined character '" + speaker + "'",
+                           m_currentLocation, suggestions);
     } else {
       markCharacterUsed(speaker, m_currentLocation);
     }
@@ -285,9 +387,19 @@ void Validator::validateChoiceStmt(const ChoiceStmt &stmt,
     if (option.gotoTarget.has_value()) {
       const std::string &target = option.gotoTarget.value();
       if (!isSceneDefined(target)) {
-        error(ErrorCode::UndefinedScene,
-              "Undefined scene '" + target + "' in choice goto",
-              m_currentLocation);
+        // Find similar scene names for "Did you mean?" suggestions
+        auto allScenes = getAllSceneNames();
+        auto similar = findSimilarStrings(target, allScenes);
+
+        std::vector<std::string> suggestions;
+        if (!similar.empty()) {
+          suggestions.push_back("Did you mean '" + similar[0] + "'?");
+        }
+        suggestions.push_back("Create scene: scene " + target + " { ... }");
+
+        errorWithSuggestions(ErrorCode::UndefinedScene,
+                             "Undefined scene '" + target + "' in choice goto",
+                             m_currentLocation, suggestions);
       } else {
         markSceneUsed(target, m_currentLocation);
         // Add to control flow graph
@@ -344,8 +456,19 @@ void Validator::validateIfStmt(const IfStmt &stmt, bool &reachable) {
 
 void Validator::validateGotoStmt(const GotoStmt &stmt, bool &reachable) {
   if (!isSceneDefined(stmt.target)) {
-    error(ErrorCode::UndefinedScene, "Undefined scene '" + stmt.target + "'",
-          m_currentLocation);
+    // Find similar scene names for "Did you mean?" suggestions
+    auto allScenes = getAllSceneNames();
+    auto similar = findSimilarStrings(stmt.target, allScenes);
+
+    std::vector<std::string> suggestions;
+    if (!similar.empty()) {
+      suggestions.push_back("Did you mean '" + similar[0] + "'?");
+    }
+    suggestions.push_back("Create scene: scene " + stmt.target + " { ... }");
+
+    errorWithSuggestions(ErrorCode::UndefinedScene,
+                         "Undefined scene '" + stmt.target + "'",
+                         m_currentLocation, suggestions);
   } else {
     markSceneUsed(stmt.target, m_currentLocation);
 
@@ -370,6 +493,32 @@ void Validator::validatePlayStmt(const PlayStmt &stmt) {
   if (stmt.resource.empty()) {
     error(ErrorCode::InvalidResourcePath,
           "Play statement requires a resource path", m_currentLocation);
+  } else {
+    // Validate audio asset exists
+    if (m_validateAssets && m_projectContext) {
+      std::string mediaType;
+      switch (stmt.type) {
+      case PlayStmt::MediaType::Sound:
+        mediaType = "sound";
+        break;
+      case PlayStmt::MediaType::Music:
+        mediaType = "music";
+        break;
+      }
+
+      if (!m_projectContext->audioExists(stmt.resource, mediaType)) {
+        warning(ErrorCode::UndefinedResource,
+                "Audio asset '" + stmt.resource + "' not found in project " +
+                    mediaType + " directory",
+                m_currentLocation);
+      }
+  } else if (m_assetFileExistsCallback) {
+    // Check if audio asset exists
+    if (!m_assetFileExistsCallback(stmt.resource)) {
+      warning(ErrorCode::MissingAssetFile,
+              "Asset '" + stmt.resource + "' not found in project",
+              m_currentLocation);
+    }
   }
 
   if (stmt.volume.has_value()) {
@@ -621,17 +770,111 @@ bool Validator::isVariableDefined(const std::string &name) const {
 
 void Validator::error(ErrorCode code, const std::string &message,
                       SourceLocation loc) {
-  m_errors.addError(code, message, loc);
+  ScriptError err(code, Severity::Error, message, loc);
+
+  // Add source context if available
+  if (!m_source.empty()) {
+    err.withSource(m_source);
+  }
+
+  // Add file path if available
+  if (!m_filePath.empty()) {
+    err.withFilePath(m_filePath);
+  }
+
+  m_errors.add(std::move(err));
 }
 
 void Validator::warning(ErrorCode code, const std::string &message,
                         SourceLocation loc) {
-  m_errors.addWarning(code, message, loc);
+  ScriptError err(code, Severity::Warning, message, loc);
+
+  // Add source context if available
+  if (!m_source.empty()) {
+    err.withSource(m_source);
+  }
+
+  // Add file path if available
+  if (!m_filePath.empty()) {
+    err.withFilePath(m_filePath);
+  }
+
+  m_errors.add(std::move(err));
 }
 
 void Validator::info(ErrorCode code, const std::string &message,
                      SourceLocation loc) {
-  m_errors.addInfo(code, message, loc);
+  ScriptError err(code, Severity::Info, message, loc);
+
+  // Add source context if available
+  if (!m_source.empty()) {
+    err.withSource(m_source);
+  }
+
+  // Add file path if available
+  if (!m_filePath.empty()) {
+    err.withFilePath(m_filePath);
+  }
+
+  m_errors.add(std::move(err));
+}
+
+void Validator::errorWithSuggestions(ErrorCode code, const std::string &message,
+                                     SourceLocation loc,
+                                     const std::vector<std::string> &suggestions) {
+  ScriptError err(code, Severity::Error, message, loc);
+
+  // Add source context if available
+  if (!m_source.empty()) {
+    err.withSource(m_source);
+  }
+
+  // Add file path if available
+  if (!m_filePath.empty()) {
+    err.withFilePath(m_filePath);
+  }
+
+  // Add suggestions
+  for (const auto &suggestion : suggestions) {
+    err.withSuggestion(suggestion);
+  }
+
+  m_errors.add(std::move(err));
+}
+
+// Helper functions to get all symbol names
+
+std::vector<std::string> Validator::getAllCharacterNames() const {
+  std::vector<std::string> names;
+  names.reserve(m_characters.size());
+  for (const auto &[name, info] : m_characters) {
+    if (info.isDefined) {
+      names.push_back(name);
+    }
+  }
+  return names;
+}
+
+std::vector<std::string> Validator::getAllSceneNames() const {
+  std::vector<std::string> names;
+  names.reserve(m_scenes.size());
+  for (const auto &[name, info] : m_scenes) {
+    if (info.isDefined) {
+      names.push_back(name);
+    }
+  }
+  return names;
+}
+
+std::vector<std::string> Validator::getAllVariableNames() const {
+  std::vector<std::string> names;
+  names.reserve(m_variables.size());
+  for (const auto &[name, info] : m_variables) {
+    if (info.isDefined) {
+      names.push_back(name);
+    }
+  }
+  return names;
 }
 
 } // namespace NovelMind::scripting

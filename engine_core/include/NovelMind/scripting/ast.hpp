@@ -212,6 +212,17 @@ struct TransitionStmt {
 };
 
 /**
+ * @brief Move command: move Character to position duration=seconds
+ */
+struct MoveStmt {
+  std::string characterId;
+  Position position;
+  std::optional<f32> customX;
+  std::optional<f32> customY;
+  f32 duration = 0.5f; ///< Default duration in seconds
+};
+
+/**
  * @brief Expression statement (for standalone expressions)
  */
 struct ExpressionStmt {
@@ -231,7 +242,7 @@ struct BlockStmt {
 struct Statement {
   std::variant<CharacterDecl, SceneDecl, ShowStmt, HideStmt, SayStmt,
                ChoiceStmt, IfStmt, GotoStmt, WaitStmt, PlayStmt, StopStmt,
-               SetStmt, TransitionStmt, ExpressionStmt, BlockStmt>
+               SetStmt, TransitionStmt, MoveStmt, ExpressionStmt, BlockStmt>
       data;
   SourceLocation location;
 

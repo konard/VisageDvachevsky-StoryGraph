@@ -6,15 +6,220 @@
  *
  * This module provides a comprehensive error reporting infrastructure
  * for the lexer, parser, validator, and compiler stages.
+ *
+ * Features:
+ * - Location information (file, line, column)
+ * - Source code context with visual indicators
+ * - "Did you mean?" suggestions using Levenshtein distance
+ * - Documentation links for error codes
+ * - Rich formatting for CLI and editor display
  */
 
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/token.hpp"
+#include <algorithm>
+#include <cmath>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <vector>
 
 namespace NovelMind::scripting {
+
+// =============================================================================
+// String Similarity Utilities
+// =============================================================================
+
+/**
+ * @brief Calculate Levenshtein (edit) distance between two strings
+ *
+ * This algorithm computes the minimum number of single-character edits
+ * (insertions, deletions, substitutions) needed to transform one string
+ * into another.
+ *
+ * @param s1 First string
+ * @param s2 Second string
+ * @return The edit distance between the two strings
+ */
+[[nodiscard]] inline size_t levenshteinDistance(const std::string &s1,
+                                                const std::string &s2) {
+  const size_t m = s1.size();
+  const size_t n = s2.size();
+
+  // Early exit for empty strings
+  if (m == 0)
+    return n;
+  if (n == 0)
+    return m;
+
+  // Use two rows to save memory (O(min(m,n)) space instead of O(m*n))
+  std::vector<size_t> prev(n + 1);
+  std::vector<size_t> curr(n + 1);
+
+  // Initialize first row
+  for (size_t j = 0; j <= n; ++j) {
+    prev[j] = j;
+  }
+
+  for (size_t i = 1; i <= m; ++i) {
+    curr[0] = i;
+    for (size_t j = 1; j <= n; ++j) {
+      size_t cost = (s1[i - 1] == s2[j - 1]) ? 0 : 1;
+      curr[j] = std::min({prev[j] + 1,        // deletion
+                          curr[j - 1] + 1,    // insertion
+                          prev[j - 1] + cost} // substitution
+      );
+    }
+    std::swap(prev, curr);
+  }
+
+  return prev[n];
+}
+
+/**
+ * @brief Find similar strings from a list of candidates
+ *
+ * Returns strings within a given edit distance threshold, sorted by
+ * similarity (closest matches first).
+ *
+ * @param name The string to match against
+ * @param candidates List of candidate strings
+ * @param maxDistance Maximum edit distance to consider (default: 2)
+ * @param maxResults Maximum number of results to return (default: 3)
+ * @return Vector of similar strings, sorted by edit distance
+ */
+[[nodiscard]] inline std::vector<std::string>
+findSimilarStrings(const std::string &name,
+                   const std::vector<std::string> &candidates,
+                   size_t maxDistance = 2, size_t maxResults = 3) {
+  std::vector<std::pair<size_t, std::string>> matches;
+
+  for (const auto &candidate : candidates) {
+    // Skip if lengths differ too much (early optimization)
+    size_t lenDiff = (name.size() > candidate.size())
+                         ? (name.size() - candidate.size())
+                         : (candidate.size() - name.size());
+    if (lenDiff > maxDistance)
+      continue;
+
+    size_t dist = levenshteinDistance(name, candidate);
+    if (dist <= maxDistance && dist > 0) { // dist > 0 to exclude exact matches
+      matches.emplace_back(dist, candidate);
+    }
+  }
+
+  // Sort by distance (closest first)
+  std::sort(matches.begin(), matches.end(),
+            [](const auto &a, const auto &b) { return a.first < b.first; });
+
+  // Extract strings up to maxResults
+  std::vector<std::string> result;
+  for (size_t i = 0; i < std::min(matches.size(), maxResults); ++i) {
+    result.push_back(matches[i].second);
+  }
+
+  return result;
+}
+
+// =============================================================================
+// Source Context Extraction
+// =============================================================================
+
+/**
+ * @brief Extract source code context around an error location
+ *
+ * Shows the error line with surrounding context and a visual indicator
+ * (caret ^) pointing to the error column.
+ *
+ * @param source The full source code
+ * @param line Error line number (1-based)
+ * @param column Error column number (1-based)
+ * @param contextLines Number of lines to show before and after error (default:
+ * 2)
+ * @return Formatted string with source context and caret indicator
+ */
+[[nodiscard]] inline std::string extractSourceContext(const std::string &source,
+                                                      u32 line, u32 column,
+                                                      u32 contextLines = 2) {
+  if (source.empty() || line == 0)
+    return "";
+
+  // Split source into lines
+  std::vector<std::string> lines;
+  std::istringstream stream(source);
+  std::string lineStr;
+  while (std::getline(stream, lineStr)) {
+    lines.push_back(lineStr);
+  }
+
+  if (line > lines.size())
+    return "";
+
+  std::ostringstream result;
+
+  // Calculate line number width for formatting
+  u32 startLine = (line > contextLines) ? (line - contextLines) : 1;
+  u32 endLine = std::min(static_cast<u32>(lines.size()), line + contextLines);
+  size_t lineNumWidth =
+      std::to_string(endLine).size(); // Width for line numbers
+
+  // Show context lines before error
+  for (u32 i = startLine; i <= endLine; ++i) {
+    size_t idx = i - 1; // Convert to 0-based index
+    if (idx >= lines.size())
+      break;
+
+    // Format line number with padding
+    std::string lineNum = std::to_string(i);
+    while (lineNum.size() < lineNumWidth) {
+      lineNum = " " + lineNum;
+    }
+
+    // Mark the error line
+    bool isErrorLine = (i == line);
+    std::string marker = isErrorLine ? " > " : "   ";
+
+    result << marker << lineNum << " | " << lines[idx] << "\n";
+
+    // Add caret indicator for error line
+    if (isErrorLine && column > 0) {
+      std::string caretLine(lineNumWidth + 4, ' '); // "   " + lineNum + " | "
+      caretLine += std::string(" | ");
+
+      // Add spaces up to the error column, then the caret
+      u32 caretPos = (column > 0) ? (column - 1) : 0;
+      // Account for tab characters in the line
+      size_t visualPos = 0;
+      for (size_t j = 0; j < caretPos && j < lines[idx].size(); ++j) {
+        if (lines[idx][j] == '\t') {
+          visualPos += 4; // Assume tab width of 4
+        } else {
+          visualPos += 1;
+        }
+      }
+      caretLine += std::string(visualPos, ' ');
+      caretLine += "^";
+
+      result << caretLine << "\n";
+    }
+  }
+
+  return result.str();
+}
+
+// =============================================================================
+// Error Documentation URLs
+// =============================================================================
+
+/**
+ * @brief Base URL for error documentation
+ */
+constexpr const char *ERROR_DOCS_BASE_URL =
+    "https://docs.novelmind.dev/errors/";
+
+// =============================================================================
+// Error Severity
+// =============================================================================
 
 /**
  * @brief Severity level for script errors
@@ -25,6 +230,23 @@ enum class Severity : u8 {
   Warning, // Potential issues that don't prevent compilation
   Error    // Errors that prevent successful compilation
 };
+
+/**
+ * @brief Get the severity string
+ */
+[[nodiscard]] inline const char *severityToString(Severity sev) {
+  switch (sev) {
+  case Severity::Hint:
+    return "hint";
+  case Severity::Info:
+    return "info";
+  case Severity::Warning:
+    return "warning";
+  case Severity::Error:
+    return "error";
+  }
+  return "unknown";
+}
 
 /**
  * @brief Error codes for script diagnostics
@@ -89,6 +311,9 @@ enum class ErrorCode : u32 {
   // Validation errors - Resources (35xx)
   UndefinedResource = 3501,
   InvalidResourcePath = 3502,
+  MissingSceneFile = 3503,
+  MissingSceneObject = 3504,
+  MissingAssetFile = 3505,
 
   // Validation errors - Choice (36xx)
   EmptyChoiceBlock = 3601,
@@ -139,18 +364,30 @@ struct RelatedInformation {
  *
  * This structure contains all information needed for comprehensive
  * error reporting in both editor and CLI contexts.
+ *
+ * Features:
+ * - File path and location (line:column)
+ * - Source code context with visual indicators
+ * - "Did you mean?" suggestions
+ * - Documentation links
+ * - Related information for cross-references
  */
 struct ScriptError {
   ErrorCode code;
   Severity severity;
   std::string message;
   SourceSpan span;
-  std::optional<std::string> source; // The source line/text if available
+
+  // File path where the error occurred
+  std::optional<std::string> filePath;
+
+  // The full source code (for context extraction)
+  std::optional<std::string> source;
 
   // Related information (e.g., "defined here", "first used here")
   std::vector<RelatedInformation> relatedInfo;
 
-  // Quick fix suggestions
+  // Quick fix suggestions (e.g., "Did you mean 'Hero'?")
   std::vector<std::string> suggestions;
 
   ScriptError() = default;
@@ -160,6 +397,14 @@ struct ScriptError {
 
   ScriptError(ErrorCode c, Severity sev, std::string msg, SourceSpan s)
       : code(c), severity(sev), message(std::move(msg)), span(s) {}
+
+  /**
+   * @brief Add file path to this error
+   */
+  ScriptError &withFilePath(std::string path) {
+    filePath = std::move(path);
+    return *this;
+  }
 
   /**
    * @brief Add related information to this error
@@ -178,7 +423,7 @@ struct ScriptError {
   }
 
   /**
-   * @brief Add source text context
+   * @brief Add source text context (full source code)
    */
   ScriptError &withSource(std::string src) {
     source = std::move(src);
@@ -196,38 +441,98 @@ struct ScriptError {
   [[nodiscard]] bool isWarning() const { return severity == Severity::Warning; }
 
   /**
-   * @brief Format error for display
+   * @brief Get the error code as a string (e.g., "E3001")
+   */
+  [[nodiscard]] std::string errorCodeString() const {
+    return "E" + std::to_string(static_cast<u32>(code));
+  }
+
+  /**
+   * @brief Get the documentation URL for this error code
+   */
+  [[nodiscard]] std::string helpUrl() const {
+    return std::string(ERROR_DOCS_BASE_URL) + errorCodeString();
+  }
+
+  /**
+   * @brief Format error for simple display (single line)
+   *
+   * Example output:
+   *   error[E3001] at script.nms:15:10: Undefined character 'Villian'
    */
   [[nodiscard]] std::string format() const {
-    std::string result;
+    std::ostringstream ss;
 
-    // Severity prefix
-    switch (severity) {
-    case Severity::Hint:
-      result = "hint";
-      break;
-    case Severity::Info:
-      result = "info";
-      break;
-    case Severity::Warning:
-      result = "warning";
-      break;
-    case Severity::Error:
-      result = "error";
-      break;
-    }
+    // Severity and error code
+    ss << severityToString(severity) << "[" << errorCodeString() << "]";
 
     // Location
-    result += "[" + std::to_string(span.start.line) + ":" +
-              std::to_string(span.start.column) + "]: ";
+    ss << " at ";
+    if (filePath.has_value()) {
+      ss << filePath.value() << ":";
+    }
+    ss << span.start.line << ":" << span.start.column;
 
     // Message
-    result += message;
+    ss << ": " << message;
 
-    // Error code
-    result += " [E" + std::to_string(static_cast<u32>(code)) + "]";
+    return ss.str();
+  }
 
-    return result;
+  /**
+   * @brief Format error with full context for display
+   *
+   * Example output:
+   *   error[E3001] at scripts/intro.nms:23:10: Undefined character 'Villian'
+   *
+   *      21 | scene intro {
+   *      22 |     show background "forest"
+   *    > 23 |     say Villian "I am evil"
+   *         |         ^
+   *      24 | }
+   *
+   *   Did you mean 'Villain'? (declared at line 5)
+   *
+   *   See: https://docs.novelmind.dev/errors/E3001
+   */
+  [[nodiscard]] std::string formatRich() const {
+    std::ostringstream ss;
+
+    // Header line
+    ss << format() << "\n";
+
+    // Source context
+    if (source.has_value() && !source.value().empty()) {
+      ss << "\n";
+      ss << extractSourceContext(source.value(), span.start.line,
+                                 span.start.column);
+    }
+
+    // Related information
+    for (const auto &related : relatedInfo) {
+      ss << "\n";
+      ss << "  note: " << related.message;
+      ss << " (at line " << related.location.line << ":"
+         << related.location.column << ")";
+    }
+
+    // Suggestions
+    if (!suggestions.empty()) {
+      ss << "\n";
+      if (suggestions.size() == 1) {
+        ss << "  suggestion: " << suggestions[0];
+      } else {
+        ss << "  suggestions:\n";
+        for (size_t i = 0; i < suggestions.size(); ++i) {
+          ss << "    " << (i + 1) << ". " << suggestions[i] << "\n";
+        }
+      }
+    }
+
+    // Help URL
+    ss << "\n  See: " << helpUrl() << "\n";
+
+    return ss.str();
   }
 };
 
@@ -420,6 +725,12 @@ private:
     return "Undefined resource";
   case ErrorCode::InvalidResourcePath:
     return "Invalid resource path";
+  case ErrorCode::MissingSceneFile:
+    return "Missing scene file";
+  case ErrorCode::MissingSceneObject:
+    return "Missing scene object";
+  case ErrorCode::MissingAssetFile:
+    return "Missing asset file";
 
   // Validation - Choice
   case ErrorCode::EmptyChoiceBlock:
@@ -456,23 +767,6 @@ private:
   default:
     return "Unknown error";
   }
-}
-
-/**
- * @brief Get the severity string
- */
-[[nodiscard]] inline const char *severityToString(Severity sev) {
-  switch (sev) {
-  case Severity::Hint:
-    return "hint";
-  case Severity::Info:
-    return "info";
-  case Severity::Warning:
-    return "warning";
-  case Severity::Error:
-    return "error";
-  }
-  return "unknown";
 }
 
 } // namespace NovelMind::scripting

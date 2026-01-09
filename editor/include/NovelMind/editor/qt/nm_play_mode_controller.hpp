@@ -145,6 +145,64 @@ public:
   /// Clear all breakpoints
   void clearAllBreakpoints();
 
+  // === Source-Level Breakpoints (file:line) ===
+
+  /**
+   * @brief Represents a source-level breakpoint
+   */
+  struct SourceBreakpoint {
+    QString filePath;  ///< Absolute path to script file
+    int line = 0;      ///< Line number (1-based)
+    bool enabled = true;
+    QString condition; ///< Optional conditional expression
+  };
+
+  /**
+   * @brief Toggle a source-level breakpoint
+   * @param filePath The script file path
+   * @param line The line number (1-based)
+   */
+  void toggleSourceBreakpoint(const QString &filePath, int line);
+
+  /**
+   * @brief Set a source-level breakpoint
+   * @param filePath The script file path
+   * @param line The line number (1-based)
+   * @param enabled Whether the breakpoint is enabled
+   */
+  void setSourceBreakpoint(const QString &filePath, int line, bool enabled);
+
+  /**
+   * @brief Check if a source-level breakpoint exists
+   * @param filePath The script file path
+   * @param line The line number (1-based)
+   * @return true if breakpoint exists and is enabled
+   */
+  bool hasSourceBreakpoint(const QString &filePath, int line) const;
+
+  /**
+   * @brief Get all source breakpoints for a file
+   * @param filePath The script file path
+   * @return Set of line numbers with breakpoints
+   */
+  QSet<int> sourceBreakpointsForFile(const QString &filePath) const;
+
+  /**
+   * @brief Get all source breakpoints
+   * @return List of all source breakpoints
+   */
+  QList<SourceBreakpoint> allSourceBreakpoints() const;
+
+  /**
+   * @brief Clear all source-level breakpoints
+   */
+  void clearAllSourceBreakpoints();
+
+  /**
+   * @brief Clear source-level breakpoints for a specific file
+   */
+  void clearSourceBreakpointsForFile(const QString &filePath);
+
   // === Variable Inspection ===
 
   /// Get all current runtime variables
@@ -199,6 +257,12 @@ signals:
   /// Emitted when breakpoints are modified
   void breakpointsChanged();
 
+  /// Emitted when source-level breakpoints are modified
+  void sourceBreakpointsChanged();
+
+  /// Emitted when a source-level breakpoint is hit
+  void sourceBreakpointHit(const QString &filePath, int line);
+
 public slots:
   /// Load breakpoints from project settings
   void loadBreakpoints(const QString &projectPath);
@@ -226,6 +290,7 @@ private:
   PlayMode m_playMode = Stopped;
   QString m_currentNodeId;
   QSet<QString> m_breakpoints;
+  QHash<QString, QSet<int>> m_sourceBreakpoints; // filePath -> set of lines
   QVariantMap m_variables;
   QVariantMap m_flags;
   QStringList m_callStack;

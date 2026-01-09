@@ -11,6 +11,7 @@
  * - Viewport controls
  */
 
+#include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include <QComboBox>
 #include <QGraphicsItem>
@@ -735,7 +736,7 @@ private:
   QLabel *m_readOnlyLabel = nullptr;
 
   // Event subscriptions for scene auto-sync (Issue #223)
-  std::vector<uint64_t> m_eventSubscriptions;
+  std::vector<EventSubscription> m_eventSubscriptions;
 };
 
 } // namespace NovelMind::editor::qt

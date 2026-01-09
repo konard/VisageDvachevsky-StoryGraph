@@ -24,6 +24,8 @@
 #include "NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp"
 #include "NovelMind/editor/qt/panels/nm_animation_adapter.hpp"
+#include "NovelMind/editor/qt/panels/nm_script_runtime_inspector_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_script_inspector_panel.hpp"
 
 #include <QAction>
 #include <QDockWidget>
@@ -136,6 +138,15 @@ void NMMainWindow::setupPanels() {
   m_debugOverlayPanel->setObjectName("DebugOverlayPanel");
   m_debugOverlayPanel->setWindowIcon(iconMgr.getIcon("panel-diagnostics", 16));
 
+  // Script Runtime Inspector panel (Issue #244)
+  m_scriptRuntimeInspectorPanel = new NMScriptRuntimeInspectorPanel(this);
+  m_scriptRuntimeInspectorPanel->setObjectName("ScriptRuntimeInspectorPanel");
+  m_scriptRuntimeInspectorPanel->setWindowIcon(iconMgr.getIcon("panel-diagnostics", 16));
+  // Script Inspector panel (issue #235 - NMS 2.0 Debugger)
+  m_scriptInspectorPanel = new NMScriptInspectorPanel(this);
+  m_scriptInspectorPanel->setObjectName("ScriptInspectorPanel");
+  m_scriptInspectorPanel->setWindowIcon(iconMgr.getIcon("panel-inspector", 16));
+
   // Project Settings panel (issue #125)
   m_projectSettingsPanel = new NMProjectSettingsPanel(this);
   m_projectSettingsPanel->setObjectName("ProjectSettingsPanel");
@@ -154,6 +165,8 @@ void NMMainWindow::setupPanels() {
   addDockWidget(Qt::LeftDockWidgetArea, m_hierarchyPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_debugOverlayPanel); // Phase 5
+  addDockWidget(Qt::RightDockWidgetArea, m_scriptRuntimeInspectorPanel); // Issue #244
+  addDockWidget(Qt::RightDockWidgetArea, m_scriptInspectorPanel); // Issue #235
   addDockWidget(Qt::RightDockWidgetArea, m_voiceManagerPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_voiceStudioPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_audioMixerPanel);
@@ -188,6 +201,8 @@ void NMMainWindow::setupPanels() {
 
   // Tab the right panels
   tabifyDockWidget(m_inspectorPanel, m_debugOverlayPanel);
+  tabifyDockWidget(m_inspectorPanel, m_scriptRuntimeInspectorPanel); // Issue #244
+  tabifyDockWidget(m_inspectorPanel, m_scriptInspectorPanel); // Issue #235
   tabifyDockWidget(m_inspectorPanel, m_voiceManagerPanel);
   tabifyDockWidget(m_inspectorPanel, m_voiceStudioPanel);
   tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
@@ -244,6 +259,7 @@ void NMMainWindow::configureDocking() {
   configureDock(m_scriptDocPanel);
   configureDock(m_playToolbarPanel);
   configureDock(m_debugOverlayPanel);
+  configureDock(m_scriptRuntimeInspectorPanel); // Issue #244
   configureDock(m_issuesPanel);
   configureDock(m_diagnosticsPanel);
   configureDock(m_sceneDialogueGraphPanel);

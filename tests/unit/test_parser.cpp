@@ -432,3 +432,125 @@ TEST_CASE("Parser parses wait and transition", "[parser]")
         REQUIRE(trans.duration == Catch::Approx(1.0f));
     }
 }
+
+TEST_CASE("Parser parses move statements", "[parser]")
+{
+    Lexer lexer;
+    Parser parser;
+
+    SECTION("parses move to left")
+    {
+        auto tokens = lexer.tokenize("move Hero to left");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.characterId == "Hero");
+        REQUIRE(move.position == Position::Left);
+        REQUIRE(move.duration == Catch::Approx(0.5f)); // Default duration
+    }
+
+    SECTION("parses move to center")
+    {
+        auto tokens = lexer.tokenize("move Alice to center");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.characterId == "Alice");
+        REQUIRE(move.position == Position::Center);
+    }
+
+    SECTION("parses move to right")
+    {
+        auto tokens = lexer.tokenize("move Bob to right");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.characterId == "Bob");
+        REQUIRE(move.position == Position::Right);
+    }
+
+    SECTION("parses move with duration")
+    {
+        auto tokens = lexer.tokenize("move Hero to left duration=0.5");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.characterId == "Hero");
+        REQUIRE(move.position == Position::Left);
+        REQUIRE(move.duration == Catch::Approx(0.5f));
+    }
+
+    SECTION("parses move with different duration")
+    {
+        auto tokens = lexer.tokenize("move Alice to center duration=1.5");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.characterId == "Alice");
+        REQUIRE(move.position == Position::Center);
+        REQUIRE(move.duration == Catch::Approx(1.5f));
+    }
+
+    SECTION("parses move with integer duration")
+    {
+        auto tokens = lexer.tokenize("move Hero to right duration=2");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+
+        const auto& move = std::get<MoveStmt>(stmt->data);
+        REQUIRE(move.duration == Catch::Approx(2.0f));
+    }
+}

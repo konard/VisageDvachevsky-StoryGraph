@@ -40,6 +40,7 @@ add_library(engine_core STATIC
     # Scripting
     src/scripting/interpreter.cpp
     src/scripting/vm.cpp
+    src/scripting/vm_debugger.cpp
     src/scripting/vm_security.cpp
     src/scripting/lexer.cpp
     src/scripting/parser.cpp

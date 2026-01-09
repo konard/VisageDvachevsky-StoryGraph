@@ -265,9 +265,6 @@ jobs:
       env:
         CC: gcc
         CXX: g++
-        sudo apt-get install -y cmake ninja-build libsdl2-dev lcov
-
-    - name: Configure CMake with coverage
       run: |
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Debug \
