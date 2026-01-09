@@ -340,6 +340,12 @@ void NMMainWindow::setupLayoutConnections() {
   connect(&styleManager, &NMStyleManager::scaleChanged, this, updateScaleActions);
   updateScaleActions(styleManager.uiScale());
 
+  // Theme switching
+  connect(m_actionThemeDark, &QAction::triggered, this,
+          []() { NMStyleManager::instance().applyDarkTheme(); });
+  connect(m_actionThemeLight, &QAction::triggered, this,
+          []() { NMStyleManager::instance().applyLightTheme(); });
+
   // Focus mode and dock options
   connect(m_actionFocusMode, &QAction::toggled, this,
           &NMMainWindow::toggleFocusMode);

@@ -1,6 +1,7 @@
 #include "NovelMind/editor/qt/widgets/nm_scene_preview_widget.hpp"
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "../panels/nm_scene_view_overlays.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/scripting/lexer.hpp"
 #include "NovelMind/scripting/parser.hpp"
@@ -46,7 +47,9 @@ void NMScenePreviewWidget::setupUI() {
   toolbarLayout->setSpacing(6);
 
   // Preview toggle button
-  m_togglePreviewBtn = new QPushButton(tr("👁️ Preview"), m_toolbarFrame);
+  auto& iconMgr = NMIconManager::instance();
+  m_togglePreviewBtn = new QPushButton(tr("Preview"), m_toolbarFrame);
+  m_togglePreviewBtn->setIcon(iconMgr.getIcon("visible", 16));
   m_togglePreviewBtn->setCheckable(true);
   m_togglePreviewBtn->setChecked(m_previewEnabled);
   m_togglePreviewBtn->setToolTip(tr("Toggle live preview (Ctrl+Shift+V)"));
@@ -55,11 +58,13 @@ void NMScenePreviewWidget::setupUI() {
 
   // Reset view button
   m_resetViewBtn = new QPushButton(tr("Reset View"), m_toolbarFrame);
+  m_resetViewBtn->setIcon(iconMgr.getIcon("property-reset", 16));
   m_resetViewBtn->setToolTip(tr("Reset camera to default position"));
   toolbarLayout->addWidget(m_resetViewBtn);
 
   // Grid toggle button
   m_toggleGridBtn = new QPushButton(tr("Grid"), m_toolbarFrame);
+  m_toggleGridBtn->setIcon(iconMgr.getIcon("layout-grid", 16));
   m_toggleGridBtn->setCheckable(true);
   m_toggleGridBtn->setChecked(m_gridVisible);
   m_toggleGridBtn->setToolTip(tr("Toggle grid overlay"));

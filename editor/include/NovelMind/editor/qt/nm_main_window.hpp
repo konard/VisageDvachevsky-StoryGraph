@@ -413,6 +413,8 @@ private:
   QAction *m_actionUiScaleCompact = nullptr;
   QAction *m_actionUiScaleDefault = nullptr;
   QAction *m_actionUiScaleComfort = nullptr;
+  QAction *m_actionThemeDark = nullptr;
+  QAction *m_actionThemeLight = nullptr;
 
   // Play menu
   QAction *m_actionPlay = nullptr;

@@ -381,6 +381,27 @@ void NMMainWindow::setupMenuBar() {
   m_actionUiScaleReset->setShortcut(QKeySequence("Ctrl+Alt+0"));
   m_actionUiScaleReset->setToolTip(tr("Reset UI scale to 100%"));
 
+  viewMenu->addSeparator();
+
+  // =========================================================================
+  // Theme Menu
+  // =========================================================================
+  QMenu *themeMenu = viewMenu->addMenu(tr("&Theme"));
+  QActionGroup *themeGroup = new QActionGroup(themeMenu);
+  themeGroup->setExclusive(true);
+
+  m_actionThemeDark = themeMenu->addAction(tr("&Dark Theme"));
+  m_actionThemeDark->setCheckable(true);
+  m_actionThemeDark->setChecked(true);
+  m_actionThemeDark->setToolTip(tr("Use dark color theme (default)"));
+
+  m_actionThemeLight = themeMenu->addAction(tr("&Light Theme"));
+  m_actionThemeLight->setCheckable(true);
+  m_actionThemeLight->setToolTip(tr("Use light color theme"));
+
+  themeGroup->addAction(m_actionThemeDark);
+  themeGroup->addAction(m_actionThemeLight);
+
   // =========================================================================
   // Play Menu
   // =========================================================================

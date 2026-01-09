@@ -1,4 +1,5 @@
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "nm_dialogs_detail.hpp"
 
 #include <QComboBox>
@@ -79,6 +80,7 @@ void NMNewProjectDialog::buildUi() {
   m_directoryEdit->setPlaceholderText(tr("Select project location"));
 
   m_browseButton = new QPushButton(tr("Browse..."), dirRow);
+  m_browseButton->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
   m_browseButton->setObjectName("NMSecondaryButton");
   connect(m_browseButton, &QPushButton::clicked, this,
           &NMNewProjectDialog::browseDirectory);

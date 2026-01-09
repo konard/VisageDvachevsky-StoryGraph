@@ -14,6 +14,7 @@
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 
 #include <QCheckBox>
 #include <QDoubleSpinBox>
@@ -619,10 +620,12 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
 
     // Mute/Solo buttons
     auto *btnLayout = new QHBoxLayout();
+    const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
 
     ctrl.muteButton = new QPushButton("M", channelWidget);
     ctrl.muteButton->setCheckable(true);
-    ctrl.muteButton->setFixedSize(24, 24);
+    NMStyleManager::configureSquareButton(ctrl.muteButton,
+                                          buttonSizes.squareMedium);
     ctrl.muteButton->setToolTip(
         tr("Mute %1 channel").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.muteButton, &QPushButton::toggled, this,
@@ -631,7 +634,8 @@ void NMAudioMixerPanel::setupMixerControls(QWidget *parent) {
 
     ctrl.soloButton = new QPushButton("S", channelWidget);
     ctrl.soloButton->setCheckable(true);
-    ctrl.soloButton->setFixedSize(24, 24);
+    NMStyleManager::configureSquareButton(ctrl.soloButton,
+                                          buttonSizes.squareMedium);
     ctrl.soloButton->setToolTip(
         tr("Solo %1 channel").arg(CHANNEL_NAMES[i + 1]));
     connect(ctrl.soloButton, &QPushButton::toggled, this,

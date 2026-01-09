@@ -39,6 +39,11 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["chevron-right"] = ":/icons/lucide/chevron-right.svg";
   m_iconFilePaths["chevron-up"] = ":/icons/lucide/chevron-up.svg";
 
+  // Sync Icons
+  m_iconFilePaths["sync"] = ":/icons/lucide/arrow-left-right.svg";
+  m_iconFilePaths["sync-to-script"] = ":/icons/lucide/arrow-right.svg";
+  m_iconFilePaths["sync-to-graph"] = ":/icons/lucide/arrow-left.svg";
+
   // Asset Type Icons
   m_iconFilePaths["asset-audio"] = ":/icons/lucide/music.svg";
   m_iconFilePaths["asset-folder"] = ":/icons/lucide/folder.svg";
@@ -76,6 +81,8 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["edit-paste"] = ":/icons/lucide/clipboard.svg";
   m_iconFilePaths["edit-redo"] = ":/icons/lucide/redo.svg";
   m_iconFilePaths["edit-undo"] = ":/icons/lucide/undo.svg";
+  m_iconFilePaths["replace"] = ":/icons/lucide/clipboard.svg";
+  m_iconFilePaths["replace-all"] = ":/icons/lucide/clipboard.svg";
 
   // File Operations
   m_iconFilePaths["file-close"] = ":/icons/lucide/x.svg";
@@ -215,6 +222,10 @@ void NMIconManager::initializeIcons() {
   m_iconFilePaths["welcome-new"] = ":/icons/lucide/file-plus.svg";
   m_iconFilePaths["welcome-open"] = ":/icons/lucide/folder-open.svg";
   m_iconFilePaths["welcome-recent"] = ":/icons/lucide/clock.svg";
+
+  // Tutorial Icons
+  m_iconFilePaths["take-tour"] = ":/icons/lucide/graduation-cap.svg";
+  m_iconFilePaths["quick-start"] = ":/icons/lucide/rocket.svg";
 
   // Zoom and View Controls
   m_iconFilePaths["zoom-fit"] = ":/icons/lucide/maximize.svg";
