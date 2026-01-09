@@ -1,9 +1,11 @@
 {
   "id": "branching_story",
   "name": "Branching Story",
-  "description": "An interactive narrative with player choices leading to multiple endings. Demonstrates the full power of the choice system and variable tracking.",
+  "description": "An interactive narrative with player choices leading to multiple endings. Demonstrates the full power of the choice system and variable tracking. Uses Graph workflow for visual story editing.",
   "category": "Intermediate",
   "difficulty": "Medium",
+  "workflowMode": "Graph",
+  "workflowDescription": "Visual graph editing - design your story using the Story Graph panel",
   "features": [
     "Branching Story Graph",
     "Multiple Endings (4)",

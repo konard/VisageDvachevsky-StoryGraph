@@ -1,9 +1,11 @@
 {
   "id": "empty_project",
   "name": "Empty Project",
-  "description": "A minimal starting point for experienced users. Contains only the essential structure with no demo content.",
+  "description": "A minimal starting point for experienced users. Contains only the essential structure with no demo content. Uses Script workflow by default.",
   "category": "Basic",
   "difficulty": "Any",
+  "workflowMode": "Script",
+  "workflowDescription": "Script editing - write your story using NMScript in the Script Editor panel",
   "features": [
     "Minimal Configuration",
     "Clean Project Structure",

@@ -1,9 +1,11 @@
 {
   "id": "demo_branching_novel",
   "name": "First Day at Academy (Interactive Demo)",
-  "description": "Complete playable demo with branching story, multiple choices, and 3 different endings. A slice-of-life visual novel showcasing NovelMind's capabilities including Story Graph, character sprites, backgrounds, animations, sound effects, and the choice system.",
+  "description": "Complete playable demo with branching story, multiple choices, and 3 different endings. A slice-of-life visual novel showcasing NovelMind's capabilities including Story Graph, character sprites, backgrounds, animations, sound effects, and the choice system. Uses Graph workflow for visual story editing.",
   "category": "Demo & Tutorial",
   "difficulty": "Beginner",
+  "workflowMode": "Graph",
+  "workflowDescription": "Visual graph editing - design your story using the Story Graph panel",
   "features": [
     "Story Graph with branching paths",
     "3 unique endings (Good, Normal, Lonely)",

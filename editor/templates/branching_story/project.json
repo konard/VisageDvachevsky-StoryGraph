@@ -52,5 +52,5 @@
       "secret_found": false
     }
   },
-  "playbackSourceMode": "Script"
+  "playbackSourceMode": "Graph"
 }
