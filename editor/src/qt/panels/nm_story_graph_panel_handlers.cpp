@@ -1609,6 +1609,30 @@ void NMStoryGraphPanel::onSyncScriptToGraph() {
   NMMessageDialog::showInfo(this, tr("Sync Script to Graph"), message);
 }
 
+void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId,
+                                                    const QString &nodeIdString,
+                                                    const QString &errorMessage) {
+  // Show error dialog to notify the user
+  const QString title = tr("Script File Creation Failed");
+  const QString message = tr("Failed to create script file for node '%1' (ID: %2).\n\n"
+                             "Error: %3\n\n"
+                             "Possible causes:\n"
+                             "• Insufficient disk space\n"
+                             "• Permission denied for the Scripts folder\n"
+                             "• Invalid characters in node name\n"
+                             "• Directory does not exist\n\n"
+                             "The node has been marked with an error indicator. "
+                             "You can hover over it to see the error details.")
+                              .arg(nodeIdString)
+                              .arg(nodeId)
+                              .arg(errorMessage);
+
+  qWarning() << "[StoryGraphPanel] Script file creation failed for node"
+             << nodeIdString << ":" << errorMessage;
+
+  NMMessageDialog::showError(this, title, message);
+}
+
 } // namespace NovelMind::editor::qt
 
 // Include MOC for Q_OBJECT class defined in this file

@@ -488,6 +488,8 @@ void NMStoryGraphPanel::setupContent() {
           &NMStoryGraphPanel::onConnectionDeleted);
   connect(m_scene, &NMStoryGraphScene::entryNodeRequested, this,
           &NMStoryGraphPanel::onEntryNodeRequested);
+  connect(m_scene, &NMStoryGraphScene::scriptFileCreationFailed, this,
+          &NMStoryGraphPanel::onScriptFileCreationFailed);
 }
 
 void NMStoryGraphPanel::setupNodePalette() {

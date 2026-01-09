@@ -121,6 +121,20 @@ void NMGraphNodeItem::setSceneValidationMessage(const QString& message) {
   updateTooltip();
 }
 
+void NMGraphNodeItem::setScriptFileError(bool hasError) {
+  if (m_hasScriptFileError != hasError) {
+    prepareGeometryChange();
+    m_hasScriptFileError = hasError;
+    updateTooltip();
+    update();
+  }
+}
+
+void NMGraphNodeItem::setScriptFileErrorMessage(const QString& message) {
+  m_scriptFileErrorMessage = message;
+  updateTooltip();
+}
+
 void NMGraphNodeItem::updateTooltip() {
   QString tooltip = m_title;
 
@@ -133,6 +147,11 @@ void NMGraphNodeItem::updateTooltip() {
       const QString prefix = m_hasSceneValidationError ? "\n⚠️ Error: " : "\n⚠️ Warning: ";
       tooltip += prefix + m_sceneValidationMessage;
     }
+  }
+
+  // Show script file creation errors for all node types
+  if (m_hasScriptFileError) {
+    tooltip += QString("\n⚠️ Script File Error: %1").arg(m_scriptFileErrorMessage);
   }
 
   setToolTip(tooltip);
@@ -587,6 +606,28 @@ void NMGraphNodeItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* /
     }
 
     // Tooltip will be handled by Qt's tooltip system based on m_sceneValidationMessage
+  }
+
+  // Script file error indicator (for all non-entry nodes)
+  if (m_hasScriptFileError && !m_isEntry) {
+    const qreal iconSize = 20.0;
+    // Position in bottom-right corner to avoid conflicts with scene validation
+    const QPointF iconCenter(NODE_WIDTH - iconSize / 2 - 4, nodeHeight - iconSize / 2 - 4);
+
+    // Draw background circle (red for file errors)
+    QColor errorBgColor(220, 60, 60); // Red
+    painter->setBrush(errorBgColor);
+    painter->setPen(QPen(errorBgColor.darker(130), 2));
+    painter->drawEllipse(iconCenter, iconSize / 2, iconSize / 2);
+
+    // Draw warning symbol (exclamation mark)
+    painter->setPen(QPen(Qt::white, 2, Qt::SolidLine, Qt::RoundCap));
+    const qreal exclamHeight = iconSize * 0.35;
+    painter->drawLine(iconCenter - QPointF(0, exclamHeight),
+                      iconCenter + QPointF(0, exclamHeight * 0.2));
+    painter->drawPoint(iconCenter + QPointF(0, exclamHeight * 0.6));
+
+    // Tooltip will be handled by Qt's tooltip system based on m_scriptFileErrorMessage
   }
 
   // Restore painter state
