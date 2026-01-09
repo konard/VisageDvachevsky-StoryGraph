@@ -44,6 +44,7 @@ NMGraphConnectionItem::NMGraphConnectionItem(NMGraphNodeItem *startNode,
                                              NMGraphNodeItem *endNode)
     : QGraphicsItem(), m_startNode(startNode), m_endNode(endNode) {
   setZValue(-1); // Draw behind nodes
+  setFlag(QGraphicsItem::ItemIsSelectable, true); // Issue #325: Allow selection for deletion
   // Don't call updatePath() in constructor - let the scene call it after adding
 }
 
@@ -117,7 +118,14 @@ void NMGraphConnectionItem::paint(QPainter *painter,
     }
   }
 
-  painter->setPen(QPen(lineColor, 2));
+  // Issue #325: Visual feedback for selected connections
+  qreal lineWidth = 2;
+  if (isSelected()) {
+    lineColor = lineColor.lighter(150); // Brighten when selected
+    lineWidth = 3; // Make thicker when selected
+  }
+
+  painter->setPen(QPen(lineColor, lineWidth));
   painter->setBrush(Qt::NoBrush);
   painter->drawPath(m_path);
 
@@ -157,6 +165,31 @@ void NMGraphConnectionItem::paint(QPainter *painter,
 
   // Restore painter state
   painter->restore();
+}
+
+void NMGraphConnectionItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *event) {
+  // Issue #325: Context menu for connection deletion
+  QMenu menu;
+  auto &iconMgr = NMIconManager::instance();
+
+  // Delete Connection action
+  QAction *deleteAction = menu.addAction("Delete Connection");
+  deleteAction->setIcon(iconMgr.getIcon("edit-delete", 16));
+  deleteAction->setToolTip("Remove this connection (Del)");
+
+  // Show menu and handle action
+  QAction *selectedAction = menu.exec(event->screenPos());
+
+  if (selectedAction == deleteAction) {
+    if (auto *graphScene = qobject_cast<NMStoryGraphScene *>(scene())) {
+      if (m_startNode && m_endNode) {
+        NMUndoManager::instance().pushCommand(
+            new DisconnectGraphNodesCommand(graphScene,
+                                           m_startNode->nodeId(),
+                                           m_endNode->nodeId()));
+      }
+    }
+  }
 }
 
 // ============================================================================
