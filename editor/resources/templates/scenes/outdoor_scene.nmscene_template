@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "id": "outdoor_scene",
+    "name": "Outdoor Scene",
+    "description": "Natural environment setup. Outdoor scene with environmental elements and character positions.",
+    "category": "Location",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["outdoor", "nature", "exterior", "environment"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Outdoor Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Outdoor environment background",
+          "locationType": "outdoor"
+        }
+      },
+      {
+        "id": "environment_left",
+        "name": "Left Environment Prop",
+        "type": "Prop",
+        "x": 150.0,
+        "y": 400.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Environmental prop (tree, rock, etc.)",
+          "propType": "environment",
+          "position": "left"
+        }
+      },
+      {
+        "id": "environment_right",
+        "name": "Right Environment Prop",
+        "type": "Prop",
+        "x": 1130.0,
+        "y": 400.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Environmental prop (bush, fence, etc.)",
+          "propType": "environment",
+          "position": "right"
+        }
+      },
+      {
+        "id": "character_left",
+        "name": "Character 1",
+        "type": "Character",
+        "x": 400.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Left character",
+          "position": "left"
+        }
+      },
+      {
+        "id": "character_right",
+        "name": "Character 2",
+        "type": "Character",
+        "x": 880.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Right character",
+          "position": "right"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "id": "vehicle_interior",
+    "name": "Vehicle Interior",
+    "description": "Car/train/bus setup. Interior vehicle scene with seating positions and window views.",
+    "category": "Location",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["vehicle", "car", "train", "bus", "transport"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Vehicle Interior Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Vehicle interior background",
+          "locationType": "vehicle"
+        }
+      },
+      {
+        "id": "window_left",
+        "name": "Left Window View",
+        "type": "Prop",
+        "x": 200.0,
+        "y": 250.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.8,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Window with passing scenery",
+          "propType": "window",
+          "position": "left"
+        }
+      },
+      {
+        "id": "window_right",
+        "name": "Right Window View",
+        "type": "Prop",
+        "x": 1080.0,
+        "y": 250.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.8,
+        "visible": true,
+        "zOrder": 5,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Window with passing scenery",
+          "propType": "window",
+          "position": "right"
+        }
+      },
+      {
+        "id": "character_left_seat",
+        "name": "Left Seat Character",
+        "type": "Character",
+        "x": 400.0,
+        "y": 380.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character in left seat",
+          "position": "left_seat",
+          "posture": "seated"
+        }
+      },
+      {
+        "id": "character_right_seat",
+        "name": "Right Seat Character",
+        "type": "Character",
+        "x": 880.0,
+        "y": 380.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 10,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Character in right seat",
+          "position": "right_seat",
+          "posture": "seated"
+        }
+      },
+      {
+        "id": "dialogue_box",
+        "name": "Dialogue Box",
+        "type": "UI",
+        "x": 0.0,
+        "y": 520.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Dialogue UI area",
+          "uiType": "dialogue"
+        }
+      }
+    ]
+  }
+}

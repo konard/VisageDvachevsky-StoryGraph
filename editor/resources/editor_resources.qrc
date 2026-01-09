@@ -131,11 +131,30 @@
         <file>icons/lucide/zap.svg</file>
         <file>icons/lucide/zoom-in.svg</file>
         <file>icons/lucide/zoom-out.svg</file>
-        <!-- Scene Templates (issue #216) -->
+        <!-- Scene Templates (issue #216, #292) -->
         <file>templates/scenes/empty_scene.nmscene_template</file>
         <file>templates/scenes/dialogue_scene.nmscene_template</file>
         <file>templates/scenes/choice_scene.nmscene_template</file>
         <file>templates/scenes/cutscene.nmscene_template</file>
         <file>templates/scenes/title_screen.nmscene_template</file>
+        <!-- New templates (issue #292) - Dialogue -->
+        <file>templates/scenes/two_character_dialogue.nmscene_template</file>
+        <file>templates/scenes/multi_character_scene.nmscene_template</file>
+        <file>templates/scenes/interrogation.nmscene_template</file>
+        <file>templates/scenes/phone_call.nmscene_template</file>
+        <!-- Scene Types -->
+        <file>templates/scenes/establishing_shot.nmscene_template</file>
+        <file>templates/scenes/closeup.nmscene_template</file>
+        <file>templates/scenes/reaction_shot.nmscene_template</file>
+        <file>templates/scenes/transition.nmscene_template</file>
+        <!-- Location Templates -->
+        <file>templates/scenes/indoor_scene.nmscene_template</file>
+        <file>templates/scenes/outdoor_scene.nmscene_template</file>
+        <file>templates/scenes/vehicle_interior.nmscene_template</file>
+        <file>templates/scenes/abstract_space.nmscene_template</file>
+        <!-- Special Templates -->
+        <file>templates/scenes/title_card.nmscene_template</file>
+        <file>templates/scenes/credits.nmscene_template</file>
+        <file>templates/scenes/flashback.nmscene_template</file>
     </qresource>
 </RCC>

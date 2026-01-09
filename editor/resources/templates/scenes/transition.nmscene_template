@@ -1,0 +1,57 @@
+{
+  "metadata": {
+    "id": "transition",
+    "name": "Transition Scene",
+    "description": "Fade/dissolve setup. Simple scene for transitions between locations or time periods.",
+    "category": "Scene Types",
+    "type": "builtin",
+    "previewPath": "",
+    "author": "NovelMind Team",
+    "version": "1.0",
+    "tags": ["transition", "fade", "dissolve", "time-skip"],
+    "created": "2026-01-09T00:00:00Z",
+    "modified": "2026-01-09T00:00:00Z"
+  },
+  "content": {
+    "sceneId": "{{scene_id}}",
+    "objects": [
+      {
+        "id": "background",
+        "name": "Transition Background",
+        "type": "Background",
+        "x": 0.0,
+        "y": 0.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 0.5,
+        "visible": true,
+        "zOrder": 0,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Transition image (often black or gradient)",
+          "transitionType": "fade"
+        }
+      },
+      {
+        "id": "transition_text",
+        "name": "Transition Text",
+        "type": "UI",
+        "x": 640.0,
+        "y": 360.0,
+        "rotation": 0.0,
+        "scaleX": 1.0,
+        "scaleY": 1.0,
+        "alpha": 1.0,
+        "visible": true,
+        "zOrder": 100,
+        "properties": {
+          "placeholder": "true",
+          "hint": "Optional text (e.g., 'Three days later...')",
+          "uiType": "text",
+          "textType": "transition"
+        }
+      }
+    ]
+  }
+}
