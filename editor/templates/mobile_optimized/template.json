@@ -1,9 +1,11 @@
 {
   "id": "mobile_optimized",
   "name": "Mobile Optimized",
-  "description": "A template optimized for mobile devices with portrait orientation, touch-friendly UI, and compressed assets.",
+  "description": "A template optimized for mobile devices with portrait orientation, touch-friendly UI, and compressed assets. Uses Script workflow by default.",
   "category": "Platform-Specific",
   "difficulty": "Medium",
+  "workflowMode": "Script",
+  "workflowDescription": "Script editing - write your story using NMScript in the Script Editor panel",
   "features": [
     "Portrait Orientation (9:16)",
     "Touch-Optimized UI",
