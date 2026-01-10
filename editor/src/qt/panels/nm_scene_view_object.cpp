@@ -19,8 +19,7 @@ namespace NovelMind::editor::qt {
 // NMSceneObject
 // ============================================================================
 
-NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
-                             QGraphicsItem *parent)
+NMSceneObject::NMSceneObject(const QString& id, NMSceneObjectType type, QGraphicsItem* parent)
     : QGraphicsPixmapItem(parent), m_id(id), m_name(id), m_objectType(type) {
   setFlag(ItemIsMovable, true);
   setFlag(ItemIsSelectable, true);
@@ -45,7 +44,7 @@ NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
   }
   painter.setRenderHint(QPainter::Antialiasing);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Get icon based on type
   QString iconName;
@@ -88,8 +87,7 @@ NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
   }
 
   // Draw icon in top-left corner
-  QPixmap icon =
-      NMIconManager::instance().getPixmap(iconName, 32, palette.textPrimary);
+  QPixmap icon = NMIconManager::instance().getPixmap(iconName, 32, palette.textPrimary);
   painter.drawPixmap(8, 8, icon);
 
   // Draw type text
@@ -98,16 +96,20 @@ NMSceneObject::NMSceneObject(const QString &id, NMSceneObjectType type,
   boldFont.setBold(true);
   boldFont.setPointSize(10);
   painter.setFont(boldFont);
-  painter.drawText(pixmap.rect().adjusted(0, 0, 0, -10),
-                   Qt::AlignCenter | Qt::AlignBottom, typeName);
+  painter.drawText(pixmap.rect().adjusted(0, 0, 0, -10), Qt::AlignCenter | Qt::AlignBottom,
+                   typeName);
 
   setPixmap(pixmap);
   setTransformOriginPoint(boundingRect().center());
 }
 
-void NMSceneObject::setScaleX(qreal scale) { setScaleXY(scale, m_scaleY); }
+void NMSceneObject::setScaleX(qreal scale) {
+  setScaleXY(scale, m_scaleY);
+}
 
-void NMSceneObject::setScaleY(qreal scale) { setScaleXY(m_scaleX, scale); }
+void NMSceneObject::setScaleY(qreal scale) {
+  setScaleXY(m_scaleX, scale);
+}
 
 void NMSceneObject::setScaleXY(qreal scaleX, qreal scaleY) {
   m_scaleX = scaleX;
@@ -115,7 +117,14 @@ void NMSceneObject::setScaleXY(qreal scaleX, qreal scaleY) {
   setTransform(QTransform::fromScale(m_scaleX, m_scaleY));
 }
 
-void NMSceneObject::setUniformScale(qreal scale) { setScaleXY(scale, scale); }
+void NMSceneObject::setUniformScale(qreal scale) {
+  setScaleXY(scale, scale);
+}
+
+void NMSceneObject::setColorTint(const QColor& color) {
+  m_colorTint = color;
+  update(); // Trigger repaint
+}
 
 void NMSceneObject::setSelected(bool selected) {
   m_selected = selected;
@@ -130,15 +139,28 @@ void NMSceneObject::setLocked(bool locked) {
   update();
 }
 
-void NMSceneObject::paint(QPainter *painter,
-                          const QStyleOptionGraphicsItem *option,
-                          QWidget *widget) {
-  // Draw the pixmap
-  QGraphicsPixmapItem::paint(painter, option, widget);
+void NMSceneObject::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+                          QWidget* widget) {
+  // Apply color tint if not white
+  if (m_colorTint != QColor(255, 255, 255, 255)) {
+    painter->save();
+    painter->setCompositionMode(QPainter::CompositionMode_Multiply);
+
+    // Draw the pixmap first
+    QGraphicsPixmapItem::paint(painter, option, widget);
+
+    // Apply tint overlay
+    painter->setCompositionMode(QPainter::CompositionMode_SourceAtop);
+    painter->fillRect(boundingRect(), m_colorTint);
+    painter->restore();
+  } else {
+    // Draw the pixmap normally
+    QGraphicsPixmapItem::paint(painter, option, widget);
+  }
 
   // Draw selection outline
   if (m_selected || isSelected()) {
-    const auto &palette = NMStyleManager::instance().palette();
+    const auto& palette = NMStyleManager::instance().palette();
     QColor fill = palette.accentPrimary;
     fill.setAlpha(40);
     painter->fillRect(boundingRect().adjusted(2, 2, -2, -2), fill);
@@ -151,24 +173,21 @@ void NMSceneObject::paint(QPainter *painter,
     QRectF bounds = boundingRect();
     int handleSize = 8;
     painter->setBrush(palette.accentPrimary);
-    painter->drawRect(static_cast<int>(bounds.left()),
-                      static_cast<int>(bounds.top()), handleSize, handleSize);
-    painter->drawRect(static_cast<int>(bounds.right() - handleSize),
-                      static_cast<int>(bounds.top()), handleSize, handleSize);
-    painter->drawRect(static_cast<int>(bounds.left()),
-                      static_cast<int>(bounds.bottom() - handleSize),
+    painter->drawRect(static_cast<int>(bounds.left()), static_cast<int>(bounds.top()), handleSize,
+                      handleSize);
+    painter->drawRect(static_cast<int>(bounds.right() - handleSize), static_cast<int>(bounds.top()),
                       handleSize, handleSize);
+    painter->drawRect(static_cast<int>(bounds.left()),
+                      static_cast<int>(bounds.bottom() - handleSize), handleSize, handleSize);
     painter->drawRect(static_cast<int>(bounds.right() - handleSize),
-                      static_cast<int>(bounds.bottom() - handleSize),
-                      handleSize, handleSize);
+                      static_cast<int>(bounds.bottom() - handleSize), handleSize, handleSize);
   }
 }
 
-QVariant NMSceneObject::itemChange(GraphicsItemChange change,
-                                   const QVariant &value) {
+QVariant NMSceneObject::itemChange(GraphicsItemChange change, const QVariant& value) {
   if (change == ItemPositionChange) {
-    if (auto *scenePtr = scene()) {
-      if (auto *nmScene = qobject_cast<NMSceneGraphicsScene *>(scenePtr)) {
+    if (auto* scenePtr = scene()) {
+      if (auto* nmScene = qobject_cast<NMSceneGraphicsScene*>(scenePtr)) {
         if (nmScene->snapToGrid()) {
           const qreal grid = nmScene->gridSize();
           QPointF pos = value.toPointF();
@@ -182,8 +201,8 @@ QVariant NMSceneObject::itemChange(GraphicsItemChange change,
     }
   }
   if (change == ItemPositionHasChanged) {
-    if (auto *scenePtr = scene()) {
-      if (auto *nmScene = qobject_cast<NMSceneGraphicsScene *>(scenePtr)) {
+    if (auto* scenePtr = scene()) {
+      if (auto* nmScene = qobject_cast<NMSceneGraphicsScene*>(scenePtr)) {
         nmScene->handleItemPositionChange(m_id, value.toPointF());
       }
     }
@@ -191,40 +210,42 @@ QVariant NMSceneObject::itemChange(GraphicsItemChange change,
   return QGraphicsPixmapItem::itemChange(change, value);
 }
 
-void NMSceneObject::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+void NMSceneObject::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     event->accept();
   }
   QGraphicsPixmapItem::mousePressEvent(event);
 }
 
-void NMSceneObject::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+void NMSceneObject::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
   QGraphicsPixmapItem::mouseMoveEvent(event);
 }
 
-void NMSceneObject::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+void NMSceneObject::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   QGraphicsPixmapItem::mouseReleaseEvent(event);
 }
 
-void NMSceneObject::addChildObjectId(const QString &childId) {
+void NMSceneObject::addChildObjectId(const QString& childId) {
   if (!childId.isEmpty() && !m_childObjectIds.contains(childId)) {
     m_childObjectIds.append(childId);
   }
 }
 
-void NMSceneObject::removeChildObjectId(const QString &childId) {
+void NMSceneObject::removeChildObjectId(const QString& childId) {
   m_childObjectIds.removeAll(childId);
 }
 
-void NMSceneObject::addTag(const QString &tag) {
+void NMSceneObject::addTag(const QString& tag) {
   if (!tag.isEmpty() && !m_tags.contains(tag)) {
     m_tags.append(tag);
   }
 }
 
-void NMSceneObject::removeTag(const QString &tag) { m_tags.removeAll(tag); }
+void NMSceneObject::removeTag(const QString& tag) {
+  m_tags.removeAll(tag);
+}
 
-bool NMSceneObject::hasTag(const QString &tag) const {
+bool NMSceneObject::hasTag(const QString& tag) const {
   return m_tags.contains(tag);
 }
 

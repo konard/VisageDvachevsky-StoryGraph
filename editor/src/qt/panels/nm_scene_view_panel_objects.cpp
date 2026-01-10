@@ -8,8 +8,8 @@
 
 namespace NovelMind::editor::qt {
 
-bool NMSceneViewPanel::createObject(const QString &id, NMSceneObjectType type,
-                                    const QPointF &pos, qreal scale) {
+bool NMSceneViewPanel::createObject(const QString& id, NMSceneObjectType type, const QPointF& pos,
+                                    qreal scale) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -18,7 +18,7 @@ bool NMSceneViewPanel::createObject(const QString &id, NMSceneObjectType type,
     return false;
   }
 
-  auto *obj = new NMSceneObject(id, type);
+  auto* obj = new NMSceneObject(id, type);
   obj->setName(id);
   obj->setPos(pos);
   obj->setUniformScale(scale);
@@ -28,7 +28,7 @@ bool NMSceneViewPanel::createObject(const QString &id, NMSceneObjectType type,
   return true;
 }
 
-bool NMSceneViewPanel::deleteObject(const QString &id) {
+bool NMSceneViewPanel::deleteObject(const QString& id) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -40,29 +40,28 @@ bool NMSceneViewPanel::deleteObject(const QString &id) {
   return true;
 }
 
-bool NMSceneViewPanel::moveObject(const QString &id, const QPointF &pos) {
+bool NMSceneViewPanel::moveObject(const QString& id, const QPointF& pos) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
   return m_scene->setObjectPosition(id, pos);
 }
 
-bool NMSceneViewPanel::rotateObject(const QString &id, qreal rotation) {
+bool NMSceneViewPanel::rotateObject(const QString& id, qreal rotation) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
   return m_scene->setObjectRotation(id, rotation);
 }
 
-bool NMSceneViewPanel::scaleObject(const QString &id, qreal scaleX,
-                                   qreal scaleY) {
+bool NMSceneViewPanel::scaleObject(const QString& id, qreal scaleX, qreal scaleY) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
   return m_scene->setObjectScale(id, scaleX, scaleY);
 }
 
-bool NMSceneViewPanel::setObjectOpacity(const QString &id, qreal opacity) {
+bool NMSceneViewPanel::setObjectOpacity(const QString& id, qreal opacity) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -73,7 +72,7 @@ bool NMSceneViewPanel::setObjectOpacity(const QString &id, qreal opacity) {
   return ok;
 }
 
-bool NMSceneViewPanel::setObjectVisible(const QString &id, bool visible) {
+bool NMSceneViewPanel::setObjectVisible(const QString& id, bool visible) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -84,7 +83,7 @@ bool NMSceneViewPanel::setObjectVisible(const QString &id, bool visible) {
   return ok;
 }
 
-bool NMSceneViewPanel::setObjectLocked(const QString &id, bool locked) {
+bool NMSceneViewPanel::setObjectLocked(const QString& id, bool locked) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -95,7 +94,18 @@ bool NMSceneViewPanel::setObjectLocked(const QString &id, bool locked) {
   return ok;
 }
 
-bool NMSceneViewPanel::setObjectZOrder(const QString &id, qreal zValue) {
+bool NMSceneViewPanel::setObjectColor(const QString& id, const QColor& color) {
+  if (!m_scene || id.isEmpty()) {
+    return false;
+  }
+  const bool ok = m_scene->setObjectColor(id, color);
+  if (ok) {
+    emit sceneObjectsChanged();
+  }
+  return ok;
+}
+
+bool NMSceneViewPanel::setObjectZOrder(const QString& id, qreal zValue) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -106,8 +116,7 @@ bool NMSceneViewPanel::setObjectZOrder(const QString &id, qreal zValue) {
   return ok;
 }
 
-bool NMSceneViewPanel::reparentObject(const QString &id,
-                                      const QString &newParentId) {
+bool NMSceneViewPanel::reparentObject(const QString& id, const QString& newParentId) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
@@ -118,8 +127,7 @@ bool NMSceneViewPanel::reparentObject(const QString &id,
   return ok;
 }
 
-bool NMSceneViewPanel::applyObjectTransform(const QString &id,
-                                            const QPointF &pos, qreal rotation,
+bool NMSceneViewPanel::applyObjectTransform(const QString& id, const QPointF& pos, qreal rotation,
                                             qreal scaleX, qreal scaleY) {
   if (!m_scene || id.isEmpty()) {
     return false;
@@ -130,12 +138,12 @@ bool NMSceneViewPanel::applyObjectTransform(const QString &id,
   return ok;
 }
 
-bool NMSceneViewPanel::renameObject(const QString &id, const QString &name) {
+bool NMSceneViewPanel::renameObject(const QString& id, const QString& name) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
 
-  NMSceneObject *obj = m_scene->findSceneObject(id);
+  NMSceneObject* obj = m_scene->findSceneObject(id);
   if (!obj) {
     return false;
   }
@@ -149,27 +157,26 @@ bool NMSceneViewPanel::renameObject(const QString &id, const QString &name) {
   return true;
 }
 
-bool NMSceneViewPanel::duplicateObject(const QString &id) {
+bool NMSceneViewPanel::duplicateObject(const QString& id) {
   if (!canEditScene() || !m_scene || id.isEmpty()) {
     return false;
   }
 
-  auto *obj = m_scene->findSceneObject(id);
+  auto* obj = m_scene->findSceneObject(id);
   if (!obj) {
     return false;
   }
 
   SceneObjectSnapshot snapshot = snapshotFromObject(obj);
   snapshot.id = generateObjectId(snapshot.type);
-  snapshot.name =
-      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
+  snapshot.name = snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
   snapshot.position = obj->pos() + QPointF(32.0, 32.0);
 
   NMUndoManager::instance().pushCommand(new AddObjectCommand(this, snapshot));
   return true;
 }
 
-void NMSceneViewPanel::selectObjectById(const QString &id) {
+void NMSceneViewPanel::selectObjectById(const QString& id) {
   if (!m_scene) {
     return;
   }
@@ -182,19 +189,18 @@ void NMSceneViewPanel::selectObjectById(const QString &id) {
   }
 }
 
-NMSceneObject *NMSceneViewPanel::findObjectById(const QString &id) const {
+NMSceneObject* NMSceneViewPanel::findObjectById(const QString& id) const {
   if (!m_scene || id.isEmpty()) {
     return nullptr;
   }
   return m_scene->findSceneObject(id);
 }
 
-bool NMSceneViewPanel::setObjectAsset(const QString &id,
-                                      const QString &assetPath) {
+bool NMSceneViewPanel::setObjectAsset(const QString& id, const QString& assetPath) {
   if (!m_scene || id.isEmpty()) {
     return false;
   }
-  auto *obj = m_scene->findSceneObject(id);
+  auto* obj = m_scene->findSceneObject(id);
   if (!obj) {
     return false;
   }
@@ -207,21 +213,19 @@ bool NMSceneViewPanel::setObjectAsset(const QString &id,
   return true;
 }
 
-bool NMSceneViewPanel::addObjectFromAsset(const QString &assetPath,
-                                          const QPointF &scenePos) {
+bool NMSceneViewPanel::addObjectFromAsset(const QString& assetPath, const QPointF& scenePos) {
   const NMSceneObjectType type = guessObjectTypeForAsset(assetPath);
   return addObjectFromAsset(assetPath, scenePos, type);
 }
 
-bool NMSceneViewPanel::addObjectFromAsset(const QString &assetPath,
-                                          const QPointF &scenePos,
+bool NMSceneViewPanel::addObjectFromAsset(const QString& assetPath, const QPointF& scenePos,
                                           NMSceneObjectType type) {
   if (!m_scene || assetPath.isEmpty()) {
     return false;
   }
   const QString ext = QFileInfo(assetPath).suffix().toLower();
-  const bool isImage = (ext == "png" || ext == "jpg" || ext == "jpeg" ||
-                        ext == "bmp" || ext == "gif");
+  const bool isImage =
+      (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "gif");
   if (!isImage) {
     return false;
   }
@@ -265,8 +269,7 @@ bool NMSceneViewPanel::canEditScene() const {
   return m_scene && !m_playModeActive && !m_runtimePreviewActive;
 }
 
-SceneObjectSnapshot
-NMSceneViewPanel::snapshotFromObject(const NMSceneObject *obj) const {
+SceneObjectSnapshot NMSceneViewPanel::snapshotFromObject(const NMSceneObject* obj) const {
   SceneObjectSnapshot snapshot;
   if (!obj) {
     return snapshot;
@@ -309,7 +312,7 @@ void NMSceneViewPanel::copySelectedObject() {
   if (!canEditScene()) {
     return;
   }
-  auto *obj = m_scene ? m_scene->selectedObject() : nullptr;
+  auto* obj = m_scene ? m_scene->selectedObject() : nullptr;
   if (!obj) {
     return;
   }
@@ -324,8 +327,7 @@ bool NMSceneViewPanel::pasteClipboardObject() {
 
   SceneObjectSnapshot snapshot = m_sceneClipboard;
   snapshot.id = generateObjectId(snapshot.type);
-  snapshot.name =
-      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
+  snapshot.name = snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
 
   QPointF basePos = snapshot.position;
   if (m_view && m_view->viewport()) {
@@ -343,15 +345,14 @@ bool NMSceneViewPanel::duplicateSelectedObject() {
     return false;
   }
 
-  auto *obj = m_scene->selectedObject();
+  auto* obj = m_scene->selectedObject();
   if (!obj) {
     return false;
   }
 
   SceneObjectSnapshot snapshot = snapshotFromObject(obj);
   snapshot.id = generateObjectId(snapshot.type);
-  snapshot.name =
-      snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
+  snapshot.name = snapshot.name.isEmpty() ? tr("Copy") : tr("%1 Copy").arg(snapshot.name);
   snapshot.position = obj->pos() + QPointF(32.0, 32.0);
 
   NMUndoManager::instance().pushCommand(new AddObjectCommand(this, snapshot));
@@ -362,7 +363,7 @@ void NMSceneViewPanel::deleteSelectedObject() {
   if (!canEditScene() || !m_scene) {
     return;
   }
-  if (auto *obj = m_scene->selectedObject()) {
+  if (auto* obj = m_scene->selectedObject()) {
     onDeleteRequested(obj->id());
   }
 }
@@ -372,17 +373,16 @@ void NMSceneViewPanel::renameSelectedObject() {
     return;
   }
 
-  auto *obj = m_scene->selectedObject();
+  auto* obj = m_scene->selectedObject();
   if (!obj) {
     return;
   }
 
   bool ok = false;
   const QString current = obj->name().isEmpty() ? obj->id() : obj->name();
-  const QString name =
-      NMInputDialog::getText(this, tr("Rename Object"), tr("Name:"),
-                             QLineEdit::Normal, current, &ok)
-          .trimmed();
+  const QString name = NMInputDialog::getText(this, tr("Rename Object"), tr("Name:"),
+                                              QLineEdit::Normal, current, &ok)
+                           .trimmed();
   if (ok && !name.isEmpty() && name != obj->name()) {
     renameObject(obj->id(), name);
   }
@@ -392,7 +392,7 @@ void NMSceneViewPanel::toggleSelectedVisibility() {
   if (!canEditScene() || !m_scene) {
     return;
   }
-  if (auto *obj = m_scene->selectedObject()) {
+  if (auto* obj = m_scene->selectedObject()) {
     setObjectVisible(obj->id(), !obj->isVisible());
   }
 }
@@ -401,7 +401,7 @@ void NMSceneViewPanel::toggleSelectedLocked() {
   if (!canEditScene() || !m_scene) {
     return;
   }
-  if (auto *obj = m_scene->selectedObject()) {
+  if (auto* obj = m_scene->selectedObject()) {
     setObjectLocked(obj->id(), !obj->isLocked());
   }
 }

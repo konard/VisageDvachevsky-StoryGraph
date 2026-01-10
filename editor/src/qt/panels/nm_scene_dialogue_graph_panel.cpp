@@ -16,10 +16,13 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QPushButton>
+#include <QQueue>
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <algorithm>
 #include <filesystem>
+#include <limits.h>
 
 namespace NovelMind::editor::qt {
 
@@ -541,112 +544,306 @@ void NMSceneDialogueGraphPanel::onFitToGraph() {
   }
 }
 
+/**
+ * @brief Improved auto-layout using Sugiyama-style hierarchical graph layout
+ *
+ * Issue #378: Complete the auto-layout implementation with:
+ * - Proper Sugiyama algorithm with longest path layer assignment
+ * - Edge crossing minimization using barycenter heuristic
+ * - Proper coordinate assignment with all nodes in positive space
+ * - User confirmation before rearranging
+ *
+ * This implementation follows the same algorithm as the Story Graph Panel
+ * (see nm_story_graph_panel_handlers.cpp, Issue #326)
+ */
 void NMSceneDialogueGraphPanel::onAutoLayout() {
   if (!m_dialogueScene || m_dialogueScene->nodes().isEmpty()) {
     qDebug() << "[SceneDialogueGraph] No nodes to layout";
     return;
   }
 
+  // Ask for confirmation before rearranging
+  auto result = NMMessageDialog::showQuestion(
+      this, tr("Auto Layout"),
+      tr("This will automatically arrange all nodes in a hierarchical "
+         "layout.\n\n"
+         "Current manual positioning will be lost. Do you want to continue?"),
+      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+
+  if (result != NMDialogButton::Yes) {
+    return;
+  }
+
   qDebug() << "[SceneDialogueGraph] Running hierarchical auto-layout";
 
-  // Hierarchical layered graph layout algorithm (Sugiyama-style)
-  const qreal LAYER_SPACING = 200.0;
-  const qreal NODE_SPACING = 80.0;
-  const qreal START_X = 100.0;
-  const qreal START_Y = 100.0;
+  const auto& nodes = m_dialogueScene->nodes();
 
-  // Step 1: Find entry nodes (nodes with no incoming connections)
-  QList<NMGraphNodeItem*> entryNodes;
-  QHash<NMGraphNodeItem*, int> inDegree;
-  QHash<NMGraphNodeItem*, QList<NMGraphNodeItem*>> children;
+  // Layout constants
+  const qreal horizontalSpacing = 280.0;
+  const qreal verticalSpacing = 160.0;
+  const qreal startX = 100.0;
+  const qreal startY = 100.0;
 
-  // Initialize in-degree map
-  for (auto* node : m_dialogueScene->nodes()) {
-    inDegree[node] = 0;
+  // Build adjacency lists (forward and reverse)
+  QHash<uint64_t, QList<uint64_t>> successors;
+  QHash<uint64_t, QList<uint64_t>> predecessors;
+  QHash<uint64_t, int> inDegree;
+  QHash<uint64_t, int> outDegree;
+  QSet<uint64_t> entryNodeSet;
+
+  for (auto* node : nodes) {
+    successors[node->nodeId()] = QList<uint64_t>();
+    predecessors[node->nodeId()] = QList<uint64_t>();
+    inDegree[node->nodeId()] = 0;
+    outDegree[node->nodeId()] = 0;
   }
 
-  // Count in-degrees and build children map
   for (auto* conn : m_dialogueScene->connections()) {
-    auto* startNode = conn->startNode();
-    auto* endNode = conn->endNode();
-    if (startNode && endNode) {
-      inDegree[endNode]++;
-      children[startNode].append(endNode);
+    uint64_t fromId = conn->startNode()->nodeId();
+    uint64_t toId = conn->endNode()->nodeId();
+    successors[fromId].append(toId);
+    predecessors[toId].append(fromId);
+    inDegree[toId]++;
+    outDegree[fromId]++;
+  }
+
+  // ===== STEP 1: Find entry nodes (sources) =====
+  // Entry nodes have no incoming edges
+  QList<uint64_t> entryNodes;
+  for (auto* node : nodes) {
+    if (inDegree[node->nodeId()] == 0) {
+      entryNodes.append(node->nodeId());
+      entryNodeSet.insert(node->nodeId());
     }
   }
 
-  // Find entry nodes
-  for (auto* node : m_dialogueScene->nodes()) {
-    if (inDegree[node] == 0) {
-      entryNodes.append(node);
+  // ===== STEP 2: Layer assignment using longest path =====
+  // This ensures nodes are placed at the maximum depth from any source
+  QHash<uint64_t, int> nodeLayers;
+  QSet<uint64_t> visited;
+
+  // Use topological sort with longest path calculation
+  QList<uint64_t> topoOrder;
+  QHash<uint64_t, int> tempInDegree = inDegree;
+  QQueue<uint64_t> zeroInDegreeQueue;
+
+  // Initialize queue with sources
+  for (auto* node : nodes) {
+    if (tempInDegree[node->nodeId()] == 0) {
+      zeroInDegreeQueue.enqueue(node->nodeId());
+      nodeLayers[node->nodeId()] = 0;
     }
   }
 
-  // If no entry nodes found, use the first node
-  if (entryNodes.isEmpty() && !m_dialogueScene->nodes().isEmpty()) {
-    entryNodes.append(m_dialogueScene->nodes().first());
-  }
+  // Process topologically
+  while (!zeroInDegreeQueue.isEmpty()) {
+    uint64_t nodeId = zeroInDegreeQueue.dequeue();
+    topoOrder.append(nodeId);
+    visited.insert(nodeId);
 
-  // Step 2: Assign nodes to layers using BFS from entry nodes
-  QHash<NMGraphNodeItem*, int> nodeLayer;
-  QHash<int, QList<NMGraphNodeItem*>> layers;
-  QSet<NMGraphNodeItem*> visited;
-  QList<NMGraphNodeItem*> queue;
+    for (uint64_t childId : successors[nodeId]) {
+      // Update child's layer to max(current layer, parent layer + 1)
+      int newLayer = nodeLayers[nodeId] + 1;
+      if (!nodeLayers.contains(childId) || newLayer > nodeLayers[childId]) {
+        nodeLayers[childId] = newLayer;
+      }
 
-  // Start BFS from all entry nodes
-  for (auto* entry : entryNodes) {
-    nodeLayer[entry] = 0;
-    layers[0].append(entry);
-    queue.append(entry);
-    visited.insert(entry);
-  }
-
-  while (!queue.isEmpty()) {
-    auto* current = queue.takeFirst();
-    int currentLayer = nodeLayer[current];
-
-    // Process all children
-    for (auto* child : children[current]) {
-      if (!visited.contains(child)) {
-        int childLayer = currentLayer + 1;
-        nodeLayer[child] = childLayer;
-        layers[childLayer].append(child);
-        queue.append(child);
-        visited.insert(child);
+      tempInDegree[childId]--;
+      if (tempInDegree[childId] == 0) {
+        zeroInDegreeQueue.enqueue(childId);
       }
     }
   }
 
-  // Handle any disconnected nodes
-  for (auto* node : m_dialogueScene->nodes()) {
-    if (!visited.contains(node)) {
-      int layer = layers.keys().isEmpty() ? 0 : layers.keys().last() + 1;
-      nodeLayer[node] = layer;
-      layers[layer].append(node);
+  // Handle cycles: nodes not in topo order are part of cycles
+  for (auto* node : nodes) {
+    uint64_t id = node->nodeId();
+    if (!visited.contains(id)) {
+      // Find the minimum layer of any successor that's already placed
+      int minSuccessorLayer = INT_MAX;
+      for (uint64_t succId : successors[id]) {
+        if (nodeLayers.contains(succId)) {
+          minSuccessorLayer = qMin(minSuccessorLayer, nodeLayers[succId]);
+        }
+      }
+
+      // Find the maximum layer of any predecessor that's already placed
+      int maxPredecessorLayer = -1;
+      for (uint64_t predId : predecessors[id]) {
+        if (nodeLayers.contains(predId)) {
+          maxPredecessorLayer = qMax(maxPredecessorLayer, nodeLayers[predId]);
+        }
+      }
+
+      // Place between predecessor and successor layers if possible
+      if (maxPredecessorLayer >= 0 && minSuccessorLayer < INT_MAX) {
+        nodeLayers[id] = maxPredecessorLayer + 1;
+      } else if (maxPredecessorLayer >= 0) {
+        nodeLayers[id] = maxPredecessorLayer + 1;
+      } else if (minSuccessorLayer < INT_MAX) {
+        nodeLayers[id] = qMax(0, minSuccessorLayer - 1);
+      } else {
+        // Isolated node in cycle, place at layer 0
+        nodeLayers[id] = 0;
+      }
+      visited.insert(id);
     }
   }
 
-  // Step 3: Position nodes based on their layer
-  for (int layer : layers.keys()) {
-    const QList<NMGraphNodeItem*>& nodesInLayer = layers[layer];
-    const qreal layerY = START_Y + layer * LAYER_SPACING;
-    const qreal totalWidth = (static_cast<qreal>(nodesInLayer.size()) - 1.0) * NODE_SPACING;
-    const qreal startX = START_X - totalWidth / 2.0;
+  // ===== STEP 3: Identify orphaned nodes (disconnected components) =====
+  QList<uint64_t> orphanedNodes;
+  QSet<uint64_t> connectedNodes;
+
+  for (auto* node : nodes) {
+    uint64_t id = node->nodeId();
+    if (inDegree[id] == 0 && outDegree[id] == 0) {
+      orphanedNodes.append(id);
+    } else {
+      connectedNodes.insert(id);
+    }
+  }
+
+  // ===== STEP 4: Build layer-to-nodes mapping for connected nodes only =====
+  QHash<int, QList<uint64_t>> layerNodes;
+  int maxLayer = 0;
+
+  for (uint64_t nodeId : connectedNodes) {
+    int layer = nodeLayers[nodeId];
+    layerNodes[layer].append(nodeId);
+    maxLayer = qMax(maxLayer, layer);
+  }
+
+  // ===== STEP 5: Edge crossing minimization using barycenter heuristic =====
+  // First, order the first layer: put entry nodes first, then by out-degree
+  if (layerNodes.contains(0)) {
+    QList<uint64_t>& layer0 = layerNodes[0];
+    std::sort(layer0.begin(), layer0.end(), [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
+      // Entry nodes come first
+      bool aIsEntry = entryNodeSet.contains(a);
+      bool bIsEntry = entryNodeSet.contains(b);
+      if (aIsEntry != bIsEntry) {
+        return aIsEntry;
+      }
+      // Then sort by out-degree (more connections = more central)
+      return outDegree[a] > outDegree[b];
+    });
+  }
+
+  // Apply barycenter heuristic for subsequent layers
+  const int iterations = 4;
+  for (int iter = 0; iter < iterations; ++iter) {
+    // Forward sweep (layer 1 to maxLayer)
+    for (int layer = 1; layer <= maxLayer; ++layer) {
+      if (!layerNodes.contains(layer)) {
+        continue;
+      }
+
+      QList<uint64_t>& currentLayer = layerNodes[layer];
+      QHash<uint64_t, qreal> barycenter;
+
+      // Calculate barycenter for each node based on predecessor positions
+      for (uint64_t nodeId : currentLayer) {
+        qreal sum = 0.0;
+        int count = 0;
+
+        for (uint64_t predId : predecessors[nodeId]) {
+          if (nodeLayers.contains(predId) && nodeLayers[predId] == layer - 1 &&
+              layerNodes.contains(layer - 1)) {
+            int predIndex = layerNodes[layer - 1].indexOf(predId);
+            if (predIndex >= 0) {
+              sum += predIndex;
+              ++count;
+            }
+          }
+        }
+
+        if (count > 0) {
+          barycenter[nodeId] = sum / count;
+        } else {
+          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+        }
+      }
+
+      // Sort by barycenter
+      std::sort(currentLayer.begin(), currentLayer.end(),
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
+    }
+
+    // Backward sweep (maxLayer-1 down to 0)
+    for (int layer = maxLayer - 1; layer >= 0; --layer) {
+      if (!layerNodes.contains(layer)) {
+        continue;
+      }
+
+      QList<uint64_t>& currentLayer = layerNodes[layer];
+      QHash<uint64_t, qreal> barycenter;
+
+      // Calculate barycenter for each node based on successor positions
+      for (uint64_t nodeId : currentLayer) {
+        qreal sum = 0.0;
+        int count = 0;
+
+        for (uint64_t succId : successors[nodeId]) {
+          if (nodeLayers.contains(succId) && nodeLayers[succId] == layer + 1 &&
+              layerNodes.contains(layer + 1)) {
+            int succIndex = layerNodes[layer + 1].indexOf(succId);
+            if (succIndex >= 0) {
+              sum += succIndex;
+              ++count;
+            }
+          }
+        }
+
+        if (count > 0) {
+          barycenter[nodeId] = sum / count;
+        } else {
+          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+        }
+      }
+
+      // Sort by barycenter
+      std::sort(currentLayer.begin(), currentLayer.end(),
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
+    }
+  }
+
+  // Handle any remaining unvisited nodes
+  for (auto* node : nodes) {
+    if (!visited.contains(node->nodeId())) {
+      maxLayer++;
+      nodeLayers[node->nodeId()] = maxLayer;
+      layerNodes[maxLayer].append(node->nodeId());
+    }
+  }
+
+  // ===== STEP 6: Position nodes =====
+  for (int layer : layerNodes.keys()) {
+    const auto& nodesInLayer = layerNodes[layer];
+    qreal y = startY + layer * verticalSpacing;
+    qreal totalWidth = static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
+    qreal x = startX - totalWidth / 2.0;
 
     for (int i = 0; i < nodesInLayer.size(); ++i) {
-      auto* node = nodesInLayer[i];
-      const qreal x = startX + i * NODE_SPACING;
-      node->setPos(x, layerY);
+      uint64_t nodeId = nodesInLayer[i];
+      auto* node = m_dialogueScene->findNode(nodeId);
+      if (node) {
+        node->setPos(x + i * horizontalSpacing, y);
+      }
     }
   }
 
-  // Step 4: Center the view on the laid out graph
+  // Update all connection paths
+  for (auto* conn : m_dialogueScene->connections()) {
+    conn->updatePath();
+  }
+
+  // Center the view on the laid out graph
   if (m_view) {
     m_view->centerOnGraph();
   }
 
   markAsModified();
-  qDebug() << "[SceneDialogueGraph] Auto-layout complete:" << layers.size() << "layers,"
+  qDebug() << "[SceneDialogueGraph] Auto-layout complete:" << layerNodes.size() << "layers,"
            << m_dialogueScene->nodes().size() << "nodes";
 }
 

@@ -28,6 +28,7 @@
 // Forward declarations for miniaudio types
 struct ma_device;
 struct ma_encoder;
+struct ma_decoder;
 struct ma_context;
 
 namespace NovelMind::audio {
@@ -124,10 +125,10 @@ struct RecordingResult {
  * });
  * @endcode
  */
-using OnLevelUpdate = std::function<void(const LevelMeter &level)>;
+using OnLevelUpdate = std::function<void(const LevelMeter& level)>;
 using OnRecordingStateChanged = std::function<void(RecordingState state)>;
-using OnRecordingComplete = std::function<void(const RecordingResult &result)>;
-using OnRecordingError = std::function<void(const std::string &error)>;
+using OnRecordingComplete = std::function<void(const RecordingResult& result)>;
+using OnRecordingError = std::function<void(const std::string& error)>;
 
 /**
  * @brief Audio Recorder - Microphone capture for voice authoring
@@ -169,8 +170,8 @@ public:
   ~AudioRecorder();
 
   // Non-copyable
-  AudioRecorder(const AudioRecorder &) = delete;
-  AudioRecorder &operator=(const AudioRecorder &) = delete;
+  AudioRecorder(const AudioRecorder&) = delete;
+  AudioRecorder& operator=(const AudioRecorder&) = delete;
 
   // =========================================================================
   // Initialization
@@ -209,26 +210,26 @@ public:
   /**
    * @brief Get current input device
    */
-  [[nodiscard]] const AudioDeviceInfo *getCurrentInputDevice() const;
+  [[nodiscard]] const AudioDeviceInfo* getCurrentInputDevice() const;
 
   /**
    * @brief Get current output device (for monitoring)
    */
-  [[nodiscard]] const AudioDeviceInfo *getCurrentOutputDevice() const;
+  [[nodiscard]] const AudioDeviceInfo* getCurrentOutputDevice() const;
 
   /**
    * @brief Set input device by ID
    * @param deviceId Device ID (empty for default)
    * @return Success or error
    */
-  Result<void> setInputDevice(const std::string &deviceId);
+  Result<void> setInputDevice(const std::string& deviceId);
 
   /**
    * @brief Set output device for monitoring
    * @param deviceId Device ID (empty for default)
    * @return Success or error
    */
-  Result<void> setOutputDevice(const std::string &deviceId);
+  Result<void> setOutputDevice(const std::string& deviceId);
 
   /**
    * @brief Refresh device list
@@ -242,14 +243,12 @@ public:
   /**
    * @brief Set recording format
    */
-  void setRecordingFormat(const RecordingFormat &format);
+  void setRecordingFormat(const RecordingFormat& format);
 
   /**
    * @brief Get current recording format
    */
-  [[nodiscard]] const RecordingFormat &getRecordingFormat() const {
-    return m_format;
-  }
+  [[nodiscard]] const RecordingFormat& getRecordingFormat() const { return m_format; }
 
   // =========================================================================
   // Monitoring
@@ -307,7 +306,7 @@ public:
    * @param outputPath Path to output file
    * @return Success or error
    */
-  Result<void> startRecording(const std::string &outputPath);
+  Result<void> startRecording(const std::string& outputPath);
 
   /**
    * @brief Stop recording
@@ -329,9 +328,7 @@ public:
   /**
    * @brief Check if currently recording
    */
-  [[nodiscard]] bool isRecording() const {
-    return m_state == RecordingState::Recording;
-  }
+  [[nodiscard]] bool isRecording() const { return m_state == RecordingState::Recording; }
 
   /**
    * @brief Get current recording duration
@@ -341,9 +338,7 @@ public:
   /**
    * @brief Get current recording path
    */
-  [[nodiscard]] const std::string &getRecordingPath() const {
-    return m_outputPath;
-  }
+  [[nodiscard]] const std::string& getRecordingPath() const { return m_outputPath; }
 
   // =========================================================================
   // Callbacks
@@ -370,16 +365,25 @@ public:
 
 private:
   // Miniaudio callback (called from audio thread)
-  static void audioCallback(ma_device *device, void *output, const void *input,
-                            u32 frameCount);
+  static void audioCallback(ma_device* device, void* output, const void* input, u32 frameCount);
 
   // Internal methods
-  void processAudioData(const void *input, u32 frameCount);
-  void updateLevelMeter(const f32 *samples, u32 sampleCount);
-  void writeToFile(const f32 *samples, u32 sampleCount);
+  void processAudioData(const void* input, u32 frameCount);
+  void updateLevelMeter(const f32* samples, u32 sampleCount);
+  void writeToFile(const f32* samples, u32 sampleCount);
   void finalizeRecording();
-  void processRecording();
+  void processRecording(bool& outTrimmed, bool& outNormalized);
   void setState(RecordingState state);
+
+  // Post-processing helper methods
+  bool readWavFile(const std::string& path, std::vector<f32>& outData, u32& outSampleRate,
+                   u32& outChannels);
+  bool writeWavFile(const std::string& path, const std::vector<f32>& data, u32 sampleRate,
+                    u32 channels);
+  static size_t findFirstNonSilentSample(const std::vector<f32>& data, f32 thresholdLinear,
+                                         u32 minSilenceSamples, u32 channels);
+  static size_t findLastNonSilentSample(const std::vector<f32>& data, f32 thresholdLinear,
+                                        u32 minSilenceSamples, u32 channels);
 
   // Initialization state
   bool m_initialized = false;
@@ -435,10 +439,9 @@ private:
   // 2. m_resourceMutex (if needed)
   // 3. m_recordMutex (if needed)
   // 4. m_levelMutex (if needed)
-  mutable std::mutex m_resourceMutex; // Protects m_encoder and m_captureDevice
-                                      // during stop/cancel
-  std::atomic<bool> m_cancelRequested{
-      false}; // Signals background thread to abort
+  mutable std::mutex m_resourceMutex;         // Protects m_encoder and m_captureDevice
+                                              // during stop/cancel
+  std::atomic<bool> m_cancelRequested{false}; // Signals background thread to abort
 
   // Helper methods for thread-safe operations
   void joinProcessingThread();

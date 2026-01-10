@@ -314,8 +314,7 @@ NMPropertyGroup::NMPropertyGroup(const QString &title, QWidget *parent)
 
   mainLayout->addWidget(m_content);
 
-  // Connect header click
-  connect(m_header, &QWidget::destroyed, [] {}); // Placeholder for event filter
+  // Event filter cleanup is handled automatically by Qt when the widget is destroyed
 }
 
 void NMPropertyGroup::setExpanded(bool expanded) {

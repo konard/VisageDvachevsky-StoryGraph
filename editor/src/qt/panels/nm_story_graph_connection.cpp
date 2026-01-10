@@ -222,6 +222,8 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter* painter, cons
   painter->save();
   painter->setRenderHint(QPainter::Antialiasing, true);
 
+  const auto &palette = NMStyleManager::instance().palette();
+
   const qreal size = 14.0;
   // Issue #389: Use palette colors for scene transition indicators
   QColor iconColor =

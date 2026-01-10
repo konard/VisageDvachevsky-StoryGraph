@@ -135,13 +135,19 @@ struct BuildConfig {
   // Advanced
   bool stripUnusedAssets = true;
   bool generateSourceMap = false;
+
+  // Code Signing (executable signing for distribution builds)
   bool signExecutable = false;
-  std::string signingCertificate;
+  std::string signingCertificate;  // Certificate path or identity
+  std::string signingPassword;     // Password for certificate (Windows PFX)
+  std::string signingEntitlements; // macOS entitlements plist path
+  std::string signingTeamId;       // macOS team ID for notarization
+  std::string signingTimestampUrl; // Timestamp server URL (optional)
 
   // Determinism - for reproducible builds
   bool deterministicBuild = true; // Enable deterministic ordering
-  u64 fixedBuildTimestamp = 0; // If non-zero, use this instead of current time
-  u32 fixedRandomSeed = 0;     // If non-zero, use for any randomization
+  u64 fixedBuildTimestamp = 0;    // If non-zero, use this instead of current time
+  u32 fixedRandomSeed = 0;        // If non-zero, use for any randomization
 };
 
 /**
@@ -249,12 +255,12 @@ public:
    * This stores the configuration for later use (e.g., for getBuildTimestamp()
    * before actually starting a build). Call startBuild() to begin the build.
    */
-  void configure(const BuildConfig &config);
+  void configure(const BuildConfig& config);
 
   /**
    * @brief Start a build with the given configuration
    */
-  Result<void> startBuild(const BuildConfig &config);
+  Result<void> startBuild(const BuildConfig& config);
 
   /**
    * @brief Cancel the current build
@@ -269,69 +275,60 @@ public:
   /**
    * @brief Get current build progress
    */
-  [[nodiscard]] const BuildProgress &getProgress() const { return m_progress; }
+  [[nodiscard]] const BuildProgress& getProgress() const { return m_progress; }
 
   /**
    * @brief Get last build result
    */
-  [[nodiscard]] const BuildResult &getLastResult() const {
-    return m_lastResult;
-  }
+  [[nodiscard]] const BuildResult& getLastResult() const { return m_lastResult; }
 
   /**
    * @brief Validate project before building
    */
-  Result<std::vector<std::string>>
-  validateProject(const std::string &projectPath);
+  Result<std::vector<std::string>> validateProject(const std::string& projectPath);
 
   /**
    * @brief Estimate build time
    */
-  [[nodiscard]] f64 estimateBuildTime(const BuildConfig &config) const;
+  [[nodiscard]] f64 estimateBuildTime(const BuildConfig& config) const;
 
   // Callbacks
-  void setOnProgressUpdate(std::function<void(const BuildProgress &)> callback);
-  void setOnStepComplete(std::function<void(const BuildStep &)> callback);
-  void setOnBuildComplete(std::function<void(const BuildResult &)> callback);
-  void setOnLogMessage(
-      std::function<void(const std::string &, bool isError)> callback);
+  void setOnProgressUpdate(std::function<void(const BuildProgress&)> callback);
+  void setOnStepComplete(std::function<void(const BuildStep&)> callback);
+  void setOnBuildComplete(std::function<void(const BuildResult&)> callback);
+  void setOnLogMessage(std::function<void(const std::string&, bool isError)> callback);
 
   // ==========================================================================
   // Public utilities (for testing and external use)
   // ==========================================================================
 
   // Crypto helpers (static, can be used without instance)
-  [[nodiscard]] static u32 calculateCrc32(const u8 *data, usize size);
-  [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8 *data,
-                                                          usize size);
+  [[nodiscard]] static u32 calculateCrc32(const u8* data, usize size);
+  [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8* data, usize size);
+  [[nodiscard]] static Result<std::vector<u8>> compressData(const std::vector<u8>& data,
+                                                            CompressionLevel level);
   [[nodiscard]] static Result<std::vector<u8>>
-  compressData(const std::vector<u8> &data, CompressionLevel level);
-  [[nodiscard]] static Result<std::vector<u8>>
-  encryptData(const std::vector<u8> &data, const std::vector<u8> &key,
-              std::array<u8, 12> &ivOut);
+  encryptData(const std::vector<u8>& data, const std::vector<u8>& key, std::array<u8, 12>& ivOut);
 
   // Resource type detection
-  [[nodiscard]] static ResourceType
-  getResourceTypeFromExtension(const std::string &path);
+  [[nodiscard]] static ResourceType getResourceTypeFromExtension(const std::string& path);
 
   // VFS path normalization
-  [[nodiscard]] static std::string normalizeVfsPath(const std::string &path);
+  [[nodiscard]] static std::string normalizeVfsPath(const std::string& path);
 
   // Key management
   [[nodiscard]] static Result<std::vector<u8>>
   loadEncryptionKeyFromEnv(); // Load from NOVELMIND_PACK_AES_KEY_HEX or _FILE
-  [[nodiscard]] static Result<std::vector<u8>>
-  loadEncryptionKeyFromFile(const std::string &path);
-  [[nodiscard]] static Result<std::vector<u8>>
-  signData(const std::vector<u8> &data, const std::string &privateKeyPath);
+  [[nodiscard]] static Result<std::vector<u8>> loadEncryptionKeyFromFile(const std::string& path);
+  [[nodiscard]] static Result<std::vector<u8>> signData(const std::vector<u8>& data,
+                                                        const std::string& privateKeyPath);
 
   // Deterministic timestamp (uses config if set)
   [[nodiscard]] u64 getBuildTimestamp() const;
 
   // Pack building (public for testing)
-  Result<void> buildPack(const std::string &outputPath,
-                         const std::vector<std::string> &files, bool encrypt,
-                         bool compress);
+  Result<void> buildPack(const std::string& outputPath, const std::vector<std::string>& files,
+                         bool encrypt, bool compress);
 
 private:
   // Build pipeline
@@ -347,32 +344,34 @@ private:
   Result<void> cleanup();
 
   // Helpers
-  void updateProgress(f32 stepProgress, const std::string &task);
-  void logMessage(const std::string &message, bool isError = false);
-  void beginStep(const std::string &name, const std::string &description);
-  void endStep(bool success, const std::string &errorMessage = "");
+  void updateProgress(f32 stepProgress, const std::string& task);
+  void logMessage(const std::string& message, bool isError = false);
+  void beginStep(const std::string& name, const std::string& description);
+  void endStep(bool success, const std::string& errorMessage = "");
 
   // Script compilation
-  ScriptCompileResult compileScript(const std::string &scriptPath);
-  Result<void> compileBytecode(const std::string &outputPath);
+  ScriptCompileResult compileScript(const std::string& scriptPath);
+  Result<void> compileBytecode(const std::string& outputPath);
 
   // Asset processing
-  AssetProcessResult processImage(const std::string &sourcePath,
-                                  const std::string &outputPath);
-  AssetProcessResult processAudio(const std::string &sourcePath,
-                                  const std::string &outputPath);
-  AssetProcessResult processFont(const std::string &sourcePath,
-                                 const std::string &outputPath);
-  AssetProcessResult processData(const std::string &sourcePath,
-                                 const std::string &outputPath);
+  AssetProcessResult processImage(const std::string& sourcePath, const std::string& outputPath);
+  AssetProcessResult processAudio(const std::string& sourcePath, const std::string& outputPath);
+  AssetProcessResult processFont(const std::string& sourcePath, const std::string& outputPath);
+  AssetProcessResult processData(const std::string& sourcePath, const std::string& outputPath);
 
   // Platform-specific bundling
-  Result<void> buildWindowsExecutable(const std::string &outputPath);
-  Result<void> buildLinuxExecutable(const std::string &outputPath);
-  Result<void> buildMacOSBundle(const std::string &outputPath);
-  Result<void> buildWebBundle(const std::string &outputPath);
-  Result<void> buildAndroidBundle(const std::string &outputPath);
-  Result<void> buildIOSBundle(const std::string &outputPath);
+  Result<void> buildWindowsExecutable(const std::string& outputPath);
+  Result<void> buildLinuxExecutable(const std::string& outputPath);
+  Result<void> buildMacOSBundle(const std::string& outputPath);
+  Result<void> buildWebBundle(const std::string& outputPath);
+  Result<void> buildAndroidBundle(const std::string& outputPath);
+  Result<void> buildIOSBundle(const std::string& outputPath);
+
+  // Code Signing
+  Result<void> signExecutableForPlatform(const std::string& executablePath);
+  Result<void> signWindowsExecutable(const std::string& executablePath);
+  Result<void> signMacOSBundle(const std::string& bundlePath);
+  Result<i32> executeCommand(const std::string& command, std::string& output) const;
 
   BuildConfig m_config;
   BuildProgress m_progress;
@@ -383,10 +382,10 @@ private:
   std::unique_ptr<std::thread> m_buildThread;
 
   // Callbacks
-  std::function<void(const BuildProgress &)> m_onProgressUpdate;
-  std::function<void(const BuildStep &)> m_onStepComplete;
-  std::function<void(const BuildResult &)> m_onBuildComplete;
-  std::function<void(const std::string &, bool)> m_onLogMessage;
+  std::function<void(const BuildProgress&)> m_onProgressUpdate;
+  std::function<void(const BuildStep&)> m_onStepComplete;
+  std::function<void(const BuildResult&)> m_onBuildComplete;
+  std::function<void(const std::string&, bool)> m_onLogMessage;
 
   // Build state
   std::vector<std::string> m_scriptFiles;
@@ -405,57 +404,50 @@ public:
   /**
    * @brief Process an image file
    */
-  Result<AssetProcessResult> processImage(const std::string &sourcePath,
-                                          const std::string &outputPath,
-                                          bool optimize = true);
+  Result<AssetProcessResult> processImage(const std::string& sourcePath,
+                                          const std::string& outputPath, bool optimize = true);
 
   /**
    * @brief Process an audio file
    */
-  Result<AssetProcessResult> processAudio(const std::string &sourcePath,
-                                          const std::string &outputPath,
-                                          bool compress = true);
+  Result<AssetProcessResult> processAudio(const std::string& sourcePath,
+                                          const std::string& outputPath, bool compress = true);
 
   /**
    * @brief Process a font file
    */
-  Result<AssetProcessResult> processFont(const std::string &sourcePath,
-                                         const std::string &outputPath);
+  Result<AssetProcessResult> processFont(const std::string& sourcePath,
+                                         const std::string& outputPath);
 
   /**
    * @brief Generate texture atlas from multiple images
    */
-  Result<std::string>
-  generateTextureAtlas(const std::vector<std::string> &images,
-                       const std::string &outputPath, i32 maxSize = 4096);
+  Result<std::string> generateTextureAtlas(const std::vector<std::string>& images,
+                                           const std::string& outputPath, i32 maxSize = 4096);
 
   /**
    * @brief Get asset type from file extension
    */
-  [[nodiscard]] static std::string getAssetType(const std::string &path);
+  [[nodiscard]] static std::string getAssetType(const std::string& path);
 
   /**
    * @brief Check if asset needs processing
    */
-  [[nodiscard]] bool needsProcessing(const std::string &sourcePath,
-                                     const std::string &outputPath) const;
+  [[nodiscard]] bool needsProcessing(const std::string& sourcePath,
+                                     const std::string& outputPath) const;
 
 private:
   // Image processing
-  Result<void> resizeImage(const std::string &input, const std::string &output,
-                           i32 maxWidth, i32 maxHeight);
-  Result<void> compressImage(const std::string &input,
-                             const std::string &output, i32 quality = 85);
-  Result<void> convertImageFormat(const std::string &input,
-                                  const std::string &output,
-                                  const std::string &format);
+  Result<void> resizeImage(const std::string& input, const std::string& output, i32 maxWidth,
+                           i32 maxHeight);
+  Result<void> compressImage(const std::string& input, const std::string& output, i32 quality = 85);
+  Result<void> convertImageFormat(const std::string& input, const std::string& output,
+                                  const std::string& format);
 
   // Audio processing
-  Result<void> convertAudioFormat(const std::string &input,
-                                  const std::string &output,
-                                  const std::string &format);
-  Result<void> normalizeAudio(const std::string &input,
-                              const std::string &output);
+  Result<void> convertAudioFormat(const std::string& input, const std::string& output,
+                                  const std::string& format);
+  Result<void> normalizeAudio(const std::string& input, const std::string& output);
 };
 
 /**
@@ -469,19 +461,17 @@ public:
   /**
    * @brief Begin a new pack
    */
-  Result<void> beginPack(const std::string &outputPath);
+  Result<void> beginPack(const std::string& outputPath);
 
   /**
    * @brief Add a file to the pack
    */
-  Result<void> addFile(const std::string &sourcePath,
-                       const std::string &packPath);
+  Result<void> addFile(const std::string& sourcePath, const std::string& packPath);
 
   /**
    * @brief Add raw data to the pack
    */
-  Result<void> addData(const std::string &packPath,
-                       const std::vector<u8> &data);
+  Result<void> addData(const std::string& packPath, const std::vector<u8>& data);
 
   /**
    * @brief Finalize and write the pack
@@ -491,7 +481,7 @@ public:
   /**
    * @brief Set encryption key
    */
-  void setEncryptionKey(const std::string &key);
+  void setEncryptionKey(const std::string& key);
 
   /**
    * @brief Set compression level
@@ -510,8 +500,8 @@ public:
   [[nodiscard]] PackStats getStats() const;
 
 private:
-  Result<std::vector<u8>> compressData(const std::vector<u8> &data);
-  Result<std::vector<u8>> encryptData(const std::vector<u8> &data);
+  Result<std::vector<u8>> compressData(const std::vector<u8>& data);
+  Result<std::vector<u8>> encryptData(const std::vector<u8>& data);
 
   std::string m_outputPath;
   std::string m_encryptionKey;
@@ -545,32 +535,32 @@ public:
   /**
    * @brief Run all integrity checks
    */
-  Result<std::vector<Issue>> checkProject(const std::string &projectPath);
+  Result<std::vector<Issue>> checkProject(const std::string& projectPath);
 
   /**
    * @brief Check for missing assets
    */
-  std::vector<Issue> checkMissingAssets(const std::string &projectPath);
+  std::vector<Issue> checkMissingAssets(const std::string& projectPath);
 
   /**
    * @brief Check script validity
    */
-  std::vector<Issue> checkScripts(const std::string &projectPath);
+  std::vector<Issue> checkScripts(const std::string& projectPath);
 
   /**
    * @brief Check localization completeness
    */
-  std::vector<Issue> checkLocalization(const std::string &projectPath);
+  std::vector<Issue> checkLocalization(const std::string& projectPath);
 
   /**
    * @brief Check for unreachable scenes
    */
-  std::vector<Issue> checkUnreachableContent(const std::string &projectPath);
+  std::vector<Issue> checkUnreachableContent(const std::string& projectPath);
 
   /**
    * @brief Check for circular references
    */
-  std::vector<Issue> checkCircularReferences(const std::string &projectPath);
+  std::vector<Issue> checkCircularReferences(const std::string& projectPath);
 
 private:
   std::vector<std::string> m_referencedAssets;
@@ -609,23 +599,22 @@ std::string formatDuration(f64 milliseconds);
 /**
  * @brief Calculate directory size
  */
-i64 calculateDirectorySize(const std::string &path);
+i64 calculateDirectorySize(const std::string& path);
 
 /**
  * @brief Copy directory recursively
  */
-Result<void> copyDirectory(const std::string &source,
-                           const std::string &destination);
+Result<void> copyDirectory(const std::string& source, const std::string& destination);
 
 /**
  * @brief Delete directory recursively
  */
-Result<void> deleteDirectory(const std::string &path);
+Result<void> deleteDirectory(const std::string& path);
 
 /**
  * @brief Create directory structure
  */
-Result<void> createDirectories(const std::string &path);
+Result<void> createDirectories(const std::string& path);
 } // namespace BuildUtils
 
 } // namespace NovelMind::editor

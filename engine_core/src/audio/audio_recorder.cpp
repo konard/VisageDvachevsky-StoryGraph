@@ -24,7 +24,9 @@ namespace fs = std::filesystem;
 
 AudioRecorder::AudioRecorder() = default;
 
-AudioRecorder::~AudioRecorder() { shutdown(); }
+AudioRecorder::~AudioRecorder() {
+  shutdown();
+}
 
 // ============================================================================
 // Initialization
@@ -104,8 +106,8 @@ std::vector<AudioDeviceInfo> AudioRecorder::getOutputDevices() const {
   return m_outputDevices;
 }
 
-const AudioDeviceInfo *AudioRecorder::getCurrentInputDevice() const {
-  for (const auto &device : m_inputDevices) {
+const AudioDeviceInfo* AudioRecorder::getCurrentInputDevice() const {
+  for (const auto& device : m_inputDevices) {
     if (device.id == m_currentInputDeviceId ||
         (m_currentInputDeviceId.empty() && device.isDefault)) {
       return &device;
@@ -114,8 +116,8 @@ const AudioDeviceInfo *AudioRecorder::getCurrentInputDevice() const {
   return m_inputDevices.empty() ? nullptr : &m_inputDevices[0];
 }
 
-const AudioDeviceInfo *AudioRecorder::getCurrentOutputDevice() const {
-  for (const auto &device : m_outputDevices) {
+const AudioDeviceInfo* AudioRecorder::getCurrentOutputDevice() const {
+  for (const auto& device : m_outputDevices) {
     if (device.id == m_currentOutputDeviceId ||
         (m_currentOutputDeviceId.empty() && device.isDefault)) {
       return &device;
@@ -124,10 +126,10 @@ const AudioDeviceInfo *AudioRecorder::getCurrentOutputDevice() const {
   return m_outputDevices.empty() ? nullptr : &m_outputDevices[0];
 }
 
-Result<void> AudioRecorder::setInputDevice(const std::string &deviceId) {
+Result<void> AudioRecorder::setInputDevice(const std::string& deviceId) {
   // Validate device exists
   bool found = deviceId.empty();
-  for (const auto &device : m_inputDevices) {
+  for (const auto& device : m_inputDevices) {
     if (device.id == deviceId) {
       found = true;
       break;
@@ -159,9 +161,9 @@ Result<void> AudioRecorder::setInputDevice(const std::string &deviceId) {
   return {};
 }
 
-Result<void> AudioRecorder::setOutputDevice(const std::string &deviceId) {
+Result<void> AudioRecorder::setOutputDevice(const std::string& deviceId) {
   bool found = deviceId.empty();
-  for (const auto &device : m_outputDevices) {
+  for (const auto& device : m_outputDevices) {
     if (device.id == deviceId) {
       found = true;
       break;
@@ -184,13 +186,13 @@ void AudioRecorder::refreshDevices() {
   m_inputDevices.clear();
   m_outputDevices.clear();
 
-  ma_device_info *captureInfos = nullptr;
+  ma_device_info* captureInfos = nullptr;
   ma_uint32 captureCount = 0;
-  ma_device_info *playbackInfos = nullptr;
+  ma_device_info* playbackInfos = nullptr;
   ma_uint32 playbackCount = 0;
 
-  if (ma_context_get_devices(m_context.get(), &playbackInfos, &playbackCount,
-                             &captureInfos, &captureCount) != MA_SUCCESS) {
+  if (ma_context_get_devices(m_context.get(), &playbackInfos, &playbackCount, &captureInfos,
+                             &captureCount) != MA_SUCCESS) {
     return;
   }
 
@@ -227,7 +229,7 @@ void AudioRecorder::refreshDevices() {
 // Recording Format
 // ============================================================================
 
-void AudioRecorder::setRecordingFormat(const RecordingFormat &format) {
+void AudioRecorder::setRecordingFormat(const RecordingFormat& format) {
   m_format = format;
 }
 
@@ -256,8 +258,7 @@ Result<void> AudioRecorder::startMetering() {
   if (!m_captureDevice) {
     m_captureDevice = std::make_unique<ma_device>();
 
-    ma_device_config deviceConfig =
-        ma_device_config_init(ma_device_type_capture);
+    ma_device_config deviceConfig = ma_device_config_init(ma_device_type_capture);
     deviceConfig.capture.format = ma_format_f32;
     deviceConfig.capture.channels = m_format.channels;
     deviceConfig.sampleRate = m_format.sampleRate;
@@ -267,14 +268,12 @@ Result<void> AudioRecorder::startMetering() {
     // Set device ID if specified - find matching device
     if (!m_currentInputDeviceId.empty()) {
       // Find the device in our list and get its index for miniaudio
-      for (ma_uint32 i = 0; i < static_cast<ma_uint32>(m_inputDevices.size());
-           ++i) {
+      for (ma_uint32 i = 0; i < static_cast<ma_uint32>(m_inputDevices.size()); ++i) {
         if (m_inputDevices[i].id == m_currentInputDeviceId) {
           // Get device info array from context
-          ma_device_info *captureInfos = nullptr;
+          ma_device_info* captureInfos = nullptr;
           ma_uint32 captureCount = 0;
-          if (ma_context_get_devices(m_context.get(), nullptr, nullptr,
-                                     &captureInfos,
+          if (ma_context_get_devices(m_context.get(), nullptr, nullptr, &captureInfos,
                                      &captureCount) == MA_SUCCESS) {
             if (i < captureCount) {
               deviceConfig.capture.pDeviceID = &captureInfos[i].id;
@@ -285,8 +284,7 @@ Result<void> AudioRecorder::startMetering() {
       }
     }
 
-    if (ma_device_init(m_context.get(), &deviceConfig, m_captureDevice.get()) !=
-        MA_SUCCESS) {
+    if (ma_device_init(m_context.get(), &deviceConfig, m_captureDevice.get()) != MA_SUCCESS) {
       m_captureDevice.reset();
       return Result<void>::error("Failed to initialize capture device");
     }
@@ -322,7 +320,7 @@ LevelMeter AudioRecorder::getCurrentLevel() const {
 // Recording
 // ============================================================================
 
-Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
+Result<void> AudioRecorder::startRecording(const std::string& outputPath) {
   if (!m_initialized) {
     return Result<void>::error("Recorder not initialized");
   }
@@ -336,16 +334,14 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
   if (outPath.has_parent_path()) {
     try {
       fs::create_directories(outPath.parent_path());
-    } catch (const fs::filesystem_error &e) {
-      const std::string errorMsg =
-          "Failed to create output directory: " + std::string(e.what());
+    } catch (const fs::filesystem_error& e) {
+      const std::string errorMsg = "Failed to create output directory: " + std::string(e.what());
       if (m_onRecordingError) {
         m_onRecordingError(errorMsg);
       }
       return Result<void>::error(errorMsg);
-    } catch (const std::exception &e) {
-      const std::string errorMsg =
-          "Failed to create output directory: " + std::string(e.what());
+    } catch (const std::exception& e) {
+      const std::string errorMsg = "Failed to create output directory: " + std::string(e.what());
       if (m_onRecordingError) {
         m_onRecordingError(errorMsg);
       }
@@ -362,12 +358,10 @@ Result<void> AudioRecorder::startRecording(const std::string &outputPath) {
   // Initialize encoder
   m_encoder = std::make_unique<ma_encoder>();
 
-  ma_encoder_config encoderConfig =
-      ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
-                             m_format.channels, m_format.sampleRate);
+  ma_encoder_config encoderConfig = ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32,
+                                                           m_format.channels, m_format.sampleRate);
 
-  if (ma_encoder_init_file(outputPath.c_str(), &encoderConfig,
-                           m_encoder.get()) != MA_SUCCESS) {
+  if (ma_encoder_init_file(outputPath.c_str(), &encoderConfig, m_encoder.get()) != MA_SUCCESS) {
     m_encoder.reset();
     setState(RecordingState::Error);
 
@@ -446,17 +440,15 @@ void AudioRecorder::cancelRecording() {
   if (!m_outputPath.empty() && fs::exists(m_outputPath)) {
     try {
       fs::remove(m_outputPath);
-    } catch (const fs::filesystem_error &e) {
+    } catch (const fs::filesystem_error& e) {
       // Log error but don't fail cancellation - file cleanup is best-effort
       if (m_onRecordingError) {
-        m_onRecordingError("Failed to delete incomplete recording file: " +
-                           std::string(e.what()));
+        m_onRecordingError("Failed to delete incomplete recording file: " + std::string(e.what()));
       }
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       // Log error but don't fail cancellation - file cleanup is best-effort
       if (m_onRecordingError) {
-        m_onRecordingError("Failed to delete incomplete recording file: " +
-                           std::string(e.what()));
+        m_onRecordingError("Failed to delete incomplete recording file: " + std::string(e.what()));
       }
     }
   }
@@ -486,8 +478,7 @@ void AudioRecorder::setOnLevelUpdate(OnLevelUpdate callback) {
   m_onLevelUpdate = std::move(callback);
 }
 
-void AudioRecorder::setOnRecordingStateChanged(
-    OnRecordingStateChanged callback) {
+void AudioRecorder::setOnRecordingStateChanged(OnRecordingStateChanged callback) {
   std::lock_guard<std::mutex> lock(m_callbackMutex);
   m_onStateChanged = std::move(callback);
 }
@@ -513,17 +504,19 @@ f32 AudioRecorder::linearToDb(f32 linear) {
   return 20.0f * std::log10(linear);
 }
 
-f32 AudioRecorder::dbToLinear(f32 db) { return std::pow(10.0f, db / 20.0f); }
+f32 AudioRecorder::dbToLinear(f32 db) {
+  return std::pow(10.0f, db / 20.0f);
+}
 
 // ============================================================================
 // Internal Methods
 // ============================================================================
 
-void AudioRecorder::audioCallback(ma_device *device, void *output,
-                                  const void *input, u32 frameCount) {
+void AudioRecorder::audioCallback(ma_device* device, void* output, const void* input,
+                                  u32 frameCount) {
   (void)output;
 
-  auto *recorder = static_cast<AudioRecorder *>(device->pUserData);
+  auto* recorder = static_cast<AudioRecorder*>(device->pUserData);
   if (!recorder) {
     return;
   }
@@ -531,12 +524,12 @@ void AudioRecorder::audioCallback(ma_device *device, void *output,
   recorder->processAudioData(input, frameCount);
 }
 
-void AudioRecorder::processAudioData(const void *input, u32 frameCount) {
+void AudioRecorder::processAudioData(const void* input, u32 frameCount) {
   if (!input || frameCount == 0) {
     return;
   }
 
-  const auto *samples = static_cast<const f32 *>(input);
+  const auto* samples = static_cast<const f32*>(input);
   u32 sampleCount = frameCount * m_format.channels;
 
   // Update level meter
@@ -548,7 +541,7 @@ void AudioRecorder::processAudioData(const void *input, u32 frameCount) {
   }
 }
 
-void AudioRecorder::updateLevelMeter(const f32 *samples, u32 sampleCount) {
+void AudioRecorder::updateLevelMeter(const f32* samples, u32 sampleCount) {
   f32 peak = 0.0f;
   f32 sumSquares = 0.0f;
 
@@ -564,8 +557,7 @@ void AudioRecorder::updateLevelMeter(const f32 *samples, u32 sampleCount) {
     std::lock_guard<std::mutex> lock(m_levelMutex);
 
     // Apply decay to peak (for smoother display)
-    m_currentLevel.peakLevel =
-        std::max(peak, m_currentLevel.peakLevel * LEVEL_DECAY_RATE);
+    m_currentLevel.peakLevel = std::max(peak, m_currentLevel.peakLevel * LEVEL_DECAY_RATE);
     m_currentLevel.rmsLevel = rms;
     m_currentLevel.peakLevelDb = linearToDb(m_currentLevel.peakLevel);
     m_currentLevel.rmsLevelDb = linearToDb(m_currentLevel.rmsLevel);
@@ -583,15 +575,14 @@ void AudioRecorder::updateLevelMeter(const f32 *samples, u32 sampleCount) {
   }
 }
 
-void AudioRecorder::writeToFile(const f32 *samples, u32 sampleCount) {
+void AudioRecorder::writeToFile(const f32* samples, u32 sampleCount) {
   std::lock_guard<std::mutex> lock(m_recordMutex);
 
   if (!m_encoder) {
     return;
   }
 
-  ma_encoder_write_pcm_frames(m_encoder.get(), samples,
-                              sampleCount / m_format.channels, nullptr);
+  ma_encoder_write_pcm_frames(m_encoder.get(), samples, sampleCount / m_format.channels, nullptr);
   m_samplesRecorded += sampleCount;
 }
 
@@ -648,7 +639,9 @@ void AudioRecorder::finalizeRecording() {
   }
 
   // Post-processing (if enabled)
-  processRecording();
+  bool wasTrimmed = false;
+  bool wasNormalized = false;
+  processRecording(wasTrimmed, wasNormalized);
 
   // Prepare result
   RecordingResult result;
@@ -656,8 +649,8 @@ void AudioRecorder::finalizeRecording() {
   result.duration = getRecordingDuration();
   result.sampleRate = m_format.sampleRate;
   result.channels = m_format.channels;
-  result.trimmed = false;
-  result.normalized = false;
+  result.trimmed = wasTrimmed;
+  result.normalized = wasNormalized;
 
   if (fs::exists(m_outputPath)) {
     result.fileSize = fs::file_size(m_outputPath);
@@ -682,22 +675,256 @@ void AudioRecorder::finalizeRecording() {
   }
 }
 
-void AudioRecorder::processRecording() {
-  // Post-processing would go here:
-  // - Silence trimming
-  // - Normalization
-  // - Format conversion (e.g., WAV to OGG)
-  //
-  // For now, we just record directly to the target format.
-  // Full implementation would use a separate audio processing library.
+void AudioRecorder::processRecording(bool& outTrimmed, bool& outNormalized) {
+  // Post-processing: silence trimming and normalization
+  // These operations modify the recorded WAV file in-place
 
+  outTrimmed = false;
+  outNormalized = false;
+
+  if (!fs::exists(m_outputPath)) {
+    return;
+  }
+
+  // Check cancellation before processing
+  if (m_cancelRequested) {
+    return;
+  }
+
+  // Read the WAV file for processing
+  std::vector<f32> audioData;
+  u32 fileSampleRate = 0;
+  u32 fileChannels = 0;
+
+  if (!readWavFile(m_outputPath, audioData, fileSampleRate, fileChannels)) {
+    return;
+  }
+
+  if (audioData.empty()) {
+    return;
+  }
+
+  bool modified = false;
+
+  // Silence trimming
   if (m_format.autoTrimSilence) {
-    // TODO: Implement silence trimming
+    if (m_cancelRequested) {
+      return;
+    }
+
+    const f32 silenceThresholdLinear = dbToLinear(m_format.silenceThreshold);
+    const u32 minSilenceSamples =
+        static_cast<u32>(m_format.silenceMinDuration * static_cast<f32>(fileSampleRate) *
+                         static_cast<f32>(fileChannels));
+
+    size_t trimStart = 0;
+    size_t trimEnd = audioData.size();
+
+    // Find first non-silent sample (with hysteresis window)
+    trimStart = findFirstNonSilentSample(audioData, silenceThresholdLinear, minSilenceSamples,
+                                         fileChannels);
+
+    // Find last non-silent sample (with hysteresis window)
+    trimEnd =
+        findLastNonSilentSample(audioData, silenceThresholdLinear, minSilenceSamples, fileChannels);
+
+    // Ensure we have valid trim points and some audio remains
+    if (trimStart < trimEnd && (trimStart > 0 || trimEnd < audioData.size())) {
+      std::vector<f32> trimmedData(audioData.begin() + static_cast<ptrdiff_t>(trimStart),
+                                   audioData.begin() + static_cast<ptrdiff_t>(trimEnd));
+      audioData = std::move(trimmedData);
+      modified = true;
+      outTrimmed = true;
+    }
   }
 
-  if (m_format.normalize) {
-    // TODO: Implement normalization
+  // Normalization
+  if (m_format.normalize && !audioData.empty()) {
+    if (m_cancelRequested) {
+      return;
+    }
+
+    // Find peak value
+    f32 peak = 0.0f;
+    for (const auto& sample : audioData) {
+      peak = std::max(peak, std::abs(sample));
+    }
+
+    // Only normalize if there's meaningful audio (avoid amplifying noise)
+    constexpr f32 MIN_PEAK_FOR_NORMALIZATION = 0.001f; // -60 dB
+    if (peak > MIN_PEAK_FOR_NORMALIZATION) {
+      const f32 targetLinear = dbToLinear(m_format.normalizeTarget);
+      const f32 scaleFactor = targetLinear / peak;
+
+      // Apply normalization (only if it would change the level meaningfully)
+      if (scaleFactor > 1.01f || scaleFactor < 0.99f) {
+        for (auto& sample : audioData) {
+          sample *= scaleFactor;
+          // Clamp to prevent clipping
+          sample = std::clamp(sample, -1.0f, 1.0f);
+        }
+        modified = true;
+        outNormalized = true;
+      }
+    }
   }
+
+  // Write back if modified
+  if (modified && !audioData.empty()) {
+    if (m_cancelRequested) {
+      return;
+    }
+
+    writeWavFile(m_outputPath, audioData, fileSampleRate, fileChannels);
+  }
+}
+
+bool AudioRecorder::readWavFile(const std::string& path, std::vector<f32>& outData,
+                                u32& outSampleRate, u32& outChannels) {
+  // Use miniaudio decoder for reading WAV files
+  ma_decoder decoder;
+  ma_decoder_config decoderConfig =
+      ma_decoder_config_init(ma_format_f32, 0, 0); // Auto-detect channels and sample rate
+
+  if (ma_decoder_init_file(path.c_str(), &decoderConfig, &decoder) != MA_SUCCESS) {
+    return false;
+  }
+
+  outSampleRate = decoder.outputSampleRate;
+  outChannels = decoder.outputChannels;
+
+  // Get total frame count
+  ma_uint64 totalFrames = 0;
+  if (ma_decoder_get_length_in_pcm_frames(&decoder, &totalFrames) != MA_SUCCESS) {
+    ma_decoder_uninit(&decoder);
+    return false;
+  }
+
+  // Allocate buffer
+  const size_t totalSamples = static_cast<size_t>(totalFrames * outChannels);
+  outData.resize(totalSamples);
+
+  // Read all frames
+  ma_uint64 framesRead = 0;
+  if (ma_decoder_read_pcm_frames(&decoder, outData.data(), totalFrames, &framesRead) !=
+      MA_SUCCESS) {
+    ma_decoder_uninit(&decoder);
+    outData.clear();
+    return false;
+  }
+
+  // Resize to actual frames read
+  outData.resize(static_cast<size_t>(framesRead * outChannels));
+
+  ma_decoder_uninit(&decoder);
+  return true;
+}
+
+bool AudioRecorder::writeWavFile(const std::string& path, const std::vector<f32>& data,
+                                 u32 sampleRate, u32 channels) {
+  if (data.empty() || channels == 0) {
+    return false;
+  }
+
+  // Write a temporary file first, then rename (for safety)
+  const std::string tempPath = path + ".tmp";
+
+  ma_encoder encoder;
+  ma_encoder_config encoderConfig =
+      ma_encoder_config_init(ma_encoding_format_wav, ma_format_f32, channels, sampleRate);
+
+  if (ma_encoder_init_file(tempPath.c_str(), &encoderConfig, &encoder) != MA_SUCCESS) {
+    return false;
+  }
+
+  const ma_uint64 frameCount = data.size() / channels;
+  ma_uint64 framesWritten = 0;
+
+  if (ma_encoder_write_pcm_frames(&encoder, data.data(), frameCount, &framesWritten) !=
+      MA_SUCCESS) {
+    ma_encoder_uninit(&encoder);
+    try {
+      fs::remove(tempPath);
+    } catch (...) {
+    }
+    return false;
+  }
+
+  ma_encoder_uninit(&encoder);
+
+  // Replace original file with processed file
+  try {
+    fs::remove(path);
+    fs::rename(tempPath, path);
+  } catch (const fs::filesystem_error&) {
+    try {
+      fs::remove(tempPath);
+    } catch (...) {
+    }
+    return false;
+  }
+
+  return true;
+}
+
+size_t AudioRecorder::findFirstNonSilentSample(const std::vector<f32>& data, f32 thresholdLinear,
+                                               u32 minSilenceSamples, u32 channels) {
+  if (data.empty()) {
+    return 0;
+  }
+
+  // Look for the first sample that exceeds the threshold
+  // Then back up by minSilenceSamples to preserve a bit of the lead-in
+  const size_t dataSize = data.size();
+
+  for (size_t i = 0; i < dataSize; ++i) {
+    if (std::abs(data[i]) > thresholdLinear) {
+      // Found first loud sample, back up to preserve some silence
+      // Align to channel boundary
+      size_t startSample = i;
+      if (startSample >= minSilenceSamples) {
+        startSample -= minSilenceSamples;
+      } else {
+        startSample = 0;
+      }
+      // Align to frame boundary
+      startSample = (startSample / channels) * channels;
+      return startSample;
+    }
+  }
+
+  // All silence - return start
+  return 0;
+}
+
+size_t AudioRecorder::findLastNonSilentSample(const std::vector<f32>& data, f32 thresholdLinear,
+                                              u32 minSilenceSamples, u32 channels) {
+  if (data.empty()) {
+    return 0;
+  }
+
+  const size_t dataSize = data.size();
+
+  // Search backwards for the last sample that exceeds threshold
+  for (size_t i = dataSize; i > 0; --i) {
+    if (std::abs(data[i - 1]) > thresholdLinear) {
+      // Found last loud sample, add trailing silence
+      size_t endSample = i;
+      endSample += minSilenceSamples;
+      if (endSample > dataSize) {
+        endSample = dataSize;
+      }
+      // Align to frame boundary
+      endSample = ((endSample + channels - 1) / channels) * channels;
+      if (endSample > dataSize) {
+        endSample = dataSize;
+      }
+      return endSample;
+    }
+  }
+
+  // All silence - return full size
+  return dataSize;
 }
 
 void AudioRecorder::setState(RecordingState state) {

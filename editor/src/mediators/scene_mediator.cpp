@@ -5,13 +5,14 @@
 
 namespace NovelMind::editor::mediators {
 
-SceneMediator::SceneMediator(QObject *parent) : QObject(parent) {}
+SceneMediator::SceneMediator(QObject* parent) : QObject(parent) {}
 
-SceneMediator::~SceneMediator() { shutdown(); }
+SceneMediator::~SceneMediator() {
+  shutdown();
+}
 
-void SceneMediator::initialize(SceneRegistry *sceneRegistry,
-                               qt::NMSceneViewPanel *sceneView,
-                               qt::NMStoryGraphPanel *storyGraph) {
+void SceneMediator::initialize(SceneRegistry* sceneRegistry, qt::NMSceneViewPanel* sceneView,
+                               qt::NMStoryGraphPanel* storyGraph) {
   if (m_initialized) {
     return;
   }
@@ -28,22 +29,20 @@ void SceneMediator::initialize(SceneRegistry *sceneRegistry,
             &SceneMediator::onSceneUnregistered);
     connect(m_sceneRegistry, &SceneRegistry::sceneIdChanged, this,
             &SceneMediator::onSceneIdChanged);
-    connect(m_sceneRegistry, &SceneRegistry::sceneRenamed, this,
-            &SceneMediator::onSceneRenamed);
+    connect(m_sceneRegistry, &SceneRegistry::sceneRenamed, this, &SceneMediator::onSceneRenamed);
   }
 
   // Connect to StoryGraph signals
   if (m_storyGraph && m_storyGraph->graphScene()) {
     connect(m_storyGraph->graphScene(), &qt::NMStoryGraphScene::nodeAdded, this,
             &SceneMediator::onNodeAdded);
-    connect(m_storyGraph->graphScene(), &qt::NMStoryGraphScene::nodeDeleted,
-            this, &SceneMediator::onNodeDeleted);
+    connect(m_storyGraph->graphScene(), &qt::NMStoryGraphScene::nodeDeleted, this,
+            &SceneMediator::onNodeDeleted);
   }
 
   // Connect to SceneView signals
   if (m_sceneView) {
-    connect(m_sceneView, &qt::NMSceneViewPanel::sceneChanged, this,
-            &SceneMediator::onSceneChanged);
+    connect(m_sceneView, &qt::NMSceneViewPanel::sceneChanged, this, &SceneMediator::onSceneChanged);
   }
 
   // Initial sync of references
@@ -69,8 +68,8 @@ void SceneMediator::shutdown() {
   }
 
   // Unsubscribe from EventBus
-  auto &bus = EventBus::instance();
-  for (auto &sub : m_subscriptions) {
+  auto& bus = EventBus::instance();
+  for (auto& sub : m_subscriptions) {
     bus.unsubscribe(sub);
   }
   m_subscriptions.clear();
@@ -87,15 +86,15 @@ void SceneMediator::syncSceneReferencesFromGraph() {
   }
 
   // Clear all existing references (will rebuild from scratch)
-  for (const QString &sceneId : m_sceneRegistry->getAllSceneIds()) {
+  for (const QString& sceneId : m_sceneRegistry->getAllSceneIds()) {
     SceneMetadata meta = m_sceneRegistry->getSceneMetadata(sceneId);
     meta.referencingNodes.clear();
     m_sceneRegistry->updateSceneMetadata(sceneId, meta);
   }
 
   // Scan all nodes in the graph
-  const auto &nodes = m_storyGraph->graphScene()->nodes();
-  for (const auto *node : nodes) {
+  const auto& nodes = m_storyGraph->graphScene()->nodes();
+  for (const auto* node : nodes) {
     if (node->isSceneNode() && !node->sceneId().isEmpty()) {
       const QString sceneId = node->sceneId();
       const QString nodeIdString = node->nodeIdString();
@@ -118,15 +117,14 @@ QStringList SceneMediator::validateSceneReferences() const {
   }
 
   // Check each scene node in the graph
-  const auto &nodes = m_storyGraph->graphScene()->nodes();
-  for (const auto *node : nodes) {
+  const auto& nodes = m_storyGraph->graphScene()->nodes();
+  for (const auto* node : nodes) {
     if (node->isSceneNode()) {
       const QString sceneId = node->sceneId();
       const QString nodeIdString = node->nodeIdString();
 
       if (sceneId.isEmpty()) {
-        errors << QString("Scene node '%1' has no scene ID assigned")
-                      .arg(nodeIdString);
+        errors << QString("Scene node '%1' has no scene ID assigned").arg(nodeIdString);
       } else if (!m_sceneRegistry->sceneExists(sceneId)) {
         errors << QString("Scene node '%1' references non-existent scene '%2'")
                       .arg(nodeIdString, sceneId);
@@ -136,28 +134,28 @@ QStringList SceneMediator::validateSceneReferences() const {
 
   // Check for broken references in the registry
   QStringList broken = m_sceneRegistry->getInvalidSceneReferences();
-  for (const QString &sceneId : broken) {
+  for (const QString& sceneId : broken) {
     errors << QString("Scene '%1' has missing document file").arg(sceneId);
   }
 
   return errors;
 }
 
-void SceneMediator::onSceneRegistered(const QString &sceneId) {
+void SceneMediator::onSceneRegistered(const QString& sceneId) {
   Q_UNUSED(sceneId);
   // No immediate action needed - nodes will add references when they use this
   // scene
 }
 
-void SceneMediator::onSceneUnregistered(const QString &sceneId) {
+void SceneMediator::onSceneUnregistered(const QString& sceneId) {
   // Check if any nodes still reference this scene
   if (!m_storyGraph || !m_storyGraph->graphScene()) {
     return;
   }
 
   QStringList affectedNodes;
-  const auto &nodes = m_storyGraph->graphScene()->nodes();
-  for (const auto *node : nodes) {
+  const auto& nodes = m_storyGraph->graphScene()->nodes();
+  for (const auto* node : nodes) {
     if (node->isSceneNode() && node->sceneId() == sceneId) {
       affectedNodes << node->nodeIdString();
     }
@@ -168,15 +166,14 @@ void SceneMediator::onSceneUnregistered(const QString &sceneId) {
   }
 }
 
-void SceneMediator::onSceneIdChanged(const QString &oldId,
-                                     const QString &newId) {
+void SceneMediator::onSceneIdChanged(const QString& oldId, const QString& newId) {
   if (!m_storyGraph || !m_storyGraph->graphScene()) {
     return;
   }
 
   // Update all scene nodes that reference the old ID
-  const auto &nodes = m_storyGraph->graphScene()->nodes();
-  for (auto *node : nodes) {
+  const auto& nodes = m_storyGraph->graphScene()->nodes();
+  for (auto* node : nodes) {
     if (node->isSceneNode() && node->sceneId() == oldId) {
       node->setSceneId(newId);
       node->update();
@@ -184,15 +181,16 @@ void SceneMediator::onSceneIdChanged(const QString &oldId,
   }
 }
 
-void SceneMediator::onSceneRenamed(const QString &sceneId,
-                                   const QString &newName) {
+void SceneMediator::onSceneRenamed(const QString& sceneId, const QString& oldName,
+                                   const QString& newName) {
   Q_UNUSED(sceneId);
+  Q_UNUSED(oldName);
   Q_UNUSED(newName);
   // Display name change doesn't affect node references
 }
 
-void SceneMediator::onNodeAdded(uint64_t nodeId, const QString &nodeIdString,
-                                const QString &nodeType) {
+void SceneMediator::onNodeAdded(uint64_t nodeId, const QString& nodeIdString,
+                                const QString& nodeType) {
   Q_UNUSED(nodeId);
 
   // Only track scene nodes
@@ -213,22 +211,20 @@ void SceneMediator::onNodeDeleted(uint64_t nodeId) {
   }
 
   // Find the node by ID to get its scene ID
-  auto *node = m_storyGraph->graphScene()->findNode(nodeId);
+  auto* node = m_storyGraph->graphScene()->findNode(nodeId);
   if (node && node->isSceneNode() && !node->sceneId().isEmpty()) {
-    m_sceneRegistry->removeSceneReference(node->sceneId(),
-                                          node->nodeIdString());
+    m_sceneRegistry->removeSceneReference(node->sceneId(), node->nodeIdString());
   }
 }
 
-void SceneMediator::onSceneChanged(const QString &sceneId) {
+void SceneMediator::onSceneChanged(const QString& sceneId) {
   Q_UNUSED(sceneId);
   // Scene was loaded/changed in Scene View
   // Could trigger thumbnail regeneration here if needed
 }
 
-void SceneMediator::updateNodeSceneReference(const QString &nodeIdString,
-                                             const QString &oldSceneId,
-                                             const QString &newSceneId) {
+void SceneMediator::updateNodeSceneReference(const QString& nodeIdString, const QString& oldSceneId,
+                                             const QString& newSceneId) {
   if (!m_sceneRegistry) {
     return;
   }
@@ -244,12 +240,12 @@ void SceneMediator::updateNodeSceneReference(const QString &nodeIdString,
   }
 }
 
-QString SceneMediator::getNodeSceneId(const QString &nodeIdString) const {
+QString SceneMediator::getNodeSceneId(const QString& nodeIdString) const {
   if (!m_storyGraph) {
     return QString();
   }
 
-  auto *node = m_storyGraph->findNodeByIdString(nodeIdString);
+  auto* node = m_storyGraph->findNodeByIdString(nodeIdString);
   if (node && node->isSceneNode()) {
     return node->sceneId();
   }

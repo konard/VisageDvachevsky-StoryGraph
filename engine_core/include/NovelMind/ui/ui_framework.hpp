@@ -468,15 +468,25 @@ public:
   bool handleEvent(UIEvent &event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
+  // Selection helpers
+  [[nodiscard]] bool hasSelection() const;
+  void clearSelection();
+  void setSelection(size_t start, size_t end);
+  void selectAll();
+  [[nodiscard]] std::string getSelectedText() const;
+  void deleteSelection();
+
 private:
+  size_t getCursorPosFromX(f32 x);
+  void updateSelectionFromMouse(f32 x);
   std::string m_text;
   std::string m_placeholder;
   bool m_password = false;
   size_t m_maxLength = 256;
   size_t m_cursorPos = 0;
-  // TODO: Implement text selection functionality
-  // size_t m_selectionStart = 0;
-  // size_t m_selectionEnd = 0;
+  size_t m_selectionStart = 0;
+  size_t m_selectionEnd = 0;
+  bool m_isDragging = false;
   f32 m_scrollOffset = 0.0f;
   f32 m_cursorBlink = 0.0f;
 

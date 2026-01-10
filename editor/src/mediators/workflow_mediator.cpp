@@ -332,6 +332,20 @@ void WorkflowMediator::onNavigateToScriptDefinition(
   // Issue #239: Bidirectional navigation from Story Graph to Script Editor
   // Find the scene definition in script files and navigate to that line
   if (!m_scriptEditor) {
+    qDebug() << "[WorkflowMediator] Script editor panel not available for navigation";
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message =
+        QObject::tr("Cannot navigate to script: Script Editor panel is not available");
+    statusEvent.timeoutMs = 5000;
+    EventBus::instance().publish(statusEvent);
+
+    if (m_diagnostics) {
+      m_diagnostics->addDiagnosticWithLocation(
+          "Warning",
+          QObject::tr("Script Editor panel is not available. Please open the Script Editor panel "
+                      "to view script definitions."),
+          QString("StoryGraph:%1").arg(event.sceneId));
+    }
     return;
   }
 
@@ -438,7 +452,16 @@ void WorkflowMediator::onNavigateToScriptDefinition(
     statusEvent.timeoutMs = 5000;
     EventBus::instance().publish(statusEvent);
 
-    qWarning() << "[WorkflowMediator] Scene definition not found:" << event.sceneId;
+    if (m_diagnostics) {
+      m_diagnostics->addDiagnosticWithLocation(
+          "Info",
+          QObject::tr("Scene '%1' is not defined in any script file. The scene may be using "
+                      "visual-only content or the script definition may be missing.")
+              .arg(event.sceneId),
+          QString("StoryGraph:%1").arg(event.sceneId));
+    }
+
+    qDebug() << "[WorkflowMediator] Scene definition not found:" << event.sceneId;
   }
 }
 
@@ -534,14 +557,37 @@ void WorkflowMediator::onDiagnosticActivated(const events::DiagnosticActivatedEv
 }
 
 void WorkflowMediator::onNavigationRequested(const events::NavigationRequestedEvent& event) {
+  // Issue #387: Improved error handling for navigation requests
   if (event.locationString.isEmpty()) {
-    qWarning() << "[WorkflowMediator] Empty location string";
+    qDebug() << "[WorkflowMediator] Empty location string in navigation request";
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message = QObject::tr("Navigation failed: Invalid location provided");
+    statusEvent.timeoutMs = 4000;
+    EventBus::instance().publish(statusEvent);
+
+    if (m_diagnostics) {
+      m_diagnostics->addDiagnostic("Warning",
+                                   QObject::tr("Navigation request with empty location string"));
+    }
     return;
   }
 
   QStringList parts = event.locationString.split(':');
   if (parts.size() < 2) {
-    qWarning() << "[WorkflowMediator] Invalid location format:" << event.locationString;
+    qDebug() << "[WorkflowMediator] Invalid location format:" << event.locationString;
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message =
+        QObject::tr("Navigation failed: Invalid location format '%1'").arg(event.locationString);
+    statusEvent.timeoutMs = 4000;
+    EventBus::instance().publish(statusEvent);
+
+    if (m_diagnostics) {
+      m_diagnostics->addDiagnostic(
+          "Warning",
+          QObject::tr("Invalid navigation location format: '%1'. Expected format: "
+                      "'Type:identifier' (e.g., 'StoryGraph:node123' or 'Script:file.nms:42')")
+              .arg(event.locationString));
+    }
     return;
   }
 
@@ -550,22 +596,52 @@ void WorkflowMediator::onNavigationRequested(const events::NavigationRequestedEv
   // Navigate to StoryGraph node
   if (typeStr.compare("StoryGraph", Qt::CaseInsensitive) == 0) {
     if (!m_storyGraph) {
-      qWarning() << "[WorkflowMediator] StoryGraph panel not available";
+      qDebug() << "[WorkflowMediator] StoryGraph panel not available for navigation";
+      events::StatusMessageEvent statusEvent;
+      statusEvent.message = QObject::tr("Cannot navigate to Story Graph: Panel is not available");
+      statusEvent.timeoutMs = 4000;
+      EventBus::instance().publish(statusEvent);
+
+      if (m_diagnostics) {
+        m_diagnostics->addDiagnosticWithLocation(
+            "Warning",
+            QObject::tr("Story Graph panel is not available. Please open the Story Graph panel "
+                        "to navigate to nodes."),
+            event.locationString);
+      }
       return;
     }
 
     QString nodeId = parts[1].trimmed();
     if (nodeId.isEmpty()) {
-      qWarning() << "[WorkflowMediator] Empty node ID";
+      qDebug() << "[WorkflowMediator] Empty node ID in StoryGraph navigation";
+      events::StatusMessageEvent statusEvent;
+      statusEvent.message = QObject::tr("Navigation failed: No node ID provided");
+      statusEvent.timeoutMs = 4000;
+      EventBus::instance().publish(statusEvent);
+
+      if (m_diagnostics) {
+        m_diagnostics->addDiagnosticWithLocation(
+            "Warning", QObject::tr("Empty node ID in navigation request"), event.locationString);
+      }
       return;
     }
 
     qDebug() << "[WorkflowMediator] Navigating to StoryGraph node:" << nodeId;
     if (!m_storyGraph->navigateToNode(nodeId)) {
-      qWarning() << "[WorkflowMediator] Failed to navigate to node:" << nodeId;
+      qDebug() << "[WorkflowMediator] Failed to navigate to node:" << nodeId;
+      events::StatusMessageEvent statusEvent;
+      statusEvent.message = QObject::tr("Node '%1' not found in Story Graph").arg(nodeId);
+      statusEvent.timeoutMs = 4000;
+      EventBus::instance().publish(statusEvent);
+
       if (m_diagnostics) {
         m_diagnostics->addDiagnosticWithLocation(
-            "Warning", QObject::tr("Could not find node '%1'").arg(nodeId), event.locationString);
+            "Info",
+            QObject::tr("Node '%1' does not exist in the Story Graph. The node may have been "
+                        "deleted or the reference is incorrect.")
+                .arg(nodeId),
+            event.locationString);
       }
     }
     return;
@@ -574,13 +650,36 @@ void WorkflowMediator::onNavigationRequested(const events::NavigationRequestedEv
   // Navigate to Script file
   if (typeStr.compare("Script", Qt::CaseInsensitive) == 0) {
     if (!m_scriptEditor) {
-      qWarning() << "[WorkflowMediator] Script editor panel not available";
+      qDebug() << "[WorkflowMediator] Script editor panel not available for navigation";
+      events::StatusMessageEvent statusEvent;
+      statusEvent.message =
+          QObject::tr("Cannot navigate to script: Script Editor panel is not available");
+      statusEvent.timeoutMs = 4000;
+      EventBus::instance().publish(statusEvent);
+
+      if (m_diagnostics) {
+        m_diagnostics->addDiagnosticWithLocation(
+            "Warning",
+            QObject::tr("Script Editor panel is not available. Please open the Script Editor "
+                        "panel to navigate to scripts."),
+            event.locationString);
+      }
       return;
     }
 
     QString filePath = parts[1].trimmed();
     if (filePath.isEmpty()) {
-      qWarning() << "[WorkflowMediator] Empty file path";
+      qDebug() << "[WorkflowMediator] Empty file path in Script navigation";
+      events::StatusMessageEvent statusEvent;
+      statusEvent.message = QObject::tr("Navigation failed: No file path provided");
+      statusEvent.timeoutMs = 4000;
+      EventBus::instance().publish(statusEvent);
+
+      if (m_diagnostics) {
+        m_diagnostics->addDiagnosticWithLocation(
+            "Warning", QObject::tr("Empty file path in script navigation request"),
+            event.locationString);
+      }
       return;
     }
 
@@ -606,10 +705,29 @@ void WorkflowMediator::onNavigationRequested(const events::NavigationRequestedEv
     QString assetPath = parts[1].trimmed();
     qDebug() << "[WorkflowMediator] Asset/File navigation:" << assetPath;
     // Could open asset browser and select the asset
+    events::StatusMessageEvent statusEvent;
+    statusEvent.message =
+        QObject::tr("Asset navigation is not yet fully implemented: %1").arg(assetPath);
+    statusEvent.timeoutMs = 4000;
+    EventBus::instance().publish(statusEvent);
     return;
   }
 
-  qWarning() << "[WorkflowMediator] Unknown location type:" << typeStr;
+  // Unknown location type
+  qDebug() << "[WorkflowMediator] Unknown location type:" << typeStr;
+  events::StatusMessageEvent statusEvent;
+  statusEvent.message = QObject::tr("Navigation failed: Unknown location type '%1'").arg(typeStr);
+  statusEvent.timeoutMs = 4000;
+  EventBus::instance().publish(statusEvent);
+
+  if (m_diagnostics) {
+    m_diagnostics->addDiagnosticWithLocation(
+        "Warning",
+        QObject::tr("Unknown navigation location type: '%1'. Supported types: StoryGraph, "
+                    "Script, Asset, File")
+            .arg(typeStr),
+        event.locationString);
+  }
 }
 
 void WorkflowMediator::onAssetDoubleClicked(const events::AssetDoubleClickedEvent& event) {

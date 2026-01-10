@@ -2,11 +2,12 @@
 
 namespace NovelMind::editor::mediators {
 
-SceneRegistryMediator::SceneRegistryMediator(SceneRegistry *sceneRegistry,
-                                             QObject *parent)
+SceneRegistryMediator::SceneRegistryMediator(SceneRegistry* sceneRegistry, QObject* parent)
     : QObject(parent), m_sceneRegistry(sceneRegistry) {}
 
-SceneRegistryMediator::~SceneRegistryMediator() { shutdown(); }
+SceneRegistryMediator::~SceneRegistryMediator() {
+  shutdown();
+}
 
 void SceneRegistryMediator::initialize() {
   if (!m_sceneRegistry) {
@@ -41,7 +42,7 @@ void SceneRegistryMediator::shutdown() {
   qDebug() << "SceneRegistryMediator shutdown";
 }
 
-void SceneRegistryMediator::onSceneRegistered(const QString &sceneId) {
+void SceneRegistryMediator::onSceneRegistered(const QString& sceneId) {
   if (!m_sceneRegistry) {
     return;
   }
@@ -59,31 +60,25 @@ void SceneRegistryMediator::onSceneRegistered(const QString &sceneId) {
   qDebug() << "SceneRegistryMediator: Published SceneCreatedEvent for" << sceneId;
 }
 
-void SceneRegistryMediator::onSceneRenamed(const QString &sceneId,
-                                           const QString &newName) {
+void SceneRegistryMediator::onSceneRenamed(const QString& sceneId, const QString& oldName,
+                                           const QString& newName) {
   if (!m_sceneRegistry) {
     return;
   }
 
-  // Get previous name from metadata (before the rename signal was emitted)
-  // Note: At this point, the metadata already has the new name,
-  // so we need to rely on the rename signal providing both old and new names.
-  // However, SceneRegistry::sceneRenamed only provides sceneId and newName.
-  // We'll need to track the old name ourselves or update the signal.
-
-  // For now, we'll publish with empty oldName and note this limitation
+  // Publish SceneRenamedEvent with both old and new names
   events::SceneRenamedEvent event;
   event.sceneId = sceneId;
-  event.oldName = QString(); // TODO: SceneRegistry signal needs to provide oldName
+  event.oldName = oldName;
   event.newName = newName;
 
   EventBus::instance().publish(event);
 
-  qDebug() << "SceneRegistryMediator: Published SceneRenamedEvent for" << sceneId
-           << "to" << newName;
+  qDebug() << "SceneRegistryMediator: Published SceneRenamedEvent for" << sceneId << "from"
+           << oldName << "to" << newName;
 }
 
-void SceneRegistryMediator::onSceneUnregistered(const QString &sceneId) {
+void SceneRegistryMediator::onSceneUnregistered(const QString& sceneId) {
   // Publish SceneDeletedEvent to EventBus
   events::SceneDeletedEvent event;
   event.sceneId = sceneId;
@@ -93,7 +88,7 @@ void SceneRegistryMediator::onSceneUnregistered(const QString &sceneId) {
   qDebug() << "SceneRegistryMediator: Published SceneDeletedEvent for" << sceneId;
 }
 
-void SceneRegistryMediator::onSceneThumbnailUpdated(const QString &sceneId) {
+void SceneRegistryMediator::onSceneThumbnailUpdated(const QString& sceneId) {
   if (!m_sceneRegistry) {
     return;
   }
@@ -108,19 +103,17 @@ void SceneRegistryMediator::onSceneThumbnailUpdated(const QString &sceneId) {
 
   EventBus::instance().publish(event);
 
-  qDebug() << "SceneRegistryMediator: Published SceneThumbnailUpdatedEvent for"
-           << sceneId;
+  qDebug() << "SceneRegistryMediator: Published SceneThumbnailUpdatedEvent for" << sceneId;
 }
 
-void SceneRegistryMediator::onSceneMetadataChanged(const QString &sceneId) {
+void SceneRegistryMediator::onSceneMetadataChanged(const QString& sceneId) {
   // Publish SceneMetadataUpdatedEvent to EventBus
   events::SceneMetadataUpdatedEvent event;
   event.sceneId = sceneId;
 
   EventBus::instance().publish(event);
 
-  qDebug() << "SceneRegistryMediator: Published SceneMetadataUpdatedEvent for"
-           << sceneId;
+  qDebug() << "SceneRegistryMediator: Published SceneMetadataUpdatedEvent for" << sceneId;
 }
 
 } // namespace NovelMind::editor::mediators
