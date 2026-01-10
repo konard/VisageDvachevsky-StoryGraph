@@ -1,5 +1,6 @@
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm.hpp"
 #include <algorithm>
 #include <iterator>
@@ -301,6 +302,11 @@ void VMDebugger::loadSourceMappings(
     const std::unordered_map<u32, DebugSourceLocation> &mappings) {
   m_sourceMappings = mappings;
   NOVELMIND_LOG_DEBUG("Loaded " + std::to_string(mappings.size()) + " source mappings");
+}
+
+const std::unordered_map<u32, DebugSourceLocation> &
+VMDebugger::getAllSourceMappings() const {
+  return m_sourceMappings;
 }
 
 void VMDebugger::clearSourceMappings() {
