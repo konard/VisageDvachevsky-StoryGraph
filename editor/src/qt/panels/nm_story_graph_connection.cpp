@@ -203,7 +203,9 @@ void NMGraphConnectionItem::paint(QPainter *painter,
     QRectF bgRect(bgPos.x(), bgPos.y(), textRect.width(), textRect.height());
 
     // Draw rounded background
-    painter->setBrush(QColor(40, 44, 52, 220)); // Semi-transparent dark bg
+    QColor bgColor = palette.bgDark;
+    bgColor.setAlpha(150); // Semi-transparent background
+    painter->setBrush(bgColor);
     painter->setPen(QPen(lineColor.darker(120), 1));
     painter->drawRoundedRect(bgRect, 4, 4);
 
@@ -226,6 +228,8 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
   painter->save();
   painter->setRenderHint(QPainter::Antialiasing, true);
 
+  const auto &palette = NMStyleManager::instance().palette();
+
   const qreal size = 14.0;
   const QColor iconColor = isCrossScene ? QColor(255, 200, 100, 220) // Warm orange
                                         : QColor(100, 200, 150, 220); // Scene green
@@ -236,7 +240,9 @@ void NMGraphConnectionItem::drawSceneTransitionIndicator(QPainter *painter,
   QRectF rect2(pos.x() - size/2 + 4, pos.y() - size/2 + 2, size * 0.6, size * 0.6);
 
   // Draw background for icon area
-  painter->setBrush(QColor(30, 34, 42, 200));
+  QColor iconBgColor = palette.bgDark;
+  iconBgColor.setAlpha(200);
+  painter->setBrush(iconBgColor);
   painter->setPen(Qt::NoPen);
   painter->drawEllipse(pos, size * 0.6, size * 0.6);
 
