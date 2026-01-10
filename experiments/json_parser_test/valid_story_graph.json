@@ -1,0 +1,27 @@
+{
+  "nodes": [
+    {
+      "id": "scene1",
+      "type": "Scene",
+      "title": "Start",
+      "dialogueText": "Welcome to the story",
+      "speaker": "Narrator"
+    },
+    {
+      "id": "scene2",
+      "type": "Dialogue",
+      "dialogueText": "This is a test dialogue with \"quotes\" and\nnewlines.",
+      "speaker": "Character"
+    },
+    {
+      "id": "choice1",
+      "type": "Choice",
+      "dialogueText": "What will you do?",
+      "choiceTargets": {
+        "Go left": "scene_left",
+        "Go right": "scene_right"
+      }
+    }
+  ],
+  "entry": "scene1"
+}
