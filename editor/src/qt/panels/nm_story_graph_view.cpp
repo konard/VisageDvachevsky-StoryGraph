@@ -4,6 +4,9 @@
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/scripting/lexer.hpp"
+#include "NovelMind/scripting/parser.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -46,7 +49,7 @@ namespace NovelMind::editor::qt {
 // NMStoryGraphView
 // ============================================================================
 
-NMStoryGraphView::NMStoryGraphView(QWidget *parent) : QGraphicsView(parent) {
+NMStoryGraphView::NMStoryGraphView(QWidget* parent) : QGraphicsView(parent) {
   // Enable antialiasing for smooth rendering
   setRenderHint(QPainter::Antialiasing);
   setRenderHint(QPainter::TextAntialiasing);
@@ -110,7 +113,7 @@ void NMStoryGraphView::centerOnGraph() {
   }
 }
 
-void NMStoryGraphView::wheelEvent(QWheelEvent *event) {
+void NMStoryGraphView::wheelEvent(QWheelEvent* event) {
   qreal factor = 1.15;
   if (event->angleDelta().y() < 0) {
     factor = 1.0 / factor;
@@ -120,7 +123,7 @@ void NMStoryGraphView::wheelEvent(QWheelEvent *event) {
   event->accept();
 }
 
-void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
+void NMStoryGraphView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton) {
     m_isPanning = true;
     m_lastPanPoint = event->pos();
@@ -136,8 +139,8 @@ void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
     m_isDragging = false;
 
     QPointF scenePos = mapToScene(event->pos());
-    auto *item = scene()->itemAt(scenePos, transform());
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+    auto* item = scene()->itemAt(scenePos, transform());
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       const bool wantsConnection = m_connectionModeEnabled ||
                                    (event->modifiers() & Qt::ControlModifier) ||
                                    node->hitTestOutputPort(scenePos);
@@ -156,7 +159,7 @@ void NMStoryGraphView::mousePressEvent(QMouseEvent *event) {
   QGraphicsView::mousePressEvent(event);
 }
 
-void NMStoryGraphView::mouseDoubleClickEvent(QMouseEvent *event) {
+void NMStoryGraphView::mouseDoubleClickEvent(QMouseEvent* event) {
   // Ignore double-click if user is dragging nodes
   if (m_isDragging) {
     event->ignore();
@@ -165,8 +168,8 @@ void NMStoryGraphView::mouseDoubleClickEvent(QMouseEvent *event) {
 
   if (event->button() == Qt::LeftButton) {
     QPointF scenePos = mapToScene(event->pos());
-    auto *item = scene()->itemAt(scenePos, transform());
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+    auto* item = scene()->itemAt(scenePos, transform());
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       emit nodeDoubleClicked(node->nodeId());
       event->accept();
       return;
@@ -176,7 +179,7 @@ void NMStoryGraphView::mouseDoubleClickEvent(QMouseEvent *event) {
   QGraphicsView::mouseDoubleClickEvent(event);
 }
 
-void NMStoryGraphView::mouseMoveEvent(QMouseEvent *event) {
+void NMStoryGraphView::mouseMoveEvent(QMouseEvent* event) {
   if (m_isPanning) {
     QPoint delta = event->pos() - m_lastPanPoint;
     m_lastPanPoint = event->pos();
@@ -197,8 +200,7 @@ void NMStoryGraphView::mouseMoveEvent(QMouseEvent *event) {
 
   // Track if user is dragging (moved beyond Qt's drag threshold)
   if (m_possibleDrag) {
-    if ((event->pos() - m_dragStartPos).manhattanLength() >=
-        QApplication::startDragDistance()) {
+    if ((event->pos() - m_dragStartPos).manhattanLength() >= QApplication::startDragDistance()) {
       m_isDragging = true;
       m_possibleDrag = false;
     }
@@ -207,7 +209,7 @@ void NMStoryGraphView::mouseMoveEvent(QMouseEvent *event) {
   QGraphicsView::mouseMoveEvent(event);
 }
 
-void NMStoryGraphView::mouseReleaseEvent(QMouseEvent *event) {
+void NMStoryGraphView::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton && m_isPanning) {
     m_isPanning = false;
     setCursor(Qt::ArrowCursor);
@@ -216,16 +218,14 @@ void NMStoryGraphView::mouseReleaseEvent(QMouseEvent *event) {
   }
 
   // Finish drawing connection
-  if (event->button() == Qt::LeftButton && m_isDrawingConnection &&
-      m_connectionStartNode) {
+  if (event->button() == Qt::LeftButton && m_isDrawingConnection && m_connectionStartNode) {
     QPointF scenePos = mapToScene(event->pos());
-    auto *item = scene()->itemAt(scenePos, transform());
-    if (auto *endNode = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+    auto* item = scene()->itemAt(scenePos, transform());
+    if (auto* endNode = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       if (endNode != m_connectionStartNode) {
         // Emit signal to create connection
         if (m_connectionStartNode && endNode) {
-          emit requestConnection(m_connectionStartNode->nodeId(),
-                                 endNode->nodeId());
+          emit requestConnection(m_connectionStartNode->nodeId(), endNode->nodeId());
         }
       }
     }
@@ -249,11 +249,10 @@ void NMStoryGraphView::mouseReleaseEvent(QMouseEvent *event) {
   QGraphicsView::mouseReleaseEvent(event);
 }
 
-void NMStoryGraphView::drawForeground(QPainter *painter,
-                                      const QRectF & /*rect*/) {
+void NMStoryGraphView::drawForeground(QPainter* painter, const QRectF& /*rect*/) {
   // Draw connection line being created
   if (m_isDrawingConnection && m_connectionStartNode) {
-    const auto &palette = NMStyleManager::instance().palette();
+    const auto& palette = NMStyleManager::instance().palette();
 
     QPointF start = m_connectionStartNode->outputPortPosition();
     QPointF end = m_connectionEndPoint;
@@ -280,7 +279,7 @@ void NMStoryGraphView::drawForeground(QPainter *painter,
  * @param url URL to validate
  * @return true if the file can be dropped on the story graph
  */
-static bool isValidDroppableFile(const QUrl &url) {
+static bool isValidDroppableFile(const QUrl& url) {
   if (!url.isLocalFile()) {
     return false;
   }
@@ -297,19 +296,90 @@ static bool isValidDroppableFile(const QUrl &url) {
   return suffix == "nms";
 }
 
-void NMStoryGraphView::dragEnterEvent(QDragEnterEvent *event) {
+/**
+ * @brief Validate script file content before creating a node
+ * Issue #393: Validates script syntax using Lexer and Parser
+ * @param filePath Path to the script file
+ * @param errorMessage Output parameter for error message
+ * @return true if the script is valid, false otherwise
+ */
+static bool validateScriptFile(const QString& filePath, QString& errorMessage) {
+  // 1. Open and read the file
+  QFile file(filePath);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    errorMessage = QObject::tr("Cannot open file: %1").arg(file.errorString());
+    return false;
+  }
+
+  // 2. Read file content as UTF-8
+  const QString content = QString::fromUtf8(file.readAll());
+  file.close();
+
+  if (content.isEmpty()) {
+    errorMessage = QObject::tr("Script file is empty");
+    return false;
+  }
+
+  // 3. Tokenize using Lexer
+  using namespace NovelMind::scripting;
+  Lexer lexer;
+  auto tokensResult = lexer.tokenize(content.toStdString());
+
+  // Check for lexer errors
+  const auto& lexerErrors = lexer.getErrors();
+  if (!lexerErrors.empty()) {
+    const auto& firstError = lexerErrors[0];
+    errorMessage = QObject::tr("Script syntax error at line %1, column %2: %3")
+                       .arg(firstError.location.line)
+                       .arg(firstError.location.column)
+                       .arg(QString::fromStdString(firstError.message));
+    return false;
+  }
+
+  if (!tokensResult.isOk()) {
+    errorMessage = QObject::tr("Script tokenization failed: %1")
+                       .arg(QString::fromStdString(tokensResult.error()));
+    return false;
+  }
+
+  // 4. Parse the tokens
+  Parser parser;
+  auto parseResult = parser.parse(tokensResult.value());
+
+  // Check for parser errors
+  const auto& parserErrors = parser.getErrors();
+  if (!parserErrors.empty()) {
+    const auto& firstError = parserErrors[0];
+    errorMessage = QObject::tr("Script parse error at line %1, column %2: %3")
+                       .arg(firstError.location.line)
+                       .arg(firstError.location.column)
+                       .arg(QString::fromStdString(firstError.message));
+    return false;
+  }
+
+  if (!parseResult.isOk()) {
+    errorMessage =
+        QObject::tr("Script parsing failed: %1").arg(QString::fromStdString(parseResult.error()));
+    return false;
+  }
+
+  // Script is valid
+  return true;
+}
+
+void NMStoryGraphView::dragEnterEvent(QDragEnterEvent* event) {
   // Validate MIME data before accepting
   if (!event || !event->mimeData()) {
     QGraphicsView::dragEnterEvent(event);
     return;
   }
 
-  const QMimeData *mimeData = event->mimeData();
+  const QMimeData* mimeData = event->mimeData();
 
   // Check for valid file URLs
   if (mimeData->hasUrls()) {
     bool hasValidFile = false;
-    for (const QUrl &url : mimeData->urls()) {
+    for (const QUrl& url : mimeData->urls()) {
       if (isValidDroppableFile(url)) {
         hasValidFile = true;
         break;
@@ -324,8 +394,7 @@ void NMStoryGraphView::dragEnterEvent(QDragEnterEvent *event) {
 
   // Check for internal asset path drag
   if (mimeData->hasFormat("application/x-novelmind-asset")) {
-    const QString assetPath =
-        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    const QString assetPath = QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
     if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
       event->acceptProposedAction();
       return;
@@ -335,18 +404,18 @@ void NMStoryGraphView::dragEnterEvent(QDragEnterEvent *event) {
   QGraphicsView::dragEnterEvent(event);
 }
 
-void NMStoryGraphView::dragMoveEvent(QDragMoveEvent *event) {
+void NMStoryGraphView::dragMoveEvent(QDragMoveEvent* event) {
   // Continue to validate during drag move
   if (!event || !event->mimeData()) {
     QGraphicsView::dragMoveEvent(event);
     return;
   }
 
-  const QMimeData *mimeData = event->mimeData();
+  const QMimeData* mimeData = event->mimeData();
 
   // Accept if we have valid files or internal assets
   if (mimeData->hasUrls()) {
-    for (const QUrl &url : mimeData->urls()) {
+    for (const QUrl& url : mimeData->urls()) {
       if (isValidDroppableFile(url)) {
         event->acceptProposedAction();
         return;
@@ -355,8 +424,7 @@ void NMStoryGraphView::dragMoveEvent(QDragMoveEvent *event) {
   }
 
   if (mimeData->hasFormat("application/x-novelmind-asset")) {
-    const QString assetPath =
-        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    const QString assetPath = QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
     if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
       event->acceptProposedAction();
       return;
@@ -366,21 +434,33 @@ void NMStoryGraphView::dragMoveEvent(QDragMoveEvent *event) {
   QGraphicsView::dragMoveEvent(event);
 }
 
-void NMStoryGraphView::dropEvent(QDropEvent *event) {
+void NMStoryGraphView::dropEvent(QDropEvent* event) {
   // Validate drop data before processing
   if (!event || !event->mimeData()) {
     QGraphicsView::dropEvent(event);
     return;
   }
 
-  const QMimeData *mimeData = event->mimeData();
+  const QMimeData* mimeData = event->mimeData();
   const QPointF scenePos = mapToScene(event->position().toPoint());
 
   // Handle file URLs
   if (mimeData->hasUrls()) {
-    for (const QUrl &url : mimeData->urls()) {
+    for (const QUrl& url : mimeData->urls()) {
       if (isValidDroppableFile(url)) {
         const QString filePath = url.toLocalFile();
+
+        // Issue #393: Validate script content before creating node
+        QString errorMessage;
+        if (!validateScriptFile(filePath, errorMessage)) {
+          NMMessageDialog::showError(nullptr, tr("Invalid Script File"),
+                                     tr("Cannot create node from script file:\n\n%1\n\nError:\n%2")
+                                         .arg(QFileInfo(filePath).fileName())
+                                         .arg(errorMessage));
+          event->ignore();
+          return;
+        }
+
         emit scriptFileDropped(filePath, scenePos);
         event->acceptProposedAction();
         return;
@@ -390,8 +470,7 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
 
   // Handle internal asset drag
   if (mimeData->hasFormat("application/x-novelmind-asset")) {
-    const QString assetPath =
-        QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
+    const QString assetPath = QString::fromUtf8(mimeData->data("application/x-novelmind-asset"));
     if (assetPath.endsWith(".nms", Qt::CaseInsensitive)) {
       // Convert to absolute path if relative
       QString fullPath = assetPath;
@@ -402,6 +481,18 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
           fullPath = QDir(projectRoot).absoluteFilePath(assetPath);
         }
       }
+
+      // Issue #393: Validate script content before creating node
+      QString errorMessage;
+      if (!validateScriptFile(fullPath, errorMessage)) {
+        NMMessageDialog::showError(nullptr, tr("Invalid Script File"),
+                                   tr("Cannot create node from script file:\n\n%1\n\nError:\n%2")
+                                       .arg(QFileInfo(fullPath).fileName())
+                                       .arg(errorMessage));
+        event->ignore();
+        return;
+      }
+
       emit scriptFileDropped(fullPath, scenePos);
       event->acceptProposedAction();
       return;
@@ -411,7 +502,7 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
   QGraphicsView::dropEvent(event);
 }
 
-void NMStoryGraphView::hideEvent(QHideEvent *event) {
+void NMStoryGraphView::hideEvent(QHideEvent* event) {
   // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
   // state if closed during a drag operation. This avoids crashes from
   // accessing invalid state when the widget is shown again.
@@ -439,52 +530,49 @@ void NMStoryGraphView::resetDragState() {
 // NMNodePalette
 // ============================================================================
 
-NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
+NMNodePalette::NMNodePalette(QWidget* parent) : QWidget(parent) {
   // Main layout for the widget
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Create scroll area for adaptive layout when panel height is small
-  auto *scrollArea = new QScrollArea(this);
+  auto* scrollArea = new QScrollArea(this);
   scrollArea->setWidgetResizable(true);
   scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
   scrollArea->setFrameShape(QFrame::NoFrame);
 
   // Style the scroll bar to be minimal
-  scrollArea->setStyleSheet(
-      QString("QScrollArea { background: transparent; border: none; }"
-              "QScrollBar:vertical { width: 6px; background: %1; }"
-              "QScrollBar::handle:vertical { background: %2; border-radius: "
-              "3px; min-height: 20px; }"
-              "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical "
-              "{ height: 0; }"
-              "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical "
-              "{ background: none; }")
-          .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
-          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+  scrollArea->setStyleSheet(QString("QScrollArea { background: transparent; border: none; }"
+                                    "QScrollBar:vertical { width: 6px; background: %1; }"
+                                    "QScrollBar::handle:vertical { background: %2; border-radius: "
+                                    "3px; min-height: 20px; }"
+                                    "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical "
+                                    "{ height: 0; }"
+                                    "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical "
+                                    "{ background: none; }")
+                                .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
+                                .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
 
   // Create content widget inside scroll area
-  auto *contentWidget = new QWidget(scrollArea);
+  auto* contentWidget = new QWidget(scrollArea);
   m_contentLayout = new QVBoxLayout(contentWidget);
   m_contentLayout->setContentsMargins(4, 4, 4, 4);
   m_contentLayout->setSpacing(4);
 
   // Title
-  auto *titleLabel = new QLabel(tr("Create Node"), contentWidget);
+  auto* titleLabel = new QLabel(tr("Create Node"), contentWidget);
   titleLabel->setStyleSheet(
-      QString("color: %1; font-weight: bold; padding: 4px;")
-          .arg(palette.textPrimary.name()));
+      QString("color: %1; font-weight: bold; padding: 4px;").arg(palette.textPrimary.name()));
   m_contentLayout->addWidget(titleLabel);
 
   // Separator
-  auto *separator = new QFrame(contentWidget);
+  auto* separator = new QFrame(contentWidget);
   separator->setFrameShape(QFrame::HLine);
-  separator->setStyleSheet(
-      QString("background-color: %1;").arg(palette.borderDark.name()));
+  separator->setStyleSheet(QString("background-color: %1;").arg(palette.borderDark.name()));
   m_contentLayout->addWidget(separator);
 
   // Node type buttons - Core nodes
@@ -494,10 +582,9 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   createNodeButton("Scene", "panel-scene");
 
   // Separator for flow control nodes
-  auto *separator2 = new QFrame(contentWidget);
+  auto* separator2 = new QFrame(contentWidget);
   separator2->setFrameShape(QFrame::HLine);
-  separator2->setStyleSheet(
-      QString("background-color: %1;").arg(palette.borderDark.name()));
+  separator2->setStyleSheet(QString("background-color: %1;").arg(palette.borderDark.name()));
   m_contentLayout->addWidget(separator2);
 
   // Flow control nodes
@@ -508,10 +595,9 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   createNodeButton("End", "node-end");
 
   // Separator for advanced nodes
-  auto *separator3 = new QFrame(contentWidget);
+  auto* separator3 = new QFrame(contentWidget);
   separator3->setFrameShape(QFrame::HLine);
-  separator3->setStyleSheet(
-      QString("background-color: %1;").arg(palette.borderDark.name()));
+  separator3->setStyleSheet(QString("background-color: %1;").arg(palette.borderDark.name()));
   m_contentLayout->addWidget(separator3);
 
   // Advanced nodes
@@ -533,17 +619,16 @@ NMNodePalette::NMNodePalette(QWidget *parent) : QWidget(parent) {
   setMaximumWidth(150);
 }
 
-void NMNodePalette::createNodeButton(const QString &nodeType,
-                                     const QString &iconName) {
+void NMNodePalette::createNodeButton(const QString& nodeType, const QString& iconName) {
   if (!m_contentLayout)
     return;
 
-  auto &iconMgr = NMIconManager::instance();
-  auto *button = new QPushButton(nodeType, this);
+  auto& iconMgr = NMIconManager::instance();
+  auto* button = new QPushButton(nodeType, this);
   button->setIcon(iconMgr.getIcon(iconName, 16));
   button->setMinimumHeight(32);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   button->setStyleSheet(QString("QPushButton {"
                                 "  background-color: %1;"
                                 "  color: %2;"

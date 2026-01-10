@@ -1,0 +1,18 @@
+// Valid test script
+scene main {
+  dialogue "Hello, World!"
+  show character alice happy
+  say alice "Welcome to the story!"
+  choice {
+    "Option 1" => label1
+    "Option 2" => label2
+  }
+}
+
+scene label1 {
+  dialogue "You chose option 1"
+}
+
+scene label2 {
+  dialogue "You chose option 2"
+}

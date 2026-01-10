@@ -1,0 +1,4 @@
+// Invalid script - unterminated string
+scene main {
+  dialogue "Hello
+}

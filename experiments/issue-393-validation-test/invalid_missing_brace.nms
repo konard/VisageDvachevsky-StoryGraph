@@ -1,0 +1,4 @@
+// Invalid script - missing closing brace
+scene main {
+  dialogue "Hello, World!"
+  show character alice happy
