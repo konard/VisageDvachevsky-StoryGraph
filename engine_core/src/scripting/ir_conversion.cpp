@@ -169,9 +169,149 @@ NodeId ASTToIRConverter::convertStatement(const Statement &stmt,
       stmt.data);
 }
 
-NodeId ASTToIRConverter::convertExpression(const Expression & /*expr*/) {
-  // Stub implementation - would create expression nodes
-  return 0;
+NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
+  return std::visit(
+      [this, &expr](const auto &exprData) -> NodeId {
+        using T = std::decay_t<decltype(exprData)>;
+
+        if constexpr (std::is_same_v<T, LiteralExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "literal");
+
+          // Store the literal value based on its type
+          std::visit(
+              [node](const auto &val) {
+                using V = std::decay_t<decltype(val)>;
+                if constexpr (std::is_same_v<V, std::monostate>) {
+                  node->setProperty("valueType", "null");
+                } else if constexpr (std::is_same_v<V, i32>) {
+                  node->setProperty("valueType", "int");
+                  node->setProperty("value", static_cast<i64>(val));
+                } else if constexpr (std::is_same_v<V, f32>) {
+                  node->setProperty("valueType", "float");
+                  node->setProperty("value", static_cast<f64>(val));
+                } else if constexpr (std::is_same_v<V, bool>) {
+                  node->setProperty("valueType", "bool");
+                  node->setProperty("value", val);
+                } else if constexpr (std::is_same_v<V, std::string>) {
+                  node->setProperty("valueType", "string");
+                  node->setProperty("value", val);
+                }
+              },
+              exprData.value);
+
+          node->setSourceLocation(expr.location);
+          return nodeId;
+
+        } else if constexpr (std::is_same_v<T, IdentifierExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "identifier");
+          node->setProperty("name", exprData.name);
+          node->setSourceLocation(expr.location);
+          return nodeId;
+
+        } else if constexpr (std::is_same_v<T, BinaryExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "binary");
+
+          // Convert operator TokenType to string
+          std::string opStr;
+          switch (exprData.op) {
+            case TokenType::Plus: opStr = "+"; break;
+            case TokenType::Minus: opStr = "-"; break;
+            case TokenType::Star: opStr = "*"; break;
+            case TokenType::Slash: opStr = "/"; break;
+            case TokenType::Percent: opStr = "%"; break;
+            case TokenType::Equal: opStr = "=="; break;
+            case TokenType::NotEqual: opStr = "!="; break;
+            case TokenType::Less: opStr = "<"; break;
+            case TokenType::LessEqual: opStr = "<="; break;
+            case TokenType::Greater: opStr = ">"; break;
+            case TokenType::GreaterEqual: opStr = ">="; break;
+            case TokenType::And: opStr = "and"; break;
+            case TokenType::Or: opStr = "or"; break;
+            default: opStr = "unknown"; break;
+          }
+          node->setProperty("operator", opStr);
+
+          // Recursively convert operands
+          if (exprData.left) {
+            NodeId leftId = convertExpression(*exprData.left);
+            node->setProperty("leftOperand", static_cast<i64>(leftId));
+          }
+          if (exprData.right) {
+            NodeId rightId = convertExpression(*exprData.right);
+            node->setProperty("rightOperand", static_cast<i64>(rightId));
+          }
+
+          node->setSourceLocation(expr.location);
+          return nodeId;
+
+        } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "unary");
+
+          // Convert operator TokenType to string
+          std::string opStr;
+          switch (exprData.op) {
+            case TokenType::Minus: opStr = "-"; break;
+            case TokenType::Not: opStr = "not"; break;
+            default: opStr = "unknown"; break;
+          }
+          node->setProperty("operator", opStr);
+
+          // Recursively convert operand
+          if (exprData.operand) {
+            NodeId operandId = convertExpression(*exprData.operand);
+            node->setProperty("operand", static_cast<i64>(operandId));
+          }
+
+          node->setSourceLocation(expr.location);
+          return nodeId;
+
+        } else if constexpr (std::is_same_v<T, CallExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "call");
+          node->setProperty("callee", exprData.callee);
+
+          // Convert arguments
+          std::vector<std::string> argIds;
+          for (const auto &arg : exprData.arguments) {
+            if (arg) {
+              NodeId argId = convertExpression(*arg);
+              argIds.push_back(std::to_string(argId));
+            }
+          }
+          node->setProperty("arguments", argIds);
+
+          node->setSourceLocation(expr.location);
+          return nodeId;
+
+        } else if constexpr (std::is_same_v<T, PropertyExpr>) {
+          NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
+          auto *node = m_graph->getNode(nodeId);
+          node->setProperty("exprType", "property");
+          node->setProperty("property", exprData.property);
+
+          // Recursively convert object
+          if (exprData.object) {
+            NodeId objectId = convertExpression(*exprData.object);
+            node->setProperty("object", static_cast<i64>(objectId));
+          }
+
+          node->setSourceLocation(expr.location);
+          return nodeId;
+        }
+
+        // Fallback - should never reach here
+        return 0;
+      },
+      expr.data);
 }
 
 NodeId ASTToIRConverter::createNodeAndConnect(IRNodeType type,
@@ -306,9 +446,135 @@ IRToASTConverter::convertNode(const IRNode *node, const IRGraph & /*graph*/) {
 }
 
 std::unique_ptr<Expression>
-IRToASTConverter::convertToExpression(const IRNode * /*node*/,
-                                      const IRGraph & /*graph*/) {
-  // Stub implementation
+IRToASTConverter::convertToExpression(const IRNode *node,
+                                      const IRGraph &graph) {
+  if (!node || node->getType() != IRNodeType::Expression) {
+    return nullptr;
+  }
+
+  std::string exprType = node->getStringProperty("exprType");
+
+  if (exprType == "literal") {
+    LiteralExpr literal;
+    std::string valueType = node->getStringProperty("valueType");
+
+    if (valueType == "null") {
+      literal.value = std::monostate{};
+    } else if (valueType == "int") {
+      literal.value = static_cast<i32>(node->getIntProperty("value"));
+    } else if (valueType == "float") {
+      literal.value = static_cast<f32>(node->getFloatProperty("value"));
+    } else if (valueType == "bool") {
+      literal.value = node->getBoolProperty("value");
+    } else if (valueType == "string") {
+      literal.value = node->getStringProperty("value");
+    }
+
+    return std::make_unique<Expression>(std::move(literal),
+                                        node->getSourceLocation());
+
+  } else if (exprType == "identifier") {
+    IdentifierExpr identifier;
+    identifier.name = node->getStringProperty("name");
+    return std::make_unique<Expression>(std::move(identifier),
+                                        node->getSourceLocation());
+
+  } else if (exprType == "binary") {
+    BinaryExpr binary;
+
+    // Convert operator string back to TokenType
+    std::string opStr = node->getStringProperty("operator");
+    if (opStr == "+") binary.op = TokenType::Plus;
+    else if (opStr == "-") binary.op = TokenType::Minus;
+    else if (opStr == "*") binary.op = TokenType::Star;
+    else if (opStr == "/") binary.op = TokenType::Slash;
+    else if (opStr == "%") binary.op = TokenType::Percent;
+    else if (opStr == "==") binary.op = TokenType::Equal;
+    else if (opStr == "!=") binary.op = TokenType::NotEqual;
+    else if (opStr == "<") binary.op = TokenType::Less;
+    else if (opStr == "<=") binary.op = TokenType::LessEqual;
+    else if (opStr == ">") binary.op = TokenType::Greater;
+    else if (opStr == ">=") binary.op = TokenType::GreaterEqual;
+    else if (opStr == "and") binary.op = TokenType::And;
+    else if (opStr == "or") binary.op = TokenType::Or;
+    else binary.op = TokenType::Error; // Fallback
+
+    // Recursively convert operands
+    i64 leftId = node->getIntProperty("leftOperand", 0);
+    if (leftId != 0) {
+      const IRNode *leftNode = graph.getNode(static_cast<NodeId>(leftId));
+      binary.left = convertToExpression(leftNode, graph);
+    }
+
+    i64 rightId = node->getIntProperty("rightOperand", 0);
+    if (rightId != 0) {
+      const IRNode *rightNode = graph.getNode(static_cast<NodeId>(rightId));
+      binary.right = convertToExpression(rightNode, graph);
+    }
+
+    return std::make_unique<Expression>(std::move(binary),
+                                        node->getSourceLocation());
+
+  } else if (exprType == "unary") {
+    UnaryExpr unary;
+
+    // Convert operator string back to TokenType
+    std::string opStr = node->getStringProperty("operator");
+    if (opStr == "-") unary.op = TokenType::Minus;
+    else if (opStr == "not") unary.op = TokenType::Not;
+    else unary.op = TokenType::Error; // Fallback
+
+    // Recursively convert operand
+    i64 operandId = node->getIntProperty("operand", 0);
+    if (operandId != 0) {
+      const IRNode *operandNode = graph.getNode(static_cast<NodeId>(operandId));
+      unary.operand = convertToExpression(operandNode, graph);
+    }
+
+    return std::make_unique<Expression>(std::move(unary),
+                                        node->getSourceLocation());
+
+  } else if (exprType == "call") {
+    CallExpr call;
+    call.callee = node->getStringProperty("callee");
+
+    // Convert arguments
+    auto prop = node->getProperty("arguments");
+    if (prop && std::holds_alternative<std::vector<std::string>>(*prop)) {
+      const auto &argIds = std::get<std::vector<std::string>>(*prop);
+      for (const auto &argIdStr : argIds) {
+        try {
+          NodeId argId = std::stoull(argIdStr);
+          const IRNode *argNode = graph.getNode(argId);
+          auto argExpr = convertToExpression(argNode, graph);
+          if (argExpr) {
+            call.arguments.push_back(std::move(argExpr));
+          }
+        } catch (...) {
+          // Skip invalid argument IDs
+        }
+      }
+    }
+
+    return std::make_unique<Expression>(std::move(call),
+                                        node->getSourceLocation());
+
+  } else if (exprType == "property") {
+    PropertyExpr property;
+    property.property = node->getStringProperty("property");
+
+    // Recursively convert object
+    i64 objectId = node->getIntProperty("object", 0);
+    if (objectId != 0) {
+      const IRNode *objectNode = graph.getNode(static_cast<NodeId>(objectId));
+      property.object = convertToExpression(objectNode, graph);
+    }
+
+    return std::make_unique<Expression>(std::move(property),
+                                        node->getSourceLocation());
+  }
+
+  // Unknown expression type
   return nullptr;
 }
 
