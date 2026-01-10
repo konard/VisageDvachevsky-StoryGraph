@@ -689,9 +689,23 @@ void NMRecordingStudioPanel::updateLineInfo() {
   m_notesLabel->setText(
       line->notes.empty() ? "-" : QString::fromStdString(line->notes));
 
-  // Update progress
-  auto stats = m_manifest->getCoverageStats(m_currentLocale);
-  m_progressLabel->setText(tr("Line %1 of %2").arg(1).arg(stats.totalLines));
+  // Update progress - find current line index
+  const auto &lines = m_manifest->getLines();
+  int currentIndex = -1;
+  for (size_t i = 0; i < lines.size(); ++i) {
+    if (lines[i].id == m_currentLineId) {
+      currentIndex = static_cast<int>(i);
+      break;
+    }
+  }
+
+  if (currentIndex >= 0) {
+    m_progressLabel->setText(tr("Line %1 of %2")
+                                 .arg(currentIndex + 1)
+                                 .arg(lines.size()));
+  } else {
+    m_progressLabel->setText(tr("Line 0 of %1").arg(lines.size()));
+  }
 }
 
 void NMRecordingStudioPanel::updateTakeList() {
@@ -962,9 +976,72 @@ void NMRecordingStudioPanel::onPlayStopClicked() {
   }
 }
 
-void NMRecordingStudioPanel::onNextLineClicked() { emit requestNextLine(); }
+void NMRecordingStudioPanel::onNextLineClicked() {
+  if (!m_manifest) {
+    return;
+  }
 
-void NMRecordingStudioPanel::onPrevLineClicked() { emit requestPrevLine(); }
+  const auto &lines = m_manifest->getLines();
+  if (lines.empty()) {
+    return;
+  }
+
+  // Find current line index
+  auto it = std::find_if(lines.begin(), lines.end(),
+                         [this](const auto &line) { return line.id == m_currentLineId; });
+
+  if (it == lines.end()) {
+    // Current line not found, start from beginning
+    if (!lines.empty()) {
+      setCurrentLine(lines[0].id);
+    }
+    return;
+  }
+
+  // Move to next line
+  ++it;
+  if (it != lines.end()) {
+    setCurrentLine(it->id);
+  } else {
+    // Already at last line, could wrap around or stay
+    // For now, stay at last line (no action)
+    NOVELMIND_LOG_INFO("[RecordingStudio] Already at last line");
+  }
+
+  // Also emit signal for external listeners
+  emit requestNextLine();
+}
+
+void NMRecordingStudioPanel::onPrevLineClicked() {
+  if (!m_manifest) {
+    return;
+  }
+
+  const auto &lines = m_manifest->getLines();
+  if (lines.empty()) {
+    return;
+  }
+
+  // Find current line index
+  auto it = std::find_if(lines.begin(), lines.end(),
+                         [this](const auto &line) { return line.id == m_currentLineId; });
+
+  if (it == lines.end() || it == lines.begin()) {
+    // Current line not found or already at first line
+    if (!lines.empty()) {
+      // Stay at first line
+      setCurrentLine(lines[0].id);
+    }
+    return;
+  }
+
+  // Move to previous line
+  --it;
+  setCurrentLine(it->id);
+
+  // Also emit signal for external listeners
+  emit requestPrevLine();
+}
 
 void NMRecordingStudioPanel::onTakeSelected(int index) {
   bool hasSelection = index >= 0;
