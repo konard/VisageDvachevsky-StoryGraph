@@ -46,6 +46,8 @@ add_executable(unit_tests
     unit/test_pack_reader.cpp
     unit/test_benchmarks.cpp
     unit/test_audio_manager.cpp
+    # Issue #428 - Clipboard integration tests
+    unit/test_clipboard.cpp
 )
 
 target_link_libraries(unit_tests

@@ -10,6 +10,7 @@ add_library(engine_core STATIC
 
     # Platform
     src/core/platform_sdl.cpp
+    src/platform/clipboard.cpp
 
     # VFS (Legacy)
     src/vfs/virtual_fs.cpp

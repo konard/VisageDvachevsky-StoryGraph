@@ -4,6 +4,7 @@
  */
 
 #include "NovelMind/ui/ui_framework.hpp"
+#include "NovelMind/platform/clipboard.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -14,12 +15,13 @@ namespace NovelMind::ui {
 // Label Implementation
 // ============================================================================
 
-Label::Label(const std::string &text, const std::string &id)
-    : Widget(id), m_text(text) {}
+Label::Label(const std::string& text, const std::string& id) : Widget(id), m_text(text) {}
 
-void Label::setText(const std::string &text) { m_text = text; }
+void Label::setText(const std::string& text) {
+  m_text = text;
+}
 
-void Label::render(renderer::IRenderer &renderer) {
+void Label::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -38,8 +40,8 @@ void Label::render(renderer::IRenderer &renderer) {
 Rect Label::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
   // Simplified text measurement
   f32 charWidth = m_style.fontSize * 0.6f;
-  f32 width = static_cast<f32>(m_text.length()) * charWidth +
-              m_style.padding.left + m_style.padding.right;
+  f32 width =
+      static_cast<f32>(m_text.length()) * charWidth + m_style.padding.left + m_style.padding.right;
   f32 height = m_style.fontSize + m_style.padding.top + m_style.padding.bottom;
 
   return {0, 0, width, height};
@@ -49,12 +51,11 @@ Rect Label::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
 // Button Implementation
 // ============================================================================
 
-Button::Button(const std::string &text, const std::string &id)
-    : Widget(id), m_text(text) {
+Button::Button(const std::string& text, const std::string& id) : Widget(id), m_text(text) {
   m_focusable = true;
 }
 
-void Button::render(renderer::IRenderer &renderer) {
+void Button::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -82,7 +83,7 @@ void Button::render(renderer::IRenderer &renderer) {
   (void)textColor; // Reserved for text renderer
 }
 
-bool Button::handleEvent(UIEvent &event) {
+bool Button::handleEvent(UIEvent& event) {
   Widget::handleEvent(event);
 
   if (event.type == UIEventType::Click && m_enabled && m_onClick) {
@@ -96,8 +97,8 @@ bool Button::handleEvent(UIEvent &event) {
 
 Rect Button::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
   f32 charWidth = m_style.fontSize * 0.6f;
-  f32 width = static_cast<f32>(m_text.length()) * charWidth +
-              m_style.padding.left + m_style.padding.right;
+  f32 width =
+      static_cast<f32>(m_text.length()) * charWidth + m_style.padding.left + m_style.padding.right;
   f32 height = m_style.fontSize + m_style.padding.top + m_style.padding.bottom;
 
   width = std::max(width, m_constraints.minWidth);
@@ -110,14 +111,16 @@ Rect Button::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
 // TextInput Implementation
 // ============================================================================
 
-TextInput::TextInput(const std::string &id) : Widget(id) { m_focusable = true; }
+TextInput::TextInput(const std::string& id) : Widget(id) {
+  m_focusable = true;
+}
 
-void TextInput::setText(const std::string &text) {
+void TextInput::setText(const std::string& text) {
   m_text = text.substr(0, m_maxLength);
   m_cursorPos = m_text.length();
 }
 
-void TextInput::render(renderer::IRenderer &renderer) {
+void TextInput::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -143,15 +146,15 @@ void TextInput::render(renderer::IRenderer &renderer) {
     size_t selEnd = std::max(m_selectionStart, m_selectionEnd);
 
     f32 charWidth = m_style.fontSize * 0.6f;
-    f32 selStartX = m_bounds.x + m_style.padding.left +
-                    static_cast<f32>(selStart) * charWidth - m_scrollOffset;
-    f32 selEndX = m_bounds.x + m_style.padding.left +
-                  static_cast<f32>(selEnd) * charWidth - m_scrollOffset;
+    f32 selStartX =
+        m_bounds.x + m_style.padding.left + static_cast<f32>(selStart) * charWidth - m_scrollOffset;
+    f32 selEndX =
+        m_bounds.x + m_style.padding.left + static_cast<f32>(selEnd) * charWidth - m_scrollOffset;
 
     renderer::Color selectionColor = m_style.accentColor;
     selectionColor.a = 128; // Semi-transparent
-    renderer::Rect selectionRect{selStartX, m_bounds.y + m_style.padding.top,
-                                 selEndX - selStartX, m_style.fontSize};
+    renderer::Rect selectionRect{selStartX, m_bounds.y + m_style.padding.top, selEndX - selStartX,
+                                 m_style.fontSize};
     renderer.fillRect(selectionRect, selectionColor);
   }
 
@@ -163,18 +166,16 @@ void TextInput::render(renderer::IRenderer &renderer) {
   // Draw cursor
   if (m_focused && !hasSelection()) {
     f32 cursorX = m_bounds.x + m_style.padding.left +
-                  static_cast<f32>(m_cursorPos) * m_style.fontSize * 0.6f -
-                  m_scrollOffset;
+                  static_cast<f32>(m_cursorPos) * m_style.fontSize * 0.6f - m_scrollOffset;
     if (static_cast<i32>(m_cursorBlink * 2) % 2 == 0) {
       renderer::Color cursorColor{255, 255, 255, 255};
-      renderer::Rect cursorRect{cursorX, m_bounds.y + m_style.padding.top, 2.0f,
-                                m_style.fontSize};
+      renderer::Rect cursorRect{cursorX, m_bounds.y + m_style.padding.top, 2.0f, m_style.fontSize};
       renderer.fillRect(cursorRect, cursorColor);
     }
   }
 }
 
-bool TextInput::handleEvent(UIEvent &event) {
+bool TextInput::handleEvent(UIEvent& event) {
   Widget::handleEvent(event);
 
   if (!m_enabled) {
@@ -317,35 +318,56 @@ bool TextInput::handleEvent(UIEvent &event) {
         return true;
       } else if (event.ctrl && event.keyCode == 67) // Ctrl+C: Copy
       {
-        // Copy functionality - placeholder for clipboard integration
         if (hasSelection()) {
           std::string selected = getSelectedText();
-          // TODO: Implement clipboard copy when platform layer is available
-          (void)selected;
+          auto clipboard = platform::createClipboard();
+          auto result = clipboard->setText(selected);
+          if (result.isError()) {
+            // Log error but don't fail the operation
+            (void)result;
+          }
         }
         event.consume();
         return true;
       } else if (event.ctrl && event.keyCode == 88) // Ctrl+X: Cut
       {
-        // Cut functionality - placeholder for clipboard integration
         if (hasSelection()) {
           std::string selected = getSelectedText();
-          // TODO: Implement clipboard copy when platform layer is available
+          auto clipboard = platform::createClipboard();
+          auto result = clipboard->setText(selected);
+          if (result.isError()) {
+            // Log error but don't fail the operation
+            (void)result;
+          }
           deleteSelection();
           if (m_onChange) {
             m_onChange(m_text);
           }
-          (void)selected;
         }
         event.consume();
         return true;
       } else if (event.ctrl && event.keyCode == 86) // Ctrl+V: Paste
       {
-        // Paste functionality - placeholder for clipboard integration
-        // TODO: Implement clipboard paste when platform layer is available
-        // For now, just delete selection if any
-        if (hasSelection()) {
-          deleteSelection();
+        auto clipboard = platform::createClipboard();
+        auto result = clipboard->getText();
+        if (result.isOk()) {
+          std::string pastedText = result.value();
+          // Delete selection first if any
+          if (hasSelection()) {
+            deleteSelection();
+          }
+          // Insert pasted text respecting max length
+          if (m_text.length() + pastedText.length() <= m_maxLength) {
+            m_text.insert(m_cursorPos, pastedText);
+            m_cursorPos += pastedText.length();
+          } else {
+            // Insert only what fits
+            size_t spaceLeft = m_maxLength - m_text.length();
+            if (spaceLeft > 0) {
+              m_text.insert(m_cursorPos, pastedText.substr(0, spaceLeft));
+              m_cursorPos += spaceLeft;
+            }
+          }
           if (m_onChange) {
             m_onChange(m_text);
           }
@@ -432,8 +454,7 @@ void TextInput::updateSelectionFromMouse(f32 x) {
 // Checkbox Implementation
 // ============================================================================
 
-Checkbox::Checkbox(const std::string &label, const std::string &id)
-    : Widget(id), m_label(label) {
+Checkbox::Checkbox(const std::string& label, const std::string& id) : Widget(id), m_label(label) {
   m_focusable = true;
 }
 
@@ -446,9 +467,11 @@ void Checkbox::setChecked(bool checked) {
   }
 }
 
-void Checkbox::toggle() { setChecked(!m_checked); }
+void Checkbox::toggle() {
+  setChecked(!m_checked);
+}
 
-void Checkbox::render(renderer::IRenderer &renderer) {
+void Checkbox::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -460,14 +483,12 @@ void Checkbox::render(renderer::IRenderer &renderer) {
   f32 boxY = m_bounds.y + (m_bounds.height - boxSize) / 2.0f;
 
   // Draw checkbox box
-  renderer::Color boxColor =
-      m_checked ? m_style.accentColor : m_style.backgroundColor;
+  renderer::Color boxColor = m_checked ? m_style.accentColor : m_style.backgroundColor;
   renderer::Rect boxRect{boxX, boxY, boxSize, boxSize};
   renderer.fillRect(boxRect, boxColor);
 
   // Draw border
-  renderer::Color borderColor =
-      m_hovered ? m_style.accentColor : m_style.borderColor;
+  renderer::Color borderColor = m_hovered ? m_style.accentColor : m_style.borderColor;
   // Border drawing would go here
   (void)borderColor;
 
@@ -488,7 +509,7 @@ void Checkbox::render(renderer::IRenderer &renderer) {
   }
 }
 
-bool Checkbox::handleEvent(UIEvent &event) {
+bool Checkbox::handleEvent(UIEvent& event) {
   Widget::handleEvent(event);
 
   if (event.type == UIEventType::Click && m_enabled) {
@@ -505,10 +526,8 @@ Rect Checkbox::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
   f32 charWidth = m_style.fontSize * 0.6f;
   f32 labelWidth = static_cast<f32>(m_label.length()) * charWidth;
 
-  f32 width = boxSize + 8.0f + labelWidth + m_style.padding.left +
-              m_style.padding.right;
-  f32 height = std::max(boxSize, m_style.fontSize) + m_style.padding.top +
-               m_style.padding.bottom;
+  f32 width = boxSize + 8.0f + labelWidth + m_style.padding.left + m_style.padding.right;
+  f32 height = std::max(boxSize, m_style.fontSize) + m_style.padding.top + m_style.padding.bottom;
 
   return {0, 0, width, height};
 }
@@ -517,7 +536,9 @@ Rect Checkbox::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
 // Slider Implementation
 // ============================================================================
 
-Slider::Slider(const std::string &id) : Widget(id) { m_focusable = true; }
+Slider::Slider(const std::string& id) : Widget(id) {
+  m_focusable = true;
+}
 
 void Slider::setValue(f32 value) {
   f32 newValue = std::max(m_min, std::min(m_max, value));
@@ -539,7 +560,7 @@ void Slider::setRange(f32 min, f32 max) {
   setValue(m_value); // Clamp current value
 }
 
-void Slider::render(renderer::IRenderer &renderer) {
+void Slider::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -548,8 +569,7 @@ void Slider::render(renderer::IRenderer &renderer) {
 
   f32 trackHeight = 4.0f;
   f32 trackY = m_bounds.y + (m_bounds.height - trackHeight) / 2.0f;
-  f32 trackWidth =
-      m_bounds.width - m_style.padding.left - m_style.padding.right;
+  f32 trackWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
   f32 trackX = m_bounds.x + m_style.padding.left;
 
   // Draw track
@@ -574,7 +594,7 @@ void Slider::render(renderer::IRenderer &renderer) {
   renderer.fillRect(thumbRect, thumbColor);
 }
 
-bool Slider::handleEvent(UIEvent &event) {
+bool Slider::handleEvent(UIEvent& event) {
   Widget::handleEvent(event);
 
   if (!m_enabled) {
@@ -584,16 +604,14 @@ bool Slider::handleEvent(UIEvent &event) {
   if (event.type == UIEventType::MouseDown) {
     m_dragging = true;
     // Calculate value from mouse position
-    f32 trackWidth =
-        m_bounds.width - m_style.padding.left - m_style.padding.right;
+    f32 trackWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
     f32 trackX = m_bounds.x + m_style.padding.left;
     f32 progress = (event.mouseX - trackX) / trackWidth;
     setValue(m_min + progress * (m_max - m_min));
     event.consume();
     return true;
   } else if (event.type == UIEventType::MouseMove && m_dragging) {
-    f32 trackWidth =
-        m_bounds.width - m_style.padding.left - m_style.padding.right;
+    f32 trackWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
     f32 trackX = m_bounds.x + m_style.padding.left;
     f32 progress = (event.mouseX - trackX) / trackWidth;
     setValue(m_min + progress * (m_max - m_min));
