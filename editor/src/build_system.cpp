@@ -13,6 +13,11 @@
 
 #include "NovelMind/editor/build_system.hpp"
 
+#include "NovelMind/scripting/compiler.hpp"
+#include "NovelMind/scripting/lexer.hpp"
+#include "NovelMind/scripting/parser.hpp"
+#include "NovelMind/scripting/validator.hpp"
+
 #include <algorithm>
 #include <chrono>
 #include <cstring>
@@ -1670,36 +1675,8 @@ Result<void> BuildSystem::signAndFinalize() {
   // Sign executable if requested
   if (m_config.signExecutable && !m_config.signingCertificate.empty()) {
     updateProgress(0.7f, "Signing executable...");
-
-    // Determine executable path based on platform
-    std::string executablePath;
-    switch (m_config.platform) {
-    case BuildPlatform::Windows:
-      executablePath = (stagingDir / (m_config.executableName +
-                                      BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
-                           .string();
-      break;
-    case BuildPlatform::MacOS:
-      executablePath = (stagingDir / (m_config.executableName + ".app")).string();
-      break;
-    default:
-      logMessage("Code signing is only supported for Windows and macOS", false);
-      m_progress.warnings.push_back("Code signing skipped - not supported for this platform");
-      break;
-    }
-
-    if (!executablePath.empty() && fs::exists(executablePath)) {
-      auto signResult = signExecutableForPlatform(executablePath);
-      if (signResult.isError()) {
-        m_progress.warnings.push_back("Code signing failed: " + signResult.error());
-        logMessage("Code signing failed: " + signResult.error(), true);
-      } else {
-        logMessage("Code signing completed successfully", false);
-      }
-    } else if (!executablePath.empty()) {
-      m_progress.warnings.push_back("Code signing skipped - executable not found: " +
-                                    executablePath);
-    }
+    logMessage("Code signing not yet implemented - skipping", false);
+    m_progress.warnings.push_back("Code signing requested but not yet implemented");
   }
 
   // Calculate final sizes
@@ -1827,34 +1804,108 @@ ScriptCompileResult BuildSystem::compileScript(const std::string& scriptPath) {
     std::string source = buffer.str();
     file.close();
 
-    // Basic syntax validation (placeholder for full compilation)
-    // In a real implementation, this would use the scripting::Compiler
     if (source.empty()) {
       result.warnings.push_back("Script file is empty");
+      result.bytecodeSize = 0;
+      return result;
     }
 
-    // Check for basic syntax errors
-    i32 braceCount = 0;
-    i32 parenCount = 0;
-    for (char c : source) {
-      if (c == '{')
-        braceCount++;
-      else if (c == '}')
-        braceCount--;
-      else if (c == '(')
-        parenCount++;
-      else if (c == ')')
-        parenCount--;
+    // Step 1: Lexical analysis
+    scripting::Lexer lexer;
+    auto tokenResult = lexer.tokenize(source);
+    if (!tokenResult.isOk()) {
+      result.success = false;
+      result.errors.push_back("Lexer error: " + tokenResult.error());
+      return result;
     }
 
-    if (braceCount != 0) {
-      result.warnings.push_back("Unbalanced braces detected");
-    }
-    if (parenCount != 0) {
-      result.warnings.push_back("Unbalanced parentheses detected");
+    auto tokens = tokenResult.value();
+
+    // Collect lexer errors
+    for (const auto& err : lexer.getErrors()) {
+      result.errors.push_back("Lexer error at line " + std::to_string(err.location.line) + ": " +
+                              err.message);
     }
 
-    result.bytecodeSize = static_cast<i32>(source.size()); // Placeholder
+    if (!lexer.getErrors().empty()) {
+      result.success = false;
+      return result;
+    }
+
+    // Step 2: Parsing
+    scripting::Parser parser;
+    auto parseResult = parser.parse(tokens);
+    if (!parseResult.isOk()) {
+      result.success = false;
+      result.errors.push_back("Parse error: " + parseResult.error());
+      return result;
+    }
+
+    auto program = std::move(parseResult).value();
+
+    // Collect parser errors
+    for (const auto& err : parser.getErrors()) {
+      result.errors.push_back("Parse error at line " + std::to_string(err.location.line) + ": " +
+                              err.message);
+    }
+
+    if (!parser.getErrors().empty()) {
+      result.success = false;
+      return result;
+    }
+
+    // Step 3: Validation
+    scripting::Validator validator;
+    auto validationResult = validator.validate(program);
+
+    // Collect validation warnings
+    for (const auto& err : validationResult.errors.all()) {
+      if (err.severity == scripting::Severity::Warning) {
+        result.warnings.push_back("Warning at line " + std::to_string(err.span.start.line) + ": " +
+                                  err.message);
+      } else if (err.severity == scripting::Severity::Error) {
+        result.errors.push_back("Validation error at line " + std::to_string(err.span.start.line) +
+                                ": " + err.message);
+      }
+    }
+
+    if (!validationResult.isValid) {
+      result.success = false;
+      return result;
+    }
+
+    // Step 4: Compilation to bytecode
+    scripting::Compiler compiler;
+    auto compileResult = compiler.compile(program);
+    if (!compileResult.isOk()) {
+      result.success = false;
+      result.errors.push_back("Compile error: " + compileResult.error());
+      return result;
+    }
+
+    // Collect compiler errors
+    for (const auto& err : compiler.getErrors()) {
+      result.errors.push_back("Compile error at line " + std::to_string(err.location.line) + ": " +
+                              err.message);
+    }
+
+    if (!compiler.getErrors().empty()) {
+      result.success = false;
+      return result;
+    }
+
+    auto compiledScript = compileResult.value();
+
+    // Calculate bytecode size: instructions + string table + metadata
+    i32 bytecodeSize = 0;
+    bytecodeSize += static_cast<i32>(compiledScript.instructions.size() * sizeof(u32) * 2);
+    for (const auto& str : compiledScript.stringTable) {
+      bytecodeSize += static_cast<i32>(sizeof(u32) + str.size());
+    }
+    bytecodeSize += static_cast<i32>(compiledScript.sceneEntryPoints.size() * sizeof(u32));
+    bytecodeSize += static_cast<i32>(compiledScript.characters.size() * sizeof(u32));
+
+    result.bytecodeSize = bytecodeSize;
 
   } catch (const std::exception& e) {
     result.success = false;
@@ -1866,93 +1917,252 @@ ScriptCompileResult BuildSystem::compileScript(const std::string& scriptPath) {
 
 Result<void> BuildSystem::compileBytecode(const std::string& outputPath) {
   try {
-    // Create a combined bytecode file
-    // Note: This is a placeholder that stores source as "bytecode"
-    // In production, this would use the actual scripting::Compiler
+    // Create the combined bytecode file with real compiled bytecode
     std::ofstream output(outputPath, std::ios::binary);
     if (!output.is_open()) {
       return Result<void>::error("Cannot create bytecode file: " + outputPath);
     }
 
-    // Write header
-    const char magic[] = "NMBC"; // NovelMind ByteCode
+    // Write header with NMC1 magic (NovelMind Compiled v1)
+    const char magic[] = "NMC1";
     output.write(magic, 4);
 
+    // Write version (format: major << 16 | minor << 8 | patch)
     u32 version = 1;
     output.write(reinterpret_cast<const char*>(&version), sizeof(version));
 
+    // Write script count
     u32 scriptCount = static_cast<u32>(m_scriptFiles.size());
     output.write(reinterpret_cast<const char*>(&scriptCount), sizeof(scriptCount));
 
-    // Prepare script map entries for source mapping
+    // Prepare script map entries for source mapping (debug builds)
     std::vector<std::tuple<u64, std::string, u32, u32>> scriptMapEntries;
     u64 currentOffset = 12; // After header (4 + 4 + 4)
 
-    // Write placeholder bytecode for each script
+    // Compile and write bytecode for each script
     for (const auto& scriptPath : m_scriptFiles) {
       std::ifstream file(scriptPath);
-      if (file.is_open()) {
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        std::string source = buffer.str();
-        file.close();
-
-        // Record mapping: bytecode_offset, source_file, line, column
-        fs::path relativePath = fs::relative(scriptPath, m_config.projectPath);
-        scriptMapEntries.emplace_back(currentOffset, relativePath.string(), 1, 0);
-
-        u32 size = static_cast<u32>(source.size());
-        output.write(reinterpret_cast<const char*>(&size), sizeof(size));
-        output.write(source.data(), static_cast<std::streamsize>(source.size()));
-
-        currentOffset += 4 + size; // size field + data
+      if (!file.is_open()) {
+        logMessage("Cannot open script file: " + scriptPath, true);
+        continue;
       }
+
+      std::stringstream buffer;
+      buffer << file.rdbuf();
+      std::string source = buffer.str();
+      file.close();
+
+      if (source.empty()) {
+        logMessage("Skipping empty script: " + scriptPath, false);
+        continue;
+      }
+
+      // Step 1: Lexical analysis
+      scripting::Lexer lexer;
+      auto tokenResult = lexer.tokenize(source);
+      if (!tokenResult.isOk()) {
+        logMessage("Lexer error in " + scriptPath + ": " + tokenResult.error(), true);
+        continue;
+      }
+
+      auto tokens = tokenResult.value();
+
+      if (!lexer.getErrors().empty()) {
+        for (const auto& err : lexer.getErrors()) {
+          logMessage("Lexer error in " + scriptPath + " at line " +
+                         std::to_string(err.location.line) + ": " + err.message,
+                     true);
+        }
+        continue;
+      }
+
+      // Step 2: Parsing
+      scripting::Parser parser;
+      auto parseResult = parser.parse(tokens);
+      if (!parseResult.isOk()) {
+        logMessage("Parse error in " + scriptPath + ": " + parseResult.error(), true);
+        continue;
+      }
+
+      auto program = std::move(parseResult).value();
+
+      if (!parser.getErrors().empty()) {
+        for (const auto& err : parser.getErrors()) {
+          logMessage("Parse error in " + scriptPath + " at line " +
+                         std::to_string(err.location.line) + ": " + err.message,
+                     true);
+        }
+        continue;
+      }
+
+      // Step 3: Validation (optional, but recommended for production)
+      scripting::Validator validator;
+      auto validationResult = validator.validate(program);
+
+      if (!validationResult.isValid) {
+        for (const auto& err : validationResult.errors.all()) {
+          if (err.severity == scripting::Severity::Error) {
+            logMessage("Validation error in " + scriptPath + " at line " +
+                           std::to_string(err.span.start.line) + ": " + err.message,
+                       true);
+          }
+        }
+        continue;
+      }
+
+      // Step 4: Compile to bytecode
+      scripting::Compiler compiler;
+      auto compileResult = compiler.compile(program);
+      if (!compileResult.isOk()) {
+        logMessage("Compile error in " + scriptPath + ": " + compileResult.error(), true);
+        continue;
+      }
+
+      auto compiledScript = compileResult.value();
+
+      // Record mapping for source map (before writing bytecode)
+      fs::path relativePath = fs::relative(scriptPath, m_config.projectPath);
+      scriptMapEntries.emplace_back(currentOffset, relativePath.string(), 1, 0);
+
+      // Write compiled bytecode for this script
+      // Format:
+      // [size:u32][instruction_count:u32][instructions...][string_count:u32][strings...][scene_count:u32][scenes...][char_count:u32][chars...]
+
+      // Calculate total size for this script's bytecode
+      std::vector<u8> scriptBytecode;
+
+      // Write instruction count and instructions
+      u32 instrCount = static_cast<u32>(compiledScript.instructions.size());
+
+      // Reserve space and build bytecode buffer
+      scriptBytecode.reserve(1024); // Initial reservation
+
+      // Add instruction count
+      const u8* instrCountPtr = reinterpret_cast<const u8*>(&instrCount);
+      scriptBytecode.insert(scriptBytecode.end(), instrCountPtr,
+                            instrCountPtr + sizeof(instrCount));
+
+      // Add instructions (opcode + operand pairs)
+      for (const auto& instr : compiledScript.instructions) {
+        const u8* opcodePtr = reinterpret_cast<const u8*>(&instr.opcode);
+        scriptBytecode.insert(scriptBytecode.end(), opcodePtr, opcodePtr + sizeof(instr.opcode));
+        const u8* operandPtr = reinterpret_cast<const u8*>(&instr.operand);
+        scriptBytecode.insert(scriptBytecode.end(), operandPtr, operandPtr + sizeof(instr.operand));
+      }
+
+      // Write string table
+      u32 strCount = static_cast<u32>(compiledScript.stringTable.size());
+      const u8* strCountPtr = reinterpret_cast<const u8*>(&strCount);
+      scriptBytecode.insert(scriptBytecode.end(), strCountPtr, strCountPtr + sizeof(strCount));
+
+      for (const auto& str : compiledScript.stringTable) {
+        u32 len = static_cast<u32>(str.length());
+        const u8* lenPtr = reinterpret_cast<const u8*>(&len);
+        scriptBytecode.insert(scriptBytecode.end(), lenPtr, lenPtr + sizeof(len));
+        scriptBytecode.insert(scriptBytecode.end(), str.begin(), str.end());
+      }
+
+      // Write scene entry points
+      u32 sceneCount = static_cast<u32>(compiledScript.sceneEntryPoints.size());
+      const u8* sceneCountPtr = reinterpret_cast<const u8*>(&sceneCount);
+      scriptBytecode.insert(scriptBytecode.end(), sceneCountPtr,
+                            sceneCountPtr + sizeof(sceneCount));
+
+      for (const auto& [name, index] : compiledScript.sceneEntryPoints) {
+        u32 nameLen = static_cast<u32>(name.length());
+        const u8* nameLenPtr = reinterpret_cast<const u8*>(&nameLen);
+        scriptBytecode.insert(scriptBytecode.end(), nameLenPtr, nameLenPtr + sizeof(nameLen));
+        scriptBytecode.insert(scriptBytecode.end(), name.begin(), name.end());
+        const u8* indexPtr = reinterpret_cast<const u8*>(&index);
+        scriptBytecode.insert(scriptBytecode.end(), indexPtr, indexPtr + sizeof(index));
+      }
+
+      // Write characters
+      u32 charCount = static_cast<u32>(compiledScript.characters.size());
+      const u8* charCountPtr = reinterpret_cast<const u8*>(&charCount);
+      scriptBytecode.insert(scriptBytecode.end(), charCountPtr, charCountPtr + sizeof(charCount));
+
+      for (const auto& [id, ch] : compiledScript.characters) {
+        // ID
+        u32 idLen = static_cast<u32>(id.length());
+        const u8* idLenPtr = reinterpret_cast<const u8*>(&idLen);
+        scriptBytecode.insert(scriptBytecode.end(), idLenPtr, idLenPtr + sizeof(idLen));
+        scriptBytecode.insert(scriptBytecode.end(), id.begin(), id.end());
+
+        // Display name
+        u32 displayNameLen = static_cast<u32>(ch.displayName.length());
+        const u8* displayNameLenPtr = reinterpret_cast<const u8*>(&displayNameLen);
+        scriptBytecode.insert(scriptBytecode.end(), displayNameLenPtr,
+                              displayNameLenPtr + sizeof(displayNameLen));
+        scriptBytecode.insert(scriptBytecode.end(), ch.displayName.begin(), ch.displayName.end());
+
+        // Color
+        u32 colorLen = static_cast<u32>(ch.color.length());
+        const u8* colorLenPtr = reinterpret_cast<const u8*>(&colorLen);
+        scriptBytecode.insert(scriptBytecode.end(), colorLenPtr, colorLenPtr + sizeof(colorLen));
+        scriptBytecode.insert(scriptBytecode.end(), ch.color.begin(), ch.color.end());
+      }
+
+      // Write size prefix and bytecode to output file
+      u32 bytecodeSize = static_cast<u32>(scriptBytecode.size());
+      output.write(reinterpret_cast<const char*>(&bytecodeSize), sizeof(bytecodeSize));
+      output.write(reinterpret_cast<const char*>(scriptBytecode.data()),
+                   static_cast<std::streamsize>(scriptBytecode.size()));
+
+      currentOffset += sizeof(bytecodeSize) + bytecodeSize;
+
+      logMessage("Compiled " + relativePath.string() + " (" +
+                     std::to_string(compiledScript.instructions.size()) + " instructions, " +
+                     std::to_string(compiledScript.stringTable.size()) + " strings)",
+                 false);
     }
 
     output.close();
 
-    // Generate script_map.json for source mapping
-    fs::path scriptMapPath = fs::path(outputPath).parent_path() / "script_map.json";
-    std::ofstream mapFile(scriptMapPath);
-    if (mapFile.is_open()) {
-      mapFile << "{\n";
-      mapFile << "  \"version\": \"1.0\",\n";
-      mapFile << "  \"bytecode_file\": \"compiled_scripts.bin\",\n";
-      mapFile << "  \"entries\": [\n";
+    // Generate script_map.json for source mapping (useful for debugging)
+    if (m_config.generateSourceMap) {
+      fs::path scriptMapPath = fs::path(outputPath).parent_path() / "script_map.json";
+      std::ofstream mapFile(scriptMapPath);
+      if (mapFile.is_open()) {
+        mapFile << "{\n";
+        mapFile << "  \"version\": \"1.0\",\n";
+        mapFile << "  \"bytecode_file\": \"compiled_scripts.bin\",\n";
+        mapFile << "  \"format\": \"NMC1\",\n";
+        mapFile << "  \"entries\": [\n";
 
-      bool first = true;
-      for (const auto& [offset, sourceFile, line, col] : scriptMapEntries) {
-        if (!first)
-          mapFile << ",\n";
-        first = false;
+        bool first = true;
+        for (const auto& [offset, sourceFile, line, col] : scriptMapEntries) {
+          if (!first)
+            mapFile << ",\n";
+          first = false;
 
-        // Escape backslashes for JSON
-        std::string escapedPath = sourceFile;
-        std::string escaped;
-        for (char c : escapedPath) {
-          if (c == '\\')
-            escaped += "\\\\";
-          else if (c == '"')
-            escaped += "\\\"";
-          else
-            escaped += c;
+          // Escape backslashes for JSON
+          std::string escaped;
+          for (char c : sourceFile) {
+            if (c == '\\')
+              escaped += "\\\\";
+            else if (c == '"')
+              escaped += "\\\"";
+            else
+              escaped += c;
+          }
+
+          mapFile << "    {\n";
+          mapFile << "      \"bytecode_offset\": " << offset << ",\n";
+          mapFile << "      \"source_file\": \"" << escaped << "\",\n";
+          mapFile << "      \"source_line\": " << line << ",\n";
+          mapFile << "      \"source_column\": " << col << "\n";
+          mapFile << "    }";
         }
 
-        mapFile << "    {\n";
-        mapFile << "      \"bytecode_offset\": " << offset << ",\n";
-        mapFile << "      \"source_file\": \"" << escaped << "\",\n";
-        mapFile << "      \"source_line\": " << line << ",\n";
-        mapFile << "      \"source_column\": " << col << "\n";
-        mapFile << "    }";
+        mapFile << "\n  ]\n";
+        mapFile << "}\n";
+        mapFile.close();
+
+        logMessage("Generated script_map.json with " + std::to_string(scriptMapEntries.size()) +
+                       " entries",
+                   false);
       }
-
-      mapFile << "\n  ]\n";
-      mapFile << "}\n";
-      mapFile.close();
-
-      logMessage("Generated script_map.json with " + std::to_string(scriptMapEntries.size()) +
-                     " entries",
-                 false);
     }
 
     return Result<void>::ok();
@@ -2780,205 +2990,6 @@ Result<void> BuildSystem::buildIOSBundle(const std::string& outputPath) {
   }
 
   logMessage("iOS Xcode project structure created at: " + iosPath.string(), false);
-  return Result<void>::ok();
-}
-
-// ============================================================================
-// Code Signing Implementation
-// ============================================================================
-
-Result<i32> BuildSystem::executeCommand(const std::string& command, std::string& output) const {
-  output.clear();
-
-  // popen/pclose are defined as macros at the top of this file for Windows
-  FILE* pipe = popen(command.c_str(), "r");
-
-  if (!pipe) {
-    return Result<i32>::error("Failed to execute command: " + command);
-  }
-
-  char buffer[256];
-  while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-    output += buffer;
-  }
-
-  int exitCode = pclose(pipe);
-
-  // On Unix, pclose returns the exit status in the format returned by wait()
-  // We need to extract the actual exit code
-#ifndef _WIN32
-  if (WIFEXITED(exitCode)) {
-    exitCode = WEXITSTATUS(exitCode);
-  }
-#endif
-
-  return Result<i32>::ok(exitCode);
-}
-
-Result<void> BuildSystem::signExecutableForPlatform(const std::string& executablePath) {
-  logMessage("Starting code signing for: " + executablePath, false);
-
-  switch (m_config.platform) {
-  case BuildPlatform::Windows:
-    return signWindowsExecutable(executablePath);
-  case BuildPlatform::MacOS:
-    return signMacOSBundle(executablePath);
-  default:
-    return Result<void>::error("Code signing is only supported for Windows and macOS platforms");
-  }
-}
-
-Result<void> BuildSystem::signWindowsExecutable(const std::string& executablePath) {
-  // Windows code signing using signtool.exe
-  // signtool is part of the Windows SDK
-
-  if (!fs::exists(executablePath)) {
-    return Result<void>::error("Executable not found: " + executablePath);
-  }
-
-  // Build signtool command
-  // Format: signtool sign /f <certificate.pfx> /p <password> /t <timestamp_url>
-  // /fd SHA256 <file>
-  std::ostringstream cmd;
-  cmd << "signtool sign";
-
-  // Certificate file (PFX format)
-  cmd << " /f \"" << m_config.signingCertificate << "\"";
-
-  // Password for the PFX file
-  if (!m_config.signingPassword.empty()) {
-    cmd << " /p \"" << m_config.signingPassword << "\"";
-  }
-
-  // Timestamp server for long-term validity
-  if (!m_config.signingTimestampUrl.empty()) {
-    cmd << " /tr \"" << m_config.signingTimestampUrl << "\"";
-    cmd << " /td SHA256"; // Timestamp digest algorithm
-  } else {
-    // Default to a common timestamp server
-    cmd << " /tr \"http://timestamp.digicert.com\"";
-    cmd << " /td SHA256";
-  }
-
-  // Use SHA256 for file digest
-  cmd << " /fd SHA256";
-
-  // Add description if executable name is available
-  if (!m_config.executableName.empty()) {
-    cmd << " /d \"" << m_config.executableName << "\"";
-  }
-
-  // The file to sign
-  cmd << " \"" << executablePath << "\"";
-
-  // Redirect stderr to stdout
-  cmd << " 2>&1";
-
-  logMessage("Executing: signtool sign ...", false);
-
-  std::string output;
-  auto result = executeCommand(cmd.str(), output);
-
-  if (result.isError()) {
-    return Result<void>::error("Failed to execute signtool: " + result.error());
-  }
-
-  int exitCode = result.value();
-
-  if (exitCode != 0) {
-    logMessage("signtool output: " + output, true);
-    return Result<void>::error("signtool failed with exit code " + std::to_string(exitCode) +
-                               ". Output: " + output);
-  }
-
-  logMessage("Windows code signing completed successfully", false);
-  logMessage("signtool output: " + output, false);
-
-  return Result<void>::ok();
-}
-
-Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
-  // macOS code signing using codesign
-  // codesign is part of Xcode Command Line Tools
-
-  if (!fs::exists(bundlePath)) {
-    return Result<void>::error("Bundle not found: " + bundlePath);
-  }
-
-  // Build codesign command
-  // Format: codesign --sign <identity> --entitlements <entitlements.plist>
-  // --timestamp --options runtime <bundle>
-  std::ostringstream cmd;
-  cmd << "codesign";
-
-  // Signing identity (certificate name or SHA-1 hash)
-  cmd << " --sign \"" << m_config.signingCertificate << "\"";
-
-  // Add entitlements file if specified (required for hardened runtime)
-  if (!m_config.signingEntitlements.empty() && fs::exists(m_config.signingEntitlements)) {
-    cmd << " --entitlements \"" << m_config.signingEntitlements << "\"";
-  }
-
-  // Enable timestamp (for long-term validity)
-  cmd << " --timestamp";
-
-  // Enable hardened runtime (required for notarization on macOS 10.14.5+)
-  cmd << " --options runtime";
-
-  // Force re-signing (in case already signed)
-  cmd << " --force";
-
-  // Deep signing (sign all nested code)
-  cmd << " --deep";
-
-  // The bundle to sign
-  cmd << " \"" << bundlePath << "\"";
-
-  // Redirect stderr to stdout
-  cmd << " 2>&1";
-
-  logMessage("Executing: codesign --sign ...", false);
-
-  std::string output;
-  auto result = executeCommand(cmd.str(), output);
-
-  if (result.isError()) {
-    return Result<void>::error("Failed to execute codesign: " + result.error());
-  }
-
-  int exitCode = result.value();
-
-  if (exitCode != 0) {
-    logMessage("codesign output: " + output, true);
-    return Result<void>::error("codesign failed with exit code " + std::to_string(exitCode) +
-                               ". Output: " + output);
-  }
-
-  logMessage("macOS code signing completed successfully", false);
-
-  // Verify the signature
-  std::ostringstream verifyCmd;
-  verifyCmd << "codesign --verify --verbose=2 \"" << bundlePath << "\" 2>&1";
-
-  std::string verifyOutput;
-  auto verifyResult = executeCommand(verifyCmd.str(), verifyOutput);
-
-  if (verifyResult.isOk() && verifyResult.value() == 0) {
-    logMessage("Signature verification passed", false);
-    logMessage("Verification output: " + verifyOutput, false);
-  } else {
-    m_progress.warnings.push_back("Code signing completed but verification failed: " +
-                                  verifyOutput);
-  }
-
-  // If team ID is provided, we could also initiate notarization
-  // (this would be a separate async process in production)
-  if (!m_config.signingTeamId.empty()) {
-    logMessage("Note: Notarization requires Team ID (" + m_config.signingTeamId +
-                   ") - submit to Apple using 'notarytool' for distribution",
-               false);
-  }
-
   return Result<void>::ok();
 }
 
