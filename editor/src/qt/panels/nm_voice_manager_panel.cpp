@@ -638,7 +638,13 @@ void NMVoiceManagerPanel::updateVoiceList() {
     const NovelMind::audio::VoiceLineStatus status =
         localeFile ? localeFile->status
                    : NovelMind::audio::VoiceLineStatus::Missing;
-    const bool hasFile = localeFile && !localeFile->filePath.empty();
+
+    // Check if file is truly matched: must have file path AND file must exist
+    bool hasFile = false;
+    if (localeFile && !localeFile->filePath.empty()) {
+      const QString filePath = QString::fromStdString(localeFile->filePath);
+      hasFile = QFile::exists(filePath);
+    }
 
     // Apply unmatched filter (early exit)
     if (showUnmatched && hasFile) {
