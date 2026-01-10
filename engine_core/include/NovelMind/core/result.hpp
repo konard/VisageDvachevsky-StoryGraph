@@ -26,7 +26,9 @@ public:
 
   [[nodiscard]] bool isError() const { return !m_hasValue; }
 
-  [[nodiscard]] explicit operator bool() const { return isOk(); }
+  explicit operator bool() const { return isOk(); }
+
+  bool operator!() const { return isError(); }
 
   [[nodiscard]] T& value() & { return m_value.value(); }
 
@@ -69,7 +71,9 @@ public:
 
   [[nodiscard]] bool isError() const { return m_error.has_value(); }
 
-  [[nodiscard]] explicit operator bool() const { return isOk(); }
+  explicit operator bool() const { return isOk(); }
+
+  bool operator!() const { return isError(); }
 
   [[nodiscard]] E& error() & { return m_error.value(); }
 
