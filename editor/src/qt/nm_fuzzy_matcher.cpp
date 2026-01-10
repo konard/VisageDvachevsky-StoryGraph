@@ -118,7 +118,7 @@ bool NMFuzzyMatcher::isWordBoundary(const QString &text, int index) {
 }
 
 int NMFuzzyMatcher::getPositionBonus(const QString &text, int index,
-                                     bool isConsecutive) {
+                                     [[maybe_unused]] bool isConsecutive) {
   int bonus = 0;
 
   // Start of string is most valuable
