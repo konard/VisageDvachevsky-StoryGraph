@@ -137,13 +137,31 @@ void TextInput::render(renderer::IRenderer &renderer) {
 
   textColor.a = static_cast<u8>(textColor.a * m_style.opacity);
 
+  // Draw selection background
+  if (m_focused && hasSelection()) {
+    size_t selStart = std::min(m_selectionStart, m_selectionEnd);
+    size_t selEnd = std::max(m_selectionStart, m_selectionEnd);
+
+    f32 charWidth = m_style.fontSize * 0.6f;
+    f32 selStartX = m_bounds.x + m_style.padding.left +
+                    static_cast<f32>(selStart) * charWidth - m_scrollOffset;
+    f32 selEndX = m_bounds.x + m_style.padding.left +
+                  static_cast<f32>(selEnd) * charWidth - m_scrollOffset;
+
+    renderer::Color selectionColor = m_style.accentColor;
+    selectionColor.a = 128; // Semi-transparent
+    renderer::Rect selectionRect{selStartX, m_bounds.y + m_style.padding.top,
+                                 selEndX - selStartX, m_style.fontSize};
+    renderer.fillRect(selectionRect, selectionColor);
+  }
+
   // Text rendering is handled when a TextRenderer is available.
   // Display text accounts for password masking and placeholder state.
   (void)displayText; // Reserved for text renderer
   (void)textColor;   // Reserved for text renderer
 
   // Draw cursor
-  if (m_focused) {
+  if (m_focused && !hasSelection()) {
     f32 cursorX = m_bounds.x + m_style.padding.left +
                   static_cast<f32>(m_cursorPos) * m_style.fontSize * 0.6f -
                   m_scrollOffset;
@@ -163,8 +181,31 @@ bool TextInput::handleEvent(UIEvent &event) {
     return false;
   }
 
-  if (event.type == UIEventType::Click) {
+  // Handle mouse down for selection start
+  if (event.type == UIEventType::MouseDown) {
     requestFocus();
+    m_isDragging = true;
+    size_t clickPos = getCursorPosFromX(event.mouseX);
+    m_cursorPos = clickPos;
+    if (!event.shift) {
+      clearSelection();
+    } else {
+      m_selectionEnd = clickPos;
+    }
+    event.consume();
+    return true;
+  }
+
+  // Handle mouse drag for selection
+  if (event.type == UIEventType::MouseMove && m_isDragging) {
+    updateSelectionFromMouse(event.mouseX);
+    event.consume();
+    return true;
+  }
+
+  // Handle mouse up to end dragging
+  if (event.type == UIEventType::MouseUp) {
+    m_isDragging = false;
     event.consume();
     return true;
   }
@@ -172,8 +213,13 @@ bool TextInput::handleEvent(UIEvent &event) {
   if (m_focused) {
     if (event.type == UIEventType::KeyPress) {
       if (event.character >= 32 && m_text.length() < m_maxLength) {
+        // Delete selection if any before inserting character
+        if (hasSelection()) {
+          deleteSelection();
+        }
         m_text.insert(m_cursorPos, 1, event.character);
         ++m_cursorPos;
+        clearSelection();
         if (m_onChange) {
           m_onChange(m_text);
         }
@@ -184,7 +230,12 @@ bool TextInput::handleEvent(UIEvent &event) {
       // Handle special keys
       if (event.keyCode == 8) // Backspace
       {
-        if (m_cursorPos > 0) {
+        if (hasSelection()) {
+          deleteSelection();
+          if (m_onChange) {
+            m_onChange(m_text);
+          }
+        } else if (m_cursorPos > 0) {
           m_text.erase(m_cursorPos - 1, 1);
           --m_cursorPos;
           if (m_onChange) {
@@ -195,7 +246,12 @@ bool TextInput::handleEvent(UIEvent &event) {
         return true;
       } else if (event.keyCode == 127) // Delete
       {
-        if (m_cursorPos < m_text.length()) {
+        if (hasSelection()) {
+          deleteSelection();
+          if (m_onChange) {
+            m_onChange(m_text);
+          }
+        } else if (m_cursorPos < m_text.length()) {
           m_text.erase(m_cursorPos, 1);
           if (m_onChange) {
             m_onChange(m_text);
@@ -212,15 +268,87 @@ bool TextInput::handleEvent(UIEvent &event) {
         return true;
       } else if (event.keyCode == 37) // Left arrow
       {
-        if (m_cursorPos > 0) {
-          --m_cursorPos;
+        if (event.shift) {
+          // Shift+Left: extend/create selection
+          if (!hasSelection()) {
+            m_selectionStart = m_cursorPos;
+          }
+          if (m_cursorPos > 0) {
+            --m_cursorPos;
+            m_selectionEnd = m_cursorPos;
+          }
+        } else {
+          // Left without shift: clear selection and move cursor
+          if (hasSelection()) {
+            m_cursorPos = std::min(m_selectionStart, m_selectionEnd);
+            clearSelection();
+          } else if (m_cursorPos > 0) {
+            --m_cursorPos;
+          }
         }
         event.consume();
         return true;
       } else if (event.keyCode == 39) // Right arrow
       {
-        if (m_cursorPos < m_text.length()) {
-          ++m_cursorPos;
+        if (event.shift) {
+          // Shift+Right: extend/create selection
+          if (!hasSelection()) {
+            m_selectionStart = m_cursorPos;
+          }
+          if (m_cursorPos < m_text.length()) {
+            ++m_cursorPos;
+            m_selectionEnd = m_cursorPos;
+          }
+        } else {
+          // Right without shift: clear selection and move cursor
+          if (hasSelection()) {
+            m_cursorPos = std::max(m_selectionStart, m_selectionEnd);
+            clearSelection();
+          } else if (m_cursorPos < m_text.length()) {
+            ++m_cursorPos;
+          }
+        }
+        event.consume();
+        return true;
+      } else if (event.ctrl && event.keyCode == 65) // Ctrl+A: Select All
+      {
+        selectAll();
+        event.consume();
+        return true;
+      } else if (event.ctrl && event.keyCode == 67) // Ctrl+C: Copy
+      {
+        // Copy functionality - placeholder for clipboard integration
+        if (hasSelection()) {
+          std::string selected = getSelectedText();
+          // TODO: Implement clipboard copy when platform layer is available
+          (void)selected;
+        }
+        event.consume();
+        return true;
+      } else if (event.ctrl && event.keyCode == 88) // Ctrl+X: Cut
+      {
+        // Cut functionality - placeholder for clipboard integration
+        if (hasSelection()) {
+          std::string selected = getSelectedText();
+          // TODO: Implement clipboard copy when platform layer is available
+          deleteSelection();
+          if (m_onChange) {
+            m_onChange(m_text);
+          }
+          (void)selected;
+        }
+        event.consume();
+        return true;
+      } else if (event.ctrl && event.keyCode == 86) // Ctrl+V: Paste
+      {
+        // Paste functionality - placeholder for clipboard integration
+        // TODO: Implement clipboard paste when platform layer is available
+        // For now, just delete selection if any
+        if (hasSelection()) {
+          deleteSelection();
+          if (m_onChange) {
+            m_onChange(m_text);
+          }
         }
         event.consume();
         return true;
@@ -239,6 +367,65 @@ Rect TextInput::measure(f32 /*availableWidth*/, f32 /*availableHeight*/) {
   height = std::max(height, m_constraints.minHeight);
 
   return {0, 0, width, height};
+}
+
+// Selection helper methods
+bool TextInput::hasSelection() const {
+  return m_selectionStart != m_selectionEnd;
+}
+
+void TextInput::clearSelection() {
+  m_selectionStart = 0;
+  m_selectionEnd = 0;
+}
+
+void TextInput::setSelection(size_t start, size_t end) {
+  m_selectionStart = std::min(start, m_text.length());
+  m_selectionEnd = std::min(end, m_text.length());
+  m_cursorPos = m_selectionEnd;
+}
+
+void TextInput::selectAll() {
+  m_selectionStart = 0;
+  m_selectionEnd = m_text.length();
+  m_cursorPos = m_selectionEnd;
+}
+
+std::string TextInput::getSelectedText() const {
+  if (!hasSelection()) {
+    return "";
+  }
+  size_t start = std::min(m_selectionStart, m_selectionEnd);
+  size_t end = std::max(m_selectionStart, m_selectionEnd);
+  return m_text.substr(start, end - start);
+}
+
+void TextInput::deleteSelection() {
+  if (!hasSelection()) {
+    return;
+  }
+  size_t start = std::min(m_selectionStart, m_selectionEnd);
+  size_t end = std::max(m_selectionStart, m_selectionEnd);
+  m_text.erase(start, end - start);
+  m_cursorPos = start;
+  clearSelection();
+}
+
+size_t TextInput::getCursorPosFromX(f32 x) {
+  f32 charWidth = m_style.fontSize * 0.6f;
+  f32 relativeX = x - m_bounds.x - m_style.padding.left + m_scrollOffset;
+  size_t pos = static_cast<size_t>(std::max(0.0f, relativeX / charWidth + 0.5f));
+  return std::min(pos, m_text.length());
+}
+
+void TextInput::updateSelectionFromMouse(f32 x) {
+  size_t newPos = getCursorPosFromX(x);
+  if (m_selectionStart == m_selectionEnd) {
+    // Start new selection from current cursor position
+    m_selectionStart = m_cursorPos;
+  }
+  m_cursorPos = newPos;
+  m_selectionEnd = newPos;
 }
 
 // ============================================================================
