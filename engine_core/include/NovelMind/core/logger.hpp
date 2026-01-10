@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdio>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <memory>
@@ -15,18 +16,18 @@ enum class LogLevel { Trace, Debug, Info, Warning, Error, Fatal, Off };
 
 class Logger {
 public:
-  static Logger &instance();
+  static Logger& instance();
 
-  Logger(const Logger &) = delete;
-  Logger &operator=(const Logger &) = delete;
+  Logger(const Logger&) = delete;
+  Logger& operator=(const Logger&) = delete;
 
   void setLevel(LogLevel level);
   [[nodiscard]] LogLevel getLevel() const;
 
-  void setOutputFile(const std::string &path);
+  void setOutputFile(const std::string& path);
   void closeOutputFile();
 
-  using LogCallback = std::function<void(LogLevel, const std::string &)>;
+  using LogCallback = std::function<void(LogLevel, const std::string&)>;
   void addLogCallback(LogCallback callback);
   void clearLogCallbacks();
 
@@ -39,11 +40,36 @@ public:
   void error(std::string_view message);
   void fatal(std::string_view message);
 
+  // Template overloads for format strings with variadic arguments
+  template <typename... Args> void trace(std::format_string<Args...> fmt, Args&&... args) {
+    trace(std::format(fmt, std::forward<Args>(args)...));
+  }
+
+  template <typename... Args> void debug(std::format_string<Args...> fmt, Args&&... args) {
+    debug(std::format(fmt, std::forward<Args>(args)...));
+  }
+
+  template <typename... Args> void info(std::format_string<Args...> fmt, Args&&... args) {
+    info(std::format(fmt, std::forward<Args>(args)...));
+  }
+
+  template <typename... Args> void warning(std::format_string<Args...> fmt, Args&&... args) {
+    warning(std::format(fmt, std::forward<Args>(args)...));
+  }
+
+  template <typename... Args> void error(std::format_string<Args...> fmt, Args&&... args) {
+    error(std::format(fmt, std::forward<Args>(args)...));
+  }
+
+  template <typename... Args> void fatal(std::format_string<Args...> fmt, Args&&... args) {
+    fatal(std::format(fmt, std::forward<Args>(args)...));
+  }
+
 private:
   Logger();
   ~Logger();
 
-  [[nodiscard]] const char *levelToString(LogLevel level) const;
+  [[nodiscard]] const char* levelToString(LogLevel level) const;
   [[nodiscard]] std::string getCurrentTimestamp() const;
 
   LogLevel m_level;
@@ -55,9 +81,9 @@ private:
 
 } // namespace NovelMind::core
 
-#define NOVELMIND_LOG_TRACE(msg) ::NovelMind::core::Logger::instance().trace(msg)
-#define NOVELMIND_LOG_DEBUG(msg) ::NovelMind::core::Logger::instance().debug(msg)
-#define NOVELMIND_LOG_INFO(msg) ::NovelMind::core::Logger::instance().info(msg)
-#define NOVELMIND_LOG_WARN(msg) ::NovelMind::core::Logger::instance().warning(msg)
-#define NOVELMIND_LOG_ERROR(msg) ::NovelMind::core::Logger::instance().error(msg)
-#define NOVELMIND_LOG_FATAL(msg) ::NovelMind::core::Logger::instance().fatal(msg)
+#define NOVELMIND_LOG_TRACE(...) ::NovelMind::core::Logger::instance().trace(__VA_ARGS__)
+#define NOVELMIND_LOG_DEBUG(...) ::NovelMind::core::Logger::instance().debug(__VA_ARGS__)
+#define NOVELMIND_LOG_INFO(...) ::NovelMind::core::Logger::instance().info(__VA_ARGS__)
+#define NOVELMIND_LOG_WARN(...) ::NovelMind::core::Logger::instance().warning(__VA_ARGS__)
+#define NOVELMIND_LOG_ERROR(...) ::NovelMind::core::Logger::instance().error(__VA_ARGS__)
+#define NOVELMIND_LOG_FATAL(...) ::NovelMind::core::Logger::instance().fatal(__VA_ARGS__)
