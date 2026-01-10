@@ -1,0 +1,5 @@
+// Invalid script - syntax error
+scene main {
+  dialogue "Test"
+  show character alice @ 123abc  // Invalid syntax
+}

@@ -4,6 +4,9 @@
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include "NovelMind/editor/qt/nm_dialogs.hpp"
+#include "NovelMind/scripting/lexer.hpp"
+#include "NovelMind/scripting/parser.hpp"
 
 #include <QAction>
 #include <QApplication>
@@ -297,6 +300,77 @@ static bool isValidDroppableFile(const QUrl &url) {
   return suffix == "nms";
 }
 
+/**
+ * @brief Validate script file content before creating a node
+ * Issue #393: Validates script syntax using Lexer and Parser
+ * @param filePath Path to the script file
+ * @param errorMessage Output parameter for error message
+ * @return true if the script is valid, false otherwise
+ */
+static bool validateScriptFile(const QString &filePath, QString &errorMessage) {
+  // 1. Open and read the file
+  QFile file(filePath);
+  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    errorMessage = QObject::tr("Cannot open file: %1").arg(file.errorString());
+    return false;
+  }
+
+  // 2. Read file content as UTF-8
+  const QString content = QString::fromUtf8(file.readAll());
+  file.close();
+
+  if (content.isEmpty()) {
+    errorMessage = QObject::tr("Script file is empty");
+    return false;
+  }
+
+  // 3. Tokenize using Lexer
+  using namespace NovelMind::scripting;
+  Lexer lexer;
+  auto tokensResult = lexer.tokenize(content.toStdString());
+
+  // Check for lexer errors
+  const auto &lexerErrors = lexer.getErrors();
+  if (!lexerErrors.empty()) {
+    const auto &firstError = lexerErrors[0];
+    errorMessage = QObject::tr("Script syntax error at line %1, column %2: %3")
+                       .arg(firstError.location.line)
+                       .arg(firstError.location.column)
+                       .arg(QString::fromStdString(firstError.message));
+    return false;
+  }
+
+  if (!tokensResult.isOk()) {
+    errorMessage = QObject::tr("Script tokenization failed: %1")
+                       .arg(QString::fromStdString(tokensResult.error()));
+    return false;
+  }
+
+  // 4. Parse the tokens
+  Parser parser;
+  auto parseResult = parser.parse(tokensResult.value());
+
+  // Check for parser errors
+  const auto &parserErrors = parser.getErrors();
+  if (!parserErrors.empty()) {
+    const auto &firstError = parserErrors[0];
+    errorMessage = QObject::tr("Script parse error at line %1, column %2: %3")
+                       .arg(firstError.location.line)
+                       .arg(firstError.location.column)
+                       .arg(QString::fromStdString(firstError.message));
+    return false;
+  }
+
+  if (!parseResult.isOk()) {
+    errorMessage = QObject::tr("Script parsing failed: %1")
+                       .arg(QString::fromStdString(parseResult.error()));
+    return false;
+  }
+
+  // Script is valid
+  return true;
+}
+
 void NMStoryGraphView::dragEnterEvent(QDragEnterEvent *event) {
   // Validate MIME data before accepting
   if (!event || !event->mimeData()) {
@@ -381,6 +455,20 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
     for (const QUrl &url : mimeData->urls()) {
       if (isValidDroppableFile(url)) {
         const QString filePath = url.toLocalFile();
+
+        // Issue #393: Validate script content before creating node
+        QString errorMessage;
+        if (!validateScriptFile(filePath, errorMessage)) {
+          NMMessageDialog::showError(
+              nullptr,
+              tr("Invalid Script File"),
+              tr("Cannot create node from script file:\n\n%1\n\nError:\n%2")
+                  .arg(QFileInfo(filePath).fileName())
+                  .arg(errorMessage));
+          event->ignore();
+          return;
+        }
+
         emit scriptFileDropped(filePath, scenePos);
         event->acceptProposedAction();
         return;
@@ -402,6 +490,20 @@ void NMStoryGraphView::dropEvent(QDropEvent *event) {
           fullPath = QDir(projectRoot).absoluteFilePath(assetPath);
         }
       }
+
+      // Issue #393: Validate script content before creating node
+      QString errorMessage;
+      if (!validateScriptFile(fullPath, errorMessage)) {
+        NMMessageDialog::showError(
+            nullptr,
+            tr("Invalid Script File"),
+            tr("Cannot create node from script file:\n\n%1\n\nError:\n%2")
+                .arg(QFileInfo(fullPath).fileName())
+                .arg(errorMessage));
+        event->ignore();
+        return;
+      }
+
       emit scriptFileDropped(fullPath, scenePos);
       event->acceptProposedAction();
       return;
