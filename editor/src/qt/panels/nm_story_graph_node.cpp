@@ -1003,7 +1003,7 @@ void NMGraphNodeItem::contextMenuEvent(QGraphicsSceneContextMenuEvent* event) {
           // Update validation status in parent panel
           if (auto* rebindGraphScene = qobject_cast<NMStoryGraphScene*>(scene())) {
             for (QObject* obj = rebindGraphScene; obj; obj = obj->parent()) {
-              if (auto* panel = qobject_cast<NMStoryGraphPanel*>(obj)) {
+              if ([[maybe_unused]] auto* panel = qobject_cast<NMStoryGraphPanel*>(obj)) {
                 // Trigger validation status update
                 rebindGraphScene->updateSceneValidationState(rebindProjectPath);
                 break;
