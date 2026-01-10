@@ -26,7 +26,7 @@ QJsonObject SceneMetadata::toJson() const {
   obj.insert("modified", modified.toString(Qt::ISODate));
 
   QJsonArray tagsArray;
-  for (const QString &tag : tags) {
+  for (const QString& tag : tags) {
     tagsArray.append(tag);
   }
   obj.insert("tags", tagsArray);
@@ -38,7 +38,7 @@ QJsonObject SceneMetadata::toJson() const {
   // Serialize referencing nodes (issue #211)
   if (!referencingNodes.isEmpty()) {
     QJsonArray refsArray;
-    for (const QString &ref : referencingNodes) {
+    for (const QString& ref : referencingNodes) {
       refsArray.append(ref);
     }
     obj.insert("referencingNodes", refsArray);
@@ -47,7 +47,7 @@ QJsonObject SceneMetadata::toJson() const {
   return obj;
 }
 
-SceneMetadata SceneMetadata::fromJson(const QJsonObject &json) {
+SceneMetadata SceneMetadata::fromJson(const QJsonObject& json) {
   SceneMetadata meta;
   meta.id = json.value("id").toString();
   meta.name = json.value("name").toString();
@@ -59,14 +59,14 @@ SceneMetadata SceneMetadata::fromJson(const QJsonObject &json) {
 
   const QJsonArray tagsArray = json.value("tags").toArray();
   meta.tags.reserve(tagsArray.size());
-  for (const auto &value : tagsArray) {
+  for (const auto& value : tagsArray) {
     meta.tags.append(value.toString());
   }
 
   // Deserialize referencing nodes (issue #211)
   const QJsonArray refsArray = json.value("referencingNodes").toArray();
   meta.referencingNodes.reserve(refsArray.size());
-  for (const auto &value : refsArray) {
+  for (const auto& value : refsArray) {
     meta.referencingNodes.append(value.toString());
   }
 
@@ -77,7 +77,7 @@ SceneMetadata SceneMetadata::fromJson(const QJsonObject &json) {
 // SceneRegistry Implementation
 // ============================================================================
 
-SceneRegistry::SceneRegistry(QObject *parent) : QObject(parent) {}
+SceneRegistry::SceneRegistry(QObject* parent) : QObject(parent) {}
 
 SceneRegistry::~SceneRegistry() = default;
 
@@ -85,7 +85,7 @@ SceneRegistry::~SceneRegistry() = default;
 // Scene Management
 // ============================================================================
 
-QString SceneRegistry::registerScene(const QString &name, const QString &basePath) {
+QString SceneRegistry::registerScene(const QString& name, const QString& basePath) {
   QString sceneId = generateUniqueSceneId(name);
 
   SceneMetadata meta;
@@ -109,42 +109,45 @@ QString SceneRegistry::registerScene(const QString &name, const QString &basePat
   return sceneId;
 }
 
-bool SceneRegistry::sceneExists(const QString &sceneId) const {
+bool SceneRegistry::sceneExists(const QString& sceneId) const {
   return m_scenes.contains(sceneId);
 }
 
-SceneMetadata SceneRegistry::getSceneMetadata(const QString &sceneId) const {
+SceneMetadata SceneRegistry::getSceneMetadata(const QString& sceneId) const {
   return m_scenes.value(sceneId);
 }
 
-QString SceneRegistry::getSceneDocumentPath(const QString &sceneId) const {
+QString SceneRegistry::getSceneDocumentPath(const QString& sceneId) const {
   if (m_scenes.contains(sceneId)) {
     return m_scenes.value(sceneId).documentPath;
   }
   return QString();
 }
 
-QString SceneRegistry::getSceneThumbnailPath(const QString &sceneId) const {
+QString SceneRegistry::getSceneThumbnailPath(const QString& sceneId) const {
   if (m_scenes.contains(sceneId)) {
     return m_scenes.value(sceneId).thumbnailPath;
   }
   return QString();
 }
 
-bool SceneRegistry::renameScene(const QString &sceneId, const QString &newName) {
+bool SceneRegistry::renameScene(const QString& sceneId, const QString& newName) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
+
+  // Capture old name before updating
+  const QString oldName = m_scenes[sceneId].name;
 
   m_scenes[sceneId].name = newName;
   updateModifiedTime(sceneId);
   m_modified = true;
 
-  emit sceneRenamed(sceneId, newName);
+  emit sceneRenamed(sceneId, oldName, newName);
   return true;
 }
 
-bool SceneRegistry::unregisterScene(const QString &sceneId) {
+bool SceneRegistry::unregisterScene(const QString& sceneId) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
@@ -156,12 +159,12 @@ bool SceneRegistry::unregisterScene(const QString &sceneId) {
   return true;
 }
 
-bool SceneRegistry::deleteScene(const QString &sceneId) {
+bool SceneRegistry::deleteScene(const QString& sceneId) {
   // Alias for unregisterScene for API compatibility (issue #211)
   return unregisterScene(sceneId);
 }
 
-QString SceneRegistry::getScenePath(const QString &sceneId) const {
+QString SceneRegistry::getScenePath(const QString& sceneId) const {
   if (m_projectPath.isEmpty() || !m_scenes.contains(sceneId)) {
     return QString();
   }
@@ -178,17 +181,17 @@ QStringList SceneRegistry::getAllSceneIds() const {
   return m_scenes.keys();
 }
 
-QList<SceneMetadata> SceneRegistry::getScenes(const QStringList &tags) const {
+QList<SceneMetadata> SceneRegistry::getScenes(const QStringList& tags) const {
   QList<SceneMetadata> result;
   result.reserve(m_scenes.size());
 
-  for (const auto &meta : m_scenes) {
+  for (const auto& meta : m_scenes) {
     if (tags.isEmpty()) {
       result.append(meta);
     } else {
       // Check if scene has any of the requested tags
       bool hasTag = false;
-      for (const QString &tag : tags) {
+      for (const QString& tag : tags) {
         if (meta.tags.contains(tag, Qt::CaseInsensitive)) {
           hasTag = true;
           break;
@@ -203,7 +206,7 @@ QList<SceneMetadata> SceneRegistry::getScenes(const QStringList &tags) const {
   return result;
 }
 
-bool SceneRegistry::updateSceneMetadata(const QString &sceneId, const SceneMetadata &metadata) {
+bool SceneRegistry::updateSceneMetadata(const QString& sceneId, const SceneMetadata& metadata) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
@@ -224,7 +227,7 @@ bool SceneRegistry::updateSceneMetadata(const QString &sceneId, const SceneMetad
 // Cross-Reference Tracking (Issue #211)
 // ============================================================================
 
-bool SceneRegistry::addSceneReference(const QString &sceneId, const QString &nodeIdString) {
+bool SceneRegistry::addSceneReference(const QString& sceneId, const QString& nodeIdString) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
@@ -241,13 +244,12 @@ bool SceneRegistry::addSceneReference(const QString &sceneId, const QString &nod
   return true;
 }
 
-bool SceneRegistry::removeSceneReference(const QString &sceneId, const QString &nodeIdString) {
+bool SceneRegistry::removeSceneReference(const QString& sceneId, const QString& nodeIdString) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
 
-  int index = static_cast<int>(
-      m_scenes[sceneId].referencingNodes.indexOf(nodeIdString));
+  int index = static_cast<int>(m_scenes[sceneId].referencingNodes.indexOf(nodeIdString));
   if (index == -1) {
     return false; // Not found
   }
@@ -260,7 +262,7 @@ bool SceneRegistry::removeSceneReference(const QString &sceneId, const QString &
   return true;
 }
 
-QStringList SceneRegistry::getSceneReferences(const QString &sceneId) const {
+QStringList SceneRegistry::getSceneReferences(const QString& sceneId) const {
   if (!m_scenes.contains(sceneId)) {
     return QStringList();
   }
@@ -268,7 +270,7 @@ QStringList SceneRegistry::getSceneReferences(const QString &sceneId) const {
   return m_scenes.value(sceneId).referencingNodes;
 }
 
-void SceneRegistry::updateSceneReferences(const QString &oldSceneId, const QString &newSceneId) {
+void SceneRegistry::updateSceneReferences(const QString& oldSceneId, const QString& newSceneId) {
   // This method is called when a scene ID is changed
   // The references are already moved to the new ID by renameSceneId()
   // This is just a hook for any additional reference update logic if needed
@@ -276,7 +278,7 @@ void SceneRegistry::updateSceneReferences(const QString &oldSceneId, const QStri
   Q_UNUSED(newSceneId);
 }
 
-bool SceneRegistry::renameSceneId(const QString &oldId, const QString &newId) {
+bool SceneRegistry::renameSceneId(const QString& oldId, const QString& newId) {
   if (!m_scenes.contains(oldId)) {
     return false;
   }
@@ -328,7 +330,7 @@ bool SceneRegistry::renameSceneId(const QString &oldId, const QString &newId) {
 // Thumbnail Management
 // ============================================================================
 
-bool SceneRegistry::generateThumbnail(const QString &sceneId, const QSize &size) {
+bool SceneRegistry::generateThumbnail(const QString& sceneId, const QSize& size) {
   if (!m_scenes.contains(sceneId)) {
     return false;
   }
@@ -337,7 +339,7 @@ bool SceneRegistry::generateThumbnail(const QString &sceneId, const QSize &size)
     return false;
   }
 
-  const SceneMetadata &meta = m_scenes[sceneId];
+  const SceneMetadata& meta = m_scenes[sceneId];
 
   // Load scene document
   QString documentPath = QDir(m_projectPath).filePath(meta.documentPath);
@@ -347,7 +349,7 @@ bool SceneRegistry::generateThumbnail(const QString &sceneId, const QSize &size)
     return false;
   }
 
-  const SceneDocument &doc = docResult.value();
+  const SceneDocument& doc = docResult.value();
 
   // Create thumbnail image
   QImage image(size, QImage::Format_ARGB32);
@@ -413,13 +415,13 @@ void SceneRegistry::clearThumbnailCache() {
     QStringList filters;
     filters << "*.png";
     QFileInfoList files = thumbnailDir.entryInfoList(filters, QDir::Files);
-    for (const QFileInfo &fileInfo : files) {
+    for (const QFileInfo& fileInfo : files) {
       QFile::remove(fileInfo.absoluteFilePath());
     }
   }
 }
 
-QString SceneRegistry::getAbsoluteThumbnailPath(const QString &sceneId) const {
+QString SceneRegistry::getAbsoluteThumbnailPath(const QString& sceneId) const {
   if (m_projectPath.isEmpty() || !m_scenes.contains(sceneId)) {
     return QString();
   }
@@ -445,7 +447,7 @@ QStringList SceneRegistry::validateScenes() const {
   }
 
   for (auto it = m_scenes.constBegin(); it != m_scenes.constEnd(); ++it) {
-    const SceneMetadata &meta = it.value();
+    const SceneMetadata& meta = it.value();
 
     // Check if document exists
     QString fullDocPath = QDir(m_projectPath).filePath(meta.documentPath);
@@ -486,7 +488,7 @@ QStringList SceneRegistry::findOrphanedScenes() const {
 
   // Also check subdirectories
   QFileInfoList subDirs = scenesDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot);
-  for (const QFileInfo &subDir : subDirs) {
+  for (const QFileInfo& subDir : subDirs) {
     if (subDir.fileName() == ".thumbnails") {
       continue; // Skip thumbnails directory
     }
@@ -494,7 +496,7 @@ QStringList SceneRegistry::findOrphanedScenes() const {
     sceneFiles.append(subDirectory.entryInfoList(filters, QDir::Files, QDir::Name));
   }
 
-  for (const QFileInfo &fileInfo : sceneFiles) {
+  for (const QFileInfo& fileInfo : sceneFiles) {
     // Get relative path
     QString relativePath = QDir(m_projectPath).relativeFilePath(fileInfo.absoluteFilePath());
 
@@ -546,7 +548,7 @@ QStringList SceneRegistry::getInvalidSceneReferences() const {
 // Persistence
 // ============================================================================
 
-bool SceneRegistry::load(const QString &projectPath) {
+bool SceneRegistry::load(const QString& projectPath) {
   m_projectPath = projectPath;
   m_registryFilePath = QDir(projectPath).filePath(REGISTRY_FILENAME);
   m_scenes.clear();
@@ -582,7 +584,7 @@ bool SceneRegistry::load(const QString &projectPath) {
   return true;
 }
 
-bool SceneRegistry::save(const QString &projectPath) {
+bool SceneRegistry::save(const QString& projectPath) {
   QString savePath = projectPath.isEmpty() ? m_projectPath : projectPath;
   if (savePath.isEmpty()) {
     qWarning() << "No project path set for scene registry save";
@@ -620,7 +622,7 @@ QJsonObject SceneRegistry::toJson() const {
   return root;
 }
 
-bool SceneRegistry::fromJson(const QJsonObject &json) {
+bool SceneRegistry::fromJson(const QJsonObject& json) {
   QString version = json.value("version").toString();
   if (version.isEmpty()) {
     qWarning() << "Scene registry missing version field";
@@ -630,7 +632,7 @@ bool SceneRegistry::fromJson(const QJsonObject &json) {
   m_scenes.clear();
 
   const QJsonArray scenesArray = json.value("scenes").toArray();
-  for (const auto &value : scenesArray) {
+  for (const auto& value : scenesArray) {
     SceneMetadata meta = SceneMetadata::fromJson(value.toObject());
     if (!meta.id.isEmpty()) {
       m_scenes.insert(meta.id, meta);
@@ -645,7 +647,7 @@ bool SceneRegistry::fromJson(const QJsonObject &json) {
 // Private Methods
 // ============================================================================
 
-QString SceneRegistry::generateUniqueSceneId(const QString &baseName) const {
+QString SceneRegistry::generateUniqueSceneId(const QString& baseName) const {
   QString baseId = sanitizeForId(baseName);
   if (baseId.isEmpty()) {
     baseId = "scene";
@@ -666,13 +668,13 @@ QString SceneRegistry::generateUniqueSceneId(const QString &baseName) const {
   return candidateId;
 }
 
-void SceneRegistry::updateModifiedTime(const QString &sceneId) {
+void SceneRegistry::updateModifiedTime(const QString& sceneId) {
   if (m_scenes.contains(sceneId)) {
     m_scenes[sceneId].modified = QDateTime::currentDateTime();
   }
 }
 
-QString SceneRegistry::sanitizeForId(const QString &name) {
+QString SceneRegistry::sanitizeForId(const QString& name) {
   // Convert to lowercase and replace spaces with underscores
   QString id = name.toLower().trimmed();
 

@@ -22,7 +22,7 @@ struct QtAppFixture {
   QtAppFixture() {
     if (!QCoreApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test")};
+      static char* argv[] = {const_cast<char*>("test")};
       static QCoreApplication app(argc, argv);
     }
   }
@@ -346,13 +346,13 @@ TEST_CASE("SceneRegistry signals", "[scene_registry]") {
   bool metadataChanged = false;
 
   QObject::connect(&registry, &SceneRegistry::sceneRegistered,
-                   [&](const QString &) { registered = true; });
+                   [&](const QString&) { registered = true; });
   QObject::connect(&registry, &SceneRegistry::sceneRenamed,
-                   [&](const QString &, const QString &) { renamed = true; });
+                   [&](const QString&, const QString&, const QString&) { renamed = true; });
   QObject::connect(&registry, &SceneRegistry::sceneUnregistered,
-                   [&](const QString &) { unregistered = true; });
+                   [&](const QString&) { unregistered = true; });
   QObject::connect(&registry, &SceneRegistry::sceneMetadataChanged,
-                   [&](const QString &) { metadataChanged = true; });
+                   [&](const QString&) { metadataChanged = true; });
 
   SECTION("sceneRegistered signal emitted") {
     registry.registerScene("Test");
@@ -363,6 +363,26 @@ TEST_CASE("SceneRegistry signals", "[scene_registry]") {
     QString id = registry.registerScene("Test");
     registry.renameScene(id, "New Name");
     REQUIRE(renamed);
+  }
+
+  SECTION("sceneRenamed signal provides oldName and newName") {
+    QString capturedSceneId;
+    QString capturedOldName;
+    QString capturedNewName;
+
+    QObject::connect(&registry, &SceneRegistry::sceneRenamed,
+                     [&](const QString& sceneId, const QString& oldName, const QString& newName) {
+                       capturedSceneId = sceneId;
+                       capturedOldName = oldName;
+                       capturedNewName = newName;
+                     });
+
+    QString id = registry.registerScene("Original Name");
+    registry.renameScene(id, "Updated Name");
+
+    REQUIRE(capturedSceneId == id);
+    REQUIRE(capturedOldName == "Original Name");
+    REQUIRE(capturedNewName == "Updated Name");
   }
 
   SECTION("sceneUnregistered signal emitted") {
@@ -613,7 +633,7 @@ TEST_CASE("SceneRegistry renameSceneId (issue #211)", "[scene_registry]") {
     bool signalEmitted = false;
     QString emittedOldId, emittedNewId;
     QObject::connect(&registry, &SceneRegistry::sceneIdChanged,
-                     [&](const QString &old, const QString &newId) {
+                     [&](const QString& old, const QString& newId) {
                        signalEmitted = true;
                        emittedOldId = old;
                        emittedNewId = newId;
@@ -637,7 +657,7 @@ TEST_CASE("SceneRegistry reference signals (issue #211)", "[scene_registry]") {
     QString emittedSceneId, emittedNodeId;
 
     QObject::connect(&registry, &SceneRegistry::sceneReferenceAdded,
-                     [&](const QString &scene, const QString &node) {
+                     [&](const QString& scene, const QString& node) {
                        signalEmitted = true;
                        emittedSceneId = scene;
                        emittedNodeId = node;
@@ -657,7 +677,7 @@ TEST_CASE("SceneRegistry reference signals (issue #211)", "[scene_registry]") {
     QString emittedSceneId, emittedNodeId;
 
     QObject::connect(&registry, &SceneRegistry::sceneReferenceRemoved,
-                     [&](const QString &scene, const QString &node) {
+                     [&](const QString& scene, const QString& node) {
                        signalEmitted = true;
                        emittedSceneId = scene;
                        emittedNodeId = node;

@@ -58,7 +58,7 @@ struct SceneMetadata {
   /**
    * @brief Load metadata from JSON object
    */
-  static SceneMetadata fromJson(const QJsonObject &json);
+  static SceneMetadata fromJson(const QJsonObject& json);
 };
 
 /**
@@ -91,7 +91,7 @@ class SceneRegistry : public QObject {
   Q_OBJECT
 
 public:
-  explicit SceneRegistry(QObject *parent = nullptr);
+  explicit SceneRegistry(QObject* parent = nullptr);
   ~SceneRegistry() override;
 
   // ==========================================================================
@@ -104,35 +104,35 @@ public:
    * @param basePath Optional base path for the scene file (relative to Scenes/)
    * @return Unique scene ID
    */
-  QString registerScene(const QString &name, const QString &basePath = QString());
+  QString registerScene(const QString& name, const QString& basePath = QString());
 
   /**
    * @brief Check if a scene with the given ID exists
    * @param sceneId Scene ID to check
    * @return true if scene is registered
    */
-  [[nodiscard]] bool sceneExists(const QString &sceneId) const;
+  [[nodiscard]] bool sceneExists(const QString& sceneId) const;
 
   /**
    * @brief Get metadata for a registered scene
    * @param sceneId Scene ID
    * @return Scene metadata (empty if not found)
    */
-  [[nodiscard]] SceneMetadata getSceneMetadata(const QString &sceneId) const;
+  [[nodiscard]] SceneMetadata getSceneMetadata(const QString& sceneId) const;
 
   /**
    * @brief Get path to the .nmscene document
    * @param sceneId Scene ID
    * @return Relative path to document, or empty if not found
    */
-  [[nodiscard]] QString getSceneDocumentPath(const QString &sceneId) const;
+  [[nodiscard]] QString getSceneDocumentPath(const QString& sceneId) const;
 
   /**
    * @brief Get path to the scene's thumbnail
    * @param sceneId Scene ID
    * @return Relative path to thumbnail, or empty if not found
    */
-  [[nodiscard]] QString getSceneThumbnailPath(const QString &sceneId) const;
+  [[nodiscard]] QString getSceneThumbnailPath(const QString& sceneId) const;
 
   /**
    * @brief Rename a scene
@@ -140,14 +140,14 @@ public:
    * @param newName New display name
    * @return true on success
    */
-  bool renameScene(const QString &sceneId, const QString &newName);
+  bool renameScene(const QString& sceneId, const QString& newName);
 
   /**
    * @brief Unregister a scene (removes from registry but not files)
    * @param sceneId Scene ID to unregister
    * @return true on success
    */
-  bool unregisterScene(const QString &sceneId);
+  bool unregisterScene(const QString& sceneId);
 
   /**
    * @brief Delete a scene (alias for unregisterScene for API compatibility)
@@ -157,7 +157,7 @@ public:
    * This is an alias for unregisterScene() to match the API spec in issue #211.
    * Note: This only removes the scene from the registry, not the actual files.
    */
-  bool deleteScene(const QString &sceneId);
+  bool deleteScene(const QString& sceneId);
 
   /**
    * @brief Get absolute path to the .nmscene document
@@ -167,7 +167,7 @@ public:
    * Unlike getSceneDocumentPath() which returns a relative path,
    * this returns the full absolute path suitable for file operations.
    */
-  [[nodiscard]] QString getScenePath(const QString &sceneId) const;
+  [[nodiscard]] QString getScenePath(const QString& sceneId) const;
 
   /**
    * @brief Get list of all registered scene IDs
@@ -180,7 +180,7 @@ public:
    * @param tags Tags to filter by (empty for all)
    * @return List of matching scene metadata
    */
-  [[nodiscard]] QList<SceneMetadata> getScenes(const QStringList &tags = QStringList()) const;
+  [[nodiscard]] QList<SceneMetadata> getScenes(const QStringList& tags = QStringList()) const;
 
   /**
    * @brief Update metadata for an existing scene
@@ -188,7 +188,7 @@ public:
    * @param metadata Updated metadata
    * @return true on success
    */
-  bool updateSceneMetadata(const QString &sceneId, const SceneMetadata &metadata);
+  bool updateSceneMetadata(const QString& sceneId, const SceneMetadata& metadata);
 
   // ==========================================================================
   // Cross-Reference Tracking (Issue #211)
@@ -200,7 +200,7 @@ public:
    * @param nodeIdString The Story Graph node ID (string form)
    * @return true if the reference was added (false if already exists or scene not found)
    */
-  bool addSceneReference(const QString &sceneId, const QString &nodeIdString);
+  bool addSceneReference(const QString& sceneId, const QString& nodeIdString);
 
   /**
    * @brief Remove a node's reference to a scene
@@ -208,14 +208,14 @@ public:
    * @param nodeIdString The Story Graph node ID
    * @return true if the reference was removed
    */
-  bool removeSceneReference(const QString &sceneId, const QString &nodeIdString);
+  bool removeSceneReference(const QString& sceneId, const QString& nodeIdString);
 
   /**
    * @brief Get all nodes that reference a specific scene
    * @param sceneId The scene ID
    * @return List of node IDs that reference this scene
    */
-  [[nodiscard]] QStringList getSceneReferences(const QString &sceneId) const;
+  [[nodiscard]] QStringList getSceneReferences(const QString& sceneId) const;
 
   /**
    * @brief Update all references when a scene ID changes
@@ -227,7 +227,7 @@ public:
    * Story Graph node updates should be handled by listening to the
    * sceneIdChanged signal.
    */
-  void updateSceneReferences(const QString &oldSceneId, const QString &newSceneId);
+  void updateSceneReferences(const QString& oldSceneId, const QString& newSceneId);
 
   /**
    * @brief Rename a scene's ID (not just display name)
@@ -238,7 +238,7 @@ public:
    * This method changes the actual scene ID, updates document paths,
    * and emits sceneIdChanged signal so Story Graph can update references.
    */
-  bool renameSceneId(const QString &oldId, const QString &newId);
+  bool renameSceneId(const QString& oldId, const QString& newId);
 
   // ==========================================================================
   // Thumbnail Management
@@ -250,7 +250,7 @@ public:
    * @param size Thumbnail size (default 256x144 for 16:9)
    * @return true on success
    */
-  bool generateThumbnail(const QString &sceneId, const QSize &size = QSize(256, 144));
+  bool generateThumbnail(const QString& sceneId, const QSize& size = QSize(256, 144));
 
   /**
    * @brief Clear all cached thumbnails
@@ -262,7 +262,7 @@ public:
    * @param sceneId Scene ID
    * @return Absolute path to thumbnail, or empty if not found
    */
-  [[nodiscard]] QString getAbsoluteThumbnailPath(const QString &sceneId) const;
+  [[nodiscard]] QString getAbsoluteThumbnailPath(const QString& sceneId) const;
 
   // ==========================================================================
   // Validation
@@ -311,14 +311,14 @@ public:
    * @param projectPath Path to project root
    * @return true on success
    */
-  bool load(const QString &projectPath);
+  bool load(const QString& projectPath);
 
   /**
    * @brief Save registry to project
    * @param projectPath Path to project root (uses loaded path if empty)
    * @return true on success
    */
-  bool save(const QString &projectPath = QString());
+  bool save(const QString& projectPath = QString());
 
   /**
    * @brief Export registry to JSON
@@ -331,7 +331,7 @@ public:
    * @param json JSON object containing registry data
    * @return true on success
    */
-  bool fromJson(const QJsonObject &json);
+  bool fromJson(const QJsonObject& json);
 
   /**
    * @brief Get the project path this registry is associated with
@@ -356,32 +356,33 @@ signals:
    * @brief Emitted when a new scene is registered
    * @param sceneId ID of the registered scene
    */
-  void sceneRegistered(const QString &sceneId);
+  void sceneRegistered(const QString& sceneId);
 
   /**
    * @brief Emitted when a scene is renamed
    * @param sceneId ID of the scene (unchanged)
+   * @param oldName Previous display name
    * @param newName New display name
    */
-  void sceneRenamed(const QString &sceneId, const QString &newName);
+  void sceneRenamed(const QString& sceneId, const QString& oldName, const QString& newName);
 
   /**
    * @brief Emitted when a scene is unregistered
    * @param sceneId ID of the unregistered scene
    */
-  void sceneUnregistered(const QString &sceneId);
+  void sceneUnregistered(const QString& sceneId);
 
   /**
    * @brief Emitted when scene metadata changes
    * @param sceneId ID of the modified scene
    */
-  void sceneMetadataChanged(const QString &sceneId);
+  void sceneMetadataChanged(const QString& sceneId);
 
   /**
    * @brief Emitted when a scene's thumbnail is updated
    * @param sceneId ID of the scene
    */
-  void sceneThumbnailUpdated(const QString &sceneId);
+  void sceneThumbnailUpdated(const QString& sceneId);
 
   /**
    * @brief Emitted when the registry is loaded
@@ -405,21 +406,21 @@ signals:
    * Story Graph should listen to this signal to update all Scene node
    * references from oldId to newId.
    */
-  void sceneIdChanged(const QString &oldId, const QString &newId);
+  void sceneIdChanged(const QString& oldId, const QString& newId);
 
   /**
    * @brief Emitted when a node reference to a scene is added
    * @param sceneId The scene being referenced
    * @param nodeIdString The node that now references the scene
    */
-  void sceneReferenceAdded(const QString &sceneId, const QString &nodeIdString);
+  void sceneReferenceAdded(const QString& sceneId, const QString& nodeIdString);
 
   /**
    * @brief Emitted when a node reference to a scene is removed
    * @param sceneId The scene being unreferenced
    * @param nodeIdString The node that no longer references the scene
    */
-  void sceneReferenceRemoved(const QString &sceneId, const QString &nodeIdString);
+  void sceneReferenceRemoved(const QString& sceneId, const QString& nodeIdString);
 
 private:
   /**
@@ -427,29 +428,29 @@ private:
    * @param baseName Base name for the ID
    * @return Unique scene ID
    */
-  QString generateUniqueSceneId(const QString &baseName) const;
+  QString generateUniqueSceneId(const QString& baseName) const;
 
   /**
    * @brief Update the modified timestamp for a scene
    * @param sceneId Scene ID
    */
-  void updateModifiedTime(const QString &sceneId);
+  void updateModifiedTime(const QString& sceneId);
 
   /**
    * @brief Sanitize a name for use as a file-safe ID
    * @param name Name to sanitize
    * @return Sanitized ID string
    */
-  static QString sanitizeForId(const QString &name);
+  static QString sanitizeForId(const QString& name);
 
   QHash<QString, SceneMetadata> m_scenes; ///< Scene metadata by ID
   QString m_projectPath;                  ///< Project root path
   QString m_registryFilePath;             ///< Path to scene_registry.json
   bool m_modified = false;                ///< Dirty flag
 
-  static constexpr const char *REGISTRY_VERSION = "1.0";
-  static constexpr const char *REGISTRY_FILENAME = "scene_registry.json";
-  static constexpr const char *THUMBNAILS_DIR = "Scenes/.thumbnails";
+  static constexpr const char* REGISTRY_VERSION = "1.0";
+  static constexpr const char* REGISTRY_FILENAME = "scene_registry.json";
+  static constexpr const char* THUMBNAILS_DIR = "Scenes/.thumbnails";
 };
 
 } // namespace NovelMind::editor

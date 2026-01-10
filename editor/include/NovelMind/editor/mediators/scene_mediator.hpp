@@ -48,7 +48,7 @@ class SceneMediator : public QObject {
   Q_OBJECT
 
 public:
-  explicit SceneMediator(QObject *parent = nullptr);
+  explicit SceneMediator(QObject* parent = nullptr);
   ~SceneMediator() override;
 
   /**
@@ -57,8 +57,8 @@ public:
    * @param sceneView The scene view panel
    * @param storyGraph The story graph panel
    */
-  void initialize(SceneRegistry *sceneRegistry, qt::NMSceneViewPanel *sceneView,
-                  qt::NMStoryGraphPanel *storyGraph);
+  void initialize(SceneRegistry* sceneRegistry, qt::NMSceneViewPanel* sceneView,
+                  qt::NMStoryGraphPanel* storyGraph);
 
   /**
    * @brief Shutdown and cleanup
@@ -73,9 +73,7 @@ public:
   /**
    * @brief Get the scene registry
    */
-  [[nodiscard]] SceneRegistry *sceneRegistry() const {
-    return m_sceneRegistry;
-  }
+  [[nodiscard]] SceneRegistry* sceneRegistry() const { return m_sceneRegistry; }
 
   // =========================================================================
   // Scene-Node Reference Management
@@ -106,23 +104,21 @@ signals:
    * @param sceneId The scene ID that failed validation
    * @param nodeIds The nodes that reference the invalid scene
    */
-  void invalidSceneReference(const QString &sceneId,
-                             const QStringList &nodeIds);
+  void invalidSceneReference(const QString& sceneId, const QStringList& nodeIds);
 
 private slots:
   // Scene Registry event handlers
-  void onSceneRegistered(const QString &sceneId);
-  void onSceneUnregistered(const QString &sceneId);
-  void onSceneIdChanged(const QString &oldId, const QString &newId);
-  void onSceneRenamed(const QString &sceneId, const QString &newName);
+  void onSceneRegistered(const QString& sceneId);
+  void onSceneUnregistered(const QString& sceneId);
+  void onSceneIdChanged(const QString& oldId, const QString& newId);
+  void onSceneRenamed(const QString& sceneId, const QString& oldName, const QString& newName);
 
   // Story Graph event handlers
-  void onNodeAdded(uint64_t nodeId, const QString &nodeIdString,
-                   const QString &nodeType);
+  void onNodeAdded(uint64_t nodeId, const QString& nodeIdString, const QString& nodeType);
   void onNodeDeleted(uint64_t nodeId);
 
   // Scene View event handlers
-  void onSceneChanged(const QString &sceneId);
+  void onSceneChanged(const QString& sceneId);
 
 private:
   /**
@@ -131,20 +127,19 @@ private:
    * @param oldSceneId The old scene ID (empty if new node)
    * @param newSceneId The new scene ID
    */
-  void updateNodeSceneReference(const QString &nodeIdString,
-                                const QString &oldSceneId,
-                                const QString &newSceneId);
+  void updateNodeSceneReference(const QString& nodeIdString, const QString& oldSceneId,
+                                const QString& newSceneId);
 
   /**
    * @brief Get the sceneId from a node in the Story Graph
    * @param nodeIdString The node ID string
    * @return The scene ID, or empty if not a scene node
    */
-  [[nodiscard]] QString getNodeSceneId(const QString &nodeIdString) const;
+  [[nodiscard]] QString getNodeSceneId(const QString& nodeIdString) const;
 
-  SceneRegistry *m_sceneRegistry = nullptr;
-  qt::NMSceneViewPanel *m_sceneView = nullptr;
-  qt::NMStoryGraphPanel *m_storyGraph = nullptr;
+  SceneRegistry* m_sceneRegistry = nullptr;
+  qt::NMSceneViewPanel* m_sceneView = nullptr;
+  qt::NMStoryGraphPanel* m_storyGraph = nullptr;
 
   std::vector<EventSubscription> m_subscriptions;
   bool m_initialized = false;
