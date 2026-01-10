@@ -749,7 +749,7 @@ void NMSceneDialogueGraphPanel::onAutoLayout() {
         for (uint64_t predId : predecessors[nodeId]) {
           if (nodeLayers.contains(predId) && nodeLayers[predId] == layer - 1 &&
               layerNodes.contains(layer - 1)) {
-            int predIndex = layerNodes[layer - 1].indexOf(predId);
+            int predIndex = static_cast<int>(layerNodes[layer - 1].indexOf(predId));
             if (predIndex >= 0) {
               sum += predIndex;
               ++count;
@@ -760,7 +760,7 @@ void NMSceneDialogueGraphPanel::onAutoLayout() {
         if (count > 0) {
           barycenter[nodeId] = sum / count;
         } else {
-          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
@@ -786,7 +786,7 @@ void NMSceneDialogueGraphPanel::onAutoLayout() {
         for (uint64_t succId : successors[nodeId]) {
           if (nodeLayers.contains(succId) && nodeLayers[succId] == layer + 1 &&
               layerNodes.contains(layer + 1)) {
-            int succIndex = layerNodes[layer + 1].indexOf(succId);
+            int succIndex = static_cast<int>(layerNodes[layer + 1].indexOf(succId));
             if (succIndex >= 0) {
               sum += succIndex;
               ++count;
@@ -797,7 +797,7 @@ void NMSceneDialogueGraphPanel::onAutoLayout() {
         if (count > 0) {
           barycenter[nodeId] = sum / count;
         } else {
-          barycenter[nodeId] = currentLayer.indexOf(nodeId);
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
