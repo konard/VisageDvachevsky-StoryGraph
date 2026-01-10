@@ -777,63 +777,547 @@ void ProjectIntegrityChecker::checkMissingTranslations(std::vector<IntegrityIssu
   }
 }
 
-void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& /*issues*/) {
-  // Would scan scripts for string usage and compare to localization files
-  // Complex implementation - placeholder for now
+void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& issues) {
+  // Scan scripts for string usage and compare to localization files
+  if (m_localizationStrings.empty()) {
+    return; // No localization strings to check
+  }
+
+  // Collect all localization keys from all locales
+  std::unordered_set<std::string> allKeys;
+  for (const auto& [locale, keys] : m_localizationStrings) {
+    for (const auto& key : keys) {
+      allKeys.insert(key);
+    }
+  }
+
+  // Collect referenced keys from scripts
+  std::unordered_set<std::string> referencedKeys;
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+
+  if (fs::exists(scriptsDir)) {
+    // Pattern to match loc("key") or loc('key')
+    std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.path().extension() == ".nms") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, locPattern)) {
+          referencedKeys.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
+
+  // Also check scene files for localization references
+  fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
+  if (fs::exists(scenesDir)) {
+    std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+
+    for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
+      if (entry.path().extension() == ".nmscene" || entry.path().extension() == ".json") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, locPattern)) {
+          referencedKeys.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
+
+  // Find unused keys
+  for (const auto& key : allKeys) {
+    if (referencedKeys.find(key) == referencedKeys.end()) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Info;
+      issue.category = IssueCategory::Localization;
+      issue.code = "L003";
+      issue.message = "Unused localization key: " + key;
+      issue.suggestions.push_back("Remove unused key to reduce clutter");
+      issue.suggestions.push_back("Key may be for future use - verify before removing");
+      issue.hasQuickFix = true;
+      issue.quickFixDescription = "Remove unused localization key from all locale files";
+      issues.push_back(issue);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkStoryGraphStructure(std::vector<IntegrityIssue>& issues) {
-  // Check for entry nodes
-  // Would parse story graph files and validate structure
-  // Placeholder - would require loading IR/graph data
-
+  // Parse story graph files and validate structure
   fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
   if (!fs::exists(scriptsDir)) {
     return;
   }
 
   bool hasEntryPoint = false;
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::string> sceneFiles;
 
-  for (const auto& entry : fs::directory_iterator(scriptsDir)) {
+  // Collect all defined scenes
+  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
     if (entry.path().extension() == ".nms") {
-      std::ifstream file(entry.path());
-      if (!file) {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
         continue;
       }
-      std::ostringstream buffer;
-      buffer << file.rdbuf();
-      std::string content = buffer.str();
 
-      // Look for scene definitions
-      if (content.find("scene main") != std::string::npos ||
-          content.find("scene start") != std::string::npos) {
-        hasEntryPoint = true;
-        break;
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+
+        // Check for entry point scenes
+        if (sceneName == "main" || sceneName == "start" || sceneName == "intro") {
+          hasEntryPoint = true;
+        }
+
+        searchStart = match.suffix().first;
       }
     }
   }
 
+  // Check for entry point
   if (!hasEntryPoint) {
     IntegrityIssue issue;
     issue.severity = IssueSeverity::Error;
     issue.category = IssueCategory::StoryGraph;
     issue.code = "G001";
-    issue.message = "No entry point scene found (main or start)";
+    issue.message = "No entry point scene found (main, start, or intro)";
     issue.suggestions.push_back("Create a 'main' scene as entry point");
     issue.hasQuickFix = true;
     issue.quickFixDescription = "Create main scene";
     issues.push_back(issue);
   }
+
+  // Check for invalid goto references
+  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::string line;
+      std::istringstream stream(content);
+      int lineNum = 0;
+
+      while (std::getline(stream, line)) {
+        lineNum++;
+        std::smatch match;
+
+        if (std::regex_search(line, match, gotoPattern)) {
+          std::string targetScene = match[1].str();
+
+          // Validate that the target scene exists
+          if (definedScenes.find(targetScene) == definedScenes.end()) {
+            IntegrityIssue issue;
+            issue.severity = IssueSeverity::Error;
+            issue.category = IssueCategory::StoryGraph;
+            issue.code = "G003";
+            issue.message = "Goto references undefined scene: " + targetScene;
+            issue.filePath = entry.path().string();
+            issue.lineNumber = lineNum;
+            issue.context = line;
+            issue.suggestions.push_back("Define scene '" + targetScene + "'");
+            issue.suggestions.push_back("Fix the goto reference");
+            issue.hasQuickFix = true;
+            issue.quickFixDescription = "Comment out invalid goto";
+            issues.push_back(issue);
+          }
+        }
+      }
+    }
+  }
+
+  // Check for duplicate scene definitions
+  std::unordered_map<std::string, std::vector<std::string>> sceneDuplicates;
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        sceneDuplicates[sceneName].push_back(entry.path().string());
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  for (const auto& [sceneName, files] : sceneDuplicates) {
+    if (files.size() > 1) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Error;
+      issue.category = IssueCategory::StoryGraph;
+      issue.code = "G004";
+      issue.message = "Duplicate scene definition: " + sceneName;
+      issue.context = "Found in " + std::to_string(files.size()) + " files";
+      for (const auto& file : files) {
+        issue.suggestions.push_back("  - " + file);
+      }
+      issues.push_back(issue);
+    }
+  }
 }
 
-void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& /*issues*/) {
-  // Would perform graph traversal to find unreachable nodes
-  // Complex implementation - placeholder for now
+void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& issues) {
+  // Perform graph traversal to find unreachable scenes
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  // Build scene graph
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions; // scene -> [target scenes]
+  std::unordered_map<std::string, std::string> sceneFiles;
+
+  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+
+  // First pass: collect all defined scenes
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  if (definedScenes.empty()) {
+    return; // No scenes to analyze
+  }
+
+  // Second pass: build transition graph
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      // Find which scene we're in
+      std::smatch sceneMatch;
+      std::string::const_iterator sceneSearchStart(content.cbegin());
+      std::string currentScene;
+
+      while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
+        currentScene = sceneMatch[1].str();
+        size_t sceneStart = static_cast<size_t>(
+            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+
+        // Find scene end (matching closing brace)
+        size_t braceStart = content.find('{', sceneStart);
+        if (braceStart == std::string::npos) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        // Find matching closing brace
+        int braceCount = 1;
+        size_t braceEnd = braceStart + 1;
+        while (braceEnd < content.size() && braceCount > 0) {
+          if (content[braceEnd] == '{')
+            braceCount++;
+          else if (content[braceEnd] == '}')
+            braceCount--;
+          braceEnd++;
+        }
+
+        if (braceCount != 0) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        std::string sceneContent = content.substr(braceStart, braceEnd - braceStart);
+
+        // Find goto statements in this scene
+        std::smatch gotoMatch;
+        std::string::const_iterator gotoSearchStart(sceneContent.cbegin());
+
+        while (std::regex_search(gotoSearchStart, sceneContent.cend(), gotoMatch, gotoPattern)) {
+          std::string targetScene = gotoMatch[1].str();
+          if (definedScenes.find(targetScene) != definedScenes.end()) {
+            sceneTransitions[currentScene].push_back(targetScene);
+          }
+          gotoSearchStart = gotoMatch.suffix().first;
+        }
+
+        sceneSearchStart = sceneMatch.suffix().first;
+      }
+    }
+  }
+
+  // Find entry point scenes
+  std::unordered_set<std::string> entryPoints;
+  for (const auto& scene : definedScenes) {
+    if (scene == "main" || scene == "start" || scene == "intro") {
+      entryPoints.insert(scene);
+    }
+  }
+
+  if (entryPoints.empty() && !definedScenes.empty()) {
+    // Use first defined scene as entry point
+    entryPoints.insert(*definedScenes.begin());
+  }
+
+  // BFS to find reachable scenes
+  std::unordered_set<std::string> reachable;
+  std::queue<std::string> toVisit;
+
+  for (const auto& entry : entryPoints) {
+    toVisit.push(entry);
+    reachable.insert(entry);
+  }
+
+  while (!toVisit.empty()) {
+    std::string current = toVisit.front();
+    toVisit.pop();
+
+    if (sceneTransitions.find(current) != sceneTransitions.end()) {
+      for (const auto& target : sceneTransitions[current]) {
+        if (reachable.find(target) == reachable.end()) {
+          reachable.insert(target);
+          toVisit.push(target);
+        }
+      }
+    }
+  }
+
+  // Report unreachable scenes
+  for (const auto& scene : definedScenes) {
+    if (reachable.find(scene) == reachable.end()) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Warning;
+      issue.category = IssueCategory::StoryGraph;
+      issue.code = "G005";
+      issue.message = "Scene '" + scene + "' is unreachable from entry points";
+      issue.filePath = sceneFiles[scene];
+      issue.suggestions.push_back("Add a goto to this scene from a reachable scene");
+      issue.suggestions.push_back("Remove the scene if it's no longer needed");
+      issue.hasQuickFix = false;
+      issues.push_back(issue);
+    }
+  }
 }
 
-void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& /*issues*/) {
-  // Would use DFS with coloring to detect cycles
-  // Complex implementation - placeholder for now
+void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) {
+  // Use DFS with coloring to detect cycles in the story graph
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  // Build scene graph
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions;
+  std::unordered_map<std::string, std::string> sceneFiles;
+
+  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+
+  // First pass: collect all defined scenes
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  if (definedScenes.empty()) {
+    return;
+  }
+
+  // Second pass: build transition graph
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch sceneMatch;
+      std::string::const_iterator sceneSearchStart(content.cbegin());
+
+      while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
+        std::string currentScene = sceneMatch[1].str();
+        size_t sceneStart = static_cast<size_t>(
+            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+
+        size_t braceStart = content.find('{', sceneStart);
+        if (braceStart == std::string::npos) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        // Find matching closing brace
+        int braceCount = 1;
+        size_t braceEnd = braceStart + 1;
+        while (braceEnd < content.size() && braceCount > 0) {
+          if (content[braceEnd] == '{')
+            braceCount++;
+          else if (content[braceEnd] == '}')
+            braceCount--;
+          braceEnd++;
+        }
+
+        if (braceCount != 0) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        std::string sceneContent = content.substr(braceStart, braceEnd - braceStart);
+
+        // Find goto statements
+        std::smatch gotoMatch;
+        std::string::const_iterator gotoSearchStart(sceneContent.cbegin());
+
+        while (std::regex_search(gotoSearchStart, sceneContent.cend(), gotoMatch, gotoPattern)) {
+          std::string targetScene = gotoMatch[1].str();
+          if (definedScenes.find(targetScene) != definedScenes.end()) {
+            sceneTransitions[currentScene].push_back(targetScene);
+          }
+          gotoSearchStart = gotoMatch.suffix().first;
+        }
+
+        sceneSearchStart = sceneMatch.suffix().first;
+      }
+    }
+  }
+
+  // DFS to detect cycles using colors
+  enum class Color { White, Gray, Black };
+  std::unordered_map<std::string, Color> colors;
+  std::vector<std::string> cycleStack;
+  std::unordered_set<std::string> reportedCycles;
+
+  // Initialize all nodes as white
+  for (const auto& scene : definedScenes) {
+    colors[scene] = Color::White;
+  }
+
+  // DFS function to detect cycles
+  std::function<bool(const std::string&)> dfs = [&](const std::string& node) -> bool {
+    colors[node] = Color::Gray;
+    cycleStack.push_back(node);
+
+    if (sceneTransitions.find(node) != sceneTransitions.end()) {
+      for (const auto& neighbor : sceneTransitions[node]) {
+        if (colors[neighbor] == Color::Gray) {
+          // Found a cycle - build cycle path
+          std::vector<std::string> cycle;
+          bool inCycle = false;
+          for (const auto& stackNode : cycleStack) {
+            if (stackNode == neighbor) {
+              inCycle = true;
+            }
+            if (inCycle) {
+              cycle.push_back(stackNode);
+            }
+          }
+          cycle.push_back(neighbor); // Complete the cycle
+
+          // Create a unique key for this cycle
+          std::string cycleKey;
+          for (const auto& n : cycle) {
+            cycleKey += n + "->";
+          }
+
+          // Only report each unique cycle once
+          if (reportedCycles.find(cycleKey) == reportedCycles.end()) {
+            reportedCycles.insert(cycleKey);
+
+            // Build cycle description
+            std::string cyclePath;
+            for (size_t i = 0; i < cycle.size(); ++i) {
+              if (i > 0)
+                cyclePath += " -> ";
+              cyclePath += cycle[i];
+            }
+
+            IntegrityIssue issue;
+            issue.severity = IssueSeverity::Warning;
+            issue.category = IssueCategory::StoryGraph;
+            issue.code = "G006";
+            issue.message = "Cycle detected in story graph";
+            issue.context = cyclePath;
+            issue.filePath = sceneFiles[node];
+            issue.suggestions.push_back("Verify if this cycle is intentional (e.g., gameplay loop)");
+            issue.suggestions.push_back("Add an 'end' statement to break unintended loops");
+            issue.suggestions.push_back("Ensure player has a way to exit the cycle");
+            issue.hasQuickFix = false;
+            issues.push_back(issue);
+          }
+        } else if (colors[neighbor] == Color::White) {
+          if (dfs(neighbor)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    cycleStack.pop_back();
+    colors[node] = Color::Black;
+    return false;
+  };
+
+  // Run DFS from all white nodes
+  for (const auto& scene : definedScenes) {
+    if (colors[scene] == Color::White) {
+      dfs(scene);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkDeadEnds(std::vector<IntegrityIssue>& issues) {
@@ -1152,6 +1636,43 @@ Result<void> ProjectIntegrityChecker::applyQuickFix(const IntegrityIssue& issue)
   if (issue.code == "R001") {
     // Duplicate asset name - requires manual resolution
     return Result<void>::error("Duplicate asset names require manual renaming or removal");
+  }
+
+  if (issue.code == "L003") {
+    // Unused localization key - remove from all locale files
+    std::string key;
+    const std::string prefix = "Unused localization key: ";
+    size_t pos = issue.message.find(prefix);
+    if (pos != std::string::npos) {
+      key = issue.message.substr(pos + prefix.length());
+    }
+    if (!key.empty()) {
+      return QuickFixes::removeUnusedLocalizationKey(m_projectPath, key);
+    }
+    return Result<void>::error("Could not extract localization key from issue message");
+  }
+
+  if (issue.code == "G003") {
+    // Invalid goto reference - comment out the line
+    if (!issue.filePath.empty() && issue.lineNumber > 0) {
+      return QuickFixes::commentOutLine(issue.filePath, issue.lineNumber);
+    }
+    return Result<void>::error("No file path or line number specified");
+  }
+
+  if (issue.code == "G004") {
+    // Duplicate scene definition - requires manual resolution
+    return Result<void>::error("Duplicate scene definitions require manual resolution");
+  }
+
+  if (issue.code == "G005") {
+    // Unreachable scene - no automatic fix (requires manual graph connection)
+    return Result<void>::error("Unreachable scenes require manual connection to the story graph");
+  }
+
+  if (issue.code == "G006") {
+    // Cycle detected - no automatic fix (needs manual review)
+    return Result<void>::error("Story graph cycles require manual review and resolution");
   }
 
   return Result<void>::error("Quick fix not implemented for issue: " + issue.code);
@@ -1516,6 +2037,86 @@ Result<void> createDefaultProjectConfig(const std::string& projectPath,
   file << "  \"playbackSourceMode\": \"Script\"\n";
   file << "}\n";
   file.close();
+
+  return Result<void>::ok();
+}
+
+Result<void> removeUnusedLocalizationKey(const std::string& projectPath, const std::string& key) {
+  fs::path locDir = fs::path(projectPath) / "Localization";
+  if (!fs::exists(locDir)) {
+    return Result<void>::error("Localization directory not found");
+  }
+
+  bool anyChanges = false;
+
+  // Remove key from all locale files
+  for (const auto& entry : fs::directory_iterator(locDir)) {
+    if (entry.path().extension() == ".json") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      // Create regex to match the key and its value (including comma handling)
+      std::regex keyPattern("\\s*,?\\s*\"" + key + "\"\\s*:\\s*\"[^\"]*\"\\s*,?\\s*");
+      std::string modifiedContent = std::regex_replace(content, keyPattern, "");
+
+      // Clean up any double commas or trailing commas
+      modifiedContent = std::regex_replace(modifiedContent, std::regex(",\\s*,"), ",");
+      modifiedContent = std::regex_replace(modifiedContent, std::regex(",\\s*}"), "\n}");
+
+      if (modifiedContent != content) {
+        std::ofstream outFile(entry.path());
+        if (outFile.is_open()) {
+          outFile << modifiedContent;
+          outFile.close();
+          anyChanges = true;
+        }
+      }
+    }
+  }
+
+  if (anyChanges) {
+    return Result<void>::ok();
+  }
+  return Result<void>::error("Key not found in any localization file: " + key);
+}
+
+Result<void> commentOutLine(const std::string& filePath, int lineNumber) {
+  if (!fs::exists(filePath)) {
+    return Result<void>::error("File not found: " + filePath);
+  }
+
+  std::ifstream inFile(filePath);
+  if (!inFile.is_open()) {
+    return Result<void>::error("Failed to open file: " + filePath);
+  }
+
+  std::vector<std::string> lines;
+  std::string line;
+  int currentLine = 0;
+
+  while (std::getline(inFile, line)) {
+    currentLine++;
+    if (currentLine == lineNumber) {
+      // Comment out this line
+      lines.push_back("    // [DISABLED] " + line);
+    } else {
+      lines.push_back(line);
+    }
+  }
+  inFile.close();
+
+  // Write back
+  std::ofstream outFile(filePath);
+  if (!outFile.is_open()) {
+    return Result<void>::error("Failed to write file: " + filePath);
+  }
+
+  for (const auto& l : lines) {
+    outFile << l << "\n";
+  }
+  outFile.close();
 
   return Result<void>::ok();
 }

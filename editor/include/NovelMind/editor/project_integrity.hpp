@@ -359,6 +359,21 @@ Result<void> removeOrphanedAsset(const std::string& projectPath, const std::stri
  */
 Result<void> createDefaultProjectConfig(const std::string& projectPath,
                                         const std::string& projectName);
+
+/**
+ * @brief Remove an unused localization key from all locale files
+ * @param projectPath Path to the project root
+ * @param key The localization key to remove
+ */
+Result<void> removeUnusedLocalizationKey(const std::string& projectPath, const std::string& key);
+
+/**
+ * @brief Comment out a specific line in a file
+ * @param filePath Path to the file
+ * @param lineNumber Line number to comment out (1-based)
+ */
+Result<void> commentOutLine(const std::string& filePath, int lineNumber);
+
 } // namespace QuickFixes
 
 } // namespace NovelMind::editor
