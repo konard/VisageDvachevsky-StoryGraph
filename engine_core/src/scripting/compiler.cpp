@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/compiler.hpp"
+#include "NovelMind/scripting/vm_debugger.hpp"
 #include <cstring>
 
 namespace NovelMind::scripting {
@@ -6,8 +7,9 @@ namespace NovelMind::scripting {
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
 
-Result<CompiledScript> Compiler::compile(const Program &program) {
+Result<CompiledScript> Compiler::compile(const Program &program, const std::string &sourceFilePath) {
   reset();
+  m_sourceFilePath = sourceFilePath;
 
   try {
     compileProgram(program);
@@ -52,16 +54,40 @@ void Compiler::reset() {
   m_pendingJumps.clear();
   m_labels.clear();
   m_currentScene.clear();
+  m_sourceFilePath.clear();
 }
 
 void Compiler::emitOp(OpCode op, u32 operand) {
   m_output.instructions.emplace_back(op, operand);
 }
 
+void Compiler::emitOp(OpCode op, u32 operand, const SourceLocation &loc) {
+  u32 ip = static_cast<u32>(m_output.instructions.size());
+  m_output.instructions.emplace_back(op, operand);
+  recordSourceMapping(ip, loc);
+}
+
 u32 Compiler::emitJump(OpCode op) {
   u32 index = static_cast<u32>(m_output.instructions.size());
   emitOp(op, 0); // Placeholder, will be patched
   return index;
+}
+
+u32 Compiler::emitJump(OpCode op, const SourceLocation &loc) {
+  u32 index = static_cast<u32>(m_output.instructions.size());
+  emitOp(op, 0, loc); // Placeholder, will be patched
+  return index;
+}
+
+void Compiler::recordSourceMapping(u32 ip, const SourceLocation &loc) {
+  if (loc.line > 0) { // Only record valid source locations
+    DebugSourceLocation debugLoc;
+    debugLoc.filePath = m_sourceFilePath;
+    debugLoc.line = loc.line;
+    debugLoc.column = loc.column;
+    debugLoc.sceneName = m_currentScene;
+    m_output.sourceMappings[ip] = debugLoc;
+  }
 }
 
 bool Compiler::patchJump(u32 jumpIndex) {
@@ -141,37 +167,37 @@ void Compiler::compileScene(const SceneDecl &decl) {
 
 void Compiler::compileStatement(const Statement &stmt) {
   std::visit(
-      [this](const auto &s) {
+      [this, &stmt](const auto &s) {
         using T = std::decay_t<decltype(s)>;
 
         if constexpr (std::is_same_v<T, ShowStmt>) {
-          compileShowStmt(s);
+          compileShowStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, HideStmt>) {
-          compileHideStmt(s);
+          compileHideStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, SayStmt>) {
-          compileSayStmt(s);
+          compileSayStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, ChoiceStmt>) {
-          compileChoiceStmt(s);
+          compileChoiceStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, IfStmt>) {
-          compileIfStmt(s);
+          compileIfStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, GotoStmt>) {
-          compileGotoStmt(s);
+          compileGotoStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, WaitStmt>) {
-          compileWaitStmt(s);
+          compileWaitStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, PlayStmt>) {
-          compilePlayStmt(s);
+          compilePlayStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, StopStmt>) {
-          compileStopStmt(s);
+          compileStopStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, SetStmt>) {
-          compileSetStmt(s);
+          compileSetStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, TransitionStmt>) {
-          compileTransitionStmt(s);
+          compileTransitionStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, MoveStmt>) {
-          compileMoveStmt(s);
+          compileMoveStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, BlockStmt>) {
-          compileBlockStmt(s);
+          compileBlockStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, ExpressionStmt>) {
-          compileExpressionStmt(s);
+          compileExpressionStmt(s, stmt.location);
         } else if constexpr (std::is_same_v<T, CharacterDecl>) {
           compileCharacter(s);
         } else if constexpr (std::is_same_v<T, SceneDecl>) {
@@ -205,11 +231,11 @@ void Compiler::compileExpression(const Expression &expr) {
 
 // Statement compilers
 
-void Compiler::compileShowStmt(const ShowStmt &stmt) {
+void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) {
   switch (stmt.target) {
   case ShowStmt::Target::Background: {
     u32 resIndex = addString(stmt.resource.value_or(""));
-    emitOp(OpCode::SHOW_BACKGROUND, resIndex);
+    emitOp(OpCode::SHOW_BACKGROUND, resIndex, loc);
     break;
   }
 
@@ -238,7 +264,7 @@ void Compiler::compileShowStmt(const ShowStmt &stmt) {
     }
     emitOp(OpCode::PUSH_INT, static_cast<u32>(posCode));
 
-    emitOp(OpCode::SHOW_CHARACTER, idIndex);
+    emitOp(OpCode::SHOW_CHARACTER, idIndex, loc);
     break;
   }
   }
@@ -257,9 +283,9 @@ void Compiler::compileShowStmt(const ShowStmt &stmt) {
   }
 }
 
-void Compiler::compileHideStmt(const HideStmt &stmt) {
+void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) {
   u32 idIndex = addString(stmt.identifier);
-  emitOp(OpCode::HIDE_CHARACTER, idIndex);
+  emitOp(OpCode::HIDE_CHARACTER, idIndex, loc);
 
   // Handle transition if specified
   if (stmt.transition.has_value()) {
@@ -274,7 +300,7 @@ void Compiler::compileHideStmt(const HideStmt &stmt) {
   }
 }
 
-void Compiler::compileSayStmt(const SayStmt &stmt) {
+void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
   u32 textIndex = addString(stmt.text);
 
   if (stmt.speaker.has_value()) {
@@ -284,10 +310,10 @@ void Compiler::compileSayStmt(const SayStmt &stmt) {
     emitOp(OpCode::PUSH_NULL);
   }
 
-  emitOp(OpCode::SAY, textIndex);
+  emitOp(OpCode::SAY, textIndex, loc);
 }
 
-void Compiler::compileChoiceStmt(const ChoiceStmt &stmt) {
+void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc) {
   // Emit choice count
   emitOp(OpCode::PUSH_INT, static_cast<u32>(stmt.options.size()));
 
@@ -298,7 +324,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt) {
   }
 
   // Emit CHOICE opcode (will wait for player selection)
-  emitOp(OpCode::CHOICE, static_cast<u32>(stmt.options.size()));
+  emitOp(OpCode::CHOICE, static_cast<u32>(stmt.options.size()), loc);
 
   // After choice returns, the result is on stack
   // Generate jump table
@@ -369,7 +395,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt) {
   }
 }
 
-void Compiler::compileIfStmt(const IfStmt &stmt) {
+void Compiler::compileIfStmt(const IfStmt &stmt, const SourceLocation &loc) {
   // Compile condition
   compileExpression(*stmt.condition);
 
@@ -398,30 +424,30 @@ void Compiler::compileIfStmt(const IfStmt &stmt) {
   patchJump(endJump);
 }
 
-void Compiler::compileGotoStmt(const GotoStmt &stmt) {
+void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) {
   u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
-  emitOp(OpCode::GOTO_SCENE, 0);
+  emitOp(OpCode::GOTO_SCENE, 0, loc);
   m_pendingJumps.push_back({jumpIndex, stmt.target});
 }
 
-void Compiler::compileWaitStmt(const WaitStmt &stmt) {
+void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
   // Convert float duration to int representation
   u32 durInt = 0;
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
-  emitOp(OpCode::WAIT, durInt);
+  emitOp(OpCode::WAIT, durInt, loc);
 }
 
-void Compiler::compilePlayStmt(const PlayStmt &stmt) {
+void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) {
   u32 resIndex = addString(stmt.resource);
 
   if (stmt.type == PlayStmt::MediaType::Sound) {
-    emitOp(OpCode::PLAY_SOUND, resIndex);
+    emitOp(OpCode::PLAY_SOUND, resIndex, loc);
   } else {
-    emitOp(OpCode::PLAY_MUSIC, resIndex);
+    emitOp(OpCode::PLAY_MUSIC, resIndex, loc);
   }
 }
 
-void Compiler::compileStopStmt(const StopStmt &stmt) {
+void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) {
   if (stmt.fadeOut.has_value()) {
     u32 durInt = 0;
     f32 dur = stmt.fadeOut.value();
@@ -429,10 +455,10 @@ void Compiler::compileStopStmt(const StopStmt &stmt) {
     emitOp(OpCode::PUSH_INT, durInt);
   }
 
-  emitOp(OpCode::STOP_MUSIC);
+  emitOp(OpCode::STOP_MUSIC, 0, loc);
 }
 
-void Compiler::compileSetStmt(const SetStmt &stmt) {
+void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
   // Compile value expression
   compileExpression(*stmt.value);
 
@@ -442,13 +468,13 @@ void Compiler::compileSetStmt(const SetStmt &stmt) {
   // Use SET_FLAG for flags (boolean variables), STORE_GLOBAL for general
   // variables
   if (stmt.isFlag) {
-    emitOp(OpCode::SET_FLAG, varIndex);
+    emitOp(OpCode::SET_FLAG, varIndex, loc);
   } else {
-    emitOp(OpCode::STORE_GLOBAL, varIndex);
+    emitOp(OpCode::STORE_GLOBAL, varIndex, loc);
   }
 }
 
-void Compiler::compileTransitionStmt(const TransitionStmt &stmt) {
+void Compiler::compileTransitionStmt(const TransitionStmt &stmt, const SourceLocation &loc) {
   u32 typeIndex = addString(stmt.type);
   u32 durInt = 0;
   std::memcpy(&durInt, &stmt.duration, sizeof(f32));
@@ -456,7 +482,7 @@ void Compiler::compileTransitionStmt(const TransitionStmt &stmt) {
   emitOp(OpCode::TRANSITION, typeIndex);
 }
 
-void Compiler::compileMoveStmt(const MoveStmt &stmt) {
+void Compiler::compileMoveStmt(const MoveStmt &stmt, const SourceLocation &loc) {
   // Push character ID string
   u32 charIndex = addString(stmt.characterId);
   emitOp(OpCode::PUSH_STRING, charIndex);
@@ -500,7 +526,7 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt) {
   emitOp(OpCode::MOVE_CHARACTER, charIndex);
 }
 
-void Compiler::compileBlockStmt(const BlockStmt &stmt) {
+void Compiler::compileBlockStmt(const BlockStmt &stmt, const SourceLocation &loc) {
   for (const auto &s : stmt.statements) {
     if (s) {
       compileStatement(*s);
@@ -508,7 +534,7 @@ void Compiler::compileBlockStmt(const BlockStmt &stmt) {
   }
 }
 
-void Compiler::compileExpressionStmt(const ExpressionStmt &stmt) {
+void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, const SourceLocation &loc) {
   if (stmt.expression) {
     compileExpression(*stmt.expression);
     emitOp(OpCode::POP); // Discard result

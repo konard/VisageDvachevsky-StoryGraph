@@ -560,8 +560,7 @@ private:
   bool m_isLooping = false;
 
   // Recording
-  // std::unique_ptr<audio::AudioRecorder> m_recorder;  // TODO: Uncomment when
-  // AudioRecorder is implemented
+  std::unique_ptr<audio::AudioRecorder> m_recorder;
   bool m_isRecording = false;
   QString m_tempRecordingPath;
 

@@ -603,14 +603,34 @@ void NMScriptRuntimeInspectorPanel::onAddBreakpointClicked() {
   if (colonPos > 0) {
     QString file = input.left(colonPos);
     int line = input.mid(colonPos + 1).toInt();
-    (void)line;
-    // Would need to map file:line to IP through source mappings
-    // For now, just show as pending
-    auto *newItem = new QTreeWidgetItem(m_breakpointsTree);
-    newItem->setCheckState(0, Qt::Checked);
-    newItem->setText(1, input);
-    newItem->setText(2, "");
-    newItem->setText(3, "0");
+
+    // Map file:line to IP through source mappings
+    if (m_debugger) {
+      // Search through source mappings to find matching IP
+      std::optional<quint32> foundIP;
+      auto mappings = m_debugger->getAllSourceMappings();
+
+      for (const auto &[ip, loc] : mappings) {
+        if (QString::fromStdString(loc.filePath).endsWith(file) && loc.line == static_cast<quint32>(line)) {
+          foundIP = ip;
+          break;
+        }
+      }
+
+      if (foundIP.has_value()) {
+        // Found matching IP, add real breakpoint
+        m_debugger->addBreakpoint(foundIP.value(), file.toStdString(), static_cast<quint32>(line));
+        updateBreakpointsDisplay();
+      } else {
+        // No mapping found, show error
+        QMessageBox::warning(this, "Breakpoint Error",
+                           QString("Could not find instruction at %1:%2.\n"
+                                   "This may be because:\n"
+                                   "- The source file doesn't match\n"
+                                   "- No executable code exists at that line\n"
+                                   "- Source mappings are not available").arg(file).arg(line));
+      }
+    }
   } else {
     // Try as IP address
     bool ipOk = false;

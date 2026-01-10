@@ -33,46 +33,46 @@
 namespace NovelMind::editor::qt {
 
 // Key validation: allows alphanumeric, underscore, dot, dash
-const QRegularExpression NMLocalizationPanel::s_keyValidationRegex(
-    QStringLiteral("^[A-Za-z0-9_.-]+$"));
+const QRegularExpression
+    NMLocalizationPanel::s_keyValidationRegex(QStringLiteral("^[A-Za-z0-9_.-]+$"));
 
-NMLocalizationPanel::NMLocalizationPanel(QWidget *parent)
+NMLocalizationPanel::NMLocalizationPanel(QWidget* parent)
     : NMDockPanel("Localization Manager", parent) {}
 
 NMLocalizationPanel::~NMLocalizationPanel() = default;
 
-void NMLocalizationPanel::onInitialize() { setupUI(); }
+void NMLocalizationPanel::onInitialize() {
+  setupUI();
+}
 
 void NMLocalizationPanel::onShutdown() {}
 
 void NMLocalizationPanel::setupUI() {
-  auto &style = NMStyleManager::instance();
-  const auto &palette = style.palette();
-  const auto &spacing = style.spacing();
-  auto &iconMgr = NMIconManager::instance();
+  auto& style = NMStyleManager::instance();
+  const auto& palette = style.palette();
+  const auto& spacing = style.spacing();
+  auto& iconMgr = NMIconManager::instance();
 
-  QVBoxLayout *layout = new QVBoxLayout(contentWidget());
+  QVBoxLayout* layout = new QVBoxLayout(contentWidget());
   layout->setContentsMargins(spacing.xs, spacing.xs, spacing.xs, spacing.xs);
   layout->setSpacing(spacing.sm);
 
   // Top toolbar: Language selector and file operations
-  QFrame *topToolbar = new QFrame(contentWidget());
+  QFrame* topToolbar = new QFrame(contentWidget());
   topToolbar->setFrameStyle(QFrame::NoFrame);
-  QHBoxLayout *topLayout = new QHBoxLayout(topToolbar);
+  QHBoxLayout* topLayout = new QHBoxLayout(topToolbar);
   topLayout->setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm);
   topLayout->setSpacing(spacing.md);
 
   // Language selection group
-  QLabel *langLabel = new QLabel(tr("Language:"), topToolbar);
-  langLabel->setStyleSheet(
-      QString("color: %1; font-weight: 600;")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
+  QLabel* langLabel = new QLabel(tr("Language:"), topToolbar);
+  langLabel->setStyleSheet(QString("color: %1; font-weight: 600;")
+                               .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
   topLayout->addWidget(langLabel);
 
   m_languageSelector = new QComboBox(topToolbar);
   m_languageSelector->setMinimumWidth(120);
-  connect(m_languageSelector,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_languageSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMLocalizationPanel::onLocaleChanged);
   topLayout->addWidget(m_languageSelector);
 
@@ -82,21 +82,18 @@ void NMLocalizationPanel::setupUI() {
   m_importButton = new QPushButton(tr("Import..."), topToolbar);
   m_importButton->setIcon(iconMgr.getIcon("import", 16));
   m_importButton->setToolTip(tr("Import localization file"));
-  connect(m_importButton, &QPushButton::clicked, this,
-          &NMLocalizationPanel::importLocale);
+  connect(m_importButton, &QPushButton::clicked, this, &NMLocalizationPanel::importLocale);
   topLayout->addWidget(m_importButton);
 
   m_exportButton = new QPushButton(tr("Export..."), topToolbar);
   m_exportButton->setIcon(iconMgr.getIcon("export", 16));
   m_exportButton->setToolTip(tr("Export current locale to file"));
-  connect(m_exportButton, &QPushButton::clicked, this,
-          &NMLocalizationPanel::exportLocale);
+  connect(m_exportButton, &QPushButton::clicked, this, &NMLocalizationPanel::exportLocale);
   topLayout->addWidget(m_exportButton);
 
   m_exportMissingBtn = new QPushButton(tr("Export Missing..."), topToolbar);
   m_exportMissingBtn->setIcon(iconMgr.getIcon("export", 16));
-  m_exportMissingBtn->setToolTip(
-      tr("Export missing translations for current locale"));
+  m_exportMissingBtn->setToolTip(tr("Export missing translations for current locale"));
   connect(m_exportMissingBtn, &QPushButton::clicked, this,
           &NMLocalizationPanel::onExportMissingClicked);
   topLayout->addWidget(m_exportMissingBtn);
@@ -106,56 +103,47 @@ void NMLocalizationPanel::setupUI() {
   m_saveBtn->setEnabled(false);
   m_saveBtn->setToolTip(tr("Save all changes"));
   m_saveBtn->setStyleSheet(
-      QString(
-          "QPushButton { background-color: %1; color: %2; font-weight: 600; }"
-          "QPushButton:hover { background-color: %3; }"
-          "QPushButton:disabled { background-color: %4; color: %5; }")
-          .arg(NMStyleManager::colorToStyleString(
-              style.panelAccents().localization))
+      QString("QPushButton { background-color: %1; color: %2; font-weight: 600; }"
+              "QPushButton:hover { background-color: %3; }"
+              "QPushButton:disabled { background-color: %4; color: %5; }")
+          .arg(NMStyleManager::colorToStyleString(style.panelAccents().localization))
           .arg(NMStyleManager::colorToStyleString(palette.textInverse))
-          .arg(NMStyleManager::colorToRgbaString(
-              style.panelAccents().localization, 220))
+          .arg(NMStyleManager::colorToRgbaString(style.panelAccents().localization, 220))
           .arg(NMStyleManager::colorToStyleString(palette.bgLight))
           .arg(NMStyleManager::colorToStyleString(palette.textDisabled)));
-  connect(m_saveBtn, &QPushButton::clicked, this,
-          &NMLocalizationPanel::onSaveClicked);
+  connect(m_saveBtn, &QPushButton::clicked, this, &NMLocalizationPanel::onSaveClicked);
   topLayout->addWidget(m_saveBtn);
 
   layout->addWidget(topToolbar);
 
   // Filter and action bar
-  QFrame *filterToolbar = new QFrame(contentWidget());
+  QFrame* filterToolbar = new QFrame(contentWidget());
   filterToolbar->setFrameStyle(QFrame::NoFrame);
-  QHBoxLayout *filterLayout = new QHBoxLayout(filterToolbar);
-  filterLayout->setContentsMargins(spacing.sm, spacing.sm, spacing.sm,
-                                   spacing.sm);
+  QHBoxLayout* filterLayout = new QHBoxLayout(filterToolbar);
+  filterLayout->setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm);
   filterLayout->setSpacing(spacing.md);
 
   // Search box
   m_searchEdit = new QLineEdit(filterToolbar);
-  m_searchEdit->setPlaceholderText(
-      tr("Search keys, source, or translations..."));
+  m_searchEdit->setPlaceholderText(tr("Search keys, source, or translations..."));
   m_searchEdit->setClearButtonEnabled(true);
-  connect(m_searchEdit, &QLineEdit::textChanged, this,
-          &NMLocalizationPanel::onSearchTextChanged);
+  connect(m_searchEdit, &QLineEdit::textChanged, this, &NMLocalizationPanel::onSearchTextChanged);
   filterLayout->addWidget(m_searchEdit, 1);
 
   // Filter checkbox
   m_showMissingOnly = new QCheckBox(tr("Show Missing Only"), filterToolbar);
   m_showMissingOnly->setStyleSheet(
-      QString("QCheckBox { color: %1; }")
-          .arg(NMStyleManager::colorToStyleString(palette.warning)));
+      QString("QCheckBox { color: %1; }").arg(NMStyleManager::colorToStyleString(palette.warning)));
   connect(m_showMissingOnly, &QCheckBox::toggled, this,
           &NMLocalizationPanel::onShowOnlyMissingToggled);
   filterLayout->addWidget(m_showMissingOnly);
 
   // Add separator
-  QFrame *separator = new QFrame(filterToolbar);
+  QFrame* separator = new QFrame(filterToolbar);
   separator->setFrameShape(QFrame::VLine);
   separator->setFrameShadow(QFrame::Sunken);
   separator->setStyleSheet(
-      QString("color: %1;")
-          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+      QString("color: %1;").arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
   filterLayout->addWidget(separator);
 
   // Edit operations group (Add/Delete)
@@ -163,37 +151,32 @@ void NMLocalizationPanel::setupUI() {
   m_addKeyBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addKeyBtn->setToolTip(tr("Add new localization key"));
   m_addKeyBtn->setStyleSheet(
-      QString(
-          "QPushButton { background-color: %1; color: %2; font-weight: 600; }"
-          "QPushButton:hover { background-color: %3; }")
+      QString("QPushButton { background-color: %1; color: %2; font-weight: 600; }"
+              "QPushButton:hover { background-color: %3; }")
           .arg(NMStyleManager::colorToStyleString(palette.successSubtle))
           .arg(NMStyleManager::colorToStyleString(palette.success))
           .arg(NMStyleManager::colorToStyleString(palette.success)));
-  connect(m_addKeyBtn, &QPushButton::clicked, this,
-          &NMLocalizationPanel::onAddKeyClicked);
+  connect(m_addKeyBtn, &QPushButton::clicked, this, &NMLocalizationPanel::onAddKeyClicked);
   filterLayout->addWidget(m_addKeyBtn);
 
   m_deleteKeyBtn = new QPushButton(tr("Delete Key"), filterToolbar);
   m_deleteKeyBtn->setIcon(iconMgr.getIcon("delete", 16));
   m_deleteKeyBtn->setToolTip(tr("Delete selected key(s)"));
-  m_deleteKeyBtn->setStyleSheet(
-      QString("QPushButton { background-color: %1; color: %2; }"
-              "QPushButton:hover { background-color: %3; color: %4; }")
-          .arg(NMStyleManager::colorToStyleString(palette.bgMedium))
-          .arg(NMStyleManager::colorToStyleString(palette.error))
-          .arg(NMStyleManager::colorToStyleString(palette.errorSubtle))
-          .arg(NMStyleManager::colorToStyleString(palette.error)));
-  connect(m_deleteKeyBtn, &QPushButton::clicked, this,
-          &NMLocalizationPanel::onDeleteKeyClicked);
+  m_deleteKeyBtn->setStyleSheet(QString("QPushButton { background-color: %1; color: %2; }"
+                                        "QPushButton:hover { background-color: %3; color: %4; }")
+                                    .arg(NMStyleManager::colorToStyleString(palette.bgMedium))
+                                    .arg(NMStyleManager::colorToStyleString(palette.error))
+                                    .arg(NMStyleManager::colorToStyleString(palette.errorSubtle))
+                                    .arg(NMStyleManager::colorToStyleString(palette.error)));
+  connect(m_deleteKeyBtn, &QPushButton::clicked, this, &NMLocalizationPanel::onDeleteKeyClicked);
   filterLayout->addWidget(m_deleteKeyBtn);
 
   // Add separator
-  QFrame *separator2 = new QFrame(filterToolbar);
+  QFrame* separator2 = new QFrame(filterToolbar);
   separator2->setFrameShape(QFrame::VLine);
   separator2->setFrameShadow(QFrame::Sunken);
   separator2->setStyleSheet(
-      QString("color: %1;")
-          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+      QString("color: %1;").arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
   filterLayout->addWidget(separator2);
 
   // Plural Forms button
@@ -217,8 +200,7 @@ void NMLocalizationPanel::setupUI() {
   m_stringsTable = new QTableWidget(contentWidget());
   m_stringsTable->setObjectName("LocalizationTable");
   m_stringsTable->setColumnCount(3);
-  m_stringsTable->setHorizontalHeaderLabels(
-      {tr("Key"), tr("Source Text"), tr("Translation")});
+  m_stringsTable->setHorizontalHeaderLabels({tr("Key"), tr("Source Text"), tr("Translation")});
   m_stringsTable->setEditTriggers(QAbstractItemView::DoubleClicked |
                                   QAbstractItemView::EditKeyPressed);
   m_stringsTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -274,11 +256,9 @@ void NMLocalizationPanel::setupUI() {
           .arg(NMStyleManager::colorToRgbaString(palette.bgLight, 60))
           .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
           .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
-          .arg(NMStyleManager::colorToStyleString(
-              style.panelAccents().localization)));
+          .arg(NMStyleManager::colorToStyleString(style.panelAccents().localization)));
 
-  connect(m_stringsTable, &QTableWidget::cellChanged, this,
-          &NMLocalizationPanel::onCellChanged);
+  connect(m_stringsTable, &QTableWidget::cellChanged, this, &NMLocalizationPanel::onCellChanged);
   connect(m_stringsTable, &QTableWidget::customContextMenuRequested, this,
           &NMLocalizationPanel::onContextMenu);
   connect(m_stringsTable, &QTableWidget::itemSelectionChanged, this,
@@ -287,22 +267,18 @@ void NMLocalizationPanel::setupUI() {
 
   // Preview Panel with variable interpolation
   m_previewPanel = new QWidget(contentWidget());
-  QHBoxLayout *previewLayout = new QHBoxLayout(m_previewPanel);
-  previewLayout->setContentsMargins(spacing.sm, spacing.sm, spacing.sm,
-                                    spacing.sm);
+  QHBoxLayout* previewLayout = new QHBoxLayout(m_previewPanel);
+  previewLayout->setContentsMargins(spacing.sm, spacing.sm, spacing.sm, spacing.sm);
   previewLayout->setSpacing(spacing.md);
 
-  QLabel *previewLabel =
-      new QLabel(tr("Preview with variables:"), m_previewPanel);
-  previewLabel->setStyleSheet(
-      QString("color: %1; font-weight: 600;")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
+  QLabel* previewLabel = new QLabel(tr("Preview with variables:"), m_previewPanel);
+  previewLabel->setStyleSheet(QString("color: %1; font-weight: 600;")
+                                  .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
   previewLayout->addWidget(previewLabel);
 
   m_previewInput = new QLineEdit(m_previewPanel);
   m_previewInput->setPlaceholderText(tr("e.g., name=John,count=5"));
-  m_previewInput->setToolTip(
-      tr("Enter variable values in format: var1=value1,var2=value2"));
+  m_previewInput->setToolTip(tr("Enter variable values in format: var1=value1,var2=value2"));
   connect(m_previewInput, &QLineEdit::textChanged, this,
           &NMLocalizationPanel::onPreviewVariablesChanged);
   previewLayout->addWidget(m_previewInput, 1);
@@ -326,17 +302,20 @@ void NMLocalizationPanel::setupUI() {
 
   // Status bar with improved styling
   m_statusLabel = new QLabel(contentWidget());
-  m_statusLabel->setStyleSheet(
-      QString("QLabel {"
-              "  color: %1;"
-              "  padding: 4px 8px;"
-              "  background-color: %2;"
-              "  border-top: 1px solid %3;"
-              "}")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
-          .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
-          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+  m_statusLabel->setStyleSheet(QString("QLabel {"
+                                       "  color: %1;"
+                                       "  padding: 4px 8px;"
+                                       "  background-color: %2;"
+                                       "  border-top: 1px solid %3;"
+                                       "}")
+                                   .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
+                                   .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
+                                   .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
   layout->addWidget(m_statusLabel);
+
+  // Connect signal for undo/redo to trigger UI refresh
+  connect(this, &NMLocalizationPanel::localizationDataChanged, this,
+          &NMLocalizationPanel::rebuildTable);
 
   refreshLocales();
 }
@@ -349,7 +328,7 @@ void NMLocalizationPanel::refreshLocales() {
   m_languageSelector->blockSignals(true);
   m_languageSelector->clear();
 
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   const QString localizationRoot =
       QString::fromStdString(pm.getFolderPath(ProjectFolder::Localization));
 
@@ -357,9 +336,8 @@ void NMLocalizationPanel::refreshLocales() {
   QDir dir(localizationRoot);
   if (dir.exists()) {
     const QStringList filters = {"*.csv", "*.json", "*.po", "*.xliff", "*.xlf"};
-    const QFileInfoList files =
-        dir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot);
-    for (const auto &info : files) {
+    const QFileInfoList files = dir.entryInfoList(filters, QDir::Files | QDir::NoDotAndDotDot);
+    for (const auto& info : files) {
       const QString locale = info.baseName();
       if (!locale.isEmpty()) {
         localeCodes.append(locale);
@@ -375,7 +353,7 @@ void NMLocalizationPanel::refreshLocales() {
   localeCodes.sort();
   m_availableLocales = localeCodes;
 
-  for (const auto &code : localeCodes) {
+  for (const auto& code : localeCodes) {
     m_languageSelector->addItem(code.toUpper(), code);
   }
 
@@ -386,8 +364,7 @@ void NMLocalizationPanel::refreshLocales() {
   }
 }
 
-static NovelMind::localization::LocalizationFormat
-formatForExtension(const QString &ext) {
+static NovelMind::localization::LocalizationFormat formatForExtension(const QString& ext) {
   const QString lower = ext.toLower();
   if (lower == "csv")
     return NovelMind::localization::LocalizationFormat::CSV;
@@ -400,8 +377,8 @@ formatForExtension(const QString &ext) {
   return NovelMind::localization::LocalizationFormat::CSV;
 }
 
-void NMLocalizationPanel::loadLocale(const QString &localeCode) {
-  auto &pm = ProjectManager::instance();
+void NMLocalizationPanel::loadLocale(const QString& localeCode) {
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return;
   }
@@ -418,18 +395,16 @@ void NMLocalizationPanel::loadLocale(const QString &localeCode) {
     dir.mkpath(".");
   }
 
-  QStringList candidates = {
-      dir.filePath(localeCode + ".csv"), dir.filePath(localeCode + ".json"),
-      dir.filePath(localeCode + ".po"), dir.filePath(localeCode + ".xliff"),
-      dir.filePath(localeCode + ".xlf")};
-  for (const auto &path : candidates) {
+  QStringList candidates = {dir.filePath(localeCode + ".csv"), dir.filePath(localeCode + ".json"),
+                            dir.filePath(localeCode + ".po"), dir.filePath(localeCode + ".xliff"),
+                            dir.filePath(localeCode + ".xlf")};
+  for (const auto& path : candidates) {
     QFileInfo info(path);
     if (!info.exists()) {
       continue;
     }
     const auto format = formatForExtension(info.suffix());
-    m_localization.loadStrings(locale, info.absoluteFilePath().toStdString(),
-                               format);
+    m_localization.loadStrings(locale, info.absoluteFilePath().toStdString(), format);
     break;
   }
 
@@ -448,8 +423,8 @@ void NMLocalizationPanel::syncEntriesFromManager() {
   NovelMind::localization::LocaleId currentLocale;
   currentLocale.language = m_currentLocale.toStdString();
 
-  const auto *defaultTable = m_localization.getStringTable(defaultLocale);
-  const auto *currentTable = m_localization.getStringTable(currentLocale);
+  const auto* defaultTable = m_localization.getStringTable(defaultLocale);
+  const auto* currentTable = m_localization.getStringTable(currentLocale);
 
   std::vector<std::string> ids;
   if (defaultTable) {
@@ -463,7 +438,7 @@ void NMLocalizationPanel::syncEntriesFromManager() {
   std::sort(ids.begin(), ids.end());
   ids.erase(std::unique(ids.begin(), ids.end()), ids.end());
 
-  for (const auto &id : ids) {
+  for (const auto& id : ids) {
     LocalizationEntry entry;
     entry.key = QString::fromStdString(id);
 
@@ -495,14 +470,14 @@ void NMLocalizationPanel::syncEntriesToManager() {
   currentLocale.language = m_currentLocale.toStdString();
 
   // Remove deleted keys from manager
-  for (const QString &key : m_deletedKeys) {
+  for (const QString& key : m_deletedKeys) {
     m_localization.removeString(defaultLocale, key.toStdString());
     m_localization.removeString(currentLocale, key.toStdString());
   }
 
   // Update/add entries
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
@@ -510,14 +485,12 @@ void NMLocalizationPanel::syncEntriesToManager() {
     const std::string id = entry.key.toStdString();
 
     if (entry.translations.contains(m_defaultLocale)) {
-      m_localization.setString(
-          defaultLocale, id,
-          entry.translations.value(m_defaultLocale).toStdString());
+      m_localization.setString(defaultLocale, id,
+                               entry.translations.value(m_defaultLocale).toStdString());
     }
     if (entry.translations.contains(m_currentLocale)) {
-      m_localization.setString(
-          currentLocale, id,
-          entry.translations.value(m_currentLocale).toStdString());
+      m_localization.setString(currentLocale, id,
+                               entry.translations.value(m_currentLocale).toStdString());
     }
   }
 }
@@ -546,8 +519,8 @@ void NMLocalizationPanel::rebuildTable() {
   m_keyToRowMap.reserve(sortedKeys.size());
 
   int row = 0;
-  for (const QString &key : sortedKeys) {
-    const LocalizationEntry &entry = m_entries.value(key);
+  for (const QString& key : sortedKeys) {
+    const LocalizationEntry& entry = m_entries.value(key);
 
     if (entry.isDeleted) {
       continue;
@@ -555,17 +528,17 @@ void NMLocalizationPanel::rebuildTable() {
 
     m_stringsTable->insertRow(row);
 
-    auto *idItem = new QTableWidgetItem(entry.key);
+    auto* idItem = new QTableWidgetItem(entry.key);
     idItem->setFlags(idItem->flags() & ~Qt::ItemIsEditable);
     m_stringsTable->setItem(row, 0, idItem);
 
     QString sourceText = entry.translations.value(m_defaultLocale);
-    auto *sourceItem = new QTableWidgetItem(sourceText);
+    auto* sourceItem = new QTableWidgetItem(sourceText);
     sourceItem->setFlags(sourceItem->flags() & ~Qt::ItemIsEditable);
     m_stringsTable->setItem(row, 1, sourceItem);
 
     QString translationText = entry.translations.value(m_currentLocale);
-    auto *translationItem = new QTableWidgetItem(translationText);
+    auto* translationItem = new QTableWidgetItem(translationText);
     m_stringsTable->setItem(row, 2, translationItem);
 
     // PERF-4: Store key-to-row mapping for O(1) lookup
@@ -584,18 +557,16 @@ void NMLocalizationPanel::applyFilters() {
     return;
   }
 
-  const QString searchText =
-      m_searchEdit ? m_searchEdit->text().toLower() : QString();
-  const bool showMissingOnly =
-      m_showMissingOnly && m_showMissingOnly->isChecked();
+  const QString searchText = m_searchEdit ? m_searchEdit->text().toLower() : QString();
+  const bool showMissingOnly = m_showMissingOnly && m_showMissingOnly->isChecked();
 
   int visibleCount = 0;
   int missingCount = 0;
 
   for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-    auto *idItem = m_stringsTable->item(row, 0);
-    auto *sourceItem = m_stringsTable->item(row, 1);
-    auto *translationItem = m_stringsTable->item(row, 2);
+    auto* idItem = m_stringsTable->item(row, 0);
+    auto* sourceItem = m_stringsTable->item(row, 1);
+    auto* translationItem = m_stringsTable->item(row, 2);
 
     if (!idItem) {
       m_stringsTable->setRowHidden(row, true);
@@ -604,8 +575,7 @@ void NMLocalizationPanel::applyFilters() {
 
     const QString key = idItem->text();
     const QString source = sourceItem ? sourceItem->text() : QString();
-    const QString translation =
-        translationItem ? translationItem->text() : QString();
+    const QString translation = translationItem ? translationItem->text() : QString();
 
     bool isMissing = translation.isEmpty();
     if (isMissing) {
@@ -613,8 +583,7 @@ void NMLocalizationPanel::applyFilters() {
     }
 
     // Apply search filter (case-insensitive)
-    bool matchesSearch = searchText.isEmpty() ||
-                         key.toLower().contains(searchText) ||
+    bool matchesSearch = searchText.isEmpty() || key.toLower().contains(searchText) ||
                          source.toLower().contains(searchText) ||
                          translation.toLower().contains(searchText);
 
@@ -638,8 +607,8 @@ void NMLocalizationPanel::highlightMissingTranslations() {
     return;
   }
 
-  auto &style = NMStyleManager::instance();
-  const auto &palette = style.palette();
+  auto& style = NMStyleManager::instance();
+  const auto& palette = style.palette();
 
   // Use warning colors for missing translations (more subtle for dark theme)
   const QColor missingBg = palette.warningSubtle;
@@ -648,7 +617,7 @@ void NMLocalizationPanel::highlightMissingTranslations() {
   const QColor mutedText = palette.textMuted;
 
   for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-    auto *translationItem = m_stringsTable->item(row, 2);
+    auto* translationItem = m_stringsTable->item(row, 2);
     if (!translationItem) {
       continue;
     }
@@ -671,7 +640,7 @@ void NMLocalizationPanel::highlightMissingTranslations() {
     }
 
     // Add subtle visual indicator to key column for missing translations
-    auto *keyItem = m_stringsTable->item(row, 0);
+    auto* keyItem = m_stringsTable->item(row, 0);
     if (keyItem) {
       if (isMissing) {
         keyItem->setForeground(mutedText);
@@ -693,7 +662,7 @@ void NMLocalizationPanel::highlightMissingTranslations() {
     }
 
     // Style source column slightly dimmed
-    auto *sourceItem = m_stringsTable->item(row, 1);
+    auto* sourceItem = m_stringsTable->item(row, 1);
     if (sourceItem) {
       sourceItem->setForeground(palette.textSecondary);
     }
@@ -705,8 +674,8 @@ void NMLocalizationPanel::updateStatusBar() {
     return;
   }
 
-  auto &style = NMStyleManager::instance();
-  const auto &palette = style.palette();
+  auto& style = NMStyleManager::instance();
+  const auto& palette = style.palette();
 
   int totalCount = 0;
   int visibleCount = 0;
@@ -717,7 +686,7 @@ void NMLocalizationPanel::updateStatusBar() {
     if (!m_stringsTable->isRowHidden(row)) {
       visibleCount++;
     }
-    auto *translationItem = m_stringsTable->item(row, 2);
+    auto* translationItem = m_stringsTable->item(row, 2);
     if (translationItem && translationItem->text().isEmpty()) {
       missingCount++;
     }
@@ -725,35 +694,30 @@ void NMLocalizationPanel::updateStatusBar() {
 
   // Calculate completion percentage
   int completedCount = totalCount - missingCount;
-  int completionPercent =
-      totalCount > 0 ? (completedCount * 100) / totalCount : 100;
+  int completionPercent = totalCount > 0 ? (completedCount * 100) / totalCount : 100;
 
   // Build styled status message
   QString status;
 
   // Show visible/total keys
-  status +=
-      QString(
-          "<span style='color: %1;'>Showing <b>%2</b> of <b>%3</b> keys</span>")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
-          .arg(visibleCount)
-          .arg(totalCount);
+  status += QString("<span style='color: %1;'>Showing <b>%2</b> of <b>%3</b> keys</span>")
+                .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
+                .arg(visibleCount)
+                .arg(totalCount);
 
   // Show missing count with color coding
   if (missingCount > 0) {
-    status +=
-        QString(" <span style='color: %1;'>●</span> ")
-            .arg(NMStyleManager::colorToStyleString(palette.borderDefault));
+    status += QString(" <span style='color: %1;'>●</span> ")
+                  .arg(NMStyleManager::colorToStyleString(palette.borderDefault));
     status += QString("<span style='color: %1;'>Missing: <b>%2</b></span>")
                   .arg(NMStyleManager::colorToStyleString(palette.warning))
                   .arg(missingCount);
   }
 
   // Show completion percentage
-  QString completionColor =
-      completionPercent == 100
-          ? NMStyleManager::colorToStyleString(palette.success)
-          : NMStyleManager::colorToStyleString(palette.info);
+  QString completionColor = completionPercent == 100
+                                ? NMStyleManager::colorToStyleString(palette.success)
+                                : NMStyleManager::colorToStyleString(palette.info);
 
   status += QString(" <span style='color: %1;'>●</span> ")
                 .arg(NMStyleManager::colorToStyleString(palette.borderDefault));
@@ -763,19 +727,16 @@ void NMLocalizationPanel::updateStatusBar() {
 
   // Show modified indicator
   if (m_dirty) {
-    status +=
-        QString(" <span style='color: %1;'>●</span> ")
-            .arg(NMStyleManager::colorToStyleString(palette.borderDefault));
-    status +=
-        QString("<span style='color: %1; font-weight: 600;'>● MODIFIED</span>")
-            .arg(NMStyleManager::colorToStyleString(
-                style.panelAccents().localization));
+    status += QString(" <span style='color: %1;'>●</span> ")
+                  .arg(NMStyleManager::colorToStyleString(palette.borderDefault));
+    status += QString("<span style='color: %1; font-weight: 600;'>● MODIFIED</span>")
+                  .arg(NMStyleManager::colorToStyleString(style.panelAccents().localization));
   }
 
   m_statusLabel->setText(status);
 }
 
-void NMLocalizationPanel::onSearchTextChanged(const QString &text) {
+void NMLocalizationPanel::onSearchTextChanged(const QString& text) {
   Q_UNUSED(text);
   applyFilters();
 }
@@ -802,8 +763,8 @@ void NMLocalizationPanel::onCellChanged(int row, int column) {
     return;
   }
 
-  auto *idItem = m_stringsTable->item(row, 0);
-  auto *valueItem = m_stringsTable->item(row, 2);
+  auto* idItem = m_stringsTable->item(row, 0);
+  auto* valueItem = m_stringsTable->item(row, 2);
   if (!idItem || !valueItem || m_currentLocale.isEmpty()) {
     return;
   }
@@ -818,8 +779,7 @@ void NMLocalizationPanel::onCellChanged(int row, int column) {
 
     // Only create undo command if value changed
     if (oldValue != value) {
-      auto *cmd = new ChangeTranslationCommand(this, key, m_currentLocale,
-                                               oldValue, value);
+      auto* cmd = new ChangeTranslationCommand(this, key, m_currentLocale, oldValue, value);
       NMUndoManager::instance().pushCommand(cmd);
     }
 
@@ -851,7 +811,7 @@ void NMLocalizationPanel::onAddKeyClicked() {
 
   if (addKey(key, defaultValue)) {
     // Create undo command for adding key
-    auto *cmd = new AddLocalizationKeyCommand(this, key, defaultValue);
+    auto* cmd = new AddLocalizationKeyCommand(this, key, defaultValue);
     NMUndoManager::instance().pushCommand(cmd);
 
     rebuildTable();
@@ -860,7 +820,7 @@ void NMLocalizationPanel::onAddKeyClicked() {
     auto rowIt = m_keyToRowMap.find(key);
     if (rowIt != m_keyToRowMap.end()) {
       int row = rowIt.value();
-      auto *item = m_stringsTable->item(row, 0);
+      auto* item = m_stringsTable->item(row, 0);
       if (item) {
         m_stringsTable->selectRow(row);
         m_stringsTable->scrollToItem(item);
@@ -869,41 +829,40 @@ void NMLocalizationPanel::onAddKeyClicked() {
   }
 }
 
-bool NMLocalizationPanel::showAddKeyDialog(QString &outKey,
-                                           QString &outDefaultValue) {
+bool NMLocalizationPanel::showAddKeyDialog(QString& outKey, QString& outDefaultValue) {
   QDialog dialog(this);
   dialog.setWindowTitle(tr("Add Localization Key"));
   dialog.setMinimumWidth(400);
 
-  QVBoxLayout *layout = new QVBoxLayout(&dialog);
+  QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
-  QFormLayout *formLayout = new QFormLayout();
+  QFormLayout* formLayout = new QFormLayout();
 
-  QLineEdit *keyEdit = new QLineEdit(&dialog);
+  QLineEdit* keyEdit = new QLineEdit(&dialog);
   keyEdit->setPlaceholderText(tr("e.g., menu.button.start"));
   formLayout->addRow(tr("Key:"), keyEdit);
 
-  QLineEdit *valueEdit = new QLineEdit(&dialog);
+  QLineEdit* valueEdit = new QLineEdit(&dialog);
   valueEdit->setPlaceholderText(tr("Default value (optional)"));
   formLayout->addRow(tr("Default Value:"), valueEdit);
 
-  QLabel *errorLabel = new QLabel(&dialog);
+  QLabel* errorLabel = new QLabel(&dialog);
   errorLabel->setStyleSheet("color: red;");
   errorLabel->hide();
 
   layout->addLayout(formLayout);
   layout->addWidget(errorLabel);
 
-  QDialogButtonBox *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
-  QPushButton *okButton = buttonBox->button(QDialogButtonBox::Ok);
+  QDialogButtonBox* buttonBox =
+      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  QPushButton* okButton = buttonBox->button(QDialogButtonBox::Ok);
   okButton->setEnabled(false);
 
   layout->addWidget(buttonBox);
 
   // Validation on key change
   connect(keyEdit, &QLineEdit::textChanged,
-          [this, okButton, errorLabel, keyEdit](const QString &text) {
+          [this, okButton, errorLabel, keyEdit](const QString& text) {
             QString error;
             bool valid = true;
 
@@ -940,16 +899,15 @@ bool NMLocalizationPanel::showAddKeyDialog(QString &outKey,
   return true;
 }
 
-bool NMLocalizationPanel::isValidKeyName(const QString &key) const {
+bool NMLocalizationPanel::isValidKeyName(const QString& key) const {
   return s_keyValidationRegex.match(key).hasMatch();
 }
 
-bool NMLocalizationPanel::isKeyUnique(const QString &key) const {
+bool NMLocalizationPanel::isKeyUnique(const QString& key) const {
   return !m_entries.contains(key) || m_entries.value(key).isDeleted;
 }
 
-bool NMLocalizationPanel::addKey(const QString &key,
-                                 const QString &defaultValue) {
+bool NMLocalizationPanel::addKey(const QString& key, const QString& defaultValue) {
   if (key.isEmpty() || !isValidKeyName(key) || !isKeyUnique(key)) {
     return false;
   }
@@ -965,8 +923,7 @@ bool NMLocalizationPanel::addKey(const QString &key,
   // Add to manager
   NovelMind::localization::LocaleId locale;
   locale.language = m_defaultLocale.toStdString();
-  m_localization.setString(locale, key.toStdString(),
-                           defaultValue.toStdString());
+  m_localization.setString(locale, key.toStdString(), defaultValue.toStdString());
 
   setDirty(true);
   return true;
@@ -977,18 +934,17 @@ void NMLocalizationPanel::onDeleteKeyClicked() {
     return;
   }
 
-  QList<QTableWidgetItem *> selectedItems = m_stringsTable->selectedItems();
+  QList<QTableWidgetItem*> selectedItems = m_stringsTable->selectedItems();
   if (selectedItems.isEmpty()) {
-    NMMessageDialog::showInfo(this, tr("Delete Key"),
-                              tr("Please select a key to delete."));
+    NMMessageDialog::showInfo(this, tr("Delete Key"), tr("Please select a key to delete."));
     return;
   }
 
   // Get unique keys from selection
   QSet<QString> keysToDelete;
-  for (auto *item : selectedItems) {
+  for (auto* item : selectedItems) {
     int row = item->row();
-    auto *idItem = m_stringsTable->item(row, 0);
+    auto* idItem = m_stringsTable->item(row, 0);
     if (idItem) {
       keysToDelete.insert(idItem->text());
     }
@@ -996,16 +952,14 @@ void NMLocalizationPanel::onDeleteKeyClicked() {
 
   QString message;
   if (keysToDelete.size() == 1) {
-    message = tr("Are you sure you want to delete the key '%1'?")
-                  .arg(*keysToDelete.begin());
+    message = tr("Are you sure you want to delete the key '%1'?").arg(*keysToDelete.begin());
   } else {
-    message =
-        tr("Are you sure you want to delete %1 keys?").arg(keysToDelete.size());
+    message = tr("Are you sure you want to delete %1 keys?").arg(keysToDelete.size());
   }
 
-  NMDialogButton result = NMMessageDialog::showQuestion(
-      this, tr("Confirm Delete"), message,
-      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
+  NMDialogButton result =
+      NMMessageDialog::showQuestion(this, tr("Confirm Delete"), message,
+                                    {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
   if (result != NMDialogButton::Yes) {
     return;
@@ -1016,7 +970,7 @@ void NMLocalizationPanel::onDeleteKeyClicked() {
     NMUndoManager::instance().beginMacro("Delete Localization Keys");
   }
 
-  for (const QString &key : keysToDelete) {
+  for (const QString& key : keysToDelete) {
     // Capture translations before deleting
     QHash<QString, QString> translations;
     if (m_entries.contains(key)) {
@@ -1024,7 +978,7 @@ void NMLocalizationPanel::onDeleteKeyClicked() {
     }
 
     // Create and push delete command
-    auto *cmd = new DeleteLocalizationKeyCommand(this, key, translations);
+    auto* cmd = new DeleteLocalizationKeyCommand(this, key, translations);
     NMUndoManager::instance().pushCommand(cmd);
 
     deleteKey(key);
@@ -1037,7 +991,7 @@ void NMLocalizationPanel::onDeleteKeyClicked() {
   rebuildTable();
 }
 
-bool NMLocalizationPanel::deleteKey(const QString &key) {
+bool NMLocalizationPanel::deleteKey(const QString& key) {
   if (!m_entries.contains(key)) {
     return false;
   }
@@ -1058,25 +1012,23 @@ bool NMLocalizationPanel::deleteKey(const QString &key) {
   return true;
 }
 
-void NMLocalizationPanel::onContextMenu(const QPoint &pos) {
+void NMLocalizationPanel::onContextMenu(const QPoint& pos) {
   QMenu menu(this);
 
-  QAction *addAction = menu.addAction(tr("Add Key..."));
-  connect(addAction, &QAction::triggered, this,
-          &NMLocalizationPanel::onAddKeyClicked);
+  QAction* addAction = menu.addAction(tr("Add Key..."));
+  connect(addAction, &QAction::triggered, this, &NMLocalizationPanel::onAddKeyClicked);
 
-  auto *idItem = m_stringsTable->itemAt(pos);
+  auto* idItem = m_stringsTable->itemAt(pos);
   if (idItem) {
     menu.addSeparator();
 
-    QAction *deleteAction = menu.addAction(tr("Delete Key"));
-    connect(deleteAction, &QAction::triggered, this,
-            &NMLocalizationPanel::onDeleteKeyClicked);
+    QAction* deleteAction = menu.addAction(tr("Delete Key"));
+    connect(deleteAction, &QAction::triggered, this, &NMLocalizationPanel::onDeleteKeyClicked);
 
-    QAction *copyKeyAction = menu.addAction(tr("Copy Key"));
+    QAction* copyKeyAction = menu.addAction(tr("Copy Key"));
     connect(copyKeyAction, &QAction::triggered, [this, idItem]() {
       int row = idItem->row();
-      auto *keyItem = m_stringsTable->item(row, 0);
+      auto* keyItem = m_stringsTable->item(row, 0);
       if (keyItem) {
         QApplication::clipboard()->setText(keyItem->text());
       }
@@ -1086,18 +1038,16 @@ void NMLocalizationPanel::onContextMenu(const QPoint &pos) {
   menu.exec(m_stringsTable->viewport()->mapToGlobal(pos));
 }
 
-QStringList
-NMLocalizationPanel::findMissingTranslations(const QString &locale) const {
+QStringList NMLocalizationPanel::findMissingTranslations(const QString& locale) const {
   QStringList missing;
 
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
 
-    if (!entry.translations.contains(locale) ||
-        entry.translations.value(locale).isEmpty()) {
+    if (!entry.translations.contains(locale) || entry.translations.value(locale).isEmpty()) {
       missing.append(entry.key);
     }
   }
@@ -1109,7 +1059,7 @@ QStringList NMLocalizationPanel::findUnusedKeys() const {
   QStringList unused;
 
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
@@ -1123,7 +1073,7 @@ QStringList NMLocalizationPanel::findUnusedKeys() const {
 }
 
 void NMLocalizationPanel::scanProjectForUsages() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return;
   }
@@ -1137,8 +1087,7 @@ void NMLocalizationPanel::scanProjectForUsages() {
   }
 
   // Directories to scan for script files
-  QStringList scanDirs = {projectPath + "/Scripts", projectPath + "/Scenes",
-                          projectPath + "/Data"};
+  QStringList scanDirs = {projectPath + "/Scripts", projectPath + "/Scenes", projectPath + "/Data"};
 
   // File extensions to scan
   QStringList extensions = {"*.nms", "*.json", "*.yaml", "*.yml", "*.xml"};
@@ -1148,14 +1097,13 @@ void NMLocalizationPanel::scanProjectForUsages() {
   QRegularExpression keyRefPattern(
       R"((?:localize|tr|getText)\s*\(\s*["\']([^"\']+)["\']\)|@([A-Za-z0-9_.-]+)|loc:([A-Za-z0-9_.-]+))");
 
-  for (const QString &scanDir : scanDirs) {
+  for (const QString& scanDir : scanDirs) {
     QDir dir(scanDir);
     if (!dir.exists()) {
       continue;
     }
 
-    QDirIterator it(scanDir, extensions, QDir::Files,
-                    QDirIterator::Subdirectories);
+    QDirIterator it(scanDir, extensions, QDir::Files, QDirIterator::Subdirectories);
 
     while (it.hasNext()) {
       const QString filePath = it.next();
@@ -1172,8 +1120,7 @@ void NMLocalizationPanel::scanProjectForUsages() {
         const QString line = in.readLine();
         lineNumber++;
 
-        QRegularExpressionMatchIterator matchIt =
-            keyRefPattern.globalMatch(line);
+        QRegularExpressionMatchIterator matchIt = keyRefPattern.globalMatch(line);
 
         while (matchIt.hasNext()) {
           QRegularExpressionMatch match = matchIt.next();
@@ -1189,9 +1136,8 @@ void NMLocalizationPanel::scanProjectForUsages() {
           }
 
           if (!foundKey.isEmpty() && m_entries.contains(foundKey)) {
-            LocalizationEntry &entry = m_entries[foundKey];
-            const QString usageLocation =
-                QString("%1:%2").arg(filePath).arg(lineNumber);
+            LocalizationEntry& entry = m_entries[foundKey];
+            const QString usageLocation = QString("%1:%2").arg(filePath).arg(lineNumber);
 
             if (!entry.usageLocations.contains(usageLocation)) {
               entry.usageLocations.append(usageLocation);
@@ -1210,12 +1156,12 @@ void NMLocalizationPanel::scanProjectForUsages() {
   updateStatusBar();
 }
 
-void NMLocalizationPanel::navigateToUsage(const QString &key, int usageIndex) {
+void NMLocalizationPanel::navigateToUsage(const QString& key, int usageIndex) {
   if (!m_entries.contains(key)) {
     return;
   }
 
-  const LocalizationEntry &entry = m_entries.value(key);
+  const LocalizationEntry& entry = m_entries.value(key);
   if (usageIndex >= 0 && usageIndex < entry.usageLocations.size()) {
     emit navigateToFile(entry.usageLocations.at(usageIndex), 0);
   }
@@ -1232,13 +1178,14 @@ void NMLocalizationPanel::setDirty(bool dirty) {
   }
 }
 
-void NMLocalizationPanel::onSaveClicked() { saveChanges(); }
+void NMLocalizationPanel::onSaveClicked() {
+  saveChanges();
+}
 
 bool NMLocalizationPanel::saveChanges() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
-    NMMessageDialog::showError(this, tr("Save Failed"),
-                               tr("No project is open."));
+    NMMessageDialog::showError(this, tr("Save Failed"), tr("No project is open."));
     return false;
   }
 
@@ -1252,22 +1199,19 @@ bool NMLocalizationPanel::saveChanges() {
   }
 
   // Save each locale to its file
-  for (const QString &localeCode : m_availableLocales) {
+  for (const QString& localeCode : m_availableLocales) {
     NovelMind::localization::LocaleId locale;
     locale.language = localeCode.toStdString();
 
     // Default to CSV format
     const QString filePath = dir.filePath(localeCode + ".csv");
-    auto result = m_localization.exportStrings(
-        locale, filePath.toStdString(),
-        NovelMind::localization::LocalizationFormat::CSV);
+    auto result = m_localization.exportStrings(locale, filePath.toStdString(),
+                                               NovelMind::localization::LocalizationFormat::CSV);
 
     if (result.isError()) {
       NMMessageDialog::showError(
           this, tr("Save Failed"),
-          tr("Failed to save %1: %2")
-              .arg(localeCode)
-              .arg(QString::fromStdString(result.error())));
+          tr("Failed to save %1: %2").arg(localeCode).arg(QString::fromStdString(result.error())));
       return false;
     }
   }
@@ -1285,7 +1229,7 @@ bool NMLocalizationPanel::saveChanges() {
 }
 
 void NMLocalizationPanel::exportLocale() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject() || m_currentLocale.isEmpty()) {
     return;
   }
@@ -1293,10 +1237,9 @@ void NMLocalizationPanel::exportLocale() {
   const QString localizationRoot =
       QString::fromStdString(pm.getFolderPath(ProjectFolder::Localization));
   const QString filter = tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
-  const QString defaultName =
-      QDir(localizationRoot).filePath(m_currentLocale + ".csv");
-  const QString path = NMFileDialog::getSaveFileName(
-      this, tr("Export Localization"), defaultName, filter);
+  const QString defaultName = QDir(localizationRoot).filePath(m_currentLocale + ".csv");
+  const QString path =
+      NMFileDialog::getSaveFileName(this, tr("Export Localization"), defaultName, filter);
   if (path.isEmpty()) {
     return;
   }
@@ -1308,16 +1251,14 @@ void NMLocalizationPanel::exportLocale() {
 
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
-  auto result =
-      m_localization.exportStrings(locale, path.toStdString(), format);
+  auto result = m_localization.exportStrings(locale, path.toStdString(), format);
   if (result.isError()) {
-    NMMessageDialog::showError(this, tr("Export Failed"),
-                               QString::fromStdString(result.error()));
+    NMMessageDialog::showError(this, tr("Export Failed"), QString::fromStdString(result.error()));
   }
 }
 
 void NMLocalizationPanel::importLocale() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     NMMessageDialog::showInfo(this, tr("Import Localization"),
                               tr("Open a project before importing strings."));
@@ -1325,8 +1266,8 @@ void NMLocalizationPanel::importLocale() {
   }
 
   const QString filter = tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
-  const QString path = NMFileDialog::getOpenFileName(
-      this, tr("Import Localization"), QDir::homePath(), filter);
+  const QString path =
+      NMFileDialog::getOpenFileName(this, tr("Import Localization"), QDir::homePath(), filter);
   if (path.isEmpty()) {
     return;
   }
@@ -1338,7 +1279,7 @@ void NMLocalizationPanel::importLocale() {
   // Capture old values for undo support (for the target locale)
   QHash<QString, QString> oldValues;
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (!entry.isDeleted && entry.translations.contains(localeCode)) {
       oldValues[entry.key] = entry.translations.value(localeCode);
     }
@@ -1348,8 +1289,7 @@ void NMLocalizationPanel::importLocale() {
   locale.language = localeCode.toStdString();
   auto result = m_localization.loadStrings(locale, path.toStdString(), format);
   if (result.isError()) {
-    NMMessageDialog::showError(this, tr("Import Failed"),
-                               QString::fromStdString(result.error()));
+    NMMessageDialog::showError(this, tr("Import Failed"), QString::fromStdString(result.error()));
     return;
   }
 
@@ -1358,24 +1298,22 @@ void NMLocalizationPanel::importLocale() {
   syncEntriesFromManager();
 
   // Create undo macro for bulk import
-  NMUndoManager::instance().beginMacro(
-      QString("Import Locale: %1").arg(info.fileName()));
+  NMUndoManager::instance().beginMacro(QString("Import Locale: %1").arg(info.fileName()));
 
   // Create commands for each changed value
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
 
-    const QString &key = entry.key;
+    const QString& key = entry.key;
     const QString newValue = entry.translations.value(localeCode, "");
     const QString oldValue = oldValues.value(key, "");
 
     // Only create command if value changed
     if (newValue != oldValue) {
-      auto *cmd = new ChangeTranslationCommand(this, key, localeCode, oldValue,
-                                               newValue);
+      auto* cmd = new ChangeTranslationCommand(this, key, localeCode, oldValue, newValue);
       NMUndoManager::instance().pushCommand(cmd);
     }
   }
@@ -1388,13 +1326,13 @@ void NMLocalizationPanel::importLocale() {
 
 void NMLocalizationPanel::onUpdate([[maybe_unused]] double deltaTime) {}
 
-void NMLocalizationPanel::onItemDoubleClicked(QTableWidgetItem *item) {
+void NMLocalizationPanel::onItemDoubleClicked(QTableWidgetItem* item) {
   if (!item) {
     return;
   }
 
   int row = item->row();
-  auto *idItem = m_stringsTable->item(row, 0);
+  auto* idItem = m_stringsTable->item(row, 0);
   if (idItem) {
     emit keySelected(idItem->text());
   }
@@ -1405,9 +1343,13 @@ void NMLocalizationPanel::onFilterChanged(int index) {
   applyFilters();
 }
 
-void NMLocalizationPanel::onExportClicked() { exportLocale(); }
+void NMLocalizationPanel::onExportClicked() {
+  exportLocale();
+}
 
-void NMLocalizationPanel::onImportClicked() { importLocale(); }
+void NMLocalizationPanel::onImportClicked() {
+  importLocale();
+}
 
 void NMLocalizationPanel::onRefreshClicked() {
   if (m_dirty) {
@@ -1438,27 +1380,25 @@ void NMLocalizationPanel::setupTable() {
   // Table setup is handled in setupUI
 }
 
-void NMLocalizationPanel::exportToCsv(const QString &filePath) {
+void NMLocalizationPanel::exportToCsv(const QString& filePath) {
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
-  m_localization.exportStrings(
-      locale, filePath.toStdString(),
-      NovelMind::localization::LocalizationFormat::CSV);
+  m_localization.exportStrings(locale, filePath.toStdString(),
+                               NovelMind::localization::LocalizationFormat::CSV);
 }
 
-void NMLocalizationPanel::exportToJson(const QString &filePath) {
+void NMLocalizationPanel::exportToJson(const QString& filePath) {
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
-  m_localization.exportStrings(
-      locale, filePath.toStdString(),
-      NovelMind::localization::LocalizationFormat::JSON);
+  m_localization.exportStrings(locale, filePath.toStdString(),
+                               NovelMind::localization::LocalizationFormat::JSON);
 }
 
-void NMLocalizationPanel::importFromCsv(const QString &filePath) {
+void NMLocalizationPanel::importFromCsv(const QString& filePath) {
   // Capture old values for undo support
   QHash<QString, QString> oldValues;
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (!entry.isDeleted && entry.translations.contains(m_currentLocale)) {
       oldValues[entry.key] = entry.translations.value(m_currentLocale);
     }
@@ -1473,25 +1413,22 @@ void NMLocalizationPanel::importFromCsv(const QString &filePath) {
 
   // Create undo macro for bulk import
   QFileInfo fileInfo(filePath);
-  NMUndoManager::instance().beginMacro(
-      QString("Import CSV: %1").arg(fileInfo.fileName()));
+  NMUndoManager::instance().beginMacro(QString("Import CSV: %1").arg(fileInfo.fileName()));
 
   // Create commands for each changed value
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
 
-    const QString &key = entry.key;
+    const QString& key = entry.key;
     const QString newValue = entry.translations.value(m_currentLocale, "");
     const QString oldValue = oldValues.value(key, "");
 
     // Only create command if value changed
     if (newValue != oldValue) {
-      auto *cmd =
-          new ChangeTranslationCommand(this, key, m_currentLocale, oldValue,
-                                       newValue);
+      auto* cmd = new ChangeTranslationCommand(this, key, m_currentLocale, oldValue, newValue);
       NMUndoManager::instance().pushCommand(cmd);
     }
   }
@@ -1502,11 +1439,11 @@ void NMLocalizationPanel::importFromCsv(const QString &filePath) {
   setDirty(true);
 }
 
-void NMLocalizationPanel::importFromJson(const QString &filePath) {
+void NMLocalizationPanel::importFromJson(const QString& filePath) {
   // Capture old values for undo support
   QHash<QString, QString> oldValues;
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (!entry.isDeleted && entry.translations.contains(m_currentLocale)) {
       oldValues[entry.key] = entry.translations.value(m_currentLocale);
     }
@@ -1521,25 +1458,22 @@ void NMLocalizationPanel::importFromJson(const QString &filePath) {
 
   // Create undo macro for bulk import
   QFileInfo fileInfo(filePath);
-  NMUndoManager::instance().beginMacro(
-      QString("Import JSON: %1").arg(fileInfo.fileName()));
+  NMUndoManager::instance().beginMacro(QString("Import JSON: %1").arg(fileInfo.fileName()));
 
   // Create commands for each changed value
   for (auto it = m_entries.constBegin(); it != m_entries.constEnd(); ++it) {
-    const LocalizationEntry &entry = it.value();
+    const LocalizationEntry& entry = it.value();
     if (entry.isDeleted) {
       continue;
     }
 
-    const QString &key = entry.key;
+    const QString& key = entry.key;
     const QString newValue = entry.translations.value(m_currentLocale, "");
     const QString oldValue = oldValues.value(key, "");
 
     // Only create command if value changed
     if (newValue != oldValue) {
-      auto *cmd =
-          new ChangeTranslationCommand(this, key, m_currentLocale, oldValue,
-                                       newValue);
+      auto* cmd = new ChangeTranslationCommand(this, key, m_currentLocale, oldValue, newValue);
       NMUndoManager::instance().pushCommand(cmd);
     }
   }
@@ -1550,10 +1484,12 @@ void NMLocalizationPanel::importFromJson(const QString &filePath) {
   setDirty(true);
 }
 
-void NMLocalizationPanel::onExportMissingClicked() { exportMissingStrings(); }
+void NMLocalizationPanel::onExportMissingClicked() {
+  exportMissingStrings();
+}
 
 void NMLocalizationPanel::exportMissingStrings() {
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject() || m_currentLocale.isEmpty()) {
     return;
   }
@@ -1561,10 +1497,9 @@ void NMLocalizationPanel::exportMissingStrings() {
   const QString localizationRoot =
       QString::fromStdString(pm.getFolderPath(ProjectFolder::Localization));
   const QString filter = tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
-  const QString defaultName =
-      QDir(localizationRoot).filePath(m_currentLocale + "_missing.csv");
-  const QString path = NMFileDialog::getSaveFileName(
-      this, tr("Export Missing Translations"), defaultName, filter);
+  const QString defaultName = QDir(localizationRoot).filePath(m_currentLocale + "_missing.csv");
+  const QString path =
+      NMFileDialog::getSaveFileName(this, tr("Export Missing Translations"), defaultName, filter);
   if (path.isEmpty()) {
     return;
   }
@@ -1576,15 +1511,12 @@ void NMLocalizationPanel::exportMissingStrings() {
 
   NovelMind::localization::LocaleId locale;
   locale.language = m_currentLocale.toStdString();
-  auto result =
-      m_localization.exportMissingStrings(locale, path.toStdString(), format);
+  auto result = m_localization.exportMissingStrings(locale, path.toStdString(), format);
   if (result.isError()) {
-    NMMessageDialog::showError(this, tr("Export Failed"),
-                               QString::fromStdString(result.error()));
+    NMMessageDialog::showError(this, tr("Export Failed"), QString::fromStdString(result.error()));
   } else {
-    NMMessageDialog::showInfo(
-        this, tr("Export Successful"),
-        tr("Missing translations exported successfully to:\n%1").arg(path));
+    NMMessageDialog::showInfo(this, tr("Export Successful"),
+                              tr("Missing translations exported successfully to:\n%1").arg(path));
   }
 }
 
@@ -1593,7 +1525,7 @@ void NMLocalizationPanel::onEditPluralFormsClicked() {
     return;
   }
 
-  QList<QTableWidgetItem *> selectedItems = m_stringsTable->selectedItems();
+  QList<QTableWidgetItem*> selectedItems = m_stringsTable->selectedItems();
   if (selectedItems.isEmpty()) {
     NMMessageDialog::showInfo(this, tr("Edit Plural Forms"),
                               tr("Please select a key to edit plural forms."));
@@ -1601,7 +1533,7 @@ void NMLocalizationPanel::onEditPluralFormsClicked() {
   }
 
   int row = selectedItems.first()->row();
-  auto *idItem = m_stringsTable->item(row, 0);
+  auto* idItem = m_stringsTable->item(row, 0);
   if (!idItem) {
     return;
   }
@@ -1610,7 +1542,7 @@ void NMLocalizationPanel::onEditPluralFormsClicked() {
   showPluralFormsDialog(key);
 }
 
-bool NMLocalizationPanel::showPluralFormsDialog(const QString &key) {
+bool NMLocalizationPanel::showPluralFormsDialog(const QString& key) {
   using namespace NovelMind::localization;
 
   QDialog dialog(this);
@@ -1618,24 +1550,24 @@ bool NMLocalizationPanel::showPluralFormsDialog(const QString &key) {
   dialog.setMinimumWidth(600);
   dialog.setMinimumHeight(400);
 
-  QVBoxLayout *layout = new QVBoxLayout(&dialog);
+  QVBoxLayout* layout = new QVBoxLayout(&dialog);
 
   // Instructions
-  QLabel *infoLabel = new QLabel(
-      tr("Define plural forms for different count values:\n"
-         "Zero (0), One (1), Two (2), Few (3-10), Many (11+), Other (default)"),
-      &dialog);
+  QLabel* infoLabel =
+      new QLabel(tr("Define plural forms for different count values:\n"
+                    "Zero (0), One (1), Two (2), Few (3-10), Many (11+), Other (default)"),
+                 &dialog);
   infoLabel->setWordWrap(true);
   layout->addWidget(infoLabel);
 
   // Get current localized string
   LocaleId locale;
   locale.language = m_currentLocale.toStdString();
-  auto *table = m_localization.getStringTableMutable(locale);
+  auto* table = m_localization.getStringTableMutable(locale);
 
-  QHash<PluralCategory, QLineEdit *> formEdits;
+  QHash<PluralCategory, QLineEdit*> formEdits;
 
-  QFormLayout *formLayout = new QFormLayout();
+  QFormLayout* formLayout = new QFormLayout();
 
   const QList<QPair<PluralCategory, QString>> categories = {
       {PluralCategory::Zero, tr("Zero (count = 0):")},
@@ -1645,10 +1577,10 @@ bool NMLocalizationPanel::showPluralFormsDialog(const QString &key) {
       {PluralCategory::Many, tr("Many (11+):")},
       {PluralCategory::Other, tr("Other (default):")}};
 
-  for (const auto &[category, label] : categories) {
-    QLineEdit *edit = new QLineEdit(&dialog);
+  for (const auto& [category, label] : categories) {
+    QLineEdit* edit = new QLineEdit(&dialog);
     if (table) {
-      const auto &strings = table->getStrings();
+      const auto& strings = table->getStrings();
       auto it = strings.find(key.toStdString());
       if (it != strings.end()) {
         auto formIt = it->second.forms.find(category);
@@ -1663,8 +1595,8 @@ bool NMLocalizationPanel::showPluralFormsDialog(const QString &key) {
 
   layout->addLayout(formLayout);
 
-  QDialogButtonBox *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+  QDialogButtonBox* buttonBox =
+      new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
   connect(buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
   connect(buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
   layout->addWidget(buttonBox);
@@ -1715,7 +1647,7 @@ void NMLocalizationPanel::applyRTLLayout(bool rtl) {
 
   // Update alignment for translation column
   for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-    auto *translationItem = m_stringsTable->item(row, 2);
+    auto* translationItem = m_stringsTable->item(row, 2);
     if (translationItem) {
       if (rtl) {
         translationItem->setTextAlignment(Qt::AlignRight | Qt::AlignVCenter);
@@ -1736,7 +1668,7 @@ void NMLocalizationPanel::onPreviewVariablesChanged() {
   const QString input = m_previewInput->text();
   const QStringList pairs = input.split(',', Qt::SkipEmptyParts);
 
-  for (const QString &pair : pairs) {
+  for (const QString& pair : pairs) {
     const QStringList parts = pair.split('=');
     if (parts.size() == 2) {
       m_previewVariables[parts[0].trimmed()] = parts[1].trimmed();
@@ -1752,14 +1684,14 @@ void NMLocalizationPanel::updatePreview() {
   }
 
   // Get currently selected key
-  QList<QTableWidgetItem *> selectedItems = m_stringsTable->selectedItems();
+  QList<QTableWidgetItem*> selectedItems = m_stringsTable->selectedItems();
   if (selectedItems.isEmpty()) {
     m_previewOutput->setText(tr("(select a key to preview)"));
     return;
   }
 
   int row = selectedItems.first()->row();
-  auto *translationItem = m_stringsTable->item(row, 2);
+  auto* translationItem = m_stringsTable->item(row, 2);
   if (!translationItem) {
     m_previewOutput->setText("");
     return;
@@ -1769,8 +1701,7 @@ void NMLocalizationPanel::updatePreview() {
 
   // Apply variable interpolation
   std::unordered_map<std::string, std::string> variables;
-  for (auto it = m_previewVariables.begin(); it != m_previewVariables.end();
-       ++it) {
+  for (auto it = m_previewVariables.begin(); it != m_previewVariables.end(); ++it) {
     variables[it.key().toStdString()] = it.value().toStdString();
   }
 
@@ -1780,16 +1711,15 @@ void NMLocalizationPanel::updatePreview() {
   m_previewOutput->setText(QString::fromStdString(interpolated));
 }
 
-int NMLocalizationPanel::importDialogueEntries(
-    const QList<QPair<QString, QString>> &entries) {
+int NMLocalizationPanel::importDialogueEntries(const QList<QPair<QString, QString>>& entries) {
   if (entries.isEmpty()) {
     return 0;
   }
 
   int imported = 0;
-  for (const auto &entry : entries) {
-    const QString &key = entry.first;
-    const QString &sourceText = entry.second;
+  for (const auto& entry : entries) {
+    const QString& key = entry.first;
+    const QString& sourceText = entry.second;
 
     // Skip if key already exists and has a value
     if (m_entries.contains(key) && !m_entries[key].isDeleted) {
@@ -1814,8 +1744,7 @@ int NMLocalizationPanel::importDialogueEntries(
     // Add to localization manager
     NovelMind::localization::LocaleId locale;
     locale.language = m_defaultLocale.toStdString();
-    m_localization.setString(locale, key.toStdString(),
-                             sourceText.toStdString());
+    m_localization.setString(locale, key.toStdString(), sourceText.toStdString());
 
     ++imported;
   }
@@ -1828,12 +1757,12 @@ int NMLocalizationPanel::importDialogueEntries(
   return imported;
 }
 
-bool NMLocalizationPanel::hasTranslation(const QString &key) const {
+bool NMLocalizationPanel::hasTranslation(const QString& key) const {
   if (!m_entries.contains(key)) {
     return false;
   }
 
-  const LocalizationEntry &entry = m_entries.value(key);
+  const LocalizationEntry& entry = m_entries.value(key);
   if (entry.isDeleted) {
     return false;
   }
@@ -1848,12 +1777,12 @@ bool NMLocalizationPanel::hasTranslation(const QString &key) const {
          !entry.translations.value(m_currentLocale).isEmpty();
 }
 
-QString NMLocalizationPanel::getTranslation(const QString &key) const {
+QString NMLocalizationPanel::getTranslation(const QString& key) const {
   if (!m_entries.contains(key)) {
     return QString();
   }
 
-  const LocalizationEntry &entry = m_entries.value(key);
+  const LocalizationEntry& entry = m_entries.value(key);
   if (entry.isDeleted) {
     return QString();
   }
@@ -1872,9 +1801,8 @@ QString NMLocalizationPanel::getTranslation(const QString &key) const {
  * PERF-4 optimization: Uses m_keyToRowMap for O(1) row lookup instead
  * of O(n) linear search through all table rows.
  */
-void NMLocalizationPanel::setTranslationValue(const QString &key,
-                                              const QString &locale,
-                                              const QString &value) {
+void NMLocalizationPanel::setTranslationValue(const QString& key, const QString& locale,
+                                              const QString& value) {
   // Update the in-memory entry
   if (m_entries.contains(key)) {
     m_entries[key].translations[locale] = value;
@@ -1889,7 +1817,7 @@ void NMLocalizationPanel::setTranslationValue(const QString &key,
       if (rowIt != m_keyToRowMap.end()) {
         int row = rowIt.value();
         // Update the translation cell (column 2)
-        auto *valueItem = m_stringsTable->item(row, 2);
+        auto* valueItem = m_stringsTable->item(row, 2);
         if (valueItem) {
           // Block signals to prevent creating a new undo command
           bool wasBlocked = m_stringsTable->blockSignals(true);

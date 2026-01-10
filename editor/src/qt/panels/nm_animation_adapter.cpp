@@ -9,15 +9,16 @@
 
 namespace NovelMind::editor::qt {
 
-NMAnimationAdapter::NMAnimationAdapter(scene::SceneManager *sceneManager,
-                                       QObject *parent)
+NMAnimationAdapter::NMAnimationAdapter(scene::SceneManager* sceneManager, QObject* parent)
     : QObject(parent), m_sceneManager(sceneManager) {
   NOVELMIND_LOG_INFO("[AnimationAdapter] Created");
 }
 
-NMAnimationAdapter::~NMAnimationAdapter() { cleanupAnimations(); }
+NMAnimationAdapter::~NMAnimationAdapter() {
+  cleanupAnimations();
+}
 
-void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
+void NMAnimationAdapter::connectTimeline(NMTimelinePanel* timeline) {
   if (!timeline) {
     NOVELMIND_LOG_ERROR("[AnimationAdapter] Cannot connect null timeline");
     return;
@@ -36,12 +37,11 @@ void NMAnimationAdapter::connectTimeline(NMTimelinePanel *timeline) {
   // Sync FPS
   m_fps = m_timeline->getFPS();
 
-  NOVELMIND_LOG_INFO(
-      std::string("[AnimationAdapter] Connected to Timeline (FPS: ") +
-      std::to_string(m_fps) + ")");
+  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Connected to Timeline (FPS: ") +
+                     std::to_string(m_fps) + ")");
 }
 
-void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
+void NMAnimationAdapter::connectSceneView(NMSceneViewPanel* sceneView) {
   if (!sceneView) {
     NOVELMIND_LOG_ERROR("[AnimationAdapter] Cannot connect null scene view");
     return;
@@ -51,29 +51,26 @@ void NMAnimationAdapter::connectSceneView(NMSceneViewPanel *sceneView) {
 
   // Connect adapter signals to scene view - trigger viewport refresh for visual
   // updates during animation playback
-  connect(this, &NMAnimationAdapter::sceneUpdateRequired, m_sceneView,
-          [this]() {
-            if (m_sceneView) {
-              // Must update the graphics view's viewport, not the dock panel
-              // widget. QWidget::update() on the panel doesn't refresh the
-              // QGraphicsScene contents.
-              if (auto *view = m_sceneView->graphicsView()) {
-                if (view->viewport()) {
-                  view->viewport()->update();
-                }
-              }
-            }
-          });
+  connect(this, &NMAnimationAdapter::sceneUpdateRequired, m_sceneView, [this]() {
+    if (m_sceneView) {
+      // Must update the graphics view's viewport, not the dock panel
+      // widget. QWidget::update() on the panel doesn't refresh the
+      // QGraphicsScene contents.
+      if (auto* view = m_sceneView->graphicsView()) {
+        if (view->viewport()) {
+          view->viewport()->update();
+        }
+      }
+    }
+  });
 
   NOVELMIND_LOG_INFO("[AnimationAdapter] Connected to Scene View");
 }
 
-bool NMAnimationAdapter::createBinding(const QString &trackId,
-                                       const QString &objectId,
+bool NMAnimationAdapter::createBinding(const QString& trackId, const QString& objectId,
                                        AnimatedProperty property) {
   if (trackId.isEmpty() || objectId.isEmpty()) {
-    NOVELMIND_LOG_WARN(
-        "[AnimationAdapter] Cannot create binding with empty IDs");
+    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot create binding with empty IDs");
     return false;
   }
 
@@ -84,27 +81,25 @@ bool NMAnimationAdapter::createBinding(const QString &trackId,
 
   m_bindings[trackId] = binding;
 
-  NOVELMIND_LOG_INFO(
-      std::string("[AnimationAdapter] Created binding: track '") +
-      trackId.toStdString() + "' -> object '" + objectId.toStdString() +
-      "' property " + std::to_string(static_cast<int>(property)));
+  NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Created binding: track '") +
+                     trackId.toStdString() + "' -> object '" + objectId.toStdString() +
+                     "' property " + std::to_string(static_cast<int>(property)));
 
   return true;
 }
 
-void NMAnimationAdapter::removeBinding(const QString &trackId) {
+void NMAnimationAdapter::removeBinding(const QString& trackId) {
   auto it = m_bindings.find(trackId);
   if (it != m_bindings.end()) {
     m_bindings.erase(it);
-    NOVELMIND_LOG_INFO(
-        std::string("[AnimationAdapter] Removed binding for track '") +
-        trackId.toStdString() + "'");
+    NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Removed binding for track '") +
+                       trackId.toStdString() + "'");
   }
 }
 
 QList<AnimationBinding> NMAnimationAdapter::getBindings() const {
   QList<AnimationBinding> result;
-  for (const auto &[key, binding] : m_bindings) {
+  for (const auto& [key, binding] : m_bindings) {
     result.append(binding);
   }
   return result;
@@ -195,11 +190,9 @@ void NMAnimationAdapter::onTimelinePlaybackStateChanged(bool playing) {
   }
 }
 
-void NMAnimationAdapter::onKeyframeModified(const QString &trackName,
-                                            int frame) {
-  NOVELMIND_LOG_DEBUG(
-      std::string("[AnimationAdapter] Keyframe modified: track '") +
-      trackName.toStdString() + "' frame " + std::to_string(frame));
+void NMAnimationAdapter::onKeyframeModified(const QString& trackName, int frame) {
+  NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Keyframe modified: track '") +
+                      trackName.toStdString() + "' frame " + std::to_string(frame));
 
   // Rebuild animations for this track
   // Update the animation at the modified frame position
@@ -210,8 +203,7 @@ void NMAnimationAdapter::onKeyframeModified(const QString &trackName,
 
 void NMAnimationAdapter::rebuildAnimations() {
   if (!m_timeline) {
-    NOVELMIND_LOG_WARN(
-        "[AnimationAdapter] Cannot rebuild animations without timeline");
+    NOVELMIND_LOG_WARN("[AnimationAdapter] Cannot rebuild animations without timeline");
     return;
   }
 
@@ -221,10 +213,10 @@ void NMAnimationAdapter::rebuildAnimations() {
   m_animationStates.clear();
 
   // Build animations for each bound track
-  const auto &tracks = m_timeline->getTracks();
+  const auto& tracks = m_timeline->getTracks();
   for (auto it = tracks.constBegin(); it != tracks.constEnd(); ++it) {
-    const QString &trackName = it.key();
-    TimelineTrack *track = it.value();
+    const QString& trackName = it.key();
+    TimelineTrack* track = it.value();
 
     // Check if this track has a binding
     auto bindingIt = m_bindings.find(trackName);
@@ -232,7 +224,7 @@ void NMAnimationAdapter::rebuildAnimations() {
       continue;
     }
 
-    const AnimationBinding &binding = bindingIt->second;
+    const AnimationBinding& binding = bindingIt->second;
 
     // Build animation timeline from track
     auto animTimeline = buildAnimationFromTrack(track, binding);
@@ -240,23 +232,21 @@ void NMAnimationAdapter::rebuildAnimations() {
       AnimationPlaybackState state;
       state.timeline = std::move(animTimeline);
       state.binding = binding;
-      state.duration = static_cast<f64>(track->keyframes.size() > 0
-                                            ? track->keyframes.last().frame
-                                            : 0) /
-                       static_cast<f64>(m_fps);
+      state.duration =
+          static_cast<f64>(track->keyframes.size() > 0 ? track->keyframes.last().frame : 0) /
+          static_cast<f64>(m_fps);
 
       m_animationStates[trackName] = std::move(state);
 
-      NOVELMIND_LOG_INFO(
-          std::string("[AnimationAdapter] Built animation for track '") +
-          trackName.toStdString() + "'");
+      NOVELMIND_LOG_INFO(std::string("[AnimationAdapter] Built animation for track '") +
+                         trackName.toStdString() + "'");
     }
   }
 }
 
 std::unique_ptr<scene::AnimationTimeline>
-NMAnimationAdapter::buildAnimationFromTrack(
-    TimelineTrack *track, [[maybe_unused]] const AnimationBinding &binding) {
+NMAnimationAdapter::buildAnimationFromTrack(TimelineTrack* track,
+                                            [[maybe_unused]] const AnimationBinding& binding) {
   if (!track || track->keyframes.isEmpty()) {
     return nullptr;
   }
@@ -268,27 +258,25 @@ NMAnimationAdapter::buildAnimationFromTrack(
 }
 
 std::unique_ptr<scene::Tween> NMAnimationAdapter::createTweenForProperty(
-    [[maybe_unused]] const AnimationBinding &binding,
-    [[maybe_unused]] const Keyframe &kf1, [[maybe_unused]] const Keyframe &kf2,
-    [[maybe_unused]] f32 duration) {
+    [[maybe_unused]] const AnimationBinding& binding, [[maybe_unused]] const Keyframe& kf1,
+    [[maybe_unused]] const Keyframe& kf2, [[maybe_unused]] f32 duration) {
   // Simplified: we handle tweening directly in interpolation
   return nullptr;
 }
 
-void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
-                                               f64 time) {
+void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding& binding, f64 time) {
   if (!m_sceneView || !m_timeline) {
     return;
   }
 
   // Get the track
-  TimelineTrack *track = m_timeline->getTrack(binding.trackId);
+  TimelineTrack* track = m_timeline->getTrack(binding.trackId);
   if (!track) {
     return;
   }
 
   // PERF-6: Use cached object pointer to avoid repeated lookups
-  NMSceneObject *obj = nullptr;
+  NMSceneObject* obj = nullptr;
   auto objIt = m_objectCache.find(binding.objectId);
   if (objIt != m_objectCache.end() && objIt.value()) {
     obj = objIt.value();
@@ -314,14 +302,12 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
   switch (binding.property) {
   case AnimatedProperty::PositionX: {
     QPointF currentPos = obj->pos();
-    applied = m_sceneView->moveObject(
-        binding.objectId, QPointF(value.toDouble(), currentPos.y()));
+    applied = m_sceneView->moveObject(binding.objectId, QPointF(value.toDouble(), currentPos.y()));
     break;
   }
   case AnimatedProperty::PositionY: {
     QPointF currentPos = obj->pos();
-    applied = m_sceneView->moveObject(
-        binding.objectId, QPointF(currentPos.x(), value.toDouble()));
+    applied = m_sceneView->moveObject(binding.objectId, QPointF(currentPos.x(), value.toDouble()));
     break;
   }
   case AnimatedProperty::Position: {
@@ -331,22 +317,20 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
     } else if (value.canConvert<QVariantList>()) {
       QVariantList list = value.toList();
       if (list.size() >= 2) {
-        applied = m_sceneView->moveObject(
-            binding.objectId, QPointF(list[0].toDouble(), list[1].toDouble()));
+        applied = m_sceneView->moveObject(binding.objectId,
+                                          QPointF(list[0].toDouble(), list[1].toDouble()));
       }
     }
     break;
   }
   case AnimatedProperty::ScaleX: {
     qreal currentScaleY = obj->scaleY();
-    applied = m_sceneView->scaleObject(binding.objectId, value.toDouble(),
-                                       currentScaleY);
+    applied = m_sceneView->scaleObject(binding.objectId, value.toDouble(), currentScaleY);
     break;
   }
   case AnimatedProperty::ScaleY: {
     qreal currentScaleX = obj->scaleX();
-    applied = m_sceneView->scaleObject(binding.objectId, currentScaleX,
-                                       value.toDouble());
+    applied = m_sceneView->scaleObject(binding.objectId, currentScaleX, value.toDouble());
     break;
   }
   case AnimatedProperty::Scale: {
@@ -367,25 +351,39 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding &binding,
     applied = m_sceneView->setObjectVisible(binding.objectId, value.toBool());
     break;
   }
-  case AnimatedProperty::Color:
+  case AnimatedProperty::Color: {
+    // Expects QColor value
+    if (value.canConvert<QColor>()) {
+      applied = m_sceneView->setObjectColor(binding.objectId, value.value<QColor>());
+    } else if (value.canConvert<QVariantList>()) {
+      // Support RGB or RGBA as list [r, g, b] or [r, g, b, a]
+      QVariantList list = value.toList();
+      if (list.size() >= 3) {
+        int r = list[0].toInt();
+        int g = list[1].toInt();
+        int b = list[2].toInt();
+        int a = (list.size() >= 4) ? list[3].toInt() : 255;
+        applied = m_sceneView->setObjectColor(binding.objectId, QColor(r, g, b, a));
+      }
+    }
+    break;
+  }
   case AnimatedProperty::Custom:
-    // Custom properties not yet supported
-    NOVELMIND_LOG_DEBUG(
-        "[AnimationAdapter] Custom/Color properties not yet implemented");
+    // Custom properties not yet supported - would require dynamic property system
+    NOVELMIND_LOG_DEBUG("[AnimationAdapter] Custom properties not yet implemented (requires "
+                        "dynamic property system)");
     break;
   }
 
   if (applied) {
-    NOVELMIND_LOG_DEBUG(
-        std::string("[AnimationAdapter] Applied animation: object '") +
-        binding.objectId.toStdString() + "' property " +
-        std::to_string(static_cast<int>(binding.property)) + " = " +
-        value.toString().toStdString());
+    NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Applied animation: object '") +
+                        binding.objectId.toStdString() + "' property " +
+                        std::to_string(static_cast<int>(binding.property)) + " = " +
+                        value.toString().toStdString());
   }
 }
 
-QVariant NMAnimationAdapter::interpolateTrackValue(TimelineTrack *track,
-                                                   f64 time) {
+QVariant NMAnimationAdapter::interpolateTrackValue(TimelineTrack* track, f64 time) {
   if (!track || track->keyframes.isEmpty()) {
     return QVariant();
   }
@@ -404,7 +402,7 @@ void NMAnimationAdapter::seekToTime(f64 time) {
   }
 
   // Apply all bound track animations at this time
-  for (const auto &[trackId, binding] : m_bindings) {
+  for (const auto& [trackId, binding] : m_bindings) {
     applyAnimationToScene(binding, time);
   }
 }

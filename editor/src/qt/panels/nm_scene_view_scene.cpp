@@ -19,8 +19,7 @@ namespace NovelMind::editor::qt {
 // NMSceneGraphicsScene
 // ============================================================================
 
-NMSceneGraphicsScene::NMSceneGraphicsScene(QObject *parent)
-    : QGraphicsScene(parent) {
+NMSceneGraphicsScene::NMSceneGraphicsScene(QObject* parent) : QGraphicsScene(parent) {
   // Set a large scene rect for scrolling
   setSceneRect(-5000, -5000, 10000, 10000);
 
@@ -69,12 +68,11 @@ void NMSceneGraphicsScene::setSnapToGrid(bool enabled) {
 }
 
 QRectF NMSceneGraphicsScene::stageRect() const {
-  const QPointF topLeft(-m_stageSize.width() / 2.0,
-                        -m_stageSize.height() / 2.0);
+  const QPointF topLeft(-m_stageSize.width() / 2.0, -m_stageSize.height() / 2.0);
   return QRectF(topLeft, m_stageSize);
 }
 
-void NMSceneGraphicsScene::addSceneObject(NMSceneObject *object) {
+void NMSceneGraphicsScene::addSceneObject(NMSceneObject* object) {
   if (!object)
     return;
 
@@ -91,7 +89,7 @@ void NMSceneGraphicsScene::addSceneObject(NMSceneObject *object) {
   // NMSceneObject if it inherits from QObject
 }
 
-void NMSceneGraphicsScene::removeSceneObject(const QString &objectId) {
+void NMSceneGraphicsScene::removeSceneObject(const QString& objectId) {
   if (objectId == m_selectedObjectId) {
     clearSelection();
   }
@@ -101,7 +99,7 @@ void NMSceneGraphicsScene::removeSceneObject(const QString &objectId) {
 
   for (int i = 0; i < m_sceneObjects.size(); ++i) {
     if (m_sceneObjects[i]->id() == objectId) {
-      NMSceneObject *obj = m_sceneObjects.takeAt(i);
+      NMSceneObject* obj = m_sceneObjects.takeAt(i);
       removeItem(obj);
       delete obj;
       break;
@@ -109,32 +107,30 @@ void NMSceneGraphicsScene::removeSceneObject(const QString &objectId) {
   }
 }
 
-NMSceneObject *
-NMSceneGraphicsScene::findSceneObject(const QString &objectId) const {
-  for (auto *obj : m_sceneObjects) {
+NMSceneObject* NMSceneGraphicsScene::findSceneObject(const QString& objectId) const {
+  for (auto* obj : m_sceneObjects) {
     if (obj->id() == objectId)
       return obj;
   }
   return nullptr;
 }
 
-NMSceneObject *NMSceneGraphicsScene::selectedObject() const {
+NMSceneObject* NMSceneGraphicsScene::selectedObject() const {
   if (m_selectedObjectId.isEmpty()) {
     return nullptr;
   }
   return findSceneObject(m_selectedObjectId);
 }
 
-QPointF NMSceneGraphicsScene::getObjectPosition(const QString &objectId) const {
-  if (auto *obj = findSceneObject(objectId)) {
+QPointF NMSceneGraphicsScene::getObjectPosition(const QString& objectId) const {
+  if (auto* obj = findSceneObject(objectId)) {
     return obj->pos();
   }
   return {};
 }
 
-bool NMSceneGraphicsScene::setObjectPosition(const QString &objectId,
-                                             const QPointF &pos) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectPosition(const QString& objectId, const QPointF& pos) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setPos(pos);
     handleItemPositionChange(objectId, pos);
     return true;
@@ -142,9 +138,8 @@ bool NMSceneGraphicsScene::setObjectPosition(const QString &objectId,
   return false;
 }
 
-bool NMSceneGraphicsScene::setObjectRotation(const QString &objectId,
-                                             qreal degrees) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectRotation(const QString& objectId, qreal degrees) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setRotation(degrees);
     updateGizmo();
     return true;
@@ -152,16 +147,15 @@ bool NMSceneGraphicsScene::setObjectRotation(const QString &objectId,
   return false;
 }
 
-qreal NMSceneGraphicsScene::getObjectRotation(const QString &objectId) const {
-  if (auto *obj = findSceneObject(objectId)) {
+qreal NMSceneGraphicsScene::getObjectRotation(const QString& objectId) const {
+  if (auto* obj = findSceneObject(objectId)) {
     return obj->rotation();
   }
   return 0.0;
 }
 
-bool NMSceneGraphicsScene::setObjectScale(const QString &objectId, qreal scaleX,
-                                          qreal scaleY) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectScale(const QString& objectId, qreal scaleX, qreal scaleY) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setScaleXY(scaleX, scaleY);
     updateGizmo();
     return true;
@@ -169,45 +163,48 @@ bool NMSceneGraphicsScene::setObjectScale(const QString &objectId, qreal scaleX,
   return false;
 }
 
-bool NMSceneGraphicsScene::setObjectOpacity(const QString &objectId,
-                                            qreal opacity) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectOpacity(const QString& objectId, qreal opacity) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setOpacity(opacity);
     return true;
   }
   return false;
 }
 
-bool NMSceneGraphicsScene::setObjectVisible(const QString &objectId,
-                                            bool visible) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectVisible(const QString& objectId, bool visible) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setVisible(visible);
     return true;
   }
   return false;
 }
 
-bool NMSceneGraphicsScene::setObjectLocked(const QString &objectId,
-                                           bool locked) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectLocked(const QString& objectId, bool locked) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setLocked(locked);
     return true;
   }
   return false;
 }
 
-bool NMSceneGraphicsScene::setObjectZOrder(const QString &objectId,
-                                           qreal zValue) {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::setObjectColor(const QString& objectId, const QColor& color) {
+  if (auto* obj = findSceneObject(objectId)) {
+    obj->setColorTint(color);
+    return true;
+  }
+  return false;
+}
+
+bool NMSceneGraphicsScene::setObjectZOrder(const QString& objectId, qreal zValue) {
+  if (auto* obj = findSceneObject(objectId)) {
     obj->setZValue(zValue);
     return true;
   }
   return false;
 }
 
-bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
-                                          const QString &newParentId) {
-  auto *obj = findSceneObject(objectId);
+bool NMSceneGraphicsScene::reparentObject(const QString& objectId, const QString& newParentId) {
+  auto* obj = findSceneObject(objectId);
   if (!obj) {
     return false;
   }
@@ -229,7 +226,7 @@ bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
         // Would create a cycle
         return false;
       }
-      auto *checkObj = findSceneObject(checkId);
+      auto* checkObj = findSceneObject(checkId);
       if (!checkObj) {
         break;
       }
@@ -239,7 +236,7 @@ bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
 
   // Remove from old parent's child list
   if (!oldParentId.isEmpty()) {
-    if (auto *oldParent = findSceneObject(oldParentId)) {
+    if (auto* oldParent = findSceneObject(oldParentId)) {
       oldParent->removeChildObjectId(objectId);
     }
   }
@@ -249,7 +246,7 @@ bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
 
   // Add to new parent's child list
   if (!newParentId.isEmpty()) {
-    if (auto *newParent = findSceneObject(newParentId)) {
+    if (auto* newParent = findSceneObject(newParentId)) {
       newParent->addChildObjectId(objectId);
     }
   }
@@ -257,27 +254,27 @@ bool NMSceneGraphicsScene::reparentObject(const QString &objectId,
   return true;
 }
 
-QPointF NMSceneGraphicsScene::getObjectScale(const QString &objectId) const {
-  if (auto *obj = findSceneObject(objectId)) {
+QPointF NMSceneGraphicsScene::getObjectScale(const QString& objectId) const {
+  if (auto* obj = findSceneObject(objectId)) {
     return {obj->scaleX(), obj->scaleY()};
   }
   return {1.0, 1.0};
 }
 
-bool NMSceneGraphicsScene::isObjectLocked(const QString &objectId) const {
-  if (auto *obj = findSceneObject(objectId)) {
+bool NMSceneGraphicsScene::isObjectLocked(const QString& objectId) const {
+  if (auto* obj = findSceneObject(objectId)) {
     return obj->isLocked();
   }
   return false;
 }
 
-void NMSceneGraphicsScene::selectObject(const QString &objectId) {
+void NMSceneGraphicsScene::selectObject(const QString& objectId) {
   if (objectId.isEmpty()) {
     clearSelection();
     return;
   }
   if (objectId == m_selectedObjectId) {
-    if (auto *obj = findSceneObject(m_selectedObjectId)) {
+    if (auto* obj = findSceneObject(m_selectedObjectId)) {
       if (obj->isSelected()) {
         return;
       }
@@ -285,14 +282,14 @@ void NMSceneGraphicsScene::selectObject(const QString &objectId) {
   }
   // Clear previous selection
   if (!m_selectedObjectId.isEmpty()) {
-    if (auto *prev = findSceneObject(m_selectedObjectId)) {
+    if (auto* prev = findSceneObject(m_selectedObjectId)) {
       prev->setSelected(false);
     }
   }
 
   // Select new object
   m_selectedObjectId = objectId;
-  if (auto *obj = findSceneObject(m_selectedObjectId)) {
+  if (auto* obj = findSceneObject(m_selectedObjectId)) {
     obj->setSelected(true);
     updateGizmo();
     emit objectSelected(objectId);
@@ -304,7 +301,7 @@ void NMSceneGraphicsScene::clearSelection() {
     return;
   }
   if (!m_selectedObjectId.isEmpty()) {
-    if (auto *obj = findSceneObject(m_selectedObjectId)) {
+    if (auto* obj = findSceneObject(m_selectedObjectId)) {
       obj->setSelected(false);
     }
     resetDragTracking();
@@ -318,9 +315,8 @@ void NMSceneGraphicsScene::setGizmoMode(NMTransformGizmo::GizmoMode mode) {
   m_gizmo->setMode(mode);
 }
 
-void NMSceneGraphicsScene::drawBackground(QPainter *painter,
-                                          const QRectF &rect) {
-  const auto &palette = NMStyleManager::instance().palette();
+void NMSceneGraphicsScene::drawBackground(QPainter* painter, const QRectF& rect) {
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Fill background
   painter->fillRect(rect, palette.bgDarkest);
@@ -338,10 +334,10 @@ void NMSceneGraphicsScene::drawBackground(QPainter *painter,
       QPen centerPen(palette.borderDark);
       centerPen.setStyle(Qt::DashLine);
       painter->setPen(centerPen);
-      painter->drawLine(QLineF(stage.center().x(), stage.top(),
-                               stage.center().x(), stage.bottom()));
-      painter->drawLine(QLineF(stage.left(), stage.center().y(), stage.right(),
-                               stage.center().y()));
+      painter->drawLine(
+          QLineF(stage.center().x(), stage.top(), stage.center().x(), stage.bottom()));
+      painter->drawLine(
+          QLineF(stage.left(), stage.center().y(), stage.right(), stage.center().y()));
     }
 
     if (m_safeFrameVisible) {
@@ -358,8 +354,7 @@ void NMSceneGraphicsScene::drawBackground(QPainter *painter,
       QPen basePen(palette.accentPrimary);
       basePen.setStyle(Qt::DotLine);
       painter->setPen(basePen);
-      painter->drawLine(
-          QLineF(stage.left(), baseline, stage.right(), baseline));
+      painter->drawLine(QLineF(stage.left(), baseline, stage.right(), baseline));
     }
   }
 
@@ -409,10 +404,10 @@ void NMSceneGraphicsScene::drawBackground(QPainter *painter,
   }
 }
 
-void NMSceneGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+void NMSceneGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     // Check if we clicked on a scene object
-    QGraphicsItem *item = itemAt(event->scenePos(), QTransform());
+    QGraphicsItem* item = itemAt(event->scenePos(), QTransform());
 
     // Skip gizmo items
     while (item && item->parentItem()) {
@@ -425,7 +420,7 @@ void NMSceneGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
     }
 
     // Check if it's a scene object
-    auto *sceneObj = dynamic_cast<NMSceneObject *>(item);
+    auto* sceneObj = dynamic_cast<NMSceneObject*>(item);
     if (sceneObj) {
       selectObject(sceneObj->id());
       if (!sceneObj->isLocked()) {
@@ -445,9 +440,9 @@ void NMSceneGraphicsScene::mousePressEvent(QGraphicsSceneMouseEvent *event) {
   QGraphicsScene::mousePressEvent(event);
 }
 
-void NMSceneGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+void NMSceneGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton && m_isDraggingObject) {
-    if (auto *obj = findSceneObject(m_draggingObjectId)) {
+    if (auto* obj = findSceneObject(m_draggingObjectId)) {
       const QPointF newPos = obj->pos();
       if (!qFuzzyCompare(m_dragStartPos.x(), newPos.x()) ||
           !qFuzzyCompare(m_dragStartPos.y(), newPos.y())) {
@@ -460,7 +455,7 @@ void NMSceneGraphicsScene::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
   QGraphicsScene::mouseReleaseEvent(event);
 }
 
-void NMSceneGraphicsScene::keyPressEvent(QKeyEvent *event) {
+void NMSceneGraphicsScene::keyPressEvent(QKeyEvent* event) {
   if ((event->key() == Qt::Key_Delete || event->key() == Qt::Key_Backspace) &&
       !m_selectedObjectId.isEmpty()) {
     emit deleteRequested(m_selectedObjectId);
@@ -475,8 +470,8 @@ void NMSceneGraphicsScene::updateGizmo() {
   m_gizmo->setTargetObjectId(m_selectedObjectId);
 }
 
-void NMSceneGraphicsScene::handleItemPositionChange(const QString &objectId,
-                                                    const QPointF &newPos) {
+void NMSceneGraphicsScene::handleItemPositionChange(const QString& objectId,
+                                                    const QPointF& newPos) {
   if (m_selectedObjectId == objectId) {
     updateGizmo();
   }
@@ -493,59 +488,56 @@ void NMSceneGraphicsScene::resetDragTracking() {
 // NMSceneInfoOverlay
 // ============================================================================
 
-NMSceneInfoOverlay::NMSceneInfoOverlay(QWidget *parent) : QWidget(parent) {
+NMSceneInfoOverlay::NMSceneInfoOverlay(QWidget* parent) : QWidget(parent) {
   setAttribute(Qt::WA_TransparentForMouseEvents);
   setAttribute(Qt::WA_NoSystemBackground);
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(10, 10, 10, 10);
   layout->setSpacing(5);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Scene label
   m_sceneLabel = new QLabel(this);
-  m_sceneLabel->setStyleSheet(
-      QString("QLabel {"
-              "  background-color: rgba(20, 20, 24, 210);"
-              "  color: %1;"
-              "  padding: 6px 12px;"
-              "  border-radius: 4px;"
-              "  border: 1px solid %2;"
-              "  font-weight: 600;"
-              "  letter-spacing: 0.4px;"
-              "}")
-          .arg(palette.textPrimary.name())
-          .arg(palette.accentPrimary.name()));
+  m_sceneLabel->setStyleSheet(QString("QLabel {"
+                                      "  background-color: rgba(20, 20, 24, 210);"
+                                      "  color: %1;"
+                                      "  padding: 6px 12px;"
+                                      "  border-radius: 4px;"
+                                      "  border: 1px solid %2;"
+                                      "  font-weight: 600;"
+                                      "  letter-spacing: 0.4px;"
+                                      "}")
+                                  .arg(palette.textPrimary.name())
+                                  .arg(palette.accentPrimary.name()));
   m_sceneLabel->setVisible(false);
   layout->addWidget(m_sceneLabel);
 
   // Cursor position label
   m_cursorLabel = new QLabel(this);
-  m_cursorLabel->setStyleSheet(
-      QString("QLabel {"
-              "  background-color: rgba(45, 45, 48, 200);"
-              "  color: %1;"
-              "  padding: 5px 10px;"
-              "  border-radius: 3px;"
-              "  font-family: 'Consolas', 'Monaco', monospace;"
-              "  font-size: 11px;"
-              "}")
-          .arg(palette.textPrimary.name()));
+  m_cursorLabel->setStyleSheet(QString("QLabel {"
+                                       "  background-color: rgba(45, 45, 48, 200);"
+                                       "  color: %1;"
+                                       "  padding: 5px 10px;"
+                                       "  border-radius: 3px;"
+                                       "  font-family: 'Consolas', 'Monaco', monospace;"
+                                       "  font-size: 11px;"
+                                       "}")
+                                   .arg(palette.textPrimary.name()));
   layout->addWidget(m_cursorLabel);
 
   // Selected object label
   m_objectLabel = new QLabel(this);
-  m_objectLabel->setStyleSheet(
-      QString("QLabel {"
-              "  background-color: rgba(0, 120, 212, 200);"
-              "  color: %1;"
-              "  padding: 5px 10px;"
-              "  border-radius: 3px;"
-              "  font-family: 'Consolas', 'Monaco', monospace;"
-              "  font-size: 11px;"
-              "}")
-          .arg(palette.textPrimary.name()));
+  m_objectLabel->setStyleSheet(QString("QLabel {"
+                                       "  background-color: rgba(0, 120, 212, 200);"
+                                       "  color: %1;"
+                                       "  padding: 5px 10px;"
+                                       "  border-radius: 3px;"
+                                       "  font-family: 'Consolas', 'Monaco', monospace;"
+                                       "  font-size: 11px;"
+                                       "}")
+                                   .arg(palette.textPrimary.name()));
   m_objectLabel->setVisible(false);
   layout->addWidget(m_objectLabel);
 
@@ -554,12 +546,12 @@ NMSceneInfoOverlay::NMSceneInfoOverlay(QWidget *parent) : QWidget(parent) {
   updateDisplay();
 }
 
-void NMSceneInfoOverlay::setCursorPosition(const QPointF &pos) {
+void NMSceneInfoOverlay::setCursorPosition(const QPointF& pos) {
   m_cursorPos = pos;
   updateDisplay();
 }
 
-void NMSceneInfoOverlay::setSceneInfo(const QString &sceneId) {
+void NMSceneInfoOverlay::setSceneInfo(const QString& sceneId) {
   m_sceneId = sceneId;
   updateDisplay();
 }
@@ -569,8 +561,7 @@ void NMSceneInfoOverlay::setPlayModeActive(bool active) {
   updateDisplay();
 }
 
-void NMSceneInfoOverlay::setSelectedObjectInfo(const QString &name,
-                                               const QPointF &pos) {
+void NMSceneInfoOverlay::setSelectedObjectInfo(const QString& name, const QPointF& pos) {
   m_objectName = name;
   m_objectPos = pos;
   m_hasSelection = true;

@@ -45,7 +45,7 @@ namespace NovelMind::editor::qt {
 // Constructor / Destructor
 // ============================================================================
 
-NMBuildSettingsPanel::NMBuildSettingsPanel(QWidget *parent)
+NMBuildSettingsPanel::NMBuildSettingsPanel(QWidget* parent)
     : NMDockPanel("Build Settings", parent) {}
 
 NMBuildSettingsPanel::~NMBuildSettingsPanel() = default;
@@ -54,14 +54,14 @@ NMBuildSettingsPanel::~NMBuildSettingsPanel() = default;
 // Lifecycle
 // ============================================================================
 
-void NMBuildSettingsPanel::onInitialize() { setupUI(); }
+void NMBuildSettingsPanel::onInitialize() {
+  setupUI();
+}
 
 void NMBuildSettingsPanel::onShutdown() {
   // Cancel any ongoing build
-  if (m_buildStatus == BuildStatus::Preparing ||
-      m_buildStatus == BuildStatus::Copying ||
-      m_buildStatus == BuildStatus::Compiling ||
-      m_buildStatus == BuildStatus::Packaging) {
+  if (m_buildStatus == BuildStatus::Preparing || m_buildStatus == BuildStatus::Copying ||
+      m_buildStatus == BuildStatus::Compiling || m_buildStatus == BuildStatus::Packaging) {
     cancelBuild();
   }
 }
@@ -69,17 +69,15 @@ void NMBuildSettingsPanel::onShutdown() {
 void NMBuildSettingsPanel::onUpdate([[maybe_unused]] double deltaTime) {
   // Update UI based on build status
   if (m_buildButton) {
-    m_buildButton->setEnabled(m_buildStatus == BuildStatus::Idle ||
-                              m_buildStatus == BuildStatus::Complete ||
-                              m_buildStatus == BuildStatus::Failed ||
-                              m_buildStatus == BuildStatus::Cancelled);
+    m_buildButton->setEnabled(
+        m_buildStatus == BuildStatus::Idle || m_buildStatus == BuildStatus::Complete ||
+        m_buildStatus == BuildStatus::Failed || m_buildStatus == BuildStatus::Cancelled);
   }
 
   if (m_cancelButton) {
-    m_cancelButton->setEnabled(m_buildStatus == BuildStatus::Preparing ||
-                               m_buildStatus == BuildStatus::Copying ||
-                               m_buildStatus == BuildStatus::Compiling ||
-                               m_buildStatus == BuildStatus::Packaging);
+    m_cancelButton->setEnabled(
+        m_buildStatus == BuildStatus::Preparing || m_buildStatus == BuildStatus::Copying ||
+        m_buildStatus == BuildStatus::Compiling || m_buildStatus == BuildStatus::Packaging);
   }
 }
 
@@ -88,7 +86,7 @@ void NMBuildSettingsPanel::onUpdate([[maybe_unused]] double deltaTime) {
 // ============================================================================
 
 void NMBuildSettingsPanel::setupUI() {
-  QVBoxLayout *mainLayout = new QVBoxLayout(contentWidget());
+  QVBoxLayout* mainLayout = new QVBoxLayout(contentWidget());
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
@@ -96,25 +94,25 @@ void NMBuildSettingsPanel::setupUI() {
   m_tabWidget = new QTabWidget(contentWidget());
 
   // Settings Tab
-  QWidget *settingsTab = new QWidget();
+  QWidget* settingsTab = new QWidget();
   setupBuildSettings();
   m_tabWidget->addTab(settingsTab, "Settings");
 
   // Warnings Tab
-  QWidget *warningsTab = new QWidget();
+  QWidget* warningsTab = new QWidget();
   setupWarningsTab();
   m_tabWidget->addTab(warningsTab, "Warnings");
 
   // Log Tab
-  QWidget *logTab = new QWidget();
+  QWidget* logTab = new QWidget();
   setupLogTab();
   m_tabWidget->addTab(logTab, "Log");
 
   mainLayout->addWidget(m_tabWidget);
 
   // Build status section at bottom
-  QWidget *statusWidget = new QWidget(contentWidget());
-  QVBoxLayout *statusLayout = new QVBoxLayout(statusWidget);
+  QWidget* statusWidget = new QWidget(contentWidget());
+  QVBoxLayout* statusLayout = new QVBoxLayout(statusWidget);
   statusLayout->setContentsMargins(8, 8, 8, 8);
   statusLayout->setSpacing(8);
 
@@ -132,7 +130,7 @@ void NMBuildSettingsPanel::setupUI() {
   statusLayout->addWidget(m_statusLabel);
 
   // Button row
-  QHBoxLayout *buttonLayout = new QHBoxLayout();
+  QHBoxLayout* buttonLayout = new QHBoxLayout();
 
   m_buildButton = new QPushButton("Build Project", statusWidget);
   m_buildButton->setIcon(NMIconManager::instance().getIcon("panel-build", 16));
@@ -144,8 +142,7 @@ void NMBuildSettingsPanel::setupUI() {
       "QPushButton:hover { background-color: #1084d8; }"
       "QPushButton:pressed { background-color: #006cbd; }"
       "QPushButton:disabled { background-color: #555; color: #888; }");
-  connect(m_buildButton, &QPushButton::clicked, this,
-          &NMBuildSettingsPanel::onBuildClicked);
+  connect(m_buildButton, &QPushButton::clicked, this, &NMBuildSettingsPanel::onBuildClicked);
   buttonLayout->addWidget(m_buildButton);
 
   m_cancelButton = new QPushButton("Cancel", statusWidget);
@@ -159,8 +156,7 @@ void NMBuildSettingsPanel::setupUI() {
       "QPushButton:hover { background-color: #ea4a12; }"
       "QPushButton:pressed { background-color: #c73000; }"
       "QPushButton:disabled { background-color: #555; color: #888; }");
-  connect(m_cancelButton, &QPushButton::clicked, this,
-          &NMBuildSettingsPanel::onCancelClicked);
+  connect(m_cancelButton, &QPushButton::clicked, this, &NMBuildSettingsPanel::onCancelClicked);
   buttonLayout->addWidget(m_cancelButton);
 
   statusLayout->addLayout(buttonLayout);
@@ -171,69 +167,65 @@ void NMBuildSettingsPanel::setupUI() {
 }
 
 void NMBuildSettingsPanel::setupBuildSettings() {
-  QWidget *settingsTab = m_tabWidget->widget(0);
-  QVBoxLayout *layout = new QVBoxLayout(settingsTab);
+  QWidget* settingsTab = m_tabWidget->widget(0);
+  QVBoxLayout* layout = new QVBoxLayout(settingsTab);
   layout->setContentsMargins(8, 8, 8, 8);
   layout->setSpacing(12);
 
   // Platform & Profile Section
-  QGroupBox *platformGroup = new QGroupBox("Platform && Profile", settingsTab);
-  QFormLayout *platformLayout = new QFormLayout(platformGroup);
+  QGroupBox* platformGroup = new QGroupBox("Platform && Profile", settingsTab);
+  QFormLayout* platformLayout = new QFormLayout(platformGroup);
   platformLayout->setSpacing(8);
 
   m_platformSelector = new QComboBox(platformGroup);
-  m_platformSelector->addItems(
-      {"Windows", "Linux", "macOS", "Web (WASM)", "Android", "iOS"});
+  m_platformSelector->addItems({"Windows", "Linux", "macOS", "Web (WASM)", "Android", "iOS"});
   m_platformSelector->setCurrentIndex(0);
-  connect(m_platformSelector,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_platformSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMBuildSettingsPanel::onPlatformChanged);
   platformLayout->addRow("Target Platform:", m_platformSelector);
 
   m_profileSelector = new QComboBox(platformGroup);
   m_profileSelector->addItems({"Debug", "Release", "Distribution"});
   m_profileSelector->setCurrentIndex(1); // Default to Release
-  connect(m_profileSelector,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_profileSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMBuildSettingsPanel::onProfileChanged);
   platformLayout->addRow("Build Profile:", m_profileSelector);
 
   layout->addWidget(platformGroup);
 
   // Output Section
-  QGroupBox *outputGroup = new QGroupBox("Output", settingsTab);
-  QVBoxLayout *outputMainLayout = new QVBoxLayout(outputGroup);
-  QFormLayout *outputFormLayout = new QFormLayout();
+  QGroupBox* outputGroup = new QGroupBox("Output", settingsTab);
+  QVBoxLayout* outputMainLayout = new QVBoxLayout(outputGroup);
+  QFormLayout* outputFormLayout = new QFormLayout();
   outputFormLayout->setSpacing(8);
 
   // Output directory with browse button
-  QHBoxLayout *outputPathLayout = new QHBoxLayout();
+  QHBoxLayout* outputPathLayout = new QHBoxLayout();
   m_outputPathEdit = new QLineEdit("./build/", outputGroup);
   m_outputPathEdit->setPlaceholderText("Select output directory...");
   outputPathLayout->addWidget(m_outputPathEdit);
 
   m_browseBtn = new QPushButton("Browse...", outputGroup);
   m_browseBtn->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
-  connect(m_browseBtn, &QPushButton::clicked, this,
-          &NMBuildSettingsPanel::onBrowseOutput);
+  connect(m_browseBtn, &QPushButton::clicked, this, &NMBuildSettingsPanel::onBrowseOutput);
   outputPathLayout->addWidget(m_browseBtn);
 
   outputFormLayout->addRow("Output Directory:", outputPathLayout);
 
   // Build name
-  QLineEdit *buildNameEdit = new QLineEdit("MyVisualNovel", outputGroup);
+  QLineEdit* buildNameEdit = new QLineEdit("MyVisualNovel", outputGroup);
   outputFormLayout->addRow("Build Name:", buildNameEdit);
 
   // Version
-  QLineEdit *versionEdit = new QLineEdit("1.0.0", outputGroup);
+  QLineEdit* versionEdit = new QLineEdit("1.0.0", outputGroup);
   outputFormLayout->addRow("Version:", versionEdit);
 
   outputMainLayout->addLayout(outputFormLayout);
   layout->addWidget(outputGroup);
 
   // Build Options Section
-  QGroupBox *optionsGroup = new QGroupBox("Build Options", settingsTab);
-  QVBoxLayout *optionsLayout = new QVBoxLayout(optionsGroup);
+  QGroupBox* optionsGroup = new QGroupBox("Build Options", settingsTab);
+  QVBoxLayout* optionsLayout = new QVBoxLayout(optionsGroup);
   optionsLayout->setSpacing(6);
 
   m_compressAssets = new QCheckBox("Compress Assets", optionsGroup);
@@ -246,29 +238,112 @@ void NMBuildSettingsPanel::setupBuildSettings() {
   m_debugBuild->setToolTip("Include debug symbols and source maps");
   optionsLayout->addWidget(m_debugBuild);
 
-  QCheckBox *stripUnused = new QCheckBox("Strip Unused Assets", optionsGroup);
+  QCheckBox* stripUnused = new QCheckBox("Strip Unused Assets", optionsGroup);
   stripUnused->setChecked(true);
-  stripUnused->setToolTip(
-      "Remove assets not referenced by any script or scene");
+  stripUnused->setToolTip("Remove assets not referenced by any script or scene");
   optionsLayout->addWidget(stripUnused);
 
-  QCheckBox *encryptAssets = new QCheckBox("Encrypt Assets", optionsGroup);
+  QCheckBox* encryptAssets = new QCheckBox("Encrypt Assets", optionsGroup);
   encryptAssets->setChecked(true);
   encryptAssets->setToolTip("Encrypt resource packs (AES-256-GCM)");
   optionsLayout->addWidget(encryptAssets);
 
-  m_includeDevAssets =
-      new QCheckBox("Include Development Assets", optionsGroup);
+  m_includeDevAssets = new QCheckBox("Include Development Assets", optionsGroup);
   m_includeDevAssets->setChecked(false);
   m_includeDevAssets->setToolTip("Include test scenes and debug assets");
   optionsLayout->addWidget(m_includeDevAssets);
 
   layout->addWidget(optionsGroup);
 
+  // Code Signing Section (for Distribution builds)
+  QGroupBox* signingGroup = new QGroupBox("Code Signing", settingsTab);
+  QVBoxLayout* signingMainLayout = new QVBoxLayout(signingGroup);
+  signingMainLayout->setSpacing(8);
+
+  m_signExecutable = new QCheckBox("Sign Executable", signingGroup);
+  m_signExecutable->setChecked(false);
+  m_signExecutable->setToolTip("Sign the executable for distribution (requires certificate)");
+  connect(m_signExecutable, &QCheckBox::toggled, this, [this](bool checked) {
+    m_signingCertificateEdit->setEnabled(checked);
+    m_browseCertificateBtn->setEnabled(checked);
+    m_signingPasswordEdit->setEnabled(checked);
+    m_signingTeamIdEdit->setEnabled(checked);
+    m_signingEntitlementsEdit->setEnabled(checked);
+    m_browseEntitlementsBtn->setEnabled(checked);
+  });
+  signingMainLayout->addWidget(m_signExecutable);
+
+  QFormLayout* signingFormLayout = new QFormLayout();
+  signingFormLayout->setSpacing(6);
+
+  // Certificate path with browse button
+  QHBoxLayout* certPathLayout = new QHBoxLayout();
+  m_signingCertificateEdit = new QLineEdit(signingGroup);
+  m_signingCertificateEdit->setPlaceholderText(
+      "Certificate file (.pfx for Windows, identity for macOS)...");
+  m_signingCertificateEdit->setEnabled(false);
+  m_signingCertificateEdit->setToolTip(
+      "Windows: Path to .pfx certificate file\n"
+      "macOS: Certificate name or SHA-1 hash (e.g., 'Developer ID Application: "
+      "Your Name')");
+  certPathLayout->addWidget(m_signingCertificateEdit);
+
+  m_browseCertificateBtn = new QPushButton("Browse...", signingGroup);
+  m_browseCertificateBtn->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
+  m_browseCertificateBtn->setEnabled(false);
+  m_browseCertificateBtn->setToolTip("Browse for certificate file");
+  certPathLayout->addWidget(m_browseCertificateBtn);
+  signingFormLayout->addRow("Certificate:", certPathLayout);
+
+  // Password (for Windows PFX files)
+  m_signingPasswordEdit = new QLineEdit(signingGroup);
+  m_signingPasswordEdit->setPlaceholderText("Certificate password (Windows PFX)...");
+  m_signingPasswordEdit->setEchoMode(QLineEdit::Password);
+  m_signingPasswordEdit->setEnabled(false);
+  m_signingPasswordEdit->setToolTip("Password for the certificate file (Windows only)");
+  signingFormLayout->addRow("Password:", m_signingPasswordEdit);
+
+  // Team ID (for macOS notarization)
+  m_signingTeamIdEdit = new QLineEdit(signingGroup);
+  m_signingTeamIdEdit->setPlaceholderText("Apple Developer Team ID (macOS)...");
+  m_signingTeamIdEdit->setEnabled(false);
+  m_signingTeamIdEdit->setToolTip("Apple Developer Team ID for notarization (macOS only)");
+  signingFormLayout->addRow("Team ID:", m_signingTeamIdEdit);
+
+  // Entitlements file (for macOS)
+  QHBoxLayout* entitlementsLayout = new QHBoxLayout();
+  m_signingEntitlementsEdit = new QLineEdit(signingGroup);
+  m_signingEntitlementsEdit->setPlaceholderText("Entitlements file (.entitlements, macOS)...");
+  m_signingEntitlementsEdit->setEnabled(false);
+  m_signingEntitlementsEdit->setToolTip(
+      "Path to entitlements plist file (macOS only, required for hardened "
+      "runtime)");
+  entitlementsLayout->addWidget(m_signingEntitlementsEdit);
+
+  m_browseEntitlementsBtn = new QPushButton("Browse...", signingGroup);
+  m_browseEntitlementsBtn->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
+  m_browseEntitlementsBtn->setEnabled(false);
+  m_browseEntitlementsBtn->setToolTip("Browse for entitlements file");
+  entitlementsLayout->addWidget(m_browseEntitlementsBtn);
+  signingFormLayout->addRow("Entitlements:", entitlementsLayout);
+
+  signingMainLayout->addLayout(signingFormLayout);
+
+  // Info label
+  QLabel* signingInfoLabel =
+      new QLabel("Note: Code signing is only available for Windows (.exe) and macOS "
+                 "(.app) builds.",
+                 signingGroup);
+  signingInfoLabel->setStyleSheet("color: #888; font-size: 11px;");
+  signingInfoLabel->setWordWrap(true);
+  signingMainLayout->addWidget(signingInfoLabel);
+
+  layout->addWidget(signingGroup);
+
   // Size Preview Section
-  QGroupBox *sizeGroup = new QGroupBox("Estimated Build Size", settingsTab);
-  QVBoxLayout *sizeLayout = new QVBoxLayout(sizeGroup);
-  QFormLayout *sizeFormLayout = new QFormLayout();
+  QGroupBox* sizeGroup = new QGroupBox("Estimated Build Size", settingsTab);
+  QVBoxLayout* sizeLayout = new QVBoxLayout(sizeGroup);
+  QFormLayout* sizeFormLayout = new QFormLayout();
   sizeFormLayout->setSpacing(4);
 
   m_totalSizeLabel = new QLabel("-- MB", sizeGroup);
@@ -303,8 +378,8 @@ void NMBuildSettingsPanel::setupBuildSettings() {
 }
 
 void NMBuildSettingsPanel::setupWarningsTab() {
-  QWidget *warningsTab = m_tabWidget->widget(1);
-  QVBoxLayout *layout = new QVBoxLayout(warningsTab);
+  QWidget* warningsTab = m_tabWidget->widget(1);
+  QVBoxLayout* layout = new QVBoxLayout(warningsTab);
   layout->setContentsMargins(8, 8, 8, 8);
   layout->setSpacing(8);
 
@@ -320,25 +395,23 @@ void NMBuildSettingsPanel::setupWarningsTab() {
   m_warningsTree->setColumnWidth(1, 300);
   m_warningsTree->setAlternatingRowColors(true);
   m_warningsTree->setRootIsDecorated(false);
-  connect(m_warningsTree, &QTreeWidget::itemDoubleClicked,
-          [this](QTreeWidgetItem *item, int) {
-            if (item) {
-              int row = m_warningsTree->indexOfTopLevelItem(item);
-              onWarningDoubleClicked(row);
-            }
-          });
+  connect(m_warningsTree, &QTreeWidget::itemDoubleClicked, [this](QTreeWidgetItem* item, int) {
+    if (item) {
+      int row = m_warningsTree->indexOfTopLevelItem(item);
+      onWarningDoubleClicked(row);
+    }
+  });
   layout->addWidget(m_warningsTree);
 
   // Scan button
-  QPushButton *scanBtn = new QPushButton("Scan for Warnings", warningsTab);
-  connect(scanBtn, &QPushButton::clicked, this,
-          &NMBuildSettingsPanel::updateWarnings);
+  QPushButton* scanBtn = new QPushButton("Scan for Warnings", warningsTab);
+  connect(scanBtn, &QPushButton::clicked, this, &NMBuildSettingsPanel::updateWarnings);
   layout->addWidget(scanBtn);
 }
 
 void NMBuildSettingsPanel::setupLogTab() {
-  QWidget *logTab = m_tabWidget->widget(2);
-  QVBoxLayout *layout = new QVBoxLayout(logTab);
+  QWidget* logTab = m_tabWidget->widget(2);
+  QVBoxLayout* layout = new QVBoxLayout(logTab);
   layout->setContentsMargins(8, 8, 8, 8);
   layout->setSpacing(8);
 
@@ -346,15 +419,13 @@ void NMBuildSettingsPanel::setupLogTab() {
   m_logOutput = new QPlainTextEdit(logTab);
   m_logOutput->setReadOnly(true);
   m_logOutput->setFont(QFont("Consolas", 9));
-  m_logOutput->setStyleSheet(
-      "QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }");
+  m_logOutput->setStyleSheet("QPlainTextEdit { background-color: #1e1e1e; color: #d4d4d4; }");
   m_logOutput->setPlaceholderText("Build log will appear here...");
   layout->addWidget(m_logOutput);
 
   // Clear button
   m_clearLogBtn = new QPushButton("Clear Log", logTab);
-  connect(m_clearLogBtn, &QPushButton::clicked,
-          [this]() { m_logOutput->clear(); });
+  connect(m_clearLogBtn, &QPushButton::clicked, [this]() { m_logOutput->clear(); });
   layout->addWidget(m_clearLogBtn);
 }
 
@@ -378,7 +449,7 @@ BuildSizeInfo NMBuildSettingsPanel::calculateBuildSize() const {
     // Scan assets directory
     fs::path assetsDir = projectDir / "assets";
     if (fs::exists(assetsDir)) {
-      for (const auto &entry : fs::recursive_directory_iterator(assetsDir)) {
+      for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
         if (entry.is_regular_file()) {
           info.fileCount++;
           auto size = static_cast<qint64>(entry.file_size());
@@ -388,8 +459,7 @@ BuildSizeInfo NMBuildSettingsPanel::calculateBuildSize() const {
           std::string ext = entry.path().extension().string();
           std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
-          if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
-              ext == ".bmp") {
+          if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp") {
             info.imagesSize += size;
           } else if (ext == ".ogg" || ext == ".wav" || ext == ".mp3") {
             info.audioSize += size;
@@ -405,7 +475,7 @@ BuildSizeInfo NMBuildSettingsPanel::calculateBuildSize() const {
     // Scan scripts directory
     fs::path scriptsDir = projectDir / "scripts";
     if (fs::exists(scriptsDir)) {
-      for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+      for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
         if (entry.is_regular_file()) {
           std::string ext = entry.path().extension().string();
           if (ext == ".nms" || ext == ".nmscript") {
@@ -418,7 +488,7 @@ BuildSizeInfo NMBuildSettingsPanel::calculateBuildSize() const {
       }
     }
 
-  } catch (const fs::filesystem_error &) {
+  } catch (const fs::filesystem_error&) {
     // Ignore errors during preview
   }
 
@@ -434,10 +504,9 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
   // First, run the build system's validation to ensure consistency
   // between UI warnings and actual build preflight checks
   editor::BuildSystem buildSystem;
-  auto validationResult =
-      buildSystem.validateProject(projectPath.toStdString());
+  auto validationResult = buildSystem.validateProject(projectPath.toStdString());
   if (validationResult.isOk()) {
-    for (const auto &err : validationResult.value()) {
+    for (const auto& err : validationResult.value()) {
       BuildWarning w;
       w.type = BuildWarningType::BrokenReference;
       w.message = QString::fromStdString(err);
@@ -455,7 +524,7 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
     if (!fs::exists(projectDir / "project.json")) {
       // Only add if not already added by build system validation
       bool alreadyAdded = false;
-      for (const auto &w : warnings) {
+      for (const auto& w : warnings) {
         if (w.message.contains("project.json")) {
           alreadyAdded = true;
           break;
@@ -465,8 +534,7 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
         BuildWarning w;
         w.type = BuildWarningType::MissingAsset;
         w.message = "Missing project.json configuration file";
-        w.filePath =
-            QString::fromStdString((projectDir / "project.json").string());
+        w.filePath = QString::fromStdString((projectDir / "project.json").string());
         w.isCritical = true;
         warnings.append(w);
       }
@@ -474,11 +542,11 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
 
     // Check for missing required directories
     std::vector<std::string> requiredDirs = {"assets", "scripts"};
-    for (const auto &dir : requiredDirs) {
+    for (const auto& dir : requiredDirs) {
       if (!fs::exists(projectDir / dir)) {
         // Only add if not already added by build system validation
         bool alreadyAdded = false;
-        for (const auto &w : warnings) {
+        for (const auto& w : warnings) {
           if (w.message.contains(QString::fromStdString(dir))) {
             alreadyAdded = true;
             break;
@@ -487,8 +555,7 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
         if (!alreadyAdded) {
           BuildWarning w;
           w.type = BuildWarningType::MissingAsset;
-          w.message = QString("Missing required directory: %1")
-                          .arg(QString::fromStdString(dir));
+          w.message = QString("Missing required directory: %1").arg(QString::fromStdString(dir));
           w.filePath = QString::fromStdString((projectDir / dir).string());
           w.isCritical = true;
           warnings.append(w);
@@ -499,14 +566,13 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
     // Check for large files
     fs::path assetsDir = projectDir / "assets";
     if (fs::exists(assetsDir)) {
-      for (const auto &entry : fs::recursive_directory_iterator(assetsDir)) {
+      for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
         if (entry.is_regular_file()) {
           auto size = entry.file_size();
           if (size > 50 * 1024 * 1024) { // > 50MB
             BuildWarning w;
             w.type = BuildWarningType::LargeFile;
-            w.message = QString("Large file detected (%1 MB)")
-                            .arg(size / (1024 * 1024));
+            w.message = QString("Large file detected (%1 MB)").arg(size / (1024 * 1024));
             w.filePath = QString::fromStdString(entry.path().string());
             w.isCritical = false;
             warnings.append(w);
@@ -515,7 +581,7 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
       }
     }
 
-  } catch (const fs::filesystem_error &) {
+  } catch (const fs::filesystem_error&) {
     // Ignore errors during scanning
   }
 
@@ -544,8 +610,7 @@ void NMBuildSettingsPanel::startBuild() {
     m_statusLabel->setText(errorMsg);
     NMMessageDialog::showError(
         this, tr("Build Cancelled"),
-        tr("Build was cancelled due to preflight validation error:\n\n%1")
-            .arg(errorMsg));
+        tr("Build was cancelled due to preflight validation error:\n\n%1").arg(errorMsg));
     return;
   }
 
@@ -553,16 +618,14 @@ void NMBuildSettingsPanel::startBuild() {
   if (!preflightErrors.empty()) {
     // Build a detailed error message explaining why the build was cancelled
     QString errorList;
-    for (const auto &err : preflightErrors) {
+    for (const auto& err : preflightErrors) {
       errorList += QString("• %1\n").arg(QString::fromStdString(err));
-      appendLog(
-          QString("Preflight error: %1").arg(QString::fromStdString(err)));
+      appendLog(QString("Preflight error: %1").arg(QString::fromStdString(err)));
     }
 
     m_buildStatus = BuildStatus::Failed;
     m_progressBar->setFormat("Failed - Preflight Errors");
-    m_statusLabel->setText(
-        QString("%1 preflight error(s) found").arg(preflightErrors.size()));
+    m_statusLabel->setText(QString("%1 preflight error(s) found").arg(preflightErrors.size()));
 
     NMMessageDialog::showError(
         this, tr("Build Cancelled"),
@@ -614,25 +677,34 @@ void NMBuildSettingsPanel::startBuild() {
     break;
   }
 
+  // Configure code signing from UI
+  if (m_signExecutable && m_signExecutable->isChecked()) {
+    config.signExecutable = true;
+    config.signingCertificate = m_signingCertificateEdit->text().toStdString();
+    config.signingPassword = m_signingPasswordEdit->text().toStdString();
+    config.signingTeamId = m_signingTeamIdEdit->text().toStdString();
+    config.signingEntitlements = m_signingEntitlementsEdit->text().toStdString();
+  } else {
+    // Override Distribution default if user explicitly disabled signing
+    config.signExecutable = m_signExecutable && m_signExecutable->isChecked();
+  }
+
   // Set options from UI
   config.packAssets = true;
-  config.compression = m_compressAssets->isChecked()
-                           ? editor::CompressionLevel::Balanced
-                           : editor::CompressionLevel::None;
+  config.compression = m_compressAssets->isChecked() ? editor::CompressionLevel::Balanced
+                                                     : editor::CompressionLevel::None;
 
   config.includedLanguages = {"en"}; // Default language
   config.defaultLanguage = "en";
 
   // Setup callbacks
-  buildSystem->setOnProgressUpdate([this](
-                                       const editor::BuildProgress &progress) {
+  buildSystem->setOnProgressUpdate([this](const editor::BuildProgress& progress) {
     QMetaObject::invokeMethod(this, [this, progress]() {
       int percent = static_cast<int>(progress.progress * 100);
       m_progressBar->setValue(percent);
 
-      QString format = QString("%1% - %2")
-                           .arg(percent)
-                           .arg(QString::fromStdString(progress.currentStep));
+      QString format =
+          QString("%1% - %2").arg(percent).arg(QString::fromStdString(progress.currentStep));
       m_progressBar->setFormat(format);
 
       m_statusLabel->setText(QString::fromStdString(progress.currentTask));
@@ -650,33 +722,29 @@ void NMBuildSettingsPanel::startBuild() {
     });
   });
 
-  buildSystem->setOnLogMessage(
-      [this](const std::string &message, bool isError) {
-        QMetaObject::invokeMethod(this, [this, message, isError]() {
-          QString formattedMsg = QString("[%1] %2")
-                                     .arg(isError ? "ERROR" : "INFO")
-                                     .arg(QString::fromStdString(message));
-          appendLog(formattedMsg);
-        });
-      });
+  buildSystem->setOnLogMessage([this](const std::string& message, bool isError) {
+    QMetaObject::invokeMethod(this, [this, message, isError]() {
+      QString formattedMsg =
+          QString("[%1] %2").arg(isError ? "ERROR" : "INFO").arg(QString::fromStdString(message));
+      appendLog(formattedMsg);
+    });
+  });
 
-  buildSystem->setOnBuildComplete([this](const editor::BuildResult &result) {
+  buildSystem->setOnBuildComplete([this](const editor::BuildResult& result) {
     QMetaObject::invokeMethod(this, [this, result]() {
       if (result.success) {
         m_buildStatus = BuildStatus::Complete;
         m_progressBar->setValue(100);
         m_progressBar->setFormat("100% - Complete");
-        m_statusLabel->setText(
-            QString("Build completed in %1")
-                .arg(QString::fromStdString(
-                    editor::BuildUtils::formatDuration(result.buildTimeMs))));
+        m_statusLabel->setText(QString("Build completed in %1")
+                                   .arg(QString::fromStdString(
+                                       editor::BuildUtils::formatDuration(result.buildTimeMs))));
 
-        appendLog(QString("Build successful! Output: %1")
-                      .arg(QString::fromStdString(result.outputPath)));
+        appendLog(
+            QString("Build successful! Output: %1").arg(QString::fromStdString(result.outputPath)));
         appendLog(
             QString("Total size: %1")
-                .arg(QString::fromStdString(
-                    editor::BuildUtils::formatFileSize(result.totalSize))));
+                .arg(QString::fromStdString(editor::BuildUtils::formatFileSize(result.totalSize))));
 
         emit buildCompleted(true, QString::fromStdString(result.outputPath));
 
@@ -685,8 +753,7 @@ void NMBuildSettingsPanel::startBuild() {
             tr("Build completed successfully!\n\nOutput: %1\nSize: %2\nTime: "
                "%3")
                 .arg(QString::fromStdString(result.outputPath))
-                .arg(QString::fromStdString(
-                    editor::BuildUtils::formatFileSize(result.totalSize)))
+                .arg(QString::fromStdString(editor::BuildUtils::formatFileSize(result.totalSize)))
                 .arg(QString::fromStdString(
                     editor::BuildUtils::formatDuration(result.buildTimeMs))));
       } else {
@@ -694,15 +761,13 @@ void NMBuildSettingsPanel::startBuild() {
         m_progressBar->setFormat("Failed");
         m_statusLabel->setText(QString::fromStdString(result.errorMessage));
 
-        appendLog(QString("Build failed: %1")
-                      .arg(QString::fromStdString(result.errorMessage)));
+        appendLog(QString("Build failed: %1").arg(QString::fromStdString(result.errorMessage)));
 
         emit buildCompleted(false, QString::fromStdString(result.errorMessage));
 
         NMMessageDialog::showError(
             this, tr("Build Failed"),
-            tr("Build failed:\n\n%1")
-                .arg(QString::fromStdString(result.errorMessage)));
+            tr("Build failed:\n\n%1").arg(QString::fromStdString(result.errorMessage)));
       }
     });
   });
@@ -713,12 +778,10 @@ void NMBuildSettingsPanel::startBuild() {
 
   if (result.isError()) {
     m_buildStatus = BuildStatus::Failed;
-    appendLog(QString("Failed to start build: %1")
-                  .arg(QString::fromStdString(result.error())));
+    appendLog(QString("Failed to start build: %1").arg(QString::fromStdString(result.error())));
     NMMessageDialog::showError(
         this, tr("Build Error"),
-        tr("Failed to start build:\n\n%1")
-            .arg(QString::fromStdString(result.error())));
+        tr("Failed to start build:\n\n%1").arg(QString::fromStdString(result.error())));
   } else {
     emit buildStarted();
   }
@@ -747,16 +810,26 @@ void NMBuildSettingsPanel::onProfileChanged(int index) {
     m_debugBuild->setChecked(true);
     m_compressAssets->setChecked(false);
     m_includeDevAssets->setChecked(true);
+    if (m_signExecutable) {
+      m_signExecutable->setChecked(false);
+    }
     break;
   case 1: // Release
     m_debugBuild->setChecked(false);
     m_compressAssets->setChecked(true);
     m_includeDevAssets->setChecked(false);
+    if (m_signExecutable) {
+      m_signExecutable->setChecked(false);
+    }
     break;
   case 2: // Distribution
     m_debugBuild->setChecked(false);
     m_compressAssets->setChecked(true);
     m_includeDevAssets->setChecked(false);
+    // Enable signing for distribution builds
+    if (m_signExecutable) {
+      m_signExecutable->setChecked(true);
+    }
     break;
   }
 
@@ -764,8 +837,8 @@ void NMBuildSettingsPanel::onProfileChanged(int index) {
 }
 
 void NMBuildSettingsPanel::onBrowseOutput() {
-  QString dir = NMFileDialog::getExistingDirectory(
-      this, tr("Select Output Directory"), m_outputPathEdit->text());
+  QString dir = NMFileDialog::getExistingDirectory(this, tr("Select Output Directory"),
+                                                   m_outputPathEdit->text());
 
   if (!dir.isEmpty()) {
     m_outputPathEdit->setText(dir);
@@ -777,7 +850,7 @@ void NMBuildSettingsPanel::onBuildClicked() {
   updateWarnings();
 
   bool hasCriticalWarnings = false;
-  for (const auto &warning : m_warnings) {
+  for (const auto& warning : m_warnings) {
     if (warning.isCritical) {
       hasCriticalWarnings = true;
       break;
@@ -799,23 +872,25 @@ void NMBuildSettingsPanel::onBuildClicked() {
   startBuild();
 }
 
-void NMBuildSettingsPanel::onCancelClicked() { cancelBuild(); }
+void NMBuildSettingsPanel::onCancelClicked() {
+  cancelBuild();
+}
 
 void NMBuildSettingsPanel::onWarningDoubleClicked(int row) {
   if (row >= 0 && row < m_warnings.size()) {
-    const auto &warning = m_warnings[row];
+    const auto& warning = m_warnings[row];
 
     // Emit signal or navigate to the file/location
     emit buildWarningFound(warning);
 
     // Could open the file in an editor here
-    appendLog(QString("Navigate to: %1 (line %2)")
-                  .arg(warning.filePath)
-                  .arg(warning.lineNumber));
+    appendLog(QString("Navigate to: %1 (line %2)").arg(warning.filePath).arg(warning.lineNumber));
   }
 }
 
-void NMBuildSettingsPanel::onRefreshPreview() { updateSizePreview(); }
+void NMBuildSettingsPanel::onRefreshPreview() {
+  updateSizePreview();
+}
 
 // ============================================================================
 // Helper Methods
@@ -837,8 +912,8 @@ void NMBuildSettingsPanel::updateWarnings() {
 
   m_warningsTree->clear();
 
-  for (const auto &warning : m_warnings) {
-    QTreeWidgetItem *item = new QTreeWidgetItem(m_warningsTree);
+  for (const auto& warning : m_warnings) {
+    QTreeWidgetItem* item = new QTreeWidgetItem(m_warningsTree);
 
     // Type column
     QString typeStr;
@@ -882,7 +957,7 @@ void NMBuildSettingsPanel::updateWarnings() {
 
   // Update count label
   int criticalCount = 0;
-  for (const auto &w : m_warnings) {
+  for (const auto& w : m_warnings) {
     if (w.isCritical)
       criticalCount++;
   }
@@ -891,9 +966,8 @@ void NMBuildSettingsPanel::updateWarnings() {
     m_warningCountLabel->setText("No warnings");
     m_warningCountLabel->setStyleSheet("color: #4caf50; font-style: italic;");
   } else {
-    m_warningCountLabel->setText(QString("%1 warnings (%2 critical)")
-                                     .arg(m_warnings.size())
-                                     .arg(criticalCount));
+    m_warningCountLabel->setText(
+        QString("%1 warnings (%2 critical)").arg(m_warnings.size()).arg(criticalCount));
     if (criticalCount > 0) {
       m_warningCountLabel->setStyleSheet("color: #ff6b6b; font-weight: bold;");
     } else {
@@ -902,17 +976,15 @@ void NMBuildSettingsPanel::updateWarnings() {
   }
 }
 
-void NMBuildSettingsPanel::appendLog(const QString &message) {
+void NMBuildSettingsPanel::appendLog(const QString& message) {
   if (m_logOutput) {
     m_logOutput->appendPlainText(
-        QString("[%1] %2")
-            .arg(QDateTime::currentDateTime().toString("hh:mm:ss"))
-            .arg(message));
+        QString("[%1] %2").arg(QDateTime::currentDateTime().toString("hh:mm:ss")).arg(message));
   }
 }
 
 QString NMBuildSettingsPanel::formatSize(qint64 bytes) const {
-  const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
   int unitIndex = 0;
   double size = static_cast<double>(bytes);
 

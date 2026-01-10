@@ -89,7 +89,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_voice_integration.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
-        unit/test_state_machine_robustness.cpp  
+        unit/test_state_machine_robustness.cpp
+        unit/test_project_integrity.cpp
     )
 
     target_link_libraries(integration_tests

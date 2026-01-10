@@ -1,6 +1,7 @@
 #include "NovelMind/scripting/script_runtime.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/resource/resource_manager.hpp"
+#include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
 #include <cstring>
 
@@ -15,6 +16,11 @@ Result<void> ScriptRuntime::load(const CompiledScript &script) {
   auto result = m_vm.load(script.instructions, script.stringTable);
   if (!result.isOk()) {
     return Result<void>::error(result.error());
+  }
+
+  // Load source mappings into debugger if attached
+  if (m_vm.hasDebugger() && !script.sourceMappings.empty()) {
+    m_vm.debugger()->loadSourceMappings(script.sourceMappings);
   }
 
   registerCallbacks();

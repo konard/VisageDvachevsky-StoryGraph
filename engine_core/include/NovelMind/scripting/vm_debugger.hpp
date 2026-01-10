@@ -25,8 +25,9 @@
 
 namespace NovelMind::scripting {
 
-// Forward declaration
+// Forward declarations
 class VirtualMachine;
+struct DebugSourceLocation;
 
 /**
  * @brief Debug stepping mode for execution control
@@ -80,22 +81,6 @@ struct Breakpoint {
   Breakpoint(u32 bp_id, u32 ip)
       : id(bp_id), instructionPointer(ip), type(BreakpointType::Normal),
         enabled(true), sourceLine(0), hitCount(0) {}
-};
-
-/**
- * @brief Source location mapping from IP to source code
- */
-struct DebugSourceLocation {
-  std::string filePath;  ///< Path to source file
-  u32 line;              ///< Line number (1-based)
-  u32 column;            ///< Column number (1-based)
-  std::string sceneName; ///< Scene name at this location
-
-  DebugSourceLocation() : line(0), column(0) {}
-  DebugSourceLocation(const std::string &path, u32 l, u32 c = 1)
-      : filePath(path), line(l), column(c) {}
-
-  bool isValid() const { return line > 0; }
 };
 
 /**
@@ -341,6 +326,13 @@ public:
    */
   void loadSourceMappings(
       const std::unordered_map<u32, DebugSourceLocation> &mappings);
+
+  /**
+   * @brief Get all source mappings
+   * @return Map of IP to source location
+   */
+  [[nodiscard]] const std::unordered_map<u32, DebugSourceLocation> &
+  getAllSourceMappings() const;
 
   /**
    * @brief Clear all source mappings

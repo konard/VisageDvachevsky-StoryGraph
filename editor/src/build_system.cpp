@@ -40,6 +40,15 @@
 
 #include <cstdlib> // for std::getenv
 
+// Platform-specific includes for process handling
+#ifdef _WIN32
+#include <io.h>
+#define popen _popen
+#define pclose _pclose
+#else
+#include <sys/wait.h> // for WIFEXITED, WEXITSTATUS
+#endif
+
 namespace fs = std::filesystem;
 
 namespace NovelMind::editor {

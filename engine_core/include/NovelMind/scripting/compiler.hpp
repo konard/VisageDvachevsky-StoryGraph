@@ -20,6 +20,22 @@
 namespace NovelMind::scripting {
 
 /**
+ * @brief Source location mapping from IP to source code (for debugging)
+ */
+struct DebugSourceLocation {
+  std::string filePath;  ///< Path to source file
+  u32 line;              ///< Line number (1-based)
+  u32 column;            ///< Column number (1-based)
+  std::string sceneName; ///< Scene name at this location
+
+  DebugSourceLocation() : line(0), column(0) {}
+  DebugSourceLocation(const std::string &path, u32 l, u32 c = 1)
+      : filePath(path), line(l), column(c) {}
+
+  bool isValid() const { return line > 0; }
+};
+
+/**
  * @brief Compiled bytecode representation
  */
 struct CompiledScript {
@@ -34,6 +50,9 @@ struct CompiledScript {
 
   // Variable declarations (for type checking)
   std::unordered_map<std::string, ValueType> variables;
+
+  // Source mappings: instruction pointer -> source location (for debugging)
+  std::unordered_map<u32, DebugSourceLocation> sourceMappings;
 };
 
 /**
@@ -72,9 +91,10 @@ public:
   /**
    * @brief Compile an AST program to bytecode
    * @param program The parsed program AST
+   * @param sourceFilePath Optional source file path for debug source mappings
    * @return Result containing compiled script or error
    */
-  [[nodiscard]] Result<CompiledScript> compile(const Program &program);
+  [[nodiscard]] Result<CompiledScript> compile(const Program &program, const std::string &sourceFilePath = "");
 
   /**
    * @brief Get all errors encountered during compilation
@@ -85,7 +105,9 @@ private:
   // Compilation helpers
   void reset();
   void emitOp(OpCode op, u32 operand = 0);
+  void emitOp(OpCode op, u32 operand, const SourceLocation &loc);
   u32 emitJump(OpCode op);
+  u32 emitJump(OpCode op, const SourceLocation &loc);
   /**
    * @brief Patch a jump instruction with the current program counter
    * @param jumpIndex Index of the jump instruction to patch
@@ -98,6 +120,9 @@ private:
   // Error handling
   void error(const std::string &message, SourceLocation loc = {});
 
+  // Source mapping
+  void recordSourceMapping(u32 ip, const SourceLocation &loc);
+
   // Visitors
   void compileProgram(const Program &program);
   void compileCharacter(const CharacterDecl &decl);
@@ -106,20 +131,20 @@ private:
   void compileExpression(const Expression &expr);
 
   // Statement compilers
-  void compileShowStmt(const ShowStmt &stmt);
-  void compileHideStmt(const HideStmt &stmt);
-  void compileSayStmt(const SayStmt &stmt);
-  void compileChoiceStmt(const ChoiceStmt &stmt);
-  void compileIfStmt(const IfStmt &stmt);
-  void compileGotoStmt(const GotoStmt &stmt);
-  void compileWaitStmt(const WaitStmt &stmt);
-  void compilePlayStmt(const PlayStmt &stmt);
-  void compileStopStmt(const StopStmt &stmt);
-  void compileSetStmt(const SetStmt &stmt);
-  void compileTransitionStmt(const TransitionStmt &stmt);
-  void compileMoveStmt(const MoveStmt &stmt);
-  void compileBlockStmt(const BlockStmt &stmt);
-  void compileExpressionStmt(const ExpressionStmt &stmt);
+  void compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc);
+  void compileHideStmt(const HideStmt &stmt, const SourceLocation &loc);
+  void compileSayStmt(const SayStmt &stmt, const SourceLocation &loc);
+  void compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc);
+  void compileIfStmt(const IfStmt &stmt, const SourceLocation &loc);
+  void compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc);
+  void compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc);
+  void compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc);
+  void compileStopStmt(const StopStmt &stmt, const SourceLocation &loc);
+  void compileSetStmt(const SetStmt &stmt, const SourceLocation &loc);
+  void compileTransitionStmt(const TransitionStmt &stmt, const SourceLocation &loc);
+  void compileMoveStmt(const MoveStmt &stmt, const SourceLocation &loc);
+  void compileBlockStmt(const BlockStmt &stmt, const SourceLocation &loc);
+  void compileExpressionStmt(const ExpressionStmt &stmt, const SourceLocation &loc);
 
   // Expression compilers
   void compileLiteral(const LiteralExpr &expr);
@@ -142,6 +167,7 @@ private:
 
   // Current compilation context
   std::string m_currentScene;
+  std::string m_sourceFilePath; // Source file path for debug mappings
 };
 
 } // namespace NovelMind::scripting

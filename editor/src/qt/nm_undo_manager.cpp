@@ -12,9 +12,11 @@ namespace NovelMind::editor::qt {
 
 NMUndoManager::NMUndoManager() : QObject(nullptr) {}
 
-NMUndoManager::~NMUndoManager() { shutdown(); }
+NMUndoManager::~NMUndoManager() {
+  shutdown();
+}
 
-NMUndoManager &NMUndoManager::instance() {
+NMUndoManager& NMUndoManager::instance() {
   static NMUndoManager instance;
   return instance;
 }
@@ -29,18 +31,12 @@ void NMUndoManager::initialize() {
   m_undoStack->setUndoLimit(100);
 
   // Connect signals
-  connect(m_undoStack.get(), &QUndoStack::canUndoChanged, this,
-          &NMUndoManager::canUndoChanged);
-  connect(m_undoStack.get(), &QUndoStack::canRedoChanged, this,
-          &NMUndoManager::canRedoChanged);
-  connect(m_undoStack.get(), &QUndoStack::undoTextChanged, this,
-          &NMUndoManager::undoTextChanged);
-  connect(m_undoStack.get(), &QUndoStack::redoTextChanged, this,
-          &NMUndoManager::redoTextChanged);
-  connect(m_undoStack.get(), &QUndoStack::cleanChanged, this,
-          &NMUndoManager::cleanChanged);
-  connect(m_undoStack.get(), &QUndoStack::indexChanged, this,
-          &NMUndoManager::indexChanged);
+  connect(m_undoStack.get(), &QUndoStack::canUndoChanged, this, &NMUndoManager::canUndoChanged);
+  connect(m_undoStack.get(), &QUndoStack::canRedoChanged, this, &NMUndoManager::canRedoChanged);
+  connect(m_undoStack.get(), &QUndoStack::undoTextChanged, this, &NMUndoManager::undoTextChanged);
+  connect(m_undoStack.get(), &QUndoStack::redoTextChanged, this, &NMUndoManager::redoTextChanged);
+  connect(m_undoStack.get(), &QUndoStack::cleanChanged, this, &NMUndoManager::cleanChanged);
+  connect(m_undoStack.get(), &QUndoStack::indexChanged, this, &NMUndoManager::indexChanged);
 
   m_initialized = true;
   core::Logger::instance().info("Undo/Redo system initialized");
@@ -57,7 +53,7 @@ void NMUndoManager::shutdown() {
   m_undoStack.reset();
 }
 
-void NMUndoManager::pushCommand(QUndoCommand *command) {
+void NMUndoManager::pushCommand(QUndoCommand* command) {
   if (!m_initialized || !m_undoStack) {
     core::Logger::instance().error("Undo manager not initialized");
     delete command;
@@ -83,7 +79,7 @@ QString NMUndoManager::redoText() const {
   return m_undoStack ? m_undoStack->redoText() : QString();
 }
 
-void NMUndoManager::beginMacro(const QString &text) {
+void NMUndoManager::beginMacro(const QString& text) {
   if (m_undoStack) {
     m_undoStack->beginMacro(text);
   }
@@ -120,16 +116,14 @@ void NMUndoManager::setUndoLimit(int limit) {
 void NMUndoManager::undo() {
   if (m_undoStack && m_undoStack->canUndo()) {
     m_undoStack->undo();
-    core::Logger::instance().info("Undo: " +
-                                  m_undoStack->undoText().toStdString());
+    core::Logger::instance().info("Undo: " + m_undoStack->undoText().toStdString());
   }
 }
 
 void NMUndoManager::redo() {
   if (m_undoStack && m_undoStack->canRedo()) {
     m_undoStack->redo();
-    core::Logger::instance().info("Redo: " +
-                                  m_undoStack->redoText().toStdString());
+    core::Logger::instance().info("Redo: " + m_undoStack->redoText().toStdString());
   }
 }
 
@@ -137,45 +131,44 @@ void NMUndoManager::redo() {
 // PropertyChangeCommand Implementation
 // =============================================================================
 
-PropertyChangeCommand::PropertyChangeCommand(const QString &objectName,
-                                             const QString &propertyName,
-                                             const PropertyValue &oldValue,
-                                             const PropertyValue &newValue,
-                                             ApplyFn apply,
-                                             QUndoCommand *parent)
+PropertyChangeCommand::PropertyChangeCommand(const QString& objectName, const QString& propertyName,
+                                             const PropertyValue& oldValue,
+                                             const PropertyValue& newValue, ApplyFn apply,
+                                             QUndoCommand* parent)
     : QUndoCommand(parent), m_apply(std::move(apply)), m_objectName(objectName),
       m_propertyName(propertyName), m_oldValue(oldValue), m_newValue(newValue) {
   setText(QString("Change %1.%2").arg(objectName, propertyName));
 }
 
-void PropertyChangeCommand::applyValue(const PropertyValue &value,
-                                       bool isUndo) {
+void PropertyChangeCommand::applyValue(const PropertyValue& value, bool isUndo) {
   if (!m_apply) {
-    core::Logger::instance().error(
-        "PropertyChangeCommand has no apply function for " +
-        m_objectName.toStdString() + "." + m_propertyName.toStdString());
+    core::Logger::instance().error("PropertyChangeCommand has no apply function for " +
+                                   m_objectName.toStdString() + "." + m_propertyName.toStdString());
     return;
   }
   m_apply(value, isUndo);
 }
 
-void PropertyChangeCommand::undo() { applyValue(m_oldValue, true); }
+void PropertyChangeCommand::undo() {
+  applyValue(m_oldValue, true);
+}
 
-void PropertyChangeCommand::redo() { applyValue(m_newValue, false); }
+void PropertyChangeCommand::redo() {
+  applyValue(m_newValue, false);
+}
 
 // =============================================================================
 // AddObjectCommand Implementation
 // =============================================================================
 
-AddObjectCommand::AddObjectCommand(NMSceneViewPanel *panel,
-                                   SceneObjectSnapshot snapshot,
-                                   QUndoCommand *parent)
+AddObjectCommand::AddObjectCommand(NMSceneViewPanel* panel, SceneObjectSnapshot snapshot,
+                                   QUndoCommand* parent)
     : QUndoCommand(parent), m_panel(panel), m_snapshot(std::move(snapshot)) {
   setText(QString("Add %1").arg(m_snapshot.name));
 }
 
 void AddObjectCommand::undo() {
-  auto *panel = m_panel.data();
+  auto* panel = m_panel.data();
   if (!panel) {
     return;
   }
@@ -183,30 +176,28 @@ void AddObjectCommand::undo() {
 }
 
 void AddObjectCommand::redo() {
-  auto *panel = m_panel.data();
+  auto* panel = m_panel.data();
   if (!panel) {
     return;
   }
 
-  auto *scene = panel->graphicsScene();
+  auto* scene = panel->graphicsScene();
   if (!scene) {
-    core::Logger::instance().error(
-        "Cannot add object: SceneView panel has no scene");
+    core::Logger::instance().error("Cannot add object: SceneView panel has no scene");
     return;
   }
 
   // If the object already exists (redo after undo), just move/rename it.
   if (!scene->findSceneObject(m_snapshot.id)) {
-    panel->createObject(m_snapshot.id, m_snapshot.type, m_snapshot.position,
-                        1.0);
+    panel->createObject(m_snapshot.id, m_snapshot.type, m_snapshot.position, 1.0);
   } else {
     panel->moveObject(m_snapshot.id, m_snapshot.position);
-    if (auto *obj = scene->findSceneObject(m_snapshot.id)) {
+    if (auto* obj = scene->findSceneObject(m_snapshot.id)) {
       obj->setScaleXY(m_snapshot.scaleX, m_snapshot.scaleY);
     }
   }
 
-  if (auto *obj = scene->findSceneObject(m_snapshot.id)) {
+  if (auto* obj = scene->findSceneObject(m_snapshot.id)) {
     obj->setName(m_snapshot.name);
     obj->setRotation(m_snapshot.rotation);
     obj->setScaleXY(m_snapshot.scaleX, m_snapshot.scaleY);
@@ -225,27 +216,26 @@ void AddObjectCommand::redo() {
 // DeleteObjectCommand Implementation
 // =============================================================================
 
-DeleteObjectCommand::DeleteObjectCommand(NMSceneViewPanel *panel,
-                                         SceneObjectSnapshot snapshot,
-                                         QUndoCommand *parent)
+DeleteObjectCommand::DeleteObjectCommand(NMSceneViewPanel* panel, SceneObjectSnapshot snapshot,
+                                         QUndoCommand* parent)
     : QUndoCommand(parent), m_panel(panel), m_snapshot(std::move(snapshot)) {
   setText(QString("Delete %1").arg(m_snapshot.name));
 }
 
 void DeleteObjectCommand::undo() {
-  auto *panel = m_panel.data();
+  auto* panel = m_panel.data();
   if (!panel) {
     return;
   }
 
   // Restore object with captured state
-  auto *scene = panel->graphicsScene();
+  auto* scene = panel->graphicsScene();
   if (!scene || scene->findSceneObject(m_snapshot.id)) {
     return;
   }
 
   panel->createObject(m_snapshot.id, m_snapshot.type, m_snapshot.position, 1.0);
-  if (auto *obj = scene->findSceneObject(m_snapshot.id)) {
+  if (auto* obj = scene->findSceneObject(m_snapshot.id)) {
     obj->setName(m_snapshot.name);
     obj->setRotation(m_snapshot.rotation);
     obj->setScaleXY(m_snapshot.scaleX, m_snapshot.scaleY);
@@ -260,7 +250,7 @@ void DeleteObjectCommand::undo() {
 }
 
 void DeleteObjectCommand::redo() {
-  auto *panel = m_panel.data();
+  auto* panel = m_panel.data();
   if (!panel) {
     return;
   }
@@ -271,14 +261,14 @@ void DeleteObjectCommand::redo() {
 // TransformObjectCommand Implementation
 // =============================================================================
 
-TransformObjectCommand::TransformObjectCommand(
-    NMSceneViewPanel *panel, const QString &objectId,
-    const QPointF &oldPosition, const QPointF &newPosition, qreal oldRotation,
-    qreal newRotation, qreal oldScaleX, qreal newScaleX, qreal oldScaleY,
-    qreal newScaleY, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
-      m_oldPosition(oldPosition), m_newPosition(newPosition),
-      m_oldRotation(oldRotation), m_newRotation(newRotation),
+TransformObjectCommand::TransformObjectCommand(NMSceneViewPanel* panel, const QString& objectId,
+                                               const QPointF& oldPosition,
+                                               const QPointF& newPosition, qreal oldRotation,
+                                               qreal newRotation, qreal oldScaleX, qreal newScaleX,
+                                               qreal oldScaleY, qreal newScaleY,
+                                               QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId), m_oldPosition(oldPosition),
+      m_newPosition(newPosition), m_oldRotation(oldRotation), m_newRotation(newRotation),
       m_oldScaleX(oldScaleX), m_newScaleX(newScaleX), m_oldScaleY(oldScaleY),
       m_newScaleY(newScaleY) {
   setText(QString("Transform %1").arg(objectId));
@@ -288,28 +278,24 @@ void TransformObjectCommand::undo() {
   if (!m_panel) {
     return;
   }
-  m_panel->applyObjectTransform(m_objectId, m_oldPosition, m_oldRotation,
-                                m_oldScaleX, m_oldScaleY);
+  m_panel->applyObjectTransform(m_objectId, m_oldPosition, m_oldRotation, m_oldScaleX, m_oldScaleY);
 }
 
 void TransformObjectCommand::redo() {
   if (!m_panel) {
     return;
   }
-  m_panel->applyObjectTransform(m_objectId, m_newPosition, m_newRotation,
-                                m_newScaleX, m_newScaleY);
+  m_panel->applyObjectTransform(m_objectId, m_newPosition, m_newRotation, m_newScaleX, m_newScaleY);
 }
 
-bool TransformObjectCommand::mergeWith(const QUndoCommand *other) {
+bool TransformObjectCommand::mergeWith(const QUndoCommand* other) {
   // Merge consecutive transform commands on the same object
   if (other->id() != id())
     return false;
 
-  const auto *transformCommand =
-      static_cast<const TransformObjectCommand *>(other);
+  const auto* transformCommand = static_cast<const TransformObjectCommand*>(other);
 
-  if (transformCommand->m_objectId != m_objectId ||
-      transformCommand->m_panel != m_panel) {
+  if (transformCommand->m_objectId != m_objectId || transformCommand->m_panel != m_panel) {
     return false;
   }
 
@@ -324,11 +310,12 @@ bool TransformObjectCommand::mergeWith(const QUndoCommand *other) {
 // ToggleObjectVisibilityCommand Implementation
 // =============================================================================
 
-ToggleObjectVisibilityCommand::ToggleObjectVisibilityCommand(
-    NMSceneViewPanel *panel, const QString &objectId, bool oldVisible,
-    bool newVisible, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
-      m_oldVisible(oldVisible), m_newVisible(newVisible) {
+ToggleObjectVisibilityCommand::ToggleObjectVisibilityCommand(NMSceneViewPanel* panel,
+                                                             const QString& objectId,
+                                                             bool oldVisible, bool newVisible,
+                                                             QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId), m_oldVisible(oldVisible),
+      m_newVisible(newVisible) {
   setText(QString("Toggle Visibility: %1").arg(objectId));
 }
 
@@ -350,13 +337,11 @@ void ToggleObjectVisibilityCommand::redo() {
 // ToggleObjectLockedCommand Implementation
 // =============================================================================
 
-ToggleObjectLockedCommand::ToggleObjectLockedCommand(NMSceneViewPanel *panel,
-                                                     const QString &objectId,
-                                                     bool oldLocked,
-                                                     bool newLocked,
-                                                     QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
-      m_oldLocked(oldLocked), m_newLocked(newLocked) {
+ToggleObjectLockedCommand::ToggleObjectLockedCommand(NMSceneViewPanel* panel,
+                                                     const QString& objectId, bool oldLocked,
+                                                     bool newLocked, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId), m_oldLocked(oldLocked),
+      m_newLocked(newLocked) {
   setText(QString("Toggle Locked: %1").arg(objectId));
 }
 
@@ -378,13 +363,11 @@ void ToggleObjectLockedCommand::redo() {
 // ReparentObjectCommand Implementation
 // =============================================================================
 
-ReparentObjectCommand::ReparentObjectCommand(NMSceneViewPanel *panel,
-                                             const QString &objectId,
-                                             const QString &oldParentId,
-                                             const QString &newParentId,
-                                             QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId),
-      m_oldParentId(oldParentId), m_newParentId(newParentId) {
+ReparentObjectCommand::ReparentObjectCommand(NMSceneViewPanel* panel, const QString& objectId,
+                                             const QString& oldParentId, const QString& newParentId,
+                                             QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_objectId(objectId), m_oldParentId(oldParentId),
+      m_newParentId(newParentId) {
   setText(QString("Reparent: %1").arg(objectId));
 }
 
@@ -402,12 +385,12 @@ void ReparentObjectCommand::redo() {
   m_panel->reparentObject(m_objectId, m_newParentId);
 }
 
-bool ReparentObjectCommand::mergeWith(const QUndoCommand *other) {
+bool ReparentObjectCommand::mergeWith(const QUndoCommand* other) {
   if (other->id() != id()) {
     return false;
   }
 
-  const auto *otherReparent = static_cast<const ReparentObjectCommand *>(other);
+  const auto* otherReparent = static_cast<const ReparentObjectCommand*>(other);
   if (otherReparent->m_objectId != m_objectId) {
     return false;
   }
@@ -421,11 +404,9 @@ bool ReparentObjectCommand::mergeWith(const QUndoCommand *other) {
 // CreateGraphNodeCommand Implementation
 // =============================================================================
 
-CreateGraphNodeCommand::CreateGraphNodeCommand(NMStoryGraphScene *scene,
-                                               const QString &nodeType,
-                                               const QPointF &position,
-                                               const QString &title,
-                                               QUndoCommand *parent)
+CreateGraphNodeCommand::CreateGraphNodeCommand(NMStoryGraphScene* scene, const QString& nodeType,
+                                               const QPointF& position, const QString& title,
+                                               QUndoCommand* parent)
     : QUndoCommand(parent), m_scene(scene) {
   m_snapshot.type = nodeType;
   m_snapshot.title = title.isEmpty() ? QString("New %1").arg(nodeType) : title;
@@ -437,7 +418,7 @@ void CreateGraphNodeCommand::undo() {
   if (!m_scene) {
     return;
   }
-  if (auto *node = m_scene->findNode(m_snapshot.id)) {
+  if (auto* node = m_scene->findNode(m_snapshot.id)) {
     m_scene->removeNode(node);
   }
 }
@@ -447,7 +428,7 @@ void CreateGraphNodeCommand::redo() {
     return;
   }
 
-  if (auto *existing = m_scene->findNode(m_snapshot.id)) {
+  if (auto* existing = m_scene->findNode(m_snapshot.id)) {
     existing->setPos(m_snapshot.position);
     existing->setTitle(m_snapshot.title);
     existing->setNodeType(m_snapshot.type);
@@ -458,9 +439,8 @@ void CreateGraphNodeCommand::redo() {
     return;
   }
 
-  auto *node =
-      m_scene->addNode(m_snapshot.title, m_snapshot.type, m_snapshot.position,
-                       m_snapshot.id, m_snapshot.idString);
+  auto* node = m_scene->addNode(m_snapshot.title, m_snapshot.type, m_snapshot.position,
+                                m_snapshot.id, m_snapshot.idString);
   if (node) {
     if (m_snapshot.id == 0) {
       m_snapshot.id = node->nodeId();
@@ -485,12 +465,11 @@ void CreateGraphNodeCommand::redo() {
 // DeleteGraphNodeCommand Implementation
 // =============================================================================
 
-DeleteGraphNodeCommand::DeleteGraphNodeCommand(NMStoryGraphScene *scene,
-                                               uint64_t nodeId,
-                                               QUndoCommand *parent)
+DeleteGraphNodeCommand::DeleteGraphNodeCommand(NMStoryGraphScene* scene, uint64_t nodeId,
+                                               QUndoCommand* parent)
     : QUndoCommand(parent), m_scene(scene) {
   if (m_scene) {
-    if (auto *node = m_scene->findNode(nodeId)) {
+    if (auto* node = m_scene->findNode(nodeId)) {
       m_snapshot.id = nodeId;
       m_snapshot.idString = node->nodeIdString();
       m_snapshot.title = node->title();
@@ -502,10 +481,9 @@ DeleteGraphNodeCommand::DeleteGraphNodeCommand(NMStoryGraphScene *scene,
       m_snapshot.choices = node->choiceOptions();
 
       const auto connections = m_scene->findConnectionsForNode(node);
-      for (auto *conn : connections) {
+      for (auto* conn : connections) {
         if (conn && conn->startNode() && conn->endNode()) {
-          m_connections.push_back(
-              {conn->startNode()->nodeId(), conn->endNode()->nodeId()});
+          m_connections.push_back({conn->startNode()->nodeId(), conn->endNode()->nodeId()});
         }
       }
       setText(QString("Delete Node %1").arg(m_snapshot.idString));
@@ -518,9 +496,8 @@ void DeleteGraphNodeCommand::undo() {
     return;
   }
 
-  auto *node =
-      m_scene->addNode(m_snapshot.title, m_snapshot.type, m_snapshot.position,
-                       m_snapshot.id, m_snapshot.idString);
+  auto* node = m_scene->addNode(m_snapshot.title, m_snapshot.type, m_snapshot.position,
+                                m_snapshot.id, m_snapshot.idString);
   if (!node) {
     return;
   }
@@ -529,7 +506,7 @@ void DeleteGraphNodeCommand::undo() {
   node->setDialogueText(m_snapshot.dialogueText);
   node->setChoiceOptions(m_snapshot.choices);
 
-  for (const auto &conn : m_connections) {
+  for (const auto& conn : m_connections) {
     m_scene->addConnection(conn.fromId, conn.toId);
   }
   m_removed = false;
@@ -540,7 +517,7 @@ void DeleteGraphNodeCommand::redo() {
     return;
   }
 
-  if (auto *node = m_scene->findNode(m_snapshot.id)) {
+  if (auto* node = m_scene->findNode(m_snapshot.id)) {
     m_scene->removeNode(node);
     m_removed = true;
   }
@@ -550,10 +527,8 @@ void DeleteGraphNodeCommand::redo() {
 // ConnectGraphNodesCommand Implementation
 // =============================================================================
 
-ConnectGraphNodesCommand::ConnectGraphNodesCommand(NMStoryGraphScene *scene,
-                                                   uint64_t sourceNodeId,
-                                                   uint64_t targetNodeId,
-                                                   QUndoCommand *parent)
+ConnectGraphNodesCommand::ConnectGraphNodesCommand(NMStoryGraphScene* scene, uint64_t sourceNodeId,
+                                                   uint64_t targetNodeId, QUndoCommand* parent)
     : QUndoCommand(parent), m_scene(scene) {
   m_connection.fromId = sourceNodeId;
   m_connection.toId = targetNodeId;
@@ -582,9 +557,10 @@ void ConnectGraphNodesCommand::redo() {
 // DisconnectGraphNodesCommand Implementation
 // =============================================================================
 
-DisconnectGraphNodesCommand::DisconnectGraphNodesCommand(
-    NMStoryGraphScene *scene, uint64_t sourceNodeId, uint64_t targetNodeId,
-    QUndoCommand *parent)
+DisconnectGraphNodesCommand::DisconnectGraphNodesCommand(NMStoryGraphScene* scene,
+                                                         uint64_t sourceNodeId,
+                                                         uint64_t targetNodeId,
+                                                         QUndoCommand* parent)
     : QUndoCommand(parent), m_scene(scene) {
   m_connection.fromId = sourceNodeId;
   m_connection.toId = targetNodeId;
@@ -613,9 +589,9 @@ void DisconnectGraphNodesCommand::redo() {
 // MoveGraphNodesCommand Implementation
 // =============================================================================
 
-MoveGraphNodesCommand::MoveGraphNodesCommand(
-    NMStoryGraphScene *scene, const QVector<GraphNodeMove> &moves,
-    QUndoCommand *parent)
+MoveGraphNodesCommand::MoveGraphNodesCommand(NMStoryGraphScene* scene,
+                                             const QVector<GraphNodeMove>& moves,
+                                             QUndoCommand* parent)
     : QUndoCommand(parent), m_scene(scene), m_moves(moves) {
   setText("Move Graph Nodes");
 }
@@ -624,8 +600,8 @@ void MoveGraphNodesCommand::undo() {
   if (!m_scene) {
     return;
   }
-  for (const auto &move : m_moves) {
-    if (auto *node = m_scene->findNode(move.nodeId)) {
+  for (const auto& move : m_moves) {
+    if (auto* node = m_scene->findNode(move.nodeId)) {
       node->setPos(move.oldPos);
     }
   }
@@ -635,30 +611,29 @@ void MoveGraphNodesCommand::redo() {
   if (!m_scene) {
     return;
   }
-  for (const auto &move : m_moves) {
-    if (auto *node = m_scene->findNode(move.nodeId)) {
+  for (const auto& move : m_moves) {
+    if (auto* node = m_scene->findNode(move.nodeId)) {
       node->setPos(move.newPos);
     }
   }
 }
 
-bool MoveGraphNodesCommand::mergeWith(const QUndoCommand *other) {
+bool MoveGraphNodesCommand::mergeWith(const QUndoCommand* other) {
   if (other->id() != id()) {
     return false;
   }
-  const auto *moveCmd = static_cast<const MoveGraphNodesCommand *>(other);
+  const auto* moveCmd = static_cast<const MoveGraphNodesCommand*>(other);
   if (moveCmd->m_scene != m_scene) {
     return false;
   }
 
   // Merge by replacing newPos for matching IDs and appending new ones
   QHash<uint64_t, GraphNodeMove> merged;
-  for (const auto &m : m_moves) {
+  for (const auto& m : m_moves) {
     merged.insert(m.nodeId, m);
   }
-  for (const auto &m : moveCmd->m_moves) {
-    auto existing =
-        merged.value(m.nodeId, GraphNodeMove{m.nodeId, QPointF(), QPointF()});
+  for (const auto& m : moveCmd->m_moves) {
+    auto existing = merged.value(m.nodeId, GraphNodeMove{m.nodeId, QPointF(), QPointF()});
     existing.newPos = m.newPos;
     if (existing.oldPos == QPointF()) {
       existing.oldPos = m.oldPos;
@@ -675,11 +650,11 @@ bool MoveGraphNodesCommand::mergeWith(const QUndoCommand *other) {
 
 #include "NovelMind/editor/qt/panels/nm_timeline_panel.hpp"
 
-TimelineKeyframeMoveCommand::TimelineKeyframeMoveCommand(
-    NMTimelinePanel *panel, const QString &trackName, int oldFrame,
-    int newFrame, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName),
-      m_oldFrame(oldFrame), m_newFrame(newFrame) {
+TimelineKeyframeMoveCommand::TimelineKeyframeMoveCommand(NMTimelinePanel* panel,
+                                                         const QString& trackName, int oldFrame,
+                                                         int newFrame, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName), m_oldFrame(oldFrame),
+      m_newFrame(newFrame) {
   setText(QString("Move Keyframe in %1").arg(trackName));
 }
 
@@ -687,7 +662,7 @@ void TimelineKeyframeMoveCommand::undo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
@@ -698,18 +673,18 @@ void TimelineKeyframeMoveCommand::redo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
   track->moveKeyframe(m_oldFrame, m_newFrame);
 }
 
-bool TimelineKeyframeMoveCommand::mergeWith(const QUndoCommand *other) {
+bool TimelineKeyframeMoveCommand::mergeWith(const QUndoCommand* other) {
   if (other->id() != id()) {
     return false;
   }
-  const auto *moveCmd = static_cast<const TimelineKeyframeMoveCommand *>(other);
+  const auto* moveCmd = static_cast<const TimelineKeyframeMoveCommand*>(other);
   if (moveCmd->m_panel != m_panel || moveCmd->m_trackName != m_trackName) {
     return false;
   }
@@ -721,12 +696,9 @@ bool TimelineKeyframeMoveCommand::mergeWith(const QUndoCommand *other) {
   return false;
 }
 
-AddKeyframeCommand::AddKeyframeCommand(NMTimelinePanel *panel,
-                                       const QString &trackName,
-                                       const KeyframeSnapshot &snapshot,
-                                       QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName),
-      m_snapshot(snapshot) {
+AddKeyframeCommand::AddKeyframeCommand(NMTimelinePanel* panel, const QString& trackName,
+                                       const KeyframeSnapshot& snapshot, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName), m_snapshot(snapshot) {
   setText(QString("Add Keyframe to %1").arg(trackName));
 }
 
@@ -734,7 +706,7 @@ void AddKeyframeCommand::undo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
@@ -745,13 +717,13 @@ void AddKeyframeCommand::redo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
   track->addKeyframe(m_snapshot.frame, m_snapshot.value,
                      static_cast<EasingType>(m_snapshot.easingType));
-  if (auto *kf = track->getKeyframe(m_snapshot.frame)) {
+  if (auto* kf = track->getKeyframe(m_snapshot.frame)) {
     kf->handleInX = m_snapshot.handleInX;
     kf->handleInY = m_snapshot.handleInY;
     kf->handleOutX = m_snapshot.handleOutX;
@@ -759,12 +731,9 @@ void AddKeyframeCommand::redo() {
   }
 }
 
-DeleteKeyframeCommand::DeleteKeyframeCommand(NMTimelinePanel *panel,
-                                             const QString &trackName,
-                                             const KeyframeSnapshot &snapshot,
-                                             QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName),
-      m_snapshot(snapshot) {
+DeleteKeyframeCommand::DeleteKeyframeCommand(NMTimelinePanel* panel, const QString& trackName,
+                                             const KeyframeSnapshot& snapshot, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName), m_snapshot(snapshot) {
   setText(QString("Delete Keyframe from %1").arg(trackName));
 }
 
@@ -772,13 +741,13 @@ void DeleteKeyframeCommand::undo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
   track->addKeyframe(m_snapshot.frame, m_snapshot.value,
                      static_cast<EasingType>(m_snapshot.easingType));
-  if (auto *kf = track->getKeyframe(m_snapshot.frame)) {
+  if (auto* kf = track->getKeyframe(m_snapshot.frame)) {
     kf->handleInX = m_snapshot.handleInX;
     kf->handleInY = m_snapshot.handleInY;
     kf->handleOutX = m_snapshot.handleOutX;
@@ -790,18 +759,19 @@ void DeleteKeyframeCommand::redo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
   track->removeKeyframe(m_snapshot.frame);
 }
 
-ChangeKeyframeEasingCommand::ChangeKeyframeEasingCommand(
-    NMTimelinePanel *panel, const QString &trackName, int frame, int oldEasing,
-    int newEasing, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName),
-      m_frame(frame), m_oldEasing(oldEasing), m_newEasing(newEasing) {
+ChangeKeyframeEasingCommand::ChangeKeyframeEasingCommand(NMTimelinePanel* panel,
+                                                         const QString& trackName, int frame,
+                                                         int oldEasing, int newEasing,
+                                                         QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_trackName(trackName), m_frame(frame),
+      m_oldEasing(oldEasing), m_newEasing(newEasing) {
   setText(QString("Change Keyframe Easing in %1").arg(trackName));
 }
 
@@ -809,11 +779,11 @@ void ChangeKeyframeEasingCommand::undo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
-  if (auto *kf = track->getKeyframe(m_frame)) {
+  if (auto* kf = track->getKeyframe(m_frame)) {
     kf->easing = static_cast<EasingType>(m_oldEasing);
   }
 }
@@ -822,11 +792,11 @@ void ChangeKeyframeEasingCommand::redo() {
   if (!m_panel) {
     return;
   }
-  auto *track = m_panel->getTrack(m_trackName);
+  auto* track = m_panel->getTrack(m_trackName);
   if (!track) {
     return;
   }
-  if (auto *kf = track->getKeyframe(m_frame)) {
+  if (auto* kf = track->getKeyframe(m_frame)) {
     kf->easing = static_cast<EasingType>(m_newEasing);
   }
 }
@@ -837,11 +807,10 @@ void ChangeKeyframeEasingCommand::redo() {
 
 #include "NovelMind/editor/qt/panels/nm_localization_panel.hpp"
 
-AddLocalizationKeyCommand::AddLocalizationKeyCommand(
-    NMLocalizationPanel *panel, const QString &key, const QString &defaultValue,
-    QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_key(key),
-      m_defaultValue(defaultValue) {
+AddLocalizationKeyCommand::AddLocalizationKeyCommand(NMLocalizationPanel* panel, const QString& key,
+                                                     const QString& defaultValue,
+                                                     QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_key(key), m_defaultValue(defaultValue) {
   setText(QString("Add Localization Key '%1'").arg(key));
 }
 
@@ -850,6 +819,7 @@ void AddLocalizationKeyCommand::undo() {
     return;
   }
   m_panel->deleteKey(m_key);
+  emit m_panel->localizationDataChanged();
 }
 
 void AddLocalizationKeyCommand::redo() {
@@ -859,15 +829,15 @@ void AddLocalizationKeyCommand::redo() {
   // On first redo, the UI already added the key, so skip it
   if (!m_firstRedo) {
     m_panel->addKey(m_key, m_defaultValue);
+    emit m_panel->localizationDataChanged();
   }
   m_firstRedo = false;
 }
 
 DeleteLocalizationKeyCommand::DeleteLocalizationKeyCommand(
-    NMLocalizationPanel *panel, const QString &key,
-    const QHash<QString, QString> &translations, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_key(key),
-      m_translations(translations) {
+    NMLocalizationPanel* panel, const QString& key, const QHash<QString, QString>& translations,
+    QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_key(key), m_translations(translations) {
   setText(QString("Delete Localization Key '%1'").arg(key));
 }
 
@@ -884,12 +854,12 @@ void DeleteLocalizationKeyCommand::undo() {
   m_panel->addKey(m_key, m_translations.value(defaultLocale, ""));
 
   // Now restore all translations for all locales
-  for (auto it = m_translations.constBegin(); it != m_translations.constEnd();
-       ++it) {
-    const QString &locale = it.key();
-    const QString &value = it.value();
+  for (auto it = m_translations.constBegin(); it != m_translations.constEnd(); ++it) {
+    const QString& locale = it.key();
+    const QString& value = it.value();
     m_panel->setTranslationValue(m_key, locale, value);
   }
+  emit m_panel->localizationDataChanged();
 }
 
 void DeleteLocalizationKeyCommand::redo() {
@@ -897,13 +867,14 @@ void DeleteLocalizationKeyCommand::redo() {
     return;
   }
   m_panel->deleteKey(m_key);
+  emit m_panel->localizationDataChanged();
 }
 
-ChangeTranslationCommand::ChangeTranslationCommand(
-    NMLocalizationPanel *panel, const QString &key, const QString &locale,
-    const QString &oldValue, const QString &newValue, QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_key(key), m_locale(locale),
-      m_oldValue(oldValue), m_newValue(newValue) {
+ChangeTranslationCommand::ChangeTranslationCommand(NMLocalizationPanel* panel, const QString& key,
+                                                   const QString& locale, const QString& oldValue,
+                                                   const QString& newValue, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_key(key), m_locale(locale), m_oldValue(oldValue),
+      m_newValue(newValue) {
   setText(QString("Change Translation '%1' [%2]").arg(key, locale));
 }
 
@@ -927,9 +898,9 @@ void ChangeTranslationCommand::redo() {
   emit m_panel->translationChanged(m_key, m_locale, m_newValue);
 }
 
-bool ChangeTranslationCommand::mergeWith(const QUndoCommand *other) {
+bool ChangeTranslationCommand::mergeWith(const QUndoCommand* other) {
   // Only merge with same command type (ensured by matching id())
-  const auto *otherCmd = static_cast<const ChangeTranslationCommand *>(other);
+  const auto* otherCmd = static_cast<const ChangeTranslationCommand*>(other);
 
   // Only merge if same key and locale
   if (otherCmd->m_key != m_key || otherCmd->m_locale != m_locale) {
@@ -949,10 +920,9 @@ bool ChangeTranslationCommand::mergeWith(const QUndoCommand *other) {
 
 #include "NovelMind/editor/qt/panels/nm_curve_editor_panel.hpp"
 
-AddCurvePointCommand::AddCurvePointCommand(NMCurveEditorPanel *panel,
-                                           CurvePointId pointId, qreal time,
-                                           qreal value, int interpolation,
-                                           QUndoCommand *parent)
+AddCurvePointCommand::AddCurvePointCommand(NMCurveEditorPanel* panel, CurvePointId pointId,
+                                           qreal time, qreal value, int interpolation,
+                                           QUndoCommand* parent)
     : QUndoCommand(parent), m_panel(panel) {
   m_snapshot.id = pointId;
   m_snapshot.time = time;
@@ -975,17 +945,16 @@ void AddCurvePointCommand::redo() {
   }
   // On first redo, the point may already be added by UI
   if (!m_firstRedo) {
-    m_panel->curveData().addPoint(
-        m_snapshot.time, m_snapshot.value,
-        static_cast<CurveInterpolation>(m_snapshot.interpolation));
+    m_panel->curveData().addPoint(m_snapshot.time, m_snapshot.value,
+                                  static_cast<CurveInterpolation>(m_snapshot.interpolation));
   }
   m_firstRedo = false;
   emit m_panel->curveChanged(m_panel->curveId());
 }
 
-DeleteCurvePointCommand::DeleteCurvePointCommand(
-    NMCurveEditorPanel *panel, const CurvePointSnapshot &snapshot,
-    QUndoCommand *parent)
+DeleteCurvePointCommand::DeleteCurvePointCommand(NMCurveEditorPanel* panel,
+                                                 const CurvePointSnapshot& snapshot,
+                                                 QUndoCommand* parent)
     : QUndoCommand(parent), m_panel(panel), m_snapshot(snapshot) {
   setText("Delete Curve Point");
 }
@@ -994,9 +963,8 @@ void DeleteCurvePointCommand::undo() {
   if (!m_panel) {
     return;
   }
-  m_panel->curveData().addPoint(
-      m_snapshot.time, m_snapshot.value,
-      static_cast<CurveInterpolation>(m_snapshot.interpolation));
+  m_panel->curveData().addPoint(m_snapshot.time, m_snapshot.value,
+                                static_cast<CurveInterpolation>(m_snapshot.interpolation));
   emit m_panel->curveChanged(m_panel->curveId());
 }
 
@@ -1008,14 +976,11 @@ void DeleteCurvePointCommand::redo() {
   emit m_panel->curveChanged(m_panel->curveId());
 }
 
-MoveCurvePointCommand::MoveCurvePointCommand(NMCurveEditorPanel *panel,
-                                             CurvePointId pointId,
-                                             qreal oldTime, qreal oldValue,
-                                             qreal newTime, qreal newValue,
-                                             QUndoCommand *parent)
-    : QUndoCommand(parent), m_panel(panel), m_pointId(pointId),
-      m_oldTime(oldTime), m_oldValue(oldValue), m_newTime(newTime),
-      m_newValue(newValue) {
+MoveCurvePointCommand::MoveCurvePointCommand(NMCurveEditorPanel* panel, CurvePointId pointId,
+                                             qreal oldTime, qreal oldValue, qreal newTime,
+                                             qreal newValue, QUndoCommand* parent)
+    : QUndoCommand(parent), m_panel(panel), m_pointId(pointId), m_oldTime(oldTime),
+      m_oldValue(oldValue), m_newTime(newTime), m_newValue(newValue) {
   setText("Move Curve Point");
 }
 
@@ -1035,11 +1000,11 @@ void MoveCurvePointCommand::redo() {
   emit m_panel->curveChanged(m_panel->curveId());
 }
 
-bool MoveCurvePointCommand::mergeWith(const QUndoCommand *other) {
+bool MoveCurvePointCommand::mergeWith(const QUndoCommand* other) {
   if (other->id() != id()) {
     return false;
   }
-  const auto *moveCmd = static_cast<const MoveCurvePointCommand *>(other);
+  const auto* moveCmd = static_cast<const MoveCurvePointCommand*>(other);
   if (moveCmd->m_panel != m_panel || moveCmd->m_pointId != m_pointId) {
     return false;
   }
@@ -1049,9 +1014,8 @@ bool MoveCurvePointCommand::mergeWith(const QUndoCommand *other) {
   return true;
 }
 
-CurveEditCommand::CurveEditCommand(NMCurveEditorPanel *panel,
-                                   const QString &description,
-                                   QUndoCommand *parent)
+CurveEditCommand::CurveEditCommand(NMCurveEditorPanel* panel, const QString& description,
+                                   QUndoCommand* parent)
     : QUndoCommand(parent), m_panel(panel) {
   setText(description);
 }
@@ -1072,16 +1036,14 @@ void CurveEditCommand::redo() {
     return;
   }
   // Apply new values
-  for (const auto &change : m_changes) {
-    m_panel->curveData().updatePoint(change.id, change.newTime,
-                                     change.newValue);
+  for (const auto& change : m_changes) {
+    m_panel->curveData().updatePoint(change.id, change.newTime, change.newValue);
   }
   emit m_panel->curveChanged(m_panel->curveId());
 }
 
-void CurveEditCommand::addPointChange(CurvePointId pointId, qreal oldTime,
-                                      qreal oldValue, qreal newTime,
-                                      qreal newValue) {
+void CurveEditCommand::addPointChange(CurvePointId pointId, qreal oldTime, qreal oldValue,
+                                      qreal newTime, qreal newValue) {
   m_changes.append({pointId, oldTime, oldValue, newTime, newValue});
 }
 

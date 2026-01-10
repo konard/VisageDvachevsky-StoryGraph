@@ -40,8 +40,7 @@ public:
    * @param sceneRegistry Pointer to the SceneRegistry instance
    * @param parent Parent QObject (optional)
    */
-  explicit SceneRegistryMediator(SceneRegistry *sceneRegistry,
-                                 QObject *parent = nullptr);
+  explicit SceneRegistryMediator(SceneRegistry* sceneRegistry, QObject* parent = nullptr);
 
   ~SceneRegistryMediator() override;
 
@@ -60,35 +59,36 @@ private slots:
    * @brief Handle scene registration signal
    * @param sceneId ID of the newly registered scene
    */
-  void onSceneRegistered(const QString &sceneId);
+  void onSceneRegistered(const QString& sceneId);
 
   /**
    * @brief Handle scene rename signal
    * @param sceneId Scene ID (unchanged)
+   * @param oldName Previous display name
    * @param newName New display name
    */
-  void onSceneRenamed(const QString &sceneId, const QString &newName);
+  void onSceneRenamed(const QString& sceneId, const QString& oldName, const QString& newName);
 
   /**
    * @brief Handle scene unregistration signal
    * @param sceneId ID of the unregistered scene
    */
-  void onSceneUnregistered(const QString &sceneId);
+  void onSceneUnregistered(const QString& sceneId);
 
   /**
    * @brief Handle thumbnail update signal
    * @param sceneId ID of the scene with updated thumbnail
    */
-  void onSceneThumbnailUpdated(const QString &sceneId);
+  void onSceneThumbnailUpdated(const QString& sceneId);
 
   /**
    * @brief Handle metadata change signal
    * @param sceneId ID of the scene with updated metadata
    */
-  void onSceneMetadataChanged(const QString &sceneId);
+  void onSceneMetadataChanged(const QString& sceneId);
 
 private:
-  SceneRegistry *m_sceneRegistry = nullptr; ///< Scene registry instance
+  SceneRegistry* m_sceneRegistry = nullptr; ///< Scene registry instance
 };
 
 } // namespace NovelMind::editor::mediators

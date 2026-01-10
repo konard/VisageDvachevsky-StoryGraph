@@ -49,8 +49,8 @@ enum class NMSceneObjectType { Background, Character, UI, Effect };
  */
 class NMSceneObject : public QGraphicsPixmapItem {
 public:
-  explicit NMSceneObject(const QString &id, NMSceneObjectType type,
-                         QGraphicsItem *parent = nullptr);
+  explicit NMSceneObject(const QString& id, NMSceneObjectType type,
+                         QGraphicsItem* parent = nullptr);
 
   [[nodiscard]] QString id() const { return m_id; }
   [[nodiscard]] NMSceneObjectType objectType() const { return m_objectType; }
@@ -58,8 +58,8 @@ public:
   [[nodiscard]] QString assetPath() const { return m_assetPath; }
   [[nodiscard]] bool isLocked() const { return m_locked; }
 
-  void setName(const QString &name) { m_name = name; }
-  void setAssetPath(const QString &path) { m_assetPath = path; }
+  void setName(const QString& name) { m_name = name; }
+  void setAssetPath(const QString& path) { m_assetPath = path; }
   void setSelected(bool selected);
   void setLocked(bool locked);
   [[nodiscard]] bool isObjectSelected() const { return m_selected; }
@@ -70,31 +70,31 @@ public:
   [[nodiscard]] qreal scaleX() const { return m_scaleX; }
   [[nodiscard]] qreal scaleY() const { return m_scaleY; }
 
+  // Color tint
+  void setColorTint(const QColor& color);
+  [[nodiscard]] QColor colorTint() const { return m_colorTint; }
+
   // Parent-child relationships
-  void setParentObjectId(const QString &parentId) {
-    m_parentObjectId = parentId;
-  }
+  void setParentObjectId(const QString& parentId) { m_parentObjectId = parentId; }
   [[nodiscard]] QString parentObjectId() const { return m_parentObjectId; }
   [[nodiscard]] QStringList childObjectIds() const { return m_childObjectIds; }
-  void addChildObjectId(const QString &childId);
-  void removeChildObjectId(const QString &childId);
+  void addChildObjectId(const QString& childId);
+  void removeChildObjectId(const QString& childId);
   void clearChildObjectIds() { m_childObjectIds.clear(); }
 
   // Tags for filtering
-  void addTag(const QString &tag);
-  void removeTag(const QString &tag);
-  [[nodiscard]] bool hasTag(const QString &tag) const;
+  void addTag(const QString& tag);
+  void removeTag(const QString& tag);
+  [[nodiscard]] bool hasTag(const QString& tag) const;
   [[nodiscard]] QStringList tags() const { return m_tags; }
-  void setTags(const QStringList &tags) { m_tags = tags; }
+  void setTags(const QStringList& tags) { m_tags = tags; }
 
 protected:
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override;
-  QVariant itemChange(GraphicsItemChange change,
-                      const QVariant &value) override;
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
+  QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
   QString m_id;
@@ -108,6 +108,7 @@ private:
   QString m_parentObjectId;
   QStringList m_childObjectIds;
   QStringList m_tags;
+  QColor m_colorTint = QColor(255, 255, 255, 255); // Default: white (no tint)
 };
 
 /**
@@ -118,17 +119,17 @@ public:
   enum class GizmoMode { Move, Rotate, Scale };
   enum class HandleType { XAxis, YAxis, XYPlane, Corner, Rotation };
 
-  explicit NMTransformGizmo(QGraphicsItem *parent = nullptr);
+  explicit NMTransformGizmo(QGraphicsItem* parent = nullptr);
 
   void setMode(GizmoMode mode);
   [[nodiscard]] GizmoMode mode() const { return m_mode; }
 
-  void setTargetObjectId(const QString &objectId);
+  void setTargetObjectId(const QString& objectId);
   [[nodiscard]] QString targetObjectId() const { return m_targetObjectId; }
 
   void updatePosition();
-  void beginHandleDrag(HandleType type, const QPointF &scenePos);
-  void updateHandleDrag(const QPointF &scenePos);
+  void beginHandleDrag(HandleType type, const QPointF& scenePos);
+  void updateHandleDrag(const QPointF& scenePos);
   void endHandleDrag();
 
 private:
@@ -136,7 +137,7 @@ private:
   void createRotateGizmo();
   void createScaleGizmo();
   void clearGizmo();
-  class NMSceneObject *resolveTarget() const;
+  class NMSceneObject* resolveTarget() const;
 
   GizmoMode m_mode = GizmoMode::Move;
   QString m_targetObjectId;
@@ -157,7 +158,7 @@ class NMSceneGraphicsScene : public QGraphicsScene {
   Q_OBJECT
 
 public:
-  explicit NMSceneGraphicsScene(QObject *parent = nullptr);
+  explicit NMSceneGraphicsScene(QObject* parent = nullptr);
   ~NMSceneGraphicsScene() override;
 
   void setGridVisible(bool visible);
@@ -172,51 +173,47 @@ public:
   [[nodiscard]] bool snapToGrid() const { return m_snapToGrid; }
   [[nodiscard]] QRectF stageRect() const;
 
-  void addSceneObject(NMSceneObject *object);
-  void removeSceneObject(const QString &objectId);
-  [[nodiscard]] NMSceneObject *findSceneObject(const QString &objectId) const;
-  [[nodiscard]] QList<NMSceneObject *> sceneObjects() const {
-    return m_sceneObjects;
-  }
-  [[nodiscard]] QPointF getObjectPosition(const QString &objectId) const;
-  bool setObjectPosition(const QString &objectId, const QPointF &pos);
-  bool setObjectRotation(const QString &objectId, qreal degrees);
-  bool setObjectScale(const QString &objectId, qreal scaleX, qreal scaleY);
-  bool setObjectOpacity(const QString &objectId, qreal opacity);
-  bool setObjectVisible(const QString &objectId, bool visible);
-  bool setObjectLocked(const QString &objectId, bool locked);
-  bool setObjectZOrder(const QString &objectId, qreal zValue);
-  bool reparentObject(const QString &objectId, const QString &newParentId);
-  [[nodiscard]] qreal getObjectRotation(const QString &objectId) const;
-  [[nodiscard]] QPointF getObjectScale(const QString &objectId) const;
-  [[nodiscard]] bool isObjectLocked(const QString &objectId) const;
+  void addSceneObject(NMSceneObject* object);
+  void removeSceneObject(const QString& objectId);
+  [[nodiscard]] NMSceneObject* findSceneObject(const QString& objectId) const;
+  [[nodiscard]] QList<NMSceneObject*> sceneObjects() const { return m_sceneObjects; }
+  [[nodiscard]] QPointF getObjectPosition(const QString& objectId) const;
+  bool setObjectPosition(const QString& objectId, const QPointF& pos);
+  bool setObjectRotation(const QString& objectId, qreal degrees);
+  bool setObjectScale(const QString& objectId, qreal scaleX, qreal scaleY);
+  bool setObjectOpacity(const QString& objectId, qreal opacity);
+  bool setObjectVisible(const QString& objectId, bool visible);
+  bool setObjectLocked(const QString& objectId, bool locked);
+  bool setObjectColor(const QString& objectId, const QColor& color);
+  bool setObjectZOrder(const QString& objectId, qreal zValue);
+  bool reparentObject(const QString& objectId, const QString& newParentId);
+  [[nodiscard]] qreal getObjectRotation(const QString& objectId) const;
+  [[nodiscard]] QPointF getObjectScale(const QString& objectId) const;
+  [[nodiscard]] bool isObjectLocked(const QString& objectId) const;
 
-  void selectObject(const QString &objectId);
+  void selectObject(const QString& objectId);
   void clearSelection();
-  [[nodiscard]] NMSceneObject *selectedObject() const;
+  [[nodiscard]] NMSceneObject* selectedObject() const;
   [[nodiscard]] QString selectedObjectId() const { return m_selectedObjectId; }
 
   void setGizmoMode(NMTransformGizmo::GizmoMode mode);
-  void handleItemPositionChange(const QString &objectId, const QPointF &newPos);
+  void handleItemPositionChange(const QString& objectId, const QPointF& newPos);
 
 signals:
-  void objectSelected(const QString &objectId);
-  void objectPositionChanged(const QString &objectId, const QPointF &position);
-  void objectMoveFinished(const QString &objectId, const QPointF &oldPosition,
-                          const QPointF &newPosition);
-  void objectTransformFinished(const QString &objectId,
-                               const QPointF &oldPosition,
-                               const QPointF &newPosition, qreal oldRotation,
-                               qreal newRotation, qreal oldScaleX,
-                               qreal newScaleX, qreal oldScaleY,
-                               qreal newScaleY);
-  void deleteRequested(const QString &objectId);
+  void objectSelected(const QString& objectId);
+  void objectPositionChanged(const QString& objectId, const QPointF& position);
+  void objectMoveFinished(const QString& objectId, const QPointF& oldPosition,
+                          const QPointF& newPosition);
+  void objectTransformFinished(const QString& objectId, const QPointF& oldPosition,
+                               const QPointF& newPosition, qreal oldRotation, qreal newRotation,
+                               qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
+  void deleteRequested(const QString& objectId);
 
 protected:
-  void drawBackground(QPainter *painter, const QRectF &rect) override;
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  void keyPressEvent(QKeyEvent *event) override;
+  void drawBackground(QPainter* painter, const QRectF& rect) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void keyPressEvent(QKeyEvent* event) override;
 
 private:
   void updateGizmo();
@@ -231,9 +228,9 @@ private:
   QSizeF m_stageSize = QSizeF(1280.0, 720.0);
   // Scene owns NMSceneObject items; this list is non-owning and maintained only
   // via addSceneObject/removeSceneObject to avoid dangling references.
-  QList<NMSceneObject *> m_sceneObjects;
+  QList<NMSceneObject*> m_sceneObjects;
   QString m_selectedObjectId;
-  NMTransformGizmo *m_gizmo = nullptr;
+  NMTransformGizmo* m_gizmo = nullptr;
   QString m_draggingObjectId;
   QPointF m_dragStartPos;
   bool m_isDraggingObject = false;
@@ -246,20 +243,20 @@ class NMSceneInfoOverlay : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMSceneInfoOverlay(QWidget *parent = nullptr);
+  explicit NMSceneInfoOverlay(QWidget* parent = nullptr);
 
-  void setCursorPosition(const QPointF &pos);
-  void setSceneInfo(const QString &sceneId);
+  void setCursorPosition(const QPointF& pos);
+  void setSceneInfo(const QString& sceneId);
   void setPlayModeActive(bool active);
-  void setSelectedObjectInfo(const QString &name, const QPointF &pos);
+  void setSelectedObjectInfo(const QString& name, const QPointF& pos);
   void clearSelectedObjectInfo();
 
 private:
   void updateDisplay();
 
-  QLabel *m_sceneLabel = nullptr;
-  QLabel *m_cursorLabel = nullptr;
-  QLabel *m_objectLabel = nullptr;
+  QLabel* m_sceneLabel = nullptr;
+  QLabel* m_cursorLabel = nullptr;
+  QLabel* m_objectLabel = nullptr;
   QPointF m_cursorPos;
   QString m_sceneId;
   QString m_objectName;
@@ -275,7 +272,7 @@ class NMSceneGraphicsView : public QGraphicsView {
   Q_OBJECT
 
 public:
-  explicit NMSceneGraphicsView(QWidget *parent = nullptr);
+  explicit NMSceneGraphicsView(QWidget* parent = nullptr);
 
   void setZoomLevel(qreal zoom);
   [[nodiscard]] qreal zoomLevel() const { return m_zoomLevel; }
@@ -285,21 +282,21 @@ public:
 
 signals:
   void zoomChanged(qreal newZoom);
-  void cursorPositionChanged(const QPointF &scenePos);
-  void assetsDropped(const QStringList &paths, const QPointF &scenePos);
-  void contextMenuRequested(const QPoint &globalPos, const QPointF &scenePos);
+  void cursorPositionChanged(const QPointF& scenePos);
+  void assetsDropped(const QStringList& paths, const QPointF& scenePos);
+  void contextMenuRequested(const QPoint& globalPos, const QPointF& scenePos);
   void dragActiveChanged(bool active);
 
 protected:
-  void wheelEvent(QWheelEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dragMoveEvent(QDragMoveEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
-  void dragLeaveEvent(QDragLeaveEvent *event) override;
-  void contextMenuEvent(QContextMenuEvent *event) override;
+  void wheelEvent(QWheelEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
+  void dragLeaveEvent(QDragLeaveEvent* event) override;
+  void contextMenuEvent(QContextMenuEvent* event) override;
 
 private:
   qreal m_zoomLevel = 1.0;
@@ -314,7 +311,7 @@ class NMSceneViewPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMSceneViewPanel(QWidget *parent = nullptr);
+  explicit NMSceneViewPanel(QWidget* parent = nullptr);
   ~NMSceneViewPanel() override;
 
   void onInitialize() override;
@@ -324,12 +321,12 @@ public:
   /**
    * @brief Get the graphics scene
    */
-  [[nodiscard]] NMSceneGraphicsScene *graphicsScene() const { return m_scene; }
+  [[nodiscard]] NMSceneGraphicsScene* graphicsScene() const { return m_scene; }
 
   /**
    * @brief Get the graphics view
    */
-  [[nodiscard]] NMSceneGraphicsView *graphicsView() const { return m_view; }
+  [[nodiscard]] NMSceneGraphicsView* graphicsView() const { return m_view; }
 
   /**
    * @brief Set grid visibility
@@ -349,57 +346,56 @@ public:
   /**
    * @brief Create a new scene object with given ID and type.
    */
-  bool createObject(const QString &id, NMSceneObjectType type,
-                    const QPointF &pos = QPointF(0, 0), qreal scale = 1.0);
+  bool createObject(const QString& id, NMSceneObjectType type, const QPointF& pos = QPointF(0, 0),
+                    qreal scale = 1.0);
 
   /**
    * @brief Delete an object by ID.
    */
-  bool deleteObject(const QString &id);
+  bool deleteObject(const QString& id);
 
   /**
    * @brief Move an object to a position.
    */
-  bool moveObject(const QString &id, const QPointF &pos);
+  bool moveObject(const QString& id, const QPointF& pos);
 
-  bool rotateObject(const QString &id, qreal rotation);
-  bool scaleObject(const QString &id, qreal scaleX, qreal scaleY);
-  bool setObjectOpacity(const QString &id, qreal opacity);
-  bool setObjectVisible(const QString &id, bool visible);
-  bool setObjectLocked(const QString &id, bool locked);
-  bool setObjectZOrder(const QString &id, qreal zValue);
-  bool reparentObject(const QString &id, const QString &newParentId);
-  bool applyObjectTransform(const QString &id, const QPointF &pos,
-                            qreal rotation, qreal scaleX, qreal scaleY);
-  bool renameObject(const QString &id, const QString &name);
+  bool rotateObject(const QString& id, qreal rotation);
+  bool scaleObject(const QString& id, qreal scaleX, qreal scaleY);
+  bool setObjectOpacity(const QString& id, qreal opacity);
+  bool setObjectVisible(const QString& id, bool visible);
+  bool setObjectLocked(const QString& id, bool locked);
+  bool setObjectColor(const QString& id, const QColor& color);
+  bool setObjectZOrder(const QString& id, qreal zValue);
+  bool reparentObject(const QString& id, const QString& newParentId);
+  bool applyObjectTransform(const QString& id, const QPointF& pos, qreal rotation, qreal scaleX,
+                            qreal scaleY);
+  bool renameObject(const QString& id, const QString& name);
 
   /**
    * @brief Duplicate an object by ID.
    * @param id Object ID to duplicate
    * @return true if successful, false otherwise
    */
-  bool duplicateObject(const QString &id);
+  bool duplicateObject(const QString& id);
 
   /**
    * @brief Select object by ID.
    */
-  void selectObjectById(const QString &id);
+  void selectObjectById(const QString& id);
 
-  NMSceneObject *findObjectById(const QString &id) const;
+  NMSceneObject* findObjectById(const QString& id) const;
 
-  bool loadSceneDocument(const QString &sceneId);
+  bool loadSceneDocument(const QString& sceneId);
   bool saveSceneDocument();
   [[nodiscard]] QString currentSceneId() const { return m_currentSceneId; }
-  bool setObjectAsset(const QString &id, const QString &assetPath);
-  bool addObjectFromAsset(const QString &assetPath, const QPointF &scenePos);
-  bool addObjectFromAsset(const QString &assetPath, const QPointF &scenePos,
+  bool setObjectAsset(const QString& id, const QString& assetPath);
+  bool addObjectFromAsset(const QString& assetPath, const QPointF& scenePos);
+  bool addObjectFromAsset(const QString& assetPath, const QPointF& scenePos,
                           NMSceneObjectType type);
-  void setBreadcrumbContext(const QString &projectName,
-                            const QString &graphName, const QString &nodeId,
-                            const QString &sceneId, bool playModeActive);
+  void setBreadcrumbContext(const QString& projectName, const QString& graphName,
+                            const QString& nodeId, const QString& sceneId, bool playModeActive);
   void setFocusModeActive(bool active);
-  void setStoryPreview(const QString &speaker, const QString &text,
-                       const QStringList &choices);
+  void setStoryPreview(const QString& speaker, const QString& text, const QStringList& choices);
   void clearStoryPreview();
 
   /**
@@ -410,22 +406,18 @@ public:
   /**
    * @brief Check if animation preview mode is active
    */
-  [[nodiscard]] bool isAnimationPreviewMode() const {
-    return m_animationPreviewMode;
-  }
+  [[nodiscard]] bool isAnimationPreviewMode() const { return m_animationPreviewMode; }
 
 signals:
-  void objectSelected(const QString &objectId);
-  void objectDoubleClicked(const QString &objectId);
+  void objectSelected(const QString& objectId);
+  void objectDoubleClicked(const QString& objectId);
   void sceneObjectsChanged();
-  void objectNameChanged(const QString &objectId, const QString &name);
-  void objectPositionChanged(const QString &objectId, const QPointF &position);
-  void objectTransformFinished(const QString &objectId, const QPointF &oldPos,
-                               const QPointF &newPos, qreal oldRotation,
-                               qreal newRotation, qreal oldScaleX,
-                               qreal newScaleX, qreal oldScaleY,
-                               qreal newScaleY);
-  void sceneChanged(const QString &sceneId);
+  void objectNameChanged(const QString& objectId, const QString& name);
+  void objectPositionChanged(const QString& objectId, const QPointF& position);
+  void objectTransformFinished(const QString& objectId, const QPointF& oldPos,
+                               const QPointF& newPos, qreal oldRotation, qreal newRotation,
+                               qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
+  void sceneChanged(const QString& sceneId);
   void focusModeRequested(bool enabled);
 
 private slots:
@@ -438,28 +430,25 @@ private slots:
   void onGizmoModeMove();
   void onGizmoModeRotate();
   void onGizmoModeScale();
-  void onCursorPositionChanged(const QPointF &scenePos);
-  void onAssetsDropped(const QStringList &paths, const QPointF &scenePos);
-  void onSceneObjectSelected(const QString &objectId);
-  void onObjectPositionChanged(const QString &objectId,
-                               const QPointF &position);
-  void onObjectMoveFinished(const QString &objectId, const QPointF &oldPos,
-                            const QPointF &newPos);
-  void onObjectTransformFinished(const QString &objectId, const QPointF &oldPos,
-                                 const QPointF &newPos, qreal oldRotation,
-                                 qreal newRotation, qreal oldScaleX,
-                                 qreal newScaleX, qreal oldScaleY,
+  void onCursorPositionChanged(const QPointF& scenePos);
+  void onAssetsDropped(const QStringList& paths, const QPointF& scenePos);
+  void onSceneObjectSelected(const QString& objectId);
+  void onObjectPositionChanged(const QString& objectId, const QPointF& position);
+  void onObjectMoveFinished(const QString& objectId, const QPointF& oldPos, const QPointF& newPos);
+  void onObjectTransformFinished(const QString& objectId, const QPointF& oldPos,
+                                 const QPointF& newPos, qreal oldRotation, qreal newRotation,
+                                 qreal oldScaleX, qreal newScaleX, qreal oldScaleY,
                                  qreal newScaleY);
-  void onDeleteRequested(const QString &objectId);
-  void onContextMenuRequested(const QPoint &globalPos, const QPointF &scenePos);
+  void onDeleteRequested(const QString& objectId);
+  void onContextMenuRequested(const QPoint& globalPos, const QPointF& scenePos);
   void onDragActiveChanged(bool active);
 
   // Play mode integration
-  void onPlayModeCurrentNodeChanged(const QString &nodeId);
-  void onPlayModeDialogueChanged(const QString &speaker, const QString &text);
-  void onPlayModeChoicesChanged(const QStringList &choices);
+  void onPlayModeCurrentNodeChanged(const QString& nodeId);
+  void onPlayModeDialogueChanged(const QString& speaker, const QString& text);
+  void onPlayModeChoicesChanged(const QStringList& choices);
   void onPlayModeChanged(int mode);
-  void applyRuntimeSnapshot(const ::NovelMind::editor::SceneSnapshot &snapshot);
+  void applyRuntimeSnapshot(const ::NovelMind::editor::SceneSnapshot& snapshot);
   void syncRuntimeSelection();
   void clearRuntimePreview();
 
@@ -474,7 +463,7 @@ private:
   void toggleGrid();
   void toggleSelectionVisibility();
   bool canEditScene() const;
-  SceneObjectSnapshot snapshotFromObject(const NMSceneObject *obj) const;
+  SceneObjectSnapshot snapshotFromObject(const NMSceneObject* obj) const;
   QString generateObjectId(NMSceneObjectType type) const;
   void copySelectedObject();
   bool pasteClipboardObject();
@@ -489,35 +478,34 @@ private:
   void updateRuntimePreviewVisibility();
   void updatePreviewOverlayVisibility();
   void applyEditorPreview();
-  QString normalizeAssetPath(const QString &assetPath) const;
-  NMSceneObjectType guessObjectTypeForAsset(const QString &assetPath) const;
-  QPixmap loadPixmapForAsset(const QString &hint, NMSceneObjectType type);
+  QString normalizeAssetPath(const QString& assetPath) const;
+  NMSceneObjectType guessObjectTypeForAsset(const QString& assetPath) const;
+  QPixmap loadPixmapForAsset(const QString& hint, NMSceneObjectType type);
 
   // Scene validation helpers (P5.3 - runtime object allocation validation)
   bool validateSceneReady() const;
   void showSceneNotLoadedError();
   void showSceneInvalidError();
-  void showRuntimeObjectCreationError(const QString &objectId,
-                                      const QString &reason);
+  void showRuntimeObjectCreationError(const QString& objectId, const QString& reason);
 
-  NMSceneGraphicsScene *m_scene = nullptr;
-  NMSceneGraphicsView *m_view = nullptr;
-  NMSceneGLViewport *m_glViewport = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  QAction *m_focusModeAction = nullptr;
-  QWidget *m_breadcrumbBar = nullptr;
-  QLabel *m_breadcrumbLabel = nullptr;
-  QFrame *m_dropHint = nullptr;
+  NMSceneGraphicsScene* m_scene = nullptr;
+  NMSceneGraphicsView* m_view = nullptr;
+  NMSceneGLViewport* m_glViewport = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QAction* m_focusModeAction = nullptr;
+  QWidget* m_breadcrumbBar = nullptr;
+  QLabel* m_breadcrumbLabel = nullptr;
+  QFrame* m_dropHint = nullptr;
   SceneObjectSnapshot m_sceneClipboard;
   bool m_sceneClipboardValid = false;
   QString m_breadcrumbProject;
   QString m_breadcrumbGraph;
   QString m_breadcrumbNode;
   QString m_breadcrumbScene;
-  NMSceneInfoOverlay *m_infoOverlay = nullptr;
-  NMPlayPreviewOverlay *m_playOverlay = nullptr;
-  QLabel *m_fontWarning = nullptr;
+  NMSceneInfoOverlay* m_infoOverlay = nullptr;
+  NMPlayPreviewOverlay* m_playOverlay = nullptr;
+  QLabel* m_fontWarning = nullptr;
   QStringList m_runtimeObjectIds;
   std::atomic<bool> m_runtimePreviewActive{false};
   bool m_gridVisibleBeforeRuntime = true;

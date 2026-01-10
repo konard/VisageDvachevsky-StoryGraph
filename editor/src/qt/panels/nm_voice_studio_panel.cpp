@@ -24,8 +24,10 @@
 #include <QAudioOutput>
 #include <QCheckBox>
 #include <QComboBox>
+#include <QDateTime>
 #include <QDir>
 #include <QDoubleSpinBox>
+#include <QFile>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QHBoxLayout>
@@ -850,6 +852,9 @@ void NMVoiceStudioPanel::onInitialize() {
 
   // Set up media player
   setupMediaPlayer();
+
+  // Set up audio recorder
+  setupRecorder();
 }
 
 void NMVoiceStudioPanel::onShutdown() {
@@ -859,6 +864,11 @@ void NMVoiceStudioPanel::onShutdown() {
 
   if (m_mediaPlayer) {
     m_mediaPlayer->stop();
+  }
+
+  // Shutdown audio recorder
+  if (m_recorder) {
+    m_recorder->shutdown();
   }
 }
 
@@ -931,11 +941,46 @@ bool NMVoiceStudioPanel::hasUnsavedChanges() const {
 // ============================================================================
 
 void NMVoiceStudioPanel::onInputDeviceChanged(int index) {
-  Q_UNUSED(index);
-  // Device change handled here if needed
+  if (!m_recorder || !m_recorder->isInitialized() || !m_inputDeviceCombo)
+    return;
+
+  // Get device ID from combo box data
+  QString deviceId = m_inputDeviceCombo->itemData(index).toString();
+
+  // Set device on recorder
+  auto result = m_recorder->setInputDevice(deviceId.toStdString());
+  if (!result) {
+    NOVELMIND_LOG_ERROR("Failed to set input device: {}", result.error());
+    NMMessageDialog::showWarning(this, tr("Device Error"),
+                                 QString::fromStdString(result.error()));
+  } else {
+    NOVELMIND_LOG_INFO("Input device changed to: {}",
+                       m_inputDeviceCombo->currentText().toStdString());
+  }
 }
 
 void NMVoiceStudioPanel::onRecordClicked() {
+  if (!m_recorder || !m_recorder->isInitialized()) {
+    NMMessageDialog::showWarning(this, tr("Recording Error"),
+                                 tr("Audio recorder is not initialized"));
+    return;
+  }
+
+  // Generate temporary recording path
+  QString tempDir = QDir::temp().filePath("NovelMind/voice_recordings");
+  QDir().mkpath(tempDir);
+
+  QString timestamp = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
+  m_tempRecordingPath = QDir(tempDir).filePath(QString("recording_%1.wav").arg(timestamp));
+
+  // Start recording
+  auto result = m_recorder->startRecording(m_tempRecordingPath.toStdString());
+  if (!result) {
+    NMMessageDialog::showWarning(this, tr("Recording Error"),
+                                 QString::fromStdString(result.error()));
+    return;
+  }
+
   m_isRecording = true;
   if (m_recordBtn)
     m_recordBtn->setEnabled(false);
@@ -945,19 +990,50 @@ void NMVoiceStudioPanel::onRecordClicked() {
     m_cancelRecordBtn->setEnabled(true);
   if (m_recordingTimeLabel)
     m_recordingTimeLabel->setText("00:00.000");
+
+  NOVELMIND_LOG_INFO("Recording started: {}", m_tempRecordingPath.toStdString());
 }
 
 void NMVoiceStudioPanel::onStopRecordClicked() {
-  m_isRecording = false;
-  if (m_recordBtn)
-    m_recordBtn->setEnabled(true);
+  if (!m_recorder || !m_recorder->isRecording()) {
+    return;
+  }
+
+  // Stop recording - onRecordingComplete callback will be triggered asynchronously
+  auto result = m_recorder->stopRecording();
+  if (!result) {
+    NOVELMIND_LOG_ERROR("Failed to stop recording: {}", result.error());
+    // Still update UI state even if stop failed
+    m_isRecording = false;
+    if (m_recordBtn)
+      m_recordBtn->setEnabled(true);
+    if (m_stopRecordBtn)
+      m_stopRecordBtn->setEnabled(false);
+    if (m_cancelRecordBtn)
+      m_cancelRecordBtn->setEnabled(false);
+    return;
+  }
+
+  // Disable buttons while processing (they'll be re-enabled in onRecordingComplete)
   if (m_stopRecordBtn)
     m_stopRecordBtn->setEnabled(false);
   if (m_cancelRecordBtn)
     m_cancelRecordBtn->setEnabled(false);
+
+  if (m_statusLabel)
+    m_statusLabel->setText(tr("Processing recording..."));
+
+  NOVELMIND_LOG_INFO("Recording stopped, processing...");
 }
 
 void NMVoiceStudioPanel::onCancelRecordClicked() {
+  if (!m_recorder || !m_recorder->isRecording()) {
+    return;
+  }
+
+  // Cancel recording - this will discard the recorded data
+  m_recorder->cancelRecording();
+
   m_isRecording = false;
   if (m_recordBtn)
     m_recordBtn->setEnabled(true);
@@ -967,6 +1043,17 @@ void NMVoiceStudioPanel::onCancelRecordClicked() {
     m_cancelRecordBtn->setEnabled(false);
   if (m_recordingTimeLabel)
     m_recordingTimeLabel->setText("00:00.000");
+
+  if (m_statusLabel)
+    m_statusLabel->setText(tr("Recording canceled"));
+
+  // Clean up temp file if it exists
+  if (!m_tempRecordingPath.isEmpty() && QFile::exists(m_tempRecordingPath)) {
+    QFile::remove(m_tempRecordingPath);
+  }
+  m_tempRecordingPath.clear();
+
+  NOVELMIND_LOG_INFO("Recording canceled");
 }
 
 void NMVoiceStudioPanel::onPlayClicked() {
@@ -1933,8 +2020,54 @@ void NMVoiceStudioPanel::setupMediaPlayer() {
 }
 
 void NMVoiceStudioPanel::setupRecorder() {
-  // Recorder setup would go here
-  // In production, would use audio::AudioRecorder
+  // Initialize AudioRecorder
+  m_recorder = std::make_unique<audio::AudioRecorder>();
+
+  auto result = m_recorder->initialize();
+  if (!result) {
+    NOVELMIND_LOG_ERROR("Failed to initialize AudioRecorder: {}", result.error());
+    return;
+  }
+
+  // Set up recording format
+  audio::RecordingFormat format;
+  format.sampleRate = 48000;
+  format.channels = 1;  // Mono
+  format.bitsPerSample = 16;
+  format.outputFormat = audio::RecordingFormat::FileFormat::WAV;
+  format.autoTrimSilence = false;  // User controls trimming manually
+  format.normalize = false;  // User controls normalization manually
+  m_recorder->setRecordingFormat(format);
+
+  // Set up callbacks with Qt::QueuedConnection for thread safety
+  m_recorder->setOnLevelUpdate([this](const audio::LevelMeter &level) {
+    QMetaObject::invokeMethod(this, [this, level]() {
+      onLevelUpdate(level);
+    }, Qt::QueuedConnection);
+  });
+
+  m_recorder->setOnRecordingStateChanged([this](audio::RecordingState state) {
+    QMetaObject::invokeMethod(this, [this, state]() {
+      onRecordingStateChanged(static_cast<int>(state));
+    }, Qt::QueuedConnection);
+  });
+
+  m_recorder->setOnRecordingComplete([this](const audio::RecordingResult &result) {
+    QMetaObject::invokeMethod(this, [this, result]() {
+      onRecordingComplete(result);
+    }, Qt::QueuedConnection);
+  });
+
+  m_recorder->setOnRecordingError([this](const std::string &error) {
+    QMetaObject::invokeMethod(this, [this, error]() {
+      onRecordingError(QString::fromStdString(error));
+    }, Qt::QueuedConnection);
+  });
+
+  // Start level metering for VU meter display
+  m_recorder->startMetering();
+
+  NOVELMIND_LOG_INFO("AudioRecorder initialized successfully");
 }
 
 // ============================================================================
@@ -1946,15 +2079,41 @@ void NMVoiceStudioPanel::refreshDeviceList() {
     return;
 
   m_inputDeviceCombo->clear();
-  m_inputDeviceCombo->addItem(tr("(Default Device)"));
 
-  auto devices = QMediaDevices::audioInputs();
-  for (const auto &device : devices) {
-    QString name = device.description();
-    if (device == QMediaDevices::defaultAudioInput()) {
-      name += tr(" (Default)");
+  // Use AudioRecorder device list if available
+  if (m_recorder && m_recorder->isInitialized()) {
+    auto devices = m_recorder->getInputDevices();
+    for (const auto &device : devices) {
+      QString name = QString::fromStdString(device.name);
+      if (device.isDefault) {
+        name += tr(" (Default)");
+      }
+      m_inputDeviceCombo->addItem(name, QString::fromStdString(device.id));
     }
-    m_inputDeviceCombo->addItem(name);
+
+    // Select current device
+    const auto *currentDevice = m_recorder->getCurrentInputDevice();
+    if (currentDevice) {
+      QString currentId = QString::fromStdString(currentDevice->id);
+      for (int i = 0; i < m_inputDeviceCombo->count(); ++i) {
+        if (m_inputDeviceCombo->itemData(i).toString() == currentId) {
+          m_inputDeviceCombo->setCurrentIndex(i);
+          break;
+        }
+      }
+    }
+  } else {
+    // Fallback to Qt devices if recorder not available
+    m_inputDeviceCombo->addItem(tr("(Default Device)"));
+
+    auto devices = QMediaDevices::audioInputs();
+    for (const auto &device : devices) {
+      QString name = device.description();
+      if (device == QMediaDevices::defaultAudioInput()) {
+        name += tr(" (Default)");
+      }
+      m_inputDeviceCombo->addItem(name);
+    }
   }
 }
 

@@ -117,16 +117,13 @@ struct IntegrityReport {
   bool passed = false; // True if no critical or error issues
 
   // Filter issues by severity
-  [[nodiscard]] std::vector<IntegrityIssue>
-  getIssuesBySeverity(IssueSeverity severity) const;
+  [[nodiscard]] std::vector<IntegrityIssue> getIssuesBySeverity(IssueSeverity severity) const;
 
   // Filter issues by category
-  [[nodiscard]] std::vector<IntegrityIssue>
-  getIssuesByCategory(IssueCategory category) const;
+  [[nodiscard]] std::vector<IntegrityIssue> getIssuesByCategory(IssueCategory category) const;
 
   // Filter issues by file
-  [[nodiscard]] std::vector<IntegrityIssue>
-  getIssuesByFile(const std::string &filePath) const;
+  [[nodiscard]] std::vector<IntegrityIssue> getIssuesByFile(const std::string& filePath) const;
 };
 
 /**
@@ -159,10 +156,9 @@ public:
   virtual ~IIntegrityCheckListener() = default;
 
   virtual void onCheckStarted() = 0;
-  virtual void onCheckProgress(const std::string &currentTask,
-                               f32 progress) = 0;
-  virtual void onIssueFound(const IntegrityIssue &issue) = 0;
-  virtual void onCheckCompleted(const IntegrityReport &report) = 0;
+  virtual void onCheckProgress(const std::string& currentTask, f32 progress) = 0;
+  virtual void onIssueFound(const IntegrityIssue& issue) = 0;
+  virtual void onCheckCompleted(const IntegrityReport& report) = 0;
 };
 
 /**
@@ -187,12 +183,12 @@ public:
   /**
    * @brief Set the project path to check
    */
-  void setProjectPath(const std::string &projectPath);
+  void setProjectPath(const std::string& projectPath);
 
   /**
    * @brief Set configuration for the check
    */
-  void setConfig(const IntegrityCheckConfig &config);
+  void setConfig(const IntegrityCheckConfig& config);
 
   /**
    * @brief Run full integrity check
@@ -212,7 +208,7 @@ public:
   /**
    * @brief Check a specific file
    */
-  std::vector<IntegrityIssue> checkFile(const std::string &filePath);
+  std::vector<IntegrityIssue> checkFile(const std::string& filePath);
 
   /**
    * @brief Cancel ongoing check
@@ -227,57 +223,55 @@ public:
   /**
    * @brief Add a check listener
    */
-  void addListener(IIntegrityCheckListener *listener);
+  void addListener(IIntegrityCheckListener* listener);
 
   /**
    * @brief Remove a listener
    */
-  void removeListener(IIntegrityCheckListener *listener);
+  void removeListener(IIntegrityCheckListener* listener);
 
   /**
    * @brief Apply a quick fix for an issue
    */
-  Result<void> applyQuickFix(const IntegrityIssue &issue);
+  Result<void> applyQuickFix(const IntegrityIssue& issue);
 
   /**
    * @brief Get the last check report
    */
-  [[nodiscard]] const IntegrityReport &getLastReport() const {
-    return m_lastReport;
-  }
+  [[nodiscard]] const IntegrityReport& getLastReport() const { return m_lastReport; }
 
 private:
   // Check functions for each category
-  void checkSceneReferences(std::vector<IntegrityIssue> &issues);
-  void checkAssetReferences(std::vector<IntegrityIssue> &issues);
-  void checkVoiceLines(std::vector<IntegrityIssue> &issues);
-  void checkLocalizationKeys(std::vector<IntegrityIssue> &issues);
-  void checkStoryGraphStructure(std::vector<IntegrityIssue> &issues);
-  void checkScriptSyntax(std::vector<IntegrityIssue> &issues);
-  void checkResourceConflicts(std::vector<IntegrityIssue> &issues);
-  void checkProjectConfiguration(std::vector<IntegrityIssue> &issues);
+  void checkSceneReferences(std::vector<IntegrityIssue>& issues);
+  void checkAssetReferences(std::vector<IntegrityIssue>& issues);
+  void checkVoiceLines(std::vector<IntegrityIssue>& issues);
+  void checkLocalizationKeys(std::vector<IntegrityIssue>& issues);
+  void checkStoryGraphStructure(std::vector<IntegrityIssue>& issues);
+  void checkScriptSyntax(std::vector<IntegrityIssue>& issues);
+  void checkResourceConflicts(std::vector<IntegrityIssue>& issues);
+  void checkProjectConfiguration(std::vector<IntegrityIssue>& issues);
 
   // StoryGraph analysis
-  void analyzeReachability(std::vector<IntegrityIssue> &issues);
-  void detectCycles(std::vector<IntegrityIssue> &issues);
-  void checkDeadEnds(std::vector<IntegrityIssue> &issues);
+  void analyzeReachability(std::vector<IntegrityIssue>& issues);
+  void detectCycles(std::vector<IntegrityIssue>& issues);
+  void checkDeadEnds(std::vector<IntegrityIssue>& issues);
 
   // Asset analysis
   void scanProjectAssets();
   void collectAssetReferences();
-  void findOrphanedAssets(std::vector<IntegrityIssue> &issues);
+  void findOrphanedAssets(std::vector<IntegrityIssue>& issues);
 
   // Localization analysis
   void scanLocalizationFiles();
-  void checkMissingTranslations(std::vector<IntegrityIssue> &issues);
-  void checkUnusedStrings(std::vector<IntegrityIssue> &issues);
+  void checkMissingTranslations(std::vector<IntegrityIssue>& issues);
+  void checkUnusedStrings(std::vector<IntegrityIssue>& issues);
 
   // Helper functions
-  void reportProgress(const std::string &task, f32 progress);
-  void reportIssue(const IntegrityIssue &issue);
-  IntegritySummary calculateSummary(const std::vector<IntegrityIssue> &issues);
+  void reportProgress(const std::string& task, f32 progress);
+  void reportIssue(const IntegrityIssue& issue);
+  IntegritySummary calculateSummary(const std::vector<IntegrityIssue>& issues);
 
-  bool shouldExclude(const std::string &path) const;
+  bool shouldExclude(const std::string& path) const;
 
   std::string m_projectPath;
   IntegrityCheckConfig m_config;
@@ -289,10 +283,9 @@ private:
   // Collected data during check
   std::unordered_set<std::string> m_projectAssets;
   std::unordered_set<std::string> m_referencedAssets;
-  std::unordered_map<std::string, std::vector<std::string>>
-      m_localizationStrings;
+  std::unordered_map<std::string, std::vector<std::string>> m_localizationStrings;
 
-  std::vector<IIntegrityCheckListener *> m_listeners;
+  std::vector<IIntegrityCheckListener*> m_listeners;
   std::vector<IntegrityIssue> m_currentIssues;
 };
 
@@ -303,40 +296,69 @@ namespace QuickFixes {
 /**
  * @brief Remove a reference to a missing scene
  */
-Result<void> removeMissingSceneReference(const std::string &projectPath,
-                                         const std::string &sceneId);
+Result<void> removeMissingSceneReference(const std::string& projectPath,
+                                         const std::string& sceneId);
 
 /**
  * @brief Create a stand-in for a missing asset
  */
-Result<void> createPlaceholderAsset(const std::string &projectPath,
-                                    const std::string &assetPath);
+Result<void> createPlaceholderAsset(const std::string& projectPath, const std::string& assetPath);
 
 /**
  * @brief Add a missing localization key with default value
  */
-Result<void> addMissingLocalizationKey(const std::string &projectPath,
-                                       const std::string &key,
-                                       const std::string &locale);
+Result<void> addMissingLocalizationKey(const std::string& projectPath, const std::string& key,
+                                       const std::string& locale);
 
 /**
  * @brief Remove orphaned asset references
  */
-Result<void>
-removeOrphanedReferences(const std::string &projectPath,
-                         const std::vector<std::string> &assetPaths);
+Result<void> removeOrphanedReferences(const std::string& projectPath,
+                                      const std::vector<std::string>& assetPaths);
 
 /**
  * @brief Connect an unreachable node to the graph
  */
-Result<void> connectUnreachableNode(const std::string &projectPath,
-                                    scripting::NodeId nodeId);
+Result<void> connectUnreachableNode(const std::string& projectPath, scripting::NodeId nodeId);
 
 /**
  * @brief Resolve duplicate ID by renaming
  */
-Result<void> resolveDuplicateId(const std::string &projectPath,
-                                const std::string &duplicateId);
+Result<void> resolveDuplicateId(const std::string& projectPath, const std::string& duplicateId);
+
+/**
+ * @brief Create an empty scene file
+ * @param projectPath Path to the project root
+ * @param sceneId Scene identifier (file will be created as sceneId.nmscene)
+ */
+Result<void> createEmptyScene(const std::string& projectPath, const std::string& sceneId);
+
+/**
+ * @brief Set the first available scene as the start scene
+ * @param projectPath Path to the project root
+ */
+Result<void> setFirstSceneAsStart(const std::string& projectPath);
+
+/**
+ * @brief Create a main entry point scene
+ * @param projectPath Path to the project root
+ */
+Result<void> createMainEntryScene(const std::string& projectPath);
+
+/**
+ * @brief Remove an orphaned/unreferenced asset file
+ * @param projectPath Path to the project root
+ * @param assetPath Relative path to the asset
+ */
+Result<void> removeOrphanedAsset(const std::string& projectPath, const std::string& assetPath);
+
+/**
+ * @brief Create a default project.json configuration file
+ * @param projectPath Path to the project root
+ * @param projectName Name of the project
+ */
+Result<void> createDefaultProjectConfig(const std::string& projectPath,
+                                        const std::string& projectName);
 } // namespace QuickFixes
 
 } // namespace NovelMind::editor

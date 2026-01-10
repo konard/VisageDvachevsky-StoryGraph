@@ -35,13 +35,7 @@ namespace NovelMind::editor::qt {
 /**
  * @brief Filter options for localization entries
  */
-enum class LocalizationFilter {
-  All,
-  MissingTranslations,
-  Unused,
-  Modified,
-  NewKeys
-};
+enum class LocalizationFilter { All, MissingTranslations, Unused, Modified, NewKeys };
 
 /**
  * @brief Localization entry with status tracking
@@ -61,7 +55,7 @@ class NMLocalizationPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMLocalizationPanel(QWidget *parent = nullptr);
+  explicit NMLocalizationPanel(QWidget* parent = nullptr);
   ~NMLocalizationPanel() override;
 
   void onInitialize() override;
@@ -71,7 +65,7 @@ public:
   /**
    * @brief Navigate to usage location
    */
-  void navigateToUsage(const QString &key, int usageIndex = 0);
+  void navigateToUsage(const QString& key, int usageIndex = 0);
 
   /**
    * @brief Add a new localization key
@@ -79,21 +73,21 @@ public:
    * @param defaultValue Default value for the key
    * @return true if key was added successfully
    */
-  bool addKey(const QString &key, const QString &defaultValue = QString());
+  bool addKey(const QString& key, const QString& defaultValue = QString());
 
   /**
    * @brief Delete a localization key
    * @param key The key to delete
    * @return true if key was deleted successfully
    */
-  bool deleteKey(const QString &key);
+  bool deleteKey(const QString& key);
 
   /**
    * @brief Find missing translations for current locale
    * @param locale The locale to check
    * @return List of keys with missing translations
    */
-  QStringList findMissingTranslations(const QString &locale) const;
+  QStringList findMissingTranslations(const QString& locale) const;
 
   /**
    * @brief Find unused keys in the project
@@ -120,21 +114,21 @@ public:
    * @param entries List of dialogue entries (key, sourceText pairs)
    * @return Number of entries imported
    */
-  int importDialogueEntries(const QList<QPair<QString, QString>> &entries);
+  int importDialogueEntries(const QList<QPair<QString, QString>>& entries);
 
   /**
    * @brief Check if a translation exists for a key in the current locale
    * @param key The localization key to check
    * @return true if translation exists, false otherwise
    */
-  bool hasTranslation(const QString &key) const;
+  bool hasTranslation(const QString& key) const;
 
   /**
    * @brief Get the translation for a key in the current locale
    * @param key The localization key
    * @return The translated text, or empty string if not found
    */
-  QString getTranslation(const QString &key) const;
+  QString getTranslation(const QString& key) const;
 
   /**
    * @brief Get the list of available locales
@@ -152,29 +146,34 @@ public:
    * @param locale The locale code
    * @param value The translation value
    */
-  void setTranslationValue(const QString &key, const QString &locale,
-                           const QString &value);
+  void setTranslationValue(const QString& key, const QString& locale, const QString& value);
 
 signals:
-  void keySelected(const QString &key);
-  void navigateToFile(const QString &filePath, int lineNumber);
-  void translationChanged(const QString &key, const QString &locale,
-                          const QString &newValue);
+  void keySelected(const QString& key);
+  void navigateToFile(const QString& filePath, int lineNumber);
+  void translationChanged(const QString& key, const QString& locale, const QString& newValue);
   void dirtyStateChanged(bool dirty);
+  /**
+   * @brief Emitted when localization data changes (key added/deleted)
+   *
+   * This signal is used by undo/redo commands to notify the panel
+   * that the table needs to be rebuilt to reflect data changes.
+   */
+  void localizationDataChanged();
 
 private slots:
-  void onSearchTextChanged(const QString &text);
+  void onSearchTextChanged(const QString& text);
   void onFilterChanged(int index);
   void onLocaleChanged(int index);
   void onCellChanged(int row, int column);
-  void onItemDoubleClicked(QTableWidgetItem *item);
+  void onItemDoubleClicked(QTableWidgetItem* item);
   void onAddKeyClicked();
   void onDeleteKeyClicked();
   void onExportClicked();
   void onImportClicked();
   void onRefreshClicked();
   void onShowOnlyMissingToggled(bool checked);
-  void onContextMenu(const QPoint &pos);
+  void onContextMenu(const QPoint& pos);
   void onSaveClicked();
   void onExportMissingClicked();
   void onEditPluralFormsClicked();
@@ -187,54 +186,54 @@ private:
   void setupFilterBar();
   void setupTable();
   void refreshLocales();
-  void loadLocale(const QString &localeCode);
+  void loadLocale(const QString& localeCode);
   void rebuildTable();
   void applyFilters();
   void updateStatusBar();
   void highlightMissingTranslations();
-  void exportToCsv(const QString &filePath);
-  void exportToJson(const QString &filePath);
-  void importFromCsv(const QString &filePath);
-  void importFromJson(const QString &filePath);
+  void exportToCsv(const QString& filePath);
+  void exportToJson(const QString& filePath);
+  void importFromCsv(const QString& filePath);
+  void importFromJson(const QString& filePath);
   void setDirty(bool dirty);
-  bool showAddKeyDialog(QString &outKey, QString &outDefaultValue);
-  bool isValidKeyName(const QString &key) const;
-  bool isKeyUnique(const QString &key) const;
+  bool showAddKeyDialog(QString& outKey, QString& outDefaultValue);
+  bool isValidKeyName(const QString& key) const;
+  bool isKeyUnique(const QString& key) const;
   void syncEntriesToManager();
   void syncEntriesFromManager();
   void exportLocale();
   void importLocale();
   void exportMissingStrings();
-  void importLocaleAsync(const QString &filePath,
+  void importLocaleAsync(const QString& filePath,
                          ::NovelMind::localization::LocalizationFormat format);
-  void exportLocaleAsync(const QString &filePath,
+  void exportLocaleAsync(const QString& filePath,
                          ::NovelMind::localization::LocalizationFormat format);
-  bool showPluralFormsDialog(const QString &key);
+  bool showPluralFormsDialog(const QString& key);
   void updatePreview();
   void applyRTLLayout(bool rtl);
 
   // UI Elements
-  QToolBar *m_toolbar = nullptr;
-  QLineEdit *m_searchEdit = nullptr;
-  QComboBox *m_filterCombo = nullptr;
-  QComboBox *m_languageSelector = nullptr;
-  QCheckBox *m_showMissingOnly = nullptr;
-  QTableWidget *m_stringsTable = nullptr;
-  QLabel *m_statusLabel = nullptr;
-  QPushButton *m_addKeyBtn = nullptr;
-  QPushButton *m_deleteKeyBtn = nullptr;
-  QPushButton *m_importButton = nullptr;
-  QPushButton *m_exportButton = nullptr;
-  QPushButton *m_exportMissingBtn = nullptr;
-  QPushButton *m_refreshBtn = nullptr;
-  QPushButton *m_saveBtn = nullptr;
-  QPushButton *m_pluralFormsBtn = nullptr;
-  QCheckBox *m_rtlPreviewCheckbox = nullptr;
+  QToolBar* m_toolbar = nullptr;
+  QLineEdit* m_searchEdit = nullptr;
+  QComboBox* m_filterCombo = nullptr;
+  QComboBox* m_languageSelector = nullptr;
+  QCheckBox* m_showMissingOnly = nullptr;
+  QTableWidget* m_stringsTable = nullptr;
+  QLabel* m_statusLabel = nullptr;
+  QPushButton* m_addKeyBtn = nullptr;
+  QPushButton* m_deleteKeyBtn = nullptr;
+  QPushButton* m_importButton = nullptr;
+  QPushButton* m_exportButton = nullptr;
+  QPushButton* m_exportMissingBtn = nullptr;
+  QPushButton* m_refreshBtn = nullptr;
+  QPushButton* m_saveBtn = nullptr;
+  QPushButton* m_pluralFormsBtn = nullptr;
+  QCheckBox* m_rtlPreviewCheckbox = nullptr;
 
   // Preview Panel
-  QWidget *m_previewPanel = nullptr;
-  QLineEdit *m_previewInput = nullptr;
-  QLabel *m_previewOutput = nullptr;
+  QWidget* m_previewPanel = nullptr;
+  QLineEdit* m_previewInput = nullptr;
+  QLabel* m_previewOutput = nullptr;
   QHash<QString, QString> m_previewVariables;
 
   // Data

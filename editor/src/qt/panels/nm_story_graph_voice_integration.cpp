@@ -12,8 +12,8 @@
 
 namespace NovelMind::editor::qt {
 
-NMStoryGraphVoiceIntegration::NMStoryGraphVoiceIntegration(
-    NMStoryGraphPanel *graphPanel, QObject *parent)
+NMStoryGraphVoiceIntegration::NMStoryGraphVoiceIntegration(NMStoryGraphPanel* graphPanel,
+                                                           QObject* parent)
     : QObject(parent), m_graphPanel(graphPanel) {
   // Initialize with user's home directory as default
   m_lastBrowseDirectory = QDir::homePath();
@@ -21,22 +21,21 @@ NMStoryGraphVoiceIntegration::NMStoryGraphVoiceIntegration(
 
 NMStoryGraphVoiceIntegration::~NMStoryGraphVoiceIntegration() = default;
 
-void NMStoryGraphVoiceIntegration::setVoiceManager(VoiceManager *voiceManager) {
+void NMStoryGraphVoiceIntegration::setVoiceManager(VoiceManager* voiceManager) {
   m_voiceManager = voiceManager;
 }
 
-void NMStoryGraphVoiceIntegration::setVoiceManifest(
-    audio::VoiceManifest *manifest) {
+void NMStoryGraphVoiceIntegration::setVoiceManifest(audio::VoiceManifest* manifest) {
   m_manifest = manifest;
 }
 
-void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString,
-                                                   const QString &currentPath) {
+void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString& nodeIdString,
+                                                   const QString& currentPath) {
   if (!m_graphPanel) {
     qWarning() << "[VoiceIntegration] Graph panel is null";
     QString errorMsg = tr("Voice feature unavailable: Graph panel is not initialized.");
     emit errorOccurred(errorMsg);
-    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
+    QMessageBox::warning(nullptr, tr("Voice Feature Unavailable"), errorMsg);
     return;
   }
 
@@ -77,27 +76,26 @@ void NMStoryGraphVoiceIntegration::assignVoiceClip(const QString &nodeIdString,
   // Emit signal
   emit voiceClipChanged(nodeIdString, voiceFile, bindingStatus);
 
-  qDebug() << "[VoiceIntegration] Assigned voice clip:" << voiceFile
-           << "to node:" << nodeIdString;
+  qDebug() << "[VoiceIntegration] Assigned voice clip:" << voiceFile << "to node:" << nodeIdString;
 }
 
-void NMStoryGraphVoiceIntegration::autoDetectVoice(
-    const QString &nodeIdString, const QString &localizationKey) {
+void NMStoryGraphVoiceIntegration::autoDetectVoice(const QString& nodeIdString,
+                                                   const QString& localizationKey) {
   if (!m_voiceManager) {
     QString errorMsg = tr("Voice feature unavailable: Voice Manager is not initialized.\n\n"
-                          "To enable voice features, ensure the Voice Manager is properly configured in your project settings.");
+                          "To enable voice features, ensure the Voice Manager is properly "
+                          "configured in your project settings.");
     emit errorOccurred(errorMsg);
     qWarning() << "[VoiceIntegration] Voice Manager is null";
-    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
+    QMessageBox::warning(nullptr, tr("Voice Feature Unavailable"), errorMsg);
     return;
   }
 
-  qDebug() << "[VoiceIntegration] Auto-detecting voice for node:"
-           << nodeIdString << "with key:" << localizationKey;
+  qDebug() << "[VoiceIntegration] Auto-detecting voice for node:" << nodeIdString
+           << "with key:" << localizationKey;
 
   // First, try to find a voice file already bound to this line ID
-  const DialogueLine *line =
-      m_voiceManager->getLine(nodeIdString.toStdString());
+  const DialogueLine* line = m_voiceManager->getLine(nodeIdString.toStdString());
   if (line && !line->voiceFile.empty()) {
     // Line already has a bound voice file
     QString voicePath = QString::fromStdString(line->voiceFile);
@@ -117,8 +115,7 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
     QString voicePath = QString::fromStdString(it->second);
     if (QFileInfo::exists(voicePath)) {
       // Apply the binding
-      auto result =
-          m_voiceManager->bindVoice(nodeIdString.toStdString(), it->second);
+      auto result = m_voiceManager->bindVoice(nodeIdString.toStdString(), it->second);
       if (result.isOk()) {
         int bindingStatus = determineBindingStatus(voicePath);
         updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
@@ -131,11 +128,10 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
 
   // If we have a manifest, try to find a matching voice file there
   if (m_manifest) {
-    const audio::VoiceManifestLine *manifestLine =
-        m_manifest->getLine(nodeIdString.toStdString());
+    const audio::VoiceManifestLine* manifestLine = m_manifest->getLine(nodeIdString.toStdString());
     if (manifestLine) {
       // Check files for the default locale
-      const audio::VoiceLocaleFile *localeFile =
+      const audio::VoiceLocaleFile* localeFile =
           manifestLine->getFile(m_manifest->getDefaultLocale());
       if (localeFile && !localeFile->filePath.empty()) {
         QString voicePath = QString::fromStdString(localeFile->filePath);
@@ -153,11 +149,11 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
   // No match found - search by localization key pattern
   // Common pattern: voice files named similar to localization key
   if (!localizationKey.isEmpty()) {
-    const auto &voiceFiles = m_voiceManager->getVoiceFiles();
+    const auto& voiceFiles = m_voiceManager->getVoiceFiles();
     QString keyBaseName = localizationKey;
     keyBaseName.replace('.', '_').replace('-', '_');
 
-    for (const auto &vf : voiceFiles) {
+    for (const auto& vf : voiceFiles) {
       if (vf.bound) {
         continue; // Skip already bound files
       }
@@ -172,14 +168,12 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
         QString voicePath = QString::fromStdString(vf.path);
         if (QFileInfo::exists(voicePath)) {
           // Apply the binding
-          auto result =
-              m_voiceManager->bindVoice(nodeIdString.toStdString(), vf.path);
+          auto result = m_voiceManager->bindVoice(nodeIdString.toStdString(), vf.path);
           if (result.isOk()) {
             int bindingStatus = determineBindingStatus(voicePath);
             updateNodeVoiceStatus(nodeIdString, voicePath, bindingStatus);
             emit voiceClipChanged(nodeIdString, voicePath, bindingStatus);
-            qDebug() << "[VoiceIntegration] Auto-detected by key match:"
-                     << voicePath;
+            qDebug() << "[VoiceIntegration] Auto-detected by key match:" << voicePath;
             return;
           }
         }
@@ -188,24 +182,23 @@ void NMStoryGraphVoiceIntegration::autoDetectVoice(
   }
 
   // No match found
-  emit errorOccurred(
-      tr("No matching voice file found for: %1").arg(nodeIdString));
+  emit errorOccurred(tr("No matching voice file found for: %1").arg(nodeIdString));
   qDebug() << "[VoiceIntegration] No voice file found for:" << nodeIdString;
 }
 
-void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
-                                                const QString &voicePath) {
+void NMStoryGraphVoiceIntegration::previewVoice(const QString& nodeIdString,
+                                                const QString& voicePath) {
   if (voicePath.isEmpty()) {
     QString errorMsg = tr("No voice clip assigned to preview.");
     emit errorOccurred(errorMsg);
-    QMessageBox::information(m_graphPanel, tr("No Voice Clip"), errorMsg);
+    QMessageBox::information(nullptr, tr("No Voice Clip"), errorMsg);
     return;
   }
 
   if (!QFileInfo::exists(voicePath)) {
     QString errorMsg = tr("Voice file not found: %1").arg(voicePath);
     emit errorOccurred(errorMsg);
-    QMessageBox::warning(m_graphPanel, tr("File Not Found"), errorMsg);
+    QMessageBox::warning(nullptr, tr("File Not Found"), errorMsg);
     return;
   }
 
@@ -215,10 +208,11 @@ void NMStoryGraphVoiceIntegration::previewVoice(const QString &nodeIdString,
     qDebug() << "[VoiceIntegration] Previewing voice:" << voicePath;
   } else {
     QString errorMsg = tr("Voice feature unavailable: Voice Manager is not initialized.\n\n"
-                          "To enable voice preview, ensure the Voice Manager is properly configured in your project settings.");
+                          "To enable voice preview, ensure the Voice Manager is properly "
+                          "configured in your project settings.");
     emit errorOccurred(errorMsg);
     qWarning() << "[VoiceIntegration] Voice Manager is null";
-    QMessageBox::warning(m_graphPanel, tr("Voice Feature Unavailable"), errorMsg);
+    QMessageBox::warning(nullptr, tr("Voice Feature Unavailable"), errorMsg);
   }
 }
 
@@ -229,14 +223,15 @@ void NMStoryGraphVoiceIntegration::stopPreview() {
   }
 }
 
-void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(
-    const QString &nodeIdString, const QString &voicePath, int bindingStatus) {
+void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(const QString& nodeIdString,
+                                                         const QString& voicePath,
+                                                         int bindingStatus) {
   if (!m_graphPanel) {
     return;
   }
 
   // Find the node and update its voice properties
-  auto *node = m_graphPanel->findNodeByIdString(nodeIdString);
+  auto* node = m_graphPanel->findNodeByIdString(nodeIdString);
   if (node) {
     node->setVoiceClipPath(voicePath);
     node->setVoiceBindingStatus(bindingStatus);
@@ -244,8 +239,7 @@ void NMStoryGraphVoiceIntegration::updateNodeVoiceStatus(
   }
 }
 
-int NMStoryGraphVoiceIntegration::determineBindingStatus(
-    const QString &voicePath) {
+int NMStoryGraphVoiceIntegration::determineBindingStatus(const QString& voicePath) {
   if (voicePath.isEmpty()) {
     return 0; // Unbound
   }
@@ -263,7 +257,8 @@ bool NMStoryGraphVoiceIntegration::isVoiceSystemAvailable() const {
 
 QString NMStoryGraphVoiceIntegration::getUnavailabilityReason() const {
   if (!m_graphPanel && !m_voiceManager) {
-    return tr("Voice features are not available: Graph panel and Voice Manager are not initialized.");
+    return tr(
+        "Voice features are not available: Graph panel and Voice Manager are not initialized.");
   }
   if (!m_graphPanel) {
     return tr("Voice features are not available: Graph panel is not initialized.");
