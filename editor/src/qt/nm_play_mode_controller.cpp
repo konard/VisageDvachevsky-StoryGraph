@@ -1,5 +1,6 @@
 #include <NovelMind/editor/project_manager.hpp>
 #include <NovelMind/editor/qt/nm_play_mode_controller.hpp>
+#include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
@@ -276,6 +277,13 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
   qDebug() << "[PlayMode] Assets path:" << assetsPath;
   qDebug() << "[PlayMode] Start scene:" << startScene;
 
+  // Check if compilation is already in progress
+  if (m_compilationInProgress) {
+    qWarning() << "[PlayMode] Compilation already in progress, ignoring new request";
+    return false;
+  }
+
+  // Prepare project descriptor
   ::NovelMind::editor::ProjectDescriptor desc;
   desc.path = projectPath.toStdString();
   desc.name = QFileInfo(projectPath).fileName().toStdString();
@@ -287,17 +295,35 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
     desc.scenesPath = projectDir.filePath("Scenes").toStdString();
   }
 
+  // Mark compilation as in progress and emit start signal
+  m_compilationInProgress = true;
+  emit compilationStarted();
+  emit compilationProgress(0, "Reading project files...");
+
   qDebug() << "[PlayMode] Calling EditorRuntimeHost::loadProject()...";
+
+  // Process events to allow UI to update before starting compilation
+  QCoreApplication::processEvents();
+
+  // Perform compilation (synchronous, but with progress updates)
   auto result = m_runtimeHost.loadProject(desc);
+
+  // Mark compilation as complete
+  m_compilationInProgress = false;
+
   if (result.isError()) {
     qCritical() << "[PlayMode] Failed to load project for runtime:"
                << QString::fromStdString(result.error());
     qCritical() << "[PlayMode] This usually means compilation failed or files are missing";
+    emit compilationFailed(QString::fromStdString(result.error()));
     m_runtimeLoaded = false;
     return false;
   }
 
   qDebug() << "[PlayMode] Project loaded successfully!";
+  emit compilationProgress(100, "Complete");
+  emit compilationFinished();
+
   m_runtimeLoaded = true;
   m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
   m_totalSteps =

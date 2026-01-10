@@ -4,6 +4,7 @@
 #include "NovelMind/scripting/ir.hpp"
 #include "editor_runtime_host_detail.hpp"
 
+#include <QCoreApplication>
 #include <QDebug>
 #include <QString>
 
@@ -984,6 +985,9 @@ Result<void> EditorRuntimeHost::compileProject() {
     qDebug() << "[EditorRuntimeHost] Total script content:" << allScripts.size() << "characters";
     qDebug() << "[EditorRuntimeHost] Starting compilation pipeline...";
 
+    // Allow UI to process events before starting compilation
+    QCoreApplication::processEvents();
+
     // Lexer
     qDebug() << "[EditorRuntimeHost] Step 1/4: Lexer tokenization...";
     scripting::Lexer lexer;
@@ -994,6 +998,9 @@ Result<void> EditorRuntimeHost::compileProject() {
       return Result<void>::error("Lexer error: " + tokensResult.error());
     }
     qDebug() << "[EditorRuntimeHost] Lexer: Generated" << tokensResult.value().size() << "tokens";
+
+    // Allow UI to update after lexer
+    QCoreApplication::processEvents();
 
     // Parser
     qDebug() << "[EditorRuntimeHost] Step 2/4: Parser...";
@@ -1014,6 +1021,9 @@ Result<void> EditorRuntimeHost::compileProject() {
     }
     qDebug() << "[EditorRuntimeHost] Parser: Found" << m_sceneNames.size() << "scenes";
 
+    // Allow UI to update after parser
+    QCoreApplication::processEvents();
+
     // Validator
     qDebug() << "[EditorRuntimeHost] Step 3/4: Validator...";
     scripting::Validator validator;
@@ -1028,6 +1038,9 @@ Result<void> EditorRuntimeHost::compileProject() {
       return Result<void>::error(errorMsg);
     }
     qDebug() << "[EditorRuntimeHost] Validator: No errors";
+
+    // Allow UI to update after validator
+    QCoreApplication::processEvents();
 
     // Compiler
     qDebug() << "[EditorRuntimeHost] Step 4/4: Compiler...";

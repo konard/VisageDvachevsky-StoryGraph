@@ -219,6 +219,23 @@ public:
   QVariantMap currentFlags() const { return m_flags; }
 
 signals:
+  // === Compilation Signals ===
+
+  /// Emitted when compilation starts
+  void compilationStarted();
+
+  /// Emitted during compilation to report progress
+  /// @param percent Progress percentage (0-100)
+  /// @param stage Current compilation stage description
+  void compilationProgress(int percent, const QString &stage);
+
+  /// Emitted when compilation completes successfully
+  void compilationFinished();
+
+  /// Emitted when compilation fails
+  /// @param error Error message
+  void compilationFailed(const QString &error);
+
   // === Playback Signals ===
 
   /// Emitted when play mode changes
@@ -321,6 +338,9 @@ private:
   // State history for backward navigation
   std::deque<scripting::RuntimeSaveState> m_stateHistory;
   static constexpr size_t MAX_HISTORY_SIZE = 100;
+
+  // Compilation progress tracking
+  bool m_compilationInProgress = false;
 };
 
 } // namespace NovelMind::editor::qt
