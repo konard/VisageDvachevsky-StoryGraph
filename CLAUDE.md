@@ -55,3 +55,16 @@ Proceed.
 
 
 Run timestamp: 2026-01-09T17:22:36.540Z
+
+---
+
+Issue to solve: https://github.com/VisageDvachevsky/StoryGraph/issues/375
+Your prepared branch: issue-375-16669e38930b
+Your prepared working directory: /tmp/gh-issue-solver-1768069483436
+Your forked repository: konard/VisageDvachevsky-StoryGraph
+Original repository (upstream): VisageDvachevsky/StoryGraph
+
+Proceed.
+
+
+Run timestamp: 2026-01-10T18:24:48.978Z
