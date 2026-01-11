@@ -230,11 +230,19 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
   m_analysis = BuildSizeAnalysis{};
   m_hashToFiles.clear();
   m_referencedAssets.clear();
+  m_pathToAssetIndex.clear();
 
   try {
     // Scan all assets
     reportProgress("Scanning assets...", 0.0f);
     scanAssets();
+
+    // Build path-to-asset index for O(1) lookups
+    // This eliminates O(n²) complexity in detectDuplicates() and
+    // generateSuggestions()
+    for (size_t i = 0; i < m_analysis.assets.size(); i++) {
+      m_pathToAssetIndex[m_analysis.assets[i].path] = i;
+    }
 
     // Analyze each asset
     reportProgress("Analyzing assets...", 0.2f);
@@ -879,22 +887,23 @@ void BuildSizeAnalyzer::detectDuplicates() {
     if (files.size() > 1) {
       // Additional safety: verify all files have the same size
       // This provides defense-in-depth against hash collisions
+      // OPTIMIZED: Use O(1) path-to-asset index lookup instead of O(n) linear
+      // search
       u64 firstFileSize = 0;
       bool sizeMismatch = false;
 
       for (const auto &path : files) {
-        for (const auto &asset : m_analysis.assets) {
-          if (asset.path == path) {
-            if (firstFileSize == 0) {
-              firstFileSize = asset.originalSize;
-            } else if (asset.originalSize != firstFileSize) {
-              // Size mismatch detected - this could be a hash collision
-              sizeMismatch = true;
-              break;
-            }
+        auto it = m_pathToAssetIndex.find(path);
+        if (it != m_pathToAssetIndex.end()) {
+          const auto &asset = m_analysis.assets[it->second];
+          if (firstFileSize == 0) {
+            firstFileSize = asset.originalSize;
+          } else if (asset.originalSize != firstFileSize) {
+            // Size mismatch detected - this could be a hash collision
+            sizeMismatch = true;
+            break;
           }
         }
-        if (sizeMismatch) break;
       }
 
       // Skip this group if sizes don't match (potential collision)
@@ -910,6 +919,7 @@ void BuildSizeAnalyzer::detectDuplicates() {
       m_analysis.totalWastedSpace += group.wastedSpace;
 
       // Mark duplicates in assets
+      // OPTIMIZED: Use O(1) index lookup instead of O(n) linear search
       bool first = true;
       for (const auto &path : files) {
         if (first) {
@@ -917,12 +927,11 @@ void BuildSizeAnalyzer::detectDuplicates() {
           continue;
         }
 
-        for (auto &asset : m_analysis.assets) {
-          if (asset.path == path) {
-            asset.isDuplicate = true;
-            asset.duplicateOf = files[0];
-            break;
-          }
+        auto it = m_pathToAssetIndex.find(path);
+        if (it != m_pathToAssetIndex.end()) {
+          auto &asset = m_analysis.assets[it->second];
+          asset.isDuplicate = true;
+          asset.duplicateOf = files[0];
         }
       }
 
@@ -1096,21 +1105,22 @@ void BuildSizeAnalyzer::generateSuggestions() {
   }
 
   // Suggest removing unused assets
+  // OPTIMIZED: Use O(1) path-to-asset index lookup instead of O(n) linear
+  // search
   for (const auto &unusedPath : m_analysis.unusedAssets) {
-    for (const auto &asset : m_analysis.assets) {
-      if (asset.path == unusedPath) {
-        OptimizationSuggestion suggestion;
-        suggestion.priority = OptimizationSuggestion::Priority::High;
-        suggestion.type = OptimizationSuggestion::Type::RemoveUnused;
-        suggestion.assetPath = asset.path;
-        suggestion.description = "Asset appears to be unused";
-        suggestion.estimatedSavings = asset.originalSize;
-        suggestion.canAutoFix = true;
+    auto it = m_pathToAssetIndex.find(unusedPath);
+    if (it != m_pathToAssetIndex.end()) {
+      const auto &asset = m_analysis.assets[it->second];
+      OptimizationSuggestion suggestion;
+      suggestion.priority = OptimizationSuggestion::Priority::High;
+      suggestion.type = OptimizationSuggestion::Type::RemoveUnused;
+      suggestion.assetPath = asset.path;
+      suggestion.description = "Asset appears to be unused";
+      suggestion.estimatedSavings = asset.originalSize;
+      suggestion.canAutoFix = true;
 
-        m_analysis.suggestions.push_back(suggestion);
-        m_analysis.potentialSavings += suggestion.estimatedSavings;
-        break;
-      }
+      m_analysis.suggestions.push_back(suggestion);
+      m_analysis.potentialSavings += suggestion.estimatedSavings;
     }
   }
 
