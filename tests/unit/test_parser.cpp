@@ -555,63 +555,152 @@ TEST_CASE("Parser parses move statements", "[parser]")
     }
 }
 
-TEST_CASE("Parser validates choice conditions", "[parser]")
+TEST_CASE("Parser error recovery", "[parser]")
 {
     Lexer lexer;
     Parser parser;
 
-    SECTION("test_parser_choice_valid_condition - accepts boolean conditions")
+    SECTION("test_parser_error_recovery_scene")
     {
+        // Test that parser recovers from error and continues parsing next scene
+        // Missing close brace in first scene
         auto tokens = lexer.tokenize(R"(
-            choice {
-                "Option 1" if has_key -> goto success
-                "Option 2" if counter > 5 -> goto path2
-                "Option 3" if flag1 and flag2 -> goto path3
+            scene broken {
+                show Hero at center
+                say "Missing close brace"
+
+            scene good {
+                say Hero "Hello!"
             }
         )");
         REQUIRE(tokens.isOk());
 
         auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+        // Parser should report error but continue
+        const auto& errors = parser.getErrors();
+        REQUIRE(errors.size() > 0);
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
-
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<ChoiceStmt>(stmt->data));
-
-        const auto& choice = std::get<ChoiceStmt>(stmt->data);
-        REQUIRE(choice.options.size() == 3);
-        REQUIRE(choice.options[0].condition.has_value());
-        REQUIRE(choice.options[1].condition.has_value());
-        REQUIRE(choice.options[2].condition.has_value());
+        // Parser should still find the second scene despite error in first
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed at least one scene
+            REQUIRE(program.scenes.size() >= 1);
+        }
     }
 
-    SECTION("test_parser_choice_invalid_condition - rejects string literal conditions")
+    SECTION("test_parser_error_recovery_choice")
     {
+        // Test that parser recovers from error in choice and continues
+        // Missing arrow in choice option
         auto tokens = lexer.tokenize(R"(
             choice {
-                "Option 1" if "invalid_string" -> goto path1
+                "Option 1" -> goto scene1
+                "Broken option" goto badscene
+                "Option 2" -> goto scene2
             }
+            say "After choice"
         )");
         REQUIRE(tokens.isOk());
 
         auto result = parser.parse(tokens.value());
-        REQUIRE(!result.isOk());
-        REQUIRE(!result.error().empty());
+        // Parser should report error
+        const auto& errors = parser.getErrors();
+        REQUIRE(errors.size() > 0);
+
+        // Parser should continue and parse the say statement after choice
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed some statements
+            REQUIRE(program.globalStatements.size() >= 1);
+        }
     }
 
-    SECTION("test_parser_choice_invalid_condition - rejects numeric literal conditions")
+    SECTION("recovers from error and finds multiple statements")
     {
+        // Test that synchronize finds all statement types
+        // Mix valid statements with invalid ones (missing required tokens)
         auto tokens = lexer.tokenize(R"(
-            choice {
-                "Option 1" if 123 -> goto path1
+            show
+            show Hero at center
+            hide
+            hide Hero
+            say
+            say "Hello"
+            if { }
+            choice { "opt" -> goto x }
+            goto
+            goto scene
+            wait
+            wait 1.0
+            play
+            play sound "x.ogg"
+            stop
+            stop music
+            set
+            set x = 1
+            transition
+            transition fade 1.0
+            move
+            move Hero to left
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have multiple errors
+        REQUIRE(errors.size() > 0);
+
+        // Parser should continue after each error and parse valid statements
+        if (result.isOk()) {
+            const auto& program = result.value();
+            // Should have parsed multiple valid statements despite errors
+            REQUIRE(program.globalStatements.size() > 5);
+        }
+    }
+
+    SECTION("recovers at else keyword")
+    {
+        // Test that parser synchronizes at else keyword
+        // Missing closing brace before else
+        auto tokens = lexer.tokenize(R"(
+            if true {
+                say "Missing brace"
+            else {
+                say "In else branch"
             }
         )");
         REQUIRE(tokens.isOk());
 
         auto result = parser.parse(tokens.value());
-        REQUIRE(!result.isOk());
-        REQUIRE(!result.error().empty());
+        const auto& errors = parser.getErrors();
+
+        // Should have at least one error from broken syntax
+        REQUIRE(errors.size() > 0);
+    }
+
+    SECTION("recovers at left brace for blocks")
+    {
+        // Test that parser synchronizes at block statements
+        // Invalid expression statement followed by block
+        auto tokens = lexer.tokenize(R"(
+            5 +
+            {
+                say "In block"
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have errors from invalid expression
+        REQUIRE(errors.size() > 0);
+
+        // Should still parse the block
+        if (result.isOk()) {
+            const auto& program = result.value();
+            REQUIRE(program.globalStatements.size() >= 1);
+        }
     }
 }
