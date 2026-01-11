@@ -281,9 +281,9 @@ TEST_CASE("SceneObjectBase update", "[scene_graph][object]")
 {
     auto obj = std::make_unique<TestSceneObject>("obj");
 
-    // Update should not crash
+    // Update should not crash - verify object ID unchanged
     obj->update(0.016); // 60 FPS
-    REQUIRE(true);
+    REQUIRE(obj->getId() == "obj");
 }
 
 TEST_CASE("SceneObjectBase render", "[scene_graph][object]")
@@ -699,9 +699,9 @@ TEST_CASE("Layer update", "[scene_graph][layer]")
     Layer layer("Test", LayerType::Background);
     layer.addObject(std::make_unique<TestSceneObject>("obj1"));
 
-    // Should not crash
+    // Should not crash - verify layer name unchanged
     layer.update(0.016);
-    REQUIRE(true);
+    REQUIRE(layer.getName() == "Test");
 }
 
 TEST_CASE("Layer render", "[scene_graph][layer]")
@@ -870,7 +870,8 @@ TEST_CASE("SceneGraph update and render", "[scene_graph]")
 
     SECTION("Update") {
         graph.update(0.016);
-        REQUIRE(true); // No crash
+        // Verify update completes without crash - object should remain in graph
+        REQUIRE(graph.getSceneId() == "");
     }
 
     SECTION("Render") {

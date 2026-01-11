@@ -292,6 +292,9 @@ void Lexer::skipLineComment() {
 
 void Lexer::skipBlockComment() {
   // Skip /* ... */
+  // Maximum nesting depth to prevent stack overflow from pathological input
+  constexpr int MAX_COMMENT_DEPTH = 128;
+
   int depth = 1;
   u32 startLine = m_line;
 
@@ -300,6 +303,15 @@ void Lexer::skipBlockComment() {
       advance();
       advance();
       ++depth;
+
+      // Check if we've exceeded the maximum nesting depth
+      if (depth > MAX_COMMENT_DEPTH) {
+        m_errors.emplace_back(
+          "Comment nesting depth exceeds limit of " + std::to_string(MAX_COMMENT_DEPTH) +
+          " (starting at line " + std::to_string(startLine) + ")",
+          SourceLocation(m_line, m_column));
+        return;
+      }
     } else if (peek() == '*' && peekNext() == '/') {
       advance();
       advance();

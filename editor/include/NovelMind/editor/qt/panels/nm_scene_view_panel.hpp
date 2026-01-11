@@ -120,6 +120,7 @@ public:
   enum class HandleType { XAxis, YAxis, XYPlane, Corner, Rotation };
 
   explicit NMTransformGizmo(QGraphicsItem* parent = nullptr);
+  ~NMTransformGizmo() override;
 
   void setMode(GizmoMode mode);
   [[nodiscard]] GizmoMode mode() const { return m_mode; }
