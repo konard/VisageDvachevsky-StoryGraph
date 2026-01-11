@@ -110,6 +110,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_gizmo_memory.cpp
         # Issue #460 - Gizmo DPI scaling tests
         unit/test_gizmo_dpi_scaling.cpp
+        # Issue #452 - Gizmo rotation normalization tests
+        unit/test_gizmo_rotation_normalization.cpp
         # Issue #570 - Build size analyzer hash security tests
         unit/test_build_size_analyzer.cpp
         unit/test_build_system.cpp
