@@ -9,20 +9,20 @@ namespace NovelMind::scripting {
 // char values The standard ctype functions require input in range [0,
 // UCHAR_MAX] or EOF
 namespace {
-inline bool safeIsDigit(char c) {
-  return std::isdigit(static_cast<unsigned char>(c)) != 0;
+inline bool safeIsDigit(unsigned char c) {
+  return std::isdigit(c) != 0;
 }
 
-inline bool safeIsAlpha(char c) {
-  return std::isalpha(static_cast<unsigned char>(c)) != 0;
+inline bool safeIsAlpha(unsigned char c) {
+  return std::isalpha(c) != 0;
 }
 
-inline bool safeIsAlnum(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) != 0;
+inline bool safeIsAlnum(unsigned char c) {
+  return std::isalnum(c) != 0;
 }
 
-inline bool safeIsXdigit(char c) {
-  return std::isxdigit(static_cast<unsigned char>(c)) != 0;
+inline bool safeIsXdigit(unsigned char c) {
+  return std::isxdigit(c) != 0;
 }
 
 // UTF-8 helper functions for Unicode identifier support
@@ -236,20 +236,27 @@ bool Lexer::isAtEnd() const {
   return m_current >= m_source.size();
 }
 
-char Lexer::peek() const {
+unsigned char Lexer::peek() const {
   if (isAtEnd())
     return '\0';
-  return m_source[m_current];
+  // Cast to unsigned char to avoid sign extension issues on platforms
+  // where char is signed. This ensures bytes with high bit set (128-255)
+  // are handled correctly, which is essential for UTF-8 support.
+  return static_cast<unsigned char>(m_source[m_current]);
 }
 
-char Lexer::peekNext() const {
+unsigned char Lexer::peekNext() const {
   if (m_current + 1 >= m_source.size())
     return '\0';
-  return m_source[m_current + 1];
+  // Cast to unsigned char to avoid sign extension issues
+  return static_cast<unsigned char>(m_source[m_current + 1]);
 }
 
-char Lexer::advance() {
-  char c = m_source[m_current++];
+unsigned char Lexer::advance() {
+  // Cast to unsigned char to avoid sign extension issues on platforms
+  // where char is signed. This ensures correct handling of UTF-8 and
+  // other byte values >= 128.
+  unsigned char c = static_cast<unsigned char>(m_source[m_current++]);
   if (c == '\n') {
     ++m_line;
     m_column = 1;
@@ -270,7 +277,7 @@ bool Lexer::match(char expected) {
 
 void Lexer::skipWhitespace() {
   while (!isAtEnd()) {
-    char c = peek();
+    unsigned char c = peek();
     switch (c) {
     case ' ':
     case '\r':
@@ -340,7 +347,7 @@ Token Lexer::scanToken() {
       return makeToken(TokenType::EndOfFile);
     }
 
-    char c = advance();
+    unsigned char c = advance();
 
     // Handle newlines
     if (c == '\n') {
@@ -376,8 +383,7 @@ Token Lexer::scanToken() {
 
     // Handle Unicode identifiers (Cyrillic, Greek, CJK, etc.)
     // Check if this is a UTF-8 multibyte character that could start an identifier
-    unsigned char uc = static_cast<unsigned char>(c);
-    if (uc >= 0x80) {
+    if (c >= 0x80) {
       // Rewind to re-examine this character as UTF-8
       --m_current;
       --m_column;
@@ -562,7 +568,7 @@ Token Lexer::scanNumber() {
 Token Lexer::scanIdentifier() {
   // Scan both ASCII and Unicode identifier characters
   while (!isAtEnd()) {
-    char c = peek();
+    unsigned char c = peek();
 
     // ASCII alphanumeric or underscore
     if (safeIsAlnum(c) || c == '_') {
@@ -571,8 +577,7 @@ Token Lexer::scanIdentifier() {
     }
 
     // Check for UTF-8 multibyte character
-    unsigned char uc = static_cast<unsigned char>(c);
-    if (uc >= 0x80) {
+    if (c >= 0x80) {
       size_t checkPos = m_current;
       uint32_t codePoint = decodeUtf8(m_source, checkPos);
       if (codePoint != 0 && isUnicodeIdentifierPart(codePoint)) {
