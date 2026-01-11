@@ -106,6 +106,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
+        # Issue #546 - EventBus stress tests
+        unit/test_event_bus_stress.cpp
         # Issue #477 - Gizmo memory management tests
         unit/test_gizmo_memory.cpp
         # Issue #460 - Gizmo DPI scaling tests
