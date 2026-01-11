@@ -168,6 +168,12 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_voice_studio_panel.cpp
     src/qt/panels/nm_audio_mixer_panel.cpp
     src/qt/panels/nm_localization_panel.cpp
+    src/qt/panels/nm_localization_data_model.cpp
+    src/qt/panels/nm_localization_dialogs.cpp
+    src/qt/panels/nm_localization_io.cpp
+    src/qt/panels/nm_localization_search.cpp
+    src/qt/panels/nm_localization_ui.cpp
+    src/qt/panels/nm_localization_ui_setup.cpp
     src/qt/panels/nm_diagnostics_panel.cpp
     src/qt/panels/nm_build_settings_panel.cpp
     src/qt/panels/nm_project_settings_panel.cpp
@@ -235,6 +241,12 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp
     include/NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp
     include/NovelMind/editor/qt/panels/nm_localization_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_data_model.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_dialogs.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_io.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_search.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_ui.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_ui_setup.hpp
     include/NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp
     include/NovelMind/editor/qt/panels/nm_build_settings_panel.hpp
     include/NovelMind/editor/qt/panels/nm_project_settings_panel.hpp
