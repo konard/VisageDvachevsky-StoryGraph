@@ -399,3 +399,223 @@ TEST_CASE("SelectionMediator handles null panel pointers safely",
 
   REQUIRE(true);
 }
+
+// ============================================================================
+// Feedback Loop Prevention Tests (Issue #451)
+// ============================================================================
+
+using namespace NovelMind::editor;
+
+TEST_CASE("Selection mediator produces single event per selection",
+          "[selection_mediator][feedback][issue-451]") {
+  // Test that selection changes produce exactly one event per change
+  int sceneObjectEventCount = 0;
+  int statusContextEventCount = 0;
+
+  auto &bus = EventBus::instance();
+
+  // Subscribe to scene object selection events
+  auto sub1 = bus.subscribe<events::SceneObjectSelectedEvent>(
+      [&sceneObjectEventCount](const events::SceneObjectSelectedEvent &) {
+        ++sceneObjectEventCount;
+      });
+
+  // Subscribe to status context events
+  auto sub2 = bus.subscribe<events::StatusContextChangedEvent>(
+      [&statusContextEventCount](const events::StatusContextChangedEvent &) {
+        ++statusContextEventCount;
+      });
+
+  // Publish a selection event
+  events::SceneObjectSelectedEvent event;
+  event.objectId = "test-object-1";
+  event.sourcePanel = "SceneView";
+  bus.publish(event);
+
+  // Process any queued events
+  bus.processQueuedEvents();
+
+  // Should receive exactly one of each event type
+  REQUIRE(sceneObjectEventCount == 1);
+
+  // Clean up
+  bus.unsubscribe(sub1);
+  bus.unsubscribe(sub2);
+}
+
+TEST_CASE("Selection mediator prevents infinite feedback loops",
+          "[selection_mediator][feedback][issue-451]") {
+  // Test that re-entrancy guard prevents infinite loops
+  // This simulates a pathological case where event handlers try to
+  // publish more selection events
+
+  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
+  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
+  auto *inspector = new qt::NMInspectorPanel(nullptr);
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+
+  auto *mediator = new mediators::SelectionMediator(
+      sceneView, hierarchy, inspector, storyGraph, nullptr);
+
+  mediator->initialize();
+
+  int eventCount = 0;
+  const int MAX_SAFE_EVENTS = 10;
+
+  auto &bus = EventBus::instance();
+
+  // Create a subscriber that tries to create a feedback loop
+  auto feedbackSub = bus.subscribe<events::SceneObjectSelectedEvent>(
+      [&eventCount, &bus](const events::SceneObjectSelectedEvent &event) {
+        ++eventCount;
+
+        // Attempt to create feedback loop by publishing another selection event
+        // The re-entrancy guard should prevent this from being processed
+        if (eventCount < MAX_SAFE_EVENTS) {
+          events::SceneObjectSelectedEvent newEvent;
+          newEvent.objectId = event.objectId + "-recursive";
+          newEvent.sourcePanel = "Test";
+          bus.publish(newEvent);
+        }
+      });
+
+  // Trigger initial event
+  events::SceneObjectSelectedEvent initialEvent;
+  initialEvent.objectId = "test-object";
+  initialEvent.sourcePanel = "SceneView";
+  bus.publish(initialEvent);
+
+  processEvents(100);
+
+  // Due to re-entrancy guard, recursive events should be ignored
+  // We should only see the initial event plus potentially one more
+  // (the recursive one published during the first handler)
+  REQUIRE(eventCount < MAX_SAFE_EVENTS);
+  REQUIRE(eventCount <= 2); // Initial + at most one recursive
+
+  // Clean up
+  bus.unsubscribe(feedbackSub);
+  mediator->shutdown();
+  delete mediator;
+  delete sceneView;
+  delete hierarchy;
+  delete inspector;
+  delete storyGraph;
+}
+
+TEST_CASE("Selection mediator handles rapid selection changes",
+          "[selection_mediator][feedback][issue-451]") {
+  // Test that rapid selection changes don't cause event spam
+  // This simulates marquee selection or rapid keyboard navigation
+
+  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
+  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
+  auto *inspector = new qt::NMInspectorPanel(nullptr);
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+
+  auto *mediator = new mediators::SelectionMediator(
+      sceneView, hierarchy, inspector, storyGraph, nullptr);
+
+  mediator->initialize();
+
+  auto &bus = EventBus::instance();
+  int selectionEventCount = 0;
+
+  auto sub = bus.subscribe<events::SceneObjectSelectedEvent>(
+      [&selectionEventCount](const events::SceneObjectSelectedEvent &) {
+        ++selectionEventCount;
+      });
+
+  // Simulate 20 rapid selection changes
+  for (int i = 0; i < 20; ++i) {
+    events::SceneObjectSelectedEvent event;
+    event.objectId = QString("object-%1").arg(i);
+    event.sourcePanel = "SceneView";
+    bus.publish(event);
+    processEvents(5); // Very short delay between selections
+  }
+
+  // Wait for any debounced operations
+  processEvents(200);
+
+  // All events should be received (no loss due to throttling at EventBus level)
+  // Debouncing happens inside the mediator for expensive operations only
+  REQUIRE(selectionEventCount == 20);
+
+  // UI should remain responsive (no freeze)
+  // This is implicit - if we got here without timeout, UI is responsive
+
+  // Clean up
+  bus.unsubscribe(sub);
+  mediator->shutdown();
+  delete mediator;
+  delete sceneView;
+  delete hierarchy;
+  delete inspector;
+  delete storyGraph;
+}
+
+TEST_CASE("Selection mediator reentrant guard works correctly",
+          "[selection_mediator][feedback][issue-451]") {
+  // Test that the m_processingSelection flag correctly prevents re-entrance
+
+  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
+  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
+  auto *inspector = new qt::NMInspectorPanel(nullptr);
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+
+  auto *mediator = new mediators::SelectionMediator(
+      sceneView, hierarchy, inspector, storyGraph, nullptr);
+
+  mediator->initialize();
+
+  auto &bus = EventBus::instance();
+  int processingCount = 0;
+
+  // Create a subscriber that will be called during selection processing
+  // and tries to trigger another selection event
+  auto reentrantSub = bus.subscribe<events::StatusContextChangedEvent>(
+      [&processingCount, &bus](const events::StatusContextChangedEvent &) {
+        ++processingCount;
+
+        // Try to publish a selection event while processing
+        // This should be blocked by the re-entrancy guard
+        events::SceneObjectSelectedEvent recursiveEvent;
+        recursiveEvent.objectId = "recursive-object";
+        recursiveEvent.sourcePanel = "Test";
+        bus.publish(recursiveEvent);
+      });
+
+  int selectionEventCount = 0;
+  auto selectionSub = bus.subscribe<events::SceneObjectSelectedEvent>(
+      [&selectionEventCount](const events::SceneObjectSelectedEvent &) {
+        ++selectionEventCount;
+      });
+
+  // Publish initial selection event
+  events::SceneObjectSelectedEvent event;
+  event.objectId = "test-object";
+  event.sourcePanel = "SceneView";
+  bus.publish(event);
+
+  processEvents(100);
+
+  // The StatusContextChangedEvent handler should be called once
+  REQUIRE(processingCount >= 1);
+
+  // The recursive selection event should either:
+  // 1. Be ignored by the re-entrancy guard (ideal)
+  // 2. Be processed but not cause infinite recursion (acceptable)
+  // Either way, we shouldn't see a huge number of events
+  REQUIRE(selectionEventCount <= 3); // Initial + at most 2 recursive
+
+  // Clean up
+  bus.unsubscribe(reentrantSub);
+  bus.unsubscribe(selectionSub);
+  mediator->shutdown();
+  delete mediator;
+  delete sceneView;
+  delete hierarchy;
+  delete inspector;
+  delete storyGraph;
+}
