@@ -372,7 +372,7 @@ private:
   void updateLevelMeter(const f32* samples, u32 sampleCount);
   void writeToFile(const f32* samples, u32 sampleCount);
   void finalizeRecording();
-  void processRecording(bool& outTrimmed, bool& outNormalized);
+  void processRecording(const std::string& outputPath, bool& outTrimmed, bool& outNormalized);
   void setState(RecordingState state);
 
   // Post-processing helper methods

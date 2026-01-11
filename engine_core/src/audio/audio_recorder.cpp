@@ -351,9 +351,13 @@ Result<void> AudioRecorder::startRecording(const std::string& outputPath) {
 
   setState(RecordingState::Preparing);
 
-  m_outputPath = outputPath;
-  m_recordBuffer.clear();
-  m_samplesRecorded = 0;
+  // Protect shared state with mutex
+  {
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    m_outputPath = outputPath;
+    m_recordBuffer.clear();
+    m_samplesRecorded = 0;
+  }
 
   // Initialize encoder
   m_encoder = std::make_unique<ma_encoder>();
@@ -436,10 +440,19 @@ void AudioRecorder::cancelRecording() {
   // Now safe to cleanup resources - background thread has completed
   cleanupResources();
 
-  // Delete incomplete file
-  if (!m_outputPath.empty() && fs::exists(m_outputPath)) {
+  // Protect m_outputPath access with mutex
+  std::string fileToDelete;
+  {
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    fileToDelete = m_outputPath;
+    m_outputPath.clear();
+    m_samplesRecorded = 0;
+  }
+
+  // Delete incomplete file (outside mutex to avoid holding lock during I/O)
+  if (!fileToDelete.empty() && fs::exists(fileToDelete)) {
     try {
-      fs::remove(m_outputPath);
+      fs::remove(fileToDelete);
     } catch (const fs::filesystem_error& e) {
       // Log error but don't fail cancellation - file cleanup is best-effort
       if (m_onRecordingError) {
@@ -454,8 +467,6 @@ void AudioRecorder::cancelRecording() {
   }
 
   m_recordBuffer.clear();
-  m_samplesRecorded = 0;
-  m_outputPath.clear();
 
   setState(RecordingState::Idle);
 }
@@ -601,6 +612,19 @@ void AudioRecorder::finalizeRecording() {
     return;
   }
 
+  // Make a local copy of output path under mutex protection to avoid races
+  std::string outputPath;
+  {
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    outputPath = m_outputPath;
+
+    // Check cancellation after acquiring lock
+    if (m_cancelRequested) {
+      m_processingActive = false;
+      return;
+    }
+  }
+
   // Stop capture if not metering (protected by mutex)
   {
     std::lock_guard<std::mutex> lock(m_resourceMutex);
@@ -638,27 +662,30 @@ void AudioRecorder::finalizeRecording() {
     return;
   }
 
-  // Post-processing (if enabled)
+  // Post-processing (if enabled) - use local copy of outputPath
   bool wasTrimmed = false;
   bool wasNormalized = false;
-  processRecording(wasTrimmed, wasNormalized);
+  processRecording(outputPath, wasTrimmed, wasNormalized);
 
-  // Prepare result
+  // Prepare result - use local copy of outputPath
   RecordingResult result;
-  result.filePath = m_outputPath;
+  result.filePath = outputPath;
   result.duration = getRecordingDuration();
   result.sampleRate = m_format.sampleRate;
   result.channels = m_format.channels;
   result.trimmed = wasTrimmed;
   result.normalized = wasNormalized;
 
-  if (fs::exists(m_outputPath)) {
-    result.fileSize = fs::file_size(m_outputPath);
+  if (fs::exists(outputPath)) {
+    result.fileSize = fs::file_size(outputPath);
   }
 
-  m_outputPath.clear();
-  m_samplesRecorded = 0;
-  m_processingActive = false;
+  // Clear shared state under mutex protection
+  {
+    std::lock_guard<std::mutex> lock(m_recordMutex);
+    m_outputPath.clear();
+    m_samplesRecorded = 0;
+  }
 
   setState(RecordingState::Idle);
 
@@ -673,16 +700,21 @@ void AudioRecorder::finalizeRecording() {
       callback(result);
     }
   }
+
+  // Set processing inactive flag at the very end, after all work including callbacks
+  m_processingActive = false;
 }
 
-void AudioRecorder::processRecording(bool& outTrimmed, bool& outNormalized) {
+void AudioRecorder::processRecording(const std::string& outputPath,
+                                     bool& outTrimmed,
+                                     bool& outNormalized) {
   // Post-processing: silence trimming and normalization
   // These operations modify the recorded WAV file in-place
 
   outTrimmed = false;
   outNormalized = false;
 
-  if (!fs::exists(m_outputPath)) {
+  if (!fs::exists(outputPath)) {
     return;
   }
 
@@ -696,7 +728,7 @@ void AudioRecorder::processRecording(bool& outTrimmed, bool& outNormalized) {
   u32 fileSampleRate = 0;
   u32 fileChannels = 0;
 
-  if (!readWavFile(m_outputPath, audioData, fileSampleRate, fileChannels)) {
+  if (!readWavFile(outputPath, audioData, fileSampleRate, fileChannels)) {
     return;
   }
 
@@ -775,7 +807,7 @@ void AudioRecorder::processRecording(bool& outTrimmed, bool& outNormalized) {
       return;
     }
 
-    writeWavFile(m_outputPath, audioData, fileSampleRate, fileChannels);
+    writeWavFile(outputPath, audioData, fileSampleRate, fileChannels);
   }
 }
 
