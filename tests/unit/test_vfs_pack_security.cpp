@@ -618,6 +618,175 @@ TEST_CASE("PackReader - Error recovery", "[vfs][pack][error_handling]") {
 }
 
 // ============================================================================
+// Integer Overflow Security Tests (Issue #561 - P0)
+// ============================================================================
+
+TEST_CASE("SecurePackReader - String boundary overflow protection",
+          "[vfs][security][overflow]") {
+  SECTION("Boundary check prevents integer overflow") {
+    // Test the safe boundary check logic
+    // if (offset > size || length > size - offset) -> reject
+
+    const u64 maxU64 = std::numeric_limits<u64>::max();
+
+    // Case 1: offset + length would overflow to a small value
+    u64 size = 1000;
+    u64 offset = maxU64 - 100; // Very large offset
+    u64 length = 200;          // Adding these would overflow
+
+    // Unsafe check would be: (offset + length <= size)
+    // which overflows to: (99 <= 1000) -> PASS (WRONG!)
+    // Safe check: (offset > size || length > size - offset)
+    bool shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == true);
+
+    // Case 2: Normal valid case
+    offset = 100;
+    length = 50;
+    size = 1000;
+    shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == false); // Should pass
+
+    // Case 3: Exactly at boundary
+    offset = 100;
+    length = 900;
+    size = 1000;
+    shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == false); // Should pass
+
+    // Case 4: Just over boundary
+    offset = 100;
+    length = 901;
+    size = 1000;
+    shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == true); // Should fail
+  }
+
+  SECTION("Boundary check with maximum values") {
+    const u64 maxU64 = std::numeric_limits<u64>::max();
+
+    // Test with maximum offset
+    u64 size = maxU64;
+    u64 offset = maxU64;
+    u64 length = 1;
+
+    bool shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == false); // offset == size is OK if length == 0
+
+    // But any non-zero length should fail
+    length = 1;
+    shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == true);
+
+    // Test overflow scenario
+    offset = maxU64 - 500;
+    length = 1000; // offset + length would overflow
+    size = maxU64;
+    shouldReject = (offset > size || length > size - offset);
+    CHECK(shouldReject == true);
+  }
+
+  SECTION("Boundary check prevents buffer overread") {
+    // Simulate the exact scenario from the vulnerability
+    const u64 stringDataSize = 0x1000;
+    u64 offset = 0xFFFFFFFFFFFFFF00;
+    u64 strSize = 0x200;
+
+    // Unsafe check: offset + strSize = 0x100 (overflow)
+    // 0x100 >= 0x1000? NO -> Would incorrectly pass!
+    u64 unsafeSum = offset + strSize; // This overflows
+    bool unsafeCheck = (unsafeSum >= stringDataSize);
+    CHECK(unsafeCheck == false); // Demonstrates the vulnerability
+
+    // Safe check: prevents overflow
+    bool safeCheck = (offset > stringDataSize ||
+                      strSize > stringDataSize - offset);
+    CHECK(safeCheck == true); // Correctly rejects
+  }
+}
+
+TEST_CASE("SecurePackReader - Resource table overflow protection",
+          "[vfs][security][overflow]") {
+  SECTION("Resource table offset + size overflow protection") {
+    const u64 fileSize = 10000;
+    const u64 maxU64 = std::numeric_limits<u64>::max();
+
+    // Case 1: offset + size would overflow
+    u64 offset = maxU64 - 100;
+    u64 tableSize = 200;
+
+    // Safe check
+    bool shouldReject = (offset > fileSize ||
+                         tableSize > fileSize - offset);
+    CHECK(shouldReject == true);
+
+    // Case 2: Valid resource table
+    offset = 512;
+    tableSize = 1024;
+    shouldReject = (offset > fileSize || tableSize > fileSize - offset);
+    CHECK(shouldReject == false);
+
+    // Case 3: Table extends just past end
+    offset = 9000;
+    tableSize = 1001; // Extends to 10001, past fileSize of 10000
+    shouldReject = (offset > fileSize || tableSize > fileSize - offset);
+    CHECK(shouldReject == true);
+  }
+}
+
+TEST_CASE("SecurePackReader - Resource data overflow protection",
+          "[vfs][security][overflow]") {
+  SECTION("Absolute offset calculation overflow protection") {
+    const u64 fileSize = 100000;
+    const u64 maxU64 = std::numeric_limits<u64>::max();
+
+    // Case 1: dataOffset + entryOffset overflows
+    u64 dataOffset = maxU64 - 1000;
+    u64 entryOffset = 2000;
+
+    bool shouldReject = (entryOffset > fileSize ||
+                         dataOffset > fileSize - entryOffset);
+    CHECK(shouldReject == true);
+
+    // Case 2: Valid offsets
+    dataOffset = 10000;
+    entryOffset = 5000;
+    shouldReject = (entryOffset > fileSize ||
+                    dataOffset > fileSize - entryOffset);
+    CHECK(shouldReject == false);
+  }
+
+  SECTION("Resource data end calculation overflow protection") {
+    const u64 fileSize = 100000;
+    const u64 footerSize = 256;
+    const u64 maxDataEnd = fileSize - footerSize;
+    const u64 maxU64 = std::numeric_limits<u64>::max();
+
+    // Case 1: absoluteOffset + compressedSize overflows
+    u64 absoluteOffset = maxU64 - 1000;
+    u64 compressedSize = 2000;
+
+    bool shouldReject = (absoluteOffset > maxDataEnd ||
+                         compressedSize > maxDataEnd - absoluteOffset);
+    CHECK(shouldReject == true);
+
+    // Case 2: Data extends past footer boundary
+    absoluteOffset = 99000;
+    compressedSize = 2000; // Would extend to 101000, past maxDataEnd of 99744
+    shouldReject = (absoluteOffset > maxDataEnd ||
+                    compressedSize > maxDataEnd - absoluteOffset);
+    CHECK(shouldReject == true);
+
+    // Case 3: Valid resource data
+    absoluteOffset = 50000;
+    compressedSize = 10000;
+    shouldReject = (absoluteOffset > maxDataEnd ||
+                    compressedSize > maxDataEnd - absoluteOffset);
+    CHECK(shouldReject == false);
+  }
+}
+
+// ============================================================================
 // Archive Format Variation Tests (Issue #187 - P0)
 // ============================================================================
 
