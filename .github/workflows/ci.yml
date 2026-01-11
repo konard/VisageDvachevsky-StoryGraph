@@ -201,11 +201,32 @@ jobs:
 
     - name: Run clang-tidy
       run: |
-        clang-tidy-15 -p build \
-          $(find engine_core/src compiler/src runtime/src -name "*.cpp" 2>/dev/null | head -20) \
-          --checks='-*,bugprone-*,modernize-*,performance-*,readability-*' \
-          --warnings-as-errors=bugprone-* \
-          2>&1 | tee clang-tidy.log || true
+        # Determine which files to check
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # For PRs, only check changed .cpp files
+          CHANGED_FILES=$(git diff --name-only --diff-filter=d origin/${{ github.base_ref }}...HEAD | grep -E '\.(cpp|hpp)$' || true)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No C++ files changed in this PR, skipping clang-tidy"
+            exit 0
+          fi
+          echo "Checking changed files in PR:"
+          echo "$CHANGED_FILES"
+          FILES_TO_CHECK="$CHANGED_FILES"
+        else
+          # For main branch, check all source files
+          FILES_TO_CHECK=$(find engine_core/src compiler/src runtime/src editor/src -name "*.cpp" 2>/dev/null)
+          echo "Checking all source files ($(echo "$FILES_TO_CHECK" | wc -l) files)"
+        fi
+
+        # Run clang-tidy on the selected files
+        if [ -n "$FILES_TO_CHECK" ]; then
+          echo "$FILES_TO_CHECK" | xargs -r clang-tidy-15 -p build \
+            --checks='-*,bugprone-*,modernize-*,performance-*,readability-*' \
+            --warnings-as-errors=bugprone-* \
+            2>&1 | tee clang-tidy.log || true
+        else
+          echo "No files to check"
+        fi
 
     - name: Upload clang-tidy log
       if: always()
