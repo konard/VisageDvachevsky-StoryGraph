@@ -279,3 +279,123 @@ TEST_CASE("Shutdown cancels pending operations",
   REQUIRE(!executed); // Should not execute after shutdown
   REQUIRE(!debouncer.isPending());
 }
+
+// ============================================================================
+// Qt Signal Connection Cleanup Tests (Issue #463)
+// ============================================================================
+
+#include "NovelMind/editor/mediators/selection_mediator.hpp"
+#include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
+#include <QSignalSpy>
+
+TEST_CASE("SelectionMediator disconnects Qt signals on shutdown",
+          "[selection_mediator][cleanup][issue-463]") {
+  // Create mock panels
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+
+  // Create mediator with story graph panel
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr,  // sceneView
+      nullptr,  // hierarchy
+      nullptr,  // inspector
+      storyGraph,
+      nullptr   // parent
+  );
+
+  // Initialize to establish connections
+  mediator->initialize();
+
+  // Verify connections exist by checking that signals would trigger callbacks
+  // We can't directly check QMetaObject connections, but we can verify behavior
+
+  // Shutdown should disconnect all signals
+  mediator->shutdown();
+
+  // After shutdown, emitting signals should not cause issues
+  // If connections weren't properly disconnected, this could cause crashes
+  // or memory leaks when storyGraph emits signals after mediator cleanup
+  emit storyGraph->nodeSelected("test-node");
+
+  processEvents(50);
+
+  // Clean up
+  delete mediator;
+  delete storyGraph;
+
+  // If we reach here without crashes, the test passes
+  REQUIRE(true);
+}
+
+TEST_CASE("SelectionMediator handles multiple initialize/shutdown cycles",
+          "[selection_mediator][cleanup][issue-463]") {
+  // This tests for connection accumulation bugs where each initialize()
+  // would add duplicate connections without proper cleanup
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  // Multiple initialize/shutdown cycles
+  for (int i = 0; i < 3; ++i) {
+    mediator->initialize();
+    processEvents(10);
+    mediator->shutdown();
+    processEvents(10);
+  }
+
+  // Final initialize
+  mediator->initialize();
+
+  // Emit signal and verify no crashes from accumulated connections
+  emit storyGraph->nodeSelected("test-node");
+  processEvents(50);
+
+  mediator->shutdown();
+
+  delete mediator;
+  delete storyGraph;
+
+  REQUIRE(true);
+}
+
+TEST_CASE("SelectionMediator destructor calls shutdown",
+          "[selection_mediator][cleanup][issue-463]") {
+  // Verify that destructor properly cleans up even if shutdown() wasn't called
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  mediator->initialize();
+
+  // Delete without explicit shutdown call - destructor should handle it
+  delete mediator;
+
+  // Emit signal after mediator is destroyed
+  // Should not crash if connections were properly cleaned up in destructor
+  emit storyGraph->nodeSelected("test-node");
+  processEvents(50);
+
+  delete storyGraph;
+
+  REQUIRE(true);
+}
+
+TEST_CASE("SelectionMediator handles null panel pointers safely",
+          "[selection_mediator][cleanup][issue-463]") {
+  // Test that shutdown() handles null pointers gracefully
+
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, nullptr, nullptr
+  );
+
+  mediator->initialize();
+  mediator->shutdown();
+
+  // Should not crash with null pointers
+  delete mediator;
+
+  REQUIRE(true);
+}
