@@ -166,6 +166,9 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_voice_manager_panel.cpp
     src/qt/panels/nm_recording_studio_panel.cpp
     src/qt/panels/nm_voice_studio_panel.cpp
+    src/qt/panels/voice_studio_waveform.cpp
+    src/qt/panels/voice_studio_effects.cpp
+    src/qt/panels/voice_studio_wav_io.cpp
     src/qt/panels/nm_audio_mixer_panel.cpp
     src/qt/panels/nm_localization_panel.cpp
     src/qt/panels/nm_diagnostics_panel.cpp
@@ -234,6 +237,9 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp
     include/NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp
     include/NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_waveform.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_effects.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_wav_io.hpp
     include/NovelMind/editor/qt/panels/nm_localization_panel.hpp
     include/NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp
     include/NovelMind/editor/qt/panels/nm_build_settings_panel.hpp
