@@ -9,7 +9,6 @@
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/renderer/camera.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
