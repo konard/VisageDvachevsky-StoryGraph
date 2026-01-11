@@ -12,7 +12,7 @@
 
 namespace NovelMind::VFS {
 
-void PackDecryptor::setKey(const std::vector<u8> &key) { m_key = key; }
+void PackDecryptor::setKey(const Core::SecureVector<u8> &key) { m_key = key; }
 
 void PackDecryptor::setKey(const u8 *key, usize keySize) {
   m_key.assign(key, key + keySize);
@@ -46,7 +46,7 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
     return Result<std::vector<u8>>::error("Failed to create cipher context");
   }
 
-  std::vector<u8> key256(32, 0);
+  Core::SecureVector<u8> key256(32, 0);
   std::memcpy(key256.data(), m_key.data(), std::min(m_key.size(), size_t(32)));
 
   if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) !=
@@ -111,15 +111,15 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
 #endif
 }
 
-Result<std::vector<u8>> PackDecryptor::deriveKey(const std::string &password,
+Result<Core::SecureVector<u8>> PackDecryptor::deriveKey(const std::string &password,
                                                  const u8 *salt,
                                                  usize saltSize) {
   if (password.empty()) {
-    return Result<std::vector<u8>>::error("Password cannot be empty");
+    return Result<Core::SecureVector<u8>>::error("Password cannot be empty");
   }
 
 #ifdef NOVELMIND_HAS_OPENSSL
-  std::vector<u8> key(32);
+  Core::SecureVector<u8> key(32);
   const int iterations = 100000;
 
   std::vector<u8> defaultSalt = {0x4E, 0x6F, 0x76, 0x65, 0x6C, 0x4D,
@@ -135,14 +135,14 @@ Result<std::vector<u8>> PackDecryptor::deriveKey(const std::string &password,
       static_cast<int>(key.size()), key.data());
 
   if (result != 1) {
-    return Result<std::vector<u8>>::error("PBKDF2 derivation failed");
+    return Result<Core::SecureVector<u8>>::error("PBKDF2 derivation failed");
   }
 
-  return Result<std::vector<u8>>::ok(std::move(key));
+  return Result<Core::SecureVector<u8>>::ok(std::move(key));
 #else
   (void)salt;
   (void)saltSize;
-  return Result<std::vector<u8>>::error("OpenSSL not available for PBKDF2");
+  return Result<Core::SecureVector<u8>>::error("OpenSSL not available for PBKDF2");
 #endif
 }
 

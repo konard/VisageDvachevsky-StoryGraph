@@ -51,6 +51,8 @@ add_executable(unit_tests
     # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
+    # Issue #574 - Secure memory for encryption keys
+    unit/test_secure_memory.cpp
 )
 
 target_link_libraries(unit_tests

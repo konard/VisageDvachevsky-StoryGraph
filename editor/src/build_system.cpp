@@ -317,7 +317,7 @@ Result<std::vector<u8>> BuildSystem::compressData(const std::vector<u8>& data,
 }
 
 Result<std::vector<u8>> BuildSystem::encryptData(const std::vector<u8>& data,
-                                                 const std::vector<u8>& key,
+                                                 const Core::SecureVector<u8>& key,
                                                  std::array<u8, 12>& ivOut) {
   if (key.size() != 32) {
     return Result<std::vector<u8>>::error("Invalid key size: expected 32 bytes for AES-256-GCM");
@@ -403,21 +403,21 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
 }
 
 // Load encryption key from environment variables
-Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
+Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
   // Try NOVELMIND_PACK_AES_KEY_HEX first
   const char* hexKey = std::getenv("NOVELMIND_PACK_AES_KEY_HEX");
   if (hexKey != nullptr) {
     std::string hexStr(hexKey);
     if (hexStr.length() != 64) {
-      return Result<std::vector<u8>>::error(
+      return Result<Core::SecureVector<u8>>::error(
           "NOVELMIND_PACK_AES_KEY_HEX must be 64 hex characters (32 bytes)");
     }
-    std::vector<u8> key(32);
+    Core::SecureVector<u8> key(32);
     for (usize i = 0; i < 32; ++i) {
       std::string byteStr = hexStr.substr(i * 2, 2);
       key[i] = static_cast<u8>(std::stoul(byteStr, nullptr, 16));
     }
-    return Result<std::vector<u8>>::ok(std::move(key));
+    return Result<Core::SecureVector<u8>>::ok(std::move(key));
   }
 
   // Try NOVELMIND_PACK_AES_KEY_FILE
@@ -426,27 +426,27 @@ Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
     return loadEncryptionKeyFromFile(keyFile);
   }
 
-  return Result<std::vector<u8>>::error(
+  return Result<Core::SecureVector<u8>>::error(
       "No encryption key found. Set NOVELMIND_PACK_AES_KEY_HEX or "
       "NOVELMIND_PACK_AES_KEY_FILE environment variable");
 }
 
 // Load encryption key from file
-Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromFile(const std::string& path) {
+Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromFile(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
-    return Result<std::vector<u8>>::error("Cannot open key file: " + path);
+    return Result<Core::SecureVector<u8>>::error("Cannot open key file: " + path);
   }
 
-  std::vector<u8> key(32);
+  Core::SecureVector<u8> key(32);
   file.read(reinterpret_cast<char*>(key.data()), 32);
 
   if (file.gcount() != 32) {
-    return Result<std::vector<u8>>::error("Key file must contain exactly 32 bytes: " + path);
+    return Result<Core::SecureVector<u8>>::error("Key file must contain exactly 32 bytes: " + path);
   }
 
   file.close();
-  return Result<std::vector<u8>>::ok(std::move(key));
+  return Result<Core::SecureVector<u8>>::ok(std::move(key));
 }
 
 // Sign data with RSA private key (returns signature)
@@ -3289,7 +3289,7 @@ Result<void> PackBuilder::finalizePack() {
   }
 }
 
-void PackBuilder::setEncryptionKey(const std::string& key) {
+void PackBuilder::setEncryptionKey(const Core::SecureVector<u8>& key) {
   m_encryptionKey = key;
 }
 
@@ -3380,7 +3380,8 @@ Result<std::vector<u8>> PackBuilder::encryptData(const std::vector<u8>& data) {
   constexpr int kTagSize = 16;
 
   // Prepare 32-byte key (pad or truncate if necessary)
-  std::vector<u8> key256(kKeySize, 0);
+  // Use SecureVector to ensure proper zeroing
+  Core::SecureVector<u8> key256(kKeySize, 0);
   std::memcpy(key256.data(), m_encryptionKey.data(),
               std::min(m_encryptionKey.size(), static_cast<usize>(kKeySize)));
 

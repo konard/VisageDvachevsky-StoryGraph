@@ -16,6 +16,7 @@
  */
 
 #include "NovelMind/core/result.hpp"
+#include "NovelMind/core/secure_memory.hpp"
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/vfs/secure_pack_reader.hpp"
 #include "NovelMind/vfs/virtual_fs.hpp"
@@ -458,7 +459,7 @@ private:
   // Mod load order
   std::vector<std::string> m_modLoadOrder;
 
-  std::vector<u8> m_decryptionKey;
+  Core::SecureVector<u8> m_decryptionKey; // Secure storage, zeroed on destruction
   std::string m_publicKeyPem;
   std::string m_publicKeyPath;
 

@@ -16,7 +16,7 @@ void SecurePackFileSystem::setPublicKeyPath(const std::string &path) {
   m_publicKeyPath = path;
 }
 
-void SecurePackFileSystem::setDecryptionKey(const std::vector<u8> &key) {
+void SecurePackFileSystem::setDecryptionKey(const Core::SecureVector<u8> &key) {
   m_decryptionKey = key;
 }
 
