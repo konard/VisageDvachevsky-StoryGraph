@@ -543,6 +543,84 @@ TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security
     REQUIRE_FALSE(vm.isHalted());  // Executed PUSH_INT, not halted yet
 }
 
+TEST_CASE("VM function call argument order", "[scripting][vm]")
+{
+    VirtualMachine vm;
+
+    // Test that SHOW_CHARACTER receives arguments in the correct order
+    // Push arguments: character ID, then position
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_STRING, 0},  // Push character ID "hero"
+        {OpCode::PUSH_INT, 2},     // Push position (2 = right)
+        {OpCode::SHOW_CHARACTER, 0},
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"hero"};
+
+    vm.load(program, strings);
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::SHOW_CHARACTER,
+        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+            capturedArgs = args;
+        });
+
+    vm.run();
+
+    // Verify we got 2 arguments in the correct order
+    REQUIRE(capturedArgs.size() == 2);
+
+    // First argument should be the character ID
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[0]));
+    REQUIRE(std::get<std::string>(capturedArgs[0]) == "hero");
+
+    // Second argument should be the position
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[1]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[1]) == 2);
+}
+
+TEST_CASE("VM multiple arguments order", "[scripting][vm]")
+{
+    VirtualMachine vm;
+
+    // Test MOVE_CHARACTER with multiple arguments (without custom position)
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_STRING, 0},  // Push character ID "hero"
+        {OpCode::PUSH_INT, 1},     // Push position (1 = center)
+        {OpCode::PUSH_INT, 500},   // Push duration (500ms)
+        {OpCode::MOVE_CHARACTER, 0},
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"hero"};
+
+    vm.load(program, strings);
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::MOVE_CHARACTER,
+        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+            capturedArgs = args;
+        });
+
+    vm.run();
+
+    // Verify arguments are in correct order: id, position, duration
+    REQUIRE(capturedArgs.size() == 3);
+
+    // First: character ID
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[0]));
+    REQUIRE(std::get<std::string>(capturedArgs[0]) == "hero");
+
+    // Second: position
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[1]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[1]) == 1);
+
+    // Third: duration
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[2]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[2]) == 500);
 // =========================================================================
 // Type Coercion Tests for Comparison Operators (Issue #475)
 // =========================================================================

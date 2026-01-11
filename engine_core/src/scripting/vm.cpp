@@ -552,6 +552,24 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     auto it = m_callbacks.find(instr.opcode);
     if (it != m_callbacks.end()) {
       std::vector<Value> args;
+
+      // VM Calling Convention:
+      // When arguments are pushed onto the stack, they are pushed in declaration order.
+      // Due to stack semantics (LIFO), popping arguments returns them in REVERSE order.
+      //
+      // To extract arguments correctly:
+      // 1. Pop all arguments from stack (they come out in reverse order)
+      // 2. Reverse the collected arguments to restore declaration order
+      // 3. Build the final args array in the correct parameter order
+      //
+      // Example: For function f(a, b, c):
+      //   - Compiler pushes: a, b, c
+      //   - Stack state (bottom to top): [a, b, c]
+      //   - Popping yields: c, b, a (reversed!)
+      //   - After std::reverse: a, b, c (correct order)
+      //
+      // This pattern ensures arguments match their parameter positions.
+
       auto popArg = [&]() -> Value {
         if (m_stack.empty()) {
           return std::monostate{};
@@ -565,54 +583,77 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         args.emplace_back(getString(instr.operand));
         break;
       case OpCode::SHOW_CHARACTER: {
-        Value posVal = popArg();
-        Value idVal = popArg();
-        if (std::holds_alternative<std::monostate>(idVal)) {
-          idVal = getString(instr.operand);
+        // Collect arguments from stack (in reverse order)
+        std::vector<Value> stackArgs;
+        stackArgs.push_back(popArg());  // position
+        stackArgs.push_back(popArg());  // id
+
+        // Reverse to get declaration order
+        std::reverse(stackArgs.begin(), stackArgs.end());
+
+        // Apply defaults if needed
+        if (std::holds_alternative<std::monostate>(stackArgs[0])) {
+          stackArgs[0] = getString(instr.operand);
         }
-        if (std::holds_alternative<std::monostate>(posVal)) {
-          posVal = static_cast<i32>(1);
+        if (std::holds_alternative<std::monostate>(stackArgs[1])) {
+          stackArgs[1] = static_cast<i32>(1);
         }
-        args.push_back(std::move(idVal));
-        args.push_back(std::move(posVal));
+
+        // Build final args array in correct order
+        args.push_back(std::move(stackArgs[0]));  // id
+        args.push_back(std::move(stackArgs[1]));  // position
         break;
       }
       case OpCode::HIDE_CHARACTER:
         args.emplace_back(getString(instr.operand));
         break;
       case OpCode::MOVE_CHARACTER: {
-        // Stack layout: duration, [customY, customX if custom], posCode, charId
-        Value durVal = popArg();
-        Value posVal = popArg();
+        // Collect arguments from stack (in reverse order)
+        // Stack layout (top to bottom): duration, [customY, customX if custom], posCode, charId
+        Value durVal = popArg();  // duration
+        Value posVal = popArg();  // position code
 
         // Check if position is custom (posCode == 3)
         i32 posCode = std::holds_alternative<i32>(posVal) ? std::get<i32>(posVal) : 1;
-        Value customY;
-        Value customX;
+
+        std::vector<Value> stackArgs;
         if (posCode == 3) {
-          // Custom position: need to pop Y and X coordinates
-          customY = popArg();
-          customX = popArg();
+          // Custom position: pop Y and X coordinates
+          Value customY = popArg();
+          Value customX = popArg();
+          Value idVal = popArg();
+
+          // Collect in reverse stack order: id, pos, X, Y, duration
+          stackArgs.push_back(std::move(idVal));
+          stackArgs.push_back(std::move(posVal));
+          stackArgs.push_back(std::move(customX));
+          stackArgs.push_back(std::move(customY));
+          stackArgs.push_back(std::move(durVal));
+        } else {
+          // No custom coordinates: id, pos, duration
+          Value idVal = popArg();
+
+          stackArgs.push_back(std::move(idVal));
+          stackArgs.push_back(std::move(posVal));
+          stackArgs.push_back(std::move(durVal));
         }
 
-        Value idVal = popArg();
-        if (std::holds_alternative<std::monostate>(idVal)) {
-          idVal = getString(instr.operand);
+        // Apply defaults if needed
+        if (std::holds_alternative<std::monostate>(stackArgs[0])) {
+          stackArgs[0] = getString(instr.operand);
         }
 
-        args.push_back(std::move(idVal));
-        args.push_back(std::move(posVal));
-        if (posCode == 3) {
-          args.push_back(std::move(customX));
-          args.push_back(std::move(customY));
+        // Build final args array in declaration order
+        for (auto &arg : stackArgs) {
+          args.push_back(std::move(arg));
         }
-        args.push_back(std::move(durVal));
         break;
       }
       case OpCode::SAY: {
+        // Only one stack argument (speaker), text comes from operand
         Value speakerVal = popArg();
-        args.emplace_back(getString(instr.operand));
-        args.push_back(std::move(speakerVal));
+        args.emplace_back(getString(instr.operand));  // text
+        args.push_back(std::move(speakerVal));        // speaker
         break;
       }
       case OpCode::CHOICE: {
@@ -634,9 +675,10 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         args.emplace_back(static_cast<i32>(instr.operand));
         break;
       case OpCode::TRANSITION: {
+        // Only one stack argument (duration), type comes from operand
         Value durVal = popArg();
-        args.emplace_back(getString(instr.operand));
-        args.push_back(std::move(durVal));
+        args.emplace_back(getString(instr.operand));  // type
+        args.push_back(std::move(durVal));            // duration
         break;
       }
       case OpCode::PLAY_SOUND:
