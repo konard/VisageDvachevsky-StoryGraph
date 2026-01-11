@@ -372,6 +372,8 @@ private:
   Result<void> signWindowsExecutable(const std::string& executablePath);
   Result<void> signMacOSBundle(const std::string& bundlePath);
   Result<i32> executeCommand(const std::string& command, std::string& output) const;
+  Result<void> validateSigningToolPath(const std::string& toolPath,
+                                       const std::vector<std::string>& allowedNames);
 
   BuildConfig m_config;
   BuildProgress m_progress;
