@@ -25,6 +25,37 @@ bool readFileToString(const fs::path& path, std::string& out) {
   out = buffer.str();
   return true;
 }
+
+// ============================================================================
+// Cached Regex Patterns
+// ============================================================================
+// Pre-compiled regex patterns to avoid recompilation on each use
+// This improves performance significantly for validation operations
+
+namespace CachedRegexPatterns {
+  // Scene-related patterns
+  static const std::regex sceneRefPattern(R"(goto\s+(\w+)|scene\s+(\w+))");
+  static const std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+  static const std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+  static const std::regex endPattern(R"(\b(end|goto|choice)\b)");
+  static const std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
+
+  // Asset-related patterns
+  static const std::regex assetRefPatternJson(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
+  static const std::regex assetRefPatternScript(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
+
+  // Localization patterns
+  static const std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+  static const std::regex keyPattern(R"(\"([^\"]+)\":\s*\"[^\"]*\")");
+
+  // Voice-related patterns
+  static const std::regex voiceRefPattern(R"(voice\s+\"([^\"]+)\")");
+
+  // Cleanup patterns (for removing keys)
+  static const std::regex doubleCommaPattern(R"(,\s*,)");
+  static const std::regex trailingCommaPattern(R"(,\s*})");
+} // namespace CachedRegexPatterns
+
 } // namespace
 
 // ============================================================================
@@ -458,7 +489,7 @@ void ProjectIntegrityChecker::checkSceneReferences(std::vector<IntegrityIssue>& 
   // Check script files for scene references
   fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
   if (fs::exists(scriptsDir)) {
-    std::regex sceneRefPattern(R"(goto\s+(\w+)|scene\s+(\w+))");
+    const auto& sceneRefPattern = CachedRegexPatterns::sceneRefPattern;
 
     for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.path().extension() == ".nms") {
@@ -528,7 +559,7 @@ void ProjectIntegrityChecker::collectAssetReferences() {
   // Scan scene files for asset references
   fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
   if (fs::exists(scenesDir)) {
-    std::regex assetRefPattern(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
+    const auto& assetRefPattern = CachedRegexPatterns::assetRefPatternJson;
 
     for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
       if (entry.path().extension() == ".nmscene" || entry.path().extension() == ".json") {
@@ -551,7 +582,7 @@ void ProjectIntegrityChecker::collectAssetReferences() {
   // Scan script files for asset references
   fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
   if (fs::exists(scriptsDir)) {
-    std::regex assetRefPattern(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
+    const auto& assetRefPattern = CachedRegexPatterns::assetRefPatternScript;
 
     for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.path().extension() == ".nms") {
@@ -644,7 +675,7 @@ void ProjectIntegrityChecker::checkVoiceLines(std::vector<IntegrityIssue>& issue
   // Check script files for voice references
   fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
   if (fs::exists(scriptsDir)) {
-    std::regex voiceRefPattern(R"(voice\s+\"([^\"]+)\")");
+    const auto& voiceRefPattern = CachedRegexPatterns::voiceRefPattern;
 
     for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.path().extension() == ".nms") {
@@ -684,7 +715,7 @@ void ProjectIntegrityChecker::scanLocalizationFiles() {
     return;
   }
 
-  std::regex keyPattern(R"(\"([^\"]+)\":\s*\"[^\"]*\")");
+  const auto& keyPattern = CachedRegexPatterns::keyPattern;
 
   for (const auto& entry : fs::directory_iterator(locDir)) {
     if (entry.path().extension() == ".json") {
@@ -797,7 +828,7 @@ void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& is
 
   if (fs::exists(scriptsDir)) {
     // Pattern to match loc("key") or loc('key')
-    std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+    const auto& locPattern = CachedRegexPatterns::locPattern;
 
     for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.path().extension() == ".nms") {
@@ -820,7 +851,7 @@ void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& is
   // Also check scene files for localization references
   fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
   if (fs::exists(scenesDir)) {
-    std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+    const auto& locPattern = CachedRegexPatterns::locPattern;
 
     for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
       if (entry.path().extension() == ".nmscene" || entry.path().extension() == ".json") {
@@ -869,7 +900,7 @@ void ProjectIntegrityChecker::checkStoryGraphStructure(std::vector<IntegrityIssu
   std::unordered_map<std::string, std::string> sceneFiles;
 
   // Collect all defined scenes
-  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
 
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
     if (entry.path().extension() == ".nms") {
@@ -910,7 +941,7 @@ void ProjectIntegrityChecker::checkStoryGraphStructure(std::vector<IntegrityIssu
   }
 
   // Check for invalid goto references
-  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
 
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
     if (entry.path().extension() == ".nms") {
@@ -954,6 +985,7 @@ void ProjectIntegrityChecker::checkStoryGraphStructure(std::vector<IntegrityIssu
   // Check for duplicate scene definitions
   std::unordered_map<std::string, std::vector<std::string>> sceneDuplicates;
 
+  // Reuse scenePattern from above
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
     if (entry.path().extension() == ".nms") {
       std::string content;
@@ -1000,8 +1032,8 @@ void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& i
   std::unordered_map<std::string, std::vector<std::string>> sceneTransitions; // scene -> [target scenes]
   std::unordered_map<std::string, std::string> sceneFiles;
 
-  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
-  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
 
   // First pass: collect all defined scenes
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
@@ -1152,8 +1184,8 @@ void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) 
   std::unordered_map<std::string, std::vector<std::string>> sceneTransitions;
   std::unordered_map<std::string, std::string> sceneFiles;
 
-  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
-  std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
 
   // First pass: collect all defined scenes
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
@@ -1326,8 +1358,8 @@ void ProjectIntegrityChecker::checkDeadEnds(std::vector<IntegrityIssue>& issues)
     return;
   }
 
-  std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
-  std::regex endPattern(R"(\b(end|goto|choice)\b)");
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& endPattern = CachedRegexPatterns::endPattern;
 
   for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
     if (entry.path().extension() == ".nms") {
@@ -1692,6 +1724,7 @@ Result<void> removeMissingSceneReference(const std::string& projectPath,
     return Result<void>::ok(); // No scripts to fix
   }
 
+  // Create dynamic regex for specific scene ID (unavoidable, as pattern depends on sceneId)
   std::regex sceneRefPattern("(goto\\s+" + sceneId + "|scene\\s+" + sceneId + ")");
   bool anyChanges = false;
 
@@ -1898,7 +1931,7 @@ Result<void> setFirstSceneAsStart(const std::string& projectPath) {
   }
 
   // Find and update startScene field, or add it
-  std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
+  const auto& startScenePattern = CachedRegexPatterns::startScenePattern;
   std::string replacement = "\"startScene\": \"" + firstSceneId + "\"";
 
   if (std::regex_search(content, startScenePattern)) {
@@ -1954,7 +1987,7 @@ Result<void> createMainEntryScene(const std::string& projectPath) {
   if (fs::exists(projectFile)) {
     std::string content;
     if (readFileToString(projectFile, content)) {
-      std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
+      const auto& startScenePattern = CachedRegexPatterns::startScenePattern;
       std::string replacement = "\"startScene\": \"main\"";
 
       if (std::regex_search(content, startScenePattern)) {
@@ -2058,12 +2091,13 @@ Result<void> removeUnusedLocalizationKey(const std::string& projectPath, const s
       }
 
       // Create regex to match the key and its value (including comma handling)
+      // Note: Dynamic regex creation is unavoidable here as pattern depends on the key parameter
       std::regex keyPattern("\\s*,?\\s*\"" + key + "\"\\s*:\\s*\"[^\"]*\"\\s*,?\\s*");
       std::string modifiedContent = std::regex_replace(content, keyPattern, "");
 
-      // Clean up any double commas or trailing commas
-      modifiedContent = std::regex_replace(modifiedContent, std::regex(",\\s*,"), ",");
-      modifiedContent = std::regex_replace(modifiedContent, std::regex(",\\s*}"), "\n}");
+      // Clean up any double commas or trailing commas using cached patterns
+      modifiedContent = std::regex_replace(modifiedContent, CachedRegexPatterns::doubleCommaPattern, ",");
+      modifiedContent = std::regex_replace(modifiedContent, CachedRegexPatterns::trailingCommaPattern, "\n}");
 
       if (modifiedContent != content) {
         std::ofstream outFile(entry.path());
