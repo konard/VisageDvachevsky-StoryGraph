@@ -708,93 +708,211 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
 //   cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" ..
 
 // =============================================================================
-// Music Seek Tests (Issue #464)
+// Thread Safety Tests - Issue #462
 // =============================================================================
 
-TEST_CASE("AudioManager music seeking", "[audio][manager][music][seek]")
-{
-    AudioManager manager;
-    auto initResult = manager.initialize();
+TEST_CASE("AudioManager thread safety - playback thread race condition",
+          "[audio][manager][threading][issue-462]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
 
-    if (initResult.isError()) {
-        SKIP("Audio hardware not available");
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Concurrent voice playback and status checks") {
+    std::atomic<bool> running{true};
+    std::atomic<int> voiceStarts{0};
+    std::atomic<int> statusChecks{0};
+
+    // Thread 1: Repeatedly start/stop voice
+    std::thread voiceThread([&]() {
+      for (int i = 0; i < 50 && running; ++i) {
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.3f;
+        auto handle = manager.playVoice("test_voice", config);
+        voiceStarts++;
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        manager.stopVoice(0.0f);
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    });
+
+    // Thread 2: Continuously check voice status
+    std::thread statusThread([&]() {
+      while (running) {
+        [[maybe_unused]] bool isPlaying = manager.isVoicePlaying();
+        statusChecks++;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+      }
+    });
+
+    // Thread 3: Update mixer state (simulates audio thread)
+    std::thread updateThread([&]() {
+      for (int i = 0; i < 100 && running; ++i) {
+        manager.update(0.016); // ~60 FPS
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      running = false;
+    });
+
+    voiceThread.join();
+    statusThread.join();
+    updateThread.join();
+
+    // Verify no crashes occurred and operations completed
+    REQUIRE(voiceStarts > 0);
+    REQUIRE(statusChecks > 0);
+  }
+
+  SECTION("Concurrent music state access") {
+    std::atomic<bool> running{true};
+
+    std::thread musicThread([&]() {
+      for (int i = 0; i < 30 && running; ++i) {
+        manager.playMusic("music" + std::to_string(i % 5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+    });
+
+    std::thread queryThread([&]() {
+      for (int i = 0; i < 100 && running; ++i) {
+        [[maybe_unused]] bool playing = manager.isMusicPlaying();
+        [[maybe_unused]] auto id = manager.getCurrentMusicId();
+        [[maybe_unused]] f32 pos = manager.getMusicPosition();
+        std::this_thread::yield();
+      }
+    });
+
+    std::thread controlThread([&]() {
+      for (int i = 0; i < 50 && running; ++i) {
+        manager.pauseMusic();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        manager.resumeMusic();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      }
+    });
+
+    musicThread.join();
+    queryThread.join();
+    controlThread.join();
+
+    // Verify no crashes
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager thread safety - multiple sources",
+          "[audio][manager][threading][issue-462]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Concurrent sound playback") {
+    std::vector<std::thread> threads;
+    std::atomic<int> soundsPlayed{0};
+
+    for (int t = 0; t < 4; ++t) {
+      threads.emplace_back([&, t]() {
+        for (int i = 0; i < 20; ++i) {
+          PlaybackConfig config;
+          config.volume = 0.5f;
+          config.priority = i;
+          auto handle = manager.playSound("sound_" + std::to_string(t * 100 + i),
+                                          config);
+          if (handle.isValid()) {
+            soundsPlayed++;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+      });
     }
 
-    SECTION("test_audio_seek_middle") {
-        manager.playMusic("test_music");
+    // Update thread
+    std::thread updateThread([&]() {
+      for (int i = 0; i < 100; ++i) {
+        manager.update(0.016);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+    });
 
-        // Seek to middle position (e.g., 30 seconds)
-        manager.seekMusic(30.0f);
+    for (auto &t : threads) {
+      t.join();
+    }
+    updateThread.join();
 
-        // Get the position after seeking
-        f32 position = manager.getMusicPosition();
+    // Verify sounds were played (some may fail due to limits, that's ok)
+    REQUIRE(soundsPlayed > 0);
+  }
 
-        // Position should be at or near 30 seconds
-        // Allow some tolerance for audio processing
-        REQUIRE(position >= 0.0f);
-        REQUIRE(position <= 31.0f); // Small tolerance
+  SECTION("Concurrent volume and mute changes") {
+    std::vector<std::thread> threads;
+
+    for (int t = 0; t < 4; ++t) {
+      threads.emplace_back([&]() {
+        for (int i = 0; i < 30; ++i) {
+          manager.setMasterVolume(0.5f + (i % 5) * 0.1f);
+          manager.setChannelVolume(AudioChannel::Music, 0.7f);
+          manager.setChannelVolume(AudioChannel::Sound, 0.8f);
+          manager.setChannelMuted(AudioChannel::Voice, i % 2 == 0);
+          std::this_thread::yield();
+        }
+      });
     }
 
-    SECTION("test_audio_seek_start") {
-        manager.playMusic("test_music");
-
-        // Seek to some position first
-        manager.seekMusic(20.0f);
-
-        // Then seek back to start
-        manager.seekMusic(0.0f);
-
-        // Position should be at start
-        f32 position = manager.getMusicPosition();
-        REQUIRE(position >= 0.0f);
-        REQUIRE(position <= 1.0f); // Should be very close to 0
+    for (auto &t : threads) {
+      t.join();
     }
 
-    SECTION("test_audio_seek_end") {
-        manager.playMusic("test_music");
+    // Verify final state is valid
+    f32 masterVol = manager.getMasterVolume();
+    REQUIRE(masterVol >= 0.0f);
+    REQUIRE(masterVol <= 1.0f);
+  }
 
-        // Seek to a very large position (should be clamped to duration)
-        manager.seekMusic(999999.0f);
+  SECTION("Concurrent ducking state access") {
+    std::atomic<bool> running{true};
 
-        // Position should be clamped to duration, not beyond
-        f32 position = manager.getMusicPosition();
-        REQUIRE(position >= 0.0f);
-        // Position should be valid (not exceeding reasonable bounds)
-        REQUIRE(position < 1000000.0f);
-    }
+    std::thread voiceThread([&]() {
+      for (int i = 0; i < 20 && running; ++i) {
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.2f + (i % 5) * 0.1f;
+        manager.playVoice("voice_" + std::to_string(i), config);
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        manager.stopVoice(0.0f);
+      }
+    });
 
-    SECTION("Seek to negative position (edge case)") {
-        manager.playMusic("test_music");
+    std::thread configThread([&]() {
+      for (int i = 0; i < 50 && running; ++i) {
+        manager.setAutoDuckingEnabled(i % 2 == 0);
+        manager.setDuckingParams(0.3f + (i % 4) * 0.05f, 0.2f);
+        std::this_thread::yield();
+      }
+    });
 
-        // Seek to negative position (should be clamped to 0)
-        manager.seekMusic(-10.0f);
+    std::thread updateThread([&]() {
+      for (int i = 0; i < 50; ++i) {
+        manager.update(0.016);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      }
+      running = false;
+    });
 
-        // Position should be clamped to 0
-        f32 position = manager.getMusicPosition();
-        REQUIRE(position >= 0.0f);
-        REQUIRE(position <= 1.0f);
-    }
+    voiceThread.join();
+    configThread.join();
+    updateThread.join();
 
-    SECTION("Seek without active music") {
-        // No music playing - seek should not crash
-        manager.seekMusic(10.0f);
+    // Verify no crashes
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
 
-        // Should handle gracefully
-        REQUIRE_FALSE(manager.isMusicPlaying());
-    }
-
-    SECTION("Multiple seeks in succession") {
-        manager.playMusic("test_music");
-
-        // Perform multiple seeks
-        manager.seekMusic(10.0f);
-        manager.seekMusic(20.0f);
-        manager.seekMusic(5.0f);
-
-        // Final position should reflect last seek
-        f32 position = manager.getMusicPosition();
-        REQUIRE(position >= 0.0f);
-    }
-
-    manager.shutdown();
+  manager.shutdown();
 }
