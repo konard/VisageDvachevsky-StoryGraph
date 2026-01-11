@@ -99,6 +99,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_event_bus.cpp
         # Issue #477 - Gizmo memory management tests
         unit/test_gizmo_memory.cpp
+        # Issue #460 - Gizmo DPI scaling tests
+        unit/test_gizmo_dpi_scaling.cpp
     )
 
     target_link_libraries(integration_tests
