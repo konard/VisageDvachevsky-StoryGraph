@@ -334,12 +334,14 @@ jobs:
           --exclude '.*/tests/.*' \
           --json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_valid']*100:.1f}\")")
         echo "Current line coverage: ${COVERAGE}%"
-        # Set minimum threshold (currently informational, not blocking)
-        THRESHOLD=25.0
+        # Phase 1: Increased threshold to 35% (blocking)
+        THRESHOLD=35.0
         if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-          echo "::warning::Coverage ${COVERAGE}% is below target ${THRESHOLD}%"
+          echo "::error::Coverage ${COVERAGE}% is below minimum threshold ${THRESHOLD}%"
+          echo "Please add tests to increase coverage before merging."
+          exit 1
         else
-          echo "Coverage ${COVERAGE}% meets target ${THRESHOLD}%"
+          echo "✓ Coverage ${COVERAGE}% meets minimum threshold ${THRESHOLD}%"
         fi
         lcov --capture --directory . --output-file coverage.info
         lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
