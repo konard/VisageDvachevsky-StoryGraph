@@ -147,6 +147,10 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_scene_dialogue_graph_panel.cpp
     src/qt/panels/nm_inspector_panel.cpp
     src/qt/panels/nm_inspector_panel_group.cpp
+    src/qt/panels/inspector_property_editor.cpp
+    src/qt/panels/inspector_component_list.cpp
+    src/qt/panels/inspector_validators.cpp
+    src/qt/panels/inspector_ui.cpp
     src/qt/panels/nm_console_panel.cpp
     src/qt/panels/nm_asset_browser_panel.cpp
     src/qt/panels/nm_scene_palette_panel.cpp
