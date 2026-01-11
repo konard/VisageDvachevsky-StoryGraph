@@ -375,7 +375,15 @@ StmtPtr Parser::parseChoiceStmt() {
 
     // Optional condition
     if (match(TokenType::If)) {
-      option.condition = parseExpression();
+      auto condExpr = parseExpression();
+      if (condExpr && !isValidConditionExpression(*condExpr)) {
+        error(
+            "Invalid condition expression in choice. Conditions must be "
+            "boolean expressions, not string or numeric literals. Use "
+            "variables (e.g., 'has_key'), comparisons (e.g., 'counter > 5'), or "
+            "boolean operators (e.g., 'flag1 and flag2')");
+      }
+      option.condition = std::move(condExpr);
     }
 
     consume(TokenType::Arrow, "Expected '->' after choice text");
@@ -921,6 +929,40 @@ std::vector<StmtPtr> Parser::parseStatementList() {
   }
 
   return statements;
+}
+
+// Validation helpers
+
+bool Parser::isValidConditionExpression(const Expression &expr) const {
+  // Check if the expression is obviously non-boolean
+  return std::visit(
+      [](const auto &e) -> bool {
+        using T = std::decay_t<decltype(e)>;
+
+        if constexpr (std::is_same_v<T, LiteralExpr>) {
+          // String literals are always invalid as conditions
+          if (std::holds_alternative<std::string>(e.value)) {
+            return false;
+          }
+          // Pure numeric literals (non-boolean) should not be used as
+          // conditions
+          if (std::holds_alternative<i32>(e.value) ||
+              std::holds_alternative<f32>(e.value)) {
+            return false;
+          }
+          // Boolean literals and monostate are OK
+          return true;
+        } else if constexpr (std::is_same_v<T, IdentifierExpr> ||
+                             std::is_same_v<T, BinaryExpr> ||
+                             std::is_same_v<T, UnaryExpr> ||
+                             std::is_same_v<T, CallExpr> ||
+                             std::is_same_v<T, PropertyExpr>) {
+          // These can potentially be boolean, allow them
+          return true;
+        }
+        return true;
+      },
+      expr.data);
 }
 
 } // namespace NovelMind::scripting
