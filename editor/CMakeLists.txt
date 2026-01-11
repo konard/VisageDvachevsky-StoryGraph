@@ -153,6 +153,11 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_hierarchy_panel.cpp
     src/qt/panels/nm_script_editor_panel.cpp
     src/qt/panels/nm_script_editor_panel_editor.cpp
+    src/qt/panels/nm_script_editor_panel_highlighter.cpp
+    src/qt/panels/nm_script_editor_panel_minimap.cpp
+    src/qt/panels/nm_script_editor_panel_find_replace.cpp
+    src/qt/panels/nm_script_editor_panel_palette.cpp
+    src/qt/panels/nm_script_editor_panel_folding.cpp
     src/qt/panels/nm_script_editor_panel_detail.cpp
     src/qt/panels/nm_script_editor_panel_preview.cpp
     src/qt/panels/nm_script_doc_panel.cpp
