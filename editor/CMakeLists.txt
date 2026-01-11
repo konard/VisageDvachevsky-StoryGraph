@@ -69,6 +69,7 @@ add_library(novelmind_editor STATIC
 
     # Build System components
     src/build_system.cpp
+    src/build_scripts.cpp
     src/build_platform.cpp
     src/build_size_analyzer.cpp
     src/build_pack.cpp
