@@ -190,6 +190,7 @@ private:
   void rebuildTable();
   void applyFilters();
   void updateStatusBar();
+  void updateStatusBarWithCounts(int totalCount, int visibleCount, int missingCount);
   void highlightMissingTranslations();
   void exportToCsv(const QString& filePath);
   void exportToJson(const QString& filePath);
