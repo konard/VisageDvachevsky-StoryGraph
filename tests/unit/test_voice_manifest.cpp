@@ -551,3 +551,348 @@ TEST_CASE("VoiceLineStatus string conversion", "[voice_manifest]") {
     REQUIRE(voiceLineStatusFromString("unknown") == VoiceLineStatus::Missing);
   }
 }
+
+// ============================================================================
+// JSON Parsing Tests for Nested Structures (Issue #559)
+// ============================================================================
+
+TEST_CASE("VoiceManifest parses nested JSON objects correctly", "[voice_manifest][issue_559]") {
+  SECTION("nested objects in files field") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": ["en", "ru"],
+      "lines": [
+        {
+          "id": "test.001",
+          "text_key": "dialog.test.001",
+          "speaker": "narrator",
+          "scene": "intro",
+          "files": {
+            "en": {
+              "path": "en/test.001.ogg",
+              "duration": 3.5
+            },
+            "ru": {
+              "path": "ru/test.001.ogg",
+              "duration": 4.2
+            }
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    REQUIRE(manifest.getLineCount() == 1);
+
+    const auto *line = manifest.getLine("test.001");
+    REQUIRE(line != nullptr);
+    REQUIRE(line->files.size() == 2);
+
+    const auto *enFile = line->getFile("en");
+    REQUIRE(enFile != nullptr);
+    REQUIRE(enFile->filePath == "en/test.001.ogg");
+    REQUIRE(enFile->duration == 3.5f);
+
+    const auto *ruFile = line->getFile("ru");
+    REQUIRE(ruFile != nullptr);
+    REQUIRE(ruFile->filePath == "ru/test.001.ogg");
+    REQUIRE(ruFile->duration == 4.2f);
+  }
+
+  SECTION("deeply nested structures") {
+    std::string json = R"({
+      "project": "nested_test",
+      "default_locale": "en",
+      "locales": ["en"],
+      "lines": [
+        {
+          "id": "deep.001",
+          "text_key": "dialog.deep.001",
+          "speaker": "narrator",
+          "scene": "intro",
+          "notes": "Test with {braces} and \"quotes\"",
+          "files": {
+            "en": "en/deep.001.ogg"
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    const auto *line = manifest.getLine("deep.001");
+    REQUIRE(line != nullptr);
+    REQUIRE(line->notes == "Test with {braces} and \"quotes\"");
+  }
+}
+
+TEST_CASE("VoiceManifest parses nested JSON arrays correctly", "[voice_manifest][issue_559]") {
+  SECTION("tags array with multiple items") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": ["en", "ru", "ja"],
+      "lines": [
+        {
+          "id": "test.001",
+          "text_key": "dialog.test.001",
+          "speaker": "narrator",
+          "scene": "intro",
+          "tags": ["calm", "intro", "important", "long"],
+          "files": {
+            "en": "en/test.001.ogg"
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    REQUIRE(manifest.getLocales().size() == 3);
+    REQUIRE(manifest.hasLocale("ja"));
+
+    const auto *line = manifest.getLine("test.001");
+    REQUIRE(line != nullptr);
+    REQUIRE(line->tags.size() == 4);
+    REQUIRE(line->tags[0] == "calm");
+    REQUIRE(line->tags[1] == "intro");
+    REQUIRE(line->tags[2] == "important");
+    REQUIRE(line->tags[3] == "long");
+  }
+
+  SECTION("empty tags array") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": [],
+      "lines": [
+        {
+          "id": "test.001",
+          "text_key": "dialog.test.001",
+          "tags": []
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    const auto *line = manifest.getLine("test.001");
+    REQUIRE(line != nullptr);
+    REQUIRE(line->tags.empty());
+  }
+}
+
+TEST_CASE("VoiceManifest parses strings containing braces correctly", "[voice_manifest][issue_559]") {
+  SECTION("notes field with braces") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": ["en"],
+      "lines": [
+        {
+          "id": "test.001",
+          "text_key": "dialog.test.001",
+          "speaker": "narrator",
+          "notes": "Use {expression} with {{nested}} braces and [brackets]",
+          "files": {
+            "en": "en/test.001.ogg"
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    const auto *line = manifest.getLine("test.001");
+    REQUIRE(line != nullptr);
+    REQUIRE(line->notes == "Use {expression} with {{nested}} braces and [brackets]");
+  }
+
+  SECTION("file paths with special characters") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": ["en"],
+      "lines": [
+        {
+          "id": "test.001",
+          "text_key": "dialog.test.001",
+          "files": {
+            "en": "assets/{locale}/voice/test.001.ogg"
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    const auto *line = manifest.getLine("test.001");
+    REQUIRE(line != nullptr);
+    const auto *enFile = line->getFile("en");
+    REQUIRE(enFile != nullptr);
+    REQUIRE(enFile->filePath == "assets/{locale}/voice/test.001.ogg");
+  }
+}
+
+TEST_CASE("VoiceManifest handles malformed JSON with error messages", "[voice_manifest][issue_559]") {
+  SECTION("invalid JSON syntax") {
+    std::string json = R"({
+      "project": "test_project",
+      "invalid syntax here
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("JSON parse error") != std::string::npos);
+  }
+
+  SECTION("unterminated string") {
+    std::string json = R"({
+      "project": "test_project,
+      "default_locale": "en"
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isError());
+  }
+
+  SECTION("invalid root type") {
+    std::string json = R"([
+      "this", "is", "an", "array"
+    ])";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("root must be an object") != std::string::npos);
+  }
+
+  SECTION("invalid nested structure") {
+    std::string json = R"({
+      "project": "test_project",
+      "default_locale": "en",
+      "locales": "this should be an array",
+      "lines": []
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    // Should succeed but skip invalid locales field
+    REQUIRE(result.isOk());
+    REQUIRE(manifest.getLocales().empty());
+  }
+
+  SECTION("empty JSON") {
+    std::string json = "";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isError());
+  }
+
+  SECTION("null JSON") {
+    std::string json = "null";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("root must be an object") != std::string::npos);
+  }
+}
+
+TEST_CASE("VoiceManifest handles complex real-world JSON", "[voice_manifest][issue_559]") {
+  SECTION("full manifest with all fields") {
+    std::string json = R"({
+      "project": "my_visual_novel",
+      "default_locale": "en",
+      "locales": ["en", "ru", "ja"],
+      "base_path": "assets/audio/voice",
+      "naming_convention": "{locale}/{id}.ogg",
+      "lines": [
+        {
+          "id": "intro.alex.001",
+          "text_key": "dialog.intro.alex.001",
+          "speaker": "alex",
+          "scene": "intro",
+          "notes": "Speak with {calm} emotion, use \"soft\" voice",
+          "tags": ["main", "calm", "intro"],
+          "source_script": "scripts/intro.txt",
+          "source_line": 42,
+          "duration_override": 5.5,
+          "files": {
+            "en": "assets/audio/voice/en/intro.alex.001.ogg",
+            "ru": "assets/audio/voice/ru/intro.alex.001.ogg",
+            "ja": "assets/audio/voice/ja/intro.alex.001.ogg"
+          }
+        },
+        {
+          "id": "intro.beth.001",
+          "text_key": "dialog.intro.beth.001",
+          "speaker": "beth",
+          "scene": "intro",
+          "tags": ["excited"],
+          "files": {
+            "en": {
+              "path": "assets/audio/voice/en/intro.beth.001.ogg",
+              "duration": 3.2
+            }
+          }
+        }
+      ]
+    })";
+
+    VoiceManifest manifest;
+    auto result = manifest.loadFromString(json);
+
+    REQUIRE(result.isOk());
+    REQUIRE(manifest.getProjectName() == "my_visual_novel");
+    REQUIRE(manifest.getDefaultLocale() == "en");
+    REQUIRE(manifest.getLocales().size() == 3);
+    REQUIRE(manifest.getBasePath() == "assets/audio/voice");
+    REQUIRE(manifest.getLineCount() == 2);
+
+    // Test first line
+    const auto *line1 = manifest.getLine("intro.alex.001");
+    REQUIRE(line1 != nullptr);
+    REQUIRE(line1->speaker == "alex");
+    REQUIRE(line1->scene == "intro");
+    REQUIRE(line1->notes == "Speak with {calm} emotion, use \"soft\" voice");
+    REQUIRE(line1->tags.size() == 3);
+    REQUIRE(line1->sourceScript == "scripts/intro.txt");
+    REQUIRE(line1->sourceLine == 42);
+    REQUIRE(line1->durationOverride == 5.5f);
+    REQUIRE(line1->files.size() == 3);
+
+    // Test second line with nested file object
+    const auto *line2 = manifest.getLine("intro.beth.001");
+    REQUIRE(line2 != nullptr);
+    REQUIRE(line2->speaker == "beth");
+    REQUIRE(line2->tags.size() == 1);
+    const auto *enFile = line2->getFile("en");
+    REQUIRE(enFile != nullptr);
+    REQUIRE(enFile->filePath == "assets/audio/voice/en/intro.beth.001.ogg");
+    REQUIRE(enFile->duration == 3.2f);
+  }
+}

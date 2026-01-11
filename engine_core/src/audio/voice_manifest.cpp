@@ -8,8 +8,10 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
-#include <regex>
 #include <sstream>
+
+// Use proper JSON parser instead of regex
+#include <nlohmann/json.hpp>
 
 namespace NovelMind::audio {
 
@@ -689,46 +691,33 @@ private:
   }
 };
 
-// Extract JSON string value
-std::string extractJsonString(const std::string &json, const std::string &key) {
-  std::string pattern = "\"" + key + "\"\\s*:\\s*\"([^\"]*)\"";
-  std::regex re(pattern);
-  std::smatch match;
-  if (std::regex_search(json, match, re)) {
-    return match[1].str();
+// Helper to safely get string from JSON object
+std::string getJsonString(const nlohmann::json &obj, const std::string &key,
+                          const std::string &defaultValue = "") {
+  if (obj.contains(key) && obj[key].is_string()) {
+    return obj[key].get<std::string>();
   }
-  return "";
+  return defaultValue;
 }
 
-// Extract JSON number value
-f32 extractJsonNumber(const std::string &json, const std::string &key) {
-  std::string pattern = "\"" + key + "\"\\s*:\\s*([0-9.]+)";
-  std::regex re(pattern);
-  std::smatch match;
-  if (std::regex_search(json, match, re)) {
-    try {
-      return std::stof(match[1].str());
-    } catch (...) {
-    }
+// Helper to safely get number from JSON object
+f32 getJsonNumber(const nlohmann::json &obj, const std::string &key,
+                  f32 defaultValue = 0.0f) {
+  if (obj.contains(key) && obj[key].is_number()) {
+    return obj[key].get<f32>();
   }
-  return 0.0f;
+  return defaultValue;
 }
 
-// Extract JSON array of strings
-std::vector<std::string> extractJsonStringArray(const std::string &json,
-                                                const std::string &key) {
+// Helper to safely get array of strings from JSON object
+std::vector<std::string> getJsonStringArray(const nlohmann::json &obj,
+                                            const std::string &key) {
   std::vector<std::string> result;
-  std::string pattern = "\"" + key + "\"\\s*:\\s*\\[([^\\]]*)\\]";
-  std::regex re(pattern);
-  std::smatch match;
-  if (std::regex_search(json, match, re)) {
-    std::string arrayContent = match[1].str();
-    std::regex itemRe("\"([^\"]*)\"");
-    auto begin =
-        std::sregex_iterator(arrayContent.begin(), arrayContent.end(), itemRe);
-    auto end = std::sregex_iterator();
-    for (auto it = begin; it != end; ++it) {
-      result.push_back((*it)[1].str());
+  if (obj.contains(key) && obj[key].is_array()) {
+    for (const auto &item : obj[key]) {
+      if (item.is_string()) {
+        result.push_back(item.get<std::string>());
+      }
     }
   }
   return result;
@@ -765,89 +754,80 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
   clearLines();
   m_locales.clear();
 
-  // Extract project metadata
-  m_projectName = extractJsonString(jsonContent, "project");
-  m_defaultLocale = extractJsonString(jsonContent, "default_locale");
-  m_locales = extractJsonStringArray(jsonContent, "locales");
-  m_basePath = extractJsonString(jsonContent, "base_path");
-  if (m_basePath.empty()) {
-    m_basePath = "assets/audio/voice";
+  // Parse JSON with proper parser
+  nlohmann::json root;
+  try {
+    root = nlohmann::json::parse(jsonContent);
+  } catch (const nlohmann::json::parse_error &e) {
+    return Result<void>::error(std::string("JSON parse error: ") + e.what());
+  } catch (const std::exception &e) {
+    return Result<void>::error(std::string("Error parsing JSON: ") + e.what());
   }
 
+  // Validate root is an object
+  if (!root.is_object()) {
+    return Result<void>::error("Invalid JSON: root must be an object");
+  }
+
+  // Extract project metadata
+  m_projectName = getJsonString(root, "project");
+  m_defaultLocale = getJsonString(root, "default_locale", "en");
+  m_locales = getJsonStringArray(root, "locales");
+  m_basePath = getJsonString(root, "base_path", "assets/audio/voice");
+
   // Extract naming convention
-  std::string convention = extractJsonString(jsonContent, "naming_convention");
+  std::string convention = getJsonString(root, "naming_convention");
   if (!convention.empty()) {
     m_namingConvention.pattern = convention;
   }
 
   // Extract voice lines
-  std::string pattern = "\\{[^\\{\\}]*\"id\"\\s*:\\s*\"([^\"]*)\"[^\\{\\}]*\\}";
-  std::regex lineRe("\"id\"\\s*:\\s*\"([^\"]*)\"");
+  if (root.contains("lines") && root["lines"].is_array()) {
+    for (const auto &lineObj : root["lines"]) {
+      if (!lineObj.is_object()) {
+        continue; // Skip invalid entries
+      }
 
-  // Find "lines" array
-  size_t linesStart = jsonContent.find("\"lines\"");
-  if (linesStart != std::string::npos) {
-    size_t arrayStart = jsonContent.find('[', linesStart);
-    size_t arrayEnd = jsonContent.rfind(']');
+      VoiceManifestLine line;
+      line.id = getJsonString(lineObj, "id");
+      line.textKey = getJsonString(lineObj, "text_key");
+      line.speaker = getJsonString(lineObj, "speaker");
+      line.scene = getJsonString(lineObj, "scene");
+      line.notes = getJsonString(lineObj, "notes");
+      line.tags = getJsonStringArray(lineObj, "tags");
+      line.sourceScript = getJsonString(lineObj, "source_script");
+      line.sourceLine = static_cast<u32>(getJsonNumber(lineObj, "source_line"));
+      line.durationOverride = getJsonNumber(lineObj, "duration_override");
 
-    if (arrayStart != std::string::npos && arrayEnd != std::string::npos) {
-      std::string linesContent =
-          jsonContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+      // Parse files object (supports nested objects)
+      if (lineObj.contains("files") && lineObj["files"].is_object()) {
+        const auto &filesObj = lineObj["files"];
+        for (auto it = filesObj.begin(); it != filesObj.end(); ++it) {
+          const std::string &locale = it.key();
 
-      // Parse each line object
-      std::regex objRe("\\{([^\\{\\}]|\\{[^\\{\\}]*\\})*\\}");
-      auto begin =
-          std::sregex_iterator(linesContent.begin(), linesContent.end(), objRe);
-      auto end = std::sregex_iterator();
+          VoiceLocaleFile locFile;
+          locFile.locale = locale;
 
-      for (auto it = begin; it != end; ++it) {
-        std::string lineJson = it->str();
-
-        VoiceManifestLine line;
-        line.id = extractJsonString(lineJson, "id");
-        line.textKey = extractJsonString(lineJson, "text_key");
-        line.speaker = extractJsonString(lineJson, "speaker");
-        line.scene = extractJsonString(lineJson, "scene");
-        line.notes = extractJsonString(lineJson, "notes");
-        line.tags = extractJsonStringArray(lineJson, "tags");
-        line.sourceScript = extractJsonString(lineJson, "source_script");
-        line.sourceLine =
-            static_cast<u32>(extractJsonNumber(lineJson, "source_line"));
-        line.durationOverride =
-            extractJsonNumber(lineJson, "duration_override");
-
-        // Parse files
-        size_t filesStart = lineJson.find("\"files\"");
-        if (filesStart != std::string::npos) {
-          size_t filesObjStart = lineJson.find('{', filesStart);
-          size_t filesObjEnd = lineJson.find('}', filesObjStart);
-          if (filesObjStart != std::string::npos &&
-              filesObjEnd != std::string::npos) {
-            std::string filesJson =
-                lineJson.substr(filesObjStart, filesObjEnd - filesObjStart + 1);
-
-            // For each locale in manifest
-            for (const auto &locale : m_locales) {
-              std::string locPattern =
-                  "\"" + locale + "\"\\s*:\\s*\"([^\"]*)\"";
-              std::regex locRe(locPattern);
-              std::smatch locMatch;
-              if (std::regex_search(filesJson, locMatch, locRe)) {
-                VoiceLocaleFile locFile;
-                locFile.locale = locale;
-                locFile.filePath = locMatch[1].str();
-                locFile.status = locFile.filePath.empty()
-                                     ? VoiceLineStatus::Missing
-                                     : VoiceLineStatus::Imported;
-                line.files[locale] = locFile;
-              }
-            }
+          if (it.value().is_string()) {
+            locFile.filePath = it.value().get<std::string>();
+            locFile.status = locFile.filePath.empty()
+                                 ? VoiceLineStatus::Missing
+                                 : VoiceLineStatus::Imported;
+          } else if (it.value().is_object()) {
+            // Support extended format with additional file metadata
+            locFile.filePath = getJsonString(it.value(), "path");
+            locFile.status = locFile.filePath.empty()
+                                 ? VoiceLineStatus::Missing
+                                 : VoiceLineStatus::Imported;
+            locFile.duration = getJsonNumber(it.value(), "duration");
           }
-        }
 
-        if (!line.id.empty()) {
-          addLine(line);
+          line.files[locale] = locFile;
         }
+      }
+
+      if (!line.id.empty()) {
+        addLine(line);
       }
     }
   }
