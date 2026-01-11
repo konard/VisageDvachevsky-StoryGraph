@@ -211,6 +211,140 @@ PackLoadResult MultiPackManager::loadPack(const std::string &path,
   return loadPackInternal(path, type, priority);
 }
 
+std::future<PackLoadResult> MultiPackManager::loadPackAsync(
+    const std::string &path, PackType type, i32 priority,
+    ProgressCallback progressCallback) {
+  // Launch async task to load pack in background thread
+  return std::async(std::launch::async,
+                    [this, path, type, priority, progressCallback]() -> PackLoadResult {
+    PackLoadResult result;
+    result.success = false;
+
+    // Report progress: Starting
+    if (progressCallback) {
+      progressCallback(0, 7, "Checking pack file");
+    }
+
+    if (!fs::exists(path)) {
+      result.errors.push_back("Pack file not found: " + path);
+      return result;
+    }
+
+    // Report progress: Reading manifest
+    if (progressCallback) {
+      progressCallback(1, 7, "Reading pack manifest");
+    }
+
+    // Read pack manifest/header
+    PackInfo info;
+    try {
+      info = readPackManifest(path);
+    } catch (const std::exception &e) {
+      result.errors.push_back("Failed to read pack manifest: " +
+                              std::string(e.what()));
+      return result;
+    }
+
+    info.path = path;
+    info.type = type;
+    info.priority = priority;
+    result.packId = info.id;
+
+    // Check if already loaded
+    if (isPackLoaded(info.id)) {
+      result.errors.push_back("Pack already loaded: " + info.id);
+      return result;
+    }
+
+    // Report progress: Checking dependencies
+    if (progressCallback) {
+      progressCallback(2, 7, "Checking dependencies");
+    }
+
+    // Check dependencies
+    auto missingDeps = getMissingDependencies(info);
+    if (!missingDeps.empty()) {
+      result.missingDependencies = missingDeps;
+      for (const auto &dep : missingDeps) {
+        result.warnings.push_back("Missing dependency: " + dep);
+      }
+    }
+
+    // Report progress: Creating reader
+    if (progressCallback) {
+      progressCallback(3, 7, "Creating pack reader");
+    }
+
+    // Create pack reader
+    auto reader = std::make_unique<SecurePackFileSystem>();
+    if (!m_publicKeyPem.empty()) {
+      reader->setPublicKeyPem(m_publicKeyPem);
+    }
+    if (!m_publicKeyPath.empty()) {
+      reader->setPublicKeyPath(m_publicKeyPath);
+    }
+    if (!m_decryptionKey.empty()) {
+      reader->setDecryptionKey(m_decryptionKey);
+    }
+
+    // Report progress: Mounting pack (this is async internally)
+    if (progressCallback) {
+      progressCallback(4, 7, "Mounting pack");
+    }
+
+    auto openResult = reader->mount(path);
+    if (openResult.isError()) {
+      result.errors.push_back("Failed to open pack: " + openResult.error());
+      return result;
+    }
+
+    // Report progress: Loading resources
+    if (progressCallback) {
+      progressCallback(5, 7, "Loading resource list");
+    }
+
+    // Create loaded pack entry
+    auto loadedPack = std::make_unique<LoadedPack>();
+    loadedPack->info = std::move(info);
+    loadedPack->reader = std::move(reader);
+    loadedPack->effectivePriority = calculateEffectivePriority(type, priority);
+
+    // Collect provided resources
+    auto resources = loadedPack->reader->listResources();
+    for (const auto &resId : resources) {
+      loadedPack->providedResources.insert(resId);
+    }
+    result.loadedResources = loadedPack->providedResources.size();
+
+    // Report progress: Registering pack
+    if (progressCallback) {
+      progressCallback(6, 7, "Registering pack");
+    }
+
+    // Add to packs list
+    m_packIdToIndex[loadedPack->info.id] = m_packs.size();
+    m_packs.push_back(std::move(loadedPack));
+
+    // If this is a mod, add to load order
+    if (type == PackType::Mod) {
+      m_modLoadOrder.push_back(result.packId);
+    }
+
+    // Rebuild resource index
+    rebuildResourceIndex();
+
+    // Report progress: Complete
+    if (progressCallback) {
+      progressCallback(7, 7, "Pack loaded successfully");
+    }
+
+    result.success = true;
+    firePackLoaded(m_packs.back()->info);
+
+    return result;
+  });
+}
+
 PackLoadResult MultiPackManager::loadPackInternal(const std::string &path,
                                                   PackType type, i32 priority) {
   PackLoadResult result;
