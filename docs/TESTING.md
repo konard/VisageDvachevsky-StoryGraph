@@ -47,7 +47,7 @@ Tests are tagged for filtering:
 
 ```bash
 # Configure with tests enabled
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DNM_BUILD_TESTS=ON
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DNOVELMIND_BUILD_TESTS=ON
 
 # Build
 cmake --build build
@@ -92,7 +92,7 @@ cd build && ctest --output-on-failure
 # Configure with coverage flags
 cmake -B build \
   -DCMAKE_BUILD_TYPE=Debug \
-  -DNM_BUILD_TESTS=ON \
+  -DNOVELMIND_BUILD_TESTS=ON \
   -DCMAKE_CXX_FLAGS="--coverage"
 
 # Build and run tests
@@ -123,6 +123,44 @@ Per Issue #179, the coverage targets are:
 - **Engine Core**: ≥ 70%
 - **Editor**: ≥ 60%
 - **Overall**: Increasing coverage of critical paths
+
+### Coverage Requirements for New Code
+
+All new code contributions must meet the following coverage requirements:
+
+#### Pull Request Coverage Standards
+
+- **New Features**: Must include tests that achieve at least 70% line coverage for the new code
+- **Bug Fixes**: Must include a regression test that reproduces the bug and verifies the fix
+- **Refactoring**: Must maintain or improve existing test coverage
+- **Critical Paths**: Security-sensitive code, data serialization, and user-facing features require 80%+ coverage
+
+#### What to Test
+
+**DO test:**
+- Public APIs and interfaces
+- Error handling and edge cases
+- Boundary conditions (null, empty, min/max values)
+- State transitions
+- Thread safety for concurrent components
+- Integration points between components
+- Critical business logic
+
+**DO NOT test:**
+- Third-party library code
+- Simple getters/setters without logic
+- Trivial forwarding functions
+- Generated code (unless it contains custom logic)
+
+#### Acceptable Exceptions
+
+Some code may be difficult or impractical to test with unit tests:
+- Platform-specific code requiring special hardware
+- GUI event handling (prefer integration tests)
+- Complex Qt widget interactions (use Qt Test framework)
+- Code that requires specific CI environment setup
+
+Document these exceptions in code comments or PR descriptions.
 
 ### Current Coverage Status
 
@@ -194,6 +232,182 @@ TEST_CASE_METHOD(ComponentFixture, "Test with fixture", "[component]")
 }
 ```
 
+### Mocking and Test Doubles
+
+The project uses manual mocking (test doubles) rather than a mocking framework. This provides full control and keeps dependencies minimal.
+
+#### When to Use Mocks
+
+Use mocks/test doubles when:
+- Testing components that depend on external resources (filesystem, network, hardware)
+- Testing components that interact with slow or non-deterministic systems
+- Isolating the unit under test from its dependencies
+- Testing error conditions that are hard to trigger with real implementations
+
+#### Creating Mock Objects
+
+Mocks should implement the same interface as the real object:
+
+```cpp
+// Real interface
+class IRenderer {
+public:
+    virtual ~IRenderer() = default;
+    virtual void drawSprite(const Texture& texture, const Transform2D& transform) = 0;
+    virtual void drawText(const Font& font, const std::string& text, f32 x, f32 y) = 0;
+    virtual i32 getWidth() const = 0;
+    virtual i32 getHeight() const = 0;
+};
+
+// Mock implementation for testing
+class MockRenderer : public IRenderer {
+public:
+    void drawSprite(const Texture& texture, const Transform2D& transform) override {
+        drawSpriteCalls++;
+        lastTexture = texture.getId();
+    }
+
+    void drawText(const Font& font, const std::string& text, f32 x, f32 y) override {
+        drawTextCalls++;
+        lastText = text;
+    }
+
+    i32 getWidth() const override { return 1920; }
+    i32 getHeight() const override { return 1080; }
+
+    // Test instrumentation
+    int drawSpriteCalls = 0;
+    int drawTextCalls = 0;
+    std::string lastTexture;
+    std::string lastText;
+};
+
+// Usage in tests
+TEST_CASE("Scene renders correctly", "[scene][rendering]") {
+    MockRenderer renderer;
+    SceneGraph scene;
+
+    scene.showBackground("bg.png");
+    scene.render(renderer);
+
+    REQUIRE(renderer.drawSpriteCalls == 1);
+    REQUIRE(renderer.lastTexture == "bg.png");
+}
+```
+
+#### Mock Best Practices
+
+**DO:**
+- Keep mocks simple and focused
+- Implement only the interface methods used by the test
+- Use meaningful default return values
+- Track method calls and arguments for verification
+- Reset mock state between test sections if reused
+- Name mocks clearly: `MockRenderer`, `TestRenderer`, `FakeFileSystem`
+
+**DON'T:**
+- Don't make mocks too complex with intricate logic
+- Don't reuse mocks across unrelated tests
+- Don't test the mock itself (test the real implementation separately)
+- Don't over-specify mock expectations (makes tests brittle)
+
+#### Types of Test Doubles
+
+**Dummy**: Objects passed around but never used (satisfies parameter requirements)
+```cpp
+class DummyWindow : public IWindow {
+    // Minimal implementation, methods can throw or do nothing
+};
+```
+
+**Stub**: Provides canned responses to calls
+```cpp
+class StubResourceManager : public IResourceManager {
+    Texture* loadTexture(const std::string& path) override {
+        return &m_defaultTexture;  // Always returns same texture
+    }
+private:
+    Texture m_defaultTexture;
+};
+```
+
+**Mock**: Records calls and allows verification
+```cpp
+class MockAudioManager : public IAudioManager {
+    void playSound(const std::string& soundId) override {
+        playedSounds.push_back(soundId);
+    }
+    std::vector<std::string> playedSounds;
+};
+```
+
+**Fake**: Working implementation with shortcuts (e.g., in-memory database)
+```cpp
+class FakeFileSystem : public IFileSystem {
+    // Real implementation using in-memory map instead of real filesystem
+    std::unordered_map<std::string, std::vector<uint8_t>> files;
+};
+```
+
+#### Mocking Patterns
+
+**Spy Pattern**: Real object with call recording
+```cpp
+class SpyRenderer : public Renderer {
+    void drawSprite(const Texture& texture, const Transform2D& transform) override {
+        drawCalls.push_back({texture.getId(), transform});
+        Renderer::drawSprite(texture, transform);  // Call real implementation
+    }
+
+    struct DrawCall {
+        std::string textureId;
+        Transform2D transform;
+    };
+    std::vector<DrawCall> drawCalls;
+};
+```
+
+**Builder Pattern for Complex Mocks**: When mocks need configuration
+```cpp
+class MockRendererBuilder {
+public:
+    MockRendererBuilder& withWidth(i32 w) { width = w; return *this; }
+    MockRendererBuilder& withHeight(i32 h) { height = h; return *this; }
+    MockRendererBuilder& failOnDraw() { shouldFailOnDraw = true; return *this; }
+
+    MockRenderer build() {
+        MockRenderer renderer;
+        renderer.width = width;
+        renderer.height = height;
+        renderer.shouldFail = shouldFailOnDraw;
+        return renderer;
+    }
+
+private:
+    i32 width = 1920;
+    i32 height = 1080;
+    bool shouldFailOnDraw = false;
+};
+
+// Usage
+TEST_CASE("Handle render failure", "[rendering]") {
+    auto renderer = MockRendererBuilder()
+        .withWidth(800)
+        .withHeight(600)
+        .failOnDraw()
+        .build();
+    // Test error handling
+}
+```
+
+#### Examples from Codebase
+
+See these files for real mocking examples:
+- `tests/integration/test_scene_workflow.cpp` - IntegrationMockRenderer
+- `tests/integration/test_animation_integration.cpp` - MockSceneObject
+- `tests/unit/test_scene_graph_deep.cpp` - MockWindow
+```
+
 ## Concurrency Testing
 
 ### Thread Safety Tests
@@ -236,7 +450,7 @@ For comprehensive race condition detection:
 # Configure with ThreadSanitizer
 cmake -B build \
   -DCMAKE_BUILD_TYPE=Debug \
-  -DNM_BUILD_TESTS=ON \
+  -DNOVELMIND_BUILD_TESTS=ON \
   -DCMAKE_CXX_FLAGS="-fsanitize=thread -g"
 
 # Build and run

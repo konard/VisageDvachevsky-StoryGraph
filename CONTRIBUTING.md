@@ -202,9 +202,26 @@ For feature requests, please describe:
 
 ## Testing
 
-### Running Tests
+All code changes must include appropriate tests. See [docs/TESTING.md](docs/TESTING.md) for comprehensive testing guidelines.
+
+### Test Coverage Requirements
+
+- **New Features**: Must include tests achieving at least 70% line coverage for new code
+- **Bug Fixes**: Must include a regression test that reproduces and verifies the fix
+- **Refactoring**: Must maintain or improve existing test coverage
+- **Critical Code**: Security-sensitive code, serialization, and user-facing features require 80%+ coverage
+
+### Running Tests Locally
+
+Before submitting a PR, ensure all tests pass:
 
 ```bash
+# Configure with tests enabled
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DNOVELMIND_BUILD_TESTS=ON
+
+# Build
+cmake --build build
+
 # Run all tests
 cd build && ctest --output-on-failure
 
@@ -213,6 +230,67 @@ cd build && ctest --output-on-failure
 
 # Run with verbose output
 ./bin/unit_tests -v
+
+# Run integration tests (requires editor build)
+./bin/integration_tests
+```
+
+### Test Organization
+
+- **Unit Tests**: `tests/unit/` - Test individual components in isolation
+- **Integration Tests**: `tests/integration/` - Test component interactions and workflows
+- **Test Naming**: `test_<component>.cpp` (e.g., `test_scene_graph.cpp`)
+- **Test Tags**: Use Catch2 tags for filtering (e.g., `[scene][rendering]`)
+
+### Writing Tests
+
+Use [Catch2](https://github.com/catchorg/Catch2) for all tests:
+
+```cpp
+#include <catch2/catch_test_macros.hpp>
+#include "NovelMind/module/component.hpp"
+
+TEST_CASE("Component behavior", "[module][component]")
+{
+    Component comp;
+
+    SECTION("Test specific behavior") {
+        comp.doSomething();
+        REQUIRE(comp.getState() == ExpectedState);
+    }
+}
+```
+
+### Mocking Strategy
+
+The project uses manual mocking (no external mocking framework):
+
+- Implement test doubles by inheriting from interfaces
+- Keep mocks simple and focused on the test scenario
+- See `tests/integration/test_scene_workflow.cpp` for mock examples
+
+For detailed mocking patterns and best practices, see [docs/TESTING.md](docs/TESTING.md#mocking-and-test-doubles).
+
+### Checking Test Coverage Locally
+
+```bash
+# Configure with coverage flags
+cmake -B build \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DNOVELMIND_BUILD_TESTS=ON \
+  -DCMAKE_CXX_FLAGS="--coverage"
+
+# Build and run tests
+cmake --build build
+cd build && ctest
+
+# Generate coverage report (Linux/macOS)
+lcov --directory . --capture --output-file coverage.info
+lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage.info
+lcov --list coverage.info
+
+# Generate HTML report
+genhtml coverage.info --output-directory coverage_html
 ```
 
 ### Static Analysis
@@ -258,12 +336,7 @@ cmake --build build
 cd build && ctest --output-on-failure
 ```
 
-### Writing Tests
-
-- Use Catch2 for unit tests
-- Place unit tests in `tests/unit/`
-- Name test files `test_<component>.cpp`
-- Cover edge cases and error conditions
+For more comprehensive testing documentation including test organization, coverage requirements, mocking strategies, and best practices, see [docs/TESTING.md](docs/TESTING.md).
 
 ## Questions?
 
