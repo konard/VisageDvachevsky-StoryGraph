@@ -27,6 +27,8 @@
 #include <QHash>
 #include <QPointer>
 #include <QQueue>
+#include <QRunnable>
+#include <QThreadPool>
 #include <QToolBar>
 #include <QWidget>
 
@@ -78,6 +80,23 @@ struct VoiceLineEntry {
 struct DurationCacheEntry {
   double duration = 0.0;
   qint64 mtime = 0; // File modification time for cache invalidation
+};
+
+/**
+ * @brief Task for probing audio file duration in background
+ */
+class DurationProbeTask : public QRunnable {
+public:
+  DurationProbeTask(const QString &path,
+                    std::shared_ptr<std::atomic<bool>> cancelled,
+                    QObject *receiver);
+
+  void run() override;
+
+private:
+  QString m_path;
+  std::shared_ptr<std::atomic<bool>> m_cancelled;
+  QPointer<QObject> m_receiver;
 };
 
 /**
@@ -155,6 +174,11 @@ signals:
    */
   void playbackError(const QString &errorMessage);
 
+  /**
+   * @brief Internal signal for thread-safe duration delivery
+   */
+  void durationProbedInternal(const QString &filePath, double duration);
+
 public slots:
   /**
    * @brief Handle recording completion from Voice Studio
@@ -204,6 +228,7 @@ private slots:
   // Async duration probing slots
   void onProbeDurationFinished();
   void processNextDurationProbe();
+  void onDurationProbed(const QString &filePath, double duration);
 
 private:
   void setupUI();
@@ -257,13 +282,13 @@ private:
   std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
   IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
 
-  // Duration probing player (separate from playback)
-  QPointer<QMediaPlayer> m_probePlayer;
+  // Duration probing - async with QThreadPool (issue #469)
+  QThreadPool *m_probeThreadPool = nullptr;
   QQueue<QString> m_probeQueue;
-  QString m_currentProbeFile;
+  QHash<QString, std::shared_ptr<std::atomic<bool>>> m_activeProbeTasks;
   std::atomic<bool> m_isProbing{false};    // Thread-safe flag for probing state
   mutable std::mutex m_probeMutex;         // Mutex for queue and file access
-  static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
+  static constexpr int MAX_CONCURRENT_PROBES = 2; // Concurrent probes for better throughput
 
   // Duration cache: path -> {duration, mtime}
   std::unordered_map<std::string, DurationCacheEntry> m_durationCache;
