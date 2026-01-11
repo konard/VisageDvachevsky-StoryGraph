@@ -78,6 +78,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
@@ -96,6 +97,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mouseReleaseEvent(event);
   }
 
@@ -132,6 +134,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsRectItem::mousePressEvent(event);
   }
 
@@ -150,6 +153,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsRectItem::mouseReleaseEvent(event);
   }
 
@@ -266,6 +270,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
@@ -284,6 +289,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mouseReleaseEvent(event);
   }
 
