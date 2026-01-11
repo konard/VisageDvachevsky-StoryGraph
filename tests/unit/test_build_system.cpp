@@ -500,3 +500,189 @@ TEST_CASE("BuildSystem::validateProject reports missing directories",
 
   cleanupTempDir(tempDir);
 }
+
+// =============================================================================
+// Encryption Key Parsing Tests (Issue #571)
+// =============================================================================
+
+TEST_CASE("Encryption key parsing handles invalid hex gracefully",
+          "[build_system][encryption][issue571]") {
+  // Save original environment
+  const char* origHexKey = std::getenv("NOVELMIND_PACK_AES_KEY_HEX");
+  const char* origKeyFile = std::getenv("NOVELMIND_PACK_AES_KEY_FILE");
+
+  SECTION("Rejects key with invalid hex characters") {
+    // Set environment variable with invalid characters
+#ifdef _WIN32
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid hex characters") != std::string::npos);
+  }
+
+  SECTION("Rejects key with special characters") {
+#ifdef _WIN32
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789ABCDEF!@#$%^&*()_+0123456789ABCDEF!@#$%^&*()_+012345");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789ABCDEF!@#$%^&*()_+0123456789ABCDEF!@#$%^&*()_+012345", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid hex characters") != std::string::npos);
+  }
+
+  SECTION("Rejects key with whitespace") {
+#ifdef _WIN32
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789ABCDEF 0123456789ABCDEF 0123456789ABCDEF 0123456789AB");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789ABCDEF 0123456789ABCDEF 0123456789ABCDEF 0123456789AB", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid hex characters") != std::string::npos);
+  }
+
+  SECTION("Rejects empty key string") {
+#ifdef _WIN32
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX", "");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX", "", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("64 hex characters") != std::string::npos);
+  }
+
+  SECTION("Rejects key with wrong length (too short)") {
+#ifdef _WIN32
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX", "0123456789ABCDEF");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX", "0123456789ABCDEF", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("64 hex characters") != std::string::npos);
+  }
+
+  SECTION("Rejects key with wrong length (too long)") {
+#ifdef _WIN32
+    _putenv_s(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567");
+#else
+    setenv(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("64 hex characters") != std::string::npos);
+  }
+
+  SECTION("Accepts valid lowercase hex key") {
+#ifdef _WIN32
+    _putenv_s(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().size() == 32);
+  }
+
+  SECTION("Accepts valid uppercase hex key") {
+#ifdef _WIN32
+    _putenv_s(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().size() == 32);
+  }
+
+  SECTION("Accepts valid mixed-case hex key") {
+#ifdef _WIN32
+    _putenv_s(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().size() == 32);
+  }
+
+  SECTION("Parses hex values correctly") {
+#ifdef _WIN32
+    _putenv_s(
+        "NOVELMIND_PACK_AES_KEY_HEX",
+        "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff");
+#else
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 1);
+#endif
+
+    auto result = BuildSystem::loadEncryptionKeyFromEnv();
+    REQUIRE(result.isOk());
+    auto key = result.value();
+    REQUIRE(key.size() == 32);
+    REQUIRE(key[0] == 0x00);
+    REQUIRE(key[1] == 0x11);
+    REQUIRE(key[2] == 0x22);
+    REQUIRE(key[3] == 0x33);
+    REQUIRE(key[14] == 0xee);
+    REQUIRE(key[15] == 0xff);
+  }
+
+  // Restore original environment
+#ifdef _WIN32
+  if (origHexKey) {
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX", origHexKey);
+  } else {
+    _putenv("NOVELMIND_PACK_AES_KEY_HEX=");
+  }
+  if (origKeyFile) {
+    _putenv_s("NOVELMIND_PACK_AES_KEY_FILE", origKeyFile);
+  } else {
+    _putenv("NOVELMIND_PACK_AES_KEY_FILE=");
+  }
+#else
+  if (origHexKey) {
+    setenv("NOVELMIND_PACK_AES_KEY_HEX", origHexKey, 1);
+  } else {
+    unsetenv("NOVELMIND_PACK_AES_KEY_HEX");
+  }
+  if (origKeyFile) {
+    setenv("NOVELMIND_PACK_AES_KEY_FILE", origKeyFile, 1);
+  } else {
+    unsetenv("NOVELMIND_PACK_AES_KEY_FILE");
+  }
+#endif
+}
