@@ -1045,3 +1045,154 @@ TEST_CASE("test_vm_division_normal_operations", "[scripting][division]")
         REQUIRE(std::get<NovelMind::i32>(result) == 1);
     }
 }
+
+// =========================================================================
+// CHOICE Opcode Stack Bounds Tests (Issue #508)
+// =========================================================================
+
+TEST_CASE("VM CHOICE opcode with sufficient stack", "[scripting][choice]")
+{
+    VirtualMachine vm;
+
+    // Test CHOICE with 3 options, all elements on stack
+    // Stack layout: [count, option1, option2, option3]
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 3},       // Push count
+        {OpCode::PUSH_STRING, 0},    // Push "Option 1"
+        {OpCode::PUSH_STRING, 1},    // Push "Option 2"
+        {OpCode::PUSH_STRING, 2},    // Push "Option 3"
+        {OpCode::CHOICE, 3},         // Request 3 choices
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"Option 1", "Option 2", "Option 3"};
+
+    vm.load(program, strings);
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::CHOICE,
+        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+            capturedArgs = args;
+        });
+
+    vm.run();
+
+    // Verify the callback was called with correct arguments
+    REQUIRE(capturedArgs.size() == 4);  // count + 3 choices
+
+    // First argument should be the count
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 3);
+
+    // Remaining arguments should be the choices in correct order
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[1]));
+    REQUIRE(std::get<std::string>(capturedArgs[1]) == "Option 1");
+
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[2]));
+    REQUIRE(std::get<std::string>(capturedArgs[2]) == "Option 2");
+
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[3]));
+    REQUIRE(std::get<std::string>(capturedArgs[3]) == "Option 3");
+}
+
+TEST_CASE("VM CHOICE opcode with insufficient stack - no elements", "[scripting][choice][security]")
+{
+    VirtualMachine vm;
+
+    // Test CHOICE with empty stack - should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::CHOICE, 3},         // Request 3 choices but stack is empty
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM CHOICE opcode with insufficient stack - partial elements", "[scripting][choice][security]")
+{
+    VirtualMachine vm;
+
+    // Test CHOICE requesting 3 options but only 2 elements on stack
+    // Stack needs: count + 3 options = 4 elements, but we only push 2
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 3},       // Push count
+        {OpCode::PUSH_STRING, 0},    // Push "Option 1" only
+        {OpCode::CHOICE, 3},         // Request 3 choices but only 1 on stack (+ count = 2 total)
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"Option 1"};
+
+    vm.load(program, strings);
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM CHOICE opcode with zero choices", "[scripting][choice]")
+{
+    VirtualMachine vm;
+
+    // Test CHOICE with 0 options
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 0},       // Push count
+        {OpCode::CHOICE, 0},         // Request 0 choices
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::CHOICE,
+        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+            capturedArgs = args;
+        });
+
+    vm.run();
+
+    // Should complete successfully with just the count argument
+    REQUIRE(vm.isHalted());
+    REQUIRE(capturedArgs.size() == 1);  // Just the count
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 0);
+}
+
+TEST_CASE("VM CHOICE opcode with one choice", "[scripting][choice]")
+{
+    VirtualMachine vm;
+
+    // Test CHOICE with exactly 1 option
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},       // Push count
+        {OpCode::PUSH_STRING, 0},    // Push "Only Option"
+        {OpCode::CHOICE, 1},         // Request 1 choice
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"Only Option"};
+
+    vm.load(program, strings);
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::CHOICE,
+        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+            capturedArgs = args;
+        });
+
+    vm.run();
+
+    // Verify the callback was called correctly
+    REQUIRE(capturedArgs.size() == 2);  // count + 1 choice
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 1);
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[1]));
+    REQUIRE(std::get<std::string>(capturedArgs[1]) == "Only Option");
+}
