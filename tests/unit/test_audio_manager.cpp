@@ -916,3 +916,279 @@ TEST_CASE("AudioManager thread safety - multiple sources",
 
   manager.shutdown();
 }
+
+// =============================================================================
+// Thread Safety Tests - Issue #558
+// =============================================================================
+
+TEST_CASE("AudioManager thread safety - concurrent sound creation with limit",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Concurrent playSound calls should never exceed max limit") {
+    const size_t maxSounds = 10;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<int> successfulCreations{0};
+    std::atomic<int> failedCreations{0};
+    std::vector<std::thread> threads;
+
+    // Launch many threads trying to create sounds simultaneously
+    for (int t = 0; t < 8; ++t) {
+      threads.emplace_back([&, t]() {
+        for (int i = 0; i < 20; ++i) {
+          PlaybackConfig config;
+          config.volume = 0.5f;
+          config.priority = i;
+          auto handle = manager.playSound("test_sound_" + std::to_string(t * 100 + i),
+                                          config);
+          if (handle.isValid()) {
+            successfulCreations++;
+          } else {
+            failedCreations++;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+      });
+    }
+
+    for (auto &thread : threads) {
+      thread.join();
+    }
+
+    // Verify that we never exceeded the limit
+    size_t finalCount = manager.getActiveSourceCount();
+    REQUIRE(finalCount <= maxSounds);
+
+    // Verify that some sounds were created
+    REQUIRE(successfulCreations > 0);
+  }
+
+  SECTION("Stress test: Rapid concurrent sound creation and limit check") {
+    const size_t maxSounds = 5;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<bool> running{true};
+    std::atomic<size_t> maxObservedCount{0};
+
+    // Thread 1-4: Continuously create sounds
+    std::vector<std::thread> creatorThreads;
+    for (int t = 0; t < 4; ++t) {
+      creatorThreads.emplace_back([&, t]() {
+        int counter = 0;
+        while (running) {
+          PlaybackConfig config;
+          config.priority = counter % 10;
+          manager.playSound("sound_" + std::to_string(t) + "_" +
+                           std::to_string(counter++), config);
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+      });
+    }
+
+    // Thread 5: Monitor thread that checks the count never exceeds limit
+    std::thread monitorThread([&]() {
+      for (int i = 0; i < 500; ++i) {
+        size_t count = manager.getActiveSourceCount();
+        size_t current = maxObservedCount.load();
+        while (count > current &&
+               !maxObservedCount.compare_exchange_weak(current, count)) {
+          // Retry if another thread updated maxObservedCount
+        }
+
+        // CRITICAL CHECK: Verify limit is never exceeded
+        REQUIRE(count <= maxSounds);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      }
+      running = false;
+    });
+
+    for (auto &thread : creatorThreads) {
+      thread.join();
+    }
+    monitorThread.join();
+
+    // Final verification
+    REQUIRE(maxObservedCount.load() <= maxSounds);
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+  }
+
+  SECTION("Verify atomicity of check-and-create operation") {
+    const size_t maxSounds = 3;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<int> creationAttempts{0};
+    std::vector<std::thread> threads;
+    std::mutex violationMutex;
+    std::vector<std::string> violations;
+
+    // Create exactly maxSounds worth of simultaneous attempts
+    for (size_t t = 0; t < maxSounds * 3; ++t) {
+      threads.emplace_back([&, t]() {
+        creationAttempts++;
+
+        // Wait for all threads to be ready
+        while (creationAttempts.load() < static_cast<int>(maxSounds * 3)) {
+          std::this_thread::yield();
+        }
+
+        // All threads try to create sounds at the same time
+        PlaybackConfig config;
+        config.priority = static_cast<int>(t);
+        auto handle = manager.playSound("test_" + std::to_string(t), config);
+
+        // Immediately check the count
+        size_t count = manager.getActiveSourceCount();
+        if (count > maxSounds) {
+          std::lock_guard<std::mutex> lock(violationMutex);
+          violations.push_back("Count exceeded: " + std::to_string(count) +
+                              " > " + std::to_string(maxSounds));
+        }
+      });
+    }
+
+    for (auto &thread : threads) {
+      thread.join();
+    }
+
+    // Verify no violations occurred
+    if (!violations.empty()) {
+      for (const auto &violation : violations) {
+        WARN(violation);
+      }
+      FAIL("Race condition detected: limit was exceeded");
+    }
+
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager thread safety - priority-based eviction is atomic",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("High priority sounds should evict low priority atomically") {
+    const size_t maxSounds = 5;
+    manager.setMaxSounds(maxSounds);
+
+    // Fill up with low priority sounds
+    for (size_t i = 0; i < maxSounds; ++i) {
+      PlaybackConfig config;
+      config.priority = 1;
+      manager.playSound("low_priority_" + std::to_string(i), config);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    REQUIRE(manager.getActiveSourceCount() == maxSounds);
+
+    std::atomic<int> highPriorityCreated{0};
+    std::vector<std::thread> threads;
+
+    // Multiple threads try to create high priority sounds
+    for (int t = 0; t < 4; ++t) {
+      threads.emplace_back([&, t]() {
+        for (int i = 0; i < 10; ++i) {
+          PlaybackConfig config;
+          config.priority = 100; // Much higher than existing sounds
+          auto handle = manager.playSound("high_priority_" +
+                                          std::to_string(t * 100 + i), config);
+          if (handle.isValid()) {
+            highPriorityCreated++;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+      });
+    }
+
+    for (auto &thread : threads) {
+      thread.join();
+    }
+
+    // Verify limit was never exceeded despite concurrent evictions
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+
+    // Verify that high priority sounds were successfully created
+    REQUIRE(highPriorityCreated > 0);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager thread safety - source creation is truly atomic",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("TOCTOU race condition should not occur") {
+    // This test specifically targets the time-of-check-time-of-use bug
+    // where the limit check and source creation are not atomic
+
+    const size_t maxSounds = 2;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<bool> raceDetected{false};
+    std::vector<std::thread> threads;
+
+    // Run multiple iterations to increase chance of catching the race
+    for (int iteration = 0; iteration < 10 && !raceDetected; ++iteration) {
+      // Clear existing sounds
+      manager.stopAllSounds(0.0f);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+      std::atomic<int> ready{0};
+      const int numThreads = 4;
+
+      for (int t = 0; t < numThreads; ++t) {
+        threads.emplace_back([&, t, iteration]() {
+          ready++;
+          // Wait for all threads to be ready
+          while (ready.load() < numThreads) {
+            std::this_thread::yield();
+          }
+
+          // All threads attempt to create sounds simultaneously
+          PlaybackConfig config;
+          config.priority = t;
+          manager.playSound("race_test_" + std::to_string(iteration) +
+                           "_" + std::to_string(t), config);
+
+          // Immediately check if limit was exceeded
+          size_t count = manager.getActiveSourceCount();
+          if (count > maxSounds) {
+            raceDetected = true;
+          }
+        });
+      }
+
+      for (auto &thread : threads) {
+        thread.join();
+      }
+      threads.clear();
+
+      // Check final count
+      if (manager.getActiveSourceCount() > maxSounds) {
+        raceDetected = true;
+      }
+    }
+
+    REQUIRE_FALSE(raceDetected);
+  }
+
+  manager.shutdown();
+}
