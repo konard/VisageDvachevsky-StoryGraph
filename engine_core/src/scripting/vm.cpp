@@ -320,12 +320,32 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::DIV: {
     Value b = pop();
     Value a = pop();
-    f32 divisor = asFloat(b);
-    if (divisor != 0.0f) {
+
+    // Check for division by zero before performing the operation
+    // Handle both integer and float divisions
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+
+    if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      // Float division
+      f32 divisor = asFloat(b);
+      if (divisor == 0.0f) {
+        NOVELMIND_LOG_ERROR("VM Runtime Error: Division by zero at instruction " +
+                            std::to_string(m_ip));
+        m_halted = true;
+        return;
+      }
       push(asFloat(a) / divisor);
     } else {
-      NOVELMIND_LOG_ERROR("Division by zero");
-      push(0);
+      // Integer division
+      i32 divisor = asInt(b);
+      if (divisor == 0) {
+        NOVELMIND_LOG_ERROR("VM Runtime Error: Division by zero at instruction " +
+                            std::to_string(m_ip));
+        m_halted = true;
+        return;
+      }
+      push(asInt(a) / divisor);
     }
     break;
   }
@@ -466,13 +486,17 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::MOD: {
     Value b = pop();
     Value a = pop();
+
+    // Check for modulo by zero before performing the operation
+    // Modulo is only defined for integers
     i32 divisor = asInt(b);
-    if (divisor != 0) {
-      push(asInt(a) % divisor);
-    } else {
-      NOVELMIND_LOG_ERROR("Modulo by zero");
-      push(0);
+    if (divisor == 0) {
+      NOVELMIND_LOG_ERROR("VM Runtime Error: Modulo by zero at instruction " +
+                          std::to_string(m_ip));
+      m_halted = true;
+      return;
     }
+    push(asInt(a) % divisor);
     break;
   }
 
