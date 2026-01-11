@@ -464,6 +464,7 @@ void NMTransformGizmo::createRotateGizmo() {
 
 void NMTransformGizmo::createScaleGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
+  const qreal uiScale = NMStyleManager::instance().uiScale();
   qreal size = 50;
 
   // Bounding box
@@ -472,19 +473,33 @@ void NMTransformGizmo::createScaleGizmo() {
   box->setBrush(Qt::NoBrush);
   addToGroup(box);
 
-  auto *scaleHit = new NMGizmoHitArea(
-      HandleType::Corner, QRectF(-size, -size, size * 2, size * 2), this);
-  scaleHit->setCursor(Qt::SizeFDiagCursor);
-  addToGroup(scaleHit);
-
-  // Corner handles
+  // Corner handles with DPI-aware sizing
   QList<QPointF> corners = {QPointF(-size, -size), QPointF(size, -size),
                             QPointF(-size, size), QPointF(size, size)};
 
+  // Visual handle size scaled with DPI
+  const qreal handleSize = 16 * uiScale;
+  const qreal handleHalfSize = handleSize / 2;
+
+  // Hit area size - larger than visual handle for easier selection
+  const qreal hitAreaSize = 24 * uiScale;
+  const qreal hitAreaHalfSize = hitAreaSize / 2;
+
   for (const auto &corner : corners) {
+    // Create larger hit area for easier selection
+    auto *hitArea = new NMGizmoHitArea(
+        HandleType::Corner,
+        QRectF(corner.x() - hitAreaHalfSize, corner.y() - hitAreaHalfSize,
+               hitAreaSize, hitAreaSize),
+        this);
+    hitArea->setCursor(Qt::SizeFDiagCursor);
+    addToGroup(hitArea);
+
+    // Create visual handle
     auto *handle =
         new NMGizmoHandle(NMTransformGizmo::HandleType::Corner, this);
-    handle->setRect(corner.x() - 8, corner.y() - 8, 16, 16);
+    handle->setRect(corner.x() - handleHalfSize, corner.y() - handleHalfSize,
+                    handleSize, handleSize);
     handle->setBrush(palette.accentPrimary);
     handle->setPen(Qt::NoPen);
     handle->setCursor(Qt::SizeFDiagCursor);

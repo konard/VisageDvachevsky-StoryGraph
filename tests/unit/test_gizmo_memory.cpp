@@ -190,8 +190,8 @@ TEST_CASE("NMTransformGizmo handles all gizmo modes correctly", "[gizmo][modes]"
     SECTION("Scale mode creates expected items") {
         gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Scale);
-        // Scale mode has: box, scaleHit, 4 corner handles = 6 items
-        REQUIRE(gizmo->childItems().size() == 6);
+        // Scale mode has: box, 4 corner hit areas, 4 corner handles = 9 items
+        REQUIRE(gizmo->childItems().size() == 9);
     }
 
     delete scene;
@@ -217,7 +217,7 @@ TEST_CASE("NMTransformGizmo does not leak memory on mode changes", "[gizmo][memo
 
         // Final mode should be Scale
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Scale);
-        REQUIRE(gizmo->childItems().size() == 6);
+        REQUIRE(gizmo->childItems().size() == 9);
 
         delete scene;
         // Valgrind or other memory checkers would catch leaks here
@@ -243,6 +243,162 @@ TEST_CASE("NMTransformGizmo clearGizmo handles empty gizmo", "[gizmo][edge_cases
         auto initialChildCount = gizmo->childItems().size();
         gizmo->setMode(initialMode);
         REQUIRE(gizmo->childItems().size() == initialChildCount);
+
+        delete scene;
+    }
+}
+
+// =============================================================================
+// NMTransformGizmo Scale Corner Hit Area Tests (Issue #459)
+// =============================================================================
+
+TEST_CASE("NMTransformGizmo scale corner handles have adequate hit areas", "[gizmo][scale][hit_area]")
+{
+    int argc = 0;
+    char *argv[] = {nullptr};
+    QApplication app(argc, argv);
+
+    auto *scene = new QGraphicsScene();
+    auto *gizmo = new NMTransformGizmo();
+    scene->addItem(gizmo);
+
+    SECTION("Scale mode creates individual hit areas for each corner") {
+        gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
+
+        // Scale mode should have: box (1) + corner hit areas (4) + corner handles (4) = 9 items
+        auto children = gizmo->childItems();
+        REQUIRE(children.size() == 9);
+
+        // Count hit areas and handles separately
+        int hitAreaCount = 0;
+        int handleCount = 0;
+
+        for (auto *item : children) {
+            // QGraphicsRectItem with NoBrush and NoPen is likely a hit area
+            auto *rectItem = qgraphicsitem_cast<QGraphicsRectItem*>(item);
+            if (rectItem && rectItem->brush() == Qt::NoBrush && rectItem->pen() == Qt::NoPen) {
+                hitAreaCount++;
+            }
+            // QGraphicsEllipseItem is a handle
+            auto *ellipseItem = qgraphicsitem_cast<QGraphicsEllipseItem*>(item);
+            if (ellipseItem) {
+                handleCount++;
+            }
+        }
+
+        // Should have 4 corner hit areas
+        REQUIRE(hitAreaCount >= 4);
+        // Should have 4 corner handles
+        REQUIRE(handleCount == 4);
+    }
+
+    SECTION("Hit areas are larger than visual handles") {
+        gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
+
+        auto children = gizmo->childItems();
+
+        // Find a hit area and a handle
+        QGraphicsRectItem *hitArea = nullptr;
+        QGraphicsEllipseItem *handle = nullptr;
+
+        for (auto *item : children) {
+            if (!hitArea) {
+                auto *rectItem = qgraphicsitem_cast<QGraphicsRectItem*>(item);
+                if (rectItem && rectItem->brush() == Qt::NoBrush && rectItem->pen() == Qt::NoPen) {
+                    // Skip the bounding box (which has a pen)
+                    if (rectItem->rect().width() < 150) { // Hit areas are smaller than the full box
+                        hitArea = rectItem;
+                    }
+                }
+            }
+            if (!handle) {
+                handle = qgraphicsitem_cast<QGraphicsEllipseItem*>(item);
+            }
+
+            if (hitArea && handle) break;
+        }
+
+        // Verify we found both
+        REQUIRE(hitArea != nullptr);
+        REQUIRE(handle != nullptr);
+
+        // Hit area should be larger than handle
+        // Hit area is 24px, handle is 16px (at 1.0 scale)
+        REQUIRE(hitArea->rect().width() > handle->rect().width());
+        REQUIRE(hitArea->rect().height() > handle->rect().height());
+    }
+
+    delete scene;
+}
+
+TEST_CASE("NMTransformGizmo scale corner handles scale with DPI", "[gizmo][scale][dpi]")
+{
+    int argc = 0;
+    char *argv[] = {nullptr};
+    QApplication app(argc, argv);
+
+    SECTION("Corner handles scale proportionally with UI scale") {
+        auto *scene = new QGraphicsScene();
+        auto *gizmo = new NMTransformGizmo();
+        scene->addItem(gizmo);
+
+        // Get the current UI scale
+        double currentScale = NMStyleManager::instance().uiScale();
+
+        // Create scale gizmo
+        gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
+
+        auto children = gizmo->childItems();
+
+        // Find a corner handle
+        QGraphicsEllipseItem *handle = nullptr;
+        for (auto *item : children) {
+            handle = qgraphicsitem_cast<QGraphicsEllipseItem*>(item);
+            if (handle) break;
+        }
+
+        REQUIRE(handle != nullptr);
+
+        // Base handle size is 16px, should be scaled by UI scale
+        double expectedSize = 16.0 * currentScale;
+        REQUIRE(handle->rect().width() == expectedSize);
+        REQUIRE(handle->rect().height() == expectedSize);
+
+        delete scene;
+    }
+
+    SECTION("Hit areas scale proportionally with UI scale") {
+        auto *scene = new QGraphicsScene();
+        auto *gizmo = new NMTransformGizmo();
+        scene->addItem(gizmo);
+
+        // Get the current UI scale
+        double currentScale = NMStyleManager::instance().uiScale();
+
+        // Create scale gizmo
+        gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
+
+        auto children = gizmo->childItems();
+
+        // Find a corner hit area
+        QGraphicsRectItem *hitArea = nullptr;
+        for (auto *item : children) {
+            auto *rectItem = qgraphicsitem_cast<QGraphicsRectItem*>(item);
+            if (rectItem && rectItem->brush() == Qt::NoBrush && rectItem->pen() == Qt::NoPen) {
+                // Skip the bounding box - hit areas are smaller
+                if (rectItem->rect().width() < 150) {
+                    hitArea = rectItem;
+                    break;
+                }
+            }
+        }
+
+        REQUIRE(hitArea != nullptr);
+
+        // Base hit area size is 24px, should be scaled by UI scale
+        double expectedSize = 24.0 * currentScale;
+        REQUIRE(hitArea->rect().width() == expectedSize);
+        REQUIRE(hitArea->rect().height() == expectedSize);
 
         delete scene;
     }
