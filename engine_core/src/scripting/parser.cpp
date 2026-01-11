@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/parser.hpp"
+#include <sstream>
 
 namespace NovelMind::scripting {
 
@@ -164,7 +165,9 @@ CharacterDecl Parser::parseCharacterDecl() {
             consume(TokenType::String, "Expected sprite string");
         decl.defaultSprite = value.lexeme;
       } else {
-        error("Unknown character property: " + propName.lexeme);
+        std::ostringstream oss;
+        oss << "Unknown character property: " << propName.lexeme;
+        error(oss.str());
         // Skip the value
         advance();
       }
