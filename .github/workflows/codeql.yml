@@ -1,0 +1,73 @@
+name: CodeQL Security Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run at 02:00 UTC every Monday for comprehensive analysis
+    - cron: '0 2 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze C++ with CodeQL
+    runs-on: ubuntu-latest
+    permissions:
+      # Required for CodeQL to upload results
+      security-events: write
+      # Required to checkout code
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev
+
+    # Initialize CodeQL tools for scanning
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        # Use security-and-quality query suite for comprehensive security checks
+        queries: security-and-quality
+        # Configure to capture build commands
+        config: |
+          paths:
+            - engine_core
+            - editor
+            - compiler
+            - runtime
+          paths-ignore:
+            - tests
+            - examples
+            - experiments
+
+    # Build the project for CodeQL analysis
+    - name: Configure CMake
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=Release \
+          -DNM_BUILD_TESTS=OFF
+
+    - name: Build project
+      run: cmake --build build
+
+    # Perform CodeQL analysis
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"
+        upload: true
+        # Fail workflow if critical or high severity issues found
+        fail-on: critical,high
