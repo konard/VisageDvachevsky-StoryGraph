@@ -458,6 +458,8 @@ void NMSceneViewPanel::setupContent() {
           &NMSceneViewPanel::onObjectTransformFinished);
   connect(m_scene, &NMSceneGraphicsScene::deleteRequested, this,
           &NMSceneViewPanel::onDeleteRequested);
+  connect(m_scene, &NMSceneGraphicsScene::objectDeleted, this,
+          &NMSceneViewPanel::objectDeleted);
 
   connect(
       m_playOverlay, &NMPlayPreviewOverlay::choiceSelected, this,

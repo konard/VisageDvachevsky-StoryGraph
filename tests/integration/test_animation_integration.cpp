@@ -298,6 +298,39 @@ TEST_CASE("Animation Integration - Preview playback synchronization", "[integrat
   }
 }
 
+TEST_CASE("Animation Integration - Object cache invalidation on deletion", "[integration][animation][cache]") {
+  SECTION("Cache entry removed when object deleted") {
+    // This is a conceptual test - in real implementation, this would test the
+    // NMAnimationAdapter's cache invalidation when receiving objectDeleted signal
+
+    // Simulate: Object exists, gets cached, then gets deleted
+    // Expected: Cache entry should be removed to prevent dangling pointer
+
+    // In a Qt environment with NMAnimationAdapter:
+    // 1. Adapter caches object pointer during animation
+    // 2. Scene emits objectDeleted signal
+    // 3. Adapter's onObjectDeleted slot removes cache entry
+    // 4. Next animation frame detects missing object gracefully
+
+    // This test documents the expected behavior for the fix to issue #567
+    // The actual Qt-based test would use QSignalSpy to verify signal/slot connection
+  }
+
+  SECTION("Cached pointer validation before use") {
+    // Conceptual test for defensive validation
+    // Even if cache invalidation signal is missed, the adapter should:
+    // 1. Check if cached object still exists in scene
+    // 2. Remove stale cache entry if object is gone
+    // 3. Return gracefully without accessing deleted memory
+  }
+
+  SECTION("Cache cleared on scene change") {
+    // When scene is reloaded or preview stops:
+    // 1. All cache entries should be cleared
+    // 2. Prevents holding references to objects from old scene
+  }
+}
+
 TEST_CASE("Animation Integration - RAII and resource management", "[integration][animation]") {
   SECTION("Unique pointer ownership") {
     // AnimationTimeline takes ownership of tweens

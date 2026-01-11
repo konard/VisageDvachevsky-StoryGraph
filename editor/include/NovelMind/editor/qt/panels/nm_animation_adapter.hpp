@@ -219,6 +219,12 @@ public slots:
    */
   void rebuildAnimations();
 
+  /**
+   * @brief Handle object deletion - invalidate cache entry
+   * @param objectId ID of the deleted object
+   */
+  void onObjectDeleted(const QString &objectId);
+
 private:
   /**
    * @brief Build animation timeline from a track

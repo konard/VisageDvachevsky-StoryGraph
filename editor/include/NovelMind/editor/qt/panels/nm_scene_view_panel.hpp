@@ -210,6 +210,7 @@ signals:
                                const QPointF& newPosition, qreal oldRotation, qreal newRotation,
                                qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
   void deleteRequested(const QString& objectId);
+  void objectDeleted(const QString& objectId);
 
 protected:
   void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -421,6 +422,7 @@ signals:
                                qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
   void sceneChanged(const QString& sceneId);
   void focusModeRequested(bool enabled);
+  void objectDeleted(const QString& objectId);
 
 private slots:
   void onZoomIn();

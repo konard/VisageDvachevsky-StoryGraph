@@ -101,6 +101,9 @@ void NMSceneGraphicsScene::removeSceneObject(const QString& objectId) {
     if (m_sceneObjects[i]->id() == objectId) {
       NMSceneObject* obj = m_sceneObjects.takeAt(i);
       removeItem(obj);
+      // Emit signal before deletion to allow dependent systems (e.g., animation adapter)
+      // to invalidate cached pointers
+      emit objectDeleted(objectId);
       delete obj;
       break;
     }
