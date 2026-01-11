@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/parser.hpp"
+#include <cassert>
 
 namespace NovelMind::scripting {
 
@@ -35,7 +36,10 @@ bool Parser::isAtEnd() const { return peek().type == TokenType::EndOfFile; }
 
 const Token &Parser::peek() const { return (*m_tokens)[m_current]; }
 
-const Token &Parser::previous() const { return (*m_tokens)[m_current - 1]; }
+const Token &Parser::previous() const {
+  assert(m_current > 0 && "Cannot call previous() before any tokens are consumed");
+  return (*m_tokens)[m_current - 1];
+}
 
 const Token &Parser::advance() {
   if (!isAtEnd()) {

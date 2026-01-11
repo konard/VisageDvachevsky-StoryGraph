@@ -555,6 +555,85 @@ TEST_CASE("Parser parses move statements", "[parser]")
     }
 }
 
+TEST_CASE("Parser previous() token bounds checking", "[parser]")
+{
+    Lexer lexer;
+    Parser parser;
+
+    SECTION("test_parser_previous_at_start")
+    {
+        // Test that parsing empty input doesn't crash
+        auto tokens = lexer.tokenize("");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        // Should succeed with empty program
+        REQUIRE(result.isOk());
+        const auto& program = result.value();
+        REQUIRE(program.characters.empty());
+        REQUIRE(program.scenes.empty());
+        REQUIRE(program.globalStatements.empty());
+    }
+
+    SECTION("test_parser_previous_after_advance")
+    {
+        // Test normal case: previous() after advance()
+        auto tokens = lexer.tokenize("say \"Hello\"");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+    }
+
+    SECTION("test_parser_previous_multiple_calls")
+    {
+        // Test multiple statements to ensure previous() works correctly throughout parsing
+        auto tokens = lexer.tokenize(R"(
+            show Hero at center
+            say Hero "Hello"
+            hide Hero
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 3);
+    }
+
+    SECTION("test_parser_empty_input")
+    {
+        // Test parsing truly empty token list (just EOF)
+        std::vector<Token> emptyTokens;
+        Token eof;
+        eof.type = TokenType::EndOfFile;
+        eof.lexeme = "";
+        eof.location = SourceLocation{1, 1};
+        emptyTokens.push_back(eof);
+
+        auto result = parser.parse(emptyTokens);
+        REQUIRE(result.isOk());
+        const auto& program = result.value();
+        REQUIRE(program.characters.empty());
+        REQUIRE(program.scenes.empty());
+        REQUIRE(program.globalStatements.empty());
+    }
+
+    SECTION("test_parser_single_token_input")
+    {
+        // Test with single valid token (should still work)
+        auto tokens = lexer.tokenize("goto scene1");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+    }
+}
+
 TEST_CASE("Parser error recovery", "[parser]")
 {
     Lexer lexer;
