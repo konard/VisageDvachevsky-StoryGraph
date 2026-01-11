@@ -55,6 +55,8 @@ add_executable(unit_tests
     unit/test_build_system.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
+    # Issue #542 - Improved error messages
+    unit/test_error_messages.cpp
 )
 
 target_link_libraries(unit_tests
