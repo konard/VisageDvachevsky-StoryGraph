@@ -205,6 +205,13 @@ TEST_CASE("SceneObjectBase deep hierarchy limits", "[scene_graph][object][hierar
     REQUIRE(root->findChild("child_50") != nullptr);
 }
 
+// NOTE: The following tests define the EXPECTED behavior for cycle detection.
+// Cycle detection is NOT yet implemented in SceneObjectBase::setParent() and addChild().
+// These tests will FAIL until cycle detection is implemented.
+// This is intentional - the tests serve as:
+//   1. Documentation of required behavior
+//   2. TDD specification for future implementation
+//   3. Regression prevention once implemented
 TEST_CASE("SceneObjectBase cyclic assignment detection", "[scene_graph][object][hierarchy][cycles]")
 {
     SECTION("Direct cycle (A->A)") {
