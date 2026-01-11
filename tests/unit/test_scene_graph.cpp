@@ -205,6 +205,104 @@ TEST_CASE("SceneObjectBase deep hierarchy limits", "[scene_graph][object][hierar
     REQUIRE(root->findChild("child_50") != nullptr);
 }
 
+TEST_CASE("SceneObjectBase cyclic assignment detection", "[scene_graph][object][hierarchy][cycles]")
+{
+    SECTION("Direct cycle (A->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto* objAPtr = objA.get();
+
+        // Attempting to set an object as its own parent should be detected and rejected
+        // Current behavior: This would create a cycle, which should be prevented
+        objA->setParent(objAPtr);
+
+        // Verify the parent was not set (cycle was rejected)
+        REQUIRE(objA->getParent() == nullptr);
+    }
+
+    SECTION("Indirect cycle (A->B->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+
+        // Set up hierarchy: A is parent of B
+        objA->addChild(std::move(objB));
+        REQUIRE(objBPtr->getParent() == objAPtr);
+
+        // Attempting to make B the parent of A would create a cycle
+        // This should be detected and rejected
+        objAPtr->setParent(objBPtr);
+
+        // Verify the cycle was rejected - A should have no parent
+        REQUIRE(objAPtr->getParent() == nullptr);
+        // Verify B is still a child of A
+        REQUIRE(objBPtr->getParent() == objAPtr);
+    }
+
+    SECTION("Deep cycle (A->B->C->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto objC = std::make_unique<TestSceneObject>("objC");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+        auto* objCPtr = objC.get();
+
+        // Set up hierarchy: A -> B -> C
+        objA->addChild(std::move(objB));
+        objBPtr->addChild(std::move(objC));
+
+        REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == objBPtr);
+
+        // Attempting to make C the parent of A would create a deep cycle
+        // This should be detected and rejected
+        objAPtr->setParent(objCPtr);
+
+        // Verify the cycle was rejected - A should have no parent
+        REQUIRE(objAPtr->getParent() == nullptr);
+        // Verify the existing hierarchy is intact
+        REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == objBPtr);
+    }
+
+    SECTION("Valid reparenting without cycles") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto objC = std::make_unique<TestSceneObject>("objC");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+        auto* objCPtr = objC.get();
+
+        // Initial hierarchy: A -> B
+        objA->addChild(std::move(objB));
+        REQUIRE(objBPtr->getParent() == objAPtr);
+
+        // Reparenting C under B is valid (no cycle)
+        objBPtr->addChild(std::move(objC));
+        REQUIRE(objCPtr->getParent() == objBPtr);
+
+        // Moving B to be a child of C should fail (would create cycle)
+        auto removedB = objAPtr->removeChild("objB");
+        REQUIRE(removedB != nullptr);
+
+        // Before adding B as child of C, verify this would create a cycle
+        // C is currently a child of B, so making B a child of C creates B->C->B
+        objCPtr->addChild(std::move(removedB));
+
+        // This should be rejected - verify B was not added
+        REQUIRE(objCPtr->findChild("objB") == nullptr);
+
+        // Valid reparenting: Move C from B to A (no cycle)
+        auto removedC = objBPtr->removeChild("objC");
+        REQUIRE(removedC != nullptr);
+        objAPtr->addChild(std::move(removedC));
+
+        // Verify the valid reparenting succeeded
+        REQUIRE(objAPtr->findChild("objC") != nullptr);
+        REQUIRE(objCPtr->getParent() == objAPtr);
+    }
+}
+
 TEST_CASE("SceneObjectBase tags", "[scene_graph][object][tags]")
 {
     auto obj = std::make_unique<TestSceneObject>("obj");
