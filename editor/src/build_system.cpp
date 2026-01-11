@@ -322,7 +322,14 @@ Result<std::vector<u8>> BuildSystem::encryptData(const std::vector<u8>& data,
                                                  const Core::SecureVector<u8>& key,
                                                  std::array<u8, 12>& ivOut) {
   if (key.size() != 32) {
-    return Result<std::vector<u8>>::error("Invalid key size: expected 32 bytes for AES-256-GCM");
+    std::string errorMsg = "Build encryption error: Invalid encryption key size\n\n";
+    errorMsg += "What went wrong: The encryption key must be exactly 32 bytes (256 bits) for AES-256-GCM.\n";
+    errorMsg += "Current key size: " + std::to_string(key.size()) + " bytes\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Use a 32-byte (256-bit) encryption key\n";
+    errorMsg += "  - Generate a secure key with: openssl rand -hex 32\n";
+    errorMsg += "  - Or let the build system auto-generate a secure key";
+    return Result<std::vector<u8>>::error(errorMsg);
   }
 
 #ifdef NOVELMIND_HAS_OPENSSL
@@ -659,20 +666,41 @@ void BuildSystem::configure(const BuildConfig& config) {
 
 Result<void> BuildSystem::startBuild(const BuildConfig& config) {
   if (m_buildInProgress) {
-    return Result<void>::error("Build already in progress");
+    std::string errorMsg = "Build already in progress\n\n";
+    errorMsg += "What went wrong: Another build is currently running.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Wait for the current build to complete\n";
+    errorMsg += "  - Or cancel the current build first using cancelBuild()";
+    return Result<void>::error(errorMsg);
   }
 
   // Validate configuration
   if (config.projectPath.empty()) {
-    return Result<void>::error("Project path is required");
+    std::string errorMsg = "Build configuration error: Project path is required\n\n";
+    errorMsg += "What went wrong: The build configuration is missing the project path.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Set config.projectPath to your project's root directory\n";
+    errorMsg += "  - Ensure the path points to a valid NovelMind project";
+    return Result<void>::error(errorMsg);
   }
   if (config.outputPath.empty()) {
-    return Result<void>::error("Output path is required");
+    std::string errorMsg = "Build configuration error: Output path is required\n\n";
+    errorMsg += "What went wrong: The build configuration is missing the output path.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Set config.outputPath to where you want the build output\n";
+    errorMsg += "  - Example: './build/output' or '../releases/MyGame'";
+    return Result<void>::error(errorMsg);
   }
 
   // Check project exists
   if (!fs::exists(config.projectPath)) {
-    return Result<void>::error("Project path does not exist: " + config.projectPath);
+    std::string errorMsg = "Build failed: Project directory not found\n\n";
+    errorMsg += "What went wrong: The project directory '" + config.projectPath + "' does not exist.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Verify the project path is correct\n";
+    errorMsg += "  - Check if the project was moved or deleted\n";
+    errorMsg += "  - Ensure you have read permissions for the directory";
+    return Result<void>::error(errorMsg);
   }
 
   m_config = config;
