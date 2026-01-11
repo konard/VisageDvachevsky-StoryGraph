@@ -95,6 +95,7 @@ void Parser::synchronize() {
     case TokenType::Say:
     case TokenType::Choice:
     case TokenType::If:
+    case TokenType::Else:
     case TokenType::Goto:
     case TokenType::Wait:
     case TokenType::Play:
@@ -102,6 +103,7 @@ void Parser::synchronize() {
     case TokenType::Set:
     case TokenType::Transition:
     case TokenType::Move:
+    case TokenType::LeftBrace:
       return;
     default:
       break;

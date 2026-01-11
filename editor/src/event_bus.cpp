@@ -76,37 +76,82 @@ void EventBus::dispatchEvent(const EditorEvent &event) {
     }
   }
 
-  // Copy subscribers to avoid issues if handlers modify subscriptions
-  std::vector<Subscriber> subscribersCopy;
+  // Increment dispatch depth to defer modifications
+  m_dispatchDepth++;
+
+  // Access subscribers directly without copying
+  // Lock only during iteration to read subscribers
   {
     std::lock_guard<std::mutex> lock(m_mutex);
-    subscribersCopy = m_subscribers;
-  }
 
-  // Dispatch to all matching subscribers
-  for (const auto &subscriber : subscribersCopy) {
-    bool shouldHandle = true;
+    // Dispatch to all matching subscribers
+    for (const auto &subscriber : m_subscribers) {
+      bool shouldHandle = true;
 
-    // Check type filter
-    if (subscriber.typeFilter.has_value() &&
-        subscriber.typeFilter.value() != event.type) {
-      shouldHandle = false;
-    }
+      // Check type filter
+      if (subscriber.typeFilter.has_value() &&
+          subscriber.typeFilter.value() != event.type) {
+        shouldHandle = false;
+      }
 
-    // Check custom filter
-    if (shouldHandle && subscriber.customFilter.has_value() &&
-        !subscriber.customFilter.value()(event)) {
-      shouldHandle = false;
-    }
+      // Check custom filter
+      if (shouldHandle && subscriber.customFilter.has_value() &&
+          !subscriber.customFilter.value()(event)) {
+        shouldHandle = false;
+      }
 
-    if (shouldHandle && subscriber.handler) {
-      try {
-        subscriber.handler(event);
-      } catch (...) {
-        // Log error but continue dispatching
+      if (shouldHandle && subscriber.handler) {
+        try {
+          subscriber.handler(event);
+        } catch (...) {
+          // Log error but continue dispatching
+        }
       }
     }
   }
+
+  // Decrement dispatch depth and process pending operations
+  m_dispatchDepth--;
+  if (m_dispatchDepth == 0) {
+    processPendingOperations();
+  }
+}
+
+void EventBus::processPendingOperations() {
+  std::lock_guard<std::mutex> lock(m_mutex);
+
+  for (const auto &op : m_pendingOperations) {
+    switch (op.type) {
+    case PendingOperation::Type::Add:
+      m_subscribers.push_back(op.subscriber);
+      break;
+
+    case PendingOperation::Type::Remove:
+      m_subscribers.erase(
+          std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                         [&op](const Subscriber &sub) {
+                           return sub.id == op.subscriptionId;
+                         }),
+          m_subscribers.end());
+      break;
+
+    case PendingOperation::Type::RemoveByType:
+      m_subscribers.erase(
+          std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                         [&op](const Subscriber &sub) {
+                           return sub.typeFilter.has_value() &&
+                                  sub.typeFilter.value() == op.eventType;
+                         }),
+          m_subscribers.end());
+      break;
+
+    case PendingOperation::Type::RemoveAll:
+      m_subscribers.clear();
+      break;
+    }
+  }
+
+  m_pendingOperations.clear();
 }
 
 // ============================================================================
@@ -120,9 +165,18 @@ EventSubscription EventBus::subscribe(EventHandler handler) {
   sub.id = m_nextSubscriberId++;
   sub.handler = std::move(handler);
 
-  m_subscribers.push_back(std::move(sub));
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::Add;
+    op.subscriber = sub;
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.push_back(std::move(sub));
+  }
 
-  return EventSubscription(m_subscribers.back().id);
+  return EventSubscription(sub.id);
 }
 
 EventSubscription EventBus::subscribe(EditorEventType type,
@@ -134,9 +188,18 @@ EventSubscription EventBus::subscribe(EditorEventType type,
   sub.handler = std::move(handler);
   sub.typeFilter = type;
 
-  m_subscribers.push_back(std::move(sub));
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::Add;
+    op.subscriber = sub;
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.push_back(std::move(sub));
+  }
 
-  return EventSubscription(m_subscribers.back().id);
+  return EventSubscription(sub.id);
 }
 
 EventSubscription EventBus::subscribe(EventFilter filter,
@@ -148,9 +211,18 @@ EventSubscription EventBus::subscribe(EventFilter filter,
   sub.handler = std::move(handler);
   sub.customFilter = std::move(filter);
 
-  m_subscribers.push_back(std::move(sub));
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::Add;
+    op.subscriber = sub;
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.push_back(std::move(sub));
+  }
 
-  return EventSubscription(m_subscribers.back().id);
+  return EventSubscription(sub.id);
 }
 
 void EventBus::unsubscribe(const EventSubscription &subscription) {
@@ -160,27 +232,56 @@ void EventBus::unsubscribe(const EventSubscription &subscription) {
 
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_subscribers.erase(std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                                     [&subscription](const Subscriber &sub) {
-                                       return sub.id == subscription.getId();
-                                     }),
-                      m_subscribers.end());
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::Remove;
+    op.subscriptionId = subscription.getId();
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.erase(
+        std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                       [&subscription](const Subscriber &sub) {
+                         return sub.id == subscription.getId();
+                       }),
+        m_subscribers.end());
+  }
 }
 
 void EventBus::unsubscribeAll(EditorEventType type) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_subscribers.erase(std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                                     [type](const Subscriber &sub) {
-                                       return sub.typeFilter.has_value() &&
-                                              sub.typeFilter.value() == type;
-                                     }),
-                      m_subscribers.end());
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::RemoveByType;
+    op.eventType = type;
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.erase(
+        std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                       [type](const Subscriber &sub) {
+                         return sub.typeFilter.has_value() &&
+                                sub.typeFilter.value() == type;
+                       }),
+        m_subscribers.end());
+  }
 }
 
 void EventBus::unsubscribeAll() {
   std::lock_guard<std::mutex> lock(m_mutex);
-  m_subscribers.clear();
+
+  if (m_dispatchDepth > 0) {
+    // Defer operation until dispatch completes
+    PendingOperation op;
+    op.type = PendingOperation::Type::RemoveAll;
+    m_pendingOperations.push_back(std::move(op));
+  } else {
+    // Apply immediately
+    m_subscribers.clear();
+  }
 }
 
 // ============================================================================

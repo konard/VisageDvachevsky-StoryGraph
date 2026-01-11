@@ -143,6 +143,13 @@ void SelectionMediator::shutdown() {
   m_selectionDebouncer.cancel();
   m_sceneLoadDebouncer.cancel();
 
+  // Issue #463: Disconnect all Qt signal connections to prevent memory leaks
+  // and stale connections. This is critical for proper cleanup when panels
+  // are destroyed or mediator is reinitialized.
+  if (m_storyGraph) {
+    disconnect(m_storyGraph, nullptr, this, nullptr);
+  }
+
   auto &bus = EventBus::instance();
   for (const auto &sub : m_subscriptions) {
     bus.unsubscribe(sub);

@@ -26,6 +26,7 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/ir.hpp"
 #include <any>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -614,11 +615,24 @@ private:
     std::optional<EventFilter> customFilter;
   };
 
+  // Pending operation for deferred subscription modifications
+  struct PendingOperation {
+    enum class Type { Add, Remove, RemoveByType, RemoveAll } type;
+    Subscriber subscriber;        // For Add
+    u64 subscriptionId = 0;       // For Remove
+    EditorEventType eventType;    // For RemoveByType
+  };
+
   void dispatchEvent(const EditorEvent &event);
+  void processPendingOperations();
 
   std::vector<Subscriber> m_subscribers;
   std::queue<std::unique_ptr<EditorEvent>> m_eventQueue;
   u64 m_nextSubscriberId = 1;
+
+  // Deferred modification support
+  std::atomic<int> m_dispatchDepth{0};
+  std::vector<PendingOperation> m_pendingOperations;
 
   bool m_synchronous = true;
   bool m_historyEnabled = false;

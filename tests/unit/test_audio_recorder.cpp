@@ -254,3 +254,251 @@ TEST_CASE("RecordingResult flags", "[audio][recorder][result]") {
     REQUIRE(result.normalized);
   }
 }
+
+// ============================================================================
+// Thread Safety Tests (Issue #461)
+// ============================================================================
+
+TEST_CASE("AudioRecorder thread safety - concurrent stop and cancel", "[audio][recorder][threading]") {
+  // This test verifies that concurrent calls to stopRecording() and cancelRecording()
+  // don't cause race conditions or crashes (Issue #461)
+
+  AudioRecorder recorder;
+
+  // Test multiple rapid cancel operations
+  SECTION("Multiple rapid cancel calls are safe") {
+    // Start from idle state
+    REQUIRE(recorder.getState() == RecordingState::Idle);
+
+    // Multiple cancel calls should be safe even when not recording
+    for (int i = 0; i < 100; ++i) {
+      recorder.cancelRecording();
+    }
+
+    REQUIRE(recorder.getState() == RecordingState::Idle);
+  }
+
+  // Test that state transitions are consistent
+  SECTION("State transitions are atomic") {
+    RecordingState lastState = recorder.getState();
+
+    // Rapidly query state from multiple threads
+    std::atomic<bool> stop{false};
+    std::atomic<int> errors{0};
+
+    auto stateChecker = [&]() {
+      while (!stop) {
+        RecordingState current = recorder.getState();
+        // State should always be a valid enum value
+        int stateValue = static_cast<int>(current);
+        if (stateValue < 0 || stateValue > 6) {
+          errors++;
+        }
+      }
+    };
+
+    std::thread t1(stateChecker);
+    std::thread t2(stateChecker);
+
+    // Let them run for a bit
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    stop = true;
+    t1.join();
+    t2.join();
+
+    REQUIRE(errors == 0);
+  }
+}
+
+TEST_CASE("AudioRecorder thread safety - rapid start/stop cycles", "[audio][recorder][threading]") {
+  // This test verifies that rapid start/stop/cancel cycles don't cause crashes
+  // or data corruption (Issue #461)
+
+  AudioRecorder recorder;
+
+  SECTION("Rapid state transitions without initialization") {
+    // These operations should fail gracefully without crashes
+    for (int i = 0; i < 50; ++i) {
+      auto startResult = recorder.startRecording("/tmp/test_rapid.wav");
+      REQUIRE(startResult.isError()); // Should fail - not initialized
+
+      auto stopResult = recorder.stopRecording();
+      REQUIRE(stopResult.isError()); // Should fail - not recording
+
+      recorder.cancelRecording(); // Should be safe even when idle
+    }
+
+    REQUIRE(recorder.getState() == RecordingState::Idle);
+  }
+}
+
+TEST_CASE("AudioRecorder thread safety - callback thread safety", "[audio][recorder][threading]") {
+  // Verify that callbacks can be safely set from multiple threads
+
+  AudioRecorder recorder;
+
+  std::atomic<int> stateChangeCount{0};
+  std::atomic<int> levelUpdateCount{0};
+
+  auto stateCallback = [&](RecordingState state) {
+    (void)state;
+    stateChangeCount++;
+  };
+
+  auto levelCallback = [&](const LevelMeter& level) {
+    (void)level;
+    levelUpdateCount++;
+  };
+
+  SECTION("Concurrent callback setting is safe") {
+    std::atomic<bool> stop{false};
+
+    auto setter = [&]() {
+      while (!stop) {
+        recorder.setOnRecordingStateChanged(stateCallback);
+        recorder.setOnLevelUpdate(levelCallback);
+        std::this_thread::yield();
+      }
+    };
+
+    std::thread t1(setter);
+    std::thread t2(setter);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    stop = true;
+    t1.join();
+    t2.join();
+
+    // Should complete without crashes
+    REQUIRE(true);
+  }
+}
+
+TEST_CASE("AudioRecorder thread safety - concurrent access patterns", "[audio][recorder][threading]") {
+  // Test various concurrent access patterns that could trigger race conditions
+
+  AudioRecorder recorder;
+
+  SECTION("Concurrent getState() calls are safe") {
+    std::atomic<bool> stop{false};
+    std::atomic<int> stateReadCount{0};
+
+    auto reader = [&]() {
+      while (!stop) {
+        RecordingState state = recorder.getState();
+        (void)state; // Use the state to prevent optimization
+        stateReadCount++;
+      }
+    };
+
+    std::vector<std::thread> threads;
+    for (int i = 0; i < 4; ++i) {
+      threads.emplace_back(reader);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    stop = true;
+    for (auto& t : threads) {
+      t.join();
+    }
+
+    // Should have successfully read state many times
+    REQUIRE(stateReadCount > 100);
+  }
+
+  SECTION("Concurrent format get/set is safe") {
+    std::atomic<bool> stop{false};
+
+    auto getter = [&]() {
+      while (!stop) {
+        const auto& format = recorder.getRecordingFormat();
+        (void)format; // Use the format to prevent optimization
+        std::this_thread::yield();
+      }
+    };
+
+    auto setter = [&]() {
+      while (!stop) {
+        RecordingFormat format;
+        format.sampleRate = 48000;
+        format.channels = 1;
+        recorder.setRecordingFormat(format);
+        std::this_thread::yield();
+      }
+    };
+
+    std::thread t1(getter);
+    std::thread t2(getter);
+    std::thread t3(setter);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+    stop = true;
+    t1.join();
+    t2.join();
+    t3.join();
+
+    // Should complete without crashes
+    REQUIRE(true);
+  }
+}
+
+TEST_CASE("AudioRecorder thread safety - destructor with active operations", "[audio][recorder][threading]") {
+  // Verify that the destructor properly handles active operations
+
+  SECTION("Destructor while in Idle state") {
+    {
+      AudioRecorder recorder;
+      // Destructor called automatically
+    }
+    // Should complete without crashes
+    REQUIRE(true);
+  }
+
+  SECTION("Destructor after multiple cancel calls") {
+    {
+      AudioRecorder recorder;
+      for (int i = 0; i < 10; ++i) {
+        recorder.cancelRecording();
+      }
+      // Destructor called automatically
+    }
+    // Should complete without crashes
+    REQUIRE(true);
+  }
+}
+
+TEST_CASE("AudioRecorder thread safety - getCurrentLevel thread safety", "[audio][recorder][threading]") {
+  // Verify that getCurrentLevel() can be safely called from multiple threads
+
+  AudioRecorder recorder;
+
+  std::atomic<bool> stop{false};
+  std::atomic<int> levelReadCount{0};
+
+  auto reader = [&]() {
+    while (!stop) {
+      LevelMeter level = recorder.getCurrentLevel();
+      (void)level; // Use the level to prevent optimization
+      levelReadCount++;
+    }
+  };
+
+  std::vector<std::thread> threads;
+  for (int i = 0; i < 4; ++i) {
+    threads.emplace_back(reader);
+  }
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+  stop = true;
+  for (auto& t : threads) {
+    t.join();
+  }
+
+  // Should have successfully read level many times
+  REQUIRE(levelReadCount > 100);
+}

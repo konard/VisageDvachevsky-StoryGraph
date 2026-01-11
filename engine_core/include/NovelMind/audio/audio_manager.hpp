@@ -476,41 +476,42 @@ private:
   MaEnginePtr m_engine;
   bool m_engineInitialized = false;
 
-  // Channel volumes
+  // Channel volumes (protected by m_stateMutex)
+  mutable std::mutex m_stateMutex;
   std::unordered_map<AudioChannel, f32> m_channelVolumes;
   std::unordered_map<AudioChannel, bool> m_channelMuted;
-  bool m_allMuted = false;
+  std::atomic<bool> m_allMuted{false};
 
   // Active sources (protected by m_sourcesMutex for thread-safe access)
   mutable std::shared_mutex m_sourcesMutex;
   std::vector<std::unique_ptr<AudioSource>> m_sources;
-  u32 m_nextHandleId = 1;
-  size_t m_maxSounds = 32;
+  std::atomic<u32> m_nextHandleId{1};
+  std::atomic<size_t> m_maxSounds{32};
 
-  // Music state
+  // Music state (protected by m_stateMutex)
   AudioHandle m_currentMusicHandle;
   AudioHandle m_crossfadeMusicHandle;
   std::string m_currentMusicId;
 
-  // Voice state
+  // Voice state (protected by m_stateMutex)
   AudioHandle m_currentVoiceHandle;
-  bool m_voicePlaying = false;
+  std::atomic<bool> m_voicePlaying{false};
 
-  // Ducking state
-  bool m_autoDuckingEnabled = true;
-  f32 m_duckVolume = 0.3f;
-  f32 m_duckFadeDuration = 0.2f;
-  f32 m_currentDuckLevel = 1.0f;
-  f32 m_targetDuckLevel = 1.0f;
+  // Ducking state (atomics for real-time audio performance)
+  std::atomic<bool> m_autoDuckingEnabled{true};
+  std::atomic<f32> m_duckVolume{0.3f};
+  std::atomic<f32> m_duckFadeDuration{0.2f};
+  std::atomic<f32> m_currentDuckLevel{1.0f};
+  std::atomic<f32> m_targetDuckLevel{1.0f};
 
-  // Master fade
+  // Master fade (protected by m_stateMutex)
   f32 m_masterFadeVolume = 1.0f;
   f32 m_masterFadeStartVolume = 1.0f;
   f32 m_masterFadeTarget = 1.0f;
   f32 m_masterFadeTimer = 0.0f;
   f32 m_masterFadeDuration = 0.0f;
 
-  // Callback
+  // Callback (protected by m_stateMutex)
   AudioCallback m_eventCallback;
   DataProvider m_dataProvider;
 };

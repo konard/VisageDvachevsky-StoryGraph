@@ -671,6 +671,22 @@ void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
   if (samples.empty() || sampleRate == 0)
     return;
 
+  // Clamp gain values to safe ranges to prevent instability
+  // Allow ±24dB which is reasonable for EQ
+  lowGainDb = std::clamp(lowGainDb, -24.0f, 24.0f);
+  midGainDb = std::clamp(midGainDb, -24.0f, 24.0f);
+  highGainDb = std::clamp(highGainDb, -24.0f, 24.0f);
+
+  // Validate and clamp frequency ranges
+  // Nyquist frequency is half the sample rate
+  float nyquistFreq = static_cast<float>(sampleRate) / 2.0f;
+
+  // Low frequency should be in range [20Hz, Nyquist/2]
+  lowFreq = std::clamp(lowFreq, 20.0f, nyquistFreq * 0.45f);
+
+  // High frequency should be above low frequency and below Nyquist
+  highFreq = std::clamp(highFreq, lowFreq + 100.0f, nyquistFreq * 0.45f);
+
   // Simple 3-band EQ using crossover filters
   // This is a simplified implementation
 
@@ -686,6 +702,10 @@ void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
 
   float lowAlpha = dt / (lowRc + dt);
   float highAlpha = highRc / (highRc + dt);
+
+  // Clamp filter coefficients to stable ranges [0, 1]
+  lowAlpha = std::clamp(lowAlpha, 0.0f, 1.0f);
+  highAlpha = std::clamp(highAlpha, 0.0f, 1.0f);
 
   float lowPrev = samples[0];
   float highPrevIn = samples[0];
@@ -705,7 +725,10 @@ void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
     float mid = samples[i] - low - high;
 
     // Apply gains and sum
-    samples[i] = low * lowGain + mid * midGain + high * highGain;
+    float output = low * lowGain + mid * midGain + high * highGain;
+
+    // Final safety clamp to prevent overflow
+    samples[i] = std::clamp(output, -1.0f, 1.0f);
   }
 }
 

@@ -35,7 +35,7 @@ add_executable(unit_tests
     unit/test_runtime_config.cpp
     unit/test_division_safety.cpp
     unit/test_audio_recorder.cpp
-    # unit/test_scene_graph_deep.cpp  # TODO: Fix renderer mock API mismatch
+    unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
@@ -48,6 +48,9 @@ add_executable(unit_tests
     unit/test_audio_manager.cpp
     # Issue #428 - Clipboard integration tests
     unit/test_clipboard.cpp
+    # Issue #465 - Recording panel thread safety tests
+    unit/test_recording_panel_thread_safety.cpp
+    unit/test_recording_callback_marshaling.cpp
 )
 
 target_link_libraries(unit_tests
@@ -93,8 +96,11 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
+        unit/test_event_bus.cpp
         # Issue #477 - Gizmo memory management tests
         unit/test_gizmo_memory.cpp
+        # Issue #460 - Gizmo DPI scaling tests
+        unit/test_gizmo_dpi_scaling.cpp
     )
 
     target_link_libraries(integration_tests

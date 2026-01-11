@@ -10,11 +10,15 @@
 #include <QGraphicsRectItem>
 #include <QGraphicsSceneHoverEvent>
 #include <QGraphicsSceneMouseEvent>
+#include <QGraphicsView>
 #include <QLineF>
 #include <QList>
 #include <QPainter>
 #include <QPen>
 #include <QPolygonF>
+#include <QScreen>
+#include <QWidget>
+#include <QWindow>
 #include <algorithm>
 #include <cmath>
 
@@ -392,7 +396,8 @@ void NMTransformGizmo::beginHandleDrag(HandleType type,
   m_dragStartScaleX = target->scaleX();
   m_dragStartScaleY = target->scaleY();
 
-  constexpr qreal kMinGizmoRadius = 40.0;
+  const qreal dpiScale = getDpiScale();
+  const qreal kMinGizmoRadius = 40.0 * dpiScale;
   const QPointF center = target->sceneBoundingRect().center();
   m_dragStartDistance =
       std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
@@ -427,7 +432,8 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     target->setPos(newPos);
   } else if (m_mode == GizmoMode::Rotate) {
     const QPointF center = target->sceneBoundingRect().center();
-    constexpr qreal kMinGizmoRadius = 40.0;
+    const qreal dpiScale = getDpiScale();
+    const qreal kMinGizmoRadius = 40.0 * dpiScale;
     auto clampRadius = [&](const QPointF &point) {
       QLineF line(center, point);
       if (line.length() < kMinGizmoRadius) {
@@ -445,7 +451,8 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     updatePosition();
   } else if (m_mode == GizmoMode::Scale) {
     const QPointF center = target->sceneBoundingRect().center();
-    constexpr qreal kMinGizmoRadius = 40.0;
+    const qreal dpiScale = getDpiScale();
+    const qreal kMinGizmoRadius = 40.0 * dpiScale;
     constexpr qreal kMinScale = 0.1;
     constexpr qreal kMaxScale = 10.0;
     constexpr qreal kEpsilon = 0.0001;
@@ -487,21 +494,50 @@ void NMTransformGizmo::endHandleDrag() {
   m_isDragging = false;
 }
 
+qreal NMTransformGizmo::getDpiScale() const {
+  // Get the device pixel ratio from the view's screen to support high DPI displays
+  auto *scenePtr = scene();
+  if (!scenePtr) {
+    return 1.0; // Default to 1.0 if no scene
+  }
+
+  // Get the first view associated with the scene
+  const auto views = scenePtr->views();
+  if (views.isEmpty()) {
+    return 1.0; // Default to 1.0 if no views
+  }
+
+  // Get the window that contains the view
+  QWidget *view = views.first();
+  if (!view || !view->window()) {
+    return 1.0; // Default to 1.0 if no window
+  }
+
+  // Get the screen's device pixel ratio
+  QWindow *window = view->window()->windowHandle();
+  if (!window || !window->screen()) {
+    return 1.0; // Default to 1.0 if no screen
+  }
+
+  return window->screen()->devicePixelRatio();
+}
+
 void NMTransformGizmo::createMoveGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
-  qreal arrowLength = 60;
-  qreal arrowHeadSize = 12;
-  qreal handleSize = 14;
+  const qreal dpiScale = getDpiScale();
+  qreal arrowLength = 60 * dpiScale;
+  qreal arrowHeadSize = 12 * dpiScale;
+  qreal handleSize = 14 * dpiScale;
 
   // X axis (Red) - make it thicker for easier clicking
   auto *xLine = new QGraphicsLineItem(0, 0, arrowLength, 0, this);
-  xLine->setPen(QPen(QColor(220, 50, 50), 5));
+  xLine->setPen(QPen(QColor(220, 50, 50), 5 * dpiScale));
   xLine->setAcceptHoverEvents(true);
   xLine->setCursor(Qt::SizeHorCursor);
   addToGroup(xLine);
 
   auto *xHit = new NMGizmoHitArea(HandleType::XAxis,
-                                  QRectF(0, -8, arrowLength, 16), this);
+                                  QRectF(0, -8 * dpiScale, arrowLength, 16 * dpiScale), this);
   xHit->setCursor(Qt::SizeHorCursor);
   addToGroup(xHit);
 
@@ -526,13 +562,13 @@ void NMTransformGizmo::createMoveGizmo() {
 
   // Y axis (Green) - make it thicker for easier clicking
   auto *yLine = new QGraphicsLineItem(0, 0, 0, arrowLength, this);
-  yLine->setPen(QPen(QColor(50, 220, 50), 5));
+  yLine->setPen(QPen(QColor(50, 220, 50), 5 * dpiScale));
   yLine->setAcceptHoverEvents(true);
   yLine->setCursor(Qt::SizeVerCursor);
   addToGroup(yLine);
 
   auto *yHit = new NMGizmoHitArea(HandleType::YAxis,
-                                  QRectF(-8, 0, 16, arrowLength), this);
+                                  QRectF(-8 * dpiScale, 0, 16 * dpiScale, arrowLength), this);
   yHit->setCursor(Qt::SizeVerCursor);
   addToGroup(yHit);
 
@@ -556,25 +592,26 @@ void NMTransformGizmo::createMoveGizmo() {
   addToGroup(yArrowHead);
 
   // Center circle - for XY plane movement
-  auto *center = new QGraphicsEllipseItem(-8, -8, 16, 16, this);
+  auto *center = new QGraphicsEllipseItem(-8 * dpiScale, -8 * dpiScale, 16 * dpiScale, 16 * dpiScale, this);
   center->setBrush(palette.accentPrimary);
-  center->setPen(QPen(palette.textPrimary, 2));
+  center->setPen(QPen(palette.textPrimary, 2 * dpiScale));
   center->setAcceptHoverEvents(true);
   center->setCursor(Qt::SizeAllCursor);
   addToGroup(center);
 
   auto *centerHandle =
       new NMGizmoHandle(NMTransformGizmo::HandleType::XYPlane, this);
-  centerHandle->setRect(-10, -10, 20, 20);
+  centerHandle->setRect(-10 * dpiScale, -10 * dpiScale, 20 * dpiScale, 20 * dpiScale);
   centerHandle->setBrush(palette.accentPrimary);
-  centerHandle->setPen(QPen(palette.textPrimary, 2));
+  centerHandle->setPen(QPen(palette.textPrimary, 2 * dpiScale));
   centerHandle->setCursor(Qt::SizeAllCursor);
   addToGroup(centerHandle);
 }
 
 void NMTransformGizmo::createRotateGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
-  qreal radius = 60;
+  const qreal dpiScale = getDpiScale();
+  qreal radius = 60 * dpiScale;
 
   // Custom rotation ring with annular hit testing and hover feedback
   auto *rotationRing = new NMGizmoRotationRing(radius, this);
@@ -584,7 +621,7 @@ void NMTransformGizmo::createRotateGizmo() {
 
   auto *handle =
       new NMGizmoHandle(NMTransformGizmo::HandleType::Rotation, this);
-  handle->setRect(-8, -radius - 8, 16, 16);
+  handle->setRect(-8 * dpiScale, -radius - 8 * dpiScale, 16 * dpiScale, 16 * dpiScale);
   handle->setBrush(palette.accentPrimary);
   handle->setPen(Qt::NoPen);
   handle->setCursor(Qt::CrossCursor);
@@ -593,27 +630,44 @@ void NMTransformGizmo::createRotateGizmo() {
 
 void NMTransformGizmo::createScaleGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
+  const qreal uiScale = NMStyleManager::instance().uiScale();
   qreal size = 50;
+  const qreal dpiScale = getDpiScale();
+  qreal size = 50 * dpiScale;
 
   // Bounding box
   auto *box = new QGraphicsRectItem(-size, -size, size * 2, size * 2, this);
-  box->setPen(QPen(palette.accentPrimary, 2, Qt::DashLine));
+  box->setPen(QPen(palette.accentPrimary, 2 * dpiScale, Qt::DashLine));
   box->setBrush(Qt::NoBrush);
   addToGroup(box);
 
-  auto *scaleHit = new NMGizmoHitArea(
-      HandleType::Corner, QRectF(-size, -size, size * 2, size * 2), this);
-  scaleHit->setCursor(Qt::SizeFDiagCursor);
-  addToGroup(scaleHit);
-
-  // Corner handles
+  // Corner handles with DPI-aware sizing
   QList<QPointF> corners = {QPointF(-size, -size), QPointF(size, -size),
                             QPointF(-size, size), QPointF(size, size)};
 
+  // Visual handle size scaled with DPI
+  const qreal handleSize = 16 * uiScale;
+  const qreal handleHalfSize = handleSize / 2;
+
+  // Hit area size - larger than visual handle for easier selection
+  const qreal hitAreaSize = 24 * uiScale;
+  const qreal hitAreaHalfSize = hitAreaSize / 2;
+
   for (const auto &corner : corners) {
+    // Create larger hit area for easier selection
+    auto *hitArea = new NMGizmoHitArea(
+        HandleType::Corner,
+        QRectF(corner.x() - hitAreaHalfSize, corner.y() - hitAreaHalfSize,
+               hitAreaSize, hitAreaSize),
+        this);
+    hitArea->setCursor(Qt::SizeFDiagCursor);
+    addToGroup(hitArea);
+
+    // Create visual handle
     auto *handle =
         new NMGizmoHandle(NMTransformGizmo::HandleType::Corner, this);
-    handle->setRect(corner.x() - 8, corner.y() - 8, 16, 16);
+    handle->setRect(corner.x() - handleHalfSize, corner.y() - handleHalfSize,
+                    handleSize, handleSize);
     handle->setBrush(palette.accentPrimary);
     handle->setPen(Qt::NoPen);
     handle->setCursor(Qt::SizeFDiagCursor);
