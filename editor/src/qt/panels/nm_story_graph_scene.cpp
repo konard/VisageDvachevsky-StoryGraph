@@ -292,11 +292,15 @@ void NMStoryGraphScene::removeNode(NMGraphNodeItem* node) {
     removeConnection(conn);
   }
 
+  // Emit signal BEFORE removing from lookup so listeners can still find the node
+  // This prevents memory leaks in listeners that need to query node properties
+  // Issue #568: Scene Mediator needs to access node->sceneId() and node->nodeIdString()
+  emit nodeDeleted(node ? node->nodeId() : 0);
+
   // Remove from list and scene
   m_nodes.removeAll(node);
   m_nodeLookup.remove(node->nodeId());
   removeItem(node);
-  emit nodeDeleted(node ? node->nodeId() : 0);
   delete node;
 
   // Force update of the area where the node was to clear artifacts
