@@ -25,6 +25,7 @@ option(NOVELMIND_BUILD_EDITOR "Build visual editor" ON)
 option(NOVELMIND_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(NOVELMIND_ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 option(NOVELMIND_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)
+option(NOVELMIND_ENABLE_LSAN "Enable LeakSanitizer" OFF)
 
 # Output directories
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -103,6 +104,20 @@ if(NOVELMIND_ENABLE_UBSAN)
     target_link_options(novelmind_compiler_options INTERFACE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
             -fsanitize=undefined
+        >
+    )
+endif()
+
+if(NOVELMIND_ENABLE_LSAN)
+    target_compile_options(novelmind_compiler_options INTERFACE
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+            -fsanitize=leak
+            -fno-omit-frame-pointer
+        >
+    )
+    target_link_options(novelmind_compiler_options INTERFACE
+        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:
+            -fsanitize=leak
         >
     )
 endif()
