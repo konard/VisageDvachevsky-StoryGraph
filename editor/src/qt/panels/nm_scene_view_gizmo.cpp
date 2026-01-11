@@ -392,7 +392,15 @@ void NMTransformGizmo::beginHandleDrag(HandleType type,
   m_activeHandle = type;
   m_dragStartScenePos = scenePos;
   m_dragStartTargetPos = target->pos();
-  m_dragStartRotation = target->rotation();
+
+  // Normalize rotation to [0, 360) range to prevent drift from accumulated rotations
+  qreal rotation = target->rotation();
+  rotation = std::fmod(rotation, 360.0);
+  if (rotation < 0.0) {
+    rotation += 360.0;
+  }
+  m_dragStartRotation = rotation;
+
   m_dragStartScaleX = target->scaleX();
   m_dragStartScaleY = target->scaleY();
 
