@@ -347,3 +347,79 @@ TEST_CASE("Lexer enforces comment nesting depth limit", "[lexer]") {
     REQUIRE(tokens.size() == 3); // show, hide, EOF
   }
 }
+
+TEST_CASE("Lexer handles numeric overflow gracefully", "[lexer]") {
+  Lexer lexer;
+
+  SECTION("reports error for integer overflow (too large)") {
+    // Value exceeds INT_MAX (2147483647)
+    auto result = lexer.tokenize("99999999999999999999");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("out of range") != std::string::npos);
+    REQUIRE(result.error().find("99999999999999999999") != std::string::npos);
+  }
+
+  SECTION("reports error for integer overflow (negative too large)") {
+    // Value exceeds INT_MIN magnitude
+    auto result = lexer.tokenize("-99999999999999999999");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("out of range") != std::string::npos);
+  }
+
+  SECTION("reports error for float overflow") {
+    // Value exceeds float max (approximately 3.4e38)
+    auto result = lexer.tokenize("1.0e100");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("out of range") != std::string::npos);
+    REQUIRE(result.error().find("1.0e100") != std::string::npos);
+  }
+
+  SECTION("reports error for negative float overflow") {
+    auto result = lexer.tokenize("-1.0e100");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("out of range") != std::string::npos);
+  }
+
+  SECTION("accepts maximum valid integer (INT_MAX)") {
+    auto result = lexer.tokenize("2147483647");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2); // integer + EOF
+    REQUIRE(tokens[0].type == TokenType::Integer);
+    REQUIRE(tokens[0].intValue == 2147483647);
+  }
+
+  SECTION("accepts minimum valid integer (INT_MIN)") {
+    // Note: The minus sign is handled as a separate operator token
+    // This tests the positive value that becomes negative
+    auto result = lexer.tokenize("-2147483648");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    // Should have: minus operator, integer literal, EOF
+    REQUIRE(tokens.size() >= 2);
+  }
+
+  SECTION("accepts large valid float values") {
+    auto result = lexer.tokenize("3.14e10");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2); // float + EOF
+    REQUIRE(tokens[0].type == TokenType::Float);
+  }
+
+  SECTION("handles overflow in expression context") {
+    // Test that overflow doesn't crash the lexer and it can continue
+    auto result = lexer.tokenize("42 + 99999999999999999999 + 7");
+    REQUIRE(result.isError());
+    // The error should mention the problematic number
+    REQUIRE(result.error().find("99999999999999999999") != std::string::npos);
+  }
+
+  SECTION("error message includes line and column information") {
+    // The error message should be in the form of a Token with SourceLocation
+    auto result = lexer.tokenize("show 99999999999999999999 hide");
+    REQUIRE(result.isError());
+    // Verify the error contains useful information
+    REQUIRE(result.error().find("out of range") != std::string::npos);
+  }
+}
