@@ -761,7 +761,7 @@ Value VirtualMachine::pop() {
   return val;
 }
 
-const std::string &VirtualMachine::getString(u32 index) const {
+const std::string &VirtualMachine::getString(u32 index) {
   static const std::string empty;
   if (index < m_stringTable.size()) {
     return m_stringTable[index];
