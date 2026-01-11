@@ -138,6 +138,11 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_story_graph_panel.cpp
     src/qt/panels/nm_story_graph_panel_handlers.cpp
     src/qt/panels/nm_story_graph_panel_detail.cpp
+    src/qt/panels/story_graph_layout.cpp
+    src/qt/panels/story_graph_node_factory.cpp
+    src/qt/panels/story_graph_edge_manager.cpp
+    src/qt/panels/story_graph_property_manager.cpp
+    src/qt/panels/story_graph_serialization.cpp
     src/qt/panels/nm_story_graph_node.cpp
     src/qt/panels/nm_story_graph_connection.cpp
     src/qt/panels/nm_story_graph_scene.cpp
