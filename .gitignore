@@ -29,6 +29,11 @@ lib/
 *.out
 *.app
 
+# Experiment binaries (executables without extensions)
+experiments/test_*
+!experiments/test_*.cpp
+!experiments/test_*.h
+
 # IDE and editor files
 .vscode/
 .idea/
