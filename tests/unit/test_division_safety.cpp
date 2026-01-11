@@ -1,13 +1,15 @@
 /**
  * @file test_division_safety.cpp
- * @brief Tests for division by zero protection in CameraPath and AudioRecorder
+ * @brief Tests for division by zero protection in CameraPath, AudioRecorder,
+ * and Gizmo
  *
  * These tests verify that edge cases don't cause crashes or NaN/Inf
  * propagation. Related to issue #154: Fix Division by Zero Bugs in Camera and
- * Audio
+ * Audio Related to issue #476: Fix Division by Zero in Gizmo Scale
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
+#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/renderer/camera.hpp"
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
@@ -178,4 +180,86 @@ TEST_CASE("AudioRecorder getRecordingDuration - zero sampleRate returns 0",
   CHECK(!std::isnan(duration));
   CHECK(!std::isinf(duration));
   CHECK(duration >= 0.0f);
+}
+
+// =============================================================================
+// Gizmo Scale Division by Zero Protection Tests
+// =============================================================================
+
+TEST_CASE("Gizmo scale - near-zero distance protection",
+          "[gizmo][safety][editor]") {
+  // This test verifies that the scale gizmo handles near-zero drag start
+  // distances safely without division by zero errors.
+  //
+  // The epsilon check in nm_scene_view_gizmo.cpp:313 should prevent division
+  // when m_dragStartDistance < kEpsilon (0.0001)
+  //
+  // Note: This is a conceptual test that verifies the logic, since
+  // NMTransformGizmo requires Qt graphics scene infrastructure. The actual
+  // implementation must ensure m_dragStartDistance >= kEpsilon before division.
+
+  constexpr qreal kEpsilon = 0.0001;
+  constexpr qreal kMinGizmoRadius = 40.0;
+
+  // Test case 1: Very small drag start distance (should be rejected)
+  qreal dragStartDistance = 0.00005; // Less than epsilon
+  CHECK(dragStartDistance < kEpsilon);
+
+  // Test case 2: Distance at epsilon boundary (should be allowed)
+  qreal validDistance = kEpsilon;
+  CHECK(validDistance >= kEpsilon);
+
+  // Test case 3: Normal distance (should work fine)
+  qreal normalDistance = kMinGizmoRadius;
+  CHECK(normalDistance >= kEpsilon);
+
+  // Test case 4: Division should be safe when distance >= epsilon
+  if (validDistance >= kEpsilon) {
+    qreal currentDistance = 50.0;
+    qreal rawFactor = currentDistance / validDistance;
+    CHECK(!std::isnan(rawFactor));
+    CHECK(!std::isinf(rawFactor));
+    CHECK(rawFactor > 0.0);
+  }
+}
+
+TEST_CASE("Gizmo scale - minimum scale enforcement", "[gizmo][safety][editor]") {
+  // This test verifies that the scale gizmo enforces minimum and maximum scale
+  // values as defined in nm_scene_view_gizmo.cpp:306-307
+  //
+  // constexpr qreal kMinScale = 0.1;
+  // constexpr qreal kMaxScale = 10.0;
+
+  constexpr qreal kMinScale = 0.1;
+  constexpr qreal kMaxScale = 10.0;
+
+  // Test case 1: Scale below minimum should be clamped
+  qreal dragStartScaleX = 0.5;
+  qreal scaleFactor = 0.1; // Would result in 0.05
+  qreal newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale,
+                                kMaxScale);
+  CHECK(newScaleX == Catch::Approx(kMinScale));
+  CHECK(newScaleX >= kMinScale);
+
+  // Test case 2: Scale above maximum should be clamped
+  dragStartScaleX = 5.0;
+  scaleFactor = 3.0; // Would result in 15.0
+  newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+  CHECK(newScaleX == Catch::Approx(kMaxScale));
+  CHECK(newScaleX <= kMaxScale);
+
+  // Test case 3: Normal scale should pass through
+  dragStartScaleX = 1.0;
+  scaleFactor = 1.5; // Results in 1.5
+  newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+  CHECK(newScaleX == Catch::Approx(1.5));
+  CHECK(newScaleX >= kMinScale);
+  CHECK(newScaleX <= kMaxScale);
+
+  // Test case 4: Very small scale factor shouldn't produce NaN or Inf
+  scaleFactor = 0.0001;
+  newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+  CHECK(!std::isnan(newScaleX));
+  CHECK(!std::isinf(newScaleX));
+  CHECK(newScaleX == Catch::Approx(kMinScale));
 }

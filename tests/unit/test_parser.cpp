@@ -554,3 +554,64 @@ TEST_CASE("Parser parses move statements", "[parser]")
         REQUIRE(move.duration == Catch::Approx(2.0f));
     }
 }
+
+TEST_CASE("Parser validates choice conditions", "[parser]")
+{
+    Lexer lexer;
+    Parser parser;
+
+    SECTION("test_parser_choice_valid_condition - accepts boolean conditions")
+    {
+        auto tokens = lexer.tokenize(R"(
+            choice {
+                "Option 1" if has_key -> goto success
+                "Option 2" if counter > 5 -> goto path2
+                "Option 3" if flag1 and flag2 -> goto path3
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(result.isOk());
+
+        const auto& program = result.value();
+        REQUIRE(program.globalStatements.size() == 1);
+
+        const auto& stmt = program.globalStatements[0];
+        REQUIRE(std::holds_alternative<ChoiceStmt>(stmt->data));
+
+        const auto& choice = std::get<ChoiceStmt>(stmt->data);
+        REQUIRE(choice.options.size() == 3);
+        REQUIRE(choice.options[0].condition.has_value());
+        REQUIRE(choice.options[1].condition.has_value());
+        REQUIRE(choice.options[2].condition.has_value());
+    }
+
+    SECTION("test_parser_choice_invalid_condition - rejects string literal conditions")
+    {
+        auto tokens = lexer.tokenize(R"(
+            choice {
+                "Option 1" if "invalid_string" -> goto path1
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(!result.isOk());
+        REQUIRE(!result.error().empty());
+    }
+
+    SECTION("test_parser_choice_invalid_condition - rejects numeric literal conditions")
+    {
+        auto tokens = lexer.tokenize(R"(
+            choice {
+                "Option 1" if 123 -> goto path1
+            }
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        REQUIRE(!result.isOk());
+        REQUIRE(!result.error().empty());
+    }
+}

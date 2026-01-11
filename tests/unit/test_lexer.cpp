@@ -232,3 +232,118 @@ TEST_CASE("Lexer reports errors", "[lexer]") {
     REQUIRE(result.isError());
   }
 }
+
+TEST_CASE("Lexer handles nested comments correctly", "[lexer]") {
+  Lexer lexer;
+
+  SECTION("handles normal nested comments") {
+    // Test various levels of nesting
+    auto result1 = lexer.tokenize("show /* level 1 */ hide");
+    REQUIRE(result1.isOk());
+    REQUIRE(result1.value().size() == 3); // show, hide, EOF
+
+    auto result2 = lexer.tokenize("show /* level 1 /* level 2 */ level 1 */ hide");
+    REQUIRE(result2.isOk());
+    REQUIRE(result2.value().size() == 3);
+
+    auto result3 = lexer.tokenize("show /* 1 /* 2 /* 3 */ 2 */ 1 */ hide");
+    REQUIRE(result3.isOk());
+    REQUIRE(result3.value().size() == 3);
+
+    auto result4 = lexer.tokenize("show /* 1 /* 2 /* 3 /* 4 */ 3 */ 2 */ 1 */ hide");
+    REQUIRE(result4.isOk());
+    REQUIRE(result4.value().size() == 3);
+  }
+
+  SECTION("handles deeply nested comments within limit") {
+    // Build a string with many nested comments (well below the limit of 128)
+    std::string input = "show ";
+    const int nestingLevel = 64; // Half the limit - should work fine
+
+    // Open all nested comments
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "/* ";
+    }
+
+    input += "deeply nested ";
+
+    // Close all nested comments
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "*/ ";
+    }
+
+    input += "hide";
+
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 3); // show, hide, EOF
+    REQUIRE(tokens[0].type == TokenType::Show);
+    REQUIRE(tokens[1].type == TokenType::Hide);
+  }
+}
+
+TEST_CASE("Lexer enforces comment nesting depth limit", "[lexer]") {
+  Lexer lexer;
+
+  SECTION("reports error when exceeding maximum nesting depth") {
+    // Build a string with comments exceeding the maximum depth of 128
+    std::string input = "show ";
+    const int nestingLevel = 129; // Exceeds the limit
+
+    // Open nested comments
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "/* ";
+    }
+
+    input += "too deep ";
+
+    // Close nested comments
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "*/ ";
+    }
+
+    input += "hide";
+
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Comment nesting depth exceeds limit") != std::string::npos);
+  }
+
+  SECTION("reports error at exactly the limit boundary") {
+    // Test at exactly MAX_COMMENT_DEPTH + 1 (129)
+    std::string input = "";
+    const int nestingLevel = 129;
+
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "/* ";
+    }
+
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Comment nesting depth exceeds limit of 128") != std::string::npos);
+  }
+
+  SECTION("accepts comments at exactly the maximum depth") {
+    // Test at exactly MAX_COMMENT_DEPTH (128)
+    std::string input = "show ";
+    const int nestingLevel = 128;
+
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "/* ";
+    }
+
+    input += "at limit ";
+
+    for (int i = 0; i < nestingLevel; ++i) {
+      input += "*/ ";
+    }
+
+    input += "hide";
+
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 3); // show, hide, EOF
+  }
+}

@@ -56,6 +56,9 @@ void SelectionMediator::initialize() {
   // =========================================================================
 
   // Connect Story Graph Panel's nodeSelected signal to publish EventBus event
+  // Issue #470: Direct connection without debouncing here - debouncing is handled
+  // in onStoryGraphNodeSelected() to allow immediate status updates while
+  // throttling expensive operations like scene loading
   if (m_storyGraph) {
     connect(m_storyGraph, &qt::NMStoryGraphPanel::nodeSelected, this,
             [this](const QString &nodeIdString) {
@@ -136,6 +139,10 @@ void SelectionMediator::initialize() {
 }
 
 void SelectionMediator::shutdown() {
+  // Issue #470: Cancel any pending debounced operations before shutdown
+  m_selectionDebouncer.cancel();
+  m_sceneLoadDebouncer.cancel();
+
   auto &bus = EventBus::instance();
   for (const auto &sub : m_subscriptions) {
     bus.unsubscribe(sub);
@@ -196,39 +203,11 @@ void SelectionMediator::onStoryGraphNodeSelected(
   qDebug() << "[SelectionMediator] Story graph node selected:"
            << event.nodeIdString;
 
-  // Update inspector with node properties
-  if (m_inspector) {
-    if (event.nodeIdString.isEmpty()) {
-      m_inspector->showNoSelection();
-      if (m_sceneView) {
-        m_sceneView->clearStoryPreview();
-      }
-    } else if (m_storyGraph) {
-      if (auto *node =
-              m_storyGraph->findNodeByIdString(event.nodeIdString)) {
-        m_inspector->inspectStoryGraphNode(node, true);
-        m_inspector->show();
-        m_inspector->raise();
+  // Issue #470: Store pending node ID for debounced operations
+  m_pendingNodeId = event.nodeIdString;
 
-        // Update scene view with story preview
-        if (m_sceneView) {
-          m_sceneView->setStoryPreview(event.dialogueSpeaker,
-                                       event.dialogueText,
-                                       event.choiceOptions);
-
-          // Load scene document if not in play mode (handled by PlayModeController)
-          if (event.nodeType.compare("Entry", Qt::CaseInsensitive) != 0) {
-            // Scene loading is handled via LoadSceneDocumentRequestedEvent
-            events::LoadSceneDocumentRequestedEvent loadEvent;
-            loadEvent.sceneId = event.nodeIdString;
-            EventBus::instance().publish(loadEvent);
-          }
-        }
-      }
-    }
-  }
-
-  // Publish status context update
+  // Immediate lightweight updates (no debouncing needed)
+  // Publish status context update immediately for responsive feedback
   events::StatusContextChangedEvent statusEvent;
   if (!event.nodeIdString.isEmpty()) {
     statusEvent.selectionLabel =
@@ -236,6 +215,49 @@ void SelectionMediator::onStoryGraphNodeSelected(
     statusEvent.nodeId = event.nodeIdString;
   }
   EventBus::instance().publish(statusEvent);
+
+  // Issue #470: Debounce inspector and scene view updates
+  // This prevents UI freeze during rapid selection changes (marquee selection)
+  m_selectionDebouncer.trigger([this, event]() {
+    if (m_inspector) {
+      if (event.nodeIdString.isEmpty()) {
+        m_inspector->showNoSelection();
+        if (m_sceneView) {
+          m_sceneView->clearStoryPreview();
+        }
+      } else if (m_storyGraph) {
+        if (auto *node =
+                m_storyGraph->findNodeByIdString(event.nodeIdString)) {
+          m_inspector->inspectStoryGraphNode(node, true);
+          m_inspector->show();
+          m_inspector->raise();
+
+          // Update scene view with story preview
+          if (m_sceneView) {
+            m_sceneView->setStoryPreview(event.dialogueSpeaker,
+                                         event.dialogueText,
+                                         event.choiceOptions);
+          }
+        }
+      }
+    }
+
+    // Issue #470: Debounce expensive scene loading operation separately
+    // Uses longer delay to avoid loading multiple scenes during rapid navigation
+    m_sceneLoadDebouncer.trigger([this, event]() {
+      if (m_sceneView && m_storyGraph) {
+        // Load scene document if not in play mode (handled by PlayModeController)
+        if (event.nodeType.compare("Entry", Qt::CaseInsensitive) != 0) {
+          // Scene loading is handled via LoadSceneDocumentRequestedEvent
+          events::LoadSceneDocumentRequestedEvent loadEvent;
+          loadEvent.sceneId = event.nodeIdString;
+          EventBus::instance().publish(loadEvent);
+          qDebug() << "[SelectionMediator] Debounced scene load for node:"
+                   << event.nodeIdString;
+        }
+      }
+    });
+  });
 
   m_processingSelection = false;
 }

@@ -93,6 +93,8 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
+        # Issue #477 - Gizmo memory management tests
+        unit/test_gizmo_memory.cpp
     )
 
     target_link_libraries(integration_tests

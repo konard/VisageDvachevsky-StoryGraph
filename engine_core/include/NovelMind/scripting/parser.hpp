@@ -116,6 +116,9 @@ private:
   std::string parseString();
   std::vector<StmtPtr> parseStatementList();
 
+  // Validation helpers
+  bool isValidConditionExpression(const Expression &expr) const;
+
   const std::vector<Token> *m_tokens;
   size_t m_current;
   std::vector<ParseError> m_errors;

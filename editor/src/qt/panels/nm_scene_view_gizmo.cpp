@@ -166,6 +166,13 @@ NMTransformGizmo::NMTransformGizmo(QGraphicsItem *parent)
   createMoveGizmo();
 }
 
+NMTransformGizmo::~NMTransformGizmo() {
+  // Clean up all child items to prevent memory leaks.
+  // This ensures proper cleanup even if the gizmo is destroyed
+  // without explicitly calling clearGizmo().
+  clearGizmo();
+}
+
 void NMTransformGizmo::setMode(GizmoMode mode) {
   if (m_mode == mode)
     return;
@@ -305,8 +312,16 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     constexpr qreal kMinGizmoRadius = 40.0;
     constexpr qreal kMinScale = 0.1;
     constexpr qreal kMaxScale = 10.0;
+    constexpr qreal kEpsilon = 0.0001;
     const qreal currentDistance =
         std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
+
+    // Safe division with epsilon check to prevent division by zero
+    if (m_dragStartDistance < kEpsilon) {
+      // Degenerate case: start distance too small, maintain current scale
+      return;
+    }
+
     const qreal rawFactor = currentDistance / m_dragStartDistance;
     const qreal scaleFactor = std::pow(rawFactor, 0.6);
     const qreal newScaleX =
@@ -478,9 +493,23 @@ void NMTransformGizmo::createScaleGizmo() {
 }
 
 void NMTransformGizmo::clearGizmo() {
-  for (auto *item : childItems()) {
-    removeFromGroup(item);
-    delete item;
+  // Create a copy of the child items list since we'll be modifying it
+  // as we iterate. This prevents iterator invalidation and ensures
+  // all items are properly cleaned up.
+  auto children = childItems();
+
+  // Remove all items from the group and delete them.
+  // We must remove from group first to properly unparent the item,
+  // then delete it. This ensures Qt's internal bookkeeping is correct.
+  for (auto *item : children) {
+    if (item) {
+      removeFromGroup(item);
+      // After removeFromGroup, the item's parent is set to this group's parent.
+      // We need to explicitly set parent to nullptr before deletion to avoid
+      // any potential double-deletion issues.
+      item->setParentItem(nullptr);
+      delete item;
+    }
   }
 }
 

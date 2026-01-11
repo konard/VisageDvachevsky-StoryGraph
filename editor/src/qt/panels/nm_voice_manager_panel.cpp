@@ -10,6 +10,7 @@
 #include <QComboBox>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
 #include <QGroupBox>
@@ -42,10 +43,110 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor::qt {
 
+// ============================================================================
+// DurationProbeTask implementation (issue #469)
+// ============================================================================
+
+DurationProbeTask::DurationProbeTask(const QString &path,
+                                     std::shared_ptr<std::atomic<bool>> cancelled,
+                                     QObject *receiver)
+    : m_path(path), m_cancelled(cancelled), m_receiver(receiver) {
+  setAutoDelete(true); // QThreadPool will delete this task when done
+}
+
+void DurationProbeTask::run() {
+  // Check if task was cancelled before starting
+  if (m_cancelled->load()) {
+    return;
+  }
+
+  // Use QMediaPlayer to probe duration in background thread
+  // Note: QMediaPlayer must be created in the thread where it will be used
+  QMediaPlayer player;
+
+  // Set up synchronization for duration reading
+  QEventLoop loop;
+  double duration = -1.0;
+  bool finished = false;
+
+  // Connect to get duration
+  QObject::connect(&player, &QMediaPlayer::durationChanged,
+                   [&duration, &loop, &finished](qint64 durationMs) {
+    if (durationMs > 0 && !finished) {
+      duration = static_cast<double>(durationMs) / 1000.0;
+      finished = true;
+      loop.quit();
+    }
+  });
+
+  // Connect to handle errors
+  QObject::connect(&player, &QMediaPlayer::errorOccurred,
+                   [&loop, &finished]([[maybe_unused]] QMediaPlayer::Error error,
+                                      [[maybe_unused]] const QString& errorString) {
+    if (!finished) {
+      finished = true;
+      loop.quit();
+    }
+  });
+
+  // Set source and wait for duration
+  player.setSource(QUrl::fromLocalFile(m_path));
+
+  // Wait for duration or error (with timeout)
+  QTimer timeout;
+  timeout.setSingleShot(true);
+  QObject::connect(&timeout, &QTimer::timeout, [&loop, &finished]() {
+    if (!finished) {
+      finished = true;
+      loop.quit();
+    }
+  });
+  timeout.start(5000); // 5 second timeout per file
+
+  // Check cancellation periodically
+  QTimer cancelCheck;
+  QObject::connect(&cancelCheck, &QTimer::timeout, [this, &loop, &finished]() {
+    if (m_cancelled->load() && !finished) {
+      finished = true;
+      loop.quit();
+    }
+  });
+  cancelCheck.start(100); // Check every 100ms
+
+  loop.exec();
+
+  // Stop timers
+  timeout.stop();
+  cancelCheck.stop();
+
+  // Emit result if valid and not cancelled
+  if (duration > 0 && !m_cancelled->load() && m_receiver) {
+    // Use QMetaObject::invokeMethod to safely call across threads
+    QMetaObject::invokeMethod(m_receiver, "durationProbedInternal",
+                              Qt::QueuedConnection,
+                              Q_ARG(QString, m_path),
+                              Q_ARG(double, duration));
+  }
+}
+
 NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget* parent, IAudioPlayer* audioPlayer)
     : NMDockPanel("Voice Manager", parent),
       m_manifest(std::make_unique<NovelMind::audio::VoiceManifest>()) {
-  (void)audioPlayer;
+  // Use injected audio player or create one
+  if (audioPlayer) {
+    m_audioPlayer = audioPlayer;
+  } else {
+    // Try ServiceLocator first, otherwise create QtAudioPlayer
+    auto* locatorPlayer = ServiceLocator::getAudioPlayer();
+    if (locatorPlayer) {
+      m_audioPlayer = locatorPlayer;
+    } else {
+      // Create our own QtAudioPlayer
+      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
+      m_audioPlayer = m_ownedAudioPlayer.get();
+    }
+  }
+
   // Initialize manifest with default locale
   m_manifest->setDefaultLocale("en");
   m_manifest->addLocale("en");
@@ -59,9 +160,22 @@ NMVoiceManagerPanel::~NMVoiceManagerPanel() {
   // Stop any ongoing playback before destruction
   stopPlayback();
 
-  // Stop probing
-  if (m_probePlayer) {
-    m_probePlayer->stop();
+  // Stop probing - cancel all tasks
+  m_isProbing.store(false);
+
+  // Cancel all active probe tasks
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    for (auto& [path, cancelled] : m_activeProbeTasks) {
+      cancelled->store(true);
+    }
+    m_activeProbeTasks.clear();
+    m_probeQueue.clear();
+  }
+
+  // Wait for probe tasks to finish
+  if (m_probeThreadPool) {
+    m_probeThreadPool->waitForDone(2000); // 2 second timeout
   }
 }
 
@@ -74,10 +188,16 @@ void NMVoiceManagerPanel::onShutdown() {
   stopPlayback();
 
   // Clean up probing
-  m_probeQueue.clear();
-  m_isProbing = false;
-  if (m_probePlayer) {
-    m_probePlayer->stop();
+  m_isProbing.store(false);
+
+  // Cancel all active probe tasks
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    for (auto& [path, cancelled] : m_activeProbeTasks) {
+      cancelled->store(true);
+    }
+    m_activeProbeTasks.clear();
+    m_probeQueue.clear();
   }
 }
 
@@ -328,23 +448,13 @@ void NMVoiceManagerPanel::setupMediaPlayer() {
         [this]([[maybe_unused]] const std::string& error) { onMediaErrorOccurred(); });
   }
 
-  // Create separate player for duration probing (still uses QMediaPlayer)
-  m_probePlayer = new QMediaPlayer(this);
+  // Create thread pool for async duration probing (issue #469)
+  m_probeThreadPool = new QThreadPool(this);
+  m_probeThreadPool->setMaxThreadCount(MAX_CONCURRENT_PROBES);
 
-  // Connect probe player signals
-  connect(m_probePlayer, &QMediaPlayer::durationChanged, this,
-          &NMVoiceManagerPanel::onProbeDurationFinished);
-  connect(m_probePlayer, &QMediaPlayer::errorOccurred, this,
-          [this]([[maybe_unused]] QMediaPlayer::Error error,
-                 [[maybe_unused]] const QString& errorString) {
-            // On probe error, just move to next file
-            if (VERBOSE_LOGGING) {
-#ifdef QT_DEBUG
-              qDebug() << "Probe error for" << m_currentProbeFile << ":" << errorString;
-#endif
-            }
-            processNextDurationProbe();
-          });
+  // Connect internal signal for thread-safe duration delivery
+  connect(this, &NMVoiceManagerPanel::durationProbedInternal, this,
+          &NMVoiceManagerPanel::onDurationProbed, Qt::QueuedConnection);
 }
 
 void NMVoiceManagerPanel::scanProject() {
@@ -1009,7 +1119,7 @@ void NMVoiceManagerPanel::onMediaErrorOccurred() {
 
 // Async duration probing
 void NMVoiceManagerPanel::startDurationProbing() {
-  if (!m_manifest) {
+  if (!m_manifest || !m_probeThreadPool) {
     return;
   }
 
@@ -1017,17 +1127,13 @@ void NMVoiceManagerPanel::startDurationProbing() {
   bool wasProbing = m_isProbing.exchange(false);
 
   if (wasProbing) {
-    // Cancel current probe
-    if (m_probePlayer) {
-      m_probePlayer->stop();
+    // Cancel current probes
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    for (auto& [path, cancelled] : m_activeProbeTasks) {
+      cancelled->store(true);
     }
-
-    // Clear queue under lock
-    {
-      std::lock_guard<std::mutex> lock(m_probeMutex);
-      m_probeQueue.clear();
-      m_currentProbeFile.clear();
-    }
+    m_activeProbeTasks.clear();
+    m_probeQueue.clear();
   }
 
   // Build queue under lock to prevent concurrent modification
@@ -1044,7 +1150,7 @@ void NMVoiceManagerPanel::startDurationProbing() {
         QString filePath = QString::fromStdString(localeFile->filePath);
         // Check if we have a valid cached duration
         double cached = getCachedDuration(filePath);
-        if (cached <= 0) {
+        if (cached <= 0 && !m_activeProbeTasks.contains(filePath)) {
           m_probeQueue.enqueue(filePath);
         }
       }
@@ -1070,79 +1176,110 @@ void NMVoiceManagerPanel::startDurationProbing() {
 
 void NMVoiceManagerPanel::processNextDurationProbe() {
   // Check atomic flag first
-  if (!m_isProbing.load()) {
+  if (!m_isProbing.load() || !m_probeThreadPool) {
     return;
   }
 
-  QString nextFile;
+  // Process multiple files up to MAX_CONCURRENT_PROBES
+  std::vector<QString> filesToProbe;
 
-  // Dequeue under lock
   {
     std::lock_guard<std::mutex> lock(m_probeMutex);
 
+    // Check if queue is empty
     if (m_probeQueue.isEmpty()) {
-      m_isProbing.store(false);
-      m_currentProbeFile.clear();
-      // Update the list with newly probed durations (outside lock to avoid
-      // deadlock)
-      QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
-                                Qt::QueuedConnection);
+      // Check if there are still active tasks
+      if (m_activeProbeTasks.isEmpty()) {
+        m_isProbing.store(false);
+        // Update the list with newly probed durations (outside lock to avoid deadlock)
+        QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
+                                  Qt::QueuedConnection);
+      }
       return;
     }
 
-    nextFile = m_probeQueue.dequeue();
-    m_currentProbeFile = nextFile;
-  }
-
-  if (!m_probePlayer) {
-    m_isProbing.store(false);
-    return;
-  }
-
-  // Probe outside lock to avoid deadlock
-  m_probePlayer->setSource(QUrl::fromLocalFile(nextFile));
-}
-
-void NMVoiceManagerPanel::onProbeDurationFinished() {
-  if (!m_probePlayer || !m_manifest) {
-    processNextDurationProbe();
-    return;
-  }
-
-  // Read current file under lock
-  QString filePath;
-  {
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-    filePath = m_currentProbeFile;
-  }
-
-  if (filePath.isEmpty()) {
-    processNextDurationProbe();
-    return;
-  }
-
-  qint64 durationMs = m_probePlayer->duration();
-  if (durationMs > 0) {
-    double durationSec = static_cast<double>(durationMs) / 1000.0;
-    cacheDuration(filePath, durationSec);
-
-    // Update the duration in manifest for current locale
-    std::string currentFilePath = filePath.toStdString();
-    for (auto& line : m_manifest->getLines()) {
-      auto* localeFile = line.getFile(m_currentLocale.toStdString());
-      if (localeFile && localeFile->filePath == currentFilePath) {
-        // Get mutable line to update
-        auto* mutableLine = m_manifest->getLineMutable(line.id);
-        if (mutableLine) {
-          auto& mutableLocaleFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
-          mutableLocaleFile.duration = static_cast<float>(durationSec);
-        }
-        break;
+    // Dequeue up to MAX_CONCURRENT_PROBES files
+    int slotsAvailable = MAX_CONCURRENT_PROBES - m_activeProbeTasks.size();
+    while (!m_probeQueue.isEmpty() && slotsAvailable > 0) {
+      QString nextFile = m_probeQueue.dequeue();
+      // Skip if already being probed
+      if (!m_activeProbeTasks.contains(nextFile)) {
+        filesToProbe.push_back(nextFile);
+        slotsAvailable--;
       }
     }
   }
 
-  // Continue with next file
+  // Submit tasks outside lock
+  for (const QString& filePath : filesToProbe) {
+    // Create cancellation token
+    auto cancelled = std::make_shared<std::atomic<bool>>(false);
+
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      m_activeProbeTasks[filePath] = cancelled;
+    }
+
+    // Create and submit task
+    auto* task = new DurationProbeTask(filePath, cancelled, this);
+    m_probeThreadPool->start(task);
+
+    if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+      qDebug() << "Started duration probe for:" << filePath;
+#endif
+    }
+  }
+}
+
+void NMVoiceManagerPanel::onProbeDurationFinished() {
+  // Legacy function - no longer used with thread pool implementation
+  // Kept for compatibility, does nothing
+}
+
+void NMVoiceManagerPanel::onDurationProbed(const QString &filePath, double duration) {
+  if (!m_manifest || filePath.isEmpty() || duration <= 0) {
+    // Remove from active tasks
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      m_activeProbeTasks.remove(filePath);
+    }
+    // Try to process next batch
+    processNextDurationProbe();
+    return;
+  }
+
+  // Cache the duration
+  cacheDuration(filePath, duration);
+
+  // Update the duration in manifest for current locale
+  std::string currentFilePath = filePath.toStdString();
+  for (auto& line : m_manifest->getLines()) {
+    auto* localeFile = line.getFile(m_currentLocale.toStdString());
+    if (localeFile && localeFile->filePath == currentFilePath) {
+      // Get mutable line to update
+      auto* mutableLine = m_manifest->getLineMutable(line.id);
+      if (mutableLine) {
+        auto& mutableLocaleFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
+        mutableLocaleFile.duration = static_cast<float>(duration);
+      }
+      break;
+    }
+  }
+
+  // Remove from active tasks
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    m_activeProbeTasks.remove(filePath);
+  }
+
+  if (VERBOSE_LOGGING) {
+#ifdef QT_DEBUG
+    qDebug() << "Duration probed:" << filePath << "=" << duration << "s";
+#endif
+  }
+
+  // Continue with next batch
   processNextDurationProbe();
 }
 
@@ -1313,12 +1450,18 @@ void NMVoiceManagerPanel::onAssignVoiceFile() {
     localeFile.status = NovelMind::audio::VoiceLineStatus::Imported;
 
     // Queue duration probe for this file
-    if (!m_probeQueue.contains(filePath)) {
-      m_probeQueue.enqueue(filePath);
-      if (!m_isProbing) {
-        processNextDurationProbe();
+    {
+      std::lock_guard<std::mutex> lock(m_probeMutex);
+      if (!m_probeQueue.contains(filePath) && !m_activeProbeTasks.contains(filePath)) {
+        m_probeQueue.enqueue(filePath);
+        if (!m_isProbing.load()) {
+          m_isProbing.store(true);
+        }
       }
     }
+
+    // Start probing if not already running
+    processNextDurationProbe();
 
     updateVoiceList();
     updateStatistics();

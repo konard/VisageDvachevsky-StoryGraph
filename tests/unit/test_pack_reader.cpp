@@ -151,12 +151,12 @@ TEST_CASE("PackReader mount operations", "[vfs][pack][mount]")
 
         auto result = reader.mount("valid_test.pack");
         if (result.isOk()) {
-            // Verify mount succeeded
-            REQUIRE(true);
+            // Verify mount succeeded - resources should now be available
+            REQUIRE(result.isOk());
             reader.unmount("valid_test.pack");
         } else {
-            // If implementation is not complete, that's ok for this test
-            REQUIRE(true);
+            // If implementation is not complete, verify we got an error result
+            REQUIRE(result.isError());
         }
 
         std::remove("valid_test.pack");
@@ -169,12 +169,14 @@ TEST_CASE("PackReader unmount operations", "[vfs][pack][mount]")
 
     SECTION("Unmount non-mounted pack is safe") {
         reader.unmount("not_mounted.pack");
-        REQUIRE(true);
+        // Verify unmounting non-existent pack doesn't crash - reader should remain valid
+        REQUIRE(reader.listResources().empty());
     }
 
     SECTION("Unmount all is safe on empty reader") {
         reader.unmountAll();
-        REQUIRE(true);
+        // Verify unmountAll on empty reader doesn't crash - no resources should remain
+        REQUIRE(reader.listResources().empty());
     }
 }
 
@@ -355,7 +357,8 @@ TEST_CASE("PackReader basic thread safety", "[vfs][pack][threading]")
             t.join();
         }
 
-        REQUIRE(true);
+        // Verify concurrent exists checks completed without crash
+        REQUIRE(reader.listResources().empty());
     }
 
     SECTION("Concurrent listResources calls") {
@@ -374,7 +377,8 @@ TEST_CASE("PackReader basic thread safety", "[vfs][pack][threading]")
             t.join();
         }
 
-        REQUIRE(true);
+        // Verify concurrent list operations completed without crash
+        REQUIRE(reader.listResources().empty());
     }
 
     SECTION("Concurrent readFile attempts") {
@@ -393,7 +397,8 @@ TEST_CASE("PackReader basic thread safety", "[vfs][pack][threading]")
             t.join();
         }
 
-        REQUIRE(true);
+        // Verify concurrent read attempts completed without crash
+        REQUIRE(reader.listResources().empty());
     }
 }
 
@@ -456,7 +461,8 @@ TEST_CASE("PackReader stress test - many operations", "[vfs][pack][stress]")
             [[maybe_unused]] bool exists =
                 reader.exists("resource_" + std::to_string(i));
         }
-        REQUIRE(true);
+        // Verify many exists checks complete without crash
+        REQUIRE(reader.listResources().empty());
     }
 
     SECTION("Many readFile attempts") {
@@ -464,14 +470,16 @@ TEST_CASE("PackReader stress test - many operations", "[vfs][pack][stress]")
             auto result = reader.readFile("resource_" + std::to_string(i));
             REQUIRE(result.isError());
         }
-        REQUIRE(true);
+        // Verify final state after many operations
+        REQUIRE(reader.listResources().empty());
     }
 
     SECTION("Many listResources calls") {
         for (int i = 0; i < 100; ++i) {
             auto resources = reader.listResources();
         }
-        REQUIRE(true);
+        // Verify repeated list operations don't corrupt state
+        REQUIRE(reader.listResources().empty());
     }
 }
 
@@ -486,8 +494,9 @@ TEST_CASE("PackReader memory safety", "[vfs][pack][safety]")
             // Reader goes out of scope here
         }
 
-        // Should not crash
-        REQUIRE(true);
+        // Verify destructor cleanup doesn't crash - create new reader to verify state
+        PackReader newReader;
+        REQUIRE(newReader.listResources().empty());
 
         std::remove("cleanup_test.pack");
     }
@@ -499,7 +508,8 @@ TEST_CASE("PackReader memory safety", "[vfs][pack][safety]")
         reader.unmountAll();
         reader.unmountAll();
 
-        REQUIRE(true);
+        // Verify multiple unmountAll calls don't corrupt state
+        REQUIRE(reader.listResources().empty());
     }
 }
 

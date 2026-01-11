@@ -12,6 +12,7 @@
 
 #include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/events/panel_events.hpp"
+#include "NovelMind/editor/qt/debouncer.hpp"
 #include <QObject>
 #include <memory>
 #include <vector>
@@ -74,6 +75,12 @@ private:
 
   std::vector<EventSubscription> m_subscriptions;
   bool m_processingSelection = false; // Prevent feedback loops
+
+  // Issue #470: Debouncer for throttling rapid selection changes
+  // Prevents cascading event chains during marquee selection or rapid keyboard navigation
+  qt::Debouncer m_selectionDebouncer{100}; // 100ms delay for UI updates
+  qt::Debouncer m_sceneLoadDebouncer{200}; // 200ms delay for expensive scene loading
+  QString m_pendingNodeId; // Store pending node ID for debounced processing
 };
 
 } // namespace NovelMind::editor::mediators
