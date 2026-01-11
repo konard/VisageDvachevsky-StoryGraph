@@ -154,6 +154,142 @@ private:
 };
 
 // ============================================================================
+// NMGizmoRotationRing - Custom rotation ring with annular hit testing
+// ============================================================================
+
+class NMGizmoRotationRing : public QGraphicsEllipseItem {
+public:
+  using HandleType = NMTransformGizmo::HandleType;
+
+  NMGizmoRotationRing(qreal radius, QGraphicsItem *parent = nullptr)
+      : QGraphicsEllipseItem(-radius, -radius, radius * 2, radius * 2, parent),
+        m_radius(radius) {
+    setFlag(ItemIsMovable, false);
+    setFlag(ItemIsSelectable, false);
+    setAcceptHoverEvents(true);
+    setAcceptedMouseButtons(Qt::LeftButton);
+    setCursor(Qt::CrossCursor);
+
+    // Calculate DPI-aware hit tolerance
+    // Base tolerance: 10 pixels, scaled by device pixel ratio
+    qreal devicePixelRatio = 1.0;
+    if (auto *scenePtr = scene()) {
+      if (auto *view = scenePtr->views().isEmpty() ? nullptr
+                                                    : scenePtr->views().first()) {
+        devicePixelRatio = view->devicePixelRatioF();
+      }
+    }
+
+    // Increase base hit tolerance from typical 2-3px to 10px minimum
+    // Scale with DPI for high-resolution displays
+    m_hitTolerance = 10.0 * std::max(1.0, devicePixelRatio);
+  }
+
+  void updateHitTolerance() {
+    // Update tolerance when view/DPI changes
+    qreal devicePixelRatio = 1.0;
+    if (auto *scenePtr = scene()) {
+      if (auto *view = scenePtr->views().isEmpty() ? nullptr
+                                                    : scenePtr->views().first()) {
+        devicePixelRatio = view->devicePixelRatioF();
+      }
+    }
+    m_hitTolerance = 10.0 * std::max(1.0, devicePixelRatio);
+  }
+
+  bool contains(const QPointF &point) const override {
+    // Calculate distance from center
+    const qreal distance = std::sqrt(point.x() * point.x() + point.y() * point.y());
+
+    // Hit test: point must be within tolerance of the ring radius
+    // This creates an annular (ring-shaped) hit area
+    const qreal innerRadius = m_radius - m_hitTolerance;
+    const qreal outerRadius = m_radius + m_hitTolerance;
+
+    return distance >= innerRadius && distance <= outerRadius;
+  }
+
+  QPainterPath shape() const override {
+    // Define the shape as an annular region for better hit testing
+    QPainterPath path;
+    const qreal outerRadius = m_radius + m_hitTolerance;
+    const qreal innerRadius = std::max(0.0, m_radius - m_hitTolerance);
+
+    path.addEllipse(QPointF(0, 0), outerRadius, outerRadius);
+    if (innerRadius > 0) {
+      QPainterPath innerPath;
+      innerPath.addEllipse(QPointF(0, 0), innerRadius, innerRadius);
+      path = path.subtracted(innerPath);
+    }
+
+    return path;
+  }
+
+protected:
+  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override {
+    m_isHovered = true;
+    update();
+    QGraphicsEllipseItem::hoverEnterEvent(event);
+  }
+
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override {
+    m_isHovered = false;
+    update();
+    QGraphicsEllipseItem::hoverLeaveEvent(event);
+  }
+
+  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
+             QWidget *widget) override {
+    // Draw the ring with visual feedback on hover
+    QPen ringPen = pen();
+    if (m_isHovered) {
+      // Make the ring thicker and brighter when hovered
+      ringPen.setWidthF(ringPen.widthF() * 1.5);
+      QColor highlightColor = ringPen.color().lighter(130);
+      ringPen.setColor(highlightColor);
+    }
+
+    painter->setPen(ringPen);
+    painter->setBrush(brush());
+    painter->drawEllipse(rect());
+  }
+
+  void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
+    if (event->button() == Qt::LeftButton) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+        gizmo->beginHandleDrag(HandleType::Rotation, event->scenePos());
+      }
+      event->accept();
+      return;
+    }
+    QGraphicsEllipseItem::mousePressEvent(event);
+  }
+
+  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
+    if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      gizmo->updateHandleDrag(event->scenePos());
+    }
+    event->accept();
+  }
+
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
+    if (event->button() == Qt::LeftButton) {
+      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+        gizmo->endHandleDrag();
+      }
+      event->accept();
+      return;
+    }
+    QGraphicsEllipseItem::mouseReleaseEvent(event);
+  }
+
+private:
+  qreal m_radius;
+  qreal m_hitTolerance = 10.0;
+  bool m_isHovered = false;
+};
+
+// ============================================================================
 // NMTransformGizmo
 // ============================================================================
 
@@ -440,18 +576,11 @@ void NMTransformGizmo::createRotateGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
   qreal radius = 60;
 
-  // Outer circle
-  auto *circle =
-      new QGraphicsEllipseItem(-radius, -radius, radius * 2, radius * 2, this);
-  circle->setPen(QPen(palette.accentPrimary, 3));
-  circle->setBrush(Qt::NoBrush);
-  addToGroup(circle);
-
-  auto *rotateHit = new NMGizmoHitArea(
-      HandleType::Rotation, QRectF(-radius, -radius, radius * 2, radius * 2),
-      this);
-  rotateHit->setCursor(Qt::CrossCursor);
-  addToGroup(rotateHit);
+  // Custom rotation ring with annular hit testing and hover feedback
+  auto *rotationRing = new NMGizmoRotationRing(radius, this);
+  rotationRing->setPen(QPen(palette.accentPrimary, 3));
+  rotationRing->setBrush(Qt::NoBrush);
+  addToGroup(rotationRing);
 
   auto *handle =
       new NMGizmoHandle(NMTransformGizmo::HandleType::Rotation, this);

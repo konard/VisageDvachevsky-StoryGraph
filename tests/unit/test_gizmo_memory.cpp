@@ -183,8 +183,8 @@ TEST_CASE("NMTransformGizmo handles all gizmo modes correctly", "[gizmo][modes]"
     SECTION("Rotate mode creates expected items") {
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Rotate);
-        // Rotate mode has: circle, rotateHit, handle = 3 items
-        REQUIRE(gizmo->childItems().size() == 3);
+        // Rotate mode has: rotationRing (custom ring with annular hit testing), handle = 2 items
+        REQUIRE(gizmo->childItems().size() == 2);
     }
 
     SECTION("Scale mode creates expected items") {
