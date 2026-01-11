@@ -55,6 +55,9 @@ add_library(novelmind_editor STATIC
     src/selection_system.cpp
     src/event_bus.cpp
     src/project_manager.cpp
+    src/project_lifecycle.cpp
+    src/project_assets.cpp
+    src/project_templates.cpp
     src/inspector_binding.cpp
     src/asset_preview.cpp
     src/timeline_playback.cpp
