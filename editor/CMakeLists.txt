@@ -155,6 +155,14 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_script_editor_panel_editor.cpp
     src/qt/panels/nm_script_editor_panel_detail.cpp
     src/qt/panels/nm_script_editor_panel_preview.cpp
+    src/qt/panels/nm_script_editor_panel_symbols.cpp
+    src/qt/panels/nm_script_editor_panel_files.cpp
+    src/qt/panels/nm_script_editor_panel_conflicts.cpp
+    src/qt/panels/nm_script_editor_panel_diagnostics.cpp
+    src/qt/panels/nm_script_editor_panel_navigation.cpp
+    src/qt/panels/nm_script_editor_panel_ui.cpp
+    src/qt/panels/nm_script_editor_panel_ui_mgmt.cpp
+    src/qt/panels/nm_script_editor_panel_state.cpp
     src/qt/panels/nm_script_doc_panel.cpp
 
     # Phase 3 & 4 panels
