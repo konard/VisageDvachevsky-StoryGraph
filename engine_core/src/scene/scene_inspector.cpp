@@ -665,17 +665,24 @@ void SceneInspectorAPI::executeCommand(std::unique_ptr<ICommand> command) {
       m_redoStack.pop();
     }
 
-    // Limit stack size
-    while (m_undoStack.size() > m_maxHistorySize) {
-      std::stack<std::unique_ptr<ICommand>> tempStack;
-      while (m_undoStack.size() > 1) {
-        tempStack.push(std::move(m_undoStack.top()));
+    // Limit stack size - remove oldest entries while preserving order
+    if (m_undoStack.size() > m_maxHistorySize) {
+      // Transfer all elements to a vector (this reverses the order)
+      std::vector<std::unique_ptr<ICommand>> temp;
+      while (!m_undoStack.empty()) {
+        temp.push_back(std::move(m_undoStack.top()));
         m_undoStack.pop();
       }
-      m_undoStack.pop(); // Remove oldest
-      while (!tempStack.empty()) {
-        m_undoStack.push(std::move(tempStack.top()));
-        tempStack.pop();
+
+      // temp now has [newest, ..., oldest]
+      // Remove oldest entries from the end
+      while (temp.size() > m_maxHistorySize) {
+        temp.pop_back();
+      }
+
+      // Restore to stack in reverse order to maintain correct sequence
+      for (auto it = temp.rbegin(); it != temp.rend(); ++it) {
+        m_undoStack.push(std::move(*it));
       }
     }
 
