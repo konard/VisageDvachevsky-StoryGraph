@@ -11,6 +11,7 @@
  */
 
 #include "NovelMind/editor/build_size_analyzer.hpp"
+#include "NovelMind/vfs/pack_security.hpp"
 
 #include <algorithm>
 #include <chrono>
@@ -876,18 +877,35 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
 void BuildSizeAnalyzer::detectDuplicates() {
   for (const auto &[hash, files] : m_hashToFiles) {
     if (files.size() > 1) {
+      // Additional safety: verify all files have the same size
+      // This provides defense-in-depth against hash collisions
+      u64 firstFileSize = 0;
+      bool sizeMismatch = false;
+
+      for (const auto &path : files) {
+        for (const auto &asset : m_analysis.assets) {
+          if (asset.path == path) {
+            if (firstFileSize == 0) {
+              firstFileSize = asset.originalSize;
+            } else if (asset.originalSize != firstFileSize) {
+              // Size mismatch detected - this could be a hash collision
+              sizeMismatch = true;
+              break;
+            }
+          }
+        }
+        if (sizeMismatch) break;
+      }
+
+      // Skip this group if sizes don't match (potential collision)
+      if (sizeMismatch) {
+        continue;
+      }
+
       DuplicateGroup group;
       group.hash = hash;
       group.paths = files;
-
-      // Find size of first file
-      for (const auto &asset : m_analysis.assets) {
-        if (asset.path == files[0]) {
-          group.singleFileSize = asset.originalSize;
-          break;
-        }
-      }
-
+      group.singleFileSize = firstFileSize;
       group.wastedSpace = group.singleFileSize * (files.size() - 1);
       m_analysis.totalWastedSpace += group.wastedSpace;
 
@@ -1155,40 +1173,35 @@ void BuildSizeAnalyzer::reportProgress(const std::string &task, f32 progress) {
 }
 
 std::string BuildSizeAnalyzer::computeFileHash(const std::string &path) {
-  // Simple hash based on file size and first/last bytes
-  // In production, would use SHA-256 or similar
+  // Use SHA-256 for cryptographically secure hash to prevent collisions
   try {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
       return "";
     }
 
-    auto size = file.tellg();
+    auto fileSize = file.tellg();
     file.seekg(0);
 
-    u64 hash = static_cast<u64>(size);
+    // Read entire file into memory for hashing
+    // For very large files, this could be optimized with streaming
+    std::vector<u8> fileData(static_cast<size_t>(fileSize));
+    file.read(reinterpret_cast<char *>(fileData.data()), fileSize);
 
-    // Read first 1KB
-    char buffer[1024];
-    file.read(buffer, std::min(static_cast<std::streamsize>(1024),
-                               static_cast<std::streamsize>(size)));
-
-    for (i32 i = 0; i < file.gcount(); i++) {
-      hash = hash * 31 + static_cast<u8>(buffer[i]);
+    if (file.gcount() != fileSize) {
+      return "";
     }
 
-    // Read last 1KB if file is larger
-    if (size > 2048) {
-      file.seekg(-1024, std::ios::end);
-      file.read(buffer, 1024);
+    // Calculate SHA-256 hash using existing secure implementation
+    auto hash = VFS::PackIntegrityChecker::calculateSha256(
+        fileData.data(), static_cast<usize>(fileSize));
 
-      for (i32 i = 0; i < file.gcount(); i++) {
-        hash = hash * 31 + static_cast<u8>(buffer[i]);
-      }
-    }
-
+    // Convert hash to hex string
     std::ostringstream oss;
-    oss << std::hex << hash;
+    for (const auto &byte : hash) {
+      oss << std::hex << std::setw(2) << std::setfill('0')
+          << static_cast<int>(byte);
+    }
     return oss.str();
 
   } catch (const std::exception &) {
