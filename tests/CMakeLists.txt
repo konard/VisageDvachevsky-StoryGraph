@@ -100,6 +100,8 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_scene_template_manager.cpp
         integration/test_scene_validation.cpp
         integration/test_scene_id_picker.cpp
+        # Issue #537 - Script Editor panel integration tests
+        integration/test_script_editor.cpp
         unit/test_voice_integration.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
