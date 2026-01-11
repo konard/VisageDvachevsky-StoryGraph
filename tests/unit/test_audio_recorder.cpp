@@ -89,8 +89,10 @@ TEST_CASE("AudioRecorder dB conversion utilities", "[audio][recorder]") {
 
 TEST_CASE("AudioRecorder destructor safety", "[audio][recorder]") {
   // Test that destructor doesn't crash when called on uninitialized recorder
-  { AudioRecorder recorder; }
-  REQUIRE(true); // If we get here, destructor didn't crash
+  AudioRecorder recorder;
+  { AudioRecorder scopedRecorder; }
+  // Verify destructor completed without crash - original recorder still valid
+  REQUIRE_FALSE(recorder.isInitialized());
 }
 
 TEST_CASE("AudioRecorder shutdown safety", "[audio][recorder]") {

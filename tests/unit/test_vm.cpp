@@ -542,3 +542,251 @@ TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security
     REQUIRE(vm.step());
     REQUIRE_FALSE(vm.isHalted());  // Executed PUSH_INT, not halted yet
 }
+
+// =========================================================================
+// Type Coercion Tests for Comparison Operators (Issue #475)
+// =========================================================================
+
+TEST_CASE("test_vm_compare_int_float", "[scripting][coercion]")
+{
+    VirtualMachine vm;
+
+    SECTION("LT: int < float") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 5},
+            {OpCode::PUSH_FLOAT, 0},  // Need to encode 10.5f
+            {OpCode::LT, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        // Encode 10.5f as operand
+        NovelMind::f32 val = 10.5f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program[1].operand = operand;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);  // 5 < 10.5
+    }
+
+    SECTION("GT: float > int") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_FLOAT, 0},  // 10.5f
+            {OpCode::PUSH_INT, 5},
+            {OpCode::GT, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        NovelMind::f32 val = 10.5f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program[0].operand = operand;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);  // 10.5 > 5
+    }
+
+    SECTION("LE: int <= float (equal values)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 10},
+            {OpCode::PUSH_FLOAT, 0},  // 10.0f
+            {OpCode::LE, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        NovelMind::f32 val = 10.0f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program[1].operand = operand;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);  // 10 <= 10.0
+    }
+
+    SECTION("GE: float >= int") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_FLOAT, 0},  // 5.5f
+            {OpCode::PUSH_INT, 10},
+            {OpCode::GE, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        NovelMind::f32 val = 5.5f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program[0].operand = operand;
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);  // 5.5 >= 10 is false
+    }
+}
+
+TEST_CASE("test_vm_compare_string_int", "[scripting][coercion]")
+{
+    VirtualMachine vm;
+
+    SECTION("LT: string < int (lexicographic)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_STRING, 0},  // "10"
+            {OpCode::PUSH_INT, 5},
+            {OpCode::LT, 0},
+            {OpCode::STORE_VAR, 1},  // "result" is at index 1
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"10", "result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        // "10" < "5" lexicographically (because '1' < '5')
+        REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("GT: int > string (converts int to string)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 20},
+            {OpCode::PUSH_STRING, 0},  // "10"
+            {OpCode::GT, 0},
+            {OpCode::STORE_VAR, 1},  // "result" is at index 1
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"10", "result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        // "20" > "10" lexicographically
+        REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("EQ: string == int (converts int to string)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_STRING, 0},  // "42"
+            {OpCode::PUSH_INT, 42},
+            {OpCode::EQ, 0},
+            {OpCode::STORE_VAR, 1},  // "result" is at index 1
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"42", "result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);  // "42" == "42"
+    }
+}
+
+TEST_CASE("VM comparison type coercion - comprehensive", "[scripting][coercion]")
+{
+    VirtualMachine vm;
+
+    SECTION("bool < bool (as int)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},    // false (0)
+            {OpCode::PUSH_BOOL, 1},    // true (1)
+            {OpCode::LT, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::get<bool>(result) == true);  // false < true (0 < 1)
+    }
+
+    SECTION("null < int (null as 0)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_NULL, 0},
+            {OpCode::PUSH_INT, 5},
+            {OpCode::LT, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::get<bool>(result) == true);  // 0 < 5
+    }
+
+    SECTION("int < int") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 3},
+            {OpCode::PUSH_INT, 7},
+            {OpCode::LT, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::get<bool>(result) == true);  // 3 < 7
+    }
+
+    SECTION("string > string (lexicographic)") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_STRING, 0},  // "banana"
+            {OpCode::PUSH_STRING, 1},  // "apple"
+            {OpCode::GT, 0},
+            {OpCode::STORE_VAR, 2},  // "result" is at index 2
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"banana", "apple", "result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);  // "banana" > "apple"
+    }
+
+    SECTION("Consistency: EQ and NE type handling") {
+        // Test that EQ and comparison operators use same coercion
+        std::vector<Instruction> program1 = {
+            {OpCode::PUSH_INT, 5},
+            {OpCode::PUSH_FLOAT, 0},  // 5.0f
+            {OpCode::EQ, 0},
+            {OpCode::STORE_VAR, 0},
+            {OpCode::HALT, 0}
+        };
+
+        NovelMind::f32 val = 5.0f;
+        NovelMind::u32 operand;
+        std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+        program1[1].operand = operand;
+
+        vm.load(program1, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::get<bool>(result) == true);  // 5 == 5.0
+    }
+}

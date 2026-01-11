@@ -377,28 +377,69 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   case OpCode::LT: {
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) < asFloat(b));
+    // Type-aware less-than comparison
+    // Coercion rules:
+    // - String types: lexicographic comparison
+    // - Numeric types (Int/Float): numeric comparison (convert to Float if either is Float)
+    // - Bool: treated as Int (true=1, false=0)
+    // - Null: treated as 0 in numeric context
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) < asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) < asFloat(b));
+    } else {
+      push(asInt(a) < asInt(b));
+    }
     break;
   }
 
   case OpCode::LE: {
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) <= asFloat(b));
+    // Type-aware less-than-or-equal comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) <= asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) <= asFloat(b));
+    } else {
+      push(asInt(a) <= asInt(b));
+    }
     break;
   }
 
   case OpCode::GT: {
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) > asFloat(b));
+    // Type-aware greater-than comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) > asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) > asFloat(b));
+    } else {
+      push(asInt(a) > asInt(b));
+    }
     break;
   }
 
   case OpCode::GE: {
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) >= asFloat(b));
+    // Type-aware greater-than-or-equal comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) >= asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) >= asFloat(b));
+    } else {
+      push(asInt(a) >= asInt(b));
+    }
     break;
   }
 
