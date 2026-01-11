@@ -557,8 +557,7 @@ void Compiler::compileLiteral(const LiteralExpr &expr) {
         } else if constexpr (std::is_same_v<T, i32>) {
           emitOp(OpCode::PUSH_INT, static_cast<u32>(val));
         } else if constexpr (std::is_same_v<T, f32>) {
-          u32 intRep = 0;
-          std::memcpy(&intRep, &val, sizeof(f32));
+          u32 intRep = std::bit_cast<u32>(val);
           emitOp(OpCode::PUSH_FLOAT, intRep);
         } else if constexpr (std::is_same_v<T, bool>) {
           emitOp(OpCode::PUSH_BOOL, val ? 1 : 0);
