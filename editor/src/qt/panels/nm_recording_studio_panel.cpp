@@ -37,6 +37,7 @@
 #include <QSlider>
 #include <QSplitter>
 #include <QTextEdit>
+#include <QThread>
 #include <QTimer>
 #include <QUrl>
 #include <QVBoxLayout>
@@ -1288,6 +1289,9 @@ void NMRecordingStudioPanel::onInputVolumeChanged(int value) {
 }
 
 void NMRecordingStudioPanel::onLevelUpdate(const audio::LevelMeter &level) {
+  // Verify we're on the main thread (Qt::QueuedConnection ensures this)
+  Q_ASSERT(QThread::currentThread() == QApplication::instance()->thread());
+
   if (m_vuMeter) {
     m_vuMeter->setLevel(level.rmsLevelDb, level.peakLevelDb, level.clipping);
   }
@@ -1343,6 +1347,9 @@ void NMRecordingStudioPanel::onLevelUpdate(const audio::LevelMeter &level) {
 }
 
 void NMRecordingStudioPanel::onRecordingStateChanged(int state) {
+  // Verify we're on the main thread (Qt::QueuedConnection ensures this)
+  Q_ASSERT(QThread::currentThread() == QApplication::instance()->thread());
+
   auto recordingState = static_cast<audio::RecordingState>(state);
 
   switch (recordingState) {
@@ -1368,6 +1375,9 @@ void NMRecordingStudioPanel::onRecordingStateChanged(int state) {
 
 void NMRecordingStudioPanel::onRecordingComplete(
     const audio::RecordingResult &result) {
+  // Verify we're on the main thread (Qt::QueuedConnection ensures this)
+  Q_ASSERT(QThread::currentThread() == QApplication::instance()->thread());
+
   m_isRecording = false;
   updateRecordingState();
 
@@ -1399,6 +1409,9 @@ void NMRecordingStudioPanel::onRecordingComplete(
 }
 
 void NMRecordingStudioPanel::onRecordingError(const QString &error) {
+  // Verify we're on the main thread (Qt::QueuedConnection ensures this)
+  Q_ASSERT(QThread::currentThread() == QApplication::instance()->thread());
+
   m_isRecording = false;
   updateRecordingState();
 

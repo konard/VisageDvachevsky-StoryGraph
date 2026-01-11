@@ -48,6 +48,9 @@ add_executable(unit_tests
     unit/test_audio_manager.cpp
     # Issue #428 - Clipboard integration tests
     unit/test_clipboard.cpp
+    # Issue #465 - Recording panel thread safety tests
+    unit/test_recording_panel_thread_safety.cpp
+    unit/test_recording_callback_marshaling.cpp
 )
 
 target_link_libraries(unit_tests
