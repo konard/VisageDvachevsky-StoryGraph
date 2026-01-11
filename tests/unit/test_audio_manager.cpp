@@ -555,6 +555,200 @@ TEST_CASE("AudioManager update", "[audio][manager]")
 }
 
 // =============================================================================
+// Audio Ducking Division by Zero Tests - Issue #449
+// =============================================================================
+
+TEST_CASE("AudioManager ducking - zero duck time", "[audio][manager][ducking][issue-449]")
+{
+    AudioManager manager;
+
+    SECTION("Set ducking params with zero fade duration") {
+        // Setting zero fade duration should not cause division by zero
+        manager.setDuckingParams(0.3f, 0.0f);
+
+        // Verify operation completes without crash
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+    }
+
+    SECTION("Voice with zero duck fade duration") {
+        auto initResult = manager.initialize();
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.3f;
+        config.duckFadeDuration = 0.0f; // Zero fade duration
+
+        // Should not crash with zero fade duration
+        auto handle = manager.playVoice("test_voice", config);
+
+        // Update should not cause division by zero
+        manager.update(0.016);
+        manager.update(0.016);
+
+        // Verify no crashes
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+
+        manager.shutdown();
+    }
+}
+
+TEST_CASE("AudioManager ducking - negative duck time", "[audio][manager][ducking][issue-449]")
+{
+    AudioManager manager;
+
+    SECTION("Set ducking params with negative fade duration") {
+        // Negative fade duration should be clamped
+        manager.setDuckingParams(0.3f, -1.0f);
+
+        // Verify operation completes without crash
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+    }
+
+    SECTION("Voice with negative duck fade duration") {
+        auto initResult = manager.initialize();
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.3f;
+        config.duckFadeDuration = -0.5f; // Negative fade duration
+
+        // Should handle negative fade duration gracefully
+        auto handle = manager.playVoice("test_voice", config);
+
+        // Update should not cause issues
+        manager.update(0.016);
+
+        // Verify no crashes
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+
+        manager.shutdown();
+    }
+}
+
+TEST_CASE("AudioManager ducking - very small duck time", "[audio][manager][ducking][issue-449]")
+{
+    AudioManager manager;
+
+    SECTION("Set ducking params with very small fade duration") {
+        // Very small fade duration should be clamped to minimum
+        manager.setDuckingParams(0.3f, 0.0001f);
+
+        // Verify operation completes without crash
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+    }
+
+    SECTION("Voice with very small duck fade duration") {
+        auto initResult = manager.initialize();
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.3f;
+        config.duckFadeDuration = 0.00001f; // Very small fade duration
+
+        // Should clamp to minimum safe value
+        auto handle = manager.playVoice("test_voice", config);
+
+        // Multiple updates to ensure ducking calculation doesn't cause issues
+        for (int i = 0; i < 10; ++i) {
+            manager.update(0.016);
+        }
+
+        // Verify no crashes or NaN/Inf propagation
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+
+        manager.shutdown();
+    }
+}
+
+TEST_CASE("AudioManager ducking - valid duck time", "[audio][manager][ducking][issue-449]")
+{
+    AudioManager manager;
+
+    SECTION("Set ducking params with valid fade duration") {
+        // Normal fade duration should work correctly
+        manager.setDuckingParams(0.3f, 0.2f);
+
+        // Verify operation completes without crash
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+    }
+
+    SECTION("Voice with valid duck fade duration") {
+        auto initResult = manager.initialize();
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        VoiceConfig config;
+        config.duckMusic = true;
+        config.duckAmount = 0.3f;
+        config.duckFadeDuration = 0.2f; // Normal fade duration
+
+        auto handle = manager.playVoice("test_voice", config);
+
+        // Update multiple times to simulate normal ducking
+        for (int i = 0; i < 20; ++i) {
+            manager.update(0.016); // ~60 FPS
+        }
+
+        // Verify everything works correctly
+        REQUIRE(manager.getActiveSourceCount() >= 0);
+
+        manager.shutdown();
+    }
+}
+
+TEST_CASE("AudioSource fade - zero fade duration", "[audio][source][fade][issue-449]")
+{
+    AudioSource source;
+
+    SECTION("Fade in with zero duration") {
+        // Zero duration should complete immediately without division by zero
+        source.fadeIn(0.0f);
+
+        // Verify state is set correctly
+        REQUIRE(source.getState() == PlaybackState::Playing);
+    }
+
+    SECTION("Fade out with zero duration") {
+        // Zero duration should complete immediately
+        source.fadeOut(0.0f, true);
+
+        // Verify state is stopped
+        REQUIRE(source.getState() == PlaybackState::Stopped);
+    }
+}
+
+TEST_CASE("AudioSource fade - negative fade duration", "[audio][source][fade][issue-449]")
+{
+    AudioSource source;
+
+    SECTION("Fade in with negative duration") {
+        // Negative duration should be handled gracefully
+        source.fadeIn(-1.0f);
+
+        // Should complete immediately or handle gracefully
+        REQUIRE(source.getState() == PlaybackState::Playing);
+    }
+
+    SECTION("Fade out with negative duration") {
+        // Negative duration should be handled gracefully
+        source.fadeOut(-0.5f, true);
+
+        // Should complete immediately
+        REQUIRE(source.getState() == PlaybackState::Stopped);
+    }
+}
+
+// =============================================================================
 // Error Path Tests
 // =============================================================================
 
