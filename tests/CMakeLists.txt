@@ -19,6 +19,7 @@ add_executable(unit_tests
     unit/test_memory_fs.cpp
     unit/test_vm.cpp
     unit/test_vm_vn.cpp
+    unit/test_vm_debugger.cpp
     unit/test_value.cpp
     unit/test_lexer.cpp
     unit/test_parser.cpp

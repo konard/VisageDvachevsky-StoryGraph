@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/vm_debugger.hpp"
+#include "NovelMind/core/assert.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm.hpp"
@@ -12,9 +13,7 @@ namespace NovelMind::scripting {
 VMDebugger::VMDebugger(VirtualMachine *vm)
     : m_vm(vm), m_nextBreakpointId(1), m_isPaused(false),
       m_stepMode(DebugStepMode::None), m_stepStartDepth(0) {
-  if (!m_vm) {
-    NOVELMIND_LOG_ERROR("VMDebugger created with null VM");
-  }
+  NOVELMIND_ASSERT_NOT_NULL(m_vm);
 }
 
 VMDebugger::~VMDebugger() = default;
