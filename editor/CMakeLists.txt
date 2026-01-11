@@ -46,6 +46,12 @@ add_library(novelmind_editor STATIC
     src/asset_pipeline.cpp
     src/editor_settings.cpp
     src/settings_registry.cpp
+    src/settings_defaults_editor.cpp
+    src/settings_defaults_project.cpp
+    src/settings_type_handlers.cpp
+    src/settings_persistence.cpp
+    src/settings_validation.cpp
+    src/settings_migration.cpp
     src/voice_manager.cpp
     src/timeline_editor.cpp
     src/scene_document.cpp
