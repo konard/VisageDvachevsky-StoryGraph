@@ -17,7 +17,9 @@
 #include <any>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -325,6 +327,10 @@ private:
 
   std::string m_userSettingsPath;
   std::string m_projectSettingsPath;
+
+  // Thread synchronization
+  // Using shared_mutex to allow concurrent reads but exclusive writes
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
