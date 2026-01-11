@@ -132,7 +132,21 @@ void DurationProbeTask::run() {
 NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget* parent, IAudioPlayer* audioPlayer)
     : NMDockPanel("Voice Manager", parent),
       m_manifest(std::make_unique<NovelMind::audio::VoiceManifest>()) {
-  (void)audioPlayer;
+  // Use injected audio player or create one
+  if (audioPlayer) {
+    m_audioPlayer = audioPlayer;
+  } else {
+    // Try ServiceLocator first, otherwise create QtAudioPlayer
+    auto* locatorPlayer = ServiceLocator::getAudioPlayer();
+    if (locatorPlayer) {
+      m_audioPlayer = locatorPlayer;
+    } else {
+      // Create our own QtAudioPlayer
+      m_ownedAudioPlayer = std::make_unique<QtAudioPlayer>(this);
+      m_audioPlayer = m_ownedAudioPlayer.get();
+    }
+  }
+
   // Initialize manifest with default locale
   m_manifest->setDefaultLocale("en");
   m_manifest->addLocale("en");
