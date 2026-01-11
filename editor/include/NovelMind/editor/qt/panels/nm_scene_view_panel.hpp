@@ -139,6 +139,7 @@ private:
   void createScaleGizmo();
   void clearGizmo();
   class NMSceneObject* resolveTarget() const;
+  qreal getDpiScale() const;
 
   GizmoMode m_mode = GizmoMode::Move;
   QString m_targetObjectId;
