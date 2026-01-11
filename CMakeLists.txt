@@ -22,6 +22,7 @@ endif()
 # Options
 option(NOVELMIND_BUILD_TESTS "Build unit tests" ON)
 option(NOVELMIND_BUILD_EDITOR "Build visual editor" ON)
+option(NOVELMIND_ENABLE_FUZZING "Build fuzzing targets (requires Clang)" OFF)
 option(NOVELMIND_ENABLE_ASAN "Enable AddressSanitizer" OFF)
 option(NOVELMIND_ENABLE_TSAN "Enable ThreadSanitizer" OFF)
 option(NOVELMIND_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer" OFF)

@@ -160,3 +160,7 @@ if(NOVELMIND_BUILD_EDITOR)
             TIMEOUT 60
     )
 endif()
+
+# Fuzzing targets (optional, requires Clang)
+# Issue #544 - libFuzzer integration for Script lexer, parser, and VM
+add_subdirectory(fuzz)
