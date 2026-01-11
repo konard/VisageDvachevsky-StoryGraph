@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NovelMind/core/result.hpp"
+#include "NovelMind/core/secure_memory.hpp"
 #include "NovelMind/core/types.hpp"
 #include <array>
 #include <iosfwd>
@@ -101,21 +102,21 @@ class PackDecryptor {
 public:
   PackDecryptor() = default;
 
-  void setKey(const std::vector<u8> &key);
+  void setKey(const Core::SecureVector<u8> &key);
   void setKey(const u8 *key, usize keySize);
 
   [[nodiscard]] Result<std::vector<u8>> decrypt(const u8 *data, usize size,
                                                 const u8 *iv, usize ivSize,
                                                 const u8 *aad, usize aadSize);
 
-  [[nodiscard]] static Result<std::vector<u8>>
+  [[nodiscard]] static Result<Core::SecureVector<u8>>
   deriveKey(const std::string &password, const u8 *salt, usize saltSize);
 
   [[nodiscard]] static Result<std::vector<u8>>
   generateRandomIV(usize size = 16);
 
 private:
-  std::vector<u8> m_key;
+  Core::SecureVector<u8> m_key; // Secure storage, zeroed on destruction
 };
 
 class SecurePackReader {

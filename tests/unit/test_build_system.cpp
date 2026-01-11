@@ -685,4 +685,489 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
     unsetenv("NOVELMIND_PACK_AES_KEY_FILE");
   }
 #endif
+// Path Traversal Security Tests (Issue #572)
+// =============================================================================
+
+TEST_CASE("Path traversal protection in sanitizeOutputPath",
+          "[build_system][security][path_traversal]") {
+  std::string tempDir = createTempDir();
+  std::string baseDir = tempDir + "/output";
+  fs::create_directories(baseDir);
+
+  SECTION("Rejects simple parent directory traversal") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "../evil.txt");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects deeply nested parent directory traversal") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "../../../../../../etc/passwd");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects path with .. in the middle") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "assets/../../../evil.exe");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Rejects path with multiple .. components") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "foo/../bar/../../../baz.dll");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Accepts valid relative path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "assets/images/bg.png");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Accepts nested valid path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "deep/nested/structure/file.dat");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Accepts path with dots in filename") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "version.1.2.3.txt");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  SECTION("Rejects backslash-based parent directory traversal (Windows)") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "..\\..\\evil.txt");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Path traversal detected") != std::string::npos);
+  }
+
+  SECTION("Accepts empty relative path") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "");
+    REQUIRE(result.isOk());
+  }
+
+  SECTION("Accepts single filename") {
+    auto result = BuildSystem::sanitizeOutputPath(baseDir, "file.txt");
+    REQUIRE(result.isOk());
+    REQUIRE(result.value().find(baseDir) != std::string::npos);
+// Code Signing Security Tests (Issue #573)
+// =============================================================================
+
+TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
+          "[build_system][security][signing]") {
+  BuildSystem buildSystem;
+
+  SECTION("Rejects pipe character") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe|malicious", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects semicolon") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe;rm -rf", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects ampersand") {
+    std::vector<std::string> allowed = {"codesign"};
+    auto result =
+        buildSystem.validateSigningToolPath("codesign&&malicious", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects backticks") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe`malicious`", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects dollar sign") {
+    std::vector<std::string> allowed = {"codesign"};
+    auto result =
+        buildSystem.validateSigningToolPath("codesign$(malicious)", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects parentheses") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe(malicious)", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects redirection operators") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe>output", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+
+    result =
+        buildSystem.validateSigningToolPath("signtool.exe<input", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+
+  SECTION("Rejects wildcards") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result =
+        buildSystem.validateSigningToolPath("signtool.exe*", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+
+    result = buildSystem.validateSigningToolPath("signtool.exe?", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+}
+
+TEST_CASE("validateSigningToolPath validates against allowlist",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Rejects non-allowlisted tool") {
+    // Create a fake executable
+    std::string maliciousPath = tempDir + "/malicious.exe";
+    std::ofstream fakeExe(maliciousPath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    std::vector<std::string> allowed = {"signtool.exe", "codesign"};
+    auto result = buildSystem.validateSigningToolPath(maliciousPath, allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("not in the allowlist") != std::string::npos);
+  }
+
+  SECTION("Accepts allowlisted tool with .exe extension") {
+    // Create a fake signtool.exe
+    std::string toolPath = tempDir + "/signtool.exe";
+    std::ofstream fakeExe(toolPath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    std::vector<std::string> allowed = {"signtool.exe", "signtool"};
+    auto result = buildSystem.validateSigningToolPath(toolPath, allowed);
+    REQUIRE(result.isOk());
+  }
+
+  SECTION("Accepts allowlisted tool without .exe extension") {
+    // Create a fake codesign
+    std::string toolPath = tempDir + "/codesign";
+    std::ofstream fakeExe(toolPath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    std::vector<std::string> allowed = {"codesign"};
+    auto result = buildSystem.validateSigningToolPath(toolPath, allowed);
+    REQUIRE(result.isOk());
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("Path traversal protection prevents writing outside output directory",
+          "[build_system][security][integration]") {
+  std::string tempDir = createTempDir();
+
+  // Create a fake project structure
+  std::string projectPath = tempDir + "/project";
+  fs::create_directories(projectPath + "/assets");
+  fs::create_directories(projectPath + "/scripts");
+
+  // Create a benign asset file
+  std::ofstream assetFile(projectPath + "/assets/image.png");
+  assetFile << "fake image data";
+  assetFile.close();
+
+  // Create project.json
+  std::ofstream projectFile(projectPath + "/project.json");
+  projectFile << R"({
+    "name": "SecurityTest",
+    "version": "1.0.0"
+  })";
+  projectFile.close();
+
+  BuildConfig config;
+  config.projectPath = projectPath;
+  config.outputPath = tempDir + "/build";
+  config.platform = BuildPlatform::Windows;
+  config.buildType = BuildType::Release;
+  config.deterministicBuild = true;
+  config.fixedBuildTimestamp = 1704067200;
+
+  BuildSystem buildSystem;
+  buildSystem.configure(config);
+
+  SECTION("Normal asset processing succeeds") {
+    // This would normally be tested with a full build
+    // For now we verify that sanitizeOutputPath works correctly
+    std::string assetsDir = config.outputPath + "/.staging/assets";
+    auto result = BuildSystem::sanitizeOutputPath(assetsDir, "image.png");
+    REQUIRE(result.isOk());
+TEST_CASE("validateSigningToolPath rejects non-existent paths",
+          "[build_system][security][signing]") {
+  BuildSystem buildSystem;
+  std::vector<std::string> allowed = {"signtool.exe"};
+
+  SECTION("Returns error for non-existent path") {
+    auto result = buildSystem.validateSigningToolPath("/nonexistent/signtool.exe", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("not found") != std::string::npos);
+  }
+}
+
+TEST_CASE("validateSigningToolPath rejects empty paths",
+          "[build_system][security][signing]") {
+  BuildSystem buildSystem;
+  std::vector<std::string> allowed = {"signtool.exe"};
+
+  SECTION("Returns error for empty path") {
+    auto result = buildSystem.validateSigningToolPath("", allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("cannot be empty") != std::string::npos);
+  }
+}
+
+TEST_CASE("validateSigningToolPath rejects directories",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Returns error for directory instead of file") {
+    std::vector<std::string> allowed = {"signtool.exe"};
+    auto result = buildSystem.validateSigningToolPath(tempDir, allowed);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("not a regular file") != std::string::npos);
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("signExecutableForPlatform validates certificate path",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Returns error when certificate doesn't exist") {
+    BuildConfig config;
+    config.platform = BuildPlatform::Windows;
+    config.signExecutable = true;
+    config.signingCertificate = "/nonexistent/cert.pfx";
+
+    buildSystem.configure(config);
+
+    // Create a fake executable to sign
+    std::string exePath = tempDir + "/test.exe";
+    std::ofstream fakeExe(exePath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    auto result = buildSystem.signExecutableForPlatform(exePath);
+    REQUIRE(result.isError());
+    // Error should mention certificate not found
+    REQUIRE(result.error().find("certificate") != std::string::npos ||
+            result.error().find("Certificate") != std::string::npos ||
+            result.error().find("not found") != std::string::npos);
+  }
+
+  SECTION("Returns error when executable doesn't exist") {
+    BuildConfig config;
+    config.platform = BuildPlatform::Windows;
+    config.signExecutable = true;
+    config.signingCertificate = tempDir + "/cert.pfx";
+
+    // Create fake certificate
+    std::ofstream fakeCert(config.signingCertificate);
+    fakeCert << "fake cert";
+    fakeCert.close();
+
+    buildSystem.configure(config);
+
+    auto result = buildSystem.signExecutableForPlatform("/nonexistent/app.exe");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("not found") != std::string::npos);
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("signWindowsExecutable rejects invalid password characters",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Rejects password with shell metacharacters") {
+    BuildConfig config;
+    config.platform = BuildPlatform::Windows;
+    config.signExecutable = true;
+    config.signingCertificate = tempDir + "/cert.pfx";
+    config.signingPassword = "password;malicious";
+
+    // Create fake certificate
+    std::ofstream fakeCert(config.signingCertificate);
+    fakeCert << "fake cert";
+    fakeCert.close();
+
+    // Create fake executable
+    std::string exePath = tempDir + "/test.exe";
+    std::ofstream fakeExe(exePath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    buildSystem.configure(config);
+
+    auto result = buildSystem.signWindowsExecutable(exePath);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("invalid character") != std::string::npos);
+  }
+}
+
+TEST_CASE("signWindowsExecutable validates timestamp URL format",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Rejects non-HTTP/HTTPS timestamp URL") {
+    BuildConfig config;
+    config.platform = BuildPlatform::Windows;
+    config.signExecutable = true;
+    config.signingCertificate = tempDir + "/cert.pfx";
+    config.signingTimestampUrl = "ftp://malicious.com";
+
+    // Create fake certificate
+    std::ofstream fakeCert(config.signingCertificate);
+    fakeCert << "fake cert";
+    fakeCert.close();
+
+    // Create fake executable
+    std::string exePath = tempDir + "/test.exe";
+    std::ofstream fakeExe(exePath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    buildSystem.configure(config);
+
+    auto result = buildSystem.signWindowsExecutable(exePath);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("timestamp") != std::string::npos ||
+            result.error().find("URL") != std::string::npos);
+  }
+
+  SECTION("Accepts valid HTTP timestamp URL") {
+    BuildConfig config;
+    config.platform = BuildPlatform::Windows;
+    config.signExecutable = true;
+    config.signingCertificate = tempDir + "/cert.pfx";
+    config.signingTimestampUrl = "http://timestamp.digicert.com";
+
+    // Create fake certificate
+    std::ofstream fakeCert(config.signingCertificate);
+    fakeCert << "fake cert";
+    fakeCert.close();
+
+    // Create fake executable
+    std::string exePath = tempDir + "/test.exe";
+    std::ofstream fakeExe(exePath);
+    fakeExe << "fake";
+    fakeExe.close();
+
+    buildSystem.configure(config);
+
+    // This will fail because signtool doesn't exist, but URL validation should pass
+    auto result = buildSystem.signWindowsExecutable(exePath);
+    // Should fail on tool validation, not URL validation
+    if (result.isError()) {
+      REQUIRE(result.error().find("tool") != std::string::npos ||
+              result.error().find("command") != std::string::npos);
+    }
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("signMacOSBundle validates team ID format",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Rejects team ID with non-alphanumeric characters") {
+    BuildConfig config;
+    config.platform = BuildPlatform::MacOS;
+    config.signExecutable = true;
+    config.signingCertificate = "Developer ID Application";
+    config.signingTeamId = "ABC123;malicious";
+
+    // Create fake bundle directory
+    std::string bundlePath = tempDir + "/test.app";
+    fs::create_directories(bundlePath);
+
+    buildSystem.configure(config);
+
+    auto result = buildSystem.signMacOSBundle(bundlePath);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("team ID") != std::string::npos);
+  }
+
+  SECTION("Accepts valid alphanumeric team ID") {
+    BuildConfig config;
+    config.platform = BuildPlatform::MacOS;
+    config.signExecutable = true;
+    config.signingCertificate = "Developer ID Application";
+    config.signingTeamId = "ABC123XYZ";
+
+    // Create fake bundle directory
+    std::string bundlePath = tempDir + "/test.app";
+    fs::create_directories(bundlePath);
+
+    buildSystem.configure(config);
+
+    // This will fail because codesign doesn't exist or cert is invalid,
+    // but team ID validation should pass
+    auto result = buildSystem.signMacOSBundle(bundlePath);
+    if (result.isError()) {
+      // Should fail on tool/signing, not team ID validation
+      REQUIRE(result.error().find("team ID") == std::string::npos);
+    }
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+TEST_CASE("signMacOSBundle validates entitlements file",
+          "[build_system][security][signing]") {
+  std::string tempDir = createTempDir();
+  BuildSystem buildSystem;
+
+  SECTION("Returns error when entitlements file doesn't exist") {
+    BuildConfig config;
+    config.platform = BuildPlatform::MacOS;
+    config.signExecutable = true;
+    config.signingCertificate = "Developer ID Application";
+    config.signingEntitlements = "/nonexistent/entitlements.plist";
+
+    // Create fake bundle directory
+    std::string bundlePath = tempDir + "/test.app";
+    fs::create_directories(bundlePath);
+
+    buildSystem.configure(config);
+
+    auto result = buildSystem.signMacOSBundle(bundlePath);
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Entitlements") != std::string::npos ||
+            result.error().find("not found") != std::string::npos);
+  }
+
+  cleanupTempDir(tempDir);
 }

@@ -80,6 +80,7 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_ENABLE_ASAN` | OFF | Enable AddressSanitizer |
 | `NOVELMIND_ENABLE_TSAN` | OFF | Enable ThreadSanitizer |
 | `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
+| `NOVELMIND_ENABLE_LSAN` | OFF | Enable LeakSanitizer |
 
 ### Build Types
 
@@ -238,6 +239,11 @@ Test your code with sanitizers to catch memory and threading issues:
 ```bash
 # AddressSanitizer (detects memory errors)
 cmake -B build -DNOVELMIND_ENABLE_ASAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
+
+# LeakSanitizer (detects memory leaks)
+cmake -B build -DNOVELMIND_ENABLE_LSAN=ON
 cmake --build build
 cd build && ctest --output-on-failure
 

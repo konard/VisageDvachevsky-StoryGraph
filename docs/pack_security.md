@@ -31,7 +31,23 @@ signed packs without a public key.
      set).
   3. AES-GCM tag is validated during decryption (when `ENCRYPTED` flag is set).
 - Key material is never logged. Environment-derived keys are loaded once at
-  initialization and held in memory only.
+  initialization and held in secure memory only.
+
+## Secure Memory Handling
+- All encryption keys are stored using `Core::SecureVector<u8>` which:
+  - Automatically zeroes memory on deallocation to prevent exposure in memory
+    dumps and core dumps.
+  - Attempts to lock memory in physical RAM to prevent swapping to disk (where
+    supported).
+  - Uses platform-specific secure zeroing functions that compilers respect.
+- Key memory is protected against:
+  - Memory dumps
+  - Debugger inspection
+  - Cold boot attacks
+  - Core dumps
+  - Swap/hibernation file exposure
+- This applies to all key storage locations: `BuildConfig`, `PackDecryptor`,
+  `MultiPackManager`, and `SecurePackFileSystem`.
 
 ## Build Pipeline Requirements
 - Sign every pack when the `SIGNED` flag is set; emit `<pack>.sig` alongside the

@@ -20,7 +20,7 @@ public:
 
   void setPublicKeyPem(const std::string &pem);
   void setPublicKeyPath(const std::string &path);
-  void setDecryptionKey(const std::vector<u8> &key);
+  void setDecryptionKey(const Core::SecureVector<u8> &key);
 
   Result<void> mount(const std::string &packPath) override;
   void unmount(const std::string &packPath) override;
@@ -42,7 +42,7 @@ private:
 
   std::unique_ptr<NovelMind::VFS::SecurePackReader> m_reader;
   std::string m_packPath;
-  std::vector<u8> m_decryptionKey;
+  Core::SecureVector<u8> m_decryptionKey; // Secure storage, zeroed on destruction
   std::string m_publicKeyPem;
   std::string m_publicKeyPath;
 };

@@ -13,6 +13,7 @@
  */
 
 #include "NovelMind/core/result.hpp"
+#include "NovelMind/core/secure_memory.hpp"
 #include "NovelMind/core/types.hpp"
 #include <array>
 #include <atomic>
@@ -111,7 +112,7 @@ struct BuildConfig {
   bool packAssets = true;
   bool encryptAssets = false;
   std::string encryptionKeyPath; // Path to key file (never the key itself)
-  std::vector<u8> encryptionKey; // 32-byte AES-256 key (runtime only)
+  Core::SecureVector<u8> encryptionKey; // 32-byte AES-256 key (secure, zeroed on destruction)
   CompressionLevel compression = CompressionLevel::Balanced;
 
   // Signing (RSA)
@@ -308,7 +309,7 @@ public:
   [[nodiscard]] static Result<std::vector<u8>> compressData(const std::vector<u8>& data,
                                                             CompressionLevel level);
   [[nodiscard]] static Result<std::vector<u8>>
-  encryptData(const std::vector<u8>& data, const std::vector<u8>& key, std::array<u8, 12>& ivOut);
+  encryptData(const std::vector<u8>& data, const Core::SecureVector<u8>& key, std::array<u8, 12>& ivOut);
 
   // Resource type detection
   [[nodiscard]] static ResourceType getResourceTypeFromExtension(const std::string& path);
@@ -316,10 +317,14 @@ public:
   // VFS path normalization
   [[nodiscard]] static std::string normalizeVfsPath(const std::string& path);
 
+  // Path security validation
+  [[nodiscard]] static Result<std::string> sanitizeOutputPath(const std::string& basePath,
+                                                              const std::string& relativePath);
+
   // Key management
-  [[nodiscard]] static Result<std::vector<u8>>
+  [[nodiscard]] static Result<Core::SecureVector<u8>>
   loadEncryptionKeyFromEnv(); // Load from NOVELMIND_PACK_AES_KEY_HEX or _FILE
-  [[nodiscard]] static Result<std::vector<u8>> loadEncryptionKeyFromFile(const std::string& path);
+  [[nodiscard]] static Result<Core::SecureVector<u8>> loadEncryptionKeyFromFile(const std::string& path);
   [[nodiscard]] static Result<std::vector<u8>> signData(const std::vector<u8>& data,
                                                         const std::string& privateKeyPath);
 
@@ -372,6 +377,8 @@ private:
   Result<void> signWindowsExecutable(const std::string& executablePath);
   Result<void> signMacOSBundle(const std::string& bundlePath);
   Result<i32> executeCommand(const std::string& command, std::string& output) const;
+  Result<void> validateSigningToolPath(const std::string& toolPath,
+                                       const std::vector<std::string>& allowedNames);
 
   BuildConfig m_config;
   BuildProgress m_progress;
@@ -479,9 +486,9 @@ public:
   Result<void> finalizePack();
 
   /**
-   * @brief Set encryption key
+   * @brief Set encryption key (secure, will be zeroed on destruction)
    */
-  void setEncryptionKey(const std::string& key);
+  void setEncryptionKey(const Core::SecureVector<u8>& key);
 
   /**
    * @brief Set compression level
@@ -504,7 +511,7 @@ private:
   Result<std::vector<u8>> encryptData(const std::vector<u8>& data);
 
   std::string m_outputPath;
-  std::string m_encryptionKey;
+  Core::SecureVector<u8> m_encryptionKey; // Secure storage, zeroed on destruction
   CompressionLevel m_compressionLevel = CompressionLevel::Balanced;
 
   struct PackEntry {

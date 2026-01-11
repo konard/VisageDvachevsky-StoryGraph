@@ -155,7 +155,7 @@ void MultiPackManager::setPackPublicKeyPath(const std::string &path) {
 }
 
 void MultiPackManager::setPackDecryptionKey(const std::vector<u8> &key) {
-  m_decryptionKey = key;
+  m_decryptionKey.assign(key.begin(), key.end());
 }
 
 Result<void>
@@ -167,7 +167,8 @@ MultiPackManager::setPackDecryptionKeyFromFile(const std::string &path) {
   if (keyResult.value().empty()) {
     return Result<void>::error("Key file is empty: " + path);
   }
-  m_decryptionKey = std::move(keyResult).value();
+  const auto& key = keyResult.value();
+  m_decryptionKey.assign(key.begin(), key.end());
   return Result<void>::ok();
 }
 
@@ -182,7 +183,7 @@ Result<void> MultiPackManager::configureKeysFromEnvironment() {
       return Result<void>::error(
           "Invalid NOVELMIND_PACK_AES_KEY_HEX (must be even-length hex)");
     }
-    m_decryptionKey = std::move(*decoded);
+    m_decryptionKey.assign(decoded->begin(), decoded->end());
   } else if (!keyFile.empty()) {
     auto keyResult = setPackDecryptionKeyFromFile(keyFile);
     if (keyResult.isError()) {

@@ -247,6 +247,8 @@ jobs:
             cmake_flag: NOVELMIND_ENABLE_TSAN
           - name: ubsan
             cmake_flag: NOVELMIND_ENABLE_UBSAN
+          - name: lsan
+            cmake_flag: NOVELMIND_ENABLE_LSAN
 
     steps:
     - uses: actions/checkout@v4
