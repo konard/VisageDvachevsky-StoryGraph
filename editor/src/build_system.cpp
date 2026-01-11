@@ -2698,18 +2698,27 @@ Result<void> BuildSystem::buildPack(const std::string& outputPath,
                    static_cast<std::streamsize>(entry.data.size()));
     }
 
-    // Calculate CRC32 of header + resource table + string table
+    // Calculate integrity hashes of header + resource table + string table
     std::vector<u8> tablesData;
     tablesData.reserve(headerBuffer.size() + resourceTableBuffer.size() + stringTableBuffer.size());
     tablesData.insert(tablesData.end(), headerBuffer.begin(), headerBuffer.end());
     tablesData.insert(tablesData.end(), resourceTableBuffer.begin(), resourceTableBuffer.end());
     tablesData.insert(tablesData.end(), stringTableBuffer.begin(), stringTableBuffer.end());
+
+    // SHA-256 for cryptographic integrity (prevents forgery)
+    auto tablesSha256 = calculateSha256(tablesData.data(), tablesData.size());
+
+    // CRC32 for quick corruption detection (fast non-cryptographic check)
     u32 tablesCrc = calculateCrc32(tablesData.data(), tablesData.size());
 
-    // Write footer (32 bytes)
+    // Write footer (64 bytes)
     const char footerMagic[] = "NMRF";
     output.write(footerMagic, 4);
 
+    // SHA-256 hash (32 bytes) - primary integrity check
+    output.write(reinterpret_cast<const char*>(tablesSha256.data()), 32);
+
+    // CRC32 (4 bytes) - secondary quick check
     output.write(reinterpret_cast<const char*>(&tablesCrc), 4);
 
     // Use deterministic timestamp if configured
