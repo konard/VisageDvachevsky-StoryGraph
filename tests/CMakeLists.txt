@@ -55,6 +55,8 @@ add_executable(unit_tests
     unit/test_build_system.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
+    # Issue #496 - Save Manager comprehensive test coverage
+    unit/test_save_manager.cpp
 )
 
 target_link_libraries(unit_tests
