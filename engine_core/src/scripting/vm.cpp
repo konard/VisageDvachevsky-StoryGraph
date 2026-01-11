@@ -596,6 +596,10 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
       auto popArg = [&]() -> Value {
         if (m_stack.empty()) {
+          // Stack underflow detected - log error and halt VM
+          NOVELMIND_LOG_ERROR("VM stack underflow during popArg() at IP: {} (opcode: {})",
+                              m_ip, static_cast<int>(instr.opcode));
+          m_halted = true;
           return std::monostate{};
         }
         Value val = std::move(m_stack.back());
