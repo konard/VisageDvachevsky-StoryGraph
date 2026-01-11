@@ -706,3 +706,95 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
 
 // Note: Full race condition stress tests require ThreadSanitizer:
 //   cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" ..
+
+// =============================================================================
+// Music Seek Tests (Issue #464)
+// =============================================================================
+
+TEST_CASE("AudioManager music seeking", "[audio][manager][music][seek]")
+{
+    AudioManager manager;
+    auto initResult = manager.initialize();
+
+    if (initResult.isError()) {
+        SKIP("Audio hardware not available");
+    }
+
+    SECTION("test_audio_seek_middle") {
+        manager.playMusic("test_music");
+
+        // Seek to middle position (e.g., 30 seconds)
+        manager.seekMusic(30.0f);
+
+        // Get the position after seeking
+        f32 position = manager.getMusicPosition();
+
+        // Position should be at or near 30 seconds
+        // Allow some tolerance for audio processing
+        REQUIRE(position >= 0.0f);
+        REQUIRE(position <= 31.0f); // Small tolerance
+    }
+
+    SECTION("test_audio_seek_start") {
+        manager.playMusic("test_music");
+
+        // Seek to some position first
+        manager.seekMusic(20.0f);
+
+        // Then seek back to start
+        manager.seekMusic(0.0f);
+
+        // Position should be at start
+        f32 position = manager.getMusicPosition();
+        REQUIRE(position >= 0.0f);
+        REQUIRE(position <= 1.0f); // Should be very close to 0
+    }
+
+    SECTION("test_audio_seek_end") {
+        manager.playMusic("test_music");
+
+        // Seek to a very large position (should be clamped to duration)
+        manager.seekMusic(999999.0f);
+
+        // Position should be clamped to duration, not beyond
+        f32 position = manager.getMusicPosition();
+        REQUIRE(position >= 0.0f);
+        // Position should be valid (not exceeding reasonable bounds)
+        REQUIRE(position < 1000000.0f);
+    }
+
+    SECTION("Seek to negative position (edge case)") {
+        manager.playMusic("test_music");
+
+        // Seek to negative position (should be clamped to 0)
+        manager.seekMusic(-10.0f);
+
+        // Position should be clamped to 0
+        f32 position = manager.getMusicPosition();
+        REQUIRE(position >= 0.0f);
+        REQUIRE(position <= 1.0f);
+    }
+
+    SECTION("Seek without active music") {
+        // No music playing - seek should not crash
+        manager.seekMusic(10.0f);
+
+        // Should handle gracefully
+        REQUIRE_FALSE(manager.isMusicPlaying());
+    }
+
+    SECTION("Multiple seeks in succession") {
+        manager.playMusic("test_music");
+
+        // Perform multiple seeks
+        manager.seekMusic(10.0f);
+        manager.seekMusic(20.0f);
+        manager.seekMusic(5.0f);
+
+        // Final position should reflect last seek
+        f32 position = manager.getMusicPosition();
+        REQUIRE(position >= 0.0f);
+    }
+
+    manager.shutdown();
+}

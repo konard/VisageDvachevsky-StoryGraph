@@ -522,9 +522,20 @@ void AudioManager::seekMusic(f32 position) {
     return;
   }
 
+  // Clamp position to valid range
+  f32 clampedPosition = position;
+  if (source->m_duration > 0.0f) {
+    clampedPosition = std::max(0.0f, std::min(position, source->m_duration));
+  } else {
+    clampedPosition = std::max(0.0f, position);
+  }
+
   ma_uint64 targetFrames =
-      static_cast<ma_uint64>(position * static_cast<f32>(sampleRate));
+      static_cast<ma_uint64>(clampedPosition * static_cast<f32>(sampleRate));
   ma_sound_seek_to_pcm_frame(source->m_sound.get(), targetFrames);
+
+  // Update the source's position to match the seek
+  source->m_position = clampedPosition;
 }
 
 AudioHandle AudioManager::playVoice(const std::string &id,
