@@ -28,6 +28,29 @@ using namespace NovelMind::audio;
 using namespace NovelMind;
 
 // =============================================================================
+// Test Helper - Access private members for overflow testing
+// =============================================================================
+
+class AudioManagerTestAccess {
+public:
+    static void setNextHandleIndex(AudioManager& manager, u32 index) {
+        manager.m_nextHandleIndex.store(index, std::memory_order_relaxed);
+    }
+
+    static void setHandleGeneration(AudioManager& manager, u8 generation) {
+        manager.m_handleGeneration.store(generation, std::memory_order_relaxed);
+    }
+
+    static u32 getNextHandleIndex(const AudioManager& manager) {
+        return manager.m_nextHandleIndex.load(std::memory_order_relaxed);
+    }
+
+    static u8 getHandleGeneration(const AudioManager& manager) {
+        return manager.m_handleGeneration.load(std::memory_order_relaxed);
+    }
+};
+
+// =============================================================================
 // AudioHandle Tests
 // =============================================================================
 
@@ -58,6 +81,60 @@ TEST_CASE("AudioHandle validity", "[audio][handle]")
         REQUIRE_FALSE(handle.isValid());
         REQUIRE(handle.id == 0);
         REQUIRE_FALSE(handle.valid);
+    }
+}
+
+TEST_CASE("AudioHandle generation counter", "[audio][handle][issue-557]")
+{
+    SECTION("Extract generation from handle ID") {
+        u32 handleId = AudioHandle::makeHandleId(5, 1000);
+        u8 generation = AudioHandle::getGeneration(handleId);
+        REQUIRE(generation == 5);
+    }
+
+    SECTION("Extract index from handle ID") {
+        u32 handleId = AudioHandle::makeHandleId(5, 1000);
+        u32 index = AudioHandle::getIndex(handleId);
+        REQUIRE(index == 1000);
+    }
+
+    SECTION("Make handle ID") {
+        u8 generation = 7;
+        u32 index = 12345;
+        u32 handleId = AudioHandle::makeHandleId(generation, index);
+
+        REQUIRE(AudioHandle::getGeneration(handleId) == generation);
+        REQUIRE(AudioHandle::getIndex(handleId) == index);
+    }
+
+    SECTION("Generation counter occupies upper 8 bits") {
+        u32 handleId = AudioHandle::makeHandleId(255, 0);
+        REQUIRE(handleId == 0xFF000000);
+    }
+
+    SECTION("Index counter occupies lower 24 bits") {
+        u32 handleId = AudioHandle::makeHandleId(0, 0x00FFFFFF);
+        REQUIRE(handleId == 0x00FFFFFF);
+    }
+
+    SECTION("Combined generation and index") {
+        u32 handleId = AudioHandle::makeHandleId(128, 0x00ABCDEF);
+        REQUIRE(handleId == 0x80ABCDEF);
+        REQUIRE(AudioHandle::getGeneration(handleId) == 128);
+        REQUIRE(AudioHandle::getIndex(handleId) == 0x00ABCDEF);
+    }
+
+    SECTION("Maximum generation value") {
+        u32 handleId = AudioHandle::makeHandleId(255, 1);
+        u8 generation = AudioHandle::getGeneration(handleId);
+        REQUIRE(generation == 255);
+    }
+
+    SECTION("Maximum index value") {
+        u32 maxIndex = 0x00FFFFFF; // 16,777,215
+        u32 handleId = AudioHandle::makeHandleId(0, maxIndex);
+        u32 index = AudioHandle::getIndex(handleId);
+        REQUIRE(index == maxIndex);
     }
 }
 
@@ -702,6 +779,175 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
     }
 
     manager.shutdown();
+}
+
+// =============================================================================
+// Handle ID Overflow Tests - Issue #557
+// =============================================================================
+
+TEST_CASE("AudioManager handle ID overflow protection", "[audio][manager][handle][issue-557]")
+{
+    SECTION("Handle generation increments on index overflow") {
+        AudioManager manager;
+        auto initResult = manager.initialize();
+
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        // Set initial index to near overflow
+        constexpr u32 MAX_INDEX = 0x00FFFFFF; // 16,777,215
+        AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 5);
+        AudioManagerTestAccess::setHandleGeneration(manager, 0);
+
+        // Create handles approaching overflow
+        std::vector<AudioHandle> handles;
+        for (int i = 0; i < 10; ++i) {
+            PlaybackConfig config;
+            auto handle = manager.playSound("test_" + std::to_string(i), config);
+            if (handle.isValid()) {
+                handles.push_back(handle);
+            }
+        }
+
+        // Verify generation incremented after overflow
+        u8 currentGen = AudioManagerTestAccess::getHandleGeneration(manager);
+        REQUIRE(currentGen >= 1);
+
+        // Verify index reset after overflow
+        u32 currentIndex = AudioManagerTestAccess::getNextHandleIndex(manager);
+        REQUIRE(currentIndex < 100); // Should have reset to small value
+
+        manager.shutdown();
+    }
+
+    SECTION("No handle collision after overflow") {
+        AudioManager manager;
+        auto initResult = manager.initialize();
+
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        // Set to just before overflow
+        constexpr u32 MAX_INDEX = 0x00FFFFFF;
+        AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 2);
+        AudioManagerTestAccess::setHandleGeneration(manager, 5);
+
+        // Create handles that will trigger overflow
+        PlaybackConfig config;
+        auto handle1 = manager.playSound("sound1", config);
+        auto handle2 = manager.playSound("sound2", config);
+        auto handle3 = manager.playSound("sound3", config); // This should trigger overflow
+        auto handle4 = manager.playSound("sound4", config);
+
+        // Verify all handles have unique IDs
+        std::set<u32> uniqueIds;
+        if (handle1.isValid()) uniqueIds.insert(handle1.id);
+        if (handle2.isValid()) uniqueIds.insert(handle2.id);
+        if (handle3.isValid()) uniqueIds.insert(handle3.id);
+        if (handle4.isValid()) uniqueIds.insert(handle4.id);
+
+        // All valid handles must have unique IDs
+        size_t validCount = 0;
+        if (handle1.isValid()) validCount++;
+        if (handle2.isValid()) validCount++;
+        if (handle3.isValid()) validCount++;
+        if (handle4.isValid()) validCount++;
+
+        REQUIRE(uniqueIds.size() == validCount);
+
+        // Verify generation changed for post-overflow handles
+        if (handle3.isValid() && handle1.isValid()) {
+            u8 gen1 = AudioHandle::getGeneration(handle1.id);
+            u8 gen3 = AudioHandle::getGeneration(handle3.id);
+            // Generation should have incremented
+            REQUIRE(gen3 > gen1);
+        }
+
+        manager.shutdown();
+    }
+
+    SECTION("Handle ID format consistency") {
+        AudioManager manager;
+        auto initResult = manager.initialize();
+
+        if (initResult.isError()) {
+            SKIP("Audio hardware not available");
+        }
+
+        AudioManagerTestAccess::setNextHandleIndex(manager, 1000);
+        AudioManagerTestAccess::setHandleGeneration(manager, 42);
+
+        PlaybackConfig config;
+        auto handle = manager.playSound("test", config);
+
+        if (handle.isValid()) {
+            u8 gen = AudioHandle::getGeneration(handle.id);
+            u32 index = AudioHandle::getIndex(handle.id);
+
+            // Verify generation is correct
+            REQUIRE(gen == 42);
+
+            // Verify index is in expected range
+            REQUIRE(index >= 1000);
+            REQUIRE(index <= 1001);
+
+            // Verify we can reconstruct the ID
+            u32 reconstructedId = AudioHandle::makeHandleId(gen, index);
+            REQUIRE(reconstructedId == handle.id);
+        }
+
+        manager.shutdown();
+    }
+}
+
+TEST_CASE("AudioManager stress test - handle overflow scenario", "[audio][manager][stress][issue-557]")
+{
+    AudioManager manager;
+    auto initResult = manager.initialize();
+
+    if (initResult.isError()) {
+        SKIP("Audio hardware not available");
+    }
+
+    SECTION("Create and destroy many handles") {
+        // Start near overflow to test faster
+        constexpr u32 MAX_INDEX = 0x00FFFFFF;
+        AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 100);
+        AudioManagerTestAccess::setHandleGeneration(manager, 0);
+
+        std::vector<AudioHandle> activeHandles;
+        std::set<u32> allHandleIds;
+
+        // Create many handles that will trigger multiple overflows
+        for (int i = 0; i < 200; ++i) {
+            PlaybackConfig config;
+            auto handle = manager.playSound("stress_test_" + std::to_string(i), config);
+
+            if (handle.isValid()) {
+                // Verify handle ID is unique
+                REQUIRE(allHandleIds.find(handle.id) == allHandleIds.end());
+                allHandleIds.insert(handle.id);
+                activeHandles.push_back(handle);
+            }
+
+            // Stop some handles to simulate real usage
+            if (i % 10 == 0 && !activeHandles.empty()) {
+                manager.stopSound(activeHandles.back());
+                activeHandles.pop_back();
+            }
+        }
+
+        // Verify generation incremented
+        u8 finalGen = AudioManagerTestAccess::getHandleGeneration(manager);
+        REQUIRE(finalGen >= 1);
+
+        // Verify all IDs were unique
+        REQUIRE(allHandleIds.size() >= 150); // At least most handles should be valid
+
+        manager.shutdown();
+    }
 }
 
 // Note: Full race condition stress tests require ThreadSanitizer:
