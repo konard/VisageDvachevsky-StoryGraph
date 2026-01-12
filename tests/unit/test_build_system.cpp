@@ -552,13 +552,13 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
   }
 
   SECTION("Rejects key with special characters") {
-    // Key with special characters - 64 chars but contains invalid hex chars
+    // Key with special characters - exactly 64 chars but contains invalid hex chars (@@@@)
 #ifdef _WIN32
     _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
-              "0123456789ABCDEF!@#$0123456789ABCDEF0123456789ABCDEF01234567");
+              "0123456789ABCDEF@@@@0123456789ABCDEF0123456789ABCDEF0123456789AB");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
-           "0123456789ABCDEF!@#$0123456789ABCDEF0123456789ABCDEF01234567", 1);
+           "0123456789ABCDEF@@@@0123456789ABCDEF0123456789ABCDEF0123456789AB", 1);
 #endif
 
     auto result = BuildSystem::loadEncryptionKeyFromEnv();
@@ -567,13 +567,13 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
   }
 
   SECTION("Rejects key with whitespace") {
-    // Key with whitespace - 64 chars but contains space
+    // Key with whitespace - exactly 64 chars but contains 4 spaces
 #ifdef _WIN32
     _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
-              "0123456789ABCDEF 123456789ABCDEF0123456789ABCDEF0123456789AB");
+              "0123456789ABCDEF    0123456789ABCDEF0123456789ABCDEF0123456789AB");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
-           "0123456789ABCDEF 123456789ABCDEF0123456789ABCDEF0123456789AB", 1);
+           "0123456789ABCDEF    0123456789ABCDEF0123456789ABCDEF0123456789AB", 1);
 #endif
 
     auto result = BuildSystem::loadEncryptionKeyFromEnv();
@@ -1046,6 +1046,11 @@ TEST_CASE("signExecutableForPlatform validates certificate path",
 
 TEST_CASE("signWindowsExecutable rejects invalid password characters",
           "[build_system][security][signing]") {
+#ifndef _WIN32
+  // This test requires signtool.exe which is only available on Windows.
+  // On other platforms, the signing tool validation fails before password validation.
+  SKIP("Test requires Windows signtool.exe");
+#else
   std::string tempDir = createTempDir();
   BuildSystem buildSystem;
 
@@ -1073,6 +1078,9 @@ TEST_CASE("signWindowsExecutable rejects invalid password characters",
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid characters") != std::string::npos);
   }
+
+  cleanupTempDir(tempDir);
+#endif
 }
 
 TEST_CASE("signWindowsExecutable validates timestamp URL format",
