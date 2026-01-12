@@ -50,6 +50,7 @@ add_executable(unit_tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
     unit/test_secure_memory.cpp
+    unit/test_save_manager.cpp
     unit/test_resource_cache.cpp
     unit/test_resource_id.cpp
     unit/test_resource_manager.cpp
