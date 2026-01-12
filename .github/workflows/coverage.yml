@@ -103,13 +103,15 @@ jobs:
       run: |
         # Coverage for engine_core
         lcov --directory build --capture --output-file coverage_engine.info --ignore-errors negative,gcov,source
-        lcov --extract coverage_engine.info '*/engine_core/src/*' --output-file coverage_engine.info --ignore-errors negative,source
-        lcov --remove coverage_engine.info '*/tests/*' --output-file coverage_engine.info --ignore-errors negative,source
+        lcov --extract coverage_engine.info '*/engine_core/src/*' --output-file coverage_engine.info --ignore-errors negative,source,unused
+        # Note: tests are already excluded by extract, but add unused to ignore-errors
+        lcov --remove coverage_engine.info '*/tests/*' --output-file coverage_engine.info --ignore-errors negative,source,unused
 
         # Coverage for editor
         lcov --directory build --capture --output-file coverage_editor.info --ignore-errors negative,gcov,source
-        lcov --extract coverage_editor.info '*/editor/src/*' --output-file coverage_editor.info --ignore-errors negative,source
-        lcov --remove coverage_editor.info '*/tests/*' --output-file coverage_editor.info --ignore-errors negative,source
+        lcov --extract coverage_editor.info '*/editor/src/*' --output-file coverage_editor.info --ignore-errors negative,source,unused
+        # Note: tests are already excluded by extract, but add unused to ignore-errors
+        lcov --remove coverage_editor.info '*/tests/*' --output-file coverage_editor.info --ignore-errors negative,source,unused
 
     - name: Display detailed coverage summary
       run: |
