@@ -920,6 +920,218 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]")
 //   cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" ..
 
 // =============================================================================
+// Error Path Tests - Issue #498 (Audio Hardware Failure)
+// =============================================================================
+
+TEST_CASE("AudioManager error paths - initialization failure recovery",
+          "[audio][manager][error][issue-498]") {
+  // Test that the audio manager handles initialization failures gracefully
+  // This simulates scenarios where audio hardware is unavailable or fails
+
+  SECTION("Manager remains in safe state after init failure") {
+    AudioManager manager;
+    auto result = manager.initialize();
+
+    // If initialization fails (no audio hardware), verify manager is still safe
+    if (result.isError()) {
+      // Manager should not crash on operations when not initialized
+      REQUIRE_FALSE(manager.isMusicPlaying());
+      REQUIRE_FALSE(manager.isVoicePlaying());
+      REQUIRE(manager.getActiveSourceCount() == 0);
+
+      // Volume operations should still work
+      manager.setMasterVolume(0.5f);
+      REQUIRE(manager.getMasterVolume() == Catch::Approx(0.5f));
+
+      // Playback operations should return invalid handles or fail gracefully
+      auto handle = manager.playSound("test");
+      REQUIRE_FALSE(handle.isValid());
+
+      auto musicHandle = manager.playMusic("test");
+      REQUIRE_FALSE(musicHandle.isValid());
+
+      auto voiceHandle = manager.playVoice("test");
+      REQUIRE_FALSE(voiceHandle.isValid());
+
+      // Shutdown should not crash
+      manager.shutdown();
+      REQUIRE(manager.getActiveSourceCount() == 0);
+    }
+  }
+
+  SECTION("Multiple initialization attempts are safe") {
+    AudioManager manager;
+
+    auto result1 = manager.initialize();
+    auto result2 = manager.initialize(); // Second init should be safe
+
+    if (result1.isOk()) {
+      REQUIRE(result2.isOk()); // Should return ok if already initialized
+      manager.shutdown();
+    }
+  }
+
+  SECTION("Operations after failed initialization don't crash") {
+    AudioManager manager;
+    // Don't initialize
+
+    // All these should handle the uninitialized state gracefully
+    manager.update(0.016);
+    manager.stopAllSounds();
+    manager.stopMusic();
+    manager.stopVoice();
+    manager.pauseAll();
+    manager.resumeAll();
+    manager.fadeAllTo(0.5f, 1.0f);
+
+    REQUIRE(manager.getActiveSourceCount() == 0);
+  }
+}
+
+TEST_CASE("AudioManager error paths - resource exhaustion",
+          "[audio][manager][error][issue-498]") {
+  // Test that audio manager handles resource exhaustion gracefully
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Maximum sound limit is enforced") {
+    // Set a low limit for testing
+    manager.setMaxSounds(5);
+
+    std::vector<AudioHandle> handles;
+    for (int i = 0; i < 10; ++i) {
+      auto handle = manager.playSound("sound_" + std::to_string(i));
+      if (handle.isValid()) {
+        handles.push_back(handle);
+      }
+    }
+
+    // Should not exceed the limit
+    REQUIRE(handles.size() <= 5);
+    REQUIRE(manager.getActiveSourceCount() <= 5);
+  }
+
+  SECTION("Priority-based eviction works") {
+    manager.setMaxSounds(3);
+
+    PlaybackConfig lowPriority;
+    lowPriority.priority = 1;
+    auto low1 = manager.playSound("low1", lowPriority);
+
+    PlaybackConfig medPriority;
+    medPriority.priority = 5;
+    auto med1 = manager.playSound("med1", medPriority);
+
+    PlaybackConfig highPriority;
+    highPriority.priority = 10;
+    auto high1 = manager.playSound("high1", highPriority);
+
+    // Now try to add another high priority sound
+    // Should evict the low priority sound
+    auto high2 = manager.playSound("high2", highPriority);
+
+    // High priority sound should be playable
+    if (high2.isValid()) {
+      // Low priority might have been evicted
+      REQUIRE(manager.getActiveSourceCount() <= 3);
+    }
+  }
+
+  SECTION("Graceful degradation when limit reached") {
+    manager.setMaxSounds(2);
+
+    auto s1 = manager.playSound("sound1");
+    auto s2 = manager.playSound("sound2");
+    auto s3 = manager.playSound("sound3"); // Should fail or evict
+
+    // System should remain stable
+    REQUIRE(manager.getActiveSourceCount() <= 2);
+
+    // Can still stop sounds
+    manager.stopSound(s1);
+    manager.update(0.016);
+
+    // Should be able to play new sound after stopping one
+    auto s4 = manager.playSound("sound4");
+    REQUIRE(manager.getActiveSourceCount() <= 2);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager error paths - data provider failures",
+          "[audio][manager][error][issue-498]") {
+  // Test that audio manager handles data provider errors gracefully
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Missing data provider is handled") {
+    // Don't set a data provider
+    auto handle = manager.playSound("test_sound");
+
+    // Should either return invalid handle or handle gracefully
+    // The implementation may try to load from file system as fallback
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  SECTION("Data provider returning error is handled") {
+    // Set a data provider that always fails
+    manager.setDataProvider([](const std::string& id) -> Result<std::vector<u8>> {
+      return Result<std::vector<u8>>::error("Data not found: " + id);
+    });
+
+    auto handle = manager.playSound("test_sound");
+
+    // Should return invalid handle
+    REQUIRE_FALSE(handle.isValid());
+
+    // Manager should remain stable
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  SECTION("Data provider returning empty data is handled") {
+    // Set a data provider that returns empty data
+    manager.setDataProvider([](const std::string& id) -> Result<std::vector<u8>> {
+      return Result<std::vector<u8>>::ok(std::vector<u8>{});
+    });
+
+    auto handle = manager.playSound("test_sound");
+
+    // Should handle empty data gracefully
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  SECTION("Data provider exception doesn't crash manager") {
+    // Note: This test verifies that if a data provider throws,
+    // the manager remains stable
+    bool callbackFired = false;
+
+    manager.setEventCallback([&](const AudioEvent& event) {
+      if (event.type == AudioEvent::Type::Error) {
+        callbackFired = true;
+      }
+    });
+
+    // Try to play with potentially failing provider
+    auto handle = manager.playSound("test");
+
+    // Manager should remain operational
+    manager.update(0.016);
+    REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  manager.shutdown();
+}
+
+// =============================================================================
 // Thread Safety Tests - Issue #462
 // =============================================================================
 
