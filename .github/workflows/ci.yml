@@ -312,7 +312,9 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
+          --exclude '.*/build/_deps/.*' \
           --gcov-ignore-errors=no_working_dir_found \
+          --gcov-ignore-parse-errors=all \
           --print-summary \
           --xml coverage.xml \
           --html coverage.html
@@ -333,7 +335,9 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
+          --exclude '.*/build/_deps/.*' \
           --gcov-ignore-errors=no_working_dir_found \
+          --gcov-ignore-parse-errors=all \
           --json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_valid']*100:.1f}\")")
         echo "Current line coverage: ${COVERAGE}%"
         # Phase 1: Increased threshold to 35% (blocking)
