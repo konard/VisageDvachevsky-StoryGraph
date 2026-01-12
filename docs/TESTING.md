@@ -244,6 +244,24 @@ cmake --build build
 cd build && ctest
 ```
 
+### Testing with Memory Sanitizer
+
+For detecting uninitialized memory reads:
+
+```bash
+# Configure with MemorySanitizer (requires Clang)
+CC=clang CXX=clang++ cmake -B build \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DNM_BUILD_TESTS=ON \
+  -DNOVELMIND_ENABLE_MSAN=ON
+
+# Build and run
+cmake --build build
+cd build && ctest
+```
+
+**Note**: MemorySanitizer requires Clang and all dependencies to be MSan-instrumented. System libraries that are not instrumented may cause false positives.
+
 ### Common Thread Safety Patterns
 
 ```cpp
