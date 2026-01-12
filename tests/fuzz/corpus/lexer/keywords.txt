@@ -1,0 +1,1 @@
+scene show hide say choice goto if else set wait play stop

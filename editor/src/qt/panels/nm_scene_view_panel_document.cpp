@@ -22,7 +22,8 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
 
   if (!m_currentSceneId.isEmpty() && m_currentSceneId != sceneId) {
     if (!m_suppressSceneSave) {
-      saveSceneDocument();
+      // Issue #521: Flush any pending debounced saves before loading new scene
+      m_saveDebouncer.flush();
     }
   }
 
