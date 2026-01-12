@@ -522,11 +522,9 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     // Convert minimum gizmo radius from screen pixels to scene coordinates
     const QPointF center = target->sceneBoundingRect().center();
     const qreal dpiScale = getDpiScale();
-    const qreal kMinGizmoRadiusScreenPixels = 40.0 * dpiScale;
-    const qreal kMinGizmoRadiusSceneUnits = screenPixelsToSceneUnits(kMinGizmoRadiusScreenPixels);
-
-    constexpr qreal kMinScale = 0.1;
-    constexpr qreal kMaxScale = 10.0;
+    const qreal kMinGizmoRadius = 40.0 * dpiScale;
+    constexpr qreal kMinScale = 0.001;
+    constexpr qreal kMaxScale = 10000.0;
     constexpr qreal kEpsilon = 0.0001;
 
     // Calculate current distance in SCENE COORDINATES
