@@ -8,6 +8,8 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
+#include <regex>
 #include <sstream>
 
 // Use proper JSON parser instead of regex
@@ -265,6 +267,13 @@ Result<void> VoiceManifest::addTake(const std::string &lineId,
     return Result<void>::error("Voice line not found: " + lineId);
   }
 
+  // Security: Validate path before storing it
+  if (!take.filePath.empty() && !isValidRelativePath(take.filePath)) {
+    return Result<void>::error(
+        "Invalid file path in take: contains path traversal sequences, "
+        "absolute path, or special characters");
+  }
+
   auto &file = line->getOrCreateFile(locale);
   file.takes.push_back(take);
 
@@ -413,6 +422,13 @@ Result<void> VoiceManifest::markAsRecorded(const std::string &lineId,
     return Result<void>::error("Voice line not found: " + lineId);
   }
 
+  // Security: Validate path before storing it
+  if (!isValidRelativePath(filePath)) {
+    return Result<void>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
+  }
+
   auto &file = line->getOrCreateFile(locale);
   file.filePath = filePath;
   file.status = VoiceLineStatus::Recorded;
@@ -427,6 +443,13 @@ Result<void> VoiceManifest::markAsImported(const std::string &lineId,
   auto *line = getLineMutable(lineId);
   if (!line) {
     return Result<void>::error("Voice line not found: " + lineId);
+  }
+
+  // Security: Validate path before storing it
+  if (!isValidRelativePath(filePath)) {
+    return Result<void>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
   }
 
   auto &file = line->getOrCreateFile(locale);
@@ -479,6 +502,15 @@ VoiceManifest::validate(bool checkFiles) const {
 
       // Check for path conflicts
       if (!file.filePath.empty()) {
+        // Security: Validate path before using it
+        if (!isValidRelativePath(file.filePath)) {
+          errors.push_back({ManifestValidationError::Type::InvalidFilePath,
+                            line.id, "files." + locale,
+                            "Invalid file path: contains path traversal "
+                            "sequences or special characters"});
+          continue; // Skip further checks for this invalid path
+        }
+
         if (seenPaths.count(file.filePath) > 0) {
           errors.push_back(
               {ManifestValidationError::Type::PathConflict, line.id,
@@ -489,11 +521,19 @@ VoiceManifest::validate(bool checkFiles) const {
 
         // Check if file exists
         if (checkFiles && file.status != VoiceLineStatus::Missing) {
-          std::string fullPath = m_basePath + "/" + file.filePath;
-          if (!fs::exists(fullPath)) {
-            errors.push_back({ManifestValidationError::Type::FileNotFound,
+          // Security: Use sanitized path resolution
+          auto resolvedPathResult = sanitizeAndResolvePath(file.filePath);
+          if (resolvedPathResult.isError()) {
+            errors.push_back({ManifestValidationError::Type::InvalidFilePath,
                               line.id, "files." + locale,
-                              "File not found: " + fullPath});
+                              resolvedPathResult.error()});
+          } else {
+            std::string fullPath = resolvedPathResult.value();
+            if (!fs::exists(fullPath)) {
+              errors.push_back({ManifestValidationError::Type::FileNotFound,
+                                line.id, "files." + locale,
+                                "File not found: " + fullPath});
+            }
           }
         }
       }
@@ -741,15 +781,52 @@ Result<void> VoiceManifest::loadFromFile(const std::string &filePath) {
     return Result<void>::error("Failed to get file size: " + filePath);
   }
 
+  // Check for empty file
+  if (size == 0) {
+    return Result<void>::error("File is empty: " + filePath);
+  }
+
+  // Check for excessively large files (> 100MB)
+  const std::streampos MAX_FILE_SIZE = 100 * 1024 * 1024;
+  if (size > MAX_FILE_SIZE) {
+    return Result<void>::error("File too large (> 100MB): " + filePath);
+  }
+
   std::string content;
   content.resize(static_cast<size_t>(size));
   file.seekg(0, std::ios::beg);
-  file.read(content.data(), size);
+  if (!file.read(content.data(), size)) {
+    return Result<void>::error("Failed to read file contents: " + filePath);
+  }
 
   return loadFromString(content);
 }
 
 Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
+  // Validate input is not empty
+  if (jsonContent.empty()) {
+    return Result<void>::error("JSON content is empty");
+  }
+
+  // Basic JSON structure validation
+  auto openBraces = std::count(jsonContent.begin(), jsonContent.end(), '{');
+  auto closeBraces = std::count(jsonContent.begin(), jsonContent.end(), '}');
+  if (openBraces != closeBraces) {
+    return Result<void>::error(
+        "Malformed JSON: mismatched braces (open: " + std::to_string(openBraces) +
+        ", close: " + std::to_string(closeBraces) + ")");
+  }
+
+  auto openBrackets = std::count(jsonContent.begin(), jsonContent.end(), '[');
+  auto closeBrackets =
+      std::count(jsonContent.begin(), jsonContent.end(), ']');
+  if (openBrackets != closeBrackets) {
+    return Result<void>::error(
+        "Malformed JSON: mismatched brackets (open: " +
+        std::to_string(openBrackets) +
+        ", close: " + std::to_string(closeBrackets) + ")");
+  }
+
   // Clear existing data
   clearLines();
   m_locales.clear();
@@ -830,6 +907,11 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
         addLine(line);
       }
     }
+  } catch (const std::regex_error &e) {
+    return Result<void>::error("Malformed JSON: regex parsing failed - " +
+                               std::string(e.what()));
+  } catch (const std::exception &e) {
+    return Result<void>::error("JSON parsing error: " + std::string(e.what()));
   }
 
   return {};
@@ -930,6 +1012,11 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
     return Result<void>::error("Failed to open CSV file: " + csvPath);
   }
 
+  // Validate locale is not empty
+  if (locale.empty()) {
+    return Result<void>::error("Locale cannot be empty for CSV import");
+  }
+
   // Ensure locale is in the list
   if (!hasLocale(locale)) {
     addLocale(locale);
@@ -937,60 +1024,159 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
 
   std::string line;
   bool headerSkipped = false;
+  size_t lineNumber = 0;
+  size_t successfulImports = 0;
+  size_t skippedLines = 0;
+
+  // Helper function for robust CSV field parsing
+  auto parseCsvLine = [](const std::string &line) -> std::vector<std::string> {
+    std::vector<std::string> fields;
+    std::string field;
+    bool inQuotes = false;
+    bool lastWasQuote = false;
+
+    for (size_t i = 0; i < line.size(); ++i) {
+      char c = line[i];
+
+      if (c == '"') {
+        if (inQuotes && i + 1 < line.size() && line[i + 1] == '"') {
+          // Escaped quote
+          field += '"';
+          ++i; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          lastWasQuote = true;
+          continue;
+        }
+      } else if (c == ',' && !inQuotes) {
+        // Field separator
+        fields.push_back(field);
+        field.clear();
+        lastWasQuote = false;
+      } else {
+        field += c;
+        lastWasQuote = false;
+      }
+    }
+
+    // Add last field
+    fields.push_back(field);
+    return fields;
+  };
 
   while (std::getline(file, line)) {
+    ++lineNumber;
+
+    // Remove trailing carriage return (Windows line endings)
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
+
     if (!headerSkipped) {
       headerSkipped = true;
+      // Validate header format
+      if (line.find("id") == std::string::npos) {
+        std::cerr << "Warning: CSV header doesn't contain 'id' column - "
+                     "assuming first line is header\n";
+      }
       continue;
     }
 
-    if (line.empty())
+    // Skip empty lines
+    if (line.empty() || line.find_first_not_of(" \t\r\n") == std::string::npos)
       continue;
 
-    // Simple CSV parsing (assumes: id,speaker,text_key,voice_file,scene)
+    // Parse CSV line with proper handling of quoted fields
     std::vector<std::string> fields;
-    std::stringstream ss(line);
-    std::string field;
-
-    while (std::getline(ss, field, ',')) {
-      // Remove quotes
-      if (!field.empty() && field.front() == '"' && field.back() == '"') {
-        field = field.substr(1, field.size() - 2);
-      }
-      fields.push_back(field);
+    try {
+      fields = parseCsvLine(line);
+    } catch (const std::exception &e) {
+      std::cerr << "Warning: Failed to parse CSV line " << lineNumber << ": "
+                << e.what() << "\n";
+      ++skippedLines;
+      continue;
     }
 
-    if (fields.size() >= 2) {
-      std::string id = fields[0];
+    // Validate minimum field count
+    if (fields.empty() || fields[0].empty()) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - missing ID field\n";
+      ++skippedLines;
+      continue;
+    }
 
-      // Check if line already exists
-      auto *existingLine = getLineMutable(id);
-      if (existingLine) {
-        // Update existing line with file path
-        if (fields.size() >= 4 && !fields[3].empty()) {
-          auto &locFile = existingLine->getOrCreateFile(locale);
-          locFile.filePath = fields[3];
-          locFile.status = VoiceLineStatus::Imported;
-        }
+    // Ensure we have at least id field
+    if (fields.size() < 1) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - no fields found\n";
+      ++skippedLines;
+      continue;
+    }
+
+    std::string id = fields[0];
+
+    // Trim whitespace from ID
+    id.erase(0, id.find_first_not_of(" \t\r\n"));
+    id.erase(id.find_last_not_of(" \t\r\n") + 1);
+
+    if (id.empty()) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - empty ID field\n";
+      ++skippedLines;
+      continue;
+    }
+
+    // Check if line already exists
+    auto *existingLine = getLineMutable(id);
+    if (existingLine) {
+      // Update existing line with file path
+      if (fields.size() >= 4 && !fields[3].empty()) {
+        auto &locFile = existingLine->getOrCreateFile(locale);
+        locFile.filePath = fields[3];
+        locFile.status = VoiceLineStatus::Imported;
+        ++successfulImports;
+      }
+    } else {
+      // Create new line
+      VoiceManifestLine newLine;
+      newLine.id = id;
+      newLine.speaker = fields.size() > 1 ? fields[1] : "";
+
+      // textKey defaults to ID if not provided
+      newLine.textKey = (fields.size() > 2 && !fields[2].empty()) ? fields[2] : id;
+
+      if (fields.size() >= 4 && !fields[3].empty()) {
+        VoiceLocaleFile locFile;
+        locFile.locale = locale;
+        locFile.filePath = fields[3];
+        locFile.status = VoiceLineStatus::Imported;
+        newLine.files[locale] = locFile;
+      }
+
+      newLine.scene = fields.size() > 4 ? fields[4] : "";
+
+      // Attempt to add line
+      auto result = addLine(newLine);
+      if (result.isError()) {
+        std::cerr << "Warning: Failed to add line '" << id << "' at CSV line "
+                  << lineNumber << ": " << result.error() << "\n";
+        ++skippedLines;
       } else {
-        // Create new line
-        VoiceManifestLine newLine;
-        newLine.id = id;
-        newLine.speaker = fields.size() > 1 ? fields[1] : "";
-        newLine.textKey = fields.size() > 2 ? fields[2] : id;
-
-        if (fields.size() >= 4 && !fields[3].empty()) {
-          VoiceLocaleFile locFile;
-          locFile.locale = locale;
-          locFile.filePath = fields[3];
-          locFile.status = VoiceLineStatus::Imported;
-          newLine.files[locale] = locFile;
-        }
-
-        newLine.scene = fields.size() > 4 ? fields[4] : "";
-        addLine(newLine);
+        ++successfulImports;
       }
     }
+  }
+
+  // Report import statistics
+  if (skippedLines > 0) {
+    std::cerr << "CSV import completed with warnings: " << successfulImports
+              << " lines imported, " << skippedLines << " lines skipped\n";
+  }
+
+  if (successfulImports == 0 && lineNumber > 1) {
+    return Result<void>::error(
+        "Failed to import any lines from CSV - file may be malformed");
   }
 
   return {};
@@ -1157,6 +1343,103 @@ void VoiceManifest::fireStatusChanged(const std::string &lineId,
                                       VoiceLineStatus status) {
   if (m_onStatusChanged) {
     m_onStatusChanged(lineId, locale, status);
+  }
+}
+
+// ============================================================================
+// Security: Path Validation
+// ============================================================================
+
+bool VoiceManifest::isValidRelativePath(const std::string &path) const {
+  if (path.empty()) {
+    return false;
+  }
+
+  // Reject absolute paths (Unix and Windows)
+  if (path[0] == '/' || path[0] == '\\') {
+    return false;
+  }
+
+  // Reject Windows absolute paths (C:, D:, etc.)
+  if (path.length() >= 2 && path[1] == ':') {
+    return false;
+  }
+
+  // Reject null bytes (null byte injection attack)
+  if (path.find('\0') != std::string::npos) {
+    return false;
+  }
+
+  // Reject paths containing ".." (path traversal)
+  // Check for "../", "..\\" and ".." at the end
+  if (path.find("..") != std::string::npos) {
+    return false;
+  }
+
+  // Reject special device names on Windows
+  static const std::vector<std::string> windowsDevices = {
+      "CON",  "PRN",  "AUX",  "NUL",  "COM1", "COM2", "COM3",
+      "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1",
+      "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8",
+      "LPT9"};
+
+  std::string upperPath = path;
+  std::transform(upperPath.begin(), upperPath.end(), upperPath.begin(),
+                 ::toupper);
+
+  for (const auto &device : windowsDevices) {
+    if (upperPath == device || upperPath.find(device + ".") == 0 ||
+        upperPath.find("/" + device) != std::string::npos ||
+        upperPath.find("\\" + device) != std::string::npos) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+Result<std::string>
+VoiceManifest::sanitizeAndResolvePath(const std::string &relativePath) const {
+  // First, check for obviously invalid paths
+  if (!isValidRelativePath(relativePath)) {
+    return Result<std::string>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
+  }
+
+  try {
+    // Canonicalize the base path
+    fs::path basePath = fs::weakly_canonical(fs::path(m_basePath));
+
+    // Combine with the relative path
+    fs::path combined = basePath / relativePath;
+
+    // Canonicalize the combined path
+    // Use weakly_canonical to handle non-existent paths
+    fs::path canonical = fs::weakly_canonical(combined);
+
+    // Check if the canonical path is within the base directory
+    // We need to ensure the resolved path starts with the base path
+    auto baseStr = basePath.lexically_normal().string();
+    auto canonicalStr = canonical.lexically_normal().string();
+
+    // Ensure both paths end consistently for comparison
+    if (!baseStr.empty() && baseStr.back() != '/' && baseStr.back() != '\\') {
+      baseStr += '/';
+    }
+
+    // Check if canonical path starts with base path
+    if (canonicalStr.find(baseStr) != 0) {
+      return Result<std::string>::error(
+          "Path traversal detected: resolved path '" + canonicalStr +
+          "' is outside allowed directory '" + baseStr + "'");
+    }
+
+    return Result<std::string>::ok(canonical.string());
+
+  } catch (const fs::filesystem_error &e) {
+    return Result<std::string>::error(std::string("Filesystem error: ") +
+                                      e.what());
   }
 }
 

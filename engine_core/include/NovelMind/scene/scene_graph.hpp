@@ -21,6 +21,7 @@
 #include "NovelMind/scene/scene_manager.hpp" // For LayerType enum
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -107,6 +108,7 @@ public:
  * - Z-ordering within layer
  * - Property system for serialization
  * - Animation support
+ * - Generation counter for thread-safe handle validation
  */
 class SceneObjectBase {
 public:
@@ -124,6 +126,7 @@ public:
   [[nodiscard]] const std::string &getId() const { return m_id; }
   [[nodiscard]] SceneObjectType getType() const { return m_type; }
   [[nodiscard]] const char *getTypeName() const;
+  [[nodiscard]] u64 getGeneration() const { return m_generation; }
 
   // Transform
   void setPosition(f32 x, f32 y);
@@ -156,13 +159,14 @@ public:
   // Parent/child relationship
   void setParent(SceneObjectBase *parent);
   [[nodiscard]] SceneObjectBase *getParent() const { return m_parent; }
-  void addChild(std::unique_ptr<SceneObjectBase> child);
+  bool addChild(std::unique_ptr<SceneObjectBase> child);
   std::unique_ptr<SceneObjectBase> removeChild(const std::string &id);
   [[nodiscard]] SceneObjectBase *findChild(const std::string &id);
   [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>> &
   getChildren() const {
     return m_children;
   }
+  [[nodiscard]] int getDepth() const;
 
   /// Maximum depth for recursive scene graph traversal to prevent stack
   /// overflow
@@ -187,7 +191,9 @@ public:
 
   // Lifecycle
   virtual void update(f64 deltaTime);
+  void updateWithDepth(f64 deltaTime, int depth);
   virtual void render(renderer::IRenderer &renderer) = 0;
+  void renderWithDepth(renderer::IRenderer &renderer, int depth);
 
   // Serialization
   [[nodiscard]] virtual SceneObjectState saveState() const;
@@ -223,6 +229,7 @@ private:
   std::string m_id;
   SceneObjectType m_type;
   i32 m_zOrder = 0;
+  u64 m_generation = 0; // Generation counter for thread-safe handle validation
 
   SceneObjectBase *m_parent = nullptr;
   std::vector<std::unique_ptr<SceneObjectBase>> m_children;
@@ -539,6 +546,14 @@ public:
   [[nodiscard]] std::vector<SceneObjectBase *>
   findObjectsByType(SceneObjectType type);
 
+  // Thread-safe object access for handles
+  // Returns nullptr if object not found or generation mismatch
+  [[nodiscard]] SceneObjectBase *findObjectWithGeneration(const std::string &id,
+                                                          u64 generation);
+
+  // Get mutex for external synchronization (for handle withObject methods)
+  std::mutex &getObjectMutex() { return m_objectMutex; }
+
   // Convenience methods for common operations
   void showBackground(const std::string &textureId);
   CharacterObject *showCharacter(const std::string &id,
@@ -596,6 +611,10 @@ private:
   std::vector<ISceneObserver *> m_observers;
   resource::ResourceManager *m_resources = nullptr;
   localization::LocalizationManager *m_localization = nullptr;
+
+  // Thread-safety: Protects access to scene objects via handles
+  // Used for TOCTOU-safe findObject operations and withObject callbacks
+  mutable std::mutex m_objectMutex;
 };
 
 } // namespace NovelMind::scene

@@ -19,6 +19,7 @@
 #include "NovelMind/core/secure_memory.hpp"
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/vfs/secure_pack_reader.hpp"
+#include "NovelMind/vfs/pack_reader.hpp"
 #include "NovelMind/vfs/virtual_fs.hpp"
 #include <functional>
 #include <memory>
@@ -26,6 +27,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <future>
 
 namespace NovelMind::vfs {
 
@@ -232,6 +234,19 @@ public:
    */
   PackLoadResult loadPack(const std::string &path, PackType type,
                           i32 priority = 0);
+
+  /**
+   * @brief Load a pack file asynchronously (non-blocking)
+   * @param path Path to pack file
+   * @param type Pack type for priority
+   * @param priority Priority within type (default 0)
+   * @param progressCallback Optional callback for loading progress
+   * @return Future with load result
+   */
+  std::future<PackLoadResult> loadPackAsync(const std::string &path,
+                                             PackType type,
+                                             i32 priority = 0,
+                                             ProgressCallback progressCallback = nullptr);
 
   /**
    * @brief Unload a pack

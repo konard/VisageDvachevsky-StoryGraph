@@ -30,7 +30,12 @@ ASTToIRConverter::convert(const Program &program) {
 
   // Convert scenes
   for (const auto &scene : program.scenes) {
-    convertScene(scene);
+    NodeId sceneId = convertScene(scene);
+    if (sceneId == 0) {
+      return Result<std::unique_ptr<IRGraph>>::error(
+          "Failed to convert scene '" + scene.name +
+          "': Node creation failed (possible memory allocation failure)");
+    }
     m_currentY += 200.0f;
   }
 
@@ -44,6 +49,11 @@ void ASTToIRConverter::convertCharacterDecl(const CharacterDecl &decl) {
 NodeId ASTToIRConverter::convertScene(const SceneDecl &scene) {
   NodeId startId = m_graph->createNode(IRNodeType::SceneStart);
   auto *startNode = m_graph->getNode(startId);
+  if (!startNode) {
+    // Critical error: node creation failed
+    // Return 0 (invalid node ID) to signal failure
+    return 0;
+  }
   startNode->setProperty("sceneName", scene.name);
   startNode->setPosition(100.0f, m_currentY);
 
@@ -54,11 +64,19 @@ NodeId ASTToIRConverter::convertScene(const SceneDecl &scene) {
 
   for (const auto &stmt : scene.body) {
     prevNode = convertStatement(*stmt, prevNode);
+    // Check if statement conversion failed
+    if (prevNode == 0) {
+      return 0;
+    }
     y += m_nodeSpacing;
   }
 
   NodeId endId = m_graph->createNode(IRNodeType::SceneEnd);
   auto *endNode = m_graph->getNode(endId);
+  if (!endNode) {
+    // Critical error: node creation failed
+    return 0;
+  }
   endNode->setPosition(100.0f, y);
 
   PortId outPort{prevNode, "exec_out", true};
@@ -177,6 +195,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         if constexpr (std::is_same_v<T, LiteralExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "literal");
 
           // Store the literal value based on its type
@@ -207,6 +228,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         } else if constexpr (std::is_same_v<T, IdentifierExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "identifier");
           node->setProperty("name", exprData.name);
           node->setSourceLocation(expr.location);
@@ -215,6 +239,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         } else if constexpr (std::is_same_v<T, BinaryExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "binary");
 
           // Convert operator TokenType to string
@@ -240,10 +267,16 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
           // Recursively convert operands
           if (exprData.left) {
             NodeId leftId = convertExpression(*exprData.left);
+            if (leftId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("leftOperand", static_cast<i64>(leftId));
           }
           if (exprData.right) {
             NodeId rightId = convertExpression(*exprData.right);
+            if (rightId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("rightOperand", static_cast<i64>(rightId));
           }
 
@@ -253,6 +286,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "unary");
 
           // Convert operator TokenType to string
@@ -267,6 +303,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
           // Recursively convert operand
           if (exprData.operand) {
             NodeId operandId = convertExpression(*exprData.operand);
+            if (operandId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("operand", static_cast<i64>(operandId));
           }
 
@@ -276,6 +315,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "call");
           node->setProperty("callee", exprData.callee);
 
@@ -284,6 +326,9 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
           for (const auto &arg : exprData.arguments) {
             if (arg) {
               NodeId argId = convertExpression(*arg);
+              if (argId == 0) {
+                return 0; // Propagate failure
+              }
               argIds.push_back(std::to_string(argId));
             }
           }
@@ -295,12 +340,18 @@ NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
         } else if constexpr (std::is_same_v<T, PropertyExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
           auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "property");
           node->setProperty("property", exprData.property);
 
           // Recursively convert object
           if (exprData.object) {
             NodeId objectId = convertExpression(*exprData.object);
+            if (objectId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("object", static_cast<i64>(objectId));
           }
 
@@ -318,6 +369,10 @@ NodeId ASTToIRConverter::createNodeAndConnect(IRNodeType type,
                                               NodeId prevNode) {
   NodeId newId = m_graph->createNode(type);
   auto *newNode = m_graph->getNode(newId);
+  if (!newNode) {
+    // Critical error: node creation failed
+    return 0; // Signal failure
+  }
 
   auto *prev = m_graph->getNode(prevNode);
   if (prev) {

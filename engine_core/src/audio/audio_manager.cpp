@@ -1,4 +1,5 @@
 #include "NovelMind/audio/audio_manager.hpp"
+#include "NovelMind/core/logger.hpp"
 #include "miniaudio/miniaudio.h"
 #include <algorithm>
 #include <cmath>
@@ -86,9 +87,17 @@ void AudioSource::update(f64 deltaTime) {
         m_state = PlaybackState::Playing;
       }
     } else {
-      f32 t = m_fadeTimer / m_fadeDuration;
-      m_volume =
-          m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      // Protect against division by zero
+      if (m_fadeDuration > 0.0f) {
+        f32 t = m_fadeTimer / m_fadeDuration;
+        m_volume =
+            m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      } else {
+        // Invalid fade duration - complete fade immediately
+        NOVELMIND_LOG_WARN("AudioSource: Invalid fade duration ({}), completing fade immediately", m_fadeDuration);
+        m_volume = m_fadeTargetVolume;
+        m_state = PlaybackState::Playing;
+      }
     }
   }
 
@@ -305,7 +314,20 @@ AudioHandle AudioManager::playSound(const std::string &id,
     return {};
   }
 
-  // Check source limit (need unique lock for potential modification)
+  // Fix for Issue #558: Check source limit and create source atomically
+  //
+  // BEFORE (had TOCTOU race):
+  //   1. Lock, check limit, remove low-priority source if needed, unlock
+  //   2. Call createSource() which locks again and adds the new source
+  //   Problem: Another thread could add sources between steps 1 and 2
+  //
+  // AFTER (atomic operation):
+  //   1. Lock once, check limit, remove if needed, create and add source
+  //   2. No window for other threads to interfere
+  //
+  // This ensures the maximum sound limit is never exceeded even under
+  // heavy concurrent load from multiple threads.
+  AudioHandle handle;
   {
     std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
     if (m_sources.size() >= m_maxSounds.load(std::memory_order_relaxed)) {
@@ -321,9 +343,15 @@ AudioHandle AudioManager::playSound(const std::string &id,
         return {}; // Can't play
       }
     }
+
+    // Create source inside the lock to ensure atomicity with the limit check
+    handle = createSourceLocked(id, config.channel);
   }
 
-  AudioHandle handle = createSource(id, config.channel);
+  // Early return if source creation failed
+  if (!handle.isValid()) {
+    return {};
+  }
   auto *source = getSource(handle);
   if (!source) {
     return {};
@@ -597,11 +625,25 @@ AudioHandle AudioManager::playVoice(const std::string &id,
   }
   m_voicePlaying.store(true, std::memory_order_release);
 
-  // Apply ducking
+  // Apply ducking with validation
   if (config.duckMusic && m_autoDuckingEnabled.load(std::memory_order_relaxed)) {
-    m_duckVolume.store(config.duckAmount, std::memory_order_relaxed);
-    m_duckFadeDuration.store(config.duckFadeDuration, std::memory_order_relaxed);
-    m_targetDuckLevel.store(config.duckAmount, std::memory_order_release);
+    // Validate and clamp duck parameters to prevent division by zero
+    constexpr f32 MIN_FADE_DURATION = 0.001f;
+    f32 duckAmount = std::max(0.0f, std::min(1.0f, config.duckAmount));
+    f32 duckFadeDuration = config.duckFadeDuration;
+
+    if (duckFadeDuration < 0.0f) {
+      NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration in VoiceConfig ({}), using 0", duckFadeDuration);
+      duckFadeDuration = 0.0f;
+    } else if (duckFadeDuration > 0.0f && duckFadeDuration < MIN_FADE_DURATION) {
+      NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small in VoiceConfig ({}), clamping to minimum ({})",
+                         duckFadeDuration, MIN_FADE_DURATION);
+      duckFadeDuration = MIN_FADE_DURATION;
+    }
+
+    m_duckVolume.store(duckAmount, std::memory_order_relaxed);
+    m_duckFadeDuration.store(duckFadeDuration, std::memory_order_relaxed);
+    m_targetDuckLevel.store(duckAmount, std::memory_order_release);
   }
 
   fireEvent(AudioEvent::Type::Started, handle, id);
@@ -789,21 +831,54 @@ void AudioManager::setAutoDuckingEnabled(bool enabled) {
 }
 
 void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
-  m_duckVolume.store(std::max(0.0f, std::min(1.0f, duckVolume)),
-                     std::memory_order_relaxed);
-  m_duckFadeDuration.store(std::max(0.0f, fadeDuration),
-                           std::memory_order_relaxed);
+  // Clamp duck volume to valid range [0, 1]
+  f32 clampedDuckVolume = std::max(0.0f, std::min(1.0f, duckVolume));
+
+  // Validate and clamp fade duration - must be positive or zero
+  // Use minimum threshold to prevent division by zero
+  constexpr f32 MIN_FADE_DURATION = 0.001f;
+  f32 clampedFadeDuration = fadeDuration;
+
+  if (fadeDuration < 0.0f) {
+    NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration ({}), clamping to 0", fadeDuration);
+    clampedFadeDuration = 0.0f;
+  } else if (fadeDuration > 0.0f && fadeDuration < MIN_FADE_DURATION) {
+    NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small ({}), clamping to minimum ({})",
+                       fadeDuration, MIN_FADE_DURATION);
+    clampedFadeDuration = MIN_FADE_DURATION;
+  }
+
+  m_duckVolume.store(clampedDuckVolume, std::memory_order_relaxed);
+  m_duckFadeDuration.store(clampedFadeDuration, std::memory_order_relaxed);
 }
 
-AudioHandle AudioManager::createSource(const std::string &trackId,
-                                       AudioChannel channel) {
+AudioHandle AudioManager::createSourceLocked(const std::string &trackId,
+                                             AudioChannel channel) {
+  // IMPORTANT: Caller must hold m_sourcesMutex (unique_lock)
+  // This function is thread-safe only when called with the lock held
+
   if (!m_engineInitialized || !m_engine) {
     return {};
   }
   auto source = std::make_unique<AudioSource>();
 
   AudioHandle handle;
-  handle.id = m_nextHandleId.fetch_add(1, std::memory_order_relaxed);
+  // Generate handle ID with overflow detection
+  // Lower 24 bits: index counter (0-16,777,215)
+  // Upper 8 bits: generation counter (0-255)
+  constexpr u32 MAX_INDEX = 0x00FFFFFF; // 16,777,215
+  u32 index = m_nextHandleIndex.fetch_add(1, std::memory_order_relaxed);
+
+  // Check for index overflow
+  if (index > MAX_INDEX) {
+    // Overflow detected: increment generation and reset index
+    m_handleGeneration.fetch_add(1, std::memory_order_relaxed);
+    index = 1; // Start from 1 to avoid ID 0
+    m_nextHandleIndex.store(2, std::memory_order_relaxed);
+  }
+
+  u8 generation = m_handleGeneration.load(std::memory_order_relaxed);
+  handle.id = AudioHandle::makeHandleId(generation, index);
   handle.valid = true;
 
   source->handle = handle;
@@ -867,11 +942,15 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   ma_sound_get_length_in_seconds(source->m_sound.get(), &lengthSeconds);
   source->m_duration = lengthSeconds;
 
-  {
-    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
-    m_sources.push_back(std::move(source));
-  }
+  // Add source to the vector - lock is already held by caller
+  m_sources.push_back(std::move(source));
   return handle;
+}
+
+AudioHandle AudioManager::createSource(const std::string &trackId,
+                                       AudioChannel channel) {
+  std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+  return createSourceLocked(trackId, channel);
 }
 
 void AudioManager::releaseSource(AudioHandle handle) {
