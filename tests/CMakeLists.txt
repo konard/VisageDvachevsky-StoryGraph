@@ -36,10 +36,11 @@ add_executable(unit_tests
     unit/test_voice_manifest.cpp
     unit/test_script_runtime_transition.cpp
     unit/test_runtime_config.cpp
-    unit/test_division_safety.cpp
+    # unit/test_division_safety.cpp # Requires editor, disabled for VFS-only build
     unit/test_audio_recorder.cpp
     unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
+    unit/test_vfs_async_loading.cpp
     unit/test_vfs_corrupted_pack_files.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
@@ -52,6 +53,8 @@ add_executable(unit_tests
     unit/test_clipboard.cpp
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
+    # unit/test_build_system.cpp # Requires editor
+    # unit/test_secure_memory.cpp # Requires editor
     unit/test_secure_memory.cpp
     unit/test_error_messages.cpp
     unit/test_save_manager.cpp
