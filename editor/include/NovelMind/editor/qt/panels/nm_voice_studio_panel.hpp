@@ -15,9 +15,15 @@
  *
  * This panel integrates with the existing Recording Studio for input and
  * Voice Manager for asset management.
+ *
+ * Note: Waveform widgets, audio effects, and WAV I/O have been extracted
+ * to separate modules for better maintainability.
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/qt/panels/voice_studio_waveform.hpp"
+#include "NovelMind/editor/qt/panels/voice_studio_effects.hpp"
+#include "NovelMind/editor/qt/panels/voice_studio_wav_io.hpp"
 
 #include <QPointer>
 #include <QUndoStack>
@@ -151,188 +157,14 @@ struct VoiceClip {
 };
 
 // ============================================================================
-// Waveform Widget
-// ============================================================================
-
-/**
- * @brief Widget for displaying and interacting with audio waveforms
- *
- * Features:
- * - Peak waveform visualization
- * - Selection range for trimming
- * - Playhead position indicator
- * - Zoom and scroll
- * - Click-to-seek support
- */
-class WaveformWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  explicit WaveformWidget(QWidget *parent = nullptr);
-
-  // Set the clip to display
-  void setClip(const VoiceClip *clip);
-
-  // Selection (for trimming)
-  void setSelection(double startSec, double endSec);
-  [[nodiscard]] double getSelectionStart() const { return m_selectionStart; }
-  [[nodiscard]] double getSelectionEnd() const { return m_selectionEnd; }
-  void clearSelection();
-
-  // Playhead
-  void setPlayheadPosition(double seconds);
-  [[nodiscard]] double getPlayheadPosition() const { return m_playheadPos; }
-
-  // Zoom (samples per pixel)
-  void setZoom(double samplesPerPixel);
-  void zoomIn();
-  void zoomOut();
-  void zoomToFit();
-
-  // Scroll position
-  void setScrollPosition(double seconds);
-
-signals:
-  void selectionChanged(double startSec, double endSec);
-  void playheadClicked(double seconds);
-  void zoomChanged(double samplesPerPixel);
-
-protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
-
-private:
-  double timeToX(double seconds) const;
-  double xToTime(double x) const;
-  void updatePeakCache();
-
-  const VoiceClip *m_clip = nullptr;
-  std::vector<float> m_displayPeaks;
-
-  double m_selectionStart = 0.0;
-  double m_selectionEnd = 0.0;
-  double m_playheadPos = 0.0;
-  double m_scrollPos = 0.0;
-  double m_samplesPerPixel = 1000.0;
-
-  bool m_isDragging = false;
-  bool m_isSelecting = false;
-  double m_dragStartTime = 0.0;
-};
-
-// ============================================================================
-// VU Meter Widget (reused from Recording Studio)
-// ============================================================================
-
-/**
- * @brief VU meter visualization widget
- */
-class StudioVUMeterWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  explicit StudioVUMeterWidget(QWidget *parent = nullptr);
-
-  void setLevel(float rmsDb, float peakDb, bool clipping);
-  void reset();
-
-protected:
-  void paintEvent(QPaintEvent *event) override;
-
-private:
-  float m_rmsDb = -60.0f;
-  float m_peakDb = -60.0f;
-  bool m_clipping = false;
-};
-
-// ============================================================================
-// Audio Processor
-// ============================================================================
-
-/**
- * @brief Processes audio samples with the given edit parameters
- *
- * All processing is done in-memory and returns a new buffer.
- * Used for both preview playback and final export.
- */
-class AudioProcessor {
-public:
-  /**
-   * @brief Apply all edit parameters to the source samples
-   * @param source Source samples
-   * @param edit Edit parameters
-   * @param format Audio format
-   * @return Processed samples
-   */
-  static std::vector<float> process(const std::vector<float> &source,
-                                    const VoiceClipEdit &edit,
-                                    const AudioFormat &format);
-
-  /**
-   * @brief Apply trim only
-   */
-  static std::vector<float> applyTrim(const std::vector<float> &samples,
-                                      int64_t trimStart, int64_t trimEnd);
-
-  /**
-   * @brief Apply fade in/out
-   */
-  static void applyFades(std::vector<float> &samples, float fadeInMs,
-                         float fadeOutMs, uint32_t sampleRate);
-
-  /**
-   * @brief Apply pre-gain
-   */
-  static void applyGain(std::vector<float> &samples, float gainDb);
-
-  /**
-   * @brief Apply normalization
-   */
-  static void applyNormalize(std::vector<float> &samples, float targetDbFS);
-
-  /**
-   * @brief Apply high-pass filter
-   */
-  static void applyHighPass(std::vector<float> &samples, float cutoffHz,
-                            uint32_t sampleRate);
-
-  /**
-   * @brief Apply low-pass filter
-   */
-  static void applyLowPass(std::vector<float> &samples, float cutoffHz,
-                           uint32_t sampleRate);
-
-  /**
-   * @brief Apply 3-band EQ
-   */
-  static void applyEQ(std::vector<float> &samples, float lowGainDb,
-                      float midGainDb, float highGainDb, float lowFreq,
-                      float highFreq, uint32_t sampleRate);
-
-  /**
-   * @brief Apply noise gate
-   */
-  static void applyNoiseGate(std::vector<float> &samples, float thresholdDb,
-                             float reductionDb, float attackMs, float releaseMs,
-                             uint32_t sampleRate);
-
-  /**
-   * @brief Calculate peak level in dB
-   */
-  static float calculatePeakDb(const std::vector<float> &samples);
-
-  /**
-   * @brief Calculate RMS level in dB
-   */
-  static float calculateRmsDb(const std::vector<float> &samples);
-};
-
-// ============================================================================
 // Voice Studio Panel
+// ============================================================================
+//
+// Note: WaveformWidget, StudioVUMeterWidget, AudioProcessor, and
+// VoiceStudioWavIO have been moved to separate headers:
+// - voice_studio_waveform.hpp
+// - voice_studio_effects.hpp
+// - voice_studio_wav_io.hpp
 // ============================================================================
 
 /**
@@ -479,8 +311,6 @@ private:
   void updatePlaybackState();
   void updateStatusBar();
 
-  bool loadWavFile(const QString &filePath);
-  bool saveWavFile(const QString &filePath);
   std::vector<float> renderProcessedAudio();
 
   void applyPreset(const QString &presetName);

@@ -46,6 +46,12 @@ add_library(novelmind_editor STATIC
     src/asset_pipeline.cpp
     src/editor_settings.cpp
     src/settings_registry.cpp
+    src/settings_defaults_editor.cpp
+    src/settings_defaults_project.cpp
+    src/settings_type_handlers.cpp
+    src/settings_persistence.cpp
+    src/settings_validation.cpp
+    src/settings_migration.cpp
     src/voice_manager.cpp
     src/timeline_editor.cpp
     src/scene_document.cpp
@@ -55,6 +61,9 @@ add_library(novelmind_editor STATIC
     src/selection_system.cpp
     src/event_bus.cpp
     src/project_manager.cpp
+    src/project_lifecycle.cpp
+    src/project_assets.cpp
+    src/project_templates.cpp
     src/inspector_binding.cpp
     src/asset_preview.cpp
     src/timeline_playback.cpp
@@ -62,6 +71,13 @@ add_library(novelmind_editor STATIC
     src/error_reporter.cpp
     src/hotkeys_manager.cpp
     src/project_integrity.cpp
+    src/project_graph_analyzer.cpp
+    src/project_graph_cycles.cpp
+    src/project_asset_tracker.cpp
+    src/project_validators.cpp
+    src/project_repair.cpp
+    src/project_quickfixes.cpp
+    src/project_report.cpp
     src/project_json.cpp
     src/scene_registry.cpp
     src/scene_template_manager.cpp
@@ -69,7 +85,17 @@ add_library(novelmind_editor STATIC
 
     # Build System components
     src/build_system.cpp
+    src/build_utils.cpp
+    src/build_crypto.cpp
+    src/build_assets.cpp
+    src/build_pack.cpp
+    src/build_integrity.cpp
+    src/build_platform.cpp
+    src/build_scripts.cpp
     src/build_size_analyzer.cpp
+    src/build_size_scanner.cpp
+    src/build_size_report.cpp
+    src/build_size_ui.cpp
 
     # Abstraction interfaces and adapters (issue #150)
     src/adapters/QtAudioPlayer.cpp
@@ -90,6 +116,7 @@ add_library(novelmind_editor STATIC
     src/qt/lazy_thumbnail_loader.cpp
     src/qt/timeline_render_cache.cpp
     src/qt/performance_metrics.cpp
+    src/qt/debouncer.cpp
 
     # Qt6 GUI implementation
     src/qt/qt_event_bus.cpp
@@ -138,6 +165,11 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_story_graph_panel.cpp
     src/qt/panels/nm_story_graph_panel_handlers.cpp
     src/qt/panels/nm_story_graph_panel_detail.cpp
+    src/qt/panels/story_graph_layout.cpp
+    src/qt/panels/story_graph_node_factory.cpp
+    src/qt/panels/story_graph_edge_manager.cpp
+    src/qt/panels/story_graph_property_manager.cpp
+    src/qt/panels/story_graph_serialization.cpp
     src/qt/panels/nm_story_graph_node.cpp
     src/qt/panels/nm_story_graph_connection.cpp
     src/qt/panels/nm_story_graph_scene.cpp
@@ -147,27 +179,66 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_scene_dialogue_graph_panel.cpp
     src/qt/panels/nm_inspector_panel.cpp
     src/qt/panels/nm_inspector_panel_group.cpp
+    src/qt/panels/inspector_property_editor.cpp
+    src/qt/panels/inspector_component_list.cpp
+    src/qt/panels/inspector_validators.cpp
+    src/qt/panels/inspector_ui.cpp
     src/qt/panels/nm_console_panel.cpp
     src/qt/panels/nm_asset_browser_panel.cpp
+    src/qt/panels/asset_browser_categorizer.cpp
+    src/qt/panels/asset_browser_thumbnails.cpp
+    src/qt/panels/asset_browser_preview.cpp
+    src/qt/panels/asset_browser_scanner.cpp
     src/qt/panels/nm_scene_palette_panel.cpp
     src/qt/panels/nm_hierarchy_panel.cpp
     src/qt/panels/nm_script_editor_panel.cpp
     src/qt/panels/nm_script_editor_panel_editor.cpp
+    src/qt/panels/nm_script_editor_panel_highlighter.cpp
+    src/qt/panels/nm_script_editor_panel_minimap.cpp
+    src/qt/panels/nm_script_editor_panel_find_replace.cpp
+    src/qt/panels/nm_script_editor_panel_palette.cpp
+    src/qt/panels/nm_script_editor_panel_folding.cpp
     src/qt/panels/nm_script_editor_panel_detail.cpp
     src/qt/panels/nm_script_editor_panel_preview.cpp
+    src/qt/panels/nm_script_editor_panel_symbols.cpp
+    src/qt/panels/nm_script_editor_panel_files.cpp
+    src/qt/panels/nm_script_editor_panel_conflicts.cpp
+    src/qt/panels/nm_script_editor_panel_diagnostics.cpp
+    src/qt/panels/nm_script_editor_panel_navigation.cpp
+    src/qt/panels/nm_script_editor_panel_ui.cpp
+    src/qt/panels/nm_script_editor_panel_ui_mgmt.cpp
+    src/qt/panels/nm_script_editor_panel_state.cpp
     src/qt/panels/nm_script_doc_panel.cpp
 
     # Phase 3 & 4 panels
     src/qt/panels/nm_timeline_panel.cpp
+    src/qt/panels/timeline_renderer.cpp
+    src/qt/panels/timeline_track_operations.cpp
+    src/qt/panels/timeline_keyframes.cpp
+    src/qt/panels/timeline_interaction.cpp
+    src/qt/panels/timeline_easing_dialog.cpp
+    src/qt/panels/timeline_viewport.cpp
     src/qt/panels/nm_animation_adapter.cpp
     src/qt/panels/nm_keyframe_item.cpp
     src/qt/panels/nm_curve_editor_panel.cpp
     src/qt/panels/nm_curve_point_item.cpp
     src/qt/panels/nm_voice_manager_panel.cpp
+    src/qt/panels/nm_voice_manager_panel_duration.cpp
+    src/qt/panels/nm_voice_manager_panel_matching.cpp
+    src/qt/panels/nm_voice_manager_panel_manifest.cpp
     src/qt/panels/nm_recording_studio_panel.cpp
     src/qt/panels/nm_voice_studio_panel.cpp
+    src/qt/panels/voice_studio_waveform.cpp
+    src/qt/panels/voice_studio_effects.cpp
+    src/qt/panels/voice_studio_wav_io.cpp
     src/qt/panels/nm_audio_mixer_panel.cpp
     src/qt/panels/nm_localization_panel.cpp
+    src/qt/panels/nm_localization_data_model.cpp
+    src/qt/panels/nm_localization_dialogs.cpp
+    src/qt/panels/nm_localization_io.cpp
+    src/qt/panels/nm_localization_search.cpp
+    src/qt/panels/nm_localization_ui.cpp
+    src/qt/panels/nm_localization_ui_setup.cpp
     src/qt/panels/nm_diagnostics_panel.cpp
     src/qt/panels/nm_build_settings_panel.cpp
     src/qt/panels/nm_project_settings_panel.cpp
@@ -191,6 +262,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/lazy_thumbnail_loader.hpp
     include/NovelMind/editor/qt/timeline_render_cache.hpp
     include/NovelMind/editor/qt/performance_metrics.hpp
+    include/NovelMind/editor/qt/debouncer.hpp
 
     # Qt6 Headers (required for AUTOMOC to work)
     include/NovelMind/editor/qt/qt_event_bus.hpp
@@ -223,6 +295,10 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_console_panel.hpp
     include/NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_categorizer.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_thumbnails.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_preview.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_scanner.hpp
     include/NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp
     include/NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp
     include/NovelMind/editor/qt/panels/nm_script_editor_panel.hpp
@@ -234,7 +310,16 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_voice_manager_panel.hpp
     include/NovelMind/editor/qt/panels/nm_recording_studio_panel.hpp
     include/NovelMind/editor/qt/panels/nm_voice_studio_panel.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_waveform.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_effects.hpp
+    include/NovelMind/editor/qt/panels/voice_studio_wav_io.hpp
     include/NovelMind/editor/qt/panels/nm_localization_panel.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_data_model.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_dialogs.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_io.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_search.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_ui.hpp
+    include/NovelMind/editor/qt/panels/nm_localization_ui_setup.hpp
     include/NovelMind/editor/qt/panels/nm_diagnostics_panel.hpp
     include/NovelMind/editor/qt/panels/nm_build_settings_panel.hpp
     include/NovelMind/editor/qt/panels/nm_project_settings_panel.hpp

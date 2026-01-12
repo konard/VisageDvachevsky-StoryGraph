@@ -22,6 +22,16 @@ SelectionMediator::~SelectionMediator() { shutdown(); }
 void SelectionMediator::initialize() {
   auto &bus = EventBus::instance();
 
+  // =========================================================================
+  // Lambda Capture Policy (Issue #520):
+  // All lambdas in this class use explicit [this] capture for consistency
+  // and safety. Even when 'this' is not immediately needed (e.g., when only
+  // calling static methods like EventBus::instance()), we capture [this] to:
+  // 1. Maintain consistent capture patterns throughout the codebase
+  // 2. Prevent future bugs when lambdas are modified to access member variables
+  // 3. Make it explicit that these lambdas are tied to the mediator's lifetime
+  // =========================================================================
+
   // Subscribe to scene object selection events
   m_subscriptions.push_back(
       bus.subscribe<events::SceneObjectSelectedEvent>(
@@ -81,7 +91,7 @@ void SelectionMediator::initialize() {
             });
 
     connect(m_storyGraph, &qt::NMStoryGraphPanel::scriptNodeRequested, this,
-            [](const QString &scriptPath) {
+            [this](const QString &scriptPath) {
               qDebug() << "[SelectionMediator] Publishing ScriptNodeRequestedEvent for script:"
                        << scriptPath;
               events::ScriptNodeRequestedEvent event;
@@ -90,7 +100,7 @@ void SelectionMediator::initialize() {
             });
 
     connect(m_storyGraph, &qt::NMStoryGraphPanel::editDialogueFlowRequested, this,
-            [](const QString &sceneId) {
+            [this](const QString &sceneId) {
               qDebug() << "[SelectionMediator] Publishing EditDialogueFlowRequestedEvent for scene:"
                        << sceneId;
               events::EditDialogueFlowRequestedEvent event;
@@ -99,7 +109,7 @@ void SelectionMediator::initialize() {
             });
 
     connect(m_storyGraph, &qt::NMStoryGraphPanel::openSceneScriptRequested, this,
-            [](const QString &sceneId, const QString &scriptPath) {
+            [this](const QString &sceneId, const QString &scriptPath) {
               qDebug() << "[SelectionMediator] Publishing OpenSceneScriptRequestedEvent for scene:"
                        << sceneId << "script:" << scriptPath;
               events::OpenSceneScriptRequestedEvent event;
@@ -110,7 +120,7 @@ void SelectionMediator::initialize() {
 
     // Issue #239: Connect navigateToScriptDefinitionRequested signal
     connect(m_storyGraph, &qt::NMStoryGraphPanel::navigateToScriptDefinitionRequested,
-            this, [](const QString &sceneId, const QString &scriptPath) {
+            this, [this](const QString &sceneId, const QString &scriptPath) {
               qDebug() << "[SelectionMediator] Publishing "
                           "NavigateToScriptDefinitionEvent for scene:"
                        << sceneId << "script:" << scriptPath;
@@ -123,7 +133,7 @@ void SelectionMediator::initialize() {
 
     // Issue #344: Connect sceneNodeDoubleClicked signal to navigate to Scene View
     connect(m_storyGraph, &qt::NMStoryGraphPanel::sceneNodeDoubleClicked,
-            this, [](const QString &sceneId) {
+            this, [this](const QString &sceneId) {
               qDebug() << "[SelectionMediator] Publishing "
                           "SceneNodeDoubleClickedEvent for scene:"
                        << sceneId;
@@ -160,10 +170,11 @@ void SelectionMediator::shutdown() {
 
 void SelectionMediator::onSceneObjectSelected(
     const events::SceneObjectSelectedEvent &event) {
-  if (m_processingSelection) {
+  // Issue #479: Use atomic exchange for thread-safe re-entrancy guard
+  // If already processing (exchange returns true), exit early
+  if (m_processingSelection.exchange(true)) {
     return;
   }
-  m_processingSelection = true;
 
   qDebug() << "[SelectionMediator] Scene object selected:" << event.objectId
            << "from:" << event.sourcePanel;
@@ -202,10 +213,11 @@ void SelectionMediator::onSceneObjectSelected(
 
 void SelectionMediator::onStoryGraphNodeSelected(
     const events::StoryGraphNodeSelectedEvent &event) {
-  if (m_processingSelection) {
+  // Issue #479: Use atomic exchange for thread-safe re-entrancy guard
+  // If already processing (exchange returns true), exit early
+  if (m_processingSelection.exchange(true)) {
     return;
   }
-  m_processingSelection = true;
 
   qDebug() << "[SelectionMediator] Story graph node selected:"
            << event.nodeIdString;
