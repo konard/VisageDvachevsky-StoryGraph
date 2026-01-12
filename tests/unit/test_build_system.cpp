@@ -753,6 +753,12 @@ TEST_CASE("Path traversal protection in sanitizeOutputPath",
     auto result = BuildSystem::sanitizeOutputPath(baseDir, "file.txt");
     REQUIRE(result.isOk());
     REQUIRE(result.value().find(baseDir) != std::string::npos);
+  }
+
+  cleanupTempDir(tempDir);
+}
+
+// =============================================================================
 // Code Signing Security Tests (Issue #573)
 // =============================================================================
 
@@ -918,6 +924,11 @@ TEST_CASE("Path traversal protection prevents writing outside output directory",
     std::string assetsDir = config.outputPath + "/.staging/assets";
     auto result = BuildSystem::sanitizeOutputPath(assetsDir, "image.png");
     REQUIRE(result.isOk());
+  }
+
+  cleanupTempDir(tempDir);
+}
+
 TEST_CASE("validateSigningToolPath rejects non-existent paths",
           "[build_system][security][signing]") {
   BuildSystem buildSystem;
