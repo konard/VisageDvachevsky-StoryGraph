@@ -31,9 +31,8 @@ static void cleanupTempDir(const std::string &path) {
 TEST_CASE("CRC32 calculation produces expected values",
           "[build_system][crc32]") {
   SECTION("Empty data") {
-    u8 empty[] = {};
-    u32 crc = BuildSystem::calculateCrc32(empty, 0);
     // CRC32 of empty data is 0 (initial XOR with final)
+    u32 crc = BuildSystem::calculateCrc32(nullptr, 0);
     REQUIRE(crc == 0);
   }
 
