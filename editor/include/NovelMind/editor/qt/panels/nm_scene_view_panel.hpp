@@ -140,6 +140,7 @@ private:
   void clearGizmo();
   class NMSceneObject* resolveTarget() const;
   qreal getDpiScale() const;
+  qreal screenPixelsToSceneUnits(qreal screenPixels) const;
 
   GizmoMode m_mode = GizmoMode::Move;
   QString m_targetObjectId;

@@ -9,8 +9,11 @@
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/renderer/camera.hpp"
+// Note: nm_scene_view_panel.hpp is not included because:
+// 1. It requires Qt and editor library which unit_tests don't link against
+// 2. The Gizmo tests below only verify the division safety concepts using
+//    constants, not the actual NMTransformGizmo class
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
@@ -198,25 +201,25 @@ TEST_CASE("Gizmo scale - near-zero distance protection",
   // NMTransformGizmo requires Qt graphics scene infrastructure. The actual
   // implementation must ensure m_dragStartDistance >= kEpsilon before division.
 
-  constexpr qreal kEpsilon = 0.0001;
-  constexpr qreal kMinGizmoRadius = 40.0;
+  constexpr double kEpsilon = 0.0001;
+  constexpr double kMinGizmoRadius = 40.0;
 
   // Test case 1: Very small drag start distance (should be rejected)
-  qreal dragStartDistance = 0.00005; // Less than epsilon
+  double dragStartDistance = 0.00005; // Less than epsilon
   CHECK(dragStartDistance < kEpsilon);
 
   // Test case 2: Distance at epsilon boundary (should be allowed)
-  qreal validDistance = kEpsilon;
+  double validDistance = kEpsilon;
   CHECK(validDistance >= kEpsilon);
 
   // Test case 3: Normal distance (should work fine)
-  qreal normalDistance = kMinGizmoRadius;
+  double normalDistance = kMinGizmoRadius;
   CHECK(normalDistance >= kEpsilon);
 
   // Test case 4: Division should be safe when distance >= epsilon
   if (validDistance >= kEpsilon) {
-    qreal currentDistance = 50.0;
-    qreal rawFactor = currentDistance / validDistance;
+    double currentDistance = 50.0;
+    double rawFactor = currentDistance / validDistance;
     CHECK(!std::isnan(rawFactor));
     CHECK(!std::isinf(rawFactor));
     CHECK(rawFactor > 0.0);
