@@ -1,0 +1,5 @@
+character Hero(name="Hero", color="#FF0000")
+scene test {
+    show Hero at center
+    say Hero "Hello!"
+}

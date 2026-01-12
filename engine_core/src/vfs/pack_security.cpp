@@ -260,8 +260,58 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     return Result<void>::error("Invalid pack footer magic");
   }
 
+  // Verify integrity using SHA-256 (primary cryptographic check)
   file.seekg(0, std::ios::beg);
-  u32 crc = 0xFFFFFFFF;
+  std::array<u8, 32> computedSha256{};
+
+#ifdef NOVELMIND_HAS_OPENSSL
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) {
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to create hash context for SHA-256 verification");
+  }
+
+  if (EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to initialize SHA-256 verification");
+  }
+
+  u64 remaining = m_header.dataOffset;
+  std::vector<u8> buffer(64 * 1024);
+  while (remaining > 0) {
+    const usize toRead =
+        static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+    file.read(reinterpret_cast<char *>(buffer.data()),
+              static_cast<std::streamsize>(toRead));
+    const std::streamsize readCount = file.gcount();
+    if (readCount <= 0) {
+      EVP_MD_CTX_free(mdctx);
+      m_lastResult = PackVerificationResult::CorruptedHeader;
+      return Result<void>::error("Failed to read pack for SHA-256 verification");
+    }
+
+    if (EVP_DigestUpdate(mdctx, buffer.data(), static_cast<usize>(readCount)) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      m_lastResult = PackVerificationResult::CorruptedHeader;
+      return Result<void>::error("Failed to update SHA-256 hash");
+    }
+
+    remaining -= static_cast<u64>(readCount);
+  }
+
+  unsigned int hashLen = 32;
+  if (EVP_DigestFinal_ex(mdctx, computedSha256.data(), &hashLen) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to finalize SHA-256 hash");
+  }
+  EVP_MD_CTX_free(mdctx);
+#else
+  // Fallback implementation without OpenSSL
+  detail::Sha256Context ctx;
+  detail::sha256Init(ctx);
+
   u64 remaining = m_header.dataOffset;
   std::vector<u8> buffer(64 * 1024);
   while (remaining > 0) {
@@ -272,7 +322,42 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     const std::streamsize readCount = file.gcount();
     if (readCount <= 0) {
       m_lastResult = PackVerificationResult::CorruptedHeader;
-      return Result<void>::error("Failed to read pack for CRC verification");
+      return Result<void>::error("Failed to read pack for SHA-256 verification");
+    }
+
+    detail::sha256Update(ctx, buffer.data(), static_cast<usize>(readCount));
+    remaining -= static_cast<u64>(readCount);
+  }
+
+  detail::sha256Final(ctx, computedSha256.data());
+#endif
+
+  // Compare SHA-256 hashes (constant-time comparison to prevent timing attacks)
+  bool sha256Match = true;
+  for (usize i = 0; i < 32; ++i) {
+    if (computedSha256[i] != m_footer.tablesSha256[i]) {
+      sha256Match = false;
+    }
+  }
+
+  if (!sha256Match) {
+    m_lastResult = PackVerificationResult::ChecksumMismatch;
+    return Result<void>::error("Pack table SHA-256 mismatch - integrity check failed");
+  }
+
+  // Optional: Quick CRC32 check for corruption detection
+  // (CRC32 is kept for backward compatibility and fast corruption detection)
+  file.seekg(0, std::ios::beg);
+  u32 crc = 0xFFFFFFFF;
+  remaining = m_header.dataOffset;
+  while (remaining > 0) {
+    const usize toRead =
+        static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+    file.read(reinterpret_cast<char *>(buffer.data()),
+              static_cast<std::streamsize>(toRead));
+    const std::streamsize readCount = file.gcount();
+    if (readCount <= 0) {
+      break;  // SHA-256 already verified, CRC is optional
     }
     crc =
         detail::updateCrc32(crc, buffer.data(), static_cast<usize>(readCount));
@@ -281,8 +366,9 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   crc = ~crc;
 
   if (crc != m_footer.tablesCrc32) {
-    m_lastResult = PackVerificationResult::ChecksumMismatch;
-    return Result<void>::error("Pack table CRC mismatch");
+    // CRC mismatch is a warning but not fatal since SHA-256 passed
+    // This could indicate corruption detected by CRC but not by SHA-256 read order
+    // In practice, if SHA-256 matches, the data is correct
   }
 
   const bool requiresSignature =

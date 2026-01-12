@@ -131,6 +131,15 @@ Value VirtualMachine::getVariable(const std::string &name) const {
   return std::monostate{};
 }
 
+const Value& VirtualMachine::getVariableRef(const std::string &name) const {
+  static const Value nullValue = std::monostate{};
+  auto it = m_variables.find(name);
+  if (it != m_variables.end()) {
+    return it->second;
+  }
+  return nullValue;
+}
+
 bool VirtualMachine::hasVariable(const std::string &name) const {
   return m_variables.find(name) != m_variables.end();
 }
@@ -272,13 +281,26 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::DUP:
     if (!m_stack.empty()) {
-      push(m_stack.back());
+      // Optimize: Check security guard and duplicate directly to avoid extra copy
+      if (!m_securityGuard.checkStackPush(m_stack.size())) {
+        NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+        m_halted = true;
+        break;
+      }
+      m_stack.push_back(m_stack.back());
     }
     break;
 
   case OpCode::LOAD_VAR: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
@@ -570,7 +592,14 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::LOAD_GLOBAL: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
@@ -660,6 +689,10 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
       auto popArg = [&]() -> Value {
         if (m_stack.empty()) {
+          // Stack underflow detected - log error and halt VM
+          NOVELMIND_LOG_ERROR("VM stack underflow during popArg() at IP: {} (opcode: {})",
+                              m_ip, static_cast<int>(instr.opcode));
+          m_halted = true;
           return std::monostate{};
         }
         Value val = std::move(m_stack.back());
@@ -746,6 +779,15 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       }
       case OpCode::CHOICE: {
         const u32 count = instr.operand;
+        // Check if stack has enough elements (count + 1 for the count value itself)
+        const u32 requiredStackSize = count + 1;
+        if (m_stack.size() < requiredStackSize) {
+          NOVELMIND_LOG_ERROR("VM Error: Stack underflow in CHOICE opcode - expected " +
+                              std::to_string(requiredStackSize) + " elements but stack has " +
+                              std::to_string(m_stack.size()));
+          m_halted = true;
+          return;
+        }
         std::vector<Value> choices;
         choices.reserve(count);
         for (u32 i = 0; i < count; ++i) {
@@ -801,7 +843,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   default:
-    NOVELMIND_LOG_WARN("Unknown opcode");
+    NOVELMIND_LOG_WARN("Unknown opcode: 0x" +
+                       std::to_string(static_cast<u8>(instr.opcode)) +
+                       " at bytecode offset " + std::to_string(m_ip));
     break;
   }
 }
@@ -825,19 +869,7 @@ Value VirtualMachine::pop() {
   return val;
 }
 
-bool VirtualMachine::ensureStack(size_t required) {
-  if (m_stack.size() < required) {
-    NOVELMIND_LOG_ERROR("VM Runtime Error: Stack underflow - required " +
-                        std::to_string(required) + " elements, but stack has " +
-                        std::to_string(m_stack.size()) + " at instruction " +
-                        std::to_string(m_ip));
-    m_halted = true;
-    return false;
-  }
-  return true;
-}
-
-const std::string &VirtualMachine::getString(u32 index) const {
+const std::string &VirtualMachine::getString(u32 index) {
   static const std::string empty;
   if (index < m_stringTable.size()) {
     return m_stringTable[index];

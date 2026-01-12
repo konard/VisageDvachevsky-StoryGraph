@@ -12,6 +12,7 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/scripting/ast.hpp"
 #include "NovelMind/scripting/opcode.hpp"
+#include "NovelMind/scripting/script_error.hpp"
 #include "NovelMind/scripting/value.hpp"
 #include <string>
 #include <unordered_map>
@@ -57,6 +58,7 @@ struct CompiledScript {
 
 /**
  * @brief Compiler error information
+ * @deprecated Use ScriptError instead for rich error reporting
  */
 struct CompileError {
   std::string message;
@@ -98,8 +100,19 @@ public:
 
   /**
    * @brief Get all errors encountered during compilation
+   * @deprecated Use getScriptErrors() instead for rich error reporting
    */
   [[nodiscard]] const std::vector<CompileError> &getErrors() const;
+
+  /**
+   * @brief Get all errors as ScriptError objects with rich formatting
+   */
+  [[nodiscard]] const ScriptErrorList &getScriptErrors() const;
+
+  /**
+   * @brief Set the source code for context extraction in error messages
+   */
+  void setSource(const std::string &source);
 
 private:
   // Compilation helpers
@@ -119,6 +132,8 @@ private:
 
   // Error handling
   void error(const std::string &message, SourceLocation loc = {});
+  void error(ErrorCode code, const std::string &message, SourceLocation loc = {});
+  void addError(ScriptError err);
 
   // Source mapping
   void recordSourceMapping(u32 ip, const SourceLocation &loc);
@@ -156,6 +171,7 @@ private:
 
   CompiledScript m_output;
   std::vector<CompileError> m_errors;
+  ScriptErrorList m_scriptErrors; // Rich error reporting
 
   // For resolving forward references
   struct PendingJump {
@@ -169,6 +185,7 @@ private:
   // Current compilation context
   std::string m_currentScene;
   std::string m_sourceFilePath; // Source file path for debug mappings
+  std::string m_source;          // Source code for error context
 };
 
 } // namespace NovelMind::scripting

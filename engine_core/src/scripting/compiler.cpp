@@ -2,7 +2,6 @@
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include "NovelMind/core/endian.hpp"
 #include <bit>
-#include <limits>
 
 namespace NovelMind::scripting {
 
@@ -24,8 +23,10 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
   try {
     compileProgram(program);
   } catch (...) {
-    if (m_errors.empty()) {
-      error("Internal compiler error");
+    if (m_errors.empty() && m_scriptErrors.isEmpty()) {
+      error(ErrorCode::CompilationFailed,
+            "An internal compiler error occurred. This is likely a bug in the compiler. "
+            "Please report this issue with the script that caused the error.");
     }
   }
 
@@ -33,9 +34,11 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
   for (const auto &pending : m_pendingJumps) {
     // Bounds check to prevent buffer overflow (security vulnerability)
     if (pending.instructionIndex >= m_output.instructions.size()) {
-      error("Internal compiler error: Invalid pending jump index " +
-            std::to_string(pending.instructionIndex) + " (program size: " +
-            std::to_string(m_output.instructions.size()) + ")", pending.location);
+      error(ErrorCode::CompilationFailed,
+            "Internal compiler error: Invalid jump instruction index " +
+            std::to_string(pending.instructionIndex) + " (program has " +
+            std::to_string(m_output.instructions.size()) + " instructions). " +
+            "This indicates a compiler bug. Please report this issue.");
       continue;
     }
 
@@ -43,7 +46,26 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
     if (it != m_labels.end()) {
       m_output.instructions[pending.instructionIndex].operand = it->second;
     } else {
-      error("Undefined label: " + pending.targetLabel, pending.location);
+      ScriptError err(ErrorCode::InvalidGotoTarget, Severity::Error,
+                      "Label '" + pending.targetLabel + "' is not defined in this script",
+                      SourceLocation{});
+      err.message += "\n\nWhat went wrong: The script tries to jump to a label that doesn't exist.";
+      err.message += "\n\nHow to fix: Define the label using 'label " + pending.targetLabel +
+                     "' or check for typos in the label name.";
+
+      // Try to find similar labels
+      std::vector<std::string> labelNames;
+      for (const auto &[name, _] : m_labels) {
+        labelNames.push_back(name);
+      }
+      auto similar = findSimilarStrings(pending.targetLabel, labelNames);
+      if (!similar.empty()) {
+        for (const auto &suggestion : similar) {
+          err.suggestions.push_back(suggestion);
+        }
+      }
+
+      addError(std::move(err));
     }
   }
 
@@ -58,13 +80,23 @@ const std::vector<CompileError> &Compiler::getErrors() const {
   return m_errors;
 }
 
+const ScriptErrorList &Compiler::getScriptErrors() const {
+  return m_scriptErrors;
+}
+
+void Compiler::setSource(const std::string &source) {
+  m_source = source;
+}
+
 void Compiler::reset() {
   m_output = CompiledScript{};
   m_errors.clear();
+  m_scriptErrors.clear();
   m_pendingJumps.clear();
   m_labels.clear();
   m_currentScene.clear();
   m_sourceFilePath.clear();
+  m_source.clear();
 }
 
 void Compiler::emitOp(OpCode op, u32 operand) {
@@ -103,9 +135,11 @@ void Compiler::recordSourceMapping(u32 ip, const SourceLocation &loc) {
 bool Compiler::patchJump(u32 jumpIndex) {
   // Bounds check to prevent buffer overflow (security vulnerability)
   if (jumpIndex >= m_output.instructions.size()) {
-    error("Internal compiler error: Invalid jump index " +
-          std::to_string(jumpIndex) + " (program size: " +
-          std::to_string(m_output.instructions.size()) + ")");
+    error(ErrorCode::CompilationFailed,
+          "Internal compiler error: Invalid jump instruction index " +
+          std::to_string(jumpIndex) + " (program has " +
+          std::to_string(m_output.instructions.size()) + " instructions). " +
+          "This indicates a compiler bug. Please report this issue.");
     return false;
   }
 
@@ -129,6 +163,35 @@ u32 Compiler::addString(const std::string &str) {
 
 void Compiler::error(const std::string &message, SourceLocation loc) {
   m_errors.emplace_back(message, loc);
+}
+
+void Compiler::error(ErrorCode code, const std::string &message, SourceLocation loc) {
+  // Add to legacy error list for backward compatibility
+  m_errors.emplace_back(message, loc);
+
+  // Create rich ScriptError
+  ScriptError err(code, Severity::Error, message, loc);
+  if (!m_sourceFilePath.empty()) {
+    err.filePath = m_sourceFilePath;
+  }
+  if (!m_source.empty()) {
+    err.source = m_source;
+  }
+  m_scriptErrors.add(std::move(err));
+}
+
+void Compiler::addError(ScriptError err) {
+  // Add to legacy error list for backward compatibility
+  m_errors.emplace_back(err.message, err.span.start);
+
+  // Set file path and source if not already set
+  if (!err.filePath.has_value() && !m_sourceFilePath.empty()) {
+    err.filePath = m_sourceFilePath;
+  }
+  if (!err.source.has_value() && !m_source.empty()) {
+    err.source = m_source;
+  }
+  m_scriptErrors.add(std::move(err));
 }
 
 void Compiler::compileProgram(const Program &program) {
@@ -325,6 +388,14 @@ void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
 }
 
 void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc) {
+  // Validate choice count limit
+  if (stmt.options.size() > MAX_CHOICE_COUNT) {
+    error("Too many choices in choice statement: " +
+          std::to_string(stmt.options.size()) + " (maximum allowed: " +
+          std::to_string(MAX_CHOICE_COUNT) + ")", loc);
+    return;
+  }
+
   // Emit choice count
   emitOp(OpCode::PUSH_INT, static_cast<u32>(stmt.options.size()));
 
@@ -583,7 +654,11 @@ void Compiler::compileBinary(const BinaryExpr &expr) {
 
   // Short-circuit for and/or
   if (expr.op == TokenType::And) {
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is false, jump to end keeping the false value
     u32 endJump = emitJump(OpCode::JUMP_IF_NOT);
+    // If left is true, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {
@@ -595,10 +670,11 @@ void Compiler::compileBinary(const BinaryExpr &expr) {
   }
 
   if (expr.op == TokenType::Or) {
-    u32 elseJump = emitJump(OpCode::JUMP_IF_NOT);
-    u32 endJump = emitJump(OpCode::JUMP);
-
-    patchJump(elseJump);
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is true, jump to end keeping the true value
+    u32 endJump = emitJump(OpCode::JUMP_IF);
+    // If left is false, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {
