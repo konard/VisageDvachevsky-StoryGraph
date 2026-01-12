@@ -23,8 +23,10 @@ add_executable(unit_tests
     unit/test_lexer.cpp
     unit/test_parser.cpp
     unit/test_validator.cpp
+    unit/test_compiler.cpp
     unit/test_story_graph.cpp
     unit/test_dialogue_localization.cpp
+    unit/test_localization_manager.cpp
     unit/test_dialogue_box.cpp
     unit/test_animation.cpp
     unit/test_snapshot.cpp
@@ -37,27 +39,32 @@ add_executable(unit_tests
     unit/test_audio_recorder.cpp
     unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
+    unit/test_vfs_corrupted_pack_files.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
     unit/test_renderer_pipeline.cpp
-    # Issue #179 - Comprehensive test coverage additions
     unit/test_scene_graph.cpp
     unit/test_audio_manager.cpp
     unit/test_pack_reader.cpp
     unit/test_benchmarks.cpp
     unit/test_audio_manager.cpp
-    # Issue #428 - Clipboard integration tests
     unit/test_clipboard.cpp
-    # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
-    # Issue #572 - Build system path traversal security tests
-    unit/test_build_system.cpp
-    # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
-    # Issue #504 - Portable float serialization tests
+    unit/test_save_manager.cpp
+    unit/test_resource_cache.cpp
+    unit/test_resource_id.cpp
+    unit/test_resource_manager.cpp
+    unit/test_cached_file_system.cpp
+    unit/test_event_bus.cpp
+    unit/test_interpreter_deserialize.cpp
+    unit/test_compiler_float_serialization.cpp
+    unit/test_scene_object_handle_thread_safety.cpp
+    # Issue #504 - Portable float serialization tests (endianness conversion)
     unit/test_endian_serialization.cpp
 )
+# Note: test_build_system.cpp requires editor library, included only in integration_tests
 
 target_link_libraries(unit_tests
     PRIVATE
@@ -82,9 +89,11 @@ include(Catch)
 
 # Discover tests with reasonable timeout for fuzz tests
 # Windows Debug builds can be significantly slower, so we use a generous default
+# SKIP_RETURN_CODE 4: Catch2 returns exit code 4 for skipped tests (SKIP macro)
 catch_discover_tests(unit_tests
     PROPERTIES
         TIMEOUT 60  # 60 seconds max per test
+        SKIP_RETURN_CODE 4
 )
 
 # Integration tests (requires editor)
@@ -108,13 +117,13 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
-        # Issue #477 - Gizmo memory management tests
         unit/test_gizmo_memory.cpp
-        # Issue #460 - Gizmo DPI scaling tests
         unit/test_gizmo_dpi_scaling.cpp
-        # Issue #570 - Build size analyzer hash security tests
+        unit/test_gizmo_rotation_normalization.cpp
         unit/test_build_size_analyzer.cpp
         unit/test_build_system.cpp
+        unit/test_selection_mediator.cpp
+        unit/test_property_mediator.cpp
     )
 
     target_link_libraries(integration_tests
@@ -136,6 +145,7 @@ if(NOVELMIND_BUILD_EDITOR)
     catch_discover_tests(integration_tests
         PROPERTIES
             TIMEOUT 60
+            SKIP_RETURN_CODE 4
     )
 
     # Abstraction interface unit tests (issue #150)
@@ -160,5 +170,6 @@ if(NOVELMIND_BUILD_EDITOR)
     catch_discover_tests(abstraction_interface_tests
         PROPERTIES
             TIMEOUT 60
+            SKIP_RETURN_CODE 4
     )
 endif()

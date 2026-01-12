@@ -1,9 +1,18 @@
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include "NovelMind/core/endian.hpp"
-#include <cstring>
+#include <bit>
+#include <limits>
 
 namespace NovelMind::scripting {
+
+// Float serialization assumptions:
+// - f32 (float) is exactly 4 bytes (32 bits), matching u32
+// - IEEE 754 single-precision format is used (ubiquitous on modern platforms)
+// - std::bit_cast provides well-defined, portable conversion without UB
+// - All floats are serialized in little-endian byte order for cross-platform compatibility
+static_assert(sizeof(f32) == sizeof(u32), "Float size must match u32 for bit_cast serialization");
+static_assert(std::numeric_limits<f32>::is_iec559, "IEEE 754 (IEC 559) float format required");
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
@@ -26,7 +35,7 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
     if (pending.instructionIndex >= m_output.instructions.size()) {
       error("Internal compiler error: Invalid pending jump index " +
             std::to_string(pending.instructionIndex) + " (program size: " +
-            std::to_string(m_output.instructions.size()) + ")");
+            std::to_string(m_output.instructions.size()) + ")", pending.location);
       continue;
     }
 
@@ -34,7 +43,7 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
     if (it != m_labels.end()) {
       m_output.instructions[pending.instructionIndex].operand = it->second;
     } else {
-      error("Undefined label: " + pending.targetLabel);
+      error("Undefined label: " + pending.targetLabel, pending.location);
     }
   }
 
@@ -274,6 +283,7 @@ void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) 
   if (stmt.transition.has_value()) {
     u32 transIndex = addString(stmt.transition.value());
     // Push duration (convert float to portable little-endian representation)
+    // Uses bit_cast (C++20) for well-defined float->u32 conversion, then converts to little-endian
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
@@ -355,7 +365,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
         // Forward reference to scene/label
         u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
         emitOp(OpCode::JUMP, 0);
-        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
+        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
         for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
@@ -370,7 +380,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
       if (option.gotoTarget.has_value()) {
         u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
         emitOp(OpCode::JUMP, 0);
-        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
+        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
         for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
@@ -428,7 +438,7 @@ void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLo
 void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) {
   u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
   emitOp(OpCode::GOTO_SCENE, 0, loc);
-  m_pendingJumps.push_back({jumpIndex, stmt.target});
+  m_pendingJumps.push_back({jumpIndex, stmt.target, loc});
 }
 
 void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
