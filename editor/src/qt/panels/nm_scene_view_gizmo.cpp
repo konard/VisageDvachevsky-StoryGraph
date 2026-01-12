@@ -631,7 +631,6 @@ void NMTransformGizmo::createRotateGizmo() {
 void NMTransformGizmo::createScaleGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
   const qreal uiScale = NMStyleManager::instance().uiScale();
-  qreal size = 50;
   const qreal dpiScale = getDpiScale();
   qreal size = 50 * dpiScale;
 
