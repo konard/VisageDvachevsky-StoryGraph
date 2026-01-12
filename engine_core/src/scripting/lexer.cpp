@@ -623,10 +623,25 @@ Token Lexer::scanColorLiteral() {
 
   std::string lexeme(m_source.substr(m_start, m_current - m_start));
 
-  // Validate color format: #RGB, #RGBA, #RRGGBB, #RRGGBBAA
+  // Validate color format: #RGB (3 hex digits), #RRGGBB (6 hex digits), #RRGGBBAA (8 hex digits)
   size_t hexLen = lexeme.size() - 1; // Exclude '#'
-  if (hexLen != 3 && hexLen != 4 && hexLen != 6 && hexLen != 8) {
-    return errorToken("Invalid color literal format");
+  if (hexLen == 0) {
+    return errorToken("Color literal must contain hex digits after '#'");
+  } else if (hexLen == 3) {
+    // Valid: #RGB format
+  } else if (hexLen == 6) {
+    // Valid: #RRGGBB format
+  } else if (hexLen == 8) {
+    // Valid: #RRGGBBAA format with alpha channel
+  } else {
+    // Invalid length - provide clear error message based on what was provided
+    if (hexLen < 3) {
+      return errorToken("Color literal too short. Expected #RGB (3 hex digits), #RRGGBB (6 hex digits), or #RRGGBBAA (8 hex digits)");
+    } else if (hexLen == 4 || hexLen == 5) {
+      return errorToken("Invalid color literal length. Expected #RGB (3 hex digits), #RRGGBB (6 hex digits), or #RRGGBBAA (8 hex digits)");
+    } else {
+      return errorToken("Color literal too long. Expected #RGB (3 hex digits), #RRGGBB (6 hex digits), or #RRGGBBAA (8 hex digits)");
+    }
   }
 
   return Token(TokenType::String, std::move(lexeme), SourceLocation(m_line, m_startColumn));
