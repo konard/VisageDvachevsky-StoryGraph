@@ -246,6 +246,9 @@ struct ScriptCompileResult {
  * @brief Build System - Main build coordinator
  */
 class BuildSystem {
+  // Allow test functions to access private members for security testing
+  friend class BuildSystemTestHelper;
+
 public:
   BuildSystem();
   ~BuildSystem();
