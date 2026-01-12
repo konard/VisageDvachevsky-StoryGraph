@@ -81,6 +81,7 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_ENABLE_TSAN` | OFF | Enable ThreadSanitizer |
 | `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
 | `NOVELMIND_ENABLE_LSAN` | OFF | Enable LeakSanitizer |
+| `NOVELMIND_ENABLE_VALGRIND` | OFF | Build with Valgrind-friendly flags |
 | `NOVELMIND_ENABLE_MSAN` | OFF | Enable MemorySanitizer |
 
 ### Build Types
@@ -258,6 +259,20 @@ cmake -B build -DNOVELMIND_ENABLE_UBSAN=ON
 cmake --build build
 cd build && ctest --output-on-failure
 
+# Valgrind (comprehensive memory analysis)
+cmake -B build -DNOVELMIND_ENABLE_VALGRIND=ON
+cmake --build build
+cd build && valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes ctest --output-on-failure
+```
+
+Note: Valgrind is a runtime tool, so the `NOVELMIND_ENABLE_VALGRIND` option only adds compiler flags to improve Valgrind's stack trace quality. You need to have Valgrind installed separately:
+
+```bash
+# Install Valgrind on Linux
+sudo apt-get install valgrind
+
+# Install on macOS (limited support)
+brew install valgrind
 # MemorySanitizer (detects uninitialized memory reads, requires Clang)
 CC=clang CXX=clang++ cmake -B build -DNOVELMIND_ENABLE_MSAN=ON
 cmake --build build
