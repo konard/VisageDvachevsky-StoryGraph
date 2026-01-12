@@ -11,6 +11,7 @@ This document describes the testing infrastructure and best practices for the No
 - [Concurrency Testing](#concurrency-testing)
 - [Performance Benchmarks](#performance-benchmarks)
 - [Integration Tests](#integration-tests)
+- [Fuzz Testing](#fuzz-testing)
 
 ## Test Organization
 
@@ -657,6 +658,110 @@ TEST_CASE("Error handling", "[component][error]")
 ✗ Don't write overly complex test logic
 ✗ Don't skip error path testing
 
+## Fuzz Testing
+
+Fuzz testing uses libFuzzer to discover crashes, hangs, and undefined behavior by feeding random input to components.
+
+### Building Fuzz Targets
+
+Fuzzing requires Clang with libFuzzer support:
+
+```bash
+# Configure with fuzzing enabled
+cmake -B build \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DNOVELMIND_ENABLE_FUZZING=ON \
+  -DCMAKE_BUILD_TYPE=Release
+
+# Build fuzz targets
+cmake --build build
+
+# Fuzz targets are in build/bin/fuzz/
+```
+
+### Available Fuzz Targets
+
+- **fuzz_lexer** - Tests Script lexer with arbitrary byte sequences
+- **fuzz_parser** - Tests Script parser with arbitrary input
+- **fuzz_vm** - Tests full pipeline: lexer → parser → compiler → VM
+
+### Running Fuzz Targets
+
+```bash
+cd build/bin
+
+# Run lexer fuzzer for 60 seconds
+./fuzz_lexer ../../../tests/fuzz/corpus/lexer -max_total_time=60
+
+# Run parser fuzzer with 100000 runs
+./fuzz_parser ../../../tests/fuzz/corpus/parser -runs=100000
+
+# Run VM fuzzer with custom memory limit
+./fuzz_vm ../../../tests/fuzz/corpus/vm -rss_limit_mb=2048
+```
+
+### Fuzzing Options
+
+Common libFuzzer options:
+
+- `-max_total_time=N` - Run for N seconds
+- `-runs=N` - Run N iterations then exit
+- `-rss_limit_mb=N` - Memory limit in MB
+- `-max_len=N` - Maximum input length
+- `-dict=file` - Use mutation dictionary
+- `-jobs=N` - Parallel fuzzing jobs
+- `-workers=N` - Concurrent workers
+
+See [libFuzzer documentation](https://llvm.org/docs/LibFuzzer.html) for more options.
+
+### Reproducing Crashes
+
+If fuzzing finds a crash, it saves the input to a file:
+
+```bash
+# Reproduce a crash
+./fuzz_lexer crash-file
+
+# Minimize the crash input
+./fuzz_lexer crash-file -minimize_crash=1
+```
+
+### Continuous Fuzzing
+
+For long-term fuzzing:
+
+```bash
+# Run indefinitely until crash found
+./fuzz_lexer corpus/ -max_total_time=0
+
+# Parallel fuzzing with 8 workers
+./fuzz_parser corpus/ -jobs=8 -workers=8
+```
+
+### Seed Corpus
+
+The `tests/fuzz/corpus/` directory contains seed inputs:
+
+- `corpus/lexer/` - Valid script snippets for lexer
+- `corpus/parser/` - Valid scripts for parser
+- `corpus/vm/` - Valid scripts for VM
+
+Add your own seed files to improve fuzzing coverage.
+
+### Integration with Sanitizers
+
+Fuzz targets are built with AddressSanitizer and UndefinedBehaviorSanitizer by default to catch memory errors and undefined behavior.
+
+For additional sanitizers:
+
+```bash
+# Build with ThreadSanitizer (for concurrent code)
+cmake -B build \
+  -DCMAKE_CXX_COMPILER=clang++ \
+  -DNOVELMIND_ENABLE_FUZZING=ON \
+  -DCMAKE_CXX_FLAGS="-fsanitize=fuzzer,thread"
+```
+
 ## Continuous Integration
 
 All tests run automatically on:
@@ -671,5 +776,7 @@ See `.github/workflows/ci.yml` and `.github/workflows/coverage.yml` for details.
 ## References
 
 - [Catch2 Documentation](https://github.com/catchorg/Catch2/blob/devel/docs/Readme.md)
+- [libFuzzer Documentation](https://llvm.org/docs/LibFuzzer.html)
 - [CONTRIBUTING.md](../CONTRIBUTING.md) - General contribution guidelines
 - [Issue #179](https://github.com/VisageDvachevsky/StoryGraph/issues/179) - Test coverage audit
+- [Issue #544](https://github.com/VisageDvachevsky/StoryGraph/issues/544) - Fuzz testing implementation

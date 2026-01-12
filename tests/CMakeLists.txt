@@ -175,3 +175,7 @@ if(NOVELMIND_BUILD_EDITOR)
             SKIP_RETURN_CODE 4
     )
 endif()
+
+# Fuzzing targets (optional, requires Clang)
+# Issue #544 - libFuzzer integration for Script lexer, parser, and VM
+add_subdirectory(fuzz)

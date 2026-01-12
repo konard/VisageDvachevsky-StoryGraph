@@ -1,0 +1,1 @@
+character Hero(name="Hero", color="#FF0000")
