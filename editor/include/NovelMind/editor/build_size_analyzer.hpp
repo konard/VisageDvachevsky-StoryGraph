@@ -290,6 +290,8 @@ private:
 
   std::unordered_map<std::string, std::vector<std::string>>
       m_hashToFiles; // For duplicate detection
+  std::unordered_map<std::string, size_t>
+      m_pathToAssetIndex; // For O(1) asset lookup by path
 
   std::vector<IBuildSizeListener *> m_listeners;
 };
