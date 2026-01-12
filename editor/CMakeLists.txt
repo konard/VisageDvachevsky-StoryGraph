@@ -185,6 +185,12 @@ add_library(novelmind_editor STATIC
 
     # Phase 3 & 4 panels
     src/qt/panels/nm_timeline_panel.cpp
+    src/qt/panels/timeline_renderer.cpp
+    src/qt/panels/timeline_track_operations.cpp
+    src/qt/panels/timeline_keyframes.cpp
+    src/qt/panels/timeline_interaction.cpp
+    src/qt/panels/timeline_easing_dialog.cpp
+    src/qt/panels/timeline_viewport.cpp
     src/qt/panels/nm_animation_adapter.cpp
     src/qt/panels/nm_keyframe_item.cpp
     src/qt/panels/nm_curve_editor_panel.cpp
