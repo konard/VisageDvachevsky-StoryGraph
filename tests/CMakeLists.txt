@@ -56,6 +56,7 @@ add_executable(unit_tests
     # unit/test_build_system.cpp # Requires editor
     # unit/test_secure_memory.cpp # Requires editor
     unit/test_secure_memory.cpp
+    unit/test_ir_conversion_safety.cpp
     unit/test_error_messages.cpp
     unit/test_save_manager.cpp
     unit/test_resource_cache.cpp
