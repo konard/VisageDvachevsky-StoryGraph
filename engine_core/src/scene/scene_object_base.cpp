@@ -4,8 +4,10 @@
  */
 
 #include "NovelMind/scene/scene_graph.hpp"
+#include "NovelMind/core/logger.hpp"
 
 #include <algorithm>
+#include <atomic>
 
 namespace NovelMind::scene {
 
@@ -13,8 +15,12 @@ namespace NovelMind::scene {
 // SceneObjectBase Implementation
 // ============================================================================
 
+// Global generation counter for thread-safe handle validation
+// Each new object gets a unique generation number
+static std::atomic<u64> g_nextGeneration{1};
+
 SceneObjectBase::SceneObjectBase(const std::string &id, SceneObjectType type)
-    : m_id(id), m_type(type) {
+    : m_id(id), m_type(type), m_generation(g_nextGeneration.fetch_add(1)) {
   m_transform.x = 0.0f;
   m_transform.y = 0.0f;
   m_transform.scaleX = 1.0f;
@@ -99,11 +105,40 @@ void SceneObjectBase::setZOrder(i32 zOrder) {
 
 void SceneObjectBase::setParent(SceneObjectBase *parent) { m_parent = parent; }
 
-void SceneObjectBase::addChild(std::unique_ptr<SceneObjectBase> child) {
-  if (child) {
-    child->setParent(this);
-    m_children.push_back(std::move(child));
+int SceneObjectBase::getDepth() const {
+  int depth = 0;
+  const SceneObjectBase *current = m_parent;
+  while (current != nullptr) {
+    depth++;
+    if (depth > MAX_SCENE_DEPTH) {
+      // Should never happen if addChild is used correctly
+      return MAX_SCENE_DEPTH + 1;
+    }
+    current = current->m_parent;
   }
+  return depth;
+}
+
+bool SceneObjectBase::addChild(std::unique_ptr<SceneObjectBase> child) {
+  if (!child) {
+    return false;
+  }
+
+  // Calculate what the depth would be for the new child
+  int currentDepth = getDepth();
+  int newChildDepth = currentDepth + 1;
+
+  if (newChildDepth >= MAX_SCENE_DEPTH) {
+    NOVELMIND_LOG_ERROR(
+        "Cannot add child '{}' to '{}': would exceed maximum scene depth "
+        "of {} (current depth: {})",
+        child->getId(), m_id, MAX_SCENE_DEPTH, currentDepth);
+    return false;
+  }
+
+  child->setParent(this);
+  m_children.push_back(std::move(child));
+  return true;
 }
 
 std::unique_ptr<SceneObjectBase>
@@ -129,8 +164,10 @@ SceneObjectBase *SceneObjectBase::findChildRecursive(const std::string &id,
                                                      int depth) {
   // Prevent infinite recursion with depth limit
   if (depth >= MAX_SCENE_DEPTH) {
-    // Log is not available here without adding header dependency,
-    // but we safely return nullptr to prevent stack overflow
+    NOVELMIND_LOG_ERROR(
+        "Scene graph depth limit ({}) exceeded while searching for child '{}' "
+        "in object '{}'",
+        MAX_SCENE_DEPTH, id, m_id);
     return nullptr;
   }
 
@@ -180,6 +217,18 @@ SceneObjectBase::getProperty(const std::string &name) const {
 }
 
 void SceneObjectBase::update(f64 deltaTime) {
+  updateWithDepth(deltaTime, 0);
+}
+
+void SceneObjectBase::updateWithDepth(f64 deltaTime, int depth) {
+  // Check depth limit to prevent stack overflow
+  if (depth >= MAX_SCENE_DEPTH) {
+    NOVELMIND_LOG_ERROR(
+        "Scene graph depth limit ({}) exceeded during update of object '{}'",
+        MAX_SCENE_DEPTH, m_id);
+    return;
+  }
+
   // Update animations
   for (auto it = m_animations.begin(); it != m_animations.end();) {
     if (*it && !(*it)->update(deltaTime)) {
@@ -189,9 +238,28 @@ void SceneObjectBase::update(f64 deltaTime) {
     }
   }
 
-  // Update children
+  // Update children with incremented depth
   for (auto &child : m_children) {
-    child->update(deltaTime);
+    child->updateWithDepth(deltaTime, depth + 1);
+  }
+}
+
+void SceneObjectBase::renderWithDepth(renderer::IRenderer &renderer,
+                                      int depth) {
+  // Check depth limit to prevent stack overflow
+  if (depth >= MAX_SCENE_DEPTH) {
+    NOVELMIND_LOG_ERROR(
+        "Scene graph depth limit ({}) exceeded during render of object '{}'",
+        MAX_SCENE_DEPTH, m_id);
+    return;
+  }
+
+  // Render children with incremented depth
+  for (auto &child : m_children) {
+    if (child->isVisible()) {
+      child->render(renderer);
+      child->renderWithDepth(renderer, depth + 1);
+    }
   }
 }
 
@@ -208,6 +276,18 @@ SceneObjectState SceneObjectBase::saveState() const {
   state.visible = m_visible;
   state.zOrder = m_zOrder;
   state.properties = m_properties;
+
+  // Warn if we're approaching the depth limit
+  int currentDepth = getDepth();
+  constexpr int DEPTH_WARNING_THRESHOLD = MAX_SCENE_DEPTH * 80 / 100; // 80% of max
+  if (currentDepth >= DEPTH_WARNING_THRESHOLD) {
+    NOVELMIND_LOG_WARN(
+        "Scene object '{}' is at depth {} ({}% of maximum depth {}). "
+        "Consider flattening the scene hierarchy to avoid stack overflow.",
+        m_id, currentDepth, (currentDepth * 100) / MAX_SCENE_DEPTH,
+        MAX_SCENE_DEPTH);
+  }
+
   return state;
 }
 

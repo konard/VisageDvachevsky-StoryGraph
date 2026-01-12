@@ -1,0 +1,7 @@
+scene test {
+    if true {
+        say Hero "yes"
+    } else {
+        say Hero "no"
+    }
+}

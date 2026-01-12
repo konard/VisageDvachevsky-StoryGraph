@@ -7,6 +7,25 @@ namespace NovelMind::vfs {
 PackReader::~PackReader() { unmountAll(); }
 
 Result<void> PackReader::mount(const std::string &packPath) {
+  // Use the internal mount implementation with no progress callback
+  return mountInternal(packPath, nullptr);
+}
+
+std::future<Result<void>> PackReader::mountAsync(const std::string &packPath,
+                                                  ProgressCallback progressCallback) {
+  // Launch async task to mount pack in background thread
+  return std::async(std::launch::async, [this, packPath, progressCallback]() {
+    return mountInternal(packPath, progressCallback);
+  });
+}
+
+Result<void> PackReader::mountInternal(const std::string &packPath,
+                                       ProgressCallback progressCallback) {
+  // Report progress: Starting
+  if (progressCallback) {
+    progressCallback(0, 4, "Opening pack file");
+  }
+
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (m_packs.find(packPath) != m_packs.end()) {
@@ -21,9 +40,19 @@ Result<void> PackReader::mount(const std::string &packPath) {
   MountedPack pack;
   pack.path = packPath;
 
+  // Report progress: Reading header
+  if (progressCallback) {
+    progressCallback(1, 4, "Reading pack header");
+  }
+
   auto headerResult = readPackHeader(file, pack.header);
   if (headerResult.isError()) {
     return headerResult;
+  }
+
+  // Report progress: Reading resource table
+  if (progressCallback) {
+    progressCallback(2, 4, "Reading resource table");
   }
 
   auto tableResult = readResourceTable(file, pack);
@@ -31,12 +60,25 @@ Result<void> PackReader::mount(const std::string &packPath) {
     return tableResult;
   }
 
+  // Report progress: Reading string table
+  if (progressCallback) {
+    progressCallback(3, 4, "Reading string table");
+  }
+
   auto stringResult = readStringTable(file, pack);
   if (stringResult.isError()) {
     return stringResult;
   }
 
+  pack.stringTableLoaded = true;
+
   m_packs[packPath] = std::move(pack);
+
+  // Report progress: Complete
+  if (progressCallback) {
+    progressCallback(4, 4, "Pack mounted successfully");
+  }
+
   NOVELMIND_LOG_INFO("Mounted pack: " + packPath);
 
   return Result<void>::ok();
@@ -266,20 +308,35 @@ PackReader::readResourceData(const std::string &packPath,
     return Result<std::vector<u8>>::error("Pack not mounted");
   }
 
-  // Security: Validate offset doesn't cause overflow
-  u64 absoluteOffset = it->second.header.dataOffset + entry.dataOffset;
-  if (absoluteOffset < it->second.header.dataOffset) {
-    return Result<std::vector<u8>>::error("Invalid resource offset (overflow)");
-  }
-
-  // Get file size to validate offset + size doesn't exceed file bounds
+  // Get file size first to validate all offsets and sizes
   file.seekg(0, std::ios::end);
   auto fileSize = file.tellg();
   if (fileSize < 0) {
     return Result<std::vector<u8>>::error("Failed to get pack file size");
   }
+  const u64 fileSizeU64 = static_cast<u64>(fileSize);
 
-  if (absoluteOffset + entry.compressedSize > static_cast<u64>(fileSize)) {
+  // Security: Validate offsets using safe arithmetic to prevent overflow
+
+  // Check 1: Validate dataOffset doesn't exceed file size
+  if (it->second.header.dataOffset > fileSizeU64) {
+    return Result<std::vector<u8>>::error(
+        "Pack data offset exceeds file size");
+  }
+
+  // Check 2: Validate entry.dataOffset doesn't exceed remaining space
+  const u64 maxEntryOffset = fileSizeU64 - it->second.header.dataOffset;
+  if (entry.dataOffset > maxEntryOffset) {
+    return Result<std::vector<u8>>::error(
+        "Resource offset exceeds pack data section");
+  }
+
+  // Check 3: Calculate absolute offset (now proven safe from overflow)
+  const u64 absoluteOffset = it->second.header.dataOffset + entry.dataOffset;
+
+  // Check 4: Validate compressedSize doesn't exceed remaining space
+  const u64 maxResourceSize = fileSizeU64 - absoluteOffset;
+  if (entry.compressedSize > maxResourceSize) {
     return Result<std::vector<u8>>::error(
         "Resource data extends beyond pack file");
   }
@@ -302,6 +359,27 @@ PackReader::readResourceData(const std::string &packPath,
   // See pack_security.hpp for encryption/compression configuration.
 
   return Result<std::vector<u8>>::ok(std::move(data));
+}
+
+Result<void> PackReader::ensureStringTableLoaded(MountedPack &pack) const {
+  if (pack.stringTableLoaded) {
+    return Result<void>::ok();
+  }
+
+  // Need to load string table now
+  std::ifstream file(pack.path, std::ios::binary);
+  if (!file.is_open()) {
+    return Result<void>::error("Failed to open pack file for lazy loading: " + pack.path);
+  }
+
+  // Cast away const since we're doing lazy initialization
+  auto stringResult = const_cast<PackReader*>(this)->readStringTable(file, pack);
+  if (stringResult.isError()) {
+    return stringResult;
+  }
+
+  pack.stringTableLoaded = true;
+  return Result<void>::ok();
 }
 
 } // namespace NovelMind::vfs

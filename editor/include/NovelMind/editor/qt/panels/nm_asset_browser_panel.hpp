@@ -19,19 +19,20 @@
 
 #include "NovelMind/editor/qt/lazy_thumbnail_loader.hpp"
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_categorizer.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_preview.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_scanner.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_thumbnails.hpp"
 #include <QAction>
 #include <QCache>
 #include <QComboBox>
-#include <QDateTime>
 #include <QFileIconProvider>
 #include <QFileSystemModel>
-#include <QFrame>
 #include <QHash>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
 #include <QPointer>
-#include <QRunnable>
 #include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QThreadPool>
@@ -41,33 +42,6 @@
 #include <memory>
 
 namespace NovelMind::editor::qt {
-
-/**
- * @brief Cached thumbnail entry with metadata for invalidation
- */
-struct ThumbnailCacheEntry {
-  QPixmap pixmap;
-  QDateTime lastModified;
-  qint64 fileSize = 0;
-};
-
-/**
- * @brief Asset metadata from database
- */
-struct AssetMetadata {
-  QString id;          // Stable unique ID
-  QString type;        // Asset type (image, audio, font, script, etc.)
-  QString path;        // Relative path
-  qint64 size = 0;     // File size in bytes
-  QString format;      // File format
-  QDateTime modified;  // Last modified time
-  int width = 0;       // For images: width
-  int height = 0;      // For images: height
-  double duration = 0; // For audio: duration in seconds
-  int sampleRate = 0;  // For audio: sample rate
-  int channels = 0;    // For audio: number of channels
-  QStringList usages;  // Where this asset is used
-};
 
 /**
  * @brief View mode for asset list
@@ -183,9 +157,6 @@ private:
   void updatePreview(const QString &path);
   void clearPreview();
   void importFiles(const QStringList &files, bool interactive);
-  QString importDestinationForExtension(const QString &extension) const;
-  QString generateUniquePath(const QString &directory,
-                             const QString &fileName) const;
   void scheduleVisibleThumbnails();
   void cancelPendingThumbnails();
 
@@ -206,10 +177,7 @@ private:
   QTreeView *m_treeView = nullptr;
   QListView *m_listView = nullptr;
   QWidget *m_listPane = nullptr;
-  QFrame *m_previewFrame = nullptr;
-  QLabel *m_previewImage = nullptr;
-  QLabel *m_previewName = nullptr;
-  QLabel *m_previewMeta = nullptr;
+  NMAssetPreviewFrame *m_previewFrame = nullptr;
   QFileSystemModel *m_treeModel = nullptr;
   QFileSystemModel *m_listModel = nullptr;
   QSortFilterProxyModel *m_filterProxy = nullptr;
@@ -223,7 +191,6 @@ private:
 
   QString m_rootPath;
   QString m_currentPath;
-  QString m_previewPath;
   int m_thumbSize = 80;
   bool m_previewVisible = true;
   AssetViewMode m_viewMode = AssetViewMode::Grid;
