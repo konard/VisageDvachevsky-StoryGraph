@@ -14,6 +14,7 @@
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/debouncer.hpp"
 #include <atomic>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
@@ -536,6 +537,10 @@ private:
   QString m_editorPreviewText;
   QStringList m_editorPreviewChoices;
   bool m_animationPreviewMode = false;
+
+  // Issue #521: Debouncer for document save/event publishing to prevent spam
+  Debouncer m_saveDebouncer{300}; // 300ms delay for batching document saves
+  std::atomic<bool> m_documentDirty{false}; // Track if there are unsaved changes
 };
 
 } // namespace NovelMind::editor::qt

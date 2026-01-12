@@ -19,9 +19,8 @@ NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
 }
 
 NMSceneViewPanel::~NMSceneViewPanel() {
-  // Disconnect from Play Mode Controller to prevent dangling connections
-  auto &playController = NMPlayModeController::instance();
-  disconnect(&playController, nullptr, this, nullptr);
+  // Issue #521: Flush any pending debounced saves before destruction
+  m_saveDebouncer.flush();
 }
 
 void NMSceneViewPanel::onInitialize() {
@@ -47,10 +46,17 @@ void NMSceneViewPanel::onInitialize() {
 
   qDebug() << "[SceneView] Connected to PlayModeController for runtime preview";
 
+  // Issue #521: Use debouncer to batch rapid changes and reduce event spam
   connect(this, &NMSceneViewPanel::sceneObjectsChanged, this, [this]() {
     if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive &&
         !m_suppressSceneSave) {
-      saveSceneDocument();
+      m_documentDirty = true;
+      m_saveDebouncer.trigger([this]() {
+        if (m_documentDirty) {
+          saveSceneDocument();
+          m_documentDirty = false;
+        }
+      });
     }
   });
   connect(this, &NMSceneViewPanel::objectTransformFinished, this,
@@ -58,7 +64,13 @@ void NMSceneViewPanel::onInitialize() {
                  qreal, qreal, qreal, qreal, qreal) {
             if (!m_isLoadingScene && !m_runtimePreviewActive &&
                 !m_playModeActive && !m_suppressSceneSave) {
-              saveSceneDocument();
+              m_documentDirty = true;
+              m_saveDebouncer.trigger([this]() {
+                if (m_documentDirty) {
+                  saveSceneDocument();
+                  m_documentDirty = false;
+                }
+              });
             }
           });
 }
