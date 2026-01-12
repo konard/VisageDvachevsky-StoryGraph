@@ -694,6 +694,11 @@ private:
   void fireLineChanged(const std::string &lineId);
   void fireStatusChanged(const std::string &lineId, const std::string &locale,
                          VoiceLineStatus status);
+
+  // Security: Path validation
+  [[nodiscard]] bool isValidRelativePath(const std::string &path) const;
+  [[nodiscard]] Result<std::string>
+  sanitizeAndResolvePath(const std::string &relativePath) const;
 };
 
 } // namespace NovelMind::audio
