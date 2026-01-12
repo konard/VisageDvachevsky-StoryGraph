@@ -94,14 +94,20 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
   const u64 resourceTableSize =
       static_cast<u64>(m_header.resourceCount) * detail::kResourceEntrySize;
-  if (m_header.resourceTableOffset < sizeof(PackHeader) ||
-      m_header.resourceTableOffset + resourceTableSize > m_fileSize) {
+  if (m_header.resourceTableOffset < sizeof(PackHeader)) {
+    m_lastResult = PackVerificationResult::CorruptedResourceTable;
+    return Result<void>::error("Invalid resource table offset/size");
+  }
+  // Safe check to prevent overflow: offset + size <= fileSize
+  // Rewritten as: offset <= fileSize && size <= fileSize - offset
+  if (m_header.resourceTableOffset > m_fileSize ||
+      resourceTableSize > m_fileSize - m_header.resourceTableOffset) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid resource table offset/size");
   }
 
-  if (m_header.stringTableOffset <
-          m_header.resourceTableOffset + resourceTableSize ||
+  const u64 resourceTableEnd = m_header.resourceTableOffset + resourceTableSize;
+  if (m_header.stringTableOffset < resourceTableEnd ||
       m_header.stringTableOffset > m_fileSize) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table offset");
@@ -182,9 +188,12 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       return Result<void>::error("String table entry too large");
     }
 
-    const u64 stringEnd =
-        static_cast<u64>(offsets[i]) + static_cast<u64>(str.size());
-    if (stringEnd >= stringDataSize) {
+    // Safe boundary check to prevent integer overflow
+    // Instead of: offset + length <= size (which can overflow)
+    // Use: offset <= size && length <= size - offset
+    const u64 offset = static_cast<u64>(offsets[i]);
+    const u64 strSize = static_cast<u64>(str.size());
+    if (offset > stringDataSize || strSize > stringDataSize - offset) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
       return Result<void>::error("String table entry out of bounds");
     }
@@ -211,14 +220,23 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       return Result<void>::error("Resource size exceeds limit");
     }
 
-    const u64 absoluteOffset = m_header.dataOffset + entry.dataOffset;
-    if (absoluteOffset < m_header.dataOffset) {
+    // Safe check to prevent overflow when calculating absolute offset
+    if (entry.dataOffset > m_fileSize ||
+        m_header.dataOffset > m_fileSize - entry.dataOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource offset overflow");
     }
+    const u64 absoluteOffset = m_header.dataOffset + entry.dataOffset;
 
-    if (absoluteOffset + entry.compressedSize >
-        m_fileSize - detail::kFooterSize) {
+    // Safe check to prevent overflow: absoluteOffset + compressedSize <= fileSize - footerSize
+    // First check if fileSize is large enough for footer
+    if (m_fileSize < detail::kFooterSize) {
+      m_lastResult = PackVerificationResult::CorruptedData;
+      return Result<void>::error("File too small for footer");
+    }
+    const u64 maxDataEnd = m_fileSize - detail::kFooterSize;
+    if (absoluteOffset > maxDataEnd ||
+        entry.compressedSize > maxDataEnd - absoluteOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource data extends beyond pack file");
     }
