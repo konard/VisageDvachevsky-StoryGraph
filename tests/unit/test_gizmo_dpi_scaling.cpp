@@ -53,15 +53,15 @@ TEST_CASE("NMTransformGizmo scales correctly on standard DPI displays", "[gizmo]
     SECTION("Rotate gizmo has expected item count") {
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Rotate);
-        // Rotate mode has: circle, rotateHit, handle = 3 items
-        REQUIRE(gizmo->childItems().size() == 3);
+        // Rotate mode has: rotationRing, handle = 2 items
+        REQUIRE(gizmo->childItems().size() == 2);
     }
 
     SECTION("Scale gizmo has expected item count") {
         gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Scale);
-        // Scale mode has: box, scaleHit, 4 corner handles = 6 items
-        REQUIRE(gizmo->childItems().size() == 6);
+        // Scale mode has: box + 4 corners × (hitArea + handle) = 1 + 8 = 9 items
+        REQUIRE(gizmo->childItems().size() == 9);
     }
 
     delete view;
@@ -115,10 +115,10 @@ TEST_CASE("NMTransformGizmo mode switching preserves DPI scaling", "[gizmo][dpi]
         REQUIRE(gizmo->childItems().size() == 10);
 
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
-        REQUIRE(gizmo->childItems().size() == 3);
+        REQUIRE(gizmo->childItems().size() == 2);
 
         gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
-        REQUIRE(gizmo->childItems().size() == 6);
+        REQUIRE(gizmo->childItems().size() == 9);
 
         // Switch back to Move
         gizmo->setMode(NMTransformGizmo::GizmoMode::Move);
@@ -158,14 +158,14 @@ TEST_CASE("NMTransformGizmo handles multi-monitor scenarios", "[gizmo][dpi][mult
         scene->addItem(gizmo);
 
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
-        REQUIRE(gizmo->childItems().size() == 3);
+        REQUIRE(gizmo->childItems().size() == 2);
 
         // Remove the view and try to change mode
         delete view;
 
         // Should still work, using default DPI scale
         gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
-        REQUIRE(gizmo->childItems().size() == 6);
+        REQUIRE(gizmo->childItems().size() == 9);
 
         delete scene;
     }
@@ -192,7 +192,7 @@ TEST_CASE("NMTransformGizmo DPI scaling does not leak memory", "[gizmo][dpi][mem
 
         // Final mode should be Scale
         REQUIRE(gizmo->mode() == NMTransformGizmo::GizmoMode::Scale);
-        REQUIRE(gizmo->childItems().size() == 6);
+        REQUIRE(gizmo->childItems().size() == 9);
     }
 
     delete view;
@@ -222,7 +222,7 @@ TEST_CASE("NMTransformGizmo DPI scaling edge cases", "[gizmo][dpi][edge_cases]")
 
         // Should handle mode changes even without a scene
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
-        REQUIRE(gizmo->childItems().size() == 3);
+        REQUIRE(gizmo->childItems().size() == 2);
 
         delete gizmo;
     }
@@ -255,7 +255,7 @@ TEST_CASE("NMTransformGizmo child item scaling verification", "[gizmo][dpi][veri
         gizmo->setMode(NMTransformGizmo::GizmoMode::Rotate);
 
         auto children = gizmo->childItems();
-        REQUIRE(children.size() == 3);
+        REQUIRE(children.size() == 2);
 
         // Verify all children are valid (non-null)
         for (const auto *child : children) {
@@ -267,7 +267,7 @@ TEST_CASE("NMTransformGizmo child item scaling verification", "[gizmo][dpi][veri
         gizmo->setMode(NMTransformGizmo::GizmoMode::Scale);
 
         auto children = gizmo->childItems();
-        REQUIRE(children.size() == 6);
+        REQUIRE(children.size() == 9);
 
         // Verify all children are valid (non-null)
         for (const auto *child : children) {

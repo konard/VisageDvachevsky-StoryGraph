@@ -1,5 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include "NovelMind/core/secure_memory.hpp"
 #include "NovelMind/vfs/memory_fs.hpp"
 #include "NovelMind/vfs/pack_reader.hpp"
 #include "NovelMind/vfs/pack_security.hpp"
@@ -341,8 +342,8 @@ TEST_CASE("PackDecryptor - Key management", "[vfs][security][encryption]") {
   PackDecryptor decryptor;
 
   SECTION("Set key from vector") {
-    std::vector<u8> key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-                           0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
+    Core::SecureVector<u8> key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+                                  0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
     decryptor.setKey(key);
     // Key should be accepted (no crash/exception)
   }
