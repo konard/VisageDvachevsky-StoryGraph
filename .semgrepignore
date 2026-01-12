@@ -1,0 +1,37 @@
+# Semgrep ignore file for security scanning
+
+# Test files
+tests/
+*_test.cpp
+*_test.hpp
+
+# Build artifacts
+build/
+*.o
+*.a
+*.so
+*.dylib
+
+# Third-party dependencies
+third_party/
+external/
+vendor/
+_deps/
+
+# Examples and experiments (non-production code)
+examples/
+experiments/
+
+# Documentation
+docs/
+*.md
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Generated files
+*.pb.cc
+*.pb.h

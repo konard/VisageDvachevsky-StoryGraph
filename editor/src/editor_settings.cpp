@@ -88,6 +88,7 @@ LayoutManager::LayoutManager() {}
 void LayoutManager::initialize(EditorApp *editor) { m_editor = editor; }
 
 Result<void> LayoutManager::saveLayout(const std::string &name) {
+  std::unique_lock lock(m_mutex);
   if (!m_editor) {
     return Result<void>::error("Editor not initialized");
   }
@@ -133,6 +134,7 @@ Result<void> LayoutManager::saveLayout(const std::string &name) {
 }
 
 Result<void> LayoutManager::loadLayout(const std::string &name) {
+  std::unique_lock lock(m_mutex);
   auto it = m_savedLayouts.find(name);
   if (it != m_savedLayouts.end()) {
     applyLayout(it->second);
@@ -157,11 +159,13 @@ Result<void> LayoutManager::loadLayout(const std::string &name) {
 }
 
 void LayoutManager::applyPreset(LayoutPreset preset) {
+  std::unique_lock lock(m_mutex);
   EditorLayout layout = createPresetLayout(preset);
   applyLayout(layout);
 }
 
 EditorLayout LayoutManager::getCurrentLayout() const {
+  std::shared_lock lock(m_mutex);
   if (m_editor) {
     return const_cast<LayoutManager *>(this)->captureCurrentLayout();
   }
@@ -169,6 +173,7 @@ EditorLayout LayoutManager::getCurrentLayout() const {
 }
 
 std::vector<std::string> LayoutManager::getSavedLayouts() const {
+  std::shared_lock lock(m_mutex);
   std::vector<std::string> names;
   for (const auto &[name, layout] : m_savedLayouts) {
     names.push_back(name);
@@ -177,6 +182,7 @@ std::vector<std::string> LayoutManager::getSavedLayouts() const {
 }
 
 void LayoutManager::deleteLayout(const std::string &name) {
+  std::unique_lock lock(m_mutex);
   m_savedLayouts.erase(name);
 
   if (!m_layoutsPath.empty()) {
@@ -186,6 +192,7 @@ void LayoutManager::deleteLayout(const std::string &name) {
 }
 
 Result<void> LayoutManager::exportLayout(const std::string &path) {
+  std::shared_lock lock(m_mutex);
   EditorLayout layout = captureCurrentLayout();
 
   try {
@@ -206,6 +213,7 @@ Result<void> LayoutManager::exportLayout(const std::string &path) {
 }
 
 Result<void> LayoutManager::importLayout(const std::string &path) {
+  std::unique_lock lock(m_mutex);
   if (!fs::exists(path)) {
     return Result<void>::error("File not found: " + path);
   }
@@ -220,6 +228,7 @@ Result<void> LayoutManager::importLayout(const std::string &path) {
 }
 
 void LayoutManager::setLayoutsPath(const std::string &path) {
+  std::unique_lock lock(m_mutex);
   m_layoutsPath = path;
 }
 
@@ -323,17 +332,20 @@ HotkeyManager::HotkeyManager() {}
 
 void HotkeyManager::registerAction(const HotkeyAction &action,
                                    HotkeyCallback callback) {
+  std::unique_lock lock(m_mutex);
   m_actions[action.id] = action;
   m_callbacks[action.id] = std::move(callback);
 }
 
 void HotkeyManager::unregisterAction(const std::string &actionId) {
+  std::unique_lock lock(m_mutex);
   m_actions.erase(actionId);
   m_callbacks.erase(actionId);
 }
 
 void HotkeyManager::setBinding(const std::string &actionId,
                                const KeyBinding &binding) {
+  std::unique_lock lock(m_mutex);
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     it->second.currentBinding = binding;
@@ -341,6 +353,7 @@ void HotkeyManager::setBinding(const std::string &actionId,
 }
 
 void HotkeyManager::resetToDefault(const std::string &actionId) {
+  std::unique_lock lock(m_mutex);
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     it->second.currentBinding = it->second.defaultBinding;
@@ -348,6 +361,7 @@ void HotkeyManager::resetToDefault(const std::string &actionId) {
 }
 
 void HotkeyManager::resetAllToDefaults() {
+  std::unique_lock lock(m_mutex);
   for (auto &[id, action] : m_actions) {
     action.currentBinding = action.defaultBinding;
   }
@@ -355,6 +369,7 @@ void HotkeyManager::resetAllToDefaults() {
 
 std::optional<HotkeyAction>
 HotkeyManager::getAction(const std::string &actionId) const {
+  std::shared_lock lock(m_mutex);
   auto it = m_actions.find(actionId);
   if (it != m_actions.end()) {
     return it->second;
@@ -364,6 +379,7 @@ HotkeyManager::getAction(const std::string &actionId) const {
 
 std::vector<HotkeyAction>
 HotkeyManager::getActionsByCategory(ActionCategory category) const {
+  std::shared_lock lock(m_mutex);
   std::vector<HotkeyAction> result;
   for (const auto &[id, action] : m_actions) {
     if (action.category == category) {
@@ -375,22 +391,34 @@ HotkeyManager::getActionsByCategory(ActionCategory category) const {
 
 const std::unordered_map<std::string, HotkeyAction> &
 HotkeyManager::getAllActions() const {
+  std::shared_lock lock(m_mutex);
   return m_actions;
 }
 
 bool HotkeyManager::handleKeyPress(i32 keyCode, KeyModifier modifiers) {
-  KeyBinding pressed;
-  pressed.keyCode = keyCode;
-  pressed.modifiers = modifiers;
+  // Copy callback to avoid holding lock during execution
+  HotkeyCallback callback;
+  {
+    std::shared_lock lock(m_mutex);
+    KeyBinding pressed;
+    pressed.keyCode = keyCode;
+    pressed.modifiers = modifiers;
 
-  for (const auto &[id, action] : m_actions) {
-    if (action.enabled && action.currentBinding == pressed) {
-      auto callbackIt = m_callbacks.find(id);
-      if (callbackIt != m_callbacks.end() && callbackIt->second) {
-        callbackIt->second();
-        return true;
+    for (const auto &[id, action] : m_actions) {
+      if (action.enabled && action.currentBinding == pressed) {
+        auto callbackIt = m_callbacks.find(id);
+        if (callbackIt != m_callbacks.end() && callbackIt->second) {
+          callback = callbackIt->second;
+          break;
+        }
       }
     }
+  }
+
+  // Execute callback without holding lock
+  if (callback) {
+    callback();
+    return true;
   }
 
   return false;
@@ -398,6 +426,7 @@ bool HotkeyManager::handleKeyPress(i32 keyCode, KeyModifier modifiers) {
 
 std::vector<std::string>
 HotkeyManager::getConflicts(const KeyBinding &binding) const {
+  std::shared_lock lock(m_mutex);
   std::vector<std::string> conflicts;
   for (const auto &[id, action] : m_actions) {
     if (action.currentBinding == binding) {
@@ -408,6 +437,7 @@ HotkeyManager::getConflicts(const KeyBinding &binding) const {
 }
 
 Result<void> HotkeyManager::save(const std::string &path) {
+  std::shared_lock lock(m_mutex);
   try {
     std::ofstream file(path);
     if (!file) {
@@ -427,6 +457,7 @@ Result<void> HotkeyManager::save(const std::string &path) {
 }
 
 Result<void> HotkeyManager::load(const std::string &path) {
+  std::unique_lock lock(m_mutex);
   if (!fs::exists(path)) {
     return Result<void>::error("File not found");
   }
@@ -656,6 +687,7 @@ ThemeManager::ThemeManager() {
 }
 
 void ThemeManager::applyTheme(const std::string &themeName) {
+  std::unique_lock lock(m_mutex);
   auto it = m_themes.find(themeName);
   if (it != m_themes.end()) {
     m_currentTheme = it->second;
@@ -663,9 +695,13 @@ void ThemeManager::applyTheme(const std::string &themeName) {
   }
 }
 
-const Theme &ThemeManager::getCurrentTheme() const { return m_currentTheme; }
+const Theme &ThemeManager::getCurrentTheme() const {
+  std::shared_lock lock(m_mutex);
+  return m_currentTheme;
+}
 
 std::optional<Theme> ThemeManager::getTheme(const std::string &name) const {
+  std::shared_lock lock(m_mutex);
   auto it = m_themes.find(name);
   if (it != m_themes.end()) {
     return it->second;
@@ -674,6 +710,7 @@ std::optional<Theme> ThemeManager::getTheme(const std::string &name) const {
 }
 
 std::vector<std::string> ThemeManager::getAvailableThemes() const {
+  std::shared_lock lock(m_mutex);
   std::vector<std::string> names;
   for (const auto &[name, theme] : m_themes) {
     names.push_back(name);
@@ -682,10 +719,12 @@ std::vector<std::string> ThemeManager::getAvailableThemes() const {
 }
 
 void ThemeManager::registerTheme(const Theme &theme) {
+  std::unique_lock lock(m_mutex);
   m_themes[theme.name] = theme;
 }
 
 void ThemeManager::unregisterTheme(const std::string &name) {
+  std::unique_lock lock(m_mutex);
   if (name != "light" && name != "dark") // Don't allow removing builtins
   {
     m_themes.erase(name);
@@ -694,6 +733,7 @@ void ThemeManager::unregisterTheme(const std::string &name) {
 
 Result<void> ThemeManager::exportTheme(const std::string &themeName,
                                        const std::string &path) {
+  std::shared_lock lock(m_mutex);
   auto it = m_themes.find(themeName);
   if (it == m_themes.end()) {
     return Result<void>::error("Theme not found: " + themeName);
@@ -740,14 +780,17 @@ Result<void> ThemeManager::importTheme(const std::string &path) {
 }
 
 const renderer::Color &ThemeManager::getColor(ThemeColor color) const {
+  std::shared_lock lock(m_mutex);
   return m_currentTheme.getColor(color);
 }
 
 const ThemeFonts &ThemeManager::getFonts() const {
+  std::shared_lock lock(m_mutex);
   return m_currentTheme.fonts;
 }
 
 const ThemeMetrics &ThemeManager::getMetrics() const {
+  std::shared_lock lock(m_mutex);
   return m_currentTheme.metrics;
 }
 
@@ -901,6 +944,7 @@ void ThemeManager::registerBuiltinThemes() {
 PreferencesManager::PreferencesManager() {}
 
 Result<void> PreferencesManager::load(const std::string &path) {
+  std::unique_lock lock(m_mutex);
   m_prefsPath = path;
 
   if (!fs::exists(path)) {
@@ -925,6 +969,7 @@ Result<void> PreferencesManager::load(const std::string &path) {
 }
 
 Result<void> PreferencesManager::save(const std::string &path) {
+  std::shared_lock lock(m_mutex);
   try {
     std::ofstream file(path);
     if (!file) {
@@ -957,13 +1002,24 @@ Result<void> PreferencesManager::save(const std::string &path) {
   }
 }
 
-EditorPreferences &PreferencesManager::get() { return m_prefs; }
+EditorPreferences &PreferencesManager::get() {
+  // Note: Returning reference to internal data - caller must ensure thread-safety
+  std::shared_lock lock(m_mutex);
+  return m_prefs;
+}
 
-const EditorPreferences &PreferencesManager::get() const { return m_prefs; }
+const EditorPreferences &PreferencesManager::get() const {
+  std::shared_lock lock(m_mutex);
+  return m_prefs;
+}
 
-void PreferencesManager::resetToDefaults() { m_prefs = EditorPreferences(); }
+void PreferencesManager::resetToDefaults() {
+  std::unique_lock lock(m_mutex);
+  m_prefs = EditorPreferences();
+}
 
 void PreferencesManager::addRecentProject(const std::string &path) {
+  std::unique_lock lock(m_mutex);
   // Remove if already exists
   auto it = std::find(m_prefs.recentProjects.begin(),
                       m_prefs.recentProjects.end(), path);
@@ -982,6 +1038,7 @@ void PreferencesManager::addRecentProject(const std::string &path) {
 }
 
 const std::vector<std::string> &PreferencesManager::getRecentProjects() const {
+  std::shared_lock lock(m_mutex);
   return m_prefs.recentProjects;
 }
 

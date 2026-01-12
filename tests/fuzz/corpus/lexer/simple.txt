@@ -1,0 +1,3 @@
+scene test {
+    say Hero "Hello!"
+}

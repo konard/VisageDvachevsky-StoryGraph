@@ -1,4 +1,8 @@
 #include "NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_categorizer.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_preview.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_scanner.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_thumbnails.hpp"
 #include "NovelMind/editor/project_manager.hpp"
 #include "NovelMind/editor/qt/nm_dialogs.hpp"
 #include "NovelMind/editor/qt/nm_style_manager.hpp"
@@ -51,150 +55,8 @@ namespace NovelMind::editor::qt {
 namespace {
 
 constexpr int kAssetThumbSize = 80;
-constexpr int kPreviewHeight = 140;
-
-bool isImageExtension(const QString &extension) {
-  const QString ext = extension.toLower();
-  return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-         ext == "gif";
-}
-
-bool isAudioExtension(const QString &extension) {
-  const QString ext = extension.toLower();
-  return ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac";
-}
-
-class NMAssetFilterProxy final : public QSortFilterProxyModel {
-public:
-  explicit NMAssetFilterProxy(QObject *parent = nullptr)
-      : QSortFilterProxyModel(parent) {}
-
-  void setNameFilterText(const QString &text) {
-    m_nameFilter = text.trimmed();
-    invalidateFilter();
-  }
-
-  void setTypeFilterIndex(int index) {
-    m_typeFilterIndex = index;
-    invalidateFilter();
-  }
-
-  void setPinnedDirectory(const QString &path) {
-    m_pinnedDirectory = QDir::cleanPath(path);
-    invalidateFilter();
-  }
-
-protected:
-  bool filterAcceptsRow(int sourceRow,
-                        const QModelIndex &sourceParent) const override {
-    auto *fsModel = qobject_cast<QFileSystemModel *>(sourceModel());
-    if (!fsModel) {
-      return true;
-    }
-
-    QModelIndex idx = fsModel->index(sourceRow, 0, sourceParent);
-    if (!idx.isValid()) {
-      return false;
-    }
-
-    const QFileInfo info = fsModel->fileInfo(idx);
-    if (info.isDir()) {
-      return true;
-    }
-
-    if (!info.isFile()) {
-      return false;
-    }
-
-    if (!m_nameFilter.isEmpty()) {
-      if (!info.fileName().contains(m_nameFilter, Qt::CaseInsensitive)) {
-        return false;
-      }
-    }
-
-    if (m_typeFilterIndex == 0) {
-      return true;
-    }
-
-    const QString ext = info.suffix().toLower();
-    switch (m_typeFilterIndex) {
-    case 1: // Images
-      return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-             ext == "gif";
-    case 2: // Audio
-      return ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac";
-    case 3: // Fonts
-      return ext == "ttf" || ext == "otf";
-    case 4: // Scripts
-      return ext == "nms" || ext == "nmscene";
-    case 5: // Data
-      return ext == "json" || ext == "xml" || ext == "yaml" || ext == "yml";
-    default:
-      return true;
-    }
-  }
-
-private:
-  QString m_nameFilter;
-  QString m_pinnedDirectory;
-  int m_typeFilterIndex = 0;
-};
 
 } // namespace
-
-class NMAssetIconProvider : public QFileIconProvider {
-public:
-  explicit NMAssetIconProvider(NMAssetBrowserPanel *panel, QSize iconSize)
-      : QFileIconProvider(), m_panel(panel), m_iconSize(iconSize) {}
-
-  void setIconSize(const QSize &size) { m_iconSize = size; }
-
-  QIcon icon(const QFileInfo &info) const override {
-    if (!info.isFile()) {
-      return QFileIconProvider::icon(info);
-    }
-
-    const QString path = info.absoluteFilePath();
-    const QString ext = info.suffix();
-
-    // Check for images
-    if (isImageExtension(ext)) {
-      // Try to get from panel's cache
-      if (m_panel && m_panel->m_thumbnailCache.contains(path)) {
-        auto *entry = m_panel->m_thumbnailCache.object(path);
-        if (entry && m_panel->isThumbnailValid(path, *entry)) {
-          return QIcon(entry->pixmap);
-        }
-      }
-
-      // PERF-3: Request async loading via lazy loader instead of blocking
-      // Return a placeholder icon while the real thumbnail loads
-      if (m_panel) {
-        // Request thumbnail with normal priority (visible items get high priority)
-        m_panel->requestAsyncThumbnail(path, m_iconSize, 5);
-      }
-
-      // Return default file icon as placeholder while async loading
-      return QFileIconProvider::icon(info);
-    }
-
-    // Check for audio files
-    if (isAudioExtension(ext)) {
-      if (m_panel) {
-        QPixmap waveform = m_panel->generateAudioWaveform(path, m_iconSize);
-        if (!waveform.isNull()) {
-          return QIcon(waveform);
-        }
-      }
-    }
-
-    return QFileIconProvider::icon(info);
-  }
-
-private:
-  QPointer<NMAssetBrowserPanel> m_panel;
-  QSize m_iconSize;
-};
 
 NMAssetBrowserPanel::NMAssetBrowserPanel(QWidget *parent)
     : NMDockPanel(tr("Asset Browser"), parent) {
@@ -500,27 +362,7 @@ void NMAssetBrowserPanel::setupContent() {
   listLayout->setSpacing(4);
   listLayout->addWidget(m_listView, 1);
 
-  m_previewFrame = new QFrame(m_listPane);
-  m_previewFrame->setObjectName("AssetPreviewFrame");
-  m_previewFrame->setFrameShape(QFrame::StyledPanel);
-  auto *previewLayout = new QVBoxLayout(m_previewFrame);
-  previewLayout->setContentsMargins(6, 6, 6, 6);
-  previewLayout->setSpacing(3);
-
-  m_previewImage = new QLabel(m_previewFrame);
-  m_previewImage->setAlignment(Qt::AlignCenter);
-  m_previewImage->setMinimumHeight(kPreviewHeight);
-  m_previewImage->setText(tr("No preview"));
-
-  m_previewName = new QLabel(m_previewFrame);
-  m_previewName->setWordWrap(true);
-  m_previewMeta = new QLabel(m_previewFrame);
-  m_previewMeta->setWordWrap(true);
-
-  previewLayout->addWidget(m_previewImage);
-  previewLayout->addWidget(m_previewName);
-  previewLayout->addWidget(m_previewMeta);
-
+  m_previewFrame = new NMAssetPreviewFrame(m_listPane);
   listLayout->addWidget(m_previewFrame);
 
   m_splitter->addWidget(m_listPane);
@@ -637,7 +479,9 @@ void NMAssetBrowserPanel::onListSelectionChanged(
         m_filterProxy ? m_filterProxy->mapToSource(current) : current;
     path = m_listModel->filePath(source);
   }
-  updatePreview(path);
+  if (m_previewFrame) {
+    m_previewFrame->updatePreview(path);
+  }
   if (!path.isEmpty()) {
     emit assetSelected(path);
   }
@@ -833,7 +677,7 @@ void NMAssetBrowserPanel::importFiles(const QStringList &files,
     switch (targetMode) {
     case ImportTargetMode::AutoByType:
       targetDir = currentTarget.isEmpty()
-                      ? importDestinationForExtension(extension)
+                      ? importDestinationForExtension(extension, assetsRoot)
                       : currentTarget;
       break;
     case ImportTargetMode::CurrentFolder:
@@ -1007,195 +851,26 @@ void NMAssetBrowserPanel::updateThumbnailSize(int size) {
 }
 
 void NMAssetBrowserPanel::updatePreview(const QString &path) {
-  if (!m_previewImage || !m_previewName || !m_previewMeta) {
+  if (!m_previewVisible || !m_previewFrame) {
     return;
   }
-  if (!m_previewVisible) {
-    return;
-  }
-
-  m_previewPath = path;
-  if (path.isEmpty()) {
-    clearPreview();
-    return;
-  }
-
-  QFileInfo info(path);
-  if (!info.exists() || !info.isFile()) {
-    clearPreview();
-    return;
-  }
-
-  m_previewName->setText(info.fileName());
-  const QString sizeText =
-      tr("%1 KB").arg(QString::number((info.size() + 1023) / 1024));
-
-  if (isImageExtension(info.suffix())) {
-    QImageReader reader(info.absoluteFilePath());
-    reader.setAutoTransform(true);
-    QSize imgSize = reader.size();
-    QImage image = reader.read();
-    if (!image.isNull()) {
-      QPixmap pix = QPixmap::fromImage(image);
-      QSize target = m_previewImage->size();
-      QPixmap scaled =
-          pix.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      m_previewImage->setPixmap(scaled);
-      m_previewImage->setText(QString());
-      m_previewMeta->setText(tr("%1 x %2 | %3")
-                                 .arg(imgSize.width())
-                                 .arg(imgSize.height())
-                                 .arg(sizeText));
-      return;
-    }
-  }
-
-  m_previewImage->setPixmap(QPixmap());
-  m_previewImage->setText(tr("No preview"));
-  m_previewMeta->setText(sizeText);
+  m_previewFrame->updatePreview(path);
 }
 
 void NMAssetBrowserPanel::clearPreview() {
-  m_previewPath.clear();
-  if (m_previewImage) {
-    m_previewImage->setPixmap(QPixmap());
-    m_previewImage->setText(tr("No preview"));
+  if (m_previewFrame) {
+    m_previewFrame->clearPreview();
   }
-  if (m_previewName) {
-    m_previewName->setText(QString());
-  }
-  if (m_previewMeta) {
-    m_previewMeta->setText(QString());
-  }
-}
-
-QString NMAssetBrowserPanel::importDestinationForExtension(
-    const QString &extension) const {
-  auto &projectManager = ProjectManager::instance();
-  if (!projectManager.hasOpenProject()) {
-    return QString();
-  }
-
-  const QString ext = extension.toLower();
-  if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-      ext == "gif") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Images));
-  }
-  if (ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Audio));
-  }
-  if (ext == "ttf" || ext == "otf") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Fonts));
-  }
-  if (ext == "nms") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Scripts));
-  }
-  if (ext == "nmscene") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Scenes));
-  }
-
-  return QString::fromStdString(
-      projectManager.getFolderPath(ProjectFolder::Assets));
-}
-
-QString NMAssetBrowserPanel::generateUniquePath(const QString &directory,
-                                                const QString &fileName) const {
-  QDir dir(directory);
-  QString baseName = QFileInfo(fileName).completeBaseName();
-  QString suffix = QFileInfo(fileName).suffix();
-  QString candidate = dir.filePath(fileName);
-  int counter = 1;
-
-  while (QFileInfo::exists(candidate)) {
-    QString numbered =
-        suffix.isEmpty()
-            ? QString("%1_%2").arg(baseName).arg(counter)
-            : QString("%1_%2.%3").arg(baseName).arg(counter).arg(suffix);
-    candidate = dir.filePath(numbered);
-    counter++;
-  }
-
-  return candidate;
 }
 
 QPixmap NMAssetBrowserPanel::generateAudioWaveform(const QString &path,
                                                    const QSize &size) const {
-  Q_UNUSED(path);
-
-  // Create a deterministic placeholder waveform
-  QPixmap pixmap(size);
-  pixmap.fill(Qt::transparent);
-
-  QPainter painter(&pixmap);
-  painter.setRenderHint(QPainter::Antialiasing);
-
-  // Background
-  QColor bgColor(60, 60, 80);
-  painter.fillRect(pixmap.rect(), bgColor);
-
-  // Border
-  painter.setPen(QPen(QColor(100, 100, 120), 1));
-  painter.drawRect(pixmap.rect().adjusted(0, 0, -1, -1));
-
-  // Draw "AUDIO" text
-  painter.setPen(QColor(200, 200, 220));
-  QFont font = painter.font();
-  font.setPointSize(size.height() / 6);
-  font.setBold(true);
-  painter.setFont(font);
-  painter.drawText(pixmap.rect(), Qt::AlignCenter, "AUDIO");
-
-  // Draw deterministic waveform bars
-  const int barCount = 16;
-  const int barWidth = (size.width() - 20) / barCount;
-  const int maxBarHeight = size.height() - 30;
-
-  // Use file path hash for deterministic heights
-  QByteArray pathData = path.toUtf8();
-  uint seed = static_cast<uint>(qHash(pathData));
-
-  painter.setPen(Qt::NoPen);
-  painter.setBrush(QColor(120, 200, 255, 180));
-
-  for (int i = 0; i < barCount; ++i) {
-    // Generate deterministic height based on position and seed
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    const double normalized = static_cast<double>(seed % 1000) / 1000.0;
-    const int barHeight =
-        static_cast<int>(maxBarHeight * normalized * 0.8 + maxBarHeight * 0.2);
-
-    const int x = 10 + i * barWidth;
-    const int y = (size.height() - barHeight) / 2;
-
-    painter.drawRect(x, y, barWidth - 2, barHeight);
-  }
-
-  return pixmap;
+  return NovelMind::editor::qt::generateAudioWaveform(path, size);
 }
 
 bool NMAssetBrowserPanel::isThumbnailValid(
     const QString &path, const ThumbnailCacheEntry &entry) const {
-  QFileInfo info(path);
-  if (!info.exists()) {
-    return false;
-  }
-
-  // Check if file has been modified
-  if (info.lastModified() != entry.lastModified) {
-    return false;
-  }
-
-  // Check if file size has changed
-  if (info.size() != entry.fileSize) {
-    return false;
-  }
-
-  return true;
+  return NovelMind::editor::qt::isThumbnailValid(path, entry);
 }
 
 void NMAssetBrowserPanel::requestAsyncThumbnail(const QString &path,
@@ -1474,39 +1149,8 @@ AssetMetadata NMAssetBrowserPanel::getAssetMetadata(const QString &path) const {
     return it.value();
   }
 
-  // Build metadata from file info
-  AssetMetadata meta;
-  QFileInfo info(path);
-
-  if (!info.exists()) {
-    return meta;
-  }
-
-  // Generate a stable ID based on path
-  meta.id =
-      QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Md5).toHex();
-  meta.path = path;
-  meta.size = info.size();
-  meta.modified = info.lastModified();
-  meta.format = info.suffix().toLower();
-
-  // Determine type based on extension
-  const QString ext = info.suffix().toLower();
-  if (isImageExtension(ext)) {
-    meta.type = "image";
-    QImageReader reader(path);
-    meta.width = reader.size().width();
-    meta.height = reader.size().height();
-  } else if (isAudioExtension(ext)) {
-    meta.type = "audio";
-    // Audio duration would require audio library integration
-  } else if (ext == "ttf" || ext == "otf" || ext == "woff" || ext == "woff2") {
-    meta.type = "font";
-  } else if (ext == "nvs" || ext == "json" || ext == "lua") {
-    meta.type = "script";
-  } else {
-    meta.type = "data";
-  }
+  // Use scanner module to get metadata
+  AssetMetadata meta = NovelMind::editor::qt::getAssetMetadata(path);
 
   // Cache the result
   m_metadataCache[path] = meta;

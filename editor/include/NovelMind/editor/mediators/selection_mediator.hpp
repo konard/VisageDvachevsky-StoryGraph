@@ -14,6 +14,7 @@
 #include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/qt/debouncer.hpp"
 #include <QObject>
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -74,7 +75,7 @@ private:
   qt::NMStoryGraphPanel *m_storyGraph = nullptr;
 
   std::vector<EventSubscription> m_subscriptions;
-  bool m_processingSelection = false; // Prevent feedback loops
+  std::atomic<bool> m_processingSelection{false}; // Prevent feedback loops (thread-safe)
 
   // Issue #470: Debouncer for throttling rapid selection changes
   // Prevents cascading event chains during marquee selection or rapid keyboard navigation
