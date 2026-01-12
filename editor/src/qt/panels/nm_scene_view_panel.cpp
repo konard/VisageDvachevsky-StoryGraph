@@ -18,7 +18,11 @@ NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
   setupToolBar();
 }
 
-NMSceneViewPanel::~NMSceneViewPanel() = default;
+NMSceneViewPanel::~NMSceneViewPanel() {
+  // Disconnect from Play Mode Controller to prevent dangling connections
+  auto &playController = NMPlayModeController::instance();
+  disconnect(&playController, nullptr, this, nullptr);
+}
 
 void NMSceneViewPanel::onInitialize() {
   // Center the view on origin
