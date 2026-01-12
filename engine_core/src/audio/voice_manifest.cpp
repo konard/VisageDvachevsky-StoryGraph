@@ -8,6 +8,7 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 #include <regex>
 #include <sstream>
 
@@ -790,23 +791,72 @@ Result<void> VoiceManifest::loadFromFile(const std::string &filePath) {
     return Result<void>::error("Failed to get file size: " + filePath);
   }
 
+  // Check for empty file
+  if (size == 0) {
+    return Result<void>::error("File is empty: " + filePath);
+  }
+
+  // Check for excessively large files (> 100MB)
+  const std::streampos MAX_FILE_SIZE = 100 * 1024 * 1024;
+  if (size > MAX_FILE_SIZE) {
+    return Result<void>::error("File too large (> 100MB): " + filePath);
+  }
+
   std::string content;
   content.resize(static_cast<size_t>(size));
   file.seekg(0, std::ios::beg);
-  file.read(content.data(), size);
+  if (!file.read(content.data(), size)) {
+    return Result<void>::error("Failed to read file contents: " + filePath);
+  }
 
   return loadFromString(content);
 }
 
 Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
+  // Validate input is not empty
+  if (jsonContent.empty()) {
+    return Result<void>::error("JSON content is empty");
+  }
+
+  // Basic JSON structure validation
+  auto openBraces = std::count(jsonContent.begin(), jsonContent.end(), '{');
+  auto closeBraces = std::count(jsonContent.begin(), jsonContent.end(), '}');
+  if (openBraces != closeBraces) {
+    return Result<void>::error(
+        "Malformed JSON: mismatched braces (open: " + std::to_string(openBraces) +
+        ", close: " + std::to_string(closeBraces) + ")");
+  }
+
+  auto openBrackets = std::count(jsonContent.begin(), jsonContent.end(), '[');
+  auto closeBrackets =
+      std::count(jsonContent.begin(), jsonContent.end(), ']');
+  if (openBrackets != closeBrackets) {
+    return Result<void>::error(
+        "Malformed JSON: mismatched brackets (open: " +
+        std::to_string(openBrackets) +
+        ", close: " + std::to_string(closeBrackets) + ")");
+  }
+
   // Clear existing data
   clearLines();
   m_locales.clear();
 
-  // Extract project metadata
+  // Extract project metadata with error reporting
   m_projectName = extractJsonString(jsonContent, "project");
   m_defaultLocale = extractJsonString(jsonContent, "default_locale");
+
+  // Fallback to "en" if default locale is not specified
+  if (m_defaultLocale.empty()) {
+    m_defaultLocale = "en";
+  }
+
   m_locales = extractJsonStringArray(jsonContent, "locales");
+
+  // Ensure at least the default locale is present
+  if (m_locales.empty()) {
+    m_locales.push_back(m_defaultLocale);
+  }
+
   m_basePath = extractJsonString(jsonContent, "base_path");
   if (m_basePath.empty()) {
     m_basePath = "assets/audio/voice";
@@ -824,50 +874,79 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
 
   // Find "lines" array
   size_t linesStart = jsonContent.find("\"lines\"");
-  if (linesStart != std::string::npos) {
-    size_t arrayStart = jsonContent.find('[', linesStart);
-    size_t arrayEnd = jsonContent.rfind(']');
+  if (linesStart == std::string::npos) {
+    // No lines array found - valid but empty manifest
+    return {};
+  }
 
-    if (arrayStart != std::string::npos && arrayEnd != std::string::npos) {
-      std::string linesContent =
-          jsonContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+  size_t arrayStart = jsonContent.find('[', linesStart);
+  size_t arrayEnd = jsonContent.rfind(']');
 
-      // Parse each line object
-      std::regex objRe("\\{([^\\{\\}]|\\{[^\\{\\}]*\\})*\\}");
-      auto begin =
-          std::sregex_iterator(linesContent.begin(), linesContent.end(), objRe);
-      auto end = std::sregex_iterator();
+  if (arrayStart == std::string::npos) {
+    return Result<void>::error(
+        "Malformed JSON: 'lines' field found but no opening bracket");
+  }
 
-      for (auto it = begin; it != end; ++it) {
-        std::string lineJson = it->str();
+  if (arrayEnd == std::string::npos || arrayEnd <= arrayStart) {
+    return Result<void>::error(
+        "Malformed JSON: 'lines' array not properly closed");
+  }
 
-        VoiceManifestLine line;
-        line.id = extractJsonString(lineJson, "id");
-        line.textKey = extractJsonString(lineJson, "text_key");
-        line.speaker = extractJsonString(lineJson, "speaker");
-        line.scene = extractJsonString(lineJson, "scene");
-        line.notes = extractJsonString(lineJson, "notes");
-        line.tags = extractJsonStringArray(lineJson, "tags");
-        line.sourceScript = extractJsonString(lineJson, "source_script");
-        line.sourceLine =
-            static_cast<u32>(extractJsonNumber(lineJson, "source_line"));
-        line.durationOverride =
-            extractJsonNumber(lineJson, "duration_override");
+  std::string linesContent =
+      jsonContent.substr(arrayStart, arrayEnd - arrayStart + 1);
 
-        // Parse files
-        size_t filesStart = lineJson.find("\"files\"");
-        if (filesStart != std::string::npos) {
-          size_t filesObjStart = lineJson.find('{', filesStart);
-          size_t filesObjEnd = lineJson.find('}', filesObjStart);
-          if (filesObjStart != std::string::npos &&
-              filesObjEnd != std::string::npos) {
-            std::string filesJson =
-                lineJson.substr(filesObjStart, filesObjEnd - filesObjStart + 1);
+  // Parse each line object
+  try {
+    std::regex objRe("\\{([^\\{\\}]|\\{[^\\{\\}]*\\})*\\}");
+    auto begin =
+        std::sregex_iterator(linesContent.begin(), linesContent.end(), objRe);
+    auto end = std::sregex_iterator();
 
-            // For each locale in manifest
-            for (const auto &locale : m_locales) {
-              std::string locPattern =
-                  "\"" + locale + "\"\\s*:\\s*\"([^\"]*)\"";
+    size_t lineIndex = 0;
+    for (auto it = begin; it != end; ++it) {
+      ++lineIndex;
+      std::string lineJson = it->str();
+
+      VoiceManifestLine line;
+      line.id = extractJsonString(lineJson, "id");
+
+      // Skip lines without ID but report warning to stderr
+      if (line.id.empty()) {
+        std::cerr << "Warning: Skipping voice line at index " << lineIndex
+                  << " - missing 'id' field\n";
+        continue;
+      }
+
+      line.textKey = extractJsonString(lineJson, "text_key");
+
+      // textKey defaults to id if not specified
+      if (line.textKey.empty()) {
+        line.textKey = line.id;
+      }
+
+      line.speaker = extractJsonString(lineJson, "speaker");
+      line.scene = extractJsonString(lineJson, "scene");
+      line.notes = extractJsonString(lineJson, "notes");
+      line.tags = extractJsonStringArray(lineJson, "tags");
+      line.sourceScript = extractJsonString(lineJson, "source_script");
+      line.sourceLine =
+          static_cast<u32>(extractJsonNumber(lineJson, "source_line"));
+      line.durationOverride = extractJsonNumber(lineJson, "duration_override");
+
+      // Parse files
+      size_t filesStart = lineJson.find("\"files\"");
+      if (filesStart != std::string::npos) {
+        size_t filesObjStart = lineJson.find('{', filesStart);
+        size_t filesObjEnd = lineJson.find('}', filesObjStart);
+        if (filesObjStart != std::string::npos &&
+            filesObjEnd != std::string::npos) {
+          std::string filesJson =
+              lineJson.substr(filesObjStart, filesObjEnd - filesObjStart + 1);
+
+          // For each locale in manifest
+          for (const auto &locale : m_locales) {
+            std::string locPattern = "\"" + locale + "\"\\s*:\\s*\"([^\"]*)\"";
+            try {
               std::regex locRe(locPattern);
               std::smatch locMatch;
               if (std::regex_search(filesJson, locMatch, locRe)) {
@@ -888,15 +967,27 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
                                      : VoiceLineStatus::Imported;
                 line.files[locale] = locFile;
               }
+            } catch (const std::regex_error &e) {
+              std::cerr << "Warning: Failed to parse locale '" << locale
+                        << "' for line '" << line.id << "': " << e.what()
+                        << "\n";
             }
           }
         }
+      }
 
-        if (!line.id.empty()) {
-          addLine(line);
-        }
+      // Attempt to add line, report error but continue
+      auto result = addLine(line);
+      if (result.isError()) {
+        std::cerr << "Warning: Failed to add line '" << line.id
+                  << "': " << result.error() << "\n";
       }
     }
+  } catch (const std::regex_error &e) {
+    return Result<void>::error("Malformed JSON: regex parsing failed - " +
+                               std::string(e.what()));
+  } catch (const std::exception &e) {
+    return Result<void>::error("JSON parsing error: " + std::string(e.what()));
   }
 
   return {};
@@ -997,6 +1088,11 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
     return Result<void>::error("Failed to open CSV file: " + csvPath);
   }
 
+  // Validate locale is not empty
+  if (locale.empty()) {
+    return Result<void>::error("Locale cannot be empty for CSV import");
+  }
+
   // Ensure locale is in the list
   if (!hasLocale(locale)) {
     addLocale(locale);
@@ -1004,68 +1100,159 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
 
   std::string line;
   bool headerSkipped = false;
+  size_t lineNumber = 0;
+  size_t successfulImports = 0;
+  size_t skippedLines = 0;
+
+  // Helper function for robust CSV field parsing
+  auto parseCsvLine = [](const std::string &line) -> std::vector<std::string> {
+    std::vector<std::string> fields;
+    std::string field;
+    bool inQuotes = false;
+    bool lastWasQuote = false;
+
+    for (size_t i = 0; i < line.size(); ++i) {
+      char c = line[i];
+
+      if (c == '"') {
+        if (inQuotes && i + 1 < line.size() && line[i + 1] == '"') {
+          // Escaped quote
+          field += '"';
+          ++i; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+          lastWasQuote = true;
+          continue;
+        }
+      } else if (c == ',' && !inQuotes) {
+        // Field separator
+        fields.push_back(field);
+        field.clear();
+        lastWasQuote = false;
+      } else {
+        field += c;
+        lastWasQuote = false;
+      }
+    }
+
+    // Add last field
+    fields.push_back(field);
+    return fields;
+  };
 
   while (std::getline(file, line)) {
+    ++lineNumber;
+
+    // Remove trailing carriage return (Windows line endings)
+    if (!line.empty() && line.back() == '\r') {
+      line.pop_back();
+    }
+
     if (!headerSkipped) {
       headerSkipped = true;
+      // Validate header format
+      if (line.find("id") == std::string::npos) {
+        std::cerr << "Warning: CSV header doesn't contain 'id' column - "
+                     "assuming first line is header\n";
+      }
       continue;
     }
 
-    if (line.empty())
+    // Skip empty lines
+    if (line.empty() || line.find_first_not_of(" \t\r\n") == std::string::npos)
       continue;
 
-    // Simple CSV parsing (assumes: id,speaker,text_key,voice_file,scene)
+    // Parse CSV line with proper handling of quoted fields
     std::vector<std::string> fields;
-    std::stringstream ss(line);
-    std::string field;
-
-    while (std::getline(ss, field, ',')) {
-      // Remove quotes
-      if (!field.empty() && field.front() == '"' && field.back() == '"') {
-        field = field.substr(1, field.size() - 2);
-      }
-      fields.push_back(field);
+    try {
+      fields = parseCsvLine(line);
+    } catch (const std::exception &e) {
+      std::cerr << "Warning: Failed to parse CSV line " << lineNumber << ": "
+                << e.what() << "\n";
+      ++skippedLines;
+      continue;
     }
 
-    if (fields.size() >= 2) {
-      std::string id = fields[0];
+    // Validate minimum field count
+    if (fields.empty() || fields[0].empty()) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - missing ID field\n";
+      ++skippedLines;
+      continue;
+    }
 
-      // Check if line already exists
-      auto *existingLine = getLineMutable(id);
-      if (existingLine) {
-        // Update existing line with file path
-        if (fields.size() >= 4 && !fields[3].empty()) {
-          // Security: Validate path before storing it
-          if (isValidRelativePath(fields[3])) {
-            auto &locFile = existingLine->getOrCreateFile(locale);
-            locFile.filePath = fields[3];
-            locFile.status = VoiceLineStatus::Imported;
-          }
-          // Silently skip invalid paths to prevent injection
-        }
+    // Ensure we have at least id field
+    if (fields.size() < 1) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - no fields found\n";
+      ++skippedLines;
+      continue;
+    }
+
+    std::string id = fields[0];
+
+    // Trim whitespace from ID
+    id.erase(0, id.find_first_not_of(" \t\r\n"));
+    id.erase(id.find_last_not_of(" \t\r\n") + 1);
+
+    if (id.empty()) {
+      std::cerr << "Warning: Skipping CSV line " << lineNumber
+                << " - empty ID field\n";
+      ++skippedLines;
+      continue;
+    }
+
+    // Check if line already exists
+    auto *existingLine = getLineMutable(id);
+    if (existingLine) {
+      // Update existing line with file path
+      if (fields.size() >= 4 && !fields[3].empty()) {
+        auto &locFile = existingLine->getOrCreateFile(locale);
+        locFile.filePath = fields[3];
+        locFile.status = VoiceLineStatus::Imported;
+        ++successfulImports;
+      }
+    } else {
+      // Create new line
+      VoiceManifestLine newLine;
+      newLine.id = id;
+      newLine.speaker = fields.size() > 1 ? fields[1] : "";
+
+      // textKey defaults to ID if not provided
+      newLine.textKey = (fields.size() > 2 && !fields[2].empty()) ? fields[2] : id;
+
+      if (fields.size() >= 4 && !fields[3].empty()) {
+        VoiceLocaleFile locFile;
+        locFile.locale = locale;
+        locFile.filePath = fields[3];
+        locFile.status = VoiceLineStatus::Imported;
+        newLine.files[locale] = locFile;
+      }
+
+      newLine.scene = fields.size() > 4 ? fields[4] : "";
+
+      // Attempt to add line
+      auto result = addLine(newLine);
+      if (result.isError()) {
+        std::cerr << "Warning: Failed to add line '" << id << "' at CSV line "
+                  << lineNumber << ": " << result.error() << "\n";
+        ++skippedLines;
       } else {
-        // Create new line
-        VoiceManifestLine newLine;
-        newLine.id = id;
-        newLine.speaker = fields.size() > 1 ? fields[1] : "";
-        newLine.textKey = fields.size() > 2 ? fields[2] : id;
-
-        if (fields.size() >= 4 && !fields[3].empty()) {
-          // Security: Validate path before storing it
-          if (isValidRelativePath(fields[3])) {
-            VoiceLocaleFile locFile;
-            locFile.locale = locale;
-            locFile.filePath = fields[3];
-            locFile.status = VoiceLineStatus::Imported;
-            newLine.files[locale] = locFile;
-          }
-          // Silently skip invalid paths to prevent injection
-        }
-
-        newLine.scene = fields.size() > 4 ? fields[4] : "";
-        addLine(newLine);
+        ++successfulImports;
       }
     }
+  }
+
+  // Report import statistics
+  if (skippedLines > 0) {
+    std::cerr << "CSV import completed with warnings: " << successfulImports
+              << " lines imported, " << skippedLines << " lines skipped\n";
+  }
+
+  if (successfulImports == 0 && lineNumber > 1) {
+    return Result<void>::error(
+        "Failed to import any lines from CSV - file may be malformed");
   }
 
   return {};
