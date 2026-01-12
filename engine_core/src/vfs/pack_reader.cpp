@@ -266,20 +266,35 @@ PackReader::readResourceData(const std::string &packPath,
     return Result<std::vector<u8>>::error("Pack not mounted");
   }
 
-  // Security: Validate offset doesn't cause overflow
-  u64 absoluteOffset = it->second.header.dataOffset + entry.dataOffset;
-  if (absoluteOffset < it->second.header.dataOffset) {
-    return Result<std::vector<u8>>::error("Invalid resource offset (overflow)");
-  }
-
-  // Get file size to validate offset + size doesn't exceed file bounds
+  // Get file size first to validate all offsets and sizes
   file.seekg(0, std::ios::end);
   auto fileSize = file.tellg();
   if (fileSize < 0) {
     return Result<std::vector<u8>>::error("Failed to get pack file size");
   }
+  const u64 fileSizeU64 = static_cast<u64>(fileSize);
 
-  if (absoluteOffset + entry.compressedSize > static_cast<u64>(fileSize)) {
+  // Security: Validate offsets using safe arithmetic to prevent overflow
+
+  // Check 1: Validate dataOffset doesn't exceed file size
+  if (it->second.header.dataOffset > fileSizeU64) {
+    return Result<std::vector<u8>>::error(
+        "Pack data offset exceeds file size");
+  }
+
+  // Check 2: Validate entry.dataOffset doesn't exceed remaining space
+  const u64 maxEntryOffset = fileSizeU64 - it->second.header.dataOffset;
+  if (entry.dataOffset > maxEntryOffset) {
+    return Result<std::vector<u8>>::error(
+        "Resource offset exceeds pack data section");
+  }
+
+  // Check 3: Calculate absolute offset (now proven safe from overflow)
+  const u64 absoluteOffset = it->second.header.dataOffset + entry.dataOffset;
+
+  // Check 4: Validate compressedSize doesn't exceed remaining space
+  const u64 maxResourceSize = fileSizeU64 - absoluteOffset;
+  if (entry.compressedSize > maxResourceSize) {
     return Result<std::vector<u8>>::error(
         "Resource data extends beyond pack file");
   }

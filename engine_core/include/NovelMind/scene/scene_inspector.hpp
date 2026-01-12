@@ -150,6 +150,23 @@ private:
   std::unique_ptr<SceneObjectBase> m_removedObject;
 };
 
+/**
+ * @brief Composite command that groups multiple commands
+ */
+class CompositeCommand : public ICommand {
+public:
+  explicit CompositeCommand(const std::string &description);
+
+  void addCommand(std::unique_ptr<ICommand> command);
+  void execute() override;
+  void undo() override;
+  [[nodiscard]] std::string getDescription() const override;
+
+private:
+  std::string m_description;
+  std::vector<std::unique_ptr<ICommand>> m_commands;
+};
+
 // Forward declaration already at top of namespace
 
 /**

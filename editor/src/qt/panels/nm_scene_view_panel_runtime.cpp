@@ -381,7 +381,8 @@ void NMSceneViewPanel::onPlayModeChanged(int mode) {
     if (m_followPlayModeNodes && m_sceneIdBeforePlay.isEmpty()) {
       m_sceneIdBeforePlay = m_currentSceneId;
       if (!m_currentSceneId.isEmpty() && !m_isLoadingScene) {
-        saveSceneDocument();
+        // Issue #521: Flush any pending debounced saves before play mode
+        m_saveDebouncer.flush();
       }
     }
     m_suppressSceneSave = m_followPlayModeNodes;
