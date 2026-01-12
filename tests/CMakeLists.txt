@@ -40,22 +40,17 @@ add_executable(unit_tests
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
     unit/test_renderer_pipeline.cpp
-    # Issue #179 - Comprehensive test coverage additions
     unit/test_scene_graph.cpp
     unit/test_audio_manager.cpp
     unit/test_pack_reader.cpp
     unit/test_benchmarks.cpp
     unit/test_audio_manager.cpp
-    # Issue #428 - Clipboard integration tests
     unit/test_clipboard.cpp
-    # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
-    # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
-    # Issue #446 - Float serialization undefined behavior fix
+    unit/test_interpreter_deserialize.cpp
     unit/test_compiler_float_serialization.cpp
-    # Issue #564 - Scene object handle thread safety tests
     unit/test_scene_object_handle_thread_safety.cpp
 )
 # Note: test_build_system.cpp requires editor library, included only in integration_tests
