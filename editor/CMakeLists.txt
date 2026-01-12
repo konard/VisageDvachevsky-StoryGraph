@@ -184,6 +184,9 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_curve_editor_panel.cpp
     src/qt/panels/nm_curve_point_item.cpp
     src/qt/panels/nm_voice_manager_panel.cpp
+    src/qt/panels/nm_voice_manager_panel_duration.cpp
+    src/qt/panels/nm_voice_manager_panel_matching.cpp
+    src/qt/panels/nm_voice_manager_panel_manifest.cpp
     src/qt/panels/nm_recording_studio_panel.cpp
     src/qt/panels/nm_voice_studio_panel.cpp
     src/qt/panels/voice_studio_waveform.cpp

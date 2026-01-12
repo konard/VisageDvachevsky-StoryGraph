@@ -44,90 +44,11 @@ namespace fs = std::filesystem;
 namespace NovelMind::editor::qt {
 
 // ============================================================================
-// DurationProbeTask implementation (issue #469)
+// Implementation note:
+// Duration probing code moved to nm_voice_manager_panel_duration.cpp
+// Matching logic moved to nm_voice_manager_panel_matching.cpp
+// Manifest adapters moved to nm_voice_manager_panel_manifest.cpp
 // ============================================================================
-
-DurationProbeTask::DurationProbeTask(const QString &path,
-                                     std::shared_ptr<std::atomic<bool>> cancelled,
-                                     QObject *receiver)
-    : m_path(path), m_cancelled(cancelled), m_receiver(receiver) {
-  setAutoDelete(true); // QThreadPool will delete this task when done
-}
-
-void DurationProbeTask::run() {
-  // Check if task was cancelled before starting
-  if (m_cancelled->load()) {
-    return;
-  }
-
-  // Use QMediaPlayer to probe duration in background thread
-  // Note: QMediaPlayer must be created in the thread where it will be used
-  QMediaPlayer player;
-
-  // Set up synchronization for duration reading
-  QEventLoop loop;
-  double duration = -1.0;
-  bool finished = false;
-
-  // Connect to get duration
-  QObject::connect(&player, &QMediaPlayer::durationChanged,
-                   [&duration, &loop, &finished](qint64 durationMs) {
-    if (durationMs > 0 && !finished) {
-      duration = static_cast<double>(durationMs) / 1000.0;
-      finished = true;
-      loop.quit();
-    }
-  });
-
-  // Connect to handle errors
-  QObject::connect(&player, &QMediaPlayer::errorOccurred,
-                   [&loop, &finished]([[maybe_unused]] QMediaPlayer::Error error,
-                                      [[maybe_unused]] const QString& errorString) {
-    if (!finished) {
-      finished = true;
-      loop.quit();
-    }
-  });
-
-  // Set source and wait for duration
-  player.setSource(QUrl::fromLocalFile(m_path));
-
-  // Wait for duration or error (with timeout)
-  QTimer timeout;
-  timeout.setSingleShot(true);
-  QObject::connect(&timeout, &QTimer::timeout, [&loop, &finished]() {
-    if (!finished) {
-      finished = true;
-      loop.quit();
-    }
-  });
-  timeout.start(5000); // 5 second timeout per file
-
-  // Check cancellation periodically
-  QTimer cancelCheck;
-  QObject::connect(&cancelCheck, &QTimer::timeout, [this, &loop, &finished]() {
-    if (m_cancelled->load() && !finished) {
-      finished = true;
-      loop.quit();
-    }
-  });
-  cancelCheck.start(100); // Check every 100ms
-
-  loop.exec();
-
-  // Stop timers
-  timeout.stop();
-  cancelCheck.stop();
-
-  // Emit result if valid and not cancelled
-  if (duration > 0 && !m_cancelled->load() && m_receiver) {
-    // Use QMetaObject::invokeMethod to safely call across threads
-    QMetaObject::invokeMethod(m_receiver, "durationProbedInternal",
-                              Qt::QueuedConnection,
-                              Q_ARG(QString, m_path),
-                              Q_ARG(double, duration));
-  }
-}
 
 NMVoiceManagerPanel::NMVoiceManagerPanel(QWidget* parent, IAudioPlayer* audioPlayer)
     : NMDockPanel("Voice Manager", parent),
@@ -500,151 +421,9 @@ void NMVoiceManagerPanel::scanProject() {
   startDurationProbing();
 }
 
-void NMVoiceManagerPanel::scanScriptsForDialogue() {
-  auto& pm = ProjectManager::instance();
-  if (!pm.hasOpenProject()) {
-    return;
-  }
-
-  QString scriptsDir = QString::fromStdString(pm.getFolderPath(ProjectFolder::Scripts));
-  if (scriptsDir.isEmpty() || !fs::exists(scriptsDir.toStdString())) {
-    return;
-  }
-
-  // Pattern to match dialogue lines: say Character "Text" or Character: "Text"
-  QRegularExpression dialoguePattern(R"((?:say\s+)?(\w+)\s*[:\s]?\s*\"([^\"]+)\")");
-
-  // Track speakers for character filter
-  QStringList speakers;
-
-  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir.toStdString())) {
-    if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
-      continue;
-    }
-
-    QString scriptPath = QString::fromStdString(entry.path().string());
-    QString relPath = QString::fromStdString(pm.toRelativePath(entry.path().string()));
-
-    // Extract scene name from file path
-    QString sceneName = QFileInfo(relPath).baseName();
-
-    QFile file(scriptPath);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-      continue;
-    }
-
-    QTextStream in(&file);
-    int lineNum = 0;
-    while (!in.atEnd()) {
-      QString line = in.readLine();
-      lineNum++;
-
-      QRegularExpressionMatch match = dialoguePattern.match(line);
-      if (match.hasMatch()) {
-        QString speaker = match.captured(1);
-        QString dialogueText = match.captured(2);
-        QString dialogueId = generateDialogueId(relPath, lineNum);
-
-        // Create VoiceManifestLine
-        NovelMind::audio::VoiceManifestLine manifestLine;
-        manifestLine.id = dialogueId.toStdString();
-        manifestLine.textKey = dialogueId.toStdString(); // Use ID as text key for now
-        manifestLine.speaker = speaker.toStdString();
-        manifestLine.scene = sceneName.toStdString();
-        manifestLine.sourceScript = relPath.toStdString();
-        manifestLine.sourceLine = static_cast<NovelMind::u32>(lineNum);
-
-        // Add to manifest
-        m_manifest->addLine(manifestLine);
-
-        if (!speakers.contains(speaker)) {
-          speakers.append(speaker);
-        }
-      }
-    }
-    file.close();
-  }
-
-  // Update character filter
-  if (m_characterFilter) {
-    m_characterFilter->clear();
-    m_characterFilter->addItem(tr("All Characters"));
-    m_characterFilter->addItems(speakers);
-  }
-}
-
-void NMVoiceManagerPanel::scanVoiceFolder() {
-  auto& pm = ProjectManager::instance();
-  if (!pm.hasOpenProject()) {
-    return;
-  }
-
-  QString voiceDir = QString::fromStdString(pm.getProjectPath()) + "/Assets/Voice";
-  if (!fs::exists(voiceDir.toStdString())) {
-    return;
-  }
-
-  for (const auto& entry : fs::recursive_directory_iterator(voiceDir.toStdString())) {
-    if (!entry.is_regular_file()) {
-      continue;
-    }
-
-    QString ext = QString::fromStdString(entry.path().extension().string()).toLower();
-    if (ext == ".ogg" || ext == ".wav" || ext == ".mp3" || ext == ".flac") {
-      m_voiceFiles.append(QString::fromStdString(entry.path().string()));
-    }
-  }
-}
-
-void NMVoiceManagerPanel::autoMatchVoiceFiles() {
-  for (const QString& voiceFile : m_voiceFiles) {
-    matchVoiceToDialogue(voiceFile);
-  }
-}
-
-void NMVoiceManagerPanel::matchVoiceToDialogue(const QString& voiceFile) {
-  QString filename = QFileInfo(voiceFile).baseName();
-
-  // Try exact match with dialogue ID
-  auto* line = m_manifest->getLineMutable(filename.toStdString());
-  if (line) {
-    auto& localeFile = line->getOrCreateFile(m_currentLocale.toStdString());
-    localeFile.filePath = voiceFile.toStdString();
-    localeFile.status = NovelMind::audio::VoiceLineStatus::Imported;
-    return;
-  }
-
-  // Try pattern matching: character_linenum or scene_linenum
-  QRegularExpression pattern(R"((\w+)_(\d+))");
-  QRegularExpressionMatch match = pattern.match(filename);
-  if (match.hasMatch()) {
-    QString prefix = match.captured(1);
-    int lineNum = match.captured(2).toInt();
-
-    // Search through all lines for matching speaker or scene
-    for (const auto& manifestLine : m_manifest->getLines()) {
-      if ((QString::fromStdString(manifestLine.speaker).compare(prefix, Qt::CaseInsensitive) == 0 ||
-           QString::fromStdString(manifestLine.scene).compare(prefix, Qt::CaseInsensitive) == 0) &&
-          manifestLine.sourceLine == static_cast<NovelMind::u32>(lineNum)) {
-        // Check if already has file for this locale
-        if (!manifestLine.hasFile(m_currentLocale.toStdString())) {
-          auto* mutableLine = m_manifest->getLineMutable(manifestLine.id);
-          if (mutableLine) {
-            auto& localeFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
-            localeFile.filePath = voiceFile.toStdString();
-            localeFile.status = NovelMind::audio::VoiceLineStatus::Imported;
-            return;
-          }
-        }
-      }
-    }
-  }
-}
-
-QString NMVoiceManagerPanel::generateDialogueId(const QString& scriptPath, int lineNumber) const {
-  QString baseName = QFileInfo(scriptPath).baseName();
-  return QString("%1_%2").arg(baseName).arg(lineNumber);
-}
+// Note: scanScriptsForDialogue(), scanVoiceFolder(), autoMatchVoiceFiles(),
+// matchVoiceToDialogue(), and generateDialogueId() moved to
+// nm_voice_manager_panel_matching.cpp
 
 /**
  * @brief Filter and display voice lines with optimized O(n) performance
@@ -861,67 +640,8 @@ void NMVoiceManagerPanel::updateStatistics() {
                             .arg(stats.coveragePercent));
 }
 
-std::vector<const NovelMind::audio::VoiceManifestLine*>
-NMVoiceManagerPanel::getMissingLines() const {
-  if (!m_manifest) {
-    return {};
-  }
-  return m_manifest->getLinesByStatus(NovelMind::audio::VoiceLineStatus::Missing,
-                                      m_currentLocale.toStdString());
-}
-
-QStringList NMVoiceManagerPanel::getUnmatchedLines() const {
-  if (!m_manifest) {
-    return QStringList();
-  }
-
-  QStringList unmatchedLines;
-  const std::string locale = m_currentLocale.toStdString();
-
-  // Iterate through all lines and find those without voice files
-  for (const auto& line : m_manifest->getLines()) {
-    // Check if this line has a file for the current locale
-    auto it = line.files.find(locale);
-    if (it == line.files.end() || it->second.filePath.empty()) {
-      // No file for this locale - it's unmatched
-      unmatchedLines.append(QString::fromStdString(line.id));
-    } else {
-      // Check if the file actually exists on disk
-      const QString filePath = QString::fromStdString(it->second.filePath);
-      if (!QFile::exists(filePath)) {
-        // File is referenced but doesn't exist - also unmatched
-        unmatchedLines.append(QString::fromStdString(line.id));
-      }
-    }
-  }
-
-  return unmatchedLines;
-}
-
-bool NMVoiceManagerPanel::exportToCsv(const QString& filePath) {
-  if (!m_manifest) {
-    return false;
-  }
-
-  // Use VoiceManifest's built-in export functionality
-  auto result = m_manifest->exportToCsv(filePath.toStdString(), m_currentLocale.toStdString());
-  return result.isOk();
-}
-
-bool NMVoiceManagerPanel::importFromCsv(const QString& filePath) {
-  if (!m_manifest) {
-    return false;
-  }
-
-  // Use VoiceManifest's built-in import functionality
-  auto result = m_manifest->importFromCsv(filePath.toStdString(), m_currentLocale.toStdString());
-  if (result.isOk()) {
-    updateVoiceList();
-    updateStatistics();
-    return true;
-  }
-  return false;
-}
+// Note: getMissingLines(), getUnmatchedLines(), exportToCsv(), and
+// importFromCsv() moved to nm_voice_manager_panel_manifest.cpp
 
 bool NMVoiceManagerPanel::playVoiceFile(const QString& filePath) {
   if (filePath.isEmpty()) {
@@ -1017,7 +737,9 @@ QString NMVoiceManagerPanel::formatDuration(qint64 ms) const {
   return QString("%1:%2.%3").arg(minutes).arg(seconds, 2, 10, QChar('0')).arg(tenths);
 }
 
+// ============================================================================
 // Audio player signal handlers (using IAudioPlayer interface - issue #150)
+// ============================================================================
 void NMVoiceManagerPanel::onPlaybackStateChanged() {
   if (!m_audioPlayer)
     return;
@@ -1117,222 +839,14 @@ void NMVoiceManagerPanel::onMediaErrorOccurred() {
   resetPlaybackUI();
 }
 
-// Async duration probing
-void NMVoiceManagerPanel::startDurationProbing() {
-  if (!m_manifest || !m_probeThreadPool) {
-    return;
-  }
+// Note: All async duration probing methods (startDurationProbing(),
+// processNextDurationProbe(), onProbeDurationFinished(), onDurationProbed(),
+// getCachedDuration(), cacheDuration(), updateDurationsInList())
+// moved to nm_voice_manager_panel_duration.cpp
 
-  // RACE-1 fix: Atomic check-and-cancel for thread safety
-  bool wasProbing = m_isProbing.exchange(false);
-
-  if (wasProbing) {
-    // Cancel current probes
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-    for (auto it = m_activeProbeTasks.begin(); it != m_activeProbeTasks.end(); ++it) {
-      it.value()->store(true);
-    }
-    m_activeProbeTasks.clear();
-    m_probeQueue.clear();
-  }
-
-  // Build queue under lock to prevent concurrent modification
-  {
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-    m_probeQueue.clear();
-
-    // Copy manifest lines to avoid iterator invalidation during iteration
-    auto lines = m_manifest->getLines();
-
-    for (const auto& line : lines) {
-      auto* localeFile = line.getFile(m_currentLocale.toStdString());
-      if (localeFile && !localeFile->filePath.empty()) {
-        QString filePath = QString::fromStdString(localeFile->filePath);
-        // Check if we have a valid cached duration
-        double cached = getCachedDuration(filePath);
-        if (cached <= 0 && !m_activeProbeTasks.contains(filePath)) {
-          m_probeQueue.enqueue(filePath);
-        }
-      }
-    }
-  }
-
-  // Start probing with atomic guard to prevent double-start
-  bool queueNotEmpty = false;
-  {
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-    queueNotEmpty = !m_probeQueue.isEmpty();
-  }
-
-  if (queueNotEmpty) {
-    bool expected = false;
-    if (m_isProbing.compare_exchange_strong(expected, true)) {
-      // Successfully acquired probing lock
-      processNextDurationProbe();
-    }
-    // If compare_exchange fails, another thread started probing - that's fine
-  }
-}
-
-void NMVoiceManagerPanel::processNextDurationProbe() {
-  // Check atomic flag first
-  if (!m_isProbing.load() || !m_probeThreadPool) {
-    return;
-  }
-
-  // Process multiple files up to MAX_CONCURRENT_PROBES
-  std::vector<QString> filesToProbe;
-
-  {
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-
-    // Check if queue is empty
-    if (m_probeQueue.isEmpty()) {
-      // Check if there are still active tasks
-      if (m_activeProbeTasks.isEmpty()) {
-        m_isProbing.store(false);
-        // Update the list with newly probed durations (outside lock to avoid deadlock)
-        QMetaObject::invokeMethod(this, &NMVoiceManagerPanel::updateDurationsInList,
-                                  Qt::QueuedConnection);
-      }
-      return;
-    }
-
-    // Dequeue up to MAX_CONCURRENT_PROBES files
-    int slotsAvailable = MAX_CONCURRENT_PROBES - m_activeProbeTasks.size();
-    while (!m_probeQueue.isEmpty() && slotsAvailable > 0) {
-      QString nextFile = m_probeQueue.dequeue();
-      // Skip if already being probed
-      if (!m_activeProbeTasks.contains(nextFile)) {
-        filesToProbe.push_back(nextFile);
-        slotsAvailable--;
-      }
-    }
-  }
-
-  // Submit tasks outside lock
-  for (const QString& filePath : filesToProbe) {
-    // Create cancellation token
-    auto cancelled = std::make_shared<std::atomic<bool>>(false);
-
-    {
-      std::lock_guard<std::mutex> lock(m_probeMutex);
-      m_activeProbeTasks[filePath] = cancelled;
-    }
-
-    // Create and submit task
-    auto* task = new DurationProbeTask(filePath, cancelled, this);
-    m_probeThreadPool->start(task);
-
-    if (VERBOSE_LOGGING) {
-#ifdef QT_DEBUG
-      qDebug() << "Started duration probe for:" << filePath;
-#endif
-    }
-  }
-}
-
-void NMVoiceManagerPanel::onProbeDurationFinished() {
-  // Legacy function - no longer used with thread pool implementation
-  // Kept for compatibility, does nothing
-}
-
-void NMVoiceManagerPanel::onDurationProbed(const QString &filePath, double duration) {
-  if (!m_manifest || filePath.isEmpty() || duration <= 0) {
-    // Remove from active tasks
-    {
-      std::lock_guard<std::mutex> lock(m_probeMutex);
-      m_activeProbeTasks.remove(filePath);
-    }
-    // Try to process next batch
-    processNextDurationProbe();
-    return;
-  }
-
-  // Cache the duration
-  cacheDuration(filePath, duration);
-
-  // Update the duration in manifest for current locale
-  std::string currentFilePath = filePath.toStdString();
-  for (auto& line : m_manifest->getLines()) {
-    auto* localeFile = line.getFile(m_currentLocale.toStdString());
-    if (localeFile && localeFile->filePath == currentFilePath) {
-      // Get mutable line to update
-      auto* mutableLine = m_manifest->getLineMutable(line.id);
-      if (mutableLine) {
-        auto& mutableLocaleFile = mutableLine->getOrCreateFile(m_currentLocale.toStdString());
-        mutableLocaleFile.duration = static_cast<float>(duration);
-      }
-      break;
-    }
-  }
-
-  // Remove from active tasks
-  {
-    std::lock_guard<std::mutex> lock(m_probeMutex);
-    m_activeProbeTasks.remove(filePath);
-  }
-
-  if (VERBOSE_LOGGING) {
-#ifdef QT_DEBUG
-    qDebug() << "Duration probed:" << filePath << "=" << duration << "s";
-#endif
-  }
-
-  // Continue with next batch
-  processNextDurationProbe();
-}
-
-double NMVoiceManagerPanel::getCachedDuration(const QString& filePath) const {
-  auto it = m_durationCache.find(filePath.toStdString());
-  if (it == m_durationCache.end()) {
-    return 0.0;
-  }
-
-  // Check if file has been modified
-  QFileInfo fileInfo(filePath);
-  if (!fileInfo.exists()) {
-    return 0.0;
-  }
-
-  qint64 currentMtime = fileInfo.lastModified().toMSecsSinceEpoch();
-  if (currentMtime != it->second.mtime) {
-    return 0.0; // Cache invalidated
-  }
-
-  return it->second.duration;
-}
-
-void NMVoiceManagerPanel::cacheDuration(const QString& filePath, double duration) {
-  QFileInfo fileInfo(filePath);
-  DurationCacheEntry entry;
-  entry.duration = duration;
-  entry.mtime = fileInfo.lastModified().toMSecsSinceEpoch();
-
-  m_durationCache[filePath.toStdString()] = entry;
-}
-
-void NMVoiceManagerPanel::updateDurationsInList() {
-  if (!m_voiceTree || !m_manifest)
-    return;
-
-  // Update durations in the tree widget items
-  for (int i = 0; i < m_voiceTree->topLevelItemCount(); ++i) {
-    auto* item = m_voiceTree->topLevelItem(i);
-    if (!item)
-      continue;
-
-    QString dialogueId = item->data(0, Qt::UserRole).toString();
-    auto* line = m_manifest->getLine(dialogueId.toStdString());
-    if (line) {
-      auto* localeFile = line->getFile(m_currentLocale.toStdString());
-      if (localeFile && localeFile->duration > 0) {
-        qint64 durationMs = static_cast<qint64>(localeFile->duration * 1000);
-        item->setText(6, formatDuration(durationMs)); // Column 6 is duration
-      }
-    }
-  }
-}
+// ============================================================================
+// Slot handlers
+// ============================================================================
 
 void NMVoiceManagerPanel::onScanClicked() {
   scanProject();
