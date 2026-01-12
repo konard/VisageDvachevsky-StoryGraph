@@ -841,7 +841,22 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   auto source = std::make_unique<AudioSource>();
 
   AudioHandle handle;
-  handle.id = m_nextHandleId.fetch_add(1, std::memory_order_relaxed);
+  // Generate handle ID with overflow detection
+  // Lower 24 bits: index counter (0-16,777,215)
+  // Upper 8 bits: generation counter (0-255)
+  constexpr u32 MAX_INDEX = 0x00FFFFFF; // 16,777,215
+  u32 index = m_nextHandleIndex.fetch_add(1, std::memory_order_relaxed);
+
+  // Check for index overflow
+  if (index > MAX_INDEX) {
+    // Overflow detected: increment generation and reset index
+    m_handleGeneration.fetch_add(1, std::memory_order_relaxed);
+    index = 1; // Start from 1 to avoid ID 0
+    m_nextHandleIndex.store(2, std::memory_order_relaxed);
+  }
+
+  u8 generation = m_handleGeneration.load(std::memory_order_relaxed);
+  handle.id = AudioHandle::makeHandleId(generation, index);
   handle.valid = true;
 
   source->handle = handle;
