@@ -134,6 +134,15 @@ PackIntegrityChecker::verifyHeader(const u8 *data, usize size) {
     return Result<PackVerificationReport>::ok(report);
   }
 
+  // Validate total size - offset 40 in the header struct
+  u64 totalSize;
+  std::memcpy(&totalSize, data + 40, sizeof(totalSize));
+  if (totalSize == 0) {
+    report.result = PackVerificationResult::CorruptedHeader;
+    report.message = "Invalid pack total size: cannot be zero";
+    return Result<PackVerificationReport>::ok(report);
+  }
+
   report.result = PackVerificationResult::Valid;
   report.message = "Header verification passed";
   return Result<PackVerificationReport>::ok(report);

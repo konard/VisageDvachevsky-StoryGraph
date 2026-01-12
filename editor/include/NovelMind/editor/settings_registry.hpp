@@ -327,29 +327,4 @@ private:
   std::string m_projectSettingsPath;
 };
 
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * @brief Convert SettingValue to string (for display)
- */
-std::string settingValueToString(const SettingValue &value);
-
-/**
- * @brief Convert string to SettingValue (for parsing)
- */
-std::optional<SettingValue> stringToSettingValue(const std::string &str,
-                                                 SettingType type);
-
-/**
- * @brief Get display name for SettingType
- */
-const char *settingTypeToString(SettingType type);
-
-/**
- * @brief Get display name for SettingScope
- */
-const char *settingScopeToString(SettingScope scope);
-
 } // namespace NovelMind::editor
