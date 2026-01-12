@@ -343,9 +343,9 @@ jobs:
         else
           echo "✓ Coverage ${COVERAGE}% meets minimum threshold ${THRESHOLD}%"
         fi
-        lcov --capture --directory . --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
-        lcov --list coverage.info
+        lcov --capture --directory . --output-file coverage.info --ignore-errors negative,gcov
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info --ignore-errors negative
+        lcov --list coverage.info --ignore-errors negative
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
