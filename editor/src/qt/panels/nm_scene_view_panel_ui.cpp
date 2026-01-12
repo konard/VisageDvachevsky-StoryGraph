@@ -1,3 +1,5 @@
+#include "NovelMind/editor/event_bus.hpp"
+#include "NovelMind/editor/events/panel_events.hpp"
 #include "NovelMind/editor/qt/nm_icon_manager.hpp"
 #include "NovelMind/editor/qt/nm_play_mode_controller.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
@@ -629,6 +631,13 @@ void NMSceneViewPanel::onSceneObjectSelected(const QString &objectId) {
       m_infoOverlay->setSelectedObjectInfo(obj->name(), obj->pos());
     }
   }
+
+  // Publish scene object selection event to EventBus for other panels
+  events::SceneObjectSelectedEvent event;
+  event.objectId = objectId;
+  event.sourcePanel = "SceneView";
+  event.editable = true;
+  EventBus::instance().publish(event);
 
   // Forward to main window's selection system
   emit objectSelected(objectId);

@@ -36,7 +36,12 @@
 ## Технические спецификации
 
 ### Язык сценариев
-- [nm_script_specification.md](nm_script_specification.md) — Спецификация NM Script 1.0
+- [nm_script_specification.md](nm_script_specification.md) — Спецификация NM Script 1.0 (на русском)
+- [nm_script_language_reference.md](nm_script_language_reference.md) — **NEW** Complete Language Reference (English)
+- [nm_script_type_system.md](nm_script_type_system.md) — **NEW** Detailed Type System Documentation
+- [nm_script_vm_architecture.md](nm_script_vm_architecture.md) — **NEW** Bytecode & VM Architecture
+- [nm_script_ir_specification.md](nm_script_ir_specification.md) — **NEW** Intermediate Representation (IR) System
+- [nm_script_standard_library.md](nm_script_standard_library.md) — **NEW** Built-in Functions & Commands Reference
 
 ### Файловые форматы
 - [pack_file_format.md](pack_file_format.md) — Формат .nmres pack-файлов
@@ -94,4 +99,4 @@
 
 ---
 
-*Последнее обновление: 2025-12-23*
+*Последнее обновление: 2026-01-11*
