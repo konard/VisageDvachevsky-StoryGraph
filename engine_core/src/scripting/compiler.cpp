@@ -582,7 +582,11 @@ void Compiler::compileBinary(const BinaryExpr &expr) {
 
   // Short-circuit for and/or
   if (expr.op == TokenType::And) {
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is false, jump to end keeping the false value
     u32 endJump = emitJump(OpCode::JUMP_IF_NOT);
+    // If left is true, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {
@@ -594,10 +598,11 @@ void Compiler::compileBinary(const BinaryExpr &expr) {
   }
 
   if (expr.op == TokenType::Or) {
-    u32 elseJump = emitJump(OpCode::JUMP_IF_NOT);
-    u32 endJump = emitJump(OpCode::JUMP);
-
-    patchJump(elseJump);
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is true, jump to end keeping the true value
+    u32 endJump = emitJump(OpCode::JUMP_IF);
+    // If left is false, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {

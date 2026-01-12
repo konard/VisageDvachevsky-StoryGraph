@@ -1046,6 +1046,233 @@ TEST_CASE("test_vm_division_normal_operations", "[scripting][division]")
     }
 }
 
+TEST_CASE("VM short-circuit evaluation for OR operator", "[scripting][short-circuit]")
+{
+    VirtualMachine vm;
+
+    SECTION("true || true - should short-circuit and return true") {
+        // When left is true, right side should not be evaluated
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},      // Push true (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF, 6},        // If true, jump to end (position 6)
+            {OpCode::POP, 0},            // Pop if false (not executed)
+            {OpCode::PUSH_BOOL, 1},      // Right side: Push true (not executed)
+            // Position 5
+            {OpCode::STORE_VAR, 0},      // Position 6: Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("true || false - should short-circuit and return true") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},      // Push true (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF, 6},        // If true, jump to end
+            {OpCode::POP, 0},            // Pop if false (not executed)
+            {OpCode::PUSH_BOOL, 0},      // Right side: Push false (not executed)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("false || true - should evaluate right and return true") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},      // Push false (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF, 6},        // If true, jump to end (not taken)
+            {OpCode::POP, 0},            // Pop the false
+            {OpCode::PUSH_BOOL, 1},      // Right side: Push true (evaluated)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("false || false - should evaluate right and return false") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},      // Push false (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF, 6},        // If true, jump to end (not taken)
+            {OpCode::POP, 0},            // Pop the false
+            {OpCode::PUSH_BOOL, 0},      // Right side: Push false (evaluated)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);
+    }
+}
+
+TEST_CASE("VM short-circuit evaluation for AND operator", "[scripting][short-circuit]")
+{
+    VirtualMachine vm;
+
+    SECTION("false && false - should short-circuit and return false") {
+        // When left is false, right side should not be evaluated
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},      // Push false (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF_NOT, 6},    // If false, jump to end (position 6)
+            {OpCode::POP, 0},            // Pop if true (not executed)
+            {OpCode::PUSH_BOOL, 0},      // Right side: Push false (not executed)
+            // Position 5
+            {OpCode::STORE_VAR, 0},      // Position 6: Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("false && true - should short-circuit and return false") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},      // Push false (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF_NOT, 6},    // If false, jump to end
+            {OpCode::POP, 0},            // Pop if true (not executed)
+            {OpCode::PUSH_BOOL, 1},      // Right side: Push true (not executed)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("true && false - should evaluate right and return false") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},      // Push true (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF_NOT, 6},    // If false, jump to end (not taken)
+            {OpCode::POP, 0},            // Pop the true
+            {OpCode::PUSH_BOOL, 0},      // Right side: Push false (evaluated)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("true && true - should evaluate right and return true") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},      // Push true (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF_NOT, 6},    // If false, jump to end (not taken)
+            {OpCode::POP, 0},            // Pop the true
+            {OpCode::PUSH_BOOL, 1},      // Right side: Push true (evaluated)
+            {OpCode::STORE_VAR, 0},      // Store result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);
+    }
+}
+
+TEST_CASE("VM short-circuit side effects verification", "[scripting][short-circuit]")
+{
+    VirtualMachine vm;
+
+    SECTION("OR - right side with side effects not evaluated when left is true") {
+        // Simulates: true || (sideEffect(), false)
+        // sideEffect() should not be called
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},      // Push true (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF, 9},        // If true, jump past right side
+            {OpCode::POP, 0},            // Pop if false (not executed)
+            // Right side with side effect (not executed):
+            {OpCode::PUSH_INT, 99},      // Side effect: push value
+            {OpCode::STORE_VAR, 1},      // Side effect: store to variable
+            {OpCode::PUSH_BOOL, 0},      // Result of right side
+            // Position 9 (end):
+            {OpCode::STORE_VAR, 0},      // Store OR result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result", "sideEffect"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == true);
+
+        // sideEffect variable should not have been set (monostate)
+        auto sideEffect = vm.getVariable("sideEffect");
+        REQUIRE(std::holds_alternative<std::monostate>(sideEffect));
+    }
+
+    SECTION("AND - right side with side effects not evaluated when left is false") {
+        // Simulates: false && (sideEffect(), true)
+        // sideEffect() should not be called
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 0},      // Push false (left)
+            {OpCode::DUP, 0},            // Duplicate for short-circuit
+            {OpCode::JUMP_IF_NOT, 9},    // If false, jump past right side
+            {OpCode::POP, 0},            // Pop if true (not executed)
+            // Right side with side effect (not executed):
+            {OpCode::PUSH_INT, 99},      // Side effect: push value
+            {OpCode::STORE_VAR, 1},      // Side effect: store to variable
+            {OpCode::PUSH_BOOL, 1},      // Result of right side
+            // Position 9 (end):
+            {OpCode::STORE_VAR, 0},      // Store AND result
+            {OpCode::HALT, 0}
+        };
+
+        vm.load(program, {"result", "sideEffect"});
+        vm.run();
+
+        auto result = vm.getVariable("result");
+        REQUIRE(std::holds_alternative<bool>(result));
+        REQUIRE(std::get<bool>(result) == false);
+
+        // sideEffect variable should not have been set (monostate)
+        auto sideEffect = vm.getVariable("sideEffect");
+        REQUIRE(std::holds_alternative<std::monostate>(sideEffect));
+    }
 TEST_CASE("VM deep recursion simulation - safe depth", "[scripting][recursion][security]")
 {
     VirtualMachine vm;
