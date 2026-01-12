@@ -53,6 +53,8 @@ add_executable(unit_tests
     unit/test_recording_callback_marshaling.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
+    # Issue #564 - Scene object handle thread safety tests
+    unit/test_scene_object_handle_thread_safety.cpp
 )
 # Note: test_build_system.cpp requires editor library, included only in integration_tests
 
