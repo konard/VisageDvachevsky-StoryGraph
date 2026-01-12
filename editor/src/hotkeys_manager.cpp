@@ -476,6 +476,47 @@ void HotkeysManager::registerStandardCommands() {
                    false,
                    nullptr});
 
+  // Transform/Gizmo commands
+  registerCommand({Commands::TransformMove,
+                   "Move Tool",
+                   "Switch to move/translate gizmo",
+                   ShortcutCategory::Transform,
+                   ShortcutContext::SceneView,
+                   {KeyCode::W, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::TransformRotate,
+                   "Rotate Tool",
+                   "Switch to rotate gizmo",
+                   ShortcutCategory::Transform,
+                   ShortcutContext::SceneView,
+                   {KeyCode::E, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::TransformScale,
+                   "Scale Tool",
+                   "Switch to scale gizmo",
+                   ShortcutCategory::Transform,
+                   ShortcutContext::SceneView,
+                   {KeyCode::R, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::TransformReset,
+                   "Reset Transform",
+                   "Reset selected object transform",
+                   ShortcutCategory::Transform,
+                   ShortcutContext::SceneView,
+                   {KeyCode::T, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
   // Window/Panel commands
   registerCommand({Commands::WindowSwitchPanel,
                    "Switch Panel",
@@ -513,6 +554,96 @@ void HotkeysManager::registerStandardCommands() {
                    ShortcutCategory::Window,
                    ShortcutContext::Global,
                    {KeyCode::H, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowSceneView,
+                   "Scene View",
+                   "Show/hide scene view panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Num1, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowStoryGraph,
+                   "Story Graph",
+                   "Show/hide story graph panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Num2, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowTimeline,
+                   "Timeline",
+                   "Show/hide timeline panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Num3, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowAssetBrowser,
+                   "Asset Browser",
+                   "Show/hide asset browser panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Num4, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowVoiceManager,
+                   "Voice Manager",
+                   "Show/hide voice manager panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Num5, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowLocalization,
+                   "Localization",
+                   "Show/hide localization panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::L, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowCurveEditor,
+                   "Curve Editor",
+                   "Show/hide curve editor panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::C, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowBuildSettings,
+                   "Build Settings",
+                   "Show/hide build settings panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::B, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::WindowSettings,
+                   "Project Settings",
+                   "Show/hide project settings panel",
+                   ShortcutCategory::Window,
+                   ShortcutContext::Global,
+                   {KeyCode::Comma, Modifiers::Ctrl},
                    {},
                    false,
                    nullptr});
@@ -564,6 +695,118 @@ void HotkeysManager::registerStandardCommands() {
                    ShortcutCategory::Debug,
                    ShortcutContext::PlayMode,
                    {KeyCode::F11, Modifiers::Shift},
+                   {},
+                   false,
+                   nullptr});
+
+  // Script operation commands
+  registerCommand({Commands::ScriptFormat,
+                   "Format Script",
+                   "Auto-format current script",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::K, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptGoToDefinition,
+                   "Go to Definition",
+                   "Go to symbol definition",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::F12, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptFindReferences,
+                   "Find References",
+                   "Find all references to symbol",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::F12, Modifiers::Shift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptShowOutline,
+                   "Show Outline",
+                   "Show script symbol outline",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::O, Modifiers::CtrlShift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptToggleComment,
+                   "Toggle Comment",
+                   "Toggle line/block comment",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::Slash, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptRun,
+                   "Run Script",
+                   "Run current script",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::F6, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::ScriptCompile,
+                   "Compile Script",
+                   "Compile current script",
+                   ShortcutCategory::Script,
+                   ShortcutContext::TextEdit,
+                   {KeyCode::F6, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  // Build operation commands
+  registerCommand({Commands::BuildProject,
+                   "Build Project",
+                   "Build the entire project",
+                   ShortcutCategory::Build,
+                   ShortcutContext::Global,
+                   {KeyCode::F7, Modifiers::None},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::BuildRun,
+                   "Build and Run",
+                   "Build project and run",
+                   ShortcutCategory::Build,
+                   ShortcutContext::Global,
+                   {KeyCode::F7, Modifiers::Ctrl},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::BuildClean,
+                   "Clean Build",
+                   "Clean build artifacts",
+                   ShortcutCategory::Build,
+                   ShortcutContext::Global,
+                   {KeyCode::F7, Modifiers::Shift},
+                   {},
+                   false,
+                   nullptr});
+
+  registerCommand({Commands::BuildSettings,
+                   "Build Settings",
+                   "Open build settings",
+                   ShortcutCategory::Build,
+                   ShortcutContext::Global,
+                   {KeyCode::B, Modifiers::CtrlAlt},
                    {},
                    false,
                    nullptr});
@@ -820,6 +1063,10 @@ std::string HotkeysManager::categoryToString(ShortcutCategory category) {
     return "Tools";
   case ShortcutCategory::Window:
     return "Window";
+  case ShortcutCategory::Script:
+    return "Script";
+  case ShortcutCategory::Build:
+    return "Build";
   case ShortcutCategory::Debug:
     return "Debug";
   case ShortcutCategory::Custom:

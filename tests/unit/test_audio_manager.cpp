@@ -29,6 +29,29 @@ using namespace NovelMind::audio;
 using namespace NovelMind;
 
 // =============================================================================
+// Test Helper - Access private members for overflow testing
+// =============================================================================
+
+class AudioManagerTestAccess {
+public:
+  static void setNextHandleIndex(AudioManager& manager, u32 index) {
+    manager.m_nextHandleIndex.store(index, std::memory_order_relaxed);
+  }
+
+  static void setHandleGeneration(AudioManager& manager, u8 generation) {
+    manager.m_handleGeneration.store(generation, std::memory_order_relaxed);
+  }
+
+  static u32 getNextHandleIndex(const AudioManager& manager) {
+    return manager.m_nextHandleIndex.load(std::memory_order_relaxed);
+  }
+
+  static u8 getHandleGeneration(const AudioManager& manager) {
+    return manager.m_handleGeneration.load(std::memory_order_relaxed);
+  }
+};
+
+// =============================================================================
 // AudioHandle Tests
 // =============================================================================
 
@@ -58,6 +81,59 @@ TEST_CASE("AudioHandle validity", "[audio][handle]") {
     REQUIRE_FALSE(handle.isValid());
     REQUIRE(handle.id == 0);
     REQUIRE_FALSE(handle.valid);
+  }
+}
+
+TEST_CASE("AudioHandle generation counter", "[audio][handle][issue-557]") {
+  SECTION("Extract generation from handle ID") {
+    u32 handleId = AudioHandle::makeHandleId(5, 1000);
+    u8 generation = AudioHandle::getGeneration(handleId);
+    REQUIRE(generation == 5);
+  }
+
+  SECTION("Extract index from handle ID") {
+    u32 handleId = AudioHandle::makeHandleId(5, 1000);
+    u32 index = AudioHandle::getIndex(handleId);
+    REQUIRE(index == 1000);
+  }
+
+  SECTION("Make handle ID") {
+    u8 generation = 7;
+    u32 index = 12345;
+    u32 handleId = AudioHandle::makeHandleId(generation, index);
+
+    REQUIRE(AudioHandle::getGeneration(handleId) == generation);
+    REQUIRE(AudioHandle::getIndex(handleId) == index);
+  }
+
+  SECTION("Generation counter occupies upper 8 bits") {
+    u32 handleId = AudioHandle::makeHandleId(255, 0);
+    REQUIRE(handleId == 0xFF000000);
+  }
+
+  SECTION("Index counter occupies lower 24 bits") {
+    u32 handleId = AudioHandle::makeHandleId(0, 0x00FFFFFF);
+    REQUIRE(handleId == 0x00FFFFFF);
+  }
+
+  SECTION("Combined generation and index") {
+    u32 handleId = AudioHandle::makeHandleId(128, 0x00ABCDEF);
+    REQUIRE(handleId == 0x80ABCDEF);
+    REQUIRE(AudioHandle::getGeneration(handleId) == 128);
+    REQUIRE(AudioHandle::getIndex(handleId) == 0x00ABCDEF);
+  }
+
+  SECTION("Maximum generation value") {
+    u32 handleId = AudioHandle::makeHandleId(255, 1);
+    u8 generation = AudioHandle::getGeneration(handleId);
+    REQUIRE(generation == 255);
+  }
+
+  SECTION("Maximum index value") {
+    u32 maxIndex = 0x00FFFFFF; // 16,777,215
+    u32 handleId = AudioHandle::makeHandleId(0, maxIndex);
+    u32 index = AudioHandle::getIndex(handleId);
+    REQUIRE(index == maxIndex);
   }
 }
 
@@ -1199,6 +1275,182 @@ TEST_CASE("AudioManager basic thread safety", "[audio][manager][threading]") {
   manager.shutdown();
 }
 
+// =============================================================================
+// Handle ID Overflow Tests - Issue #557
+// =============================================================================
+
+TEST_CASE("AudioManager handle ID overflow protection", "[audio][manager][handle][issue-557]") {
+  SECTION("Handle generation increments on index overflow") {
+    AudioManager manager;
+    auto initResult = manager.initialize();
+
+    if (initResult.isError()) {
+      SKIP("Audio hardware not available");
+    }
+
+    // Set initial index to near overflow
+    constexpr u32 MAX_INDEX = 0x00FFFFFF; // 16,777,215
+    AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 5);
+    AudioManagerTestAccess::setHandleGeneration(manager, 0);
+
+    // Create handles approaching overflow
+    std::vector<AudioHandle> handles;
+    for (int i = 0; i < 10; ++i) {
+      PlaybackConfig config;
+      auto handle = manager.playSound("test_" + std::to_string(i), config);
+      if (handle.isValid()) {
+        handles.push_back(handle);
+      }
+    }
+
+    // Verify generation incremented after overflow
+    u8 currentGen = AudioManagerTestAccess::getHandleGeneration(manager);
+    REQUIRE(currentGen >= 1);
+
+    // Verify index reset after overflow
+    u32 currentIndex = AudioManagerTestAccess::getNextHandleIndex(manager);
+    REQUIRE(currentIndex < 100); // Should have reset to small value
+
+    manager.shutdown();
+  }
+
+  SECTION("No handle collision after overflow") {
+    AudioManager manager;
+    auto initResult = manager.initialize();
+
+    if (initResult.isError()) {
+      SKIP("Audio hardware not available");
+    }
+
+    // Set to just before overflow
+    constexpr u32 MAX_INDEX = 0x00FFFFFF;
+    AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 2);
+    AudioManagerTestAccess::setHandleGeneration(manager, 5);
+
+    // Create handles that will trigger overflow
+    PlaybackConfig config;
+    auto handle1 = manager.playSound("sound1", config);
+    auto handle2 = manager.playSound("sound2", config);
+    auto handle3 = manager.playSound("sound3", config); // This should trigger overflow
+    auto handle4 = manager.playSound("sound4", config);
+
+    // Verify all handles have unique IDs
+    std::set<u32> uniqueIds;
+    if (handle1.isValid())
+      uniqueIds.insert(handle1.id);
+    if (handle2.isValid())
+      uniqueIds.insert(handle2.id);
+    if (handle3.isValid())
+      uniqueIds.insert(handle3.id);
+    if (handle4.isValid())
+      uniqueIds.insert(handle4.id);
+
+    // All valid handles must have unique IDs
+    size_t validCount = 0;
+    if (handle1.isValid())
+      validCount++;
+    if (handle2.isValid())
+      validCount++;
+    if (handle3.isValid())
+      validCount++;
+    if (handle4.isValid())
+      validCount++;
+
+    REQUIRE(uniqueIds.size() == validCount);
+
+    // Verify generation changed for post-overflow handles
+    if (handle3.isValid() && handle1.isValid()) {
+      u8 gen1 = AudioHandle::getGeneration(handle1.id);
+      u8 gen3 = AudioHandle::getGeneration(handle3.id);
+      // Generation should have incremented
+      REQUIRE(gen3 > gen1);
+    }
+
+    manager.shutdown();
+  }
+
+  SECTION("Handle ID format consistency") {
+    AudioManager manager;
+    auto initResult = manager.initialize();
+
+    if (initResult.isError()) {
+      SKIP("Audio hardware not available");
+    }
+
+    AudioManagerTestAccess::setNextHandleIndex(manager, 1000);
+    AudioManagerTestAccess::setHandleGeneration(manager, 42);
+
+    PlaybackConfig config;
+    auto handle = manager.playSound("test", config);
+
+    if (handle.isValid()) {
+      u8 gen = AudioHandle::getGeneration(handle.id);
+      u32 index = AudioHandle::getIndex(handle.id);
+
+      // Verify generation is correct
+      REQUIRE(gen == 42);
+
+      // Verify index is in expected range
+      REQUIRE(index >= 1000);
+      REQUIRE(index <= 1001);
+
+      // Verify we can reconstruct the ID
+      u32 reconstructedId = AudioHandle::makeHandleId(gen, index);
+      REQUIRE(reconstructedId == handle.id);
+    }
+
+    manager.shutdown();
+  }
+}
+
+TEST_CASE("AudioManager stress test - handle overflow scenario",
+          "[audio][manager][stress][issue-557]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Create and destroy many handles") {
+    // Start near overflow to test faster
+    constexpr u32 MAX_INDEX = 0x00FFFFFF;
+    AudioManagerTestAccess::setNextHandleIndex(manager, MAX_INDEX - 100);
+    AudioManagerTestAccess::setHandleGeneration(manager, 0);
+
+    std::vector<AudioHandle> activeHandles;
+    std::set<u32> allHandleIds;
+
+    // Create many handles that will trigger multiple overflows
+    for (int i = 0; i < 200; ++i) {
+      PlaybackConfig config;
+      auto handle = manager.playSound("stress_test_" + std::to_string(i), config);
+
+      if (handle.isValid()) {
+        // Verify handle ID is unique
+        REQUIRE(allHandleIds.find(handle.id) == allHandleIds.end());
+        allHandleIds.insert(handle.id);
+        activeHandles.push_back(handle);
+      }
+
+      // Stop some handles to simulate real usage
+      if (i % 10 == 0 && !activeHandles.empty()) {
+        manager.stopSound(activeHandles.back());
+        activeHandles.pop_back();
+      }
+    }
+
+    // Verify generation incremented
+    u8 finalGen = AudioManagerTestAccess::getHandleGeneration(manager);
+    REQUIRE(finalGen >= 1);
+
+    // Verify all IDs were unique
+    REQUIRE(allHandleIds.size() >= 150); // At least most handles should be valid
+
+    manager.shutdown();
+  }
+}
+
 // Note: Full race condition stress tests require ThreadSanitizer:
 //   cmake -DCMAKE_CXX_FLAGS="-fsanitize=thread -g" ..
 
@@ -1631,6 +1883,278 @@ TEST_CASE("AudioManager thread safety - multiple sources",
 
     // Verify no crashes
     REQUIRE(manager.getActiveSourceCount() >= 0);
+  }
+
+  manager.shutdown();
+}
+
+// =============================================================================
+// Thread Safety Tests - Issue #558
+// =============================================================================
+
+TEST_CASE("AudioManager thread safety - concurrent sound creation with limit",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("Concurrent playSound calls should never exceed max limit") {
+    const size_t maxSounds = 10;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<int> successfulCreations{0};
+    std::atomic<int> failedCreations{0};
+    std::vector<std::thread> threads;
+
+    // Launch many threads trying to create sounds simultaneously
+    for (int t = 0; t < 8; ++t) {
+      threads.emplace_back([&, t]() {
+        for (int i = 0; i < 20; ++i) {
+          PlaybackConfig config;
+          config.volume = 0.5f;
+          config.priority = i;
+          auto handle = manager.playSound("test_sound_" + std::to_string(t * 100 + i), config);
+          if (handle.isValid()) {
+            successfulCreations++;
+          } else {
+            failedCreations++;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+      });
+    }
+
+    for (auto& thread : threads) {
+      thread.join();
+    }
+
+    // Verify that we never exceeded the limit
+    size_t finalCount = manager.getActiveSourceCount();
+    REQUIRE(finalCount <= maxSounds);
+
+    // Verify that some sounds were created
+    REQUIRE(successfulCreations > 0);
+  }
+
+  SECTION("Stress test: Rapid concurrent sound creation and limit check") {
+    const size_t maxSounds = 5;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<bool> running{true};
+    std::atomic<size_t> maxObservedCount{0};
+
+    // Thread 1-4: Continuously create sounds
+    std::vector<std::thread> creatorThreads;
+    for (int t = 0; t < 4; ++t) {
+      creatorThreads.emplace_back([&, t]() {
+        int counter = 0;
+        while (running) {
+          PlaybackConfig config;
+          config.priority = counter % 10;
+          manager.playSound("sound_" + std::to_string(t) + "_" + std::to_string(counter++), config);
+          std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+      });
+    }
+
+    // Thread 5: Monitor thread that checks the count never exceeds limit
+    std::thread monitorThread([&]() {
+      for (int i = 0; i < 500; ++i) {
+        size_t count = manager.getActiveSourceCount();
+        size_t current = maxObservedCount.load();
+        while (count > current && !maxObservedCount.compare_exchange_weak(current, count)) {
+          // Retry if another thread updated maxObservedCount
+        }
+
+        // CRITICAL CHECK: Verify limit is never exceeded
+        REQUIRE(count <= maxSounds);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+      }
+      running = false;
+    });
+
+    for (auto& thread : creatorThreads) {
+      thread.join();
+    }
+    monitorThread.join();
+
+    // Final verification
+    REQUIRE(maxObservedCount.load() <= maxSounds);
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+  }
+
+  SECTION("Verify atomicity of check-and-create operation") {
+    const size_t maxSounds = 3;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<int> creationAttempts{0};
+    std::vector<std::thread> threads;
+    std::mutex violationMutex;
+    std::vector<std::string> violations;
+
+    // Create exactly maxSounds worth of simultaneous attempts
+    for (size_t t = 0; t < maxSounds * 3; ++t) {
+      threads.emplace_back([&, t]() {
+        creationAttempts++;
+
+        // Wait for all threads to be ready
+        while (creationAttempts.load() < static_cast<int>(maxSounds * 3)) {
+          std::this_thread::yield();
+        }
+
+        // All threads try to create sounds at the same time
+        PlaybackConfig config;
+        config.priority = static_cast<int>(t);
+        auto handle = manager.playSound("test_" + std::to_string(t), config);
+
+        // Immediately check the count
+        size_t count = manager.getActiveSourceCount();
+        if (count > maxSounds) {
+          std::lock_guard<std::mutex> lock(violationMutex);
+          violations.push_back("Count exceeded: " + std::to_string(count) + " > " +
+                               std::to_string(maxSounds));
+        }
+      });
+    }
+
+    for (auto& thread : threads) {
+      thread.join();
+    }
+
+    // Verify no violations occurred
+    if (!violations.empty()) {
+      for (const auto& violation : violations) {
+        WARN(violation);
+      }
+      FAIL("Race condition detected: limit was exceeded");
+    }
+
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager thread safety - priority-based eviction is atomic",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("High priority sounds should evict low priority atomically") {
+    const size_t maxSounds = 5;
+    manager.setMaxSounds(maxSounds);
+
+    // Fill up with low priority sounds
+    for (size_t i = 0; i < maxSounds; ++i) {
+      PlaybackConfig config;
+      config.priority = 1;
+      manager.playSound("low_priority_" + std::to_string(i), config);
+    }
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    REQUIRE(manager.getActiveSourceCount() == maxSounds);
+
+    std::atomic<int> highPriorityCreated{0};
+    std::vector<std::thread> threads;
+
+    // Multiple threads try to create high priority sounds
+    for (int t = 0; t < 4; ++t) {
+      threads.emplace_back([&, t]() {
+        for (int i = 0; i < 10; ++i) {
+          PlaybackConfig config;
+          config.priority = 100; // Much higher than existing sounds
+          auto handle = manager.playSound("high_priority_" + std::to_string(t * 100 + i), config);
+          if (handle.isValid()) {
+            highPriorityCreated++;
+          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        }
+      });
+    }
+
+    for (auto& thread : threads) {
+      thread.join();
+    }
+
+    // Verify limit was never exceeded despite concurrent evictions
+    REQUIRE(manager.getActiveSourceCount() <= maxSounds);
+
+    // Verify that high priority sounds were successfully created
+    REQUIRE(highPriorityCreated > 0);
+  }
+
+  manager.shutdown();
+}
+
+TEST_CASE("AudioManager thread safety - source creation is truly atomic",
+          "[audio][manager][threading][issue-558]") {
+  AudioManager manager;
+  auto initResult = manager.initialize();
+
+  if (initResult.isError()) {
+    SKIP("Audio hardware not available");
+  }
+
+  SECTION("TOCTOU race condition should not occur") {
+    // This test specifically targets the time-of-check-time-of-use bug
+    // where the limit check and source creation are not atomic
+
+    const size_t maxSounds = 2;
+    manager.setMaxSounds(maxSounds);
+
+    std::atomic<bool> raceDetected{false};
+    std::vector<std::thread> threads;
+
+    // Run multiple iterations to increase chance of catching the race
+    for (int iteration = 0; iteration < 10 && !raceDetected; ++iteration) {
+      // Clear existing sounds
+      manager.stopAllSounds(0.0f);
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+      std::atomic<int> ready{0};
+      const int numThreads = 4;
+
+      for (int t = 0; t < numThreads; ++t) {
+        threads.emplace_back([&, t, iteration]() {
+          ready++;
+          // Wait for all threads to be ready
+          while (ready.load() < numThreads) {
+            std::this_thread::yield();
+          }
+
+          // All threads attempt to create sounds simultaneously
+          PlaybackConfig config;
+          config.priority = t;
+          manager.playSound("race_test_" + std::to_string(iteration) + "_" + std::to_string(t),
+                            config);
+
+          // Immediately check if limit was exceeded
+          size_t count = manager.getActiveSourceCount();
+          if (count > maxSounds) {
+            raceDetected = true;
+          }
+        });
+      }
+
+      for (auto& thread : threads) {
+        thread.join();
+      }
+      threads.clear();
+
+      // Check final count
+      if (manager.getActiveSourceCount() > maxSounds) {
+        raceDetected = true;
+      }
+    }
+
+    REQUIRE_FALSE(raceDetected);
   }
 
   manager.shutdown();

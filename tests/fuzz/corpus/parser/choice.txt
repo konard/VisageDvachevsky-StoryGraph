@@ -1,0 +1,6 @@
+scene test {
+    choice {
+        "Option A" -> goto test
+        "Option B" -> goto test
+    }
+}

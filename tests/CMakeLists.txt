@@ -19,6 +19,7 @@ add_executable(unit_tests
     unit/test_memory_fs.cpp
     unit/test_vm.cpp
     unit/test_vm_vn.cpp
+    unit/test_vm_debugger.cpp
     unit/test_value.cpp
     unit/test_lexer.cpp
     unit/test_parser.cpp
@@ -31,14 +32,16 @@ add_executable(unit_tests
     unit/test_animation.cpp
     unit/test_snapshot.cpp
     unit/test_fuzzing.cpp
+    unit/test_compiler.cpp
     unit/test_texture_loading.cpp
     unit/test_voice_manifest.cpp
     unit/test_script_runtime_transition.cpp
     unit/test_runtime_config.cpp
-    unit/test_division_safety.cpp
+    # unit/test_division_safety.cpp # Requires editor, disabled for VFS-only build
     unit/test_audio_recorder.cpp
     unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
+    unit/test_vfs_async_loading.cpp
     unit/test_vfs_corrupted_pack_files.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
@@ -51,7 +54,11 @@ add_executable(unit_tests
     unit/test_clipboard.cpp
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
+    # unit/test_build_system.cpp # Requires editor
+    # unit/test_secure_memory.cpp # Requires editor
     unit/test_secure_memory.cpp
+    unit/test_ir_conversion_safety.cpp
+    unit/test_error_messages.cpp
     unit/test_save_manager.cpp
     unit/test_resource_cache.cpp
     unit/test_resource_id.cpp
@@ -61,6 +68,8 @@ add_executable(unit_tests
     unit/test_interpreter_deserialize.cpp
     unit/test_compiler_float_serialization.cpp
     unit/test_scene_object_handle_thread_safety.cpp
+    # Issue #504 - Portable float serialization tests (endianness conversion)
+    unit/test_endian_serialization.cpp
 )
 # Note: test_build_system.cpp requires editor library, included only in integration_tests
 
@@ -109,12 +118,15 @@ if(NOVELMIND_BUILD_EDITOR)
         integration/test_scene_template_manager.cpp
         integration/test_scene_validation.cpp
         integration/test_scene_id_picker.cpp
+        integration/test_scene_view_panel.cpp
+        integration/test_script_editor.cpp
         unit/test_voice_integration.cpp
         unit/test_performance_cache.cpp
         unit/test_tutorial_types.cpp
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
+        unit/test_event_bus_stress.cpp
         unit/test_gizmo_memory.cpp
         unit/test_gizmo_dpi_scaling.cpp
         unit/test_gizmo_rotation_normalization.cpp
@@ -171,3 +183,7 @@ if(NOVELMIND_BUILD_EDITOR)
             SKIP_RETURN_CODE 4
     )
 endif()
+
+# Fuzzing targets (optional, requires Clang)
+# Issue #544 - libFuzzer integration for Script lexer, parser, and VM
+add_subdirectory(fuzz)

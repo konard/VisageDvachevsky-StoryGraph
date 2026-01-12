@@ -18,31 +18,42 @@ namespace NovelMind::scripting {
 ASTToIRConverter::ASTToIRConverter() = default;
 ASTToIRConverter::~ASTToIRConverter() = default;
 
-Result<std::unique_ptr<IRGraph>> ASTToIRConverter::convert(const Program& program) {
+Result<std::unique_ptr<IRGraph>>
+ASTToIRConverter::convert(const Program &program) {
   m_graph = std::make_unique<IRGraph>();
   m_currentY = 0.0f;
 
   // Convert character declarations
-  for (const auto& decl : program.characters) {
+  for (const auto &decl : program.characters) {
     convertCharacterDecl(decl);
   }
 
   // Convert scenes
-  for (const auto& scene : program.scenes) {
-    convertScene(scene);
+  for (const auto &scene : program.scenes) {
+    NodeId sceneId = convertScene(scene);
+    if (sceneId == 0) {
+      return Result<std::unique_ptr<IRGraph>>::error(
+          "Failed to convert scene '" + scene.name +
+          "': Node creation failed (possible memory allocation failure)");
+    }
     m_currentY += 200.0f;
   }
 
   return Result<std::unique_ptr<IRGraph>>::ok(std::move(m_graph));
 }
 
-void ASTToIRConverter::convertCharacterDecl(const CharacterDecl& decl) {
+void ASTToIRConverter::convertCharacterDecl(const CharacterDecl &decl) {
   m_graph->addCharacter(decl.id, decl.displayName, decl.color);
 }
 
-NodeId ASTToIRConverter::convertScene(const SceneDecl& scene) {
+NodeId ASTToIRConverter::convertScene(const SceneDecl &scene) {
   NodeId startId = m_graph->createNode(IRNodeType::SceneStart);
-  auto* startNode = m_graph->getNode(startId);
+  auto *startNode = m_graph->getNode(startId);
+  if (!startNode) {
+    // Critical error: node creation failed
+    // Return 0 (invalid node ID) to signal failure
+    return 0;
+  }
   startNode->setProperty("sceneName", scene.name);
   startNode->setPosition(100.0f, m_currentY);
 
@@ -51,13 +62,21 @@ NodeId ASTToIRConverter::convertScene(const SceneDecl& scene) {
   NodeId prevNode = startId;
   f32 y = m_currentY + m_nodeSpacing;
 
-  for (const auto& stmt : scene.body) {
+  for (const auto &stmt : scene.body) {
     prevNode = convertStatement(*stmt, prevNode);
+    // Check if statement conversion failed
+    if (prevNode == 0) {
+      return 0;
+    }
     y += m_nodeSpacing;
   }
 
   NodeId endId = m_graph->createNode(IRNodeType::SceneEnd);
-  auto* endNode = m_graph->getNode(endId);
+  auto *endNode = m_graph->getNode(endId);
+  if (!endNode) {
+    // Critical error: node creation failed
+    return 0;
+  }
   endNode->setPosition(100.0f, y);
 
   PortId outPort{prevNode, "exec_out", true};
@@ -67,19 +86,21 @@ NodeId ASTToIRConverter::convertScene(const SceneDecl& scene) {
   return startId;
 }
 
-NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode) {
+NodeId ASTToIRConverter::convertStatement(const Statement &stmt,
+                                          NodeId prevNode) {
   // Use std::visit to handle the variant
   return std::visit(
-      [this, prevNode, &stmt](const auto& stmtData) -> NodeId {
+      [this, prevNode, &stmt](const auto &stmtData) -> NodeId {
         using T = std::decay_t<decltype(stmtData)>;
 
         if constexpr (std::is_same_v<T, ShowStmt>) {
-          IRNodeType nodeType = (stmtData.target == ShowStmt::Target::Background)
-                                    ? IRNodeType::ShowBackground
-                                    : IRNodeType::ShowCharacter;
+          IRNodeType nodeType =
+              (stmtData.target == ShowStmt::Target::Background)
+                  ? IRNodeType::ShowBackground
+                  : IRNodeType::ShowCharacter;
 
           NodeId nodeId = createNodeAndConnect(nodeType, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
 
           if (stmtData.target == ShowStmt::Target::Background) {
             node->setProperty("background", stmtData.identifier);
@@ -90,14 +111,15 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
 
           return nodeId;
         } else if constexpr (std::is_same_v<T, HideStmt>) {
-          NodeId nodeId = createNodeAndConnect(IRNodeType::HideCharacter, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          NodeId nodeId =
+              createNodeAndConnect(IRNodeType::HideCharacter, prevNode);
+          auto *node = m_graph->getNode(nodeId);
           node->setProperty("character", stmtData.identifier);
           node->setSourceLocation(stmt.location);
           return nodeId;
         } else if constexpr (std::is_same_v<T, SayStmt>) {
           NodeId nodeId = createNodeAndConnect(IRNodeType::Dialogue, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
           if (stmtData.speaker) {
             node->setProperty("character", *stmtData.speaker);
           }
@@ -106,11 +128,11 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
           return nodeId;
         } else if constexpr (std::is_same_v<T, ChoiceStmt>) {
           NodeId choiceId = createNodeAndConnect(IRNodeType::Choice, prevNode);
-          auto* choiceNode = m_graph->getNode(choiceId);
+          auto *choiceNode = m_graph->getNode(choiceId);
           choiceNode->setSourceLocation(stmt.location);
 
           std::vector<std::string> optionTexts;
-          for (const auto& opt : stmtData.options) {
+          for (const auto &opt : stmtData.options) {
             optionTexts.push_back(opt.text);
           }
           choiceNode->setProperty("options", optionTexts);
@@ -118,12 +140,12 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
           return choiceId;
         } else if constexpr (std::is_same_v<T, IfStmt>) {
           NodeId branchId = createNodeAndConnect(IRNodeType::Branch, prevNode);
-          auto* branchNode = m_graph->getNode(branchId);
+          auto *branchNode = m_graph->getNode(branchId);
           branchNode->setSourceLocation(stmt.location);
           return branchId;
         } else if constexpr (std::is_same_v<T, GotoStmt>) {
           NodeId gotoId = createNodeAndConnect(IRNodeType::Goto, prevNode);
-          auto* gotoNode = m_graph->getNode(gotoId);
+          auto *gotoNode = m_graph->getNode(gotoId);
           gotoNode->setProperty("target", stmtData.target);
           gotoNode->setSourceLocation(stmt.location);
           return gotoId;
@@ -132,7 +154,7 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
                                     ? IRNodeType::PlayMusic
                                     : IRNodeType::PlaySound;
           NodeId nodeId = createNodeAndConnect(nodeType, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
           node->setProperty("track", stmtData.resource);
           if (stmtData.loop && *stmtData.loop) {
             node->setProperty("loop", true);
@@ -145,13 +167,14 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
           return nodeId;
         } else if constexpr (std::is_same_v<T, WaitStmt>) {
           NodeId nodeId = createNodeAndConnect(IRNodeType::Wait, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
           node->setProperty("duration", static_cast<f64>(stmtData.duration));
           node->setSourceLocation(stmt.location);
           return nodeId;
         } else if constexpr (std::is_same_v<T, TransitionStmt>) {
-          NodeId nodeId = createNodeAndConnect(IRNodeType::Transition, prevNode);
-          auto* node = m_graph->getNode(nodeId);
+          NodeId nodeId =
+              createNodeAndConnect(IRNodeType::Transition, prevNode);
+          auto *node = m_graph->getNode(nodeId);
           node->setProperty("type", stmtData.type);
           node->setProperty("duration", static_cast<f64>(stmtData.duration));
           node->setSourceLocation(stmt.location);
@@ -164,19 +187,22 @@ NodeId ASTToIRConverter::convertStatement(const Statement& stmt, NodeId prevNode
       stmt.data);
 }
 
-NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
+NodeId ASTToIRConverter::convertExpression(const Expression &expr) {
   return std::visit(
-      [this, &expr](const auto& exprData) -> NodeId {
+      [this, &expr](const auto &exprData) -> NodeId {
         using T = std::decay_t<decltype(exprData)>;
 
         if constexpr (std::is_same_v<T, LiteralExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "literal");
 
           // Store the literal value based on its type
           std::visit(
-              [node](const auto& val) {
+              [node](const auto &val) {
                 using V = std::decay_t<decltype(val)>;
                 if constexpr (std::is_same_v<V, std::monostate>) {
                   node->setProperty("valueType", "null");
@@ -201,7 +227,10 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
 
         } else if constexpr (std::is_same_v<T, IdentifierExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "identifier");
           node->setProperty("name", exprData.name);
           node->setSourceLocation(expr.location);
@@ -209,64 +238,45 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
 
         } else if constexpr (std::is_same_v<T, BinaryExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "binary");
 
           // Convert operator TokenType to string
           std::string opStr;
           switch (exprData.op) {
-          case TokenType::Plus:
-            opStr = "+";
-            break;
-          case TokenType::Minus:
-            opStr = "-";
-            break;
-          case TokenType::Star:
-            opStr = "*";
-            break;
-          case TokenType::Slash:
-            opStr = "/";
-            break;
-          case TokenType::Percent:
-            opStr = "%";
-            break;
-          case TokenType::Equal:
-            opStr = "==";
-            break;
-          case TokenType::NotEqual:
-            opStr = "!=";
-            break;
-          case TokenType::Less:
-            opStr = "<";
-            break;
-          case TokenType::LessEqual:
-            opStr = "<=";
-            break;
-          case TokenType::Greater:
-            opStr = ">";
-            break;
-          case TokenType::GreaterEqual:
-            opStr = ">=";
-            break;
-          case TokenType::And:
-            opStr = "and";
-            break;
-          case TokenType::Or:
-            opStr = "or";
-            break;
-          default:
-            opStr = "unknown";
-            break;
+            case TokenType::Plus: opStr = "+"; break;
+            case TokenType::Minus: opStr = "-"; break;
+            case TokenType::Star: opStr = "*"; break;
+            case TokenType::Slash: opStr = "/"; break;
+            case TokenType::Percent: opStr = "%"; break;
+            case TokenType::Equal: opStr = "=="; break;
+            case TokenType::NotEqual: opStr = "!="; break;
+            case TokenType::Less: opStr = "<"; break;
+            case TokenType::LessEqual: opStr = "<="; break;
+            case TokenType::Greater: opStr = ">"; break;
+            case TokenType::GreaterEqual: opStr = ">="; break;
+            case TokenType::And: opStr = "and"; break;
+            case TokenType::Or: opStr = "or"; break;
+            default: opStr = "unknown"; break;
           }
           node->setProperty("operator", opStr);
 
           // Recursively convert operands
           if (exprData.left) {
             NodeId leftId = convertExpression(*exprData.left);
+            if (leftId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("leftOperand", static_cast<i64>(leftId));
           }
           if (exprData.right) {
             NodeId rightId = convertExpression(*exprData.right);
+            if (rightId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("rightOperand", static_cast<i64>(rightId));
           }
 
@@ -275,27 +285,27 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
 
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "unary");
 
           // Convert operator TokenType to string
           std::string opStr;
           switch (exprData.op) {
-          case TokenType::Minus:
-            opStr = "-";
-            break;
-          case TokenType::Not:
-            opStr = "not";
-            break;
-          default:
-            opStr = "unknown";
-            break;
+            case TokenType::Minus: opStr = "-"; break;
+            case TokenType::Not: opStr = "not"; break;
+            default: opStr = "unknown"; break;
           }
           node->setProperty("operator", opStr);
 
           // Recursively convert operand
           if (exprData.operand) {
             NodeId operandId = convertExpression(*exprData.operand);
+            if (operandId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("operand", static_cast<i64>(operandId));
           }
 
@@ -304,15 +314,21 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
 
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "call");
           node->setProperty("callee", exprData.callee);
 
           // Convert arguments
           std::vector<std::string> argIds;
-          for (const auto& arg : exprData.arguments) {
+          for (const auto &arg : exprData.arguments) {
             if (arg) {
               NodeId argId = convertExpression(*arg);
+              if (argId == 0) {
+                return 0; // Propagate failure
+              }
               argIds.push_back(std::to_string(argId));
             }
           }
@@ -323,13 +339,19 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
 
         } else if constexpr (std::is_same_v<T, PropertyExpr>) {
           NodeId nodeId = m_graph->createNode(IRNodeType::Expression);
-          auto* node = m_graph->getNode(nodeId);
+          auto *node = m_graph->getNode(nodeId);
+          if (!node) {
+            return 0; // Signal failure
+          }
           node->setProperty("exprType", "property");
           node->setProperty("property", exprData.property);
 
           // Recursively convert object
           if (exprData.object) {
             NodeId objectId = convertExpression(*exprData.object);
+            if (objectId == 0) {
+              return 0; // Propagate failure
+            }
             node->setProperty("object", static_cast<i64>(objectId));
           }
 
@@ -343,11 +365,16 @@ NodeId ASTToIRConverter::convertExpression(const Expression& expr) {
       expr.data);
 }
 
-NodeId ASTToIRConverter::createNodeAndConnect(IRNodeType type, NodeId prevNode) {
+NodeId ASTToIRConverter::createNodeAndConnect(IRNodeType type,
+                                              NodeId prevNode) {
   NodeId newId = m_graph->createNode(type);
-  auto* newNode = m_graph->getNode(newId);
+  auto *newNode = m_graph->getNode(newId);
+  if (!newNode) {
+    // Critical error: node creation failed
+    return 0; // Signal failure
+  }
 
-  auto* prev = m_graph->getNode(prevNode);
+  auto *prev = m_graph->getNode(prevNode);
   if (prev) {
     newNode->setPosition(prev->getX(), prev->getY() + m_nodeSpacing);
   }
@@ -366,11 +393,11 @@ NodeId ASTToIRConverter::createNodeAndConnect(IRNodeType type, NodeId prevNode) 
 IRToASTConverter::IRToASTConverter() = default;
 IRToASTConverter::~IRToASTConverter() = default;
 
-Result<Program> IRToASTConverter::convert(const IRGraph& graph) {
+Result<Program> IRToASTConverter::convert(const IRGraph &graph) {
   Program program;
   m_visited.clear();
 
-  for (const auto& sceneName : graph.getSceneNames()) {
+  for (const auto &sceneName : graph.getSceneNames()) {
     NodeId startId = graph.getSceneStartNode(sceneName);
     if (startId == 0) {
       continue;
@@ -381,7 +408,7 @@ Result<Program> IRToASTConverter::convert(const IRGraph& graph) {
 
     auto execOrder = graph.getExecutionOrder();
     for (NodeId id : execOrder) {
-      const auto* node = graph.getNode(id);
+      const auto *node = graph.getNode(id);
       if (!node || m_visited.count(id)) {
         continue;
       }
@@ -398,8 +425,8 @@ Result<Program> IRToASTConverter::convert(const IRGraph& graph) {
   return Result<Program>::ok(std::move(program));
 }
 
-std::unique_ptr<Statement> IRToASTConverter::convertNode(const IRNode* node,
-                                                         const IRGraph& /*graph*/) {
+std::unique_ptr<Statement>
+IRToASTConverter::convertNode(const IRNode *node, const IRGraph & /*graph*/) {
   m_visited.insert(node->getId());
 
   switch (node->getType()) {
@@ -407,20 +434,23 @@ std::unique_ptr<Statement> IRToASTConverter::convertNode(const IRNode* node,
     ShowStmt show;
     show.target = ShowStmt::Target::Character;
     show.identifier = node->getStringProperty("character");
-    return std::make_unique<Statement>(std::move(show), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(show),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::ShowBackground: {
     ShowStmt show;
     show.target = ShowStmt::Target::Background;
     show.identifier = node->getStringProperty("background");
-    return std::make_unique<Statement>(std::move(show), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(show),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::HideCharacter: {
     HideStmt hide;
     hide.identifier = node->getStringProperty("character");
-    return std::make_unique<Statement>(std::move(hide), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(hide),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::Dialogue: {
@@ -430,7 +460,8 @@ std::unique_ptr<Statement> IRToASTConverter::convertNode(const IRNode* node,
       say.speaker = character;
     }
     say.text = node->getStringProperty("text");
-    return std::make_unique<Statement>(std::move(say), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(say),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::PlayMusic: {
@@ -438,26 +469,30 @@ std::unique_ptr<Statement> IRToASTConverter::convertNode(const IRNode* node,
     play.type = PlayStmt::MediaType::Music;
     play.resource = node->getStringProperty("track");
     play.loop = node->getBoolProperty("loop", false);
-    return std::make_unique<Statement>(std::move(play), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(play),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::PlaySound: {
     PlayStmt play;
     play.type = PlayStmt::MediaType::Sound;
     play.resource = node->getStringProperty("track");
-    return std::make_unique<Statement>(std::move(play), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(play),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::Wait: {
     WaitStmt wait;
     wait.duration = static_cast<f32>(node->getFloatProperty("duration", 1.0));
-    return std::make_unique<Statement>(std::move(wait), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(wait),
+                                       node->getSourceLocation());
   }
 
   case IRNodeType::Goto: {
     GotoStmt gotoStmt;
     gotoStmt.target = node->getStringProperty("target");
-    return std::make_unique<Statement>(std::move(gotoStmt), node->getSourceLocation());
+    return std::make_unique<Statement>(std::move(gotoStmt),
+                                       node->getSourceLocation());
   }
 
   default:
@@ -465,8 +500,9 @@ std::unique_ptr<Statement> IRToASTConverter::convertNode(const IRNode* node,
   }
 }
 
-std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* node,
-                                                                  const IRGraph& graph) {
+std::unique_ptr<Expression>
+IRToASTConverter::convertToExpression(const IRNode *node,
+                                      const IRGraph &graph) {
   if (!node || node->getType() != IRNodeType::Expression) {
     return nullptr;
   }
@@ -489,82 +525,69 @@ std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* 
       literal.value = node->getStringProperty("value");
     }
 
-    return std::make_unique<Expression>(std::move(literal), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(literal),
+                                        node->getSourceLocation());
 
   } else if (exprType == "identifier") {
     IdentifierExpr identifier;
     identifier.name = node->getStringProperty("name");
-    return std::make_unique<Expression>(std::move(identifier), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(identifier),
+                                        node->getSourceLocation());
 
   } else if (exprType == "binary") {
     BinaryExpr binary;
 
     // Convert operator string back to TokenType
     std::string opStr = node->getStringProperty("operator");
-    if (opStr == "+")
-      binary.op = TokenType::Plus;
-    else if (opStr == "-")
-      binary.op = TokenType::Minus;
-    else if (opStr == "*")
-      binary.op = TokenType::Star;
-    else if (opStr == "/")
-      binary.op = TokenType::Slash;
-    else if (opStr == "%")
-      binary.op = TokenType::Percent;
-    else if (opStr == "==")
-      binary.op = TokenType::Equal;
-    else if (opStr == "!=")
-      binary.op = TokenType::NotEqual;
-    else if (opStr == "<")
-      binary.op = TokenType::Less;
-    else if (opStr == "<=")
-      binary.op = TokenType::LessEqual;
-    else if (opStr == ">")
-      binary.op = TokenType::Greater;
-    else if (opStr == ">=")
-      binary.op = TokenType::GreaterEqual;
-    else if (opStr == "and")
-      binary.op = TokenType::And;
-    else if (opStr == "or")
-      binary.op = TokenType::Or;
-    else
-      binary.op = TokenType::Error; // Fallback
+    if (opStr == "+") binary.op = TokenType::Plus;
+    else if (opStr == "-") binary.op = TokenType::Minus;
+    else if (opStr == "*") binary.op = TokenType::Star;
+    else if (opStr == "/") binary.op = TokenType::Slash;
+    else if (opStr == "%") binary.op = TokenType::Percent;
+    else if (opStr == "==") binary.op = TokenType::Equal;
+    else if (opStr == "!=") binary.op = TokenType::NotEqual;
+    else if (opStr == "<") binary.op = TokenType::Less;
+    else if (opStr == "<=") binary.op = TokenType::LessEqual;
+    else if (opStr == ">") binary.op = TokenType::Greater;
+    else if (opStr == ">=") binary.op = TokenType::GreaterEqual;
+    else if (opStr == "and") binary.op = TokenType::And;
+    else if (opStr == "or") binary.op = TokenType::Or;
+    else binary.op = TokenType::Error; // Fallback
 
     // Recursively convert operands
     i64 leftId = node->getIntProperty("leftOperand", 0);
     if (leftId != 0) {
-      const IRNode* leftNode = graph.getNode(static_cast<NodeId>(leftId));
+      const IRNode *leftNode = graph.getNode(static_cast<NodeId>(leftId));
       binary.left = convertToExpression(leftNode, graph);
     }
 
     i64 rightId = node->getIntProperty("rightOperand", 0);
     if (rightId != 0) {
-      const IRNode* rightNode = graph.getNode(static_cast<NodeId>(rightId));
+      const IRNode *rightNode = graph.getNode(static_cast<NodeId>(rightId));
       binary.right = convertToExpression(rightNode, graph);
     }
 
-    return std::make_unique<Expression>(std::move(binary), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(binary),
+                                        node->getSourceLocation());
 
   } else if (exprType == "unary") {
     UnaryExpr unary;
 
     // Convert operator string back to TokenType
     std::string opStr = node->getStringProperty("operator");
-    if (opStr == "-")
-      unary.op = TokenType::Minus;
-    else if (opStr == "not")
-      unary.op = TokenType::Not;
-    else
-      unary.op = TokenType::Error; // Fallback
+    if (opStr == "-") unary.op = TokenType::Minus;
+    else if (opStr == "not") unary.op = TokenType::Not;
+    else unary.op = TokenType::Error; // Fallback
 
     // Recursively convert operand
     i64 operandId = node->getIntProperty("operand", 0);
     if (operandId != 0) {
-      const IRNode* operandNode = graph.getNode(static_cast<NodeId>(operandId));
+      const IRNode *operandNode = graph.getNode(static_cast<NodeId>(operandId));
       unary.operand = convertToExpression(operandNode, graph);
     }
 
-    return std::make_unique<Expression>(std::move(unary), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(unary),
+                                        node->getSourceLocation());
 
   } else if (exprType == "call") {
     CallExpr call;
@@ -573,11 +596,11 @@ std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* 
     // Convert arguments
     auto prop = node->getProperty("arguments");
     if (prop && std::holds_alternative<std::vector<std::string>>(*prop)) {
-      const auto& argIds = std::get<std::vector<std::string>>(*prop);
-      for (const auto& argIdStr : argIds) {
+      const auto &argIds = std::get<std::vector<std::string>>(*prop);
+      for (const auto &argIdStr : argIds) {
         try {
           NodeId argId = std::stoull(argIdStr);
-          const IRNode* argNode = graph.getNode(argId);
+          const IRNode *argNode = graph.getNode(argId);
           auto argExpr = convertToExpression(argNode, graph);
           if (argExpr) {
             call.arguments.push_back(std::move(argExpr));
@@ -588,7 +611,8 @@ std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* 
       }
     }
 
-    return std::make_unique<Expression>(std::move(call), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(call),
+                                        node->getSourceLocation());
 
   } else if (exprType == "property") {
     PropertyExpr property;
@@ -597,11 +621,12 @@ std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* 
     // Recursively convert object
     i64 objectId = node->getIntProperty("object", 0);
     if (objectId != 0) {
-      const IRNode* objectNode = graph.getNode(static_cast<NodeId>(objectId));
+      const IRNode *objectNode = graph.getNode(static_cast<NodeId>(objectId));
       property.object = convertToExpression(objectNode, graph);
     }
 
-    return std::make_unique<Expression>(std::move(property), node->getSourceLocation());
+    return std::make_unique<Expression>(std::move(property),
+                                        node->getSourceLocation());
   }
 
   // Unknown expression type
@@ -615,11 +640,11 @@ std::unique_ptr<Expression> IRToASTConverter::convertToExpression(const IRNode* 
 ASTToTextGenerator::ASTToTextGenerator() = default;
 ASTToTextGenerator::~ASTToTextGenerator() = default;
 
-std::string ASTToTextGenerator::generate(const Program& program) {
+std::string ASTToTextGenerator::generate(const Program &program) {
   m_output.clear();
   m_indentLevel = 0;
 
-  for (const auto& decl : program.characters) {
+  for (const auto &decl : program.characters) {
     generateCharacter(decl);
     newline();
   }
@@ -628,7 +653,7 @@ std::string ASTToTextGenerator::generate(const Program& program) {
     newline();
   }
 
-  for (const auto& scene : program.scenes) {
+  for (const auto &scene : program.scenes) {
     generateScene(scene);
     newline();
   }
@@ -636,7 +661,7 @@ std::string ASTToTextGenerator::generate(const Program& program) {
   return m_output;
 }
 
-void ASTToTextGenerator::generateCharacter(const CharacterDecl& decl) {
+void ASTToTextGenerator::generateCharacter(const CharacterDecl &decl) {
   write("character ");
   write(decl.id);
   write("(name=\"");
@@ -650,14 +675,14 @@ void ASTToTextGenerator::generateCharacter(const CharacterDecl& decl) {
   write(")");
 }
 
-void ASTToTextGenerator::generateScene(const SceneDecl& scene) {
+void ASTToTextGenerator::generateScene(const SceneDecl &scene) {
   write("scene ");
   write(scene.name);
   write(" {");
   newline();
 
   m_indentLevel++;
-  for (const auto& stmt : scene.body) {
+  for (const auto &stmt : scene.body) {
     generateStatement(*stmt, m_indentLevel);
   }
   m_indentLevel--;
@@ -666,11 +691,12 @@ void ASTToTextGenerator::generateScene(const SceneDecl& scene) {
   write("}");
 }
 
-void ASTToTextGenerator::generateStatement(const Statement& stmt, int /*indentLvl*/) {
+void ASTToTextGenerator::generateStatement(const Statement &stmt,
+                                           int /*indentLvl*/) {
   indent();
 
   std::visit(
-      [this](const auto& stmtData) {
+      [this](const auto &stmtData) {
         using T = std::decay_t<decltype(stmtData)>;
 
         if constexpr (std::is_same_v<T, ShowStmt>) {
@@ -727,14 +753,14 @@ void ASTToTextGenerator::generateStatement(const Statement& stmt, int /*indentLv
   newline();
 }
 
-void ASTToTextGenerator::generateExpression(const Expression& expr) {
+void ASTToTextGenerator::generateExpression(const Expression &expr) {
   std::visit(
-      [this](const auto& exprData) {
+      [this](const auto &exprData) {
         using T = std::decay_t<decltype(exprData)>;
 
         if constexpr (std::is_same_v<T, LiteralExpr>) {
           std::visit(
-              [this](const auto& val) {
+              [this](const auto &val) {
                 using V = std::decay_t<decltype(val)>;
                 if constexpr (std::is_same_v<V, std::string>) {
                   write("\"");
@@ -762,12 +788,8 @@ void ASTToTextGenerator::indent() {
   }
 }
 
-void ASTToTextGenerator::newline() {
-  m_output += "\n";
-}
+void ASTToTextGenerator::newline() { m_output += "\n"; }
 
-void ASTToTextGenerator::write(const std::string& text) {
-  m_output += text;
-}
+void ASTToTextGenerator::write(const std::string &text) { m_output += text; }
 
 } // namespace NovelMind::scripting

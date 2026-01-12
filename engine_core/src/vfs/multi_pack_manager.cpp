@@ -17,7 +17,7 @@ namespace NovelMind::vfs {
 namespace fs = std::filesystem;
 namespace {
 
-bool readFileToString(std::ifstream& file, std::string& out) {
+bool readFileToString(std::ifstream &file, std::string &out) {
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
   if (size == std::streampos(-1) || size < 0) {
@@ -30,7 +30,7 @@ bool readFileToString(std::ifstream& file, std::string& out) {
   return static_cast<bool>(file);
 }
 
-Result<std::vector<u8>> readBinaryFile(const std::string& path) {
+Result<std::vector<u8>> readBinaryFile(const std::string &path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return Result<std::vector<u8>>::error("Failed to open file: " + path);
@@ -42,14 +42,15 @@ Result<std::vector<u8>> readBinaryFile(const std::string& path) {
   }
   std::vector<u8> data(static_cast<size_t>(size));
   file.seekg(0, std::ios::beg);
-  file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(data.size()));
+  file.read(reinterpret_cast<char *>(data.data()),
+            static_cast<std::streamsize>(data.size()));
   if (!file) {
     return Result<std::vector<u8>>::error("Failed to read file: " + path);
   }
   return Result<std::vector<u8>>::ok(std::move(data));
 }
 
-std::optional<std::vector<u8>> decodeHex(const std::string& hex) {
+std::optional<std::vector<u8>> decodeHex(const std::string &hex) {
   if (hex.size() % 2 != 0) {
     return std::nullopt;
   }
@@ -76,9 +77,9 @@ std::optional<std::vector<u8>> decodeHex(const std::string& hex) {
   return bytes;
 }
 
-std::string getEnvValue(const char* name) {
+std::string getEnvValue(const char *name) {
 #if defined(_WIN32)
-  char* value = nullptr;
+  char *value = nullptr;
   size_t len = 0;
   if (_dupenv_s(&value, &len, name) != 0 || !value) {
     return {};
@@ -87,7 +88,7 @@ std::string getEnvValue(const char* name) {
   std::free(value);
   return out;
 #else
-  const char* value = std::getenv(name);
+  const char *value = std::getenv(name);
   return value ? std::string(value) : std::string();
 #endif
 }
@@ -137,27 +138,28 @@ void MultiPackManager::shutdown() {
   m_initialized = false;
 }
 
-void MultiPackManager::setPackDirectory(const std::string& path) {
+void MultiPackManager::setPackDirectory(const std::string &path) {
   m_packDirectory = path;
 }
 
-void MultiPackManager::setModsDirectory(const std::string& path) {
+void MultiPackManager::setModsDirectory(const std::string &path) {
   m_modsDirectory = path;
 }
 
-void MultiPackManager::setPackPublicKeyPem(const std::string& pem) {
+void MultiPackManager::setPackPublicKeyPem(const std::string &pem) {
   m_publicKeyPem = pem;
 }
 
-void MultiPackManager::setPackPublicKeyPath(const std::string& path) {
+void MultiPackManager::setPackPublicKeyPath(const std::string &path) {
   m_publicKeyPath = path;
 }
 
-void MultiPackManager::setPackDecryptionKey(const std::vector<u8>& key) {
+void MultiPackManager::setPackDecryptionKey(const std::vector<u8> &key) {
   m_decryptionKey.assign(key.begin(), key.end());
 }
 
-Result<void> MultiPackManager::setPackDecryptionKeyFromFile(const std::string& path) {
+Result<void>
+MultiPackManager::setPackDecryptionKeyFromFile(const std::string &path) {
   auto keyResult = readBinaryFile(path);
   if (keyResult.isError()) {
     return Result<void>::error(keyResult.error());
@@ -178,7 +180,8 @@ Result<void> MultiPackManager::configureKeysFromEnvironment() {
   if (!hexKey.empty()) {
     auto decoded = decodeHex(hexKey.c_str());
     if (!decoded.has_value() || decoded->empty()) {
-      return Result<void>::error("Invalid NOVELMIND_PACK_AES_KEY_HEX (must be even-length hex)");
+      return Result<void>::error(
+          "Invalid NOVELMIND_PACK_AES_KEY_HEX (must be even-length hex)");
     }
     m_decryptionKey.assign(decoded->begin(), decoded->end());
   } else if (!keyFile.empty()) {
@@ -199,16 +202,151 @@ Result<void> MultiPackManager::configureKeysFromEnvironment() {
 // Pack Loading
 // =========================================================================
 
-PackLoadResult MultiPackManager::loadBasePack(const std::string& path) {
+PackLoadResult MultiPackManager::loadBasePack(const std::string &path) {
   return loadPackInternal(path, PackType::Base, 0);
 }
 
-PackLoadResult MultiPackManager::loadPack(const std::string& path, PackType type, i32 priority) {
+PackLoadResult MultiPackManager::loadPack(const std::string &path,
+                                          PackType type, i32 priority) {
   return loadPackInternal(path, type, priority);
 }
 
-PackLoadResult MultiPackManager::loadPackInternal(const std::string& path, PackType type,
-                                                  i32 priority) {
+std::future<PackLoadResult> MultiPackManager::loadPackAsync(
+    const std::string &path, PackType type, i32 priority,
+    ProgressCallback progressCallback) {
+  // Launch async task to load pack in background thread
+  return std::async(std::launch::async,
+                    [this, path, type, priority, progressCallback]() -> PackLoadResult {
+    PackLoadResult result;
+    result.success = false;
+
+    // Report progress: Starting
+    if (progressCallback) {
+      progressCallback(0, 7, "Checking pack file");
+    }
+
+    if (!fs::exists(path)) {
+      result.errors.push_back("Pack file not found: " + path);
+      return result;
+    }
+
+    // Report progress: Reading manifest
+    if (progressCallback) {
+      progressCallback(1, 7, "Reading pack manifest");
+    }
+
+    // Read pack manifest/header
+    PackInfo info;
+    try {
+      info = readPackManifest(path);
+    } catch (const std::exception &e) {
+      result.errors.push_back("Failed to read pack manifest: " +
+                              std::string(e.what()));
+      return result;
+    }
+
+    info.path = path;
+    info.type = type;
+    info.priority = priority;
+    result.packId = info.id;
+
+    // Check if already loaded
+    if (isPackLoaded(info.id)) {
+      result.errors.push_back("Pack already loaded: " + info.id);
+      return result;
+    }
+
+    // Report progress: Checking dependencies
+    if (progressCallback) {
+      progressCallback(2, 7, "Checking dependencies");
+    }
+
+    // Check dependencies
+    auto missingDeps = getMissingDependencies(info);
+    if (!missingDeps.empty()) {
+      result.missingDependencies = missingDeps;
+      for (const auto &dep : missingDeps) {
+        result.warnings.push_back("Missing dependency: " + dep);
+      }
+    }
+
+    // Report progress: Creating reader
+    if (progressCallback) {
+      progressCallback(3, 7, "Creating pack reader");
+    }
+
+    // Create pack reader
+    auto reader = std::make_unique<SecurePackFileSystem>();
+    if (!m_publicKeyPem.empty()) {
+      reader->setPublicKeyPem(m_publicKeyPem);
+    }
+    if (!m_publicKeyPath.empty()) {
+      reader->setPublicKeyPath(m_publicKeyPath);
+    }
+    if (!m_decryptionKey.empty()) {
+      reader->setDecryptionKey(m_decryptionKey);
+    }
+
+    // Report progress: Mounting pack (this is async internally)
+    if (progressCallback) {
+      progressCallback(4, 7, "Mounting pack");
+    }
+
+    auto openResult = reader->mount(path);
+    if (openResult.isError()) {
+      result.errors.push_back("Failed to open pack: " + openResult.error());
+      return result;
+    }
+
+    // Report progress: Loading resources
+    if (progressCallback) {
+      progressCallback(5, 7, "Loading resource list");
+    }
+
+    // Create loaded pack entry
+    auto loadedPack = std::make_unique<LoadedPack>();
+    loadedPack->info = std::move(info);
+    loadedPack->reader = std::move(reader);
+    loadedPack->effectivePriority = calculateEffectivePriority(type, priority);
+
+    // Collect provided resources
+    auto resources = loadedPack->reader->listResources();
+    for (const auto &resId : resources) {
+      loadedPack->providedResources.insert(resId);
+    }
+    result.loadedResources = loadedPack->providedResources.size();
+
+    // Report progress: Registering pack
+    if (progressCallback) {
+      progressCallback(6, 7, "Registering pack");
+    }
+
+    // Add to packs list
+    m_packIdToIndex[loadedPack->info.id] = m_packs.size();
+    m_packs.push_back(std::move(loadedPack));
+
+    // If this is a mod, add to load order
+    if (type == PackType::Mod) {
+      m_modLoadOrder.push_back(result.packId);
+    }
+
+    // Rebuild resource index
+    rebuildResourceIndex();
+
+    // Report progress: Complete
+    if (progressCallback) {
+      progressCallback(7, 7, "Pack loaded successfully");
+    }
+
+    result.success = true;
+    firePackLoaded(m_packs.back()->info);
+
+    return result;
+  });
+}
+
+PackLoadResult MultiPackManager::loadPackInternal(const std::string &path,
+                                                  PackType type, i32 priority) {
   PackLoadResult result;
   result.success = false;
 
@@ -221,8 +359,9 @@ PackLoadResult MultiPackManager::loadPackInternal(const std::string& path, PackT
   PackInfo info;
   try {
     info = readPackManifest(path);
-  } catch (const std::exception& e) {
-    result.errors.push_back("Failed to read pack manifest: " + std::string(e.what()));
+  } catch (const std::exception &e) {
+    result.errors.push_back("Failed to read pack manifest: " +
+                            std::string(e.what()));
     return result;
   }
 
@@ -241,7 +380,7 @@ PackLoadResult MultiPackManager::loadPackInternal(const std::string& path, PackT
   auto missingDeps = getMissingDependencies(info);
   if (!missingDeps.empty()) {
     result.missingDependencies = missingDeps;
-    for (const auto& dep : missingDeps) {
+    for (const auto &dep : missingDeps) {
       result.warnings.push_back("Missing dependency: " + dep);
     }
     // Continue loading but warn about missing dependencies
@@ -273,7 +412,7 @@ PackLoadResult MultiPackManager::loadPackInternal(const std::string& path, PackT
 
   // Collect provided resources
   auto resources = loadedPack->reader->listResources();
-  for (const auto& resId : resources) {
+  for (const auto &resId : resources) {
     loadedPack->providedResources.insert(resId);
   }
   result.loadedResources = loadedPack->providedResources.size();
@@ -296,7 +435,7 @@ PackLoadResult MultiPackManager::loadPackInternal(const std::string& path, PackT
   return result;
 }
 
-void MultiPackManager::unloadPack(const std::string& packId) {
+void MultiPackManager::unloadPack(const std::string &packId) {
   auto it = m_packIdToIndex.find(packId);
   if (it == m_packIdToIndex.end())
     return;
@@ -309,8 +448,9 @@ void MultiPackManager::unloadPack(const std::string& packId) {
   }
 
   // Remove from mod load order if applicable
-  m_modLoadOrder.erase(std::remove(m_modLoadOrder.begin(), m_modLoadOrder.end(), packId),
-                       m_modLoadOrder.end());
+  m_modLoadOrder.erase(
+      std::remove(m_modLoadOrder.begin(), m_modLoadOrder.end(), packId),
+      m_modLoadOrder.end());
 
   // Remove from packs list
   m_packs.erase(m_packs.begin() + static_cast<ptrdiff_t>(index));
@@ -328,20 +468,20 @@ void MultiPackManager::unloadPack(const std::string& packId) {
 void MultiPackManager::unloadPacksOfType(PackType type) {
   // Collect pack IDs to unload
   std::vector<std::string> toUnload;
-  for (const auto& pack : m_packs) {
+  for (const auto &pack : m_packs) {
     if (pack->info.type == type) {
       toUnload.push_back(pack->info.id);
     }
   }
 
   // Unload each pack
-  for (const auto& id : toUnload) {
+  for (const auto &id : toUnload) {
     unloadPack(id);
   }
 }
 
 void MultiPackManager::unloadAllPacks() {
-  for (auto& pack : m_packs) {
+  for (auto &pack : m_packs) {
     if (pack->reader) {
       pack->reader->unmountAll();
     }
@@ -354,7 +494,7 @@ void MultiPackManager::unloadAllPacks() {
   m_modLoadOrder.clear();
 }
 
-PackLoadResult MultiPackManager::reloadPack(const std::string& packId) {
+PackLoadResult MultiPackManager::reloadPack(const std::string &packId) {
   auto it = m_packIdToIndex.find(packId);
   if (it == m_packIdToIndex.end()) {
     PackLoadResult result;
@@ -371,7 +511,7 @@ PackLoadResult MultiPackManager::reloadPack(const std::string& packId) {
   return loadPack(path, type, priority);
 }
 
-void MultiPackManager::setPackEnabled(const std::string& packId, bool enabled) {
+void MultiPackManager::setPackEnabled(const std::string &packId, bool enabled) {
   auto it = m_packIdToIndex.find(packId);
   if (it != m_packIdToIndex.end()) {
     m_packs[it->second]->info.enabled = enabled;
@@ -383,13 +523,14 @@ void MultiPackManager::setPackEnabled(const std::string& packId, bool enabled) {
 // Pack Discovery
 // =========================================================================
 
-std::vector<DiscoveredPack> MultiPackManager::discoverPacks(const std::string& directory) {
+std::vector<DiscoveredPack>
+MultiPackManager::discoverPacks(const std::string &directory) {
   std::vector<DiscoveredPack> discovered;
 
   if (!fs::exists(directory))
     return discovered;
 
-  for (const auto& entry : fs::recursive_directory_iterator(directory)) {
+  for (const auto &entry : fs::recursive_directory_iterator(directory)) {
     if (!entry.is_regular_file())
       continue;
 
@@ -412,7 +553,7 @@ std::vector<DiscoveredPack> MultiPackManager::discoverPacks(const std::string& d
             pack.loadError += missing[i];
           }
         }
-      } catch (const std::exception& e) {
+      } catch (const std::exception &e) {
         pack.canLoad = false;
         pack.loadError = e.what();
       }
@@ -435,7 +576,7 @@ std::vector<DiscoveredPack> MultiPackManager::discoverLanguagePacks() {
 
   if (!m_packDirectory.empty()) {
     auto all = discoverPacks(m_packDirectory);
-    for (auto& pack : all) {
+    for (auto &pack : all) {
       if (pack.info.type == PackType::Language) {
         langPacks.push_back(std::move(pack));
       }
@@ -445,14 +586,15 @@ std::vector<DiscoveredPack> MultiPackManager::discoverLanguagePacks() {
   return langPacks;
 }
 
-bool MultiPackManager::areDependenciesSatisfied(const PackInfo& pack) const {
+bool MultiPackManager::areDependenciesSatisfied(const PackInfo &pack) const {
   return getMissingDependencies(pack).empty();
 }
 
-std::vector<std::string> MultiPackManager::getMissingDependencies(const PackInfo& pack) const {
+std::vector<std::string>
+MultiPackManager::getMissingDependencies(const PackInfo &pack) const {
   std::vector<std::string> missing;
 
-  for (const auto& dep : pack.dependencies) {
+  for (const auto &dep : pack.dependencies) {
     if (!isPackLoaded(dep)) {
       missing.push_back(dep);
     }
@@ -465,7 +607,7 @@ std::vector<std::string> MultiPackManager::getMissingDependencies(const PackInfo
 // Pack Information
 // =========================================================================
 
-const PackInfo* MultiPackManager::getPackInfo(const std::string& packId) const {
+const PackInfo *MultiPackManager::getPackInfo(const std::string &packId) const {
   auto it = m_packIdToIndex.find(packId);
   if (it != m_packIdToIndex.end()) {
     return &m_packs[it->second]->info;
@@ -473,18 +615,19 @@ const PackInfo* MultiPackManager::getPackInfo(const std::string& packId) const {
   return nullptr;
 }
 
-std::vector<const PackInfo*> MultiPackManager::getLoadedPacks() const {
-  std::vector<const PackInfo*> result;
+std::vector<const PackInfo *> MultiPackManager::getLoadedPacks() const {
+  std::vector<const PackInfo *> result;
   result.reserve(m_packs.size());
-  for (const auto& pack : m_packs) {
+  for (const auto &pack : m_packs) {
     result.push_back(&pack->info);
   }
   return result;
 }
 
-std::vector<const PackInfo*> MultiPackManager::getPacksOfType(PackType type) const {
-  std::vector<const PackInfo*> result;
-  for (const auto& pack : m_packs) {
+std::vector<const PackInfo *>
+MultiPackManager::getPacksOfType(PackType type) const {
+  std::vector<const PackInfo *> result;
+  for (const auto &pack : m_packs) {
     if (pack->info.type == type) {
       result.push_back(&pack->info);
     }
@@ -492,11 +635,11 @@ std::vector<const PackInfo*> MultiPackManager::getPacksOfType(PackType type) con
   return result;
 }
 
-bool MultiPackManager::isPackLoaded(const std::string& packId) const {
+bool MultiPackManager::isPackLoaded(const std::string &packId) const {
   return m_packIdToIndex.find(packId) != m_packIdToIndex.end();
 }
 
-bool MultiPackManager::isPackEnabled(const std::string& packId) const {
+bool MultiPackManager::isPackEnabled(const std::string &packId) const {
   auto it = m_packIdToIndex.find(packId);
   if (it != m_packIdToIndex.end()) {
     return m_packs[it->second]->info.enabled;
@@ -508,13 +651,14 @@ bool MultiPackManager::isPackEnabled(const std::string& packId) const {
 // Resource Access
 // =========================================================================
 
-Result<std::vector<u8>> MultiPackManager::readResource(const std::string& resourceId) {
+Result<std::vector<u8>>
+MultiPackManager::readResource(const std::string &resourceId) {
   auto it = m_resourceIndex.find(resourceId);
   if (it == m_resourceIndex.end()) {
     return Result<std::vector<u8>>::error("Resource not found: " + resourceId);
   }
 
-  auto& pack = m_packs[it->second];
+  auto &pack = m_packs[it->second];
   if (!pack->info.enabled) {
     return Result<std::vector<u8>>::error("Pack is disabled: " + pack->info.id);
   }
@@ -522,11 +666,12 @@ Result<std::vector<u8>> MultiPackManager::readResource(const std::string& resour
   return pack->reader->readFile(resourceId);
 }
 
-bool MultiPackManager::exists(const std::string& resourceId) const {
+bool MultiPackManager::exists(const std::string &resourceId) const {
   return m_resourceIndex.find(resourceId) != m_resourceIndex.end();
 }
 
-std::optional<ResourceInfo> MultiPackManager::getResourceInfo(const std::string& resourceId) const {
+std::optional<ResourceInfo>
+MultiPackManager::getResourceInfo(const std::string &resourceId) const {
   auto it = m_resourceIndex.find(resourceId);
   if (it == m_resourceIndex.end()) {
     return std::nullopt;
@@ -535,7 +680,8 @@ std::optional<ResourceInfo> MultiPackManager::getResourceInfo(const std::string&
   return m_packs[it->second]->reader->getInfo(resourceId);
 }
 
-std::string MultiPackManager::getResourcePack(const std::string& resourceId) const {
+std::string
+MultiPackManager::getResourcePack(const std::string &resourceId) const {
   auto it = m_resourceIndex.find(resourceId);
   if (it != m_resourceIndex.end()) {
     return m_packs[it->second]->info.id;
@@ -543,10 +689,11 @@ std::string MultiPackManager::getResourcePack(const std::string& resourceId) con
   return "";
 }
 
-std::vector<std::string> MultiPackManager::listResources(ResourceType type) const {
+std::vector<std::string>
+MultiPackManager::listResources(ResourceType type) const {
   std::vector<std::string> result;
 
-  for (const auto& [resourceId, packIndex] : m_resourceIndex) {
+  for (const auto &[resourceId, packIndex] : m_resourceIndex) {
     if (type == ResourceType::Unknown) {
       result.push_back(resourceId);
     } else {
@@ -564,23 +711,25 @@ std::vector<ResourceOverride> MultiPackManager::getActiveOverrides() const {
   std::vector<ResourceOverride> overrides;
 
   // Track first occurrence of each resource
-  std::unordered_map<std::string, std::pair<std::string, PackType>> firstOccurrence;
+  std::unordered_map<std::string, std::pair<std::string, PackType>>
+      firstOccurrence;
 
   // Process packs from lowest to highest priority
   std::vector<size_t> sortedIndices;
   for (size_t i = 0; i < m_packs.size(); ++i) {
     sortedIndices.push_back(i);
   }
-  std::sort(sortedIndices.begin(), sortedIndices.end(), [this](size_t a, size_t b) {
-    return m_packs[a]->effectivePriority < m_packs[b]->effectivePriority;
-  });
+  std::sort(
+      sortedIndices.begin(), sortedIndices.end(), [this](size_t a, size_t b) {
+        return m_packs[a]->effectivePriority < m_packs[b]->effectivePriority;
+      });
 
   for (size_t idx : sortedIndices) {
-    const auto& pack = m_packs[idx];
+    const auto &pack = m_packs[idx];
     if (!pack->info.enabled)
       continue;
 
-    for (const auto& resourceId : pack->providedResources) {
+    for (const auto &resourceId : pack->providedResources) {
       auto it = firstOccurrence.find(resourceId);
       if (it == firstOccurrence.end()) {
         firstOccurrence[resourceId] = {pack->info.id, pack->info.type};
@@ -602,8 +751,9 @@ std::vector<ResourceOverride> MultiPackManager::getActiveOverrides() const {
   return overrides;
 }
 
-Result<std::vector<u8>> MultiPackManager::readResourceFromPack(const std::string& packId,
-                                                               const std::string& resourceId) {
+Result<std::vector<u8>>
+MultiPackManager::readResourceFromPack(const std::string &packId,
+                                       const std::string &resourceId) {
   auto it = m_packIdToIndex.find(packId);
   if (it == m_packIdToIndex.end()) {
     return Result<std::vector<u8>>::error("Pack not found: " + packId);
@@ -620,7 +770,7 @@ std::vector<std::string> MultiPackManager::getModLoadOrder() const {
   return m_modLoadOrder;
 }
 
-void MultiPackManager::setModLoadOrder(const std::vector<std::string>& order) {
+void MultiPackManager::setModLoadOrder(const std::vector<std::string> &order) {
   m_modLoadOrder = order;
 
   // Update priorities based on order
@@ -636,7 +786,7 @@ void MultiPackManager::setModLoadOrder(const std::vector<std::string>& order) {
   rebuildResourceIndex();
 }
 
-void MultiPackManager::moveModUp(const std::string& packId) {
+void MultiPackManager::moveModUp(const std::string &packId) {
   auto it = std::find(m_modLoadOrder.begin(), m_modLoadOrder.end(), packId);
   if (it != m_modLoadOrder.end() && it != m_modLoadOrder.begin()) {
     std::iter_swap(it, it - 1);
@@ -644,7 +794,7 @@ void MultiPackManager::moveModUp(const std::string& packId) {
   }
 }
 
-void MultiPackManager::moveModDown(const std::string& packId) {
+void MultiPackManager::moveModDown(const std::string &packId) {
   auto it = std::find(m_modLoadOrder.begin(), m_modLoadOrder.end(), packId);
   if (it != m_modLoadOrder.end() && it + 1 != m_modLoadOrder.end()) {
     std::iter_swap(it, it + 1);
@@ -652,7 +802,7 @@ void MultiPackManager::moveModDown(const std::string& packId) {
   }
 }
 
-Result<void> MultiPackManager::saveModConfig(const std::string& path) {
+Result<void> MultiPackManager::saveModConfig(const std::string &path) {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -672,7 +822,7 @@ Result<void> MultiPackManager::saveModConfig(const std::string& path) {
   file << "  \"enabledMods\": [\n";
 
   std::vector<std::string> enabledMods;
-  for (const auto& pack : m_packs) {
+  for (const auto &pack : m_packs) {
     if (pack->info.type == PackType::Mod && pack->info.enabled) {
       enabledMods.push_back(pack->info.id);
     }
@@ -691,7 +841,7 @@ Result<void> MultiPackManager::saveModConfig(const std::string& path) {
   return {};
 }
 
-Result<void> MultiPackManager::loadModConfig(const std::string& path) {
+Result<void> MultiPackManager::loadModConfig(const std::string &path) {
   std::ifstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for reading: " + path);
@@ -710,7 +860,8 @@ Result<void> MultiPackManager::loadModConfig(const std::string& path) {
     std::string orderStr = loadOrderMatch[1].str();
     std::string idPattern = "\"([^\"]+)\"";
     std::regex idRegex(idPattern);
-    auto beginIt = std::sregex_iterator(orderStr.begin(), orderStr.end(), idRegex);
+    auto beginIt =
+        std::sregex_iterator(orderStr.begin(), orderStr.end(), idRegex);
     auto endIt = std::sregex_iterator();
 
     std::vector<std::string> order;
@@ -728,7 +879,8 @@ Result<void> MultiPackManager::loadModConfig(const std::string& path) {
     std::string enabledStr = enabledMatch[1].str();
     std::string idPattern2 = "\"([^\"]+)\"";
     std::regex idRegex2(idPattern2);
-    auto beginIt2 = std::sregex_iterator(enabledStr.begin(), enabledStr.end(), idRegex2);
+    auto beginIt2 =
+        std::sregex_iterator(enabledStr.begin(), enabledStr.end(), idRegex2);
     auto endIt2 = std::sregex_iterator();
 
     std::set<std::string> enabledMods;
@@ -737,7 +889,7 @@ Result<void> MultiPackManager::loadModConfig(const std::string& path) {
     }
 
     // Update enabled state
-    for (auto& pack : m_packs) {
+    for (auto &pack : m_packs) {
       if (pack->info.type == PackType::Mod) {
         pack->info.enabled = enabledMods.count(pack->info.id) > 0;
       }
@@ -753,9 +905,7 @@ Result<void> MultiPackManager::loadModConfig(const std::string& path) {
 // Statistics
 // =========================================================================
 
-size_t MultiPackManager::getPackCount() const {
-  return m_packs.size();
-}
+size_t MultiPackManager::getPackCount() const { return m_packs.size(); }
 
 size_t MultiPackManager::getResourceCount() const {
   return m_resourceIndex.size();
@@ -785,7 +935,7 @@ void MultiPackManager::setOnResourceOverridden(OnResourceOverridden callback) {
 // Private Helpers
 // =========================================================================
 
-PackInfo MultiPackManager::readPackManifest(const std::string& path) {
+PackInfo MultiPackManager::readPackManifest(const std::string &path) {
   PackInfo info;
 
   // Generate ID from filename if no manifest
@@ -825,13 +975,13 @@ void MultiPackManager::rebuildResourceIndex() {
     }
   }
 
-  std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b) {
+  std::sort(sorted.begin(), sorted.end(), [](const auto &a, const auto &b) {
     return a.second > b.second; // Higher priority first
   });
 
   // Build index (first occurrence wins due to descending sort)
-  for (const auto& [idx, priority] : sorted) {
-    for (const auto& resourceId : m_packs[idx]->providedResources) {
+  for (const auto &[idx, priority] : sorted) {
+    for (const auto &resourceId : m_packs[idx]->providedResources) {
       if (m_resourceIndex.find(resourceId) == m_resourceIndex.end()) {
         m_resourceIndex[resourceId] = idx;
       }
@@ -839,7 +989,8 @@ void MultiPackManager::rebuildResourceIndex() {
   }
 }
 
-i32 MultiPackManager::calculateEffectivePriority(PackType type, i32 basePriority) const {
+i32 MultiPackManager::calculateEffectivePriority(PackType type,
+                                                 i32 basePriority) const {
   i32 typeBase = 0;
   switch (type) {
   case PackType::Base:
@@ -862,19 +1013,20 @@ i32 MultiPackManager::calculateEffectivePriority(PackType type, i32 basePriority
   return typeBase + basePriority;
 }
 
-void MultiPackManager::firePackLoaded(const PackInfo& info) {
+void MultiPackManager::firePackLoaded(const PackInfo &info) {
   if (m_onPackLoaded) {
     m_onPackLoaded(info);
   }
 }
 
-void MultiPackManager::firePackUnloaded(const std::string& packId) {
+void MultiPackManager::firePackUnloaded(const std::string &packId) {
   if (m_onPackUnloaded) {
     m_onPackUnloaded(packId);
   }
 }
 
-void MultiPackManager::fireResourceOverridden(const ResourceOverride& override) {
+void MultiPackManager::fireResourceOverridden(
+    const ResourceOverride &override) {
   if (m_onResourceOverridden) {
     m_onResourceOverridden(override);
   }

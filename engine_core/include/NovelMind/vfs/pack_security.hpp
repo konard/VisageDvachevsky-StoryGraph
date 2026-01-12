@@ -163,7 +163,8 @@ private:
 
   struct PackFooter {
     u32 magic;
-    u32 tablesCrc32;
+    u8 tablesSha256[32]; // SHA-256 for cryptographic integrity
+    u32 tablesCrc32;     // CRC32 for quick corruption detection
     u64 createdTimestamp;
     u32 buildNumber;
     u8 reserved[12];

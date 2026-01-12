@@ -503,3 +503,158 @@ TEST_CASE("SceneObjectHandle - Validity tracking", "[scene_graph][handle]") {
     CHECK(handle.isValid() == false);
   }
 }
+
+// ============================================================================
+// Scene Graph Depth Limit Tests (Issue #548 - P2)
+// ============================================================================
+
+TEST_CASE("SceneGraph - Depth limit enforcement", "[scene_graph][depth][bug]") {
+  SECTION("addChild respects maximum depth limit") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a chain approaching the limit
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < SceneObjectBase::MAX_SCENE_DEPTH - 1; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      bool added = current->addChild(std::move(child));
+      CHECK(added == true);
+      current = childPtr;
+    }
+
+    // This should fail as we're at the limit
+    auto tooDeep = std::make_unique<BackgroundObject>("too_deep");
+    bool added = current->addChild(std::move(tooDeep));
+    CHECK(added == false);
+  }
+
+  SECTION("getDepth returns correct depth") {
+    auto root = std::make_unique<BackgroundObject>("root");
+    CHECK(root->getDepth() == 0);
+
+    auto child1 = std::make_unique<BackgroundObject>("child1");
+    SceneObjectBase* child1Ptr = child1.get();
+    root->addChild(std::move(child1));
+    CHECK(child1Ptr->getDepth() == 1);
+
+    auto child2 = std::make_unique<BackgroundObject>("child2");
+    SceneObjectBase* child2Ptr = child2.get();
+    child1Ptr->addChild(std::move(child2));
+    CHECK(child2Ptr->getDepth() == 2);
+
+    auto child3 = std::make_unique<BackgroundObject>("child3");
+    SceneObjectBase* child3Ptr = child3.get();
+    child2Ptr->addChild(std::move(child3));
+    CHECK(child3Ptr->getDepth() == 3);
+  }
+
+  SECTION("findChild handles deep hierarchies") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a reasonable depth hierarchy
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < 10; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Should be able to find the deepest child
+    auto* found = root->findChild("child_9");
+    CHECK(found != nullptr);
+    if (found) {
+      CHECK(found->getId() == "child_9");
+    }
+  }
+
+  SECTION("update with depth limit prevents stack overflow") {
+    MockRenderer renderer;
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a very deep hierarchy
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < 50; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Should not crash
+    root->update(0.016);
+    // Render will call pure virtual, so we skip it for BackgroundObject in this test
+  }
+
+  SECTION("Maximum depth constant is reasonable") {
+    // Verify the constant is set to a reasonable value
+    CHECK(SceneObjectBase::MAX_SCENE_DEPTH == 100);
+  }
+}
+
+TEST_CASE("SceneGraph - Depth warning during save", "[scene_graph][depth][warning]") {
+  SECTION("saveState warns when approaching depth limit") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a chain to 80% of the limit (should trigger warning)
+    SceneObjectBase* current = root.get();
+    constexpr int depthFor80Percent = (SceneObjectBase::MAX_SCENE_DEPTH * 80) / 100;
+
+    for (int i = 0; i < depthFor80Percent; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Saving state of the deepest object should generate a warning
+    // (We can't easily test log output, but we verify it doesn't crash)
+    SceneObjectState state = current->saveState();
+    CHECK(state.id.find("child_") != std::string::npos);
+  }
+}
+
+TEST_CASE("SceneGraph - Stress test with complex hierarchy", "[scene_graph][depth][stress]") {
+  SECTION("Wide and shallow hierarchy") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Add 50 children at depth 1
+    for (int i = 0; i < 50; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      root->addChild(std::move(child));
+    }
+
+    CHECK(root->getChildren().size() == 50);
+
+    // All children should be at depth 1
+    for (const auto& child : root->getChildren()) {
+      CHECK(child->getDepth() == 1);
+    }
+  }
+
+  SECTION("Balanced tree structure") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Create a binary tree structure with 4 levels
+    std::vector<SceneObjectBase*> currentLevel = {root.get()};
+
+    for (int level = 0; level < 4; ++level) {
+      std::vector<SceneObjectBase*> nextLevel;
+      for (auto* parent : currentLevel) {
+        for (int i = 0; i < 2; ++i) {
+          auto child = std::make_unique<BackgroundObject>("L" + std::to_string(level) + "_" +
+                                                          std::to_string(i));
+          SceneObjectBase* childPtr = child.get();
+          parent->addChild(std::move(child));
+          nextLevel.push_back(childPtr);
+        }
+      }
+      currentLevel = nextLevel;
+    }
+
+    // Verify the leaves are at the correct depth
+    for (auto* leaf : currentLevel) {
+      CHECK(leaf->getDepth() == 4);
+    }
+  }
+}

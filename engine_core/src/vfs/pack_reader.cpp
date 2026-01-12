@@ -4,11 +4,28 @@
 
 namespace NovelMind::vfs {
 
-PackReader::~PackReader() {
-  unmountAll();
+PackReader::~PackReader() { unmountAll(); }
+
+Result<void> PackReader::mount(const std::string &packPath) {
+  // Use the internal mount implementation with no progress callback
+  return mountInternal(packPath, nullptr);
 }
 
-Result<void> PackReader::mount(const std::string& packPath) {
+std::future<Result<void>> PackReader::mountAsync(const std::string &packPath,
+                                                  ProgressCallback progressCallback) {
+  // Launch async task to mount pack in background thread
+  return std::async(std::launch::async, [this, packPath, progressCallback]() {
+    return mountInternal(packPath, progressCallback);
+  });
+}
+
+Result<void> PackReader::mountInternal(const std::string &packPath,
+                                       ProgressCallback progressCallback) {
+  // Report progress: Starting
+  if (progressCallback) {
+    progressCallback(0, 4, "Opening pack file");
+  }
+
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (m_packs.find(packPath) != m_packs.end()) {
@@ -23,9 +40,19 @@ Result<void> PackReader::mount(const std::string& packPath) {
   MountedPack pack;
   pack.path = packPath;
 
+  // Report progress: Reading header
+  if (progressCallback) {
+    progressCallback(1, 4, "Reading pack header");
+  }
+
   auto headerResult = readPackHeader(file, pack.header);
   if (headerResult.isError()) {
     return headerResult;
+  }
+
+  // Report progress: Reading resource table
+  if (progressCallback) {
+    progressCallback(2, 4, "Reading resource table");
   }
 
   auto tableResult = readResourceTable(file, pack);
@@ -33,18 +60,31 @@ Result<void> PackReader::mount(const std::string& packPath) {
     return tableResult;
   }
 
+  // Report progress: Reading string table
+  if (progressCallback) {
+    progressCallback(3, 4, "Reading string table");
+  }
+
   auto stringResult = readStringTable(file, pack);
   if (stringResult.isError()) {
     return stringResult;
   }
 
+  pack.stringTableLoaded = true;
+
   m_packs[packPath] = std::move(pack);
+
+  // Report progress: Complete
+  if (progressCallback) {
+    progressCallback(4, 4, "Pack mounted successfully");
+  }
+
   NOVELMIND_LOG_INFO("Mounted pack: " + packPath);
 
   return Result<void>::ok();
 }
 
-void PackReader::unmount(const std::string& packPath) {
+void PackReader::unmount(const std::string &packPath) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_packs.erase(packPath);
   NOVELMIND_LOG_INFO("Unmounted pack: " + packPath);
@@ -56,14 +96,15 @@ void PackReader::unmountAll() {
   NOVELMIND_LOG_INFO("Unmounted all packs");
 }
 
-Result<std::vector<u8>> PackReader::readFile(const std::string& resourceId) const {
+Result<std::vector<u8>>
+PackReader::readFile(const std::string &resourceId) const {
   // Find entry and copy data needed for reading
   std::string packPath;
   PackResourceEntry entry;
   {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    for (const auto& [path, pack] : m_packs) {
+    for (const auto &[path, pack] : m_packs) {
       auto it = pack.entries.find(resourceId);
       if (it != pack.entries.end()) {
         packPath = path;
@@ -81,10 +122,10 @@ Result<std::vector<u8>> PackReader::readFile(const std::string& resourceId) cons
   return Result<std::vector<u8>>::error("Resource not found: " + resourceId);
 }
 
-bool PackReader::exists(const std::string& resourceId) const {
+bool PackReader::exists(const std::string &resourceId) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto& [packPath, pack] : m_packs) {
+  for (const auto &[packPath, pack] : m_packs) {
     if (pack.entries.find(resourceId) != pack.entries.end()) {
       return true;
     }
@@ -93,10 +134,11 @@ bool PackReader::exists(const std::string& resourceId) const {
   return false;
 }
 
-std::optional<ResourceInfo> PackReader::getInfo(const std::string& resourceId) const {
+std::optional<ResourceInfo>
+PackReader::getInfo(const std::string &resourceId) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto& [packPath, pack] : m_packs) {
+  for (const auto &[packPath, pack] : m_packs) {
     auto it = pack.entries.find(resourceId);
     if (it != pack.entries.end()) {
       ResourceInfo info;
@@ -116,9 +158,10 @@ std::vector<std::string> PackReader::listResources(ResourceType type) const {
 
   std::vector<std::string> result;
 
-  for (const auto& [packPath, pack] : m_packs) {
-    for (const auto& [id, entry] : pack.entries) {
-      if (type == ResourceType::Unknown || static_cast<ResourceType>(entry.type) == type) {
+  for (const auto &[packPath, pack] : m_packs) {
+    for (const auto &[id, entry] : pack.entries) {
+      if (type == ResourceType::Unknown ||
+          static_cast<ResourceType>(entry.type) == type) {
         result.push_back(id);
       }
     }
@@ -127,8 +170,9 @@ std::vector<std::string> PackReader::listResources(ResourceType type) const {
   return result;
 }
 
-Result<void> PackReader::readPackHeader(std::ifstream& file, PackHeader& header) {
-  file.read(reinterpret_cast<char*>(&header), sizeof(PackHeader));
+Result<void> PackReader::readPackHeader(std::ifstream &file,
+                                        PackHeader &header) {
+  file.read(reinterpret_cast<char *>(&header), sizeof(PackHeader));
 
   if (!file) {
     return Result<void>::error("Failed to read pack header");
@@ -143,7 +187,8 @@ Result<void> PackReader::readPackHeader(std::ifstream& file, PackHeader& header)
   }
 
   if (header.flags != 0) {
-    return Result<void>::error("Secure pack flags set; use SecurePackReader instead of PackReader");
+    return Result<void>::error(
+        "Secure pack flags set; use SecurePackReader instead of PackReader");
   }
 
   // Security: Validate resource count to prevent excessive allocations
@@ -155,7 +200,8 @@ Result<void> PackReader::readPackHeader(std::ifstream& file, PackHeader& header)
   return Result<void>::ok();
 }
 
-Result<void> PackReader::readResourceTable(std::ifstream& file, MountedPack& pack) {
+Result<void> PackReader::readResourceTable(std::ifstream &file,
+                                           MountedPack &pack) {
   file.seekg(static_cast<std::streamoff>(pack.header.resourceTableOffset));
 
   if (!file) {
@@ -164,7 +210,7 @@ Result<void> PackReader::readResourceTable(std::ifstream& file, MountedPack& pac
 
   for (u32 i = 0; i < pack.header.resourceCount; ++i) {
     PackResourceEntry entry;
-    file.read(reinterpret_cast<char*>(&entry), sizeof(PackResourceEntry));
+    file.read(reinterpret_cast<char *>(&entry), sizeof(PackResourceEntry));
 
     if (!file) {
       return Result<void>::error("Failed to read resource entry");
@@ -177,7 +223,8 @@ Result<void> PackReader::readResourceTable(std::ifstream& file, MountedPack& pac
   return Result<void>::ok();
 }
 
-Result<void> PackReader::readStringTable(std::ifstream& file, MountedPack& pack) {
+Result<void> PackReader::readStringTable(std::ifstream &file,
+                                         MountedPack &pack) {
   file.seekg(static_cast<std::streamoff>(pack.header.stringTableOffset));
 
   if (!file) {
@@ -185,7 +232,7 @@ Result<void> PackReader::readStringTable(std::ifstream& file, MountedPack& pack)
   }
 
   u32 stringCount = 0;
-  file.read(reinterpret_cast<char*>(&stringCount), sizeof(u32));
+  file.read(reinterpret_cast<char *>(&stringCount), sizeof(u32));
 
   if (!file) {
     return Result<void>::error("Failed to read string count");
@@ -199,7 +246,7 @@ Result<void> PackReader::readStringTable(std::ifstream& file, MountedPack& pack)
 
   // Read string offsets
   std::vector<u32> offsets(stringCount);
-  file.read(reinterpret_cast<char*>(offsets.data()),
+  file.read(reinterpret_cast<char *>(offsets.data()),
             static_cast<std::streamsize>(stringCount * sizeof(u32)));
 
   if (!file) {
@@ -228,9 +275,9 @@ Result<void> PackReader::readStringTable(std::ifstream& file, MountedPack& pack)
   // Re-map entries with actual string IDs
   std::unordered_map<std::string, PackResourceEntry> newEntries;
   u32 index = 0;
-  for (auto& [key, entry] : pack.entries) {
+  for (auto &[key, entry] : pack.entries) {
     if (entry.idStringOffset < pack.stringTable.size()) {
-      const std::string& resourceId = pack.stringTable[entry.idStringOffset];
+      const std::string &resourceId = pack.stringTable[entry.idStringOffset];
       newEntries[resourceId] = entry;
     }
     ++index;
@@ -240,12 +287,15 @@ Result<void> PackReader::readStringTable(std::ifstream& file, MountedPack& pack)
   return Result<void>::ok();
 }
 
-Result<std::vector<u8>> PackReader::readResourceData(const std::string& packPath,
-                                                     const PackResourceEntry& entry) const {
+Result<std::vector<u8>>
+PackReader::readResourceData(const std::string &packPath,
+                             const PackResourceEntry &entry) const {
   // Security: Validate resource size to prevent excessive allocations
-  constexpr u64 MAX_RESOURCE_SIZE = 512ULL * 1024 * 1024; // 512 MB max per resource
+  constexpr u64 MAX_RESOURCE_SIZE =
+      512ULL * 1024 * 1024; // 512 MB max per resource
   if (entry.compressedSize > MAX_RESOURCE_SIZE) {
-    return Result<std::vector<u8>>::error("Resource size exceeds maximum allowed");
+    return Result<std::vector<u8>>::error(
+        "Resource size exceeds maximum allowed");
   }
 
   std::ifstream file(packPath, std::ios::binary);
@@ -270,13 +320,15 @@ Result<std::vector<u8>> PackReader::readResourceData(const std::string& packPath
 
   // Check 1: Validate dataOffset doesn't exceed file size
   if (it->second.header.dataOffset > fileSizeU64) {
-    return Result<std::vector<u8>>::error("Pack data offset exceeds file size");
+    return Result<std::vector<u8>>::error(
+        "Pack data offset exceeds file size");
   }
 
   // Check 2: Validate entry.dataOffset doesn't exceed remaining space
   const u64 maxEntryOffset = fileSizeU64 - it->second.header.dataOffset;
   if (entry.dataOffset > maxEntryOffset) {
-    return Result<std::vector<u8>>::error("Resource offset exceeds pack data section");
+    return Result<std::vector<u8>>::error(
+        "Resource offset exceeds pack data section");
   }
 
   // Check 3: Calculate absolute offset (now proven safe from overflow)
@@ -285,7 +337,8 @@ Result<std::vector<u8>> PackReader::readResourceData(const std::string& packPath
   // Check 4: Validate compressedSize doesn't exceed remaining space
   const u64 maxResourceSize = fileSizeU64 - absoluteOffset;
   if (entry.compressedSize > maxResourceSize) {
-    return Result<std::vector<u8>>::error("Resource data extends beyond pack file");
+    return Result<std::vector<u8>>::error(
+        "Resource data extends beyond pack file");
   }
 
   file.seekg(static_cast<std::streamoff>(absoluteOffset));
@@ -295,7 +348,7 @@ Result<std::vector<u8>> PackReader::readResourceData(const std::string& packPath
   }
 
   std::vector<u8> data(static_cast<usize>(entry.compressedSize));
-  file.read(reinterpret_cast<char*>(data.data()),
+  file.read(reinterpret_cast<char *>(data.data()),
             static_cast<std::streamsize>(entry.compressedSize));
 
   if (!file) {
@@ -306,6 +359,27 @@ Result<std::vector<u8>> PackReader::readResourceData(const std::string& packPath
   // See pack_security.hpp for encryption/compression configuration.
 
   return Result<std::vector<u8>>::ok(std::move(data));
+}
+
+Result<void> PackReader::ensureStringTableLoaded(MountedPack &pack) const {
+  if (pack.stringTableLoaded) {
+    return Result<void>::ok();
+  }
+
+  // Need to load string table now
+  std::ifstream file(pack.path, std::ios::binary);
+  if (!file.is_open()) {
+    return Result<void>::error("Failed to open pack file for lazy loading: " + pack.path);
+  }
+
+  // Cast away const since we're doing lazy initialization
+  auto stringResult = const_cast<PackReader*>(this)->readStringTable(file, pack);
+  if (stringResult.isError()) {
+    return stringResult;
+  }
+
+  pack.stringTableLoaded = true;
+  return Result<void>::ok();
 }
 
 } // namespace NovelMind::vfs

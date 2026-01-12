@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/vm_debugger.hpp"
+#include "NovelMind/core/assert.hpp"
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm.hpp"
@@ -9,12 +10,10 @@
 
 namespace NovelMind::scripting {
 
-VMDebugger::VMDebugger(VirtualMachine* vm)
-    : m_vm(vm), m_nextBreakpointId(1), m_isPaused(false), m_stepMode(DebugStepMode::None),
-      m_stepStartDepth(0) {
-  if (!m_vm) {
-    NOVELMIND_LOG_ERROR("VMDebugger created with null VM");
-  }
+VMDebugger::VMDebugger(VirtualMachine *vm)
+    : m_vm(vm), m_nextBreakpointId(1), m_isPaused(false),
+      m_stepMode(DebugStepMode::None), m_stepStartDepth(0) {
+  NOVELMIND_ASSERT_NOT_NULL(m_vm);
 }
 
 VMDebugger::~VMDebugger() = default;
@@ -31,36 +30,34 @@ u32 VMDebugger::addBreakpoint(u32 ip) {
   return bp.id;
 }
 
-u32 VMDebugger::addBreakpoint(u32 ip, const std::string& sourceFile, u32 sourceLine) {
+u32 VMDebugger::addBreakpoint(u32 ip, const std::string &sourceFile,
+                               u32 sourceLine) {
   Breakpoint bp(m_nextBreakpointId++, ip);
   bp.sourceFile = sourceFile;
   bp.sourceLine = sourceLine;
   m_breakpoints[bp.id] = bp;
   m_breakpointIPs.insert(ip);
-  NOVELMIND_LOG_DEBUG("Added breakpoint " + std::to_string(bp.id) + " at " + sourceFile + ":" +
-                      std::to_string(sourceLine) + " (IP " + std::to_string(ip) + ")");
+  NOVELMIND_LOG_DEBUG("Added breakpoint " + std::to_string(bp.id) + " at " + sourceFile + ":" + std::to_string(sourceLine) + " (IP " + std::to_string(ip) + ")");
   return bp.id;
 }
 
-u32 VMDebugger::addConditionalBreakpoint(u32 ip, const std::string& condition) {
+u32 VMDebugger::addConditionalBreakpoint(u32 ip, const std::string &condition) {
   Breakpoint bp(m_nextBreakpointId++, ip);
   bp.type = BreakpointType::Conditional;
   bp.condition = condition;
   m_breakpoints[bp.id] = bp;
   m_breakpointIPs.insert(ip);
-  NOVELMIND_LOG_DEBUG("Added conditional breakpoint " + std::to_string(bp.id) + " at IP " +
-                      std::to_string(ip) + " with condition: " + condition);
+  NOVELMIND_LOG_DEBUG("Added conditional breakpoint " + std::to_string(bp.id) + " at IP " + std::to_string(ip) + " with condition: " + condition);
   return bp.id;
 }
 
-u32 VMDebugger::addLogpoint(u32 ip, const std::string& message) {
+u32 VMDebugger::addLogpoint(u32 ip, const std::string &message) {
   Breakpoint bp(m_nextBreakpointId++, ip);
   bp.type = BreakpointType::Logpoint;
   bp.logMessage = message;
   m_breakpoints[bp.id] = bp;
   m_breakpointIPs.insert(ip);
-  NOVELMIND_LOG_DEBUG("Added logpoint " + std::to_string(bp.id) + " at IP " + std::to_string(ip) +
-                      ": " + message);
+  NOVELMIND_LOG_DEBUG("Added logpoint " + std::to_string(bp.id) + " at IP " + std::to_string(ip) + ": " + message);
   return bp.id;
 }
 
@@ -75,7 +72,7 @@ bool VMDebugger::removeBreakpoint(u32 breakpointId) {
 
   // Check if any other breakpoints are at the same IP
   bool hasOtherAtIP = false;
-  for (const auto& [id, bp] : m_breakpoints) {
+  for (const auto &[id, bp] : m_breakpoints) {
     if (bp.instructionPointer == ip) {
       hasOtherAtIP = true;
       break;
@@ -93,7 +90,7 @@ u32 VMDebugger::removeBreakpointsAt(u32 ip) {
   u32 removed = 0;
   std::vector<u32> toRemove;
 
-  for (const auto& [id, bp] : m_breakpoints) {
+  for (const auto &[id, bp] : m_breakpoints) {
     if (bp.instructionPointer == ip) {
       toRemove.push_back(id);
     }
@@ -106,8 +103,7 @@ u32 VMDebugger::removeBreakpointsAt(u32 ip) {
 
   if (removed > 0) {
     m_breakpointIPs.erase(ip);
-    NOVELMIND_LOG_DEBUG("Removed " + std::to_string(removed) + " breakpoint(s) at IP " +
-                        std::to_string(ip));
+    NOVELMIND_LOG_DEBUG("Removed " + std::to_string(removed) + " breakpoint(s) at IP " + std::to_string(ip));
   }
 
   return removed;
@@ -119,8 +115,7 @@ bool VMDebugger::setBreakpointEnabled(u32 breakpointId, bool enabled) {
     return false;
   }
   it->second.enabled = enabled;
-  NOVELMIND_LOG_DEBUG("Breakpoint " + std::to_string(breakpointId) + " " +
-                      (enabled ? "enabled" : "disabled"));
+  NOVELMIND_LOG_DEBUG("Breakpoint " + std::to_string(breakpointId) + " " + (enabled ? "enabled" : "disabled"));
   return true;
 }
 
@@ -138,7 +133,7 @@ bool VMDebugger::hasBreakpointAt(u32 ip) const {
     return false;
   }
   // Check if any enabled breakpoint exists at this IP
-  for (const auto& [id, bp] : m_breakpoints) {
+  for (const auto &[id, bp] : m_breakpoints) {
     if (bp.instructionPointer == ip && bp.enabled) {
       return true;
     }
@@ -149,13 +144,14 @@ bool VMDebugger::hasBreakpointAt(u32 ip) const {
 std::vector<Breakpoint> VMDebugger::getAllBreakpoints() const {
   std::vector<Breakpoint> result;
   result.reserve(m_breakpoints.size());
-  for (const auto& [id, bp] : m_breakpoints) {
+  for (const auto &[id, bp] : m_breakpoints) {
     result.push_back(bp);
   }
   // Sort by IP for consistent display
-  std::sort(result.begin(), result.end(), [](const Breakpoint& a, const Breakpoint& b) {
-    return a.instructionPointer < b.instructionPointer;
-  });
+  std::sort(result.begin(), result.end(),
+            [](const Breakpoint &a, const Breakpoint &b) {
+              return a.instructionPointer < b.instructionPointer;
+            });
   return result;
 }
 
@@ -225,8 +221,7 @@ void VMDebugger::stepOut() {
   if (m_vm) {
     m_vm->resume();
   }
-  NOVELMIND_LOG_DEBUG("Step out from IP " + std::to_string(getCurrentIP()) + " (depth " +
-                      std::to_string(m_stepStartDepth) + ")");
+  NOVELMIND_LOG_DEBUG("Step out from IP " + std::to_string(getCurrentIP()) + " (depth " + std::to_string(m_stepStartDepth) + ")");
 }
 
 void VMDebugger::stop() {
@@ -247,7 +242,8 @@ u32 VMDebugger::getCurrentIP() const {
   return m_vm ? m_vm->getIP() : 0;
 }
 
-std::optional<DebugSourceLocation> VMDebugger::getCurrentSourceLocation() const {
+std::optional<DebugSourceLocation>
+VMDebugger::getCurrentSourceLocation() const {
   return getSourceLocation(getCurrentIP());
 }
 
@@ -281,29 +277,34 @@ std::unordered_map<std::string, bool> VMDebugger::getAllFlags() const {
   return {};
 }
 
-std::vector<VariableChangeEvent> VMDebugger::getRecentVariableChanges(u32 count) const {
+std::vector<VariableChangeEvent>
+VMDebugger::getRecentVariableChanges(u32 count) const {
   if (count >= m_variableHistory.size()) {
     return m_variableHistory;
   }
   // Return the most recent changes
   return std::vector<VariableChangeEvent>(
-      m_variableHistory.end() - static_cast<std::ptrdiff_t>(count), m_variableHistory.end());
+      m_variableHistory.end() - static_cast<std::ptrdiff_t>(count),
+      m_variableHistory.end());
 }
 
 // =========================================================================
 // Source Location Mapping
 // =========================================================================
 
-void VMDebugger::setSourceMapping(u32 ip, const DebugSourceLocation& location) {
+void VMDebugger::setSourceMapping(u32 ip,
+                                  const DebugSourceLocation &location) {
   m_sourceMappings[ip] = location;
 }
 
-void VMDebugger::loadSourceMappings(const std::unordered_map<u32, DebugSourceLocation>& mappings) {
+void VMDebugger::loadSourceMappings(
+    const std::unordered_map<u32, DebugSourceLocation> &mappings) {
   m_sourceMappings = mappings;
   NOVELMIND_LOG_DEBUG("Loaded " + std::to_string(mappings.size()) + " source mappings");
 }
 
-const std::unordered_map<u32, DebugSourceLocation>& VMDebugger::getAllSourceMappings() const {
+const std::unordered_map<u32, DebugSourceLocation> &
+VMDebugger::getAllSourceMappings() const {
   return m_sourceMappings;
 }
 
@@ -315,7 +316,7 @@ void VMDebugger::clearSourceMappings() {
 // Variable Modification
 // =========================================================================
 
-bool VMDebugger::setVariable(const std::string& name, const Value& value) {
+bool VMDebugger::setVariable(const std::string &name, const Value &value) {
   if (!m_vm) {
     return false;
   }
@@ -338,14 +339,13 @@ bool VMDebugger::setVariable(const std::string& name, const Value& value) {
   return true;
 }
 
-bool VMDebugger::setFlag(const std::string& name, bool value) {
+bool VMDebugger::setFlag(const std::string &name, bool value) {
   if (!m_vm) {
     return false;
   }
 
   m_vm->setFlag(name, value);
-  NOVELMIND_LOG_DEBUG("Set flag " + name + " = " + (value ? "true" : "false") +
-                      " during debugging");
+  NOVELMIND_LOG_DEBUG("Set flag " + name + " = " + (value ? "true" : "false") + " during debugging");
   return true;
 }
 
@@ -398,7 +398,7 @@ bool VMDebugger::beforeInstruction(u32 ip) {
 
   // Check breakpoints
   if (m_breakpointIPs.find(ip) != m_breakpointIPs.end()) {
-    for (auto& [id, bp] : m_breakpoints) {
+    for (auto &[id, bp] : m_breakpoints) {
       if (bp.instructionPointer == ip && bp.enabled) {
         ++bp.hitCount;
 
@@ -408,8 +408,7 @@ bool VMDebugger::beforeInstruction(u32 ip) {
           if (m_onBreakpointHit) {
             m_onBreakpointHit(bp, ip);
           }
-          NOVELMIND_LOG_DEBUG("Breakpoint " + std::to_string(bp.id) + " hit at IP " +
-                              std::to_string(ip));
+          NOVELMIND_LOG_DEBUG("Breakpoint " + std::to_string(bp.id) + " hit at IP " + std::to_string(ip));
           return false; // Don't continue
 
         case BreakpointType::Conditional:
@@ -418,8 +417,7 @@ bool VMDebugger::beforeInstruction(u32 ip) {
             if (m_onBreakpointHit) {
               m_onBreakpointHit(bp, ip);
             }
-            NOVELMIND_LOG_DEBUG("Conditional breakpoint " + std::to_string(bp.id) + " hit at IP " +
-                                std::to_string(ip) + " (condition: " + bp.condition + ")");
+            NOVELMIND_LOG_DEBUG("Conditional breakpoint " + std::to_string(bp.id) + " hit at IP " + std::to_string(ip) + " (condition: " + bp.condition + ")");
             return false; // Don't continue
           }
           break;
@@ -446,8 +444,9 @@ void VMDebugger::afterInstruction(u32 /*ip*/) {
   // Can be used for post-instruction analysis if needed
 }
 
-void VMDebugger::trackVariableChange(const std::string& name, const Value& oldValue,
-                                     const Value& newValue) {
+void VMDebugger::trackVariableChange(const std::string &name,
+                                     const Value &oldValue,
+                                     const Value &newValue) {
   VariableChangeEvent event;
   event.name = name;
   event.oldValue = oldValue;
@@ -469,7 +468,8 @@ void VMDebugger::trackVariableChange(const std::string& name, const Value& oldVa
   }
 }
 
-void VMDebugger::notifySceneEntered(const std::string& sceneName, u32 returnAddress) {
+void VMDebugger::notifySceneEntered(const std::string &sceneName,
+                                    u32 returnAddress) {
   CallStackFrame frame;
   frame.sceneName = sceneName;
   frame.instructionPointer = getCurrentIP();
@@ -486,11 +486,10 @@ void VMDebugger::notifySceneEntered(const std::string& sceneName, u32 returnAddr
     m_onSceneEntered(sceneName);
   }
 
-  NOVELMIND_LOG_DEBUG("Entered scene: " + sceneName +
-                      " (stack depth: " + std::to_string(m_callStack.size()) + ")");
+  NOVELMIND_LOG_DEBUG("Entered scene: " + sceneName + " (stack depth: " + std::to_string(m_callStack.size()) + ")");
 }
 
-void VMDebugger::notifySceneExited(const std::string& sceneName) {
+void VMDebugger::notifySceneExited(const std::string &sceneName) {
   if (!m_callStack.empty() && m_callStack.back().sceneName == sceneName) {
     m_callStack.pop_back();
   }
@@ -502,15 +501,14 @@ void VMDebugger::notifySceneExited(const std::string& sceneName) {
     m_onSceneExited(sceneName);
   }
 
-  NOVELMIND_LOG_DEBUG("Exited scene: " + sceneName +
-                      " (stack depth: " + std::to_string(m_callStack.size()) + ")");
+  NOVELMIND_LOG_DEBUG("Exited scene: " + sceneName + " (stack depth: " + std::to_string(m_callStack.size()) + ")");
 }
 
 // =========================================================================
 // Private Helpers
 // =========================================================================
 
-bool VMDebugger::evaluateCondition(const std::string& condition) const {
+bool VMDebugger::evaluateCondition(const std::string &condition) const {
   if (!m_vm || condition.empty()) {
     return false;
   }
@@ -574,7 +572,8 @@ bool VMDebugger::evaluateCondition(const std::string& condition) const {
   return asBool(val);
 }
 
-std::string VMDebugger::formatLogpointMessage(const std::string& message) const {
+std::string
+VMDebugger::formatLogpointMessage(const std::string &message) const {
   if (!m_vm) {
     return message;
   }
@@ -591,7 +590,8 @@ std::string VMDebugger::formatLogpointMessage(const std::string& message) const 
 
   while (std::regex_search(searchStart, result.cend(), match, varPattern)) {
     // Append text before the match
-    const auto searchOffset = static_cast<size_t>(std::distance(result.cbegin(), searchStart));
+    const auto searchOffset =
+        static_cast<size_t>(std::distance(result.cbegin(), searchStart));
     const auto matchOffset = static_cast<size_t>(match.position());
     size_t matchPos = matchOffset + searchOffset;
     formatted += result.substr(lastPos, matchPos - lastPos);

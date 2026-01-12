@@ -7,9 +7,11 @@
 
 #include "NovelMind/vfs/pack_security.hpp"
 #include "NovelMind/vfs/virtual_fs.hpp"
+#include "NovelMind/vfs/pack_reader.hpp"
 #include <memory>
 #include <string>
 #include <vector>
+#include <future>
 
 namespace NovelMind::vfs {
 
@@ -23,6 +25,11 @@ public:
   void setDecryptionKey(const Core::SecureVector<u8>& key);
 
   Result<void> mount(const std::string& packPath) override;
+
+  // Async version of mount for non-blocking pack loading
+  std::future<Result<void>> mountAsync(const std::string& packPath,
+                                       ProgressCallback progressCallback = nullptr);
+
   void unmount(const std::string& packPath) override;
   void unmountAll() override;
 

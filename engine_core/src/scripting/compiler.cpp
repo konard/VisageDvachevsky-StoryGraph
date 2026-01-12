@@ -1,7 +1,7 @@
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
+#include "NovelMind/core/endian.hpp"
 #include <bit>
-#include <limits>
 
 namespace NovelMind::scripting {
 
@@ -9,34 +9,36 @@ namespace NovelMind::scripting {
 // - f32 (float) is exactly 4 bytes (32 bits), matching u32
 // - IEEE 754 single-precision format is used (ubiquitous on modern platforms)
 // - std::bit_cast provides well-defined, portable conversion without UB
-// - Endianness is preserved through bit_cast (no conversion needed within same system)
+// - All floats are serialized in little-endian byte order for cross-platform compatibility
 static_assert(sizeof(f32) == sizeof(u32), "Float size must match u32 for bit_cast serialization");
 static_assert(std::numeric_limits<f32>::is_iec559, "IEEE 754 (IEC 559) float format required");
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
 
-Result<CompiledScript> Compiler::compile(const Program& program,
-                                         const std::string& sourceFilePath) {
+Result<CompiledScript> Compiler::compile(const Program &program, const std::string &sourceFilePath) {
   reset();
   m_sourceFilePath = sourceFilePath;
 
   try {
     compileProgram(program);
   } catch (...) {
-    if (m_errors.empty()) {
-      error("Internal compiler error");
+    if (m_errors.empty() && m_scriptErrors.isEmpty()) {
+      error(ErrorCode::CompilationFailed,
+            "An internal compiler error occurred. This is likely a bug in the compiler. "
+            "Please report this issue with the script that caused the error.");
     }
   }
 
   // Resolve pending jumps
-  for (const auto& pending : m_pendingJumps) {
+  for (const auto &pending : m_pendingJumps) {
     // Bounds check to prevent buffer overflow (security vulnerability)
     if (pending.instructionIndex >= m_output.instructions.size()) {
-      error("Internal compiler error: Invalid pending jump index " +
-                std::to_string(pending.instructionIndex) +
-                " (program size: " + std::to_string(m_output.instructions.size()) + ")",
-            pending.location);
+      error(ErrorCode::CompilationFailed,
+            "Internal compiler error: Invalid jump instruction index " +
+            std::to_string(pending.instructionIndex) + " (program has " +
+            std::to_string(m_output.instructions.size()) + " instructions). " +
+            "This indicates a compiler bug. Please report this issue.");
       continue;
     }
 
@@ -44,7 +46,26 @@ Result<CompiledScript> Compiler::compile(const Program& program,
     if (it != m_labels.end()) {
       m_output.instructions[pending.instructionIndex].operand = it->second;
     } else {
-      error("Undefined label: " + pending.targetLabel, pending.location);
+      ScriptError err(ErrorCode::InvalidGotoTarget, Severity::Error,
+                      "Label '" + pending.targetLabel + "' is not defined in this script",
+                      SourceLocation{});
+      err.message += "\n\nWhat went wrong: The script tries to jump to a label that doesn't exist.";
+      err.message += "\n\nHow to fix: Define the label using 'label " + pending.targetLabel +
+                     "' or check for typos in the label name.";
+
+      // Try to find similar labels
+      std::vector<std::string> labelNames;
+      for (const auto &[name, _] : m_labels) {
+        labelNames.push_back(name);
+      }
+      auto similar = findSimilarStrings(pending.targetLabel, labelNames);
+      if (!similar.empty()) {
+        for (const auto &suggestion : similar) {
+          err.suggestions.push_back(suggestion);
+        }
+      }
+
+      addError(std::move(err));
     }
   }
 
@@ -55,24 +76,34 @@ Result<CompiledScript> Compiler::compile(const Program& program,
   return Result<CompiledScript>::ok(std::move(m_output));
 }
 
-const std::vector<CompileError>& Compiler::getErrors() const {
+const std::vector<CompileError> &Compiler::getErrors() const {
   return m_errors;
+}
+
+const ScriptErrorList &Compiler::getScriptErrors() const {
+  return m_scriptErrors;
+}
+
+void Compiler::setSource(const std::string &source) {
+  m_source = source;
 }
 
 void Compiler::reset() {
   m_output = CompiledScript{};
   m_errors.clear();
+  m_scriptErrors.clear();
   m_pendingJumps.clear();
   m_labels.clear();
   m_currentScene.clear();
   m_sourceFilePath.clear();
+  m_source.clear();
 }
 
 void Compiler::emitOp(OpCode op, u32 operand) {
   m_output.instructions.emplace_back(op, operand);
 }
 
-void Compiler::emitOp(OpCode op, u32 operand, const SourceLocation& loc) {
+void Compiler::emitOp(OpCode op, u32 operand, const SourceLocation &loc) {
   u32 ip = static_cast<u32>(m_output.instructions.size());
   m_output.instructions.emplace_back(op, operand);
   recordSourceMapping(ip, loc);
@@ -84,13 +115,13 @@ u32 Compiler::emitJump(OpCode op) {
   return index;
 }
 
-u32 Compiler::emitJump(OpCode op, const SourceLocation& loc) {
+u32 Compiler::emitJump(OpCode op, const SourceLocation &loc) {
   u32 index = static_cast<u32>(m_output.instructions.size());
   emitOp(op, 0, loc); // Placeholder, will be patched
   return index;
 }
 
-void Compiler::recordSourceMapping(u32 ip, const SourceLocation& loc) {
+void Compiler::recordSourceMapping(u32 ip, const SourceLocation &loc) {
   if (loc.line > 0) { // Only record valid source locations
     DebugSourceLocation debugLoc;
     debugLoc.filePath = m_sourceFilePath;
@@ -104,8 +135,11 @@ void Compiler::recordSourceMapping(u32 ip, const SourceLocation& loc) {
 bool Compiler::patchJump(u32 jumpIndex) {
   // Bounds check to prevent buffer overflow (security vulnerability)
   if (jumpIndex >= m_output.instructions.size()) {
-    error("Internal compiler error: Invalid jump index " + std::to_string(jumpIndex) +
-          " (program size: " + std::to_string(m_output.instructions.size()) + ")");
+    error(ErrorCode::CompilationFailed,
+          "Internal compiler error: Invalid jump instruction index " +
+          std::to_string(jumpIndex) + " (program has " +
+          std::to_string(m_output.instructions.size()) + " instructions). " +
+          "This indicates a compiler bug. Please report this issue.");
     return false;
   }
 
@@ -114,7 +148,7 @@ bool Compiler::patchJump(u32 jumpIndex) {
   return true;
 }
 
-u32 Compiler::addString(const std::string& str) {
+u32 Compiler::addString(const std::string &str) {
   // Check if string already exists
   for (u32 i = 0; i < m_output.stringTable.size(); ++i) {
     if (m_output.stringTable[i] == str) {
@@ -127,23 +161,52 @@ u32 Compiler::addString(const std::string& str) {
   return index;
 }
 
-void Compiler::error(const std::string& message, SourceLocation loc) {
+void Compiler::error(const std::string &message, SourceLocation loc) {
   m_errors.emplace_back(message, loc);
 }
 
-void Compiler::compileProgram(const Program& program) {
+void Compiler::error(ErrorCode code, const std::string &message, SourceLocation loc) {
+  // Add to legacy error list for backward compatibility
+  m_errors.emplace_back(message, loc);
+
+  // Create rich ScriptError
+  ScriptError err(code, Severity::Error, message, loc);
+  if (!m_sourceFilePath.empty()) {
+    err.filePath = m_sourceFilePath;
+  }
+  if (!m_source.empty()) {
+    err.source = m_source;
+  }
+  m_scriptErrors.add(std::move(err));
+}
+
+void Compiler::addError(ScriptError err) {
+  // Add to legacy error list for backward compatibility
+  m_errors.emplace_back(err.message, err.span.start);
+
+  // Set file path and source if not already set
+  if (!err.filePath.has_value() && !m_sourceFilePath.empty()) {
+    err.filePath = m_sourceFilePath;
+  }
+  if (!err.source.has_value() && !m_source.empty()) {
+    err.source = m_source;
+  }
+  m_scriptErrors.add(std::move(err));
+}
+
+void Compiler::compileProgram(const Program &program) {
   // First pass: register all characters
-  for (const auto& character : program.characters) {
+  for (const auto &character : program.characters) {
     compileCharacter(character);
   }
 
   // Second pass: compile all scenes
-  for (const auto& scene : program.scenes) {
+  for (const auto &scene : program.scenes) {
     compileScene(scene);
   }
 
   // Global statements (if any)
-  for (const auto& stmt : program.globalStatements) {
+  for (const auto &stmt : program.globalStatements) {
     if (stmt) {
       compileStatement(*stmt);
     }
@@ -153,11 +216,11 @@ void Compiler::compileProgram(const Program& program) {
   emitOp(OpCode::HALT);
 }
 
-void Compiler::compileCharacter(const CharacterDecl& decl) {
+void Compiler::compileCharacter(const CharacterDecl &decl) {
   m_output.characters[decl.id] = decl;
 }
 
-void Compiler::compileScene(const SceneDecl& decl) {
+void Compiler::compileScene(const SceneDecl &decl) {
   // Record entry point
   u32 entryPoint = static_cast<u32>(m_output.instructions.size());
   m_output.sceneEntryPoints[decl.name] = entryPoint;
@@ -166,7 +229,7 @@ void Compiler::compileScene(const SceneDecl& decl) {
   m_currentScene = decl.name;
 
   // Compile scene body
-  for (const auto& stmt : decl.body) {
+  for (const auto &stmt : decl.body) {
     if (stmt) {
       compileStatement(*stmt);
     }
@@ -175,9 +238,9 @@ void Compiler::compileScene(const SceneDecl& decl) {
   m_currentScene.clear();
 }
 
-void Compiler::compileStatement(const Statement& stmt) {
+void Compiler::compileStatement(const Statement &stmt) {
   std::visit(
-      [this, &stmt](const auto& s) {
+      [this, &stmt](const auto &s) {
         using T = std::decay_t<decltype(s)>;
 
         if constexpr (std::is_same_v<T, ShowStmt>) {
@@ -217,9 +280,9 @@ void Compiler::compileStatement(const Statement& stmt) {
       stmt.data);
 }
 
-void Compiler::compileExpression(const Expression& expr) {
+void Compiler::compileExpression(const Expression &expr) {
   std::visit(
-      [this](const auto& e) {
+      [this](const auto &e) {
         using T = std::decay_t<decltype(e)>;
 
         if constexpr (std::is_same_v<T, LiteralExpr>) {
@@ -241,7 +304,7 @@ void Compiler::compileExpression(const Expression& expr) {
 
 // Statement compilers
 
-void Compiler::compileShowStmt(const ShowStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) {
   switch (stmt.target) {
   case ShowStmt::Target::Background: {
     u32 resIndex = addString(stmt.resource.value_or(""));
@@ -282,19 +345,19 @@ void Compiler::compileShowStmt(const ShowStmt& stmt, const SourceLocation& loc) 
   // Handle transition if specified
   if (stmt.transition.has_value()) {
     u32 transIndex = addString(stmt.transition.value());
-    // Push duration (convert float to int representation using bit_cast)
-    // This is portable and well-defined (C++20), avoiding strict aliasing issues
+    // Push duration (convert float to portable little-endian representation)
+    // Uses bit_cast (C++20) for well-defined float->u32 conversion, then converts to little-endian
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      durInt = std::bit_cast<u32>(dur);
+      durInt = serializeFloat(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
   }
 }
 
-void Compiler::compileHideStmt(const HideStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) {
   u32 idIndex = addString(stmt.identifier);
   emitOp(OpCode::HIDE_CHARACTER, idIndex, loc);
 
@@ -304,14 +367,14 @@ void Compiler::compileHideStmt(const HideStmt& stmt, const SourceLocation& loc) 
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      durInt = std::bit_cast<u32>(dur);
+      durInt = serializeFloat(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
   }
 }
 
-void Compiler::compileSayStmt(const SayStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
   u32 textIndex = addString(stmt.text);
 
   if (stmt.speaker.has_value()) {
@@ -324,12 +387,20 @@ void Compiler::compileSayStmt(const SayStmt& stmt, const SourceLocation& loc) {
   emitOp(OpCode::SAY, textIndex, loc);
 }
 
-void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc) {
+  // Validate choice count limit
+  if (stmt.options.size() > MAX_CHOICE_COUNT) {
+    error("Too many choices in choice statement: " +
+          std::to_string(stmt.options.size()) + " (maximum allowed: " +
+          std::to_string(MAX_CHOICE_COUNT) + ")", loc);
+    return;
+  }
+
   // Emit choice count
   emitOp(OpCode::PUSH_INT, static_cast<u32>(stmt.options.size()));
 
   // Emit each choice text
-  for (const auto& option : stmt.options) {
+  for (const auto &option : stmt.options) {
     u32 textIndex = addString(option.text);
     emitOp(OpCode::PUSH_STRING, textIndex);
   }
@@ -342,7 +413,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& l
   std::vector<u32> endJumps;
 
   for (size_t i = 0; i < stmt.options.size(); ++i) {
-    const auto& option = stmt.options[i];
+    const auto &option = stmt.options[i];
 
     // Compare choice result with index
     emitOp(OpCode::DUP);
@@ -367,7 +438,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& l
         emitOp(OpCode::JUMP, 0);
         m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
-        for (const auto& bodyStmt : option.body) {
+        for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
             compileStatement(*bodyStmt);
           }
@@ -382,7 +453,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& l
         emitOp(OpCode::JUMP, 0);
         m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
-        for (const auto& bodyStmt : option.body) {
+        for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
             compileStatement(*bodyStmt);
           }
@@ -406,7 +477,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& l
   }
 }
 
-void Compiler::compileIfStmt(const IfStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
+void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   // Compile condition
   compileExpression(*stmt.condition);
 
@@ -414,7 +485,7 @@ void Compiler::compileIfStmt(const IfStmt& stmt, [[maybe_unused]] const SourceLo
   u32 elseJump = emitJump(OpCode::JUMP_IF_NOT);
 
   // Then branch
-  for (const auto& thenStmt : stmt.thenBranch) {
+  for (const auto &thenStmt : stmt.thenBranch) {
     if (thenStmt) {
       compileStatement(*thenStmt);
     }
@@ -426,7 +497,7 @@ void Compiler::compileIfStmt(const IfStmt& stmt, [[maybe_unused]] const SourceLo
   // Else branch
   patchJump(elseJump);
 
-  for (const auto& elseStmt : stmt.elseBranch) {
+  for (const auto &elseStmt : stmt.elseBranch) {
     if (elseStmt) {
       compileStatement(*elseStmt);
     }
@@ -435,19 +506,19 @@ void Compiler::compileIfStmt(const IfStmt& stmt, [[maybe_unused]] const SourceLo
   patchJump(endJump);
 }
 
-void Compiler::compileGotoStmt(const GotoStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) {
   u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
   emitOp(OpCode::GOTO_SCENE, 0, loc);
   m_pendingJumps.push_back({jumpIndex, stmt.target, loc});
 }
 
-void Compiler::compileWaitStmt(const WaitStmt& stmt, const SourceLocation& loc) {
-  // Convert float duration to int representation using bit_cast
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
+  // Convert float duration to portable little-endian representation
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::WAIT, durInt, loc);
 }
 
-void Compiler::compilePlayStmt(const PlayStmt& stmt, const SourceLocation& loc) {
+void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) {
   u32 resIndex = addString(stmt.resource);
 
   if (stmt.type == PlayStmt::MediaType::Sound) {
@@ -457,17 +528,17 @@ void Compiler::compilePlayStmt(const PlayStmt& stmt, const SourceLocation& loc) 
   }
 }
 
-void Compiler::compileStopStmt(const StopStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) {
   if (stmt.fadeOut.has_value()) {
     f32 dur = stmt.fadeOut.value();
-    u32 durInt = std::bit_cast<u32>(dur);
+    u32 durInt = serializeFloat(dur);
     emitOp(OpCode::PUSH_INT, durInt);
   }
 
   emitOp(OpCode::STOP_MUSIC, 0, loc);
 }
 
-void Compiler::compileSetStmt(const SetStmt& stmt, const SourceLocation& loc) {
+void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
   // Compile value expression
   compileExpression(*stmt.value);
 
@@ -483,15 +554,14 @@ void Compiler::compileSetStmt(const SetStmt& stmt, const SourceLocation& loc) {
   }
 }
 
-void Compiler::compileTransitionStmt(const TransitionStmt& stmt,
-                                     [[maybe_unused]] const SourceLocation& loc) {
+void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   u32 typeIndex = addString(stmt.type);
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
   emitOp(OpCode::TRANSITION, typeIndex);
 }
 
-void Compiler::compileMoveStmt(const MoveStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
+void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   // Push character ID string
   u32 charIndex = addString(stmt.characterId);
   emitOp(OpCode::PUSH_STRING, charIndex);
@@ -518,30 +588,29 @@ void Compiler::compileMoveStmt(const MoveStmt& stmt, [[maybe_unused]] const Sour
   if (stmt.position == Position::Custom) {
     f32 x = stmt.customX.value_or(0.5f);
     f32 y = stmt.customY.value_or(0.5f);
-    u32 xInt = std::bit_cast<u32>(x);
-    u32 yInt = std::bit_cast<u32>(y);
+    u32 xInt = serializeFloat(x);
+    u32 yInt = serializeFloat(y);
     emitOp(OpCode::PUSH_FLOAT, xInt);
     emitOp(OpCode::PUSH_FLOAT, yInt);
   }
 
-  // Push duration (convert float to int representation using bit_cast)
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+  // Push duration (convert float to portable little-endian representation)
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
 
   // Emit the MOVE_CHARACTER opcode with character string index
   emitOp(OpCode::MOVE_CHARACTER, charIndex);
 }
 
-void Compiler::compileBlockStmt(const BlockStmt& stmt, [[maybe_unused]] const SourceLocation& loc) {
-  for (const auto& s : stmt.statements) {
+void Compiler::compileBlockStmt(const BlockStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
+  for (const auto &s : stmt.statements) {
     if (s) {
       compileStatement(*s);
     }
   }
 }
 
-void Compiler::compileExpressionStmt(const ExpressionStmt& stmt,
-                                     [[maybe_unused]] const SourceLocation& loc) {
+void Compiler::compileExpressionStmt(const ExpressionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   if (stmt.expression) {
     compileExpression(*stmt.expression);
     emitOp(OpCode::POP); // Discard result
@@ -550,9 +619,9 @@ void Compiler::compileExpressionStmt(const ExpressionStmt& stmt,
 
 // Expression compilers
 
-void Compiler::compileLiteral(const LiteralExpr& expr) {
+void Compiler::compileLiteral(const LiteralExpr &expr) {
   std::visit(
-      [this](const auto& val) {
+      [this](const auto &val) {
         using T = std::decay_t<decltype(val)>;
 
         if constexpr (std::is_same_v<T, std::monostate>) {
@@ -560,7 +629,7 @@ void Compiler::compileLiteral(const LiteralExpr& expr) {
         } else if constexpr (std::is_same_v<T, i32>) {
           emitOp(OpCode::PUSH_INT, static_cast<u32>(val));
         } else if constexpr (std::is_same_v<T, f32>) {
-          u32 intRep = std::bit_cast<u32>(val);
+          u32 intRep = serializeFloat(val);
           emitOp(OpCode::PUSH_FLOAT, intRep);
         } else if constexpr (std::is_same_v<T, bool>) {
           emitOp(OpCode::PUSH_BOOL, val ? 1 : 0);
@@ -572,12 +641,12 @@ void Compiler::compileLiteral(const LiteralExpr& expr) {
       expr.value);
 }
 
-void Compiler::compileIdentifier(const IdentifierExpr& expr) {
+void Compiler::compileIdentifier(const IdentifierExpr &expr) {
   u32 nameIndex = addString(expr.name);
   emitOp(OpCode::LOAD_GLOBAL, nameIndex);
 }
 
-void Compiler::compileBinary(const BinaryExpr& expr) {
+void Compiler::compileBinary(const BinaryExpr &expr) {
   // Compile left operand
   if (expr.left) {
     compileExpression(*expr.left);
@@ -585,7 +654,11 @@ void Compiler::compileBinary(const BinaryExpr& expr) {
 
   // Short-circuit for and/or
   if (expr.op == TokenType::And) {
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is false, jump to end keeping the false value
     u32 endJump = emitJump(OpCode::JUMP_IF_NOT);
+    // If left is true, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {
@@ -597,10 +670,11 @@ void Compiler::compileBinary(const BinaryExpr& expr) {
   }
 
   if (expr.op == TokenType::Or) {
-    u32 elseJump = emitJump(OpCode::JUMP_IF_NOT);
-    u32 endJump = emitJump(OpCode::JUMP);
-
-    patchJump(elseJump);
+    // Duplicate left value for short-circuit evaluation
+    emitOp(OpCode::DUP);
+    // If left is true, jump to end keeping the true value
+    u32 endJump = emitJump(OpCode::JUMP_IF);
+    // If left is false, pop it and evaluate right
     emitOp(OpCode::POP);
 
     if (expr.right) {
@@ -657,7 +731,7 @@ void Compiler::compileBinary(const BinaryExpr& expr) {
   }
 }
 
-void Compiler::compileUnary(const UnaryExpr& expr) {
+void Compiler::compileUnary(const UnaryExpr &expr) {
   if (expr.operand) {
     compileExpression(*expr.operand);
   }
@@ -675,9 +749,9 @@ void Compiler::compileUnary(const UnaryExpr& expr) {
   }
 }
 
-void Compiler::compileCall(const CallExpr& expr) {
+void Compiler::compileCall(const CallExpr &expr) {
   // Compile arguments
-  for (const auto& arg : expr.arguments) {
+  for (const auto &arg : expr.arguments) {
     if (arg) {
       compileExpression(*arg);
     }
@@ -689,7 +763,7 @@ void Compiler::compileCall(const CallExpr& expr) {
   emitOp(OpCode::CALL, funcIndex);
 }
 
-void Compiler::compileProperty(const PropertyExpr& expr) {
+void Compiler::compileProperty(const PropertyExpr &expr) {
   // Compile object
   if (expr.object) {
     compileExpression(*expr.object);

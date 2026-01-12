@@ -73,6 +73,12 @@ enum class PlaybackState : u8 { Stopped, Playing, Paused, FadingIn, FadingOut };
 
 /**
  * @brief Audio source handle for tracking active playback
+ *
+ * Handle ID format (32-bit):
+ * - Upper 8 bits: Generation counter (0-255)
+ * - Lower 24 bits: Index counter (0-16,777,215)
+ *
+ * When index overflows, generation increments to prevent handle collision.
  */
 struct AudioHandle {
   u32 id = 0;
@@ -82,6 +88,19 @@ struct AudioHandle {
   void invalidate() {
     valid = false;
     id = 0;
+  }
+
+  // Extract generation from handle ID
+  [[nodiscard]] static u8 getGeneration(u32 handleId) {
+    return static_cast<u8>((handleId >> 24) & 0xFF);
+  }
+
+  // Extract index from handle ID
+  [[nodiscard]] static u32 getIndex(u32 handleId) { return handleId & 0x00FFFFFF; }
+
+  // Create handle ID from generation and index
+  [[nodiscard]] static u32 makeHandleId(u8 generation, u32 index) {
+    return (static_cast<u32>(generation) << 24) | (index & 0x00FFFFFF);
   }
 };
 
@@ -212,6 +231,9 @@ private:
  * @brief Audio Manager 2.0 - Central audio management
  */
 class AudioManager {
+  // Allow tests to access private members for overflow testing
+  friend class AudioManagerTestAccess;
+
 public:
   using DataProvider = std::function<Result<std::vector<u8>>(const std::string& id)>;
   AudioManager();
@@ -238,6 +260,13 @@ public:
 
   /**
    * @brief Play a sound effect
+   *
+   * Thread Safety: This function is fully thread-safe. The limit check and
+   * source creation are performed atomically within a single lock, preventing
+   * TOCTOU race conditions. Multiple threads can safely call this function
+   * concurrently without exceeding the maximum sound limit (set by setMaxSounds).
+   *
+   * @see Issue #558 for details on the TOCTOU race condition that was fixed
    */
   AudioHandle playSound(const std::string& id, const PlaybackConfig& config = {});
 
@@ -453,6 +482,7 @@ public:
 
 private:
   AudioHandle createSource(const std::string& trackId, AudioChannel channel);
+  AudioHandle createSourceLocked(const std::string& trackId, AudioChannel channel);
   void releaseSource(AudioHandle handle);
   void fireEvent(AudioEvent::Type type, AudioHandle handle, const std::string& trackId = "");
 
@@ -472,7 +502,8 @@ private:
   // Active sources (protected by m_sourcesMutex for thread-safe access)
   mutable std::shared_mutex m_sourcesMutex;
   std::vector<std::unique_ptr<AudioSource>> m_sources;
-  std::atomic<u32> m_nextHandleId{1};
+  std::atomic<u32> m_nextHandleIndex{1}; // Lower 24 bits: index counter
+  std::atomic<u8> m_handleGeneration{0}; // Upper 8 bits: generation counter
   std::atomic<size_t> m_maxSounds{32};
 
   // Music state (protected by m_stateMutex)

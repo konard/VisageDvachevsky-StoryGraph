@@ -39,28 +39,28 @@ struct LiteralExpr {
 };
 
 struct IdentifierExpr {
-  std::string name;
+  std::string name{};
 };
 
 struct BinaryExpr {
-  ExprPtr left;
-  TokenType op;
-  ExprPtr right;
+  ExprPtr left{};
+  TokenType op{};
+  ExprPtr right{};
 };
 
 struct UnaryExpr {
-  TokenType op;
-  ExprPtr operand;
+  TokenType op{};
+  ExprPtr operand{};
 };
 
 struct CallExpr {
-  std::string callee;
-  std::vector<ExprPtr> arguments;
+  std::string callee{};
+  std::vector<ExprPtr> arguments{};
 };
 
 struct PropertyExpr {
-  ExprPtr object;
-  std::string property;
+  ExprPtr object{};
+  std::string property{};
 };
 
 /**
@@ -83,18 +83,18 @@ struct Expression {
  * @brief Character declaration: character Hero(name="Alex", color="#FFCC00")
  */
 struct CharacterDecl {
-  std::string id;
-  std::string displayName;
-  std::string color;
-  std::optional<std::string> defaultSprite;
+  std::string id{};
+  std::string displayName{};
+  std::string color{};
+  std::optional<std::string> defaultSprite{};
 };
 
 /**
  * @brief Scene declaration: scene intro { ... }
  */
 struct SceneDecl {
-  std::string name;
-  std::vector<StmtPtr> body;
+  std::string name{};
+  std::vector<StmtPtr> body{};
 };
 
 /**
@@ -103,71 +103,71 @@ struct SceneDecl {
 struct ShowStmt {
   enum class Target { Background, Character, Sprite };
 
-  Target target;
-  std::string identifier;
-  std::optional<std::string> resource;
-  std::optional<Position> position;
-  std::optional<f32> customX;
-  std::optional<f32> customY;
-  std::optional<std::string> transition;
-  std::optional<f32> duration;
+  Target target = Target::Background;
+  std::string identifier{};
+  std::optional<std::string> resource{};
+  std::optional<Position> position{};
+  std::optional<f32> customX{};
+  std::optional<f32> customY{};
+  std::optional<std::string> transition{};
+  std::optional<f32> duration{};
 };
 
 /**
  * @brief Hide command: hide Hero
  */
 struct HideStmt {
-  std::string identifier;
-  std::optional<std::string> transition;
-  std::optional<f32> duration;
+  std::string identifier{};
+  std::optional<std::string> transition{};
+  std::optional<f32> duration{};
 };
 
 /**
  * @brief Say command: say Hero "Hello, world!"
  */
 struct SayStmt {
-  std::optional<std::string> speaker;
-  std::string text;
+  std::optional<std::string> speaker{};
+  std::string text{};
 };
 
 /**
  * @brief Choice option within a choice block
  */
 struct ChoiceOption {
-  std::string text;
-  std::optional<ExprPtr> condition;
-  std::vector<StmtPtr> body;
-  std::optional<std::string> gotoTarget;
+  std::string text{};
+  std::optional<ExprPtr> condition{};
+  std::vector<StmtPtr> body{};
+  std::optional<std::string> gotoTarget{};
 };
 
 /**
  * @brief Choice block: choice { "Option 1" -> ... }
  */
 struct ChoiceStmt {
-  std::vector<ChoiceOption> options;
+  std::vector<ChoiceOption> options{};
 };
 
 /**
  * @brief If statement: if condition { ... } else { ... }
  */
 struct IfStmt {
-  ExprPtr condition;
-  std::vector<StmtPtr> thenBranch;
-  std::vector<StmtPtr> elseBranch;
+  ExprPtr condition{};
+  std::vector<StmtPtr> thenBranch{};
+  std::vector<StmtPtr> elseBranch{};
 };
 
 /**
  * @brief Goto statement: goto scene_name
  */
 struct GotoStmt {
-  std::string target;
+  std::string target{};
 };
 
 /**
  * @brief Wait statement: wait 2.0
  */
 struct WaitStmt {
-  f32 duration;
+  f32 duration = 0.0f;
 };
 
 /**
@@ -176,18 +176,18 @@ struct WaitStmt {
 struct PlayStmt {
   enum class MediaType { Sound, Music };
 
-  MediaType type;
-  std::string resource;
-  std::optional<f32> volume;
-  std::optional<bool> loop;
+  MediaType type = MediaType::Sound;
+  std::string resource{};
+  std::optional<f32> volume{};
+  std::optional<bool> loop{};
 };
 
 /**
  * @brief Stop statement: stop music
  */
 struct StopStmt {
-  PlayStmt::MediaType type;
-  std::optional<f32> fadeOut;
+  PlayStmt::MediaType type = PlayStmt::MediaType::Music;
+  std::optional<f32> fadeOut{};
 };
 
 /**
@@ -195,8 +195,8 @@ struct StopStmt {
  *        or: set flag variable = value (for boolean flags)
  */
 struct SetStmt {
-  std::string variable;
-  ExprPtr value;
+  std::string variable{};
+  ExprPtr value{};
   bool isFlag = false; ///< True if this is a flag (boolean) variable
 };
 
@@ -204,19 +204,19 @@ struct SetStmt {
  * @brief Transition statement: transition fade 1.0
  */
 struct TransitionStmt {
-  std::string type;
-  f32 duration;
-  std::optional<std::string> color;
+  std::string type{};
+  f32 duration = 0.0f;
+  std::optional<std::string> color{};
 };
 
 /**
  * @brief Move command: move Character to position duration=seconds
  */
 struct MoveStmt {
-  std::string characterId;
-  Position position;
-  std::optional<f32> customX;
-  std::optional<f32> customY;
+  std::string characterId{};
+  Position position = Position::Center;
+  std::optional<f32> customX{};
+  std::optional<f32> customY{};
   f32 duration = 0.5f; ///< Default duration in seconds
 };
 
@@ -224,14 +224,14 @@ struct MoveStmt {
  * @brief Expression statement (for standalone expressions)
  */
 struct ExpressionStmt {
-  ExprPtr expression;
+  ExprPtr expression{};
 };
 
 /**
  * @brief Block statement (group of statements)
  */
 struct BlockStmt {
-  std::vector<StmtPtr> statements;
+  std::vector<StmtPtr> statements{};
 };
 
 /**

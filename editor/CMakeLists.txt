@@ -61,6 +61,9 @@ add_library(novelmind_editor STATIC
     src/selection_system.cpp
     src/event_bus.cpp
     src/project_manager.cpp
+    src/project_lifecycle.cpp
+    src/project_assets.cpp
+    src/project_templates.cpp
     src/inspector_binding.cpp
     src/asset_preview.cpp
     src/timeline_playback.cpp
@@ -90,6 +93,9 @@ add_library(novelmind_editor STATIC
     src/build_platform.cpp
     src/build_scripts.cpp
     src/build_size_analyzer.cpp
+    src/build_size_scanner.cpp
+    src/build_size_report.cpp
+    src/build_size_ui.cpp
 
     # Abstraction interfaces and adapters (issue #150)
     src/adapters/QtAudioPlayer.cpp
@@ -173,6 +179,10 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_scene_dialogue_graph_panel.cpp
     src/qt/panels/nm_inspector_panel.cpp
     src/qt/panels/nm_inspector_panel_group.cpp
+    src/qt/panels/inspector_property_editor.cpp
+    src/qt/panels/inspector_component_list.cpp
+    src/qt/panels/inspector_validators.cpp
+    src/qt/panels/inspector_ui.cpp
     src/qt/panels/nm_console_panel.cpp
     src/qt/panels/nm_asset_browser_panel.cpp
     src/qt/panels/asset_browser_categorizer.cpp
@@ -190,6 +200,14 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_script_editor_panel_folding.cpp
     src/qt/panels/nm_script_editor_panel_detail.cpp
     src/qt/panels/nm_script_editor_panel_preview.cpp
+    src/qt/panels/nm_script_editor_panel_symbols.cpp
+    src/qt/panels/nm_script_editor_panel_files.cpp
+    src/qt/panels/nm_script_editor_panel_conflicts.cpp
+    src/qt/panels/nm_script_editor_panel_diagnostics.cpp
+    src/qt/panels/nm_script_editor_panel_navigation.cpp
+    src/qt/panels/nm_script_editor_panel_ui.cpp
+    src/qt/panels/nm_script_editor_panel_ui_mgmt.cpp
+    src/qt/panels/nm_script_editor_panel_state.cpp
     src/qt/panels/nm_script_doc_panel.cpp
 
     # Phase 3 & 4 panels

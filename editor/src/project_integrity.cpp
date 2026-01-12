@@ -11,6 +11,76 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor {
 
+namespace {
+bool readFileToString(const fs::path& path, std::string& out) {
+  std::ifstream file(path, std::ios::in | std::ios::binary);
+  if (!file.is_open()) {
+    return false;
+  }
+  std::ostringstream buffer;
+  buffer << file.rdbuf();
+  out = buffer.str();
+  return true;
+}
+
+// ============================================================================
+// Cached Regex Patterns
+// ============================================================================
+// Pre-compiled regex patterns to avoid recompilation on each use
+// This improves performance significantly for validation operations
+
+namespace CachedRegexPatterns {
+// Scene-related patterns
+static const std::regex sceneRefPattern(R"(goto\s+(\w+)|scene\s+(\w+))");
+static const std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+static const std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+static const std::regex endPattern(R"(\b(end|goto|choice)\b)");
+static const std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
+
+// Asset-related patterns
+static const std::regex
+    assetRefPatternJson(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
+static const std::regex assetRefPatternScript(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
+
+// Localization patterns
+static const std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+static const std::regex keyPattern(R"(\"([^\"]+)\":\s*\"[^\"]*\")");
+
+// Voice-related patterns
+static const std::regex voiceRefPattern(R"(voice\s+\"([^\"]+)\")");
+
+// Cleanup patterns (for removing keys)
+static const std::regex doubleCommaPattern(R"(,\s*,)");
+static const std::regex trailingCommaPattern(R"(,\s*})");
+} // namespace CachedRegexPatterns
+
+} // namespace
+
+// ============================================================================
+// IntegrityReport Implementation
+// ============================================================================
+
+std::vector<IntegrityIssue> IntegrityReport::getIssuesBySeverity(IssueSeverity severity) const {
+  std::vector<IntegrityIssue> result;
+  std::copy_if(issues.begin(), issues.end(), std::back_inserter(result),
+               [severity](const IntegrityIssue& issue) { return issue.severity == severity; });
+  return result;
+}
+
+std::vector<IntegrityIssue> IntegrityReport::getIssuesByCategory(IssueCategory category) const {
+  std::vector<IntegrityIssue> result;
+  std::copy_if(issues.begin(), issues.end(), std::back_inserter(result),
+               [category](const IntegrityIssue& issue) { return issue.category == category; });
+  return result;
+}
+
+std::vector<IntegrityIssue> IntegrityReport::getIssuesByFile(const std::string& filePath) const {
+  std::vector<IntegrityIssue> result;
+  std::copy_if(issues.begin(), issues.end(), std::back_inserter(result),
+               [&filePath](const IntegrityIssue& issue) { return issue.filePath == filePath; });
+  return result;
+}
+
 // ============================================================================
 // ProjectIntegrityChecker Implementation
 // ============================================================================
@@ -282,9 +352,97 @@ void ProjectIntegrityChecker::checkProjectConfiguration(std::vector<IntegrityIss
 }
 
 void ProjectIntegrityChecker::checkSceneReferences(std::vector<IntegrityIssue>& issues) {
-  ProjectValidators validators;
-  validators.setProjectPath(m_projectPath);
-  validators.checkSceneReferences(issues);
+  fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
+  if (!fs::exists(scenesDir)) {
+    return;
+  }
+
+  // Collect all scene IDs and check for serialization errors
+  std::unordered_set<std::string> sceneIds;
+  for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
+    if (entry.path().extension() == ".nmscene") {
+      std::string sceneId = entry.path().stem().string();
+      sceneIds.insert(sceneId);
+
+      // Check if scene file can be read (basic serialization check)
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        IntegrityIssue issue;
+        issue.severity = IssueSeverity::Error;
+        issue.category = IssueCategory::Scene;
+        issue.code = "S003";
+        issue.message = "Failed to read scene file: " + sceneId;
+        issue.filePath = entry.path().string();
+        issue.suggestions.push_back("Check file permissions");
+        issue.suggestions.push_back("File may be corrupted");
+        issues.push_back(issue);
+        continue;
+      }
+
+      // Basic JSON validation - check for balanced braces
+      int braceCount = 0;
+      for (char c : content) {
+        if (c == '{')
+          braceCount++;
+        else if (c == '}')
+          braceCount--;
+      }
+      if (braceCount != 0) {
+        IntegrityIssue issue;
+        issue.severity = IssueSeverity::Error;
+        issue.category = IssueCategory::Scene;
+        issue.code = "S004";
+        issue.message = "Scene file has malformed JSON: " + sceneId;
+        issue.filePath = entry.path().string();
+        issue.context = "Unbalanced braces detected";
+        issue.suggestions.push_back("Check JSON syntax");
+        issue.suggestions.push_back("Restore from backup if corrupted");
+        issues.push_back(issue);
+      }
+    }
+  }
+
+  // Check script files for scene references
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (fs::exists(scriptsDir)) {
+    const auto& sceneRefPattern = CachedRegexPatterns::sceneRefPattern;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.path().extension() == ".nms") {
+        std::ifstream file(entry.path());
+        std::string line;
+        int lineNum = 0;
+
+        while (std::getline(file, line)) {
+          lineNum++;
+          std::smatch match;
+          std::string::const_iterator searchStart(line.cbegin());
+
+          while (std::regex_search(searchStart, line.cend(), match, sceneRefPattern)) {
+            std::string sceneRef = match[1].matched ? match[1].str() : match[2].str();
+
+            if (!sceneRef.empty() && sceneIds.find(sceneRef) == sceneIds.end()) {
+              IntegrityIssue issue;
+              issue.severity = IssueSeverity::Error;
+              issue.category = IssueCategory::Scene;
+              issue.code = "S002";
+              issue.message = "Reference to undefined scene: " + sceneRef;
+              issue.filePath = entry.path().string();
+              issue.lineNumber = lineNum;
+              issue.context = line;
+              issue.suggestions.push_back("Create scene '" + sceneRef + "'");
+              issue.suggestions.push_back("Fix the scene reference");
+              issue.hasQuickFix = true;
+              issue.quickFixDescription = "Comment out reference to missing scene";
+              issues.push_back(issue);
+            }
+
+            searchStart = match.suffix().first;
+          }
+        }
+      }
+    }
+  }
 }
 
 void ProjectIntegrityChecker::scanProjectAssets() {
@@ -295,10 +453,53 @@ void ProjectIntegrityChecker::scanProjectAssets() {
 }
 
 void ProjectIntegrityChecker::collectAssetReferences() {
-  ProjectAssetTracker tracker;
-  tracker.setProjectPath(m_projectPath);
-  tracker.collectAssetReferences();
-  m_referencedAssets = tracker.getReferencedAssets();
+  m_referencedAssets.clear();
+
+  // Scan scene files for asset references
+  fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
+  if (fs::exists(scenesDir)) {
+    const auto& assetRefPattern = CachedRegexPatterns::assetRefPatternJson;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
+      if (entry.path().extension() == ".nmscene" || entry.path().extension() == ".json") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, assetRefPattern)) {
+          m_referencedAssets.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
+
+  // Scan script files for asset references
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (fs::exists(scriptsDir)) {
+    const auto& assetRefPattern = CachedRegexPatterns::assetRefPatternScript;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.path().extension() == ".nms") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, assetRefPattern)) {
+          m_referencedAssets.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkAssetReferences(std::vector<IntegrityIssue>& issues) {
@@ -318,17 +519,89 @@ void ProjectIntegrityChecker::findOrphanedAssets(std::vector<IntegrityIssue>& is
 }
 
 void ProjectIntegrityChecker::checkVoiceLines(std::vector<IntegrityIssue>& issues) {
-  ProjectValidators validators;
-  validators.setProjectPath(m_projectPath);
-  validators.checkVoiceLines(issues);
+  fs::path voiceDir = fs::path(m_projectPath) / "Assets" / "Voice";
+  if (!fs::exists(voiceDir)) {
+    // Voice directory doesn't exist - that's okay if voice isn't used
+    return;
+  }
+
+  // Collect voice files
+  std::unordered_set<std::string> voiceFiles;
+  for (const auto& entry : fs::recursive_directory_iterator(voiceDir)) {
+    if (entry.is_regular_file()) {
+      std::string ext = entry.path().extension().string();
+      if (ext == ".ogg" || ext == ".wav" || ext == ".mp3") {
+        voiceFiles.insert(entry.path().stem().string());
+      }
+    }
+  }
+
+  // Check script files for voice references
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (fs::exists(scriptsDir)) {
+    const auto& voiceRefPattern = CachedRegexPatterns::voiceRefPattern;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.path().extension() == ".nms") {
+        std::ifstream file(entry.path());
+        std::string line;
+        int lineNum = 0;
+
+        while (std::getline(file, line)) {
+          lineNum++;
+          std::smatch match;
+
+          if (std::regex_search(line, match, voiceRefPattern)) {
+            std::string voiceRef = match[1].str();
+            if (voiceFiles.find(voiceRef) == voiceFiles.end()) {
+              IntegrityIssue issue;
+              issue.severity = IssueSeverity::Warning;
+              issue.category = IssueCategory::VoiceLine;
+              issue.code = "V001";
+              issue.message = "Voice file not found: " + voiceRef;
+              issue.filePath = entry.path().string();
+              issue.lineNumber = lineNum;
+              issue.context = line;
+              issues.push_back(issue);
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 void ProjectIntegrityChecker::scanLocalizationFiles() {
-  ProjectValidators validators;
-  validators.setProjectPath(m_projectPath);
-  validators.setLocales(m_config.locales);
-  validators.scanLocalizationFiles();
-  m_localizationStrings = validators.getLocalizationStrings();
+  m_localizationStrings.clear();
+
+  fs::path locDir = fs::path(m_projectPath) / "Localization";
+  if (!fs::exists(locDir)) {
+    return;
+  }
+
+  const auto& keyPattern = CachedRegexPatterns::keyPattern;
+
+  for (const auto& entry : fs::directory_iterator(locDir)) {
+    if (entry.path().extension() == ".json") {
+      std::string locale = entry.path().stem().string();
+      std::vector<std::string> keys;
+
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, keyPattern)) {
+        keys.push_back(match[1].str());
+        searchStart = match.suffix().first;
+      }
+
+      m_localizationStrings[locale] = std::move(keys);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkLocalizationKeys(std::vector<IntegrityIssue>& issues) {
@@ -346,34 +619,608 @@ void ProjectIntegrityChecker::checkMissingTranslations(std::vector<IntegrityIssu
 }
 
 void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& issues) {
-  ProjectValidators validators;
-  validators.setProjectPath(m_projectPath);
-  validators.scanLocalizationFiles();
-  validators.checkUnusedStrings(issues);
+  // Scan scripts for string usage and compare to localization files
+  if (m_localizationStrings.empty()) {
+    return; // No localization strings to check
+  }
+
+  // Collect all localization keys from all locales
+  std::unordered_set<std::string> allKeys;
+  for (const auto& [locale, keys] : m_localizationStrings) {
+    for (const auto& key : keys) {
+      allKeys.insert(key);
+    }
+  }
+
+  // Collect referenced keys from scripts
+  std::unordered_set<std::string> referencedKeys;
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+
+  if (fs::exists(scriptsDir)) {
+    // Pattern to match loc("key") or loc('key')
+    const auto& locPattern = CachedRegexPatterns::locPattern;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+      if (entry.path().extension() == ".nms") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, locPattern)) {
+          referencedKeys.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
+
+  // Also check scene files for localization references
+  fs::path scenesDir = fs::path(m_projectPath) / "Scenes";
+  if (fs::exists(scenesDir)) {
+    const auto& locPattern = CachedRegexPatterns::locPattern;
+
+    for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
+      if (entry.path().extension() == ".nmscene" || entry.path().extension() == ".json") {
+        std::string content;
+        if (!readFileToString(entry.path(), content)) {
+          continue;
+        }
+
+        std::smatch match;
+        std::string::const_iterator searchStart(content.cbegin());
+
+        while (std::regex_search(searchStart, content.cend(), match, locPattern)) {
+          referencedKeys.insert(match[1].str());
+          searchStart = match.suffix().first;
+        }
+      }
+    }
+  }
+
+  // Find unused keys
+  for (const auto& key : allKeys) {
+    if (referencedKeys.find(key) == referencedKeys.end()) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Info;
+      issue.category = IssueCategory::Localization;
+      issue.code = "L003";
+      issue.message = "Unused localization key: " + key;
+      issue.suggestions.push_back("Remove unused key to reduce clutter");
+      issue.suggestions.push_back("Key may be for future use - verify before removing");
+      issue.hasQuickFix = true;
+      issue.quickFixDescription = "Remove unused localization key from all locale files";
+      issues.push_back(issue);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkStoryGraphStructure(std::vector<IntegrityIssue>& issues) {
-  ProjectGraphAnalyzer analyzer;
-  analyzer.setProjectPath(m_projectPath);
-  analyzer.checkStoryGraphStructure(issues);
+  // Parse story graph files and validate structure
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  bool hasEntryPoint = false;
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::string> sceneFiles;
+
+  // Collect all defined scenes
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+
+        // Check for entry point scenes
+        if (sceneName == "main" || sceneName == "start" || sceneName == "intro") {
+          hasEntryPoint = true;
+        }
+
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  // Check for entry point
+  if (!hasEntryPoint) {
+    IntegrityIssue issue;
+    issue.severity = IssueSeverity::Error;
+    issue.category = IssueCategory::StoryGraph;
+    issue.code = "G001";
+    issue.message = "No entry point scene found (main, start, or intro)";
+    issue.suggestions.push_back("Create a 'main' scene as entry point");
+    issue.hasQuickFix = true;
+    issue.quickFixDescription = "Create main scene";
+    issues.push_back(issue);
+  }
+
+  // Check for invalid goto references
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::string line;
+      std::istringstream stream(content);
+      int lineNum = 0;
+
+      while (std::getline(stream, line)) {
+        lineNum++;
+        std::smatch match;
+
+        if (std::regex_search(line, match, gotoPattern)) {
+          std::string targetScene = match[1].str();
+
+          // Validate that the target scene exists
+          if (definedScenes.find(targetScene) == definedScenes.end()) {
+            IntegrityIssue issue;
+            issue.severity = IssueSeverity::Error;
+            issue.category = IssueCategory::StoryGraph;
+            issue.code = "G003";
+            issue.message = "Goto references undefined scene: " + targetScene;
+            issue.filePath = entry.path().string();
+            issue.lineNumber = lineNum;
+            issue.context = line;
+            issue.suggestions.push_back("Define scene '" + targetScene + "'");
+            issue.suggestions.push_back("Fix the goto reference");
+            issue.hasQuickFix = true;
+            issue.quickFixDescription = "Comment out invalid goto";
+            issues.push_back(issue);
+          }
+        }
+      }
+    }
+  }
+
+  // Check for duplicate scene definitions
+  std::unordered_map<std::string, std::vector<std::string>> sceneDuplicates;
+
+  // Reuse scenePattern from above
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        sceneDuplicates[sceneName].push_back(entry.path().string());
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  for (const auto& [sceneName, files] : sceneDuplicates) {
+    if (files.size() > 1) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Error;
+      issue.category = IssueCategory::StoryGraph;
+      issue.code = "G004";
+      issue.message = "Duplicate scene definition: " + sceneName;
+      issue.context = "Found in " + std::to_string(files.size()) + " files";
+      for (const auto& file : files) {
+        issue.suggestions.push_back("  - " + file);
+      }
+      issues.push_back(issue);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& issues) {
-  ProjectGraphAnalyzer analyzer;
-  analyzer.setProjectPath(m_projectPath);
-  analyzer.analyzeReachability(issues);
+  // Perform graph traversal to find unreachable scenes
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  // Build scene graph
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::vector<std::string>>
+      sceneTransitions; // scene -> [target scenes]
+  std::unordered_map<std::string, std::string> sceneFiles;
+
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
+
+  // First pass: collect all defined scenes
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  if (definedScenes.empty()) {
+    return; // No scenes to analyze
+  }
+
+  // Second pass: build transition graph
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      // Find which scene we're in
+      std::smatch sceneMatch;
+      std::string::const_iterator sceneSearchStart(content.cbegin());
+      std::string currentScene;
+
+      while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
+        currentScene = sceneMatch[1].str();
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
+
+        // Find scene end (matching closing brace)
+        size_t braceStart = content.find('{', sceneStart);
+        if (braceStart == std::string::npos) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        // Find matching closing brace
+        int braceCount = 1;
+        size_t braceEnd = braceStart + 1;
+        while (braceEnd < content.size() && braceCount > 0) {
+          if (content[braceEnd] == '{')
+            braceCount++;
+          else if (content[braceEnd] == '}')
+            braceCount--;
+          braceEnd++;
+        }
+
+        if (braceCount != 0) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        std::string sceneContent = content.substr(braceStart, braceEnd - braceStart);
+
+        // Find goto statements in this scene
+        std::smatch gotoMatch;
+        std::string::const_iterator gotoSearchStart(sceneContent.cbegin());
+
+        while (std::regex_search(gotoSearchStart, sceneContent.cend(), gotoMatch, gotoPattern)) {
+          std::string targetScene = gotoMatch[1].str();
+          if (definedScenes.find(targetScene) != definedScenes.end()) {
+            sceneTransitions[currentScene].push_back(targetScene);
+          }
+          gotoSearchStart = gotoMatch.suffix().first;
+        }
+
+        sceneSearchStart = sceneMatch.suffix().first;
+      }
+    }
+  }
+
+  // Find entry point scenes
+  std::unordered_set<std::string> entryPoints;
+  for (const auto& scene : definedScenes) {
+    if (scene == "main" || scene == "start" || scene == "intro") {
+      entryPoints.insert(scene);
+    }
+  }
+
+  if (entryPoints.empty() && !definedScenes.empty()) {
+    // Use first defined scene as entry point
+    entryPoints.insert(*definedScenes.begin());
+  }
+
+  // BFS to find reachable scenes
+  std::unordered_set<std::string> reachable;
+  std::queue<std::string> toVisit;
+
+  for (const auto& entry : entryPoints) {
+    toVisit.push(entry);
+    reachable.insert(entry);
+  }
+
+  while (!toVisit.empty()) {
+    std::string current = toVisit.front();
+    toVisit.pop();
+
+    if (sceneTransitions.find(current) != sceneTransitions.end()) {
+      for (const auto& target : sceneTransitions[current]) {
+        if (reachable.find(target) == reachable.end()) {
+          reachable.insert(target);
+          toVisit.push(target);
+        }
+      }
+    }
+  }
+
+  // Report unreachable scenes
+  for (const auto& scene : definedScenes) {
+    if (reachable.find(scene) == reachable.end()) {
+      IntegrityIssue issue;
+      issue.severity = IssueSeverity::Warning;
+      issue.category = IssueCategory::StoryGraph;
+      issue.code = "G005";
+      issue.message = "Scene '" + scene + "' is unreachable from entry points";
+      issue.filePath = sceneFiles[scene];
+      issue.suggestions.push_back("Add a goto to this scene from a reachable scene");
+      issue.suggestions.push_back("Remove the scene if it's no longer needed");
+      issue.hasQuickFix = false;
+      issues.push_back(issue);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) {
-  ProjectGraphAnalyzer analyzer;
-  analyzer.setProjectPath(m_projectPath);
-  analyzer.detectCycles(issues);
+  // Use DFS with coloring to detect cycles in the story graph
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  // Build scene graph
+  std::unordered_set<std::string> definedScenes;
+  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions;
+  std::unordered_map<std::string, std::string> sceneFiles;
+
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& gotoPattern = CachedRegexPatterns::gotoPattern;
+
+  // First pass: collect all defined scenes
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch match;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), match, scenePattern)) {
+        std::string sceneName = match[1].str();
+        definedScenes.insert(sceneName);
+        sceneFiles[sceneName] = entry.path().string();
+        searchStart = match.suffix().first;
+      }
+    }
+  }
+
+  if (definedScenes.empty()) {
+    return;
+  }
+
+  // Second pass: build transition graph
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch sceneMatch;
+      std::string::const_iterator sceneSearchStart(content.cbegin());
+
+      while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
+        std::string currentScene = sceneMatch[1].str();
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
+
+        size_t braceStart = content.find('{', sceneStart);
+        if (braceStart == std::string::npos) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        // Find matching closing brace
+        int braceCount = 1;
+        size_t braceEnd = braceStart + 1;
+        while (braceEnd < content.size() && braceCount > 0) {
+          if (content[braceEnd] == '{')
+            braceCount++;
+          else if (content[braceEnd] == '}')
+            braceCount--;
+          braceEnd++;
+        }
+
+        if (braceCount != 0) {
+          sceneSearchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        std::string sceneContent = content.substr(braceStart, braceEnd - braceStart);
+
+        // Find goto statements
+        std::smatch gotoMatch;
+        std::string::const_iterator gotoSearchStart(sceneContent.cbegin());
+
+        while (std::regex_search(gotoSearchStart, sceneContent.cend(), gotoMatch, gotoPattern)) {
+          std::string targetScene = gotoMatch[1].str();
+          if (definedScenes.find(targetScene) != definedScenes.end()) {
+            sceneTransitions[currentScene].push_back(targetScene);
+          }
+          gotoSearchStart = gotoMatch.suffix().first;
+        }
+
+        sceneSearchStart = sceneMatch.suffix().first;
+      }
+    }
+  }
+
+  // DFS to detect cycles using colors
+  enum class Color { White, Gray, Black };
+  std::unordered_map<std::string, Color> colors;
+  std::vector<std::string> cycleStack;
+  std::unordered_set<std::string> reportedCycles;
+
+  // Initialize all nodes as white
+  for (const auto& scene : definedScenes) {
+    colors[scene] = Color::White;
+  }
+
+  // DFS function to detect cycles
+  std::function<bool(const std::string&)> dfs = [&](const std::string& node) -> bool {
+    colors[node] = Color::Gray;
+    cycleStack.push_back(node);
+
+    if (sceneTransitions.find(node) != sceneTransitions.end()) {
+      for (const auto& neighbor : sceneTransitions[node]) {
+        if (colors[neighbor] == Color::Gray) {
+          // Found a cycle - build cycle path
+          std::vector<std::string> cycle;
+          bool inCycle = false;
+          for (const auto& stackNode : cycleStack) {
+            if (stackNode == neighbor) {
+              inCycle = true;
+            }
+            if (inCycle) {
+              cycle.push_back(stackNode);
+            }
+          }
+          cycle.push_back(neighbor); // Complete the cycle
+
+          // Create a unique key for this cycle
+          std::string cycleKey;
+          for (const auto& n : cycle) {
+            cycleKey += n + "->";
+          }
+
+          // Only report each unique cycle once
+          if (reportedCycles.find(cycleKey) == reportedCycles.end()) {
+            reportedCycles.insert(cycleKey);
+
+            // Build cycle description
+            std::string cyclePath;
+            for (size_t i = 0; i < cycle.size(); ++i) {
+              if (i > 0)
+                cyclePath += " -> ";
+              cyclePath += cycle[i];
+            }
+
+            IntegrityIssue issue;
+            issue.severity = IssueSeverity::Warning;
+            issue.category = IssueCategory::StoryGraph;
+            issue.code = "G006";
+            issue.message = "Cycle detected in story graph";
+            issue.context = cyclePath;
+            issue.filePath = sceneFiles[node];
+            issue.suggestions.push_back(
+                "Verify if this cycle is intentional (e.g., gameplay loop)");
+            issue.suggestions.push_back("Add an 'end' statement to break unintended loops");
+            issue.suggestions.push_back("Ensure player has a way to exit the cycle");
+            issue.hasQuickFix = false;
+            issues.push_back(issue);
+          }
+        } else if (colors[neighbor] == Color::White) {
+          if (dfs(neighbor)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    cycleStack.pop_back();
+    colors[node] = Color::Black;
+    return false;
+  };
+
+  // Run DFS from all white nodes
+  for (const auto& scene : definedScenes) {
+    if (colors[scene] == Color::White) {
+      dfs(scene);
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkDeadEnds(std::vector<IntegrityIssue>& issues) {
-  ProjectGraphAnalyzer analyzer;
-  analyzer.setProjectPath(m_projectPath);
-  analyzer.checkDeadEnds(issues);
+  fs::path scriptsDir = fs::path(m_projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return;
+  }
+
+  const auto& scenePattern = CachedRegexPatterns::scenePattern;
+  const auto& endPattern = CachedRegexPatterns::endPattern;
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::smatch sceneMatch;
+      std::string::const_iterator searchStart(content.cbegin());
+
+      while (std::regex_search(searchStart, content.cend(), sceneMatch, scenePattern)) {
+        std::string sceneName = sceneMatch[1].str();
+
+        // Find the scene content (simplified - real implementation would parse
+        // braces)
+        size_t braceStart =
+            content.find('{', static_cast<std::string::size_type>(sceneMatch.position()));
+        if (braceStart == std::string::npos) {
+          searchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        // Find matching closing brace (simplified)
+        size_t braceEnd = content.find('}', braceStart);
+        if (braceEnd == std::string::npos) {
+          searchStart = sceneMatch.suffix().first;
+          continue;
+        }
+
+        std::string sceneContent = content.substr(braceStart, braceEnd - braceStart);
+
+        // Check if scene has an exit (end, goto, or choice)
+        if (!std::regex_search(sceneContent, endPattern)) {
+          IntegrityIssue issue;
+          issue.severity = IssueSeverity::Warning;
+          issue.category = IssueCategory::StoryGraph;
+          issue.code = "G002";
+          issue.message = "Scene '" + sceneName + "' may be a dead end (no goto, choice, or end)";
+          issue.filePath = entry.path().string();
+          issue.suggestions.push_back("Add 'end' to end the story");
+          issue.suggestions.push_back("Add 'goto' to continue to another scene");
+          issues.push_back(issue);
+        }
+
+        searchStart = sceneMatch.suffix().first;
+      }
+    }
+  }
 }
 
 void ProjectIntegrityChecker::checkScriptSyntax(std::vector<IntegrityIssue>& issues) {
@@ -455,5 +1302,648 @@ bool ProjectIntegrityChecker::shouldExclude(const std::string& path) const {
   }
   return false;
 }
+
+Result<void> ProjectIntegrityChecker::applyQuickFix(const IntegrityIssue& issue) {
+  if (!issue.hasQuickFix) {
+    return Result<void>::error("No quick fix available for this issue");
+  }
+
+  // Dispatch to appropriate quick fix based on issue code
+  if (issue.code == "C001") {
+    // Create project.json configuration file
+    fs::path projectDir(m_projectPath);
+    std::string projectName = projectDir.filename().string();
+    return QuickFixes::createDefaultProjectConfig(m_projectPath, projectName);
+  }
+
+  if (issue.code == "C002") {
+    // Create missing directory
+    if (!issue.filePath.empty()) {
+      std::error_code ec;
+      fs::create_directories(issue.filePath, ec);
+      if (ec) {
+        return Result<void>::error("Failed to create directory: " + ec.message());
+      }
+      return Result<void>::ok();
+    }
+    return Result<void>::error("No file path specified for directory creation");
+  }
+
+  if (issue.code == "C003") {
+    // No start scene defined - set first available scene as start
+    return QuickFixes::setFirstSceneAsStart(m_projectPath);
+  }
+
+  if (issue.code == "C004") {
+    // Version mismatch - manual intervention required (no automatic fix)
+    return Result<void>::error("Version mismatch requires manual project migration");
+  }
+
+  if (issue.code == "S001") {
+    // Start scene file not found - create an empty scene file
+    // Extract scene name from message or use the file path
+    std::string sceneId;
+    if (!issue.filePath.empty()) {
+      fs::path scenePath(issue.filePath);
+      sceneId = scenePath.stem().string();
+    }
+    if (sceneId.empty()) {
+      return Result<void>::error("Could not determine scene ID from issue");
+    }
+    return QuickFixes::createEmptyScene(m_projectPath, sceneId);
+  }
+
+  if (issue.code == "S002") {
+    // Reference to undefined scene - remove the reference
+    // Extract scene ID from message: "Reference to undefined scene: <sceneId>"
+    std::string sceneId;
+    const std::string prefix = "Reference to undefined scene: ";
+    size_t pos = issue.message.find(prefix);
+    if (pos != std::string::npos) {
+      sceneId = issue.message.substr(pos + prefix.length());
+    }
+    if (!sceneId.empty()) {
+      return QuickFixes::removeMissingSceneReference(m_projectPath, sceneId);
+    }
+    return Result<void>::error("Could not extract scene ID from issue message");
+  }
+
+  if (issue.code == "S003" || issue.code == "S004") {
+    // Scene file read error or malformed JSON - requires manual fix
+    return Result<void>::error("Scene file corruption requires manual restoration from backup");
+  }
+
+  if (issue.code == "A001") {
+    // File does not exist - create placeholder
+    if (!issue.filePath.empty()) {
+      return QuickFixes::createPlaceholderAsset(m_projectPath, issue.filePath);
+    }
+    return Result<void>::error("No file path specified for asset creation");
+  }
+
+  if (issue.code == "A002") {
+    // Referenced asset not found - create placeholder asset
+    // Extract asset name from message: "Referenced asset not found: <assetName>"
+    std::string assetName;
+    const std::string prefix = "Referenced asset not found: ";
+    size_t pos = issue.message.find(prefix);
+    if (pos != std::string::npos) {
+      assetName = issue.message.substr(pos + prefix.length());
+    }
+    if (!assetName.empty()) {
+      // Create in Assets directory with the referenced name
+      std::string assetPath = "Assets/" + assetName;
+      return QuickFixes::createPlaceholderAsset(m_projectPath, assetPath);
+    }
+    return Result<void>::error("Could not extract asset name from issue");
+  }
+
+  if (issue.code == "A003") {
+    // Asset is not referenced (orphaned) - remove the asset file
+    if (!issue.filePath.empty()) {
+      return QuickFixes::removeOrphanedAsset(m_projectPath, issue.filePath);
+    }
+    return Result<void>::error("No file path specified for asset removal");
+  }
+
+  if (issue.code == "V001") {
+    // Voice file not found - no automatic fix (requires audio file)
+    return Result<void>::error("Missing voice files must be recorded or imported manually");
+  }
+
+  if (issue.code == "L001") {
+    // Duplicate localization key - requires manual resolution
+    return Result<void>::error("Duplicate localization keys require manual resolution");
+  }
+
+  if (issue.code == "L002") {
+    // Missing translation - add missing localization key
+    std::string key;
+    std::string locale = "en";
+
+    // Extract key from message: "Missing translation for '<key>' in <locale>"
+    size_t startQuote = issue.message.find('\'');
+    if (startQuote != std::string::npos) {
+      size_t endQuote = issue.message.find('\'', startQuote + 1);
+      if (endQuote != std::string::npos) {
+        key = issue.message.substr(startQuote + 1, endQuote - startQuote - 1);
+      }
+    }
+
+    // Extract locale from message
+    size_t inPos = issue.message.find(" in ");
+    if (inPos != std::string::npos) {
+      locale = issue.message.substr(inPos + 4);
+    }
+
+    if (!key.empty()) {
+      return QuickFixes::addMissingLocalizationKey(m_projectPath, key, locale);
+    }
+    return Result<void>::error("Could not extract localization key from issue message");
+  }
+
+  if (issue.code == "G001") {
+    // No entry point scene found - create main scene
+    return QuickFixes::createMainEntryScene(m_projectPath);
+  }
+
+  if (issue.code == "G002") {
+    // Dead end scene - requires manual story flow editing
+    return Result<void>::error("Dead end scenes require manual addition of goto, choice, or end");
+  }
+
+  if (issue.code == "R001") {
+    // Duplicate asset name - requires manual resolution
+    return Result<void>::error("Duplicate asset names require manual renaming or removal");
+  }
+
+  if (issue.code == "L003") {
+    // Unused localization key - remove from all locale files
+    std::string key;
+    const std::string prefix = "Unused localization key: ";
+    size_t pos = issue.message.find(prefix);
+    if (pos != std::string::npos) {
+      key = issue.message.substr(pos + prefix.length());
+    }
+    if (!key.empty()) {
+      return QuickFixes::removeUnusedLocalizationKey(m_projectPath, key);
+    }
+    return Result<void>::error("Could not extract localization key from issue message");
+  }
+
+  if (issue.code == "G003") {
+    // Invalid goto reference - comment out the line
+    if (!issue.filePath.empty() && issue.lineNumber > 0) {
+      return QuickFixes::commentOutLine(issue.filePath, issue.lineNumber);
+    }
+    return Result<void>::error("No file path or line number specified");
+  }
+
+  if (issue.code == "G004") {
+    // Duplicate scene definition - requires manual resolution
+    return Result<void>::error("Duplicate scene definitions require manual resolution");
+  }
+
+  if (issue.code == "G005") {
+    // Unreachable scene - no automatic fix (requires manual graph connection)
+    return Result<void>::error("Unreachable scenes require manual connection to the story graph");
+  }
+
+  if (issue.code == "G006") {
+    // Cycle detected - no automatic fix (needs manual review)
+    return Result<void>::error("Story graph cycles require manual review and resolution");
+  }
+
+  return Result<void>::error("Quick fix not implemented for issue: " + issue.code);
+}
+
+// ============================================================================
+// QuickFixes Implementation
+// ============================================================================
+
+namespace QuickFixes {
+
+Result<void> removeMissingSceneReference(const std::string& projectPath,
+                                         const std::string& sceneId) {
+  // Scan script files and remove/comment out references to the missing scene
+  fs::path scriptsDir = fs::path(projectPath) / "Scripts";
+  if (!fs::exists(scriptsDir)) {
+    return Result<void>::ok(); // No scripts to fix
+  }
+
+  // Create dynamic regex for specific scene ID (unavoidable, as pattern depends on sceneId)
+  std::regex sceneRefPattern("(goto\\s+" + sceneId + "|scene\\s+" + sceneId + ")");
+  bool anyChanges = false;
+
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
+    if (entry.path().extension() == ".nms") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      std::string modifiedContent =
+          std::regex_replace(content, sceneRefPattern, "// [REMOVED: $1] - scene not found");
+
+      if (modifiedContent != content) {
+        std::ofstream outFile(entry.path());
+        if (outFile.is_open()) {
+          outFile << modifiedContent;
+          outFile.close();
+          anyChanges = true;
+        }
+      }
+    }
+  }
+
+  if (anyChanges) {
+    return Result<void>::ok();
+  }
+  return Result<void>::error("No references found to remove for scene: " + sceneId);
+}
+
+Result<void> createPlaceholderAsset(const std::string& projectPath, const std::string& assetPath) {
+  fs::path fullPath;
+
+  // Check if assetPath is already absolute or relative to project
+  if (fs::path(assetPath).is_absolute()) {
+    fullPath = assetPath;
+  } else {
+    fullPath = fs::path(projectPath) / assetPath;
+  }
+
+  // Create parent directories
+  std::error_code ec;
+  fs::create_directories(fullPath.parent_path(), ec);
+  if (ec) {
+    return Result<void>::error("Failed to create directory: " + ec.message());
+  }
+
+  // Determine file type and create appropriate placeholder
+  std::string ext = fullPath.extension().string();
+  std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+  std::ofstream file(fullPath, std::ios::binary);
+  if (!file.is_open()) {
+    return Result<void>::error("Failed to create placeholder file: " + fullPath.string());
+  }
+
+  if (ext == ".png") {
+    // Minimal valid PNG (1x1 transparent pixel)
+    const unsigned char pngData[] = {
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48,
+        0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00,
+        0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41, 0x54, 0x78,
+        0x9C, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00,
+        0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82};
+    file.write(reinterpret_cast<const char*>(pngData), sizeof(pngData));
+  } else if (ext == ".json") {
+    file << "{\n}\n";
+  } else if (ext == ".nms") {
+    file << "// Placeholder script\nscene placeholder {\n  // Add content "
+            "here\n}\n";
+  } else {
+    // Generic placeholder
+    file << "PLACEHOLDER";
+  }
+  file.close();
+
+  return Result<void>::ok();
+}
+
+Result<void> addMissingLocalizationKey(const std::string& projectPath, const std::string& key,
+                                       const std::string& locale) {
+  fs::path locFile = fs::path(projectPath) / "Localization" / (locale + ".json");
+
+  // Create Localization directory if it doesn't exist
+  std::error_code ec;
+  fs::create_directories(locFile.parent_path(), ec);
+
+  if (!fs::exists(locFile)) {
+    // Create the file with the new key
+    std::ofstream outFile(locFile);
+    if (!outFile.is_open()) {
+      return Result<void>::error("Failed to create localization file: " + locFile.string());
+    }
+    outFile << "{\n  \"" << key << "\": \"\"\n}\n";
+    outFile.close();
+    return Result<void>::ok();
+  }
+
+  // Read existing content
+  std::string content;
+  if (!readFileToString(locFile, content)) {
+    return Result<void>::error("Failed to read localization file");
+  }
+
+  // Find last key-value pair and add new one
+  size_t lastBrace = content.rfind('}');
+  if (lastBrace != std::string::npos) {
+    // Check if there are existing entries
+    size_t lastQuote = content.rfind('"', lastBrace);
+    std::string separator = lastQuote != std::string::npos ? ",\n" : "\n";
+
+    std::string newEntry = separator + "  \"" + key + "\": \"\"";
+    content.insert(lastBrace, newEntry);
+
+    std::ofstream outFile(locFile);
+    if (!outFile.is_open()) {
+      return Result<void>::error("Failed to write localization file");
+    }
+    outFile << content;
+    outFile.close();
+  }
+
+  return Result<void>::ok();
+}
+
+Result<void> removeOrphanedReferences(const std::string& /*projectPath*/,
+                                      const std::vector<std::string>& /*assetPaths*/) {
+  // Would scan files and remove references
+  return Result<void>::ok();
+}
+
+Result<void> connectUnreachableNode(const std::string& /*projectPath*/,
+                                    scripting::NodeId /*nodeId*/) {
+  // Would modify graph structure
+  return Result<void>::ok();
+}
+
+Result<void> resolveDuplicateId(const std::string& /*projectPath*/,
+                                const std::string& /*duplicateId*/) {
+  // Would rename duplicate IDs
+  return Result<void>::ok();
+}
+
+Result<void> createEmptyScene(const std::string& projectPath, const std::string& sceneId) {
+  // Create Scenes directory if it doesn't exist
+  fs::path scenesDir = fs::path(projectPath) / "Scenes";
+  std::error_code ec;
+  fs::create_directories(scenesDir, ec);
+  if (ec) {
+    return Result<void>::error("Failed to create Scenes directory: " + ec.message());
+  }
+
+  fs::path sceneFile = scenesDir / (sceneId + ".nmscene");
+
+  // Check if file already exists
+  if (fs::exists(sceneFile)) {
+    return Result<void>::error("Scene file already exists: " + sceneFile.string());
+  }
+
+  // Create empty scene JSON
+  std::ofstream file(sceneFile);
+  if (!file.is_open()) {
+    return Result<void>::error("Failed to create scene file: " + sceneFile.string());
+  }
+
+  // Write minimal valid scene document
+  file << "{\n";
+  file << "  \"sceneId\": \"" << sceneId << "\",\n";
+  file << "  \"objects\": []\n";
+  file << "}\n";
+  file.close();
+
+  return Result<void>::ok();
+}
+
+Result<void> setFirstSceneAsStart(const std::string& projectPath) {
+  // Find first available scene
+  fs::path scenesDir = fs::path(projectPath) / "Scenes";
+  if (!fs::exists(scenesDir)) {
+    return Result<void>::error("Scenes directory not found");
+  }
+
+  std::string firstSceneId;
+  for (const auto& entry : fs::directory_iterator(scenesDir)) {
+    if (entry.path().extension() == ".nmscene") {
+      firstSceneId = entry.path().stem().string();
+      break;
+    }
+  }
+
+  if (firstSceneId.empty()) {
+    return Result<void>::error("No scenes found in project");
+  }
+
+  // Update project.json with the start scene
+  fs::path projectFile = fs::path(projectPath) / "project.json";
+  if (!fs::exists(projectFile)) {
+    return Result<void>::error("project.json not found");
+  }
+
+  std::string content;
+  if (!readFileToString(projectFile, content)) {
+    return Result<void>::error("Failed to read project.json");
+  }
+
+  // Find and update startScene field, or add it
+  const auto& startScenePattern = CachedRegexPatterns::startScenePattern;
+  std::string replacement = "\"startScene\": \"" + firstSceneId + "\"";
+
+  if (std::regex_search(content, startScenePattern)) {
+    content = std::regex_replace(content, startScenePattern, replacement);
+  } else {
+    // Add startScene before the last closing brace
+    size_t lastBrace = content.rfind('}');
+    if (lastBrace != std::string::npos) {
+      size_t lastQuote = content.rfind('"', lastBrace);
+      std::string separator = lastQuote != std::string::npos ? ",\n" : "\n";
+      content.insert(lastBrace, separator + "  " + replacement);
+    }
+  }
+
+  std::ofstream outFile(projectFile);
+  if (!outFile.is_open()) {
+    return Result<void>::error("Failed to write project.json");
+  }
+  outFile << content;
+  outFile.close();
+
+  return Result<void>::ok();
+}
+
+Result<void> createMainEntryScene(const std::string& projectPath) {
+  // First, create the main scene file
+  auto result = createEmptyScene(projectPath, "main");
+  if (!result.isOk()) {
+    return result;
+  }
+
+  // Also create a corresponding main.nms script file
+  fs::path scriptsDir = fs::path(projectPath) / "Scripts";
+  std::error_code ec;
+  fs::create_directories(scriptsDir, ec);
+
+  fs::path scriptFile = scriptsDir / "main.nms";
+  if (!fs::exists(scriptFile)) {
+    std::ofstream file(scriptFile);
+    if (file.is_open()) {
+      file << "// Main entry point script\n";
+      file << "scene main {\n";
+      file << "  // Add your story content here\n";
+      file << "  say \"Welcome to the story!\"\n";
+      file << "  end\n";
+      file << "}\n";
+      file.close();
+    }
+  }
+
+  // Try to set main as the start scene
+  fs::path projectFile = fs::path(projectPath) / "project.json";
+  if (fs::exists(projectFile)) {
+    std::string content;
+    if (readFileToString(projectFile, content)) {
+      const auto& startScenePattern = CachedRegexPatterns::startScenePattern;
+      std::string replacement = "\"startScene\": \"main\"";
+
+      if (std::regex_search(content, startScenePattern)) {
+        content = std::regex_replace(content, startScenePattern, replacement);
+      } else {
+        size_t lastBrace = content.rfind('}');
+        if (lastBrace != std::string::npos) {
+          size_t lastQuote = content.rfind('"', lastBrace);
+          std::string separator = lastQuote != std::string::npos ? ",\n" : "\n";
+          content.insert(lastBrace, separator + "  " + replacement);
+        }
+      }
+
+      std::ofstream outFile(projectFile);
+      if (outFile.is_open()) {
+        outFile << content;
+        outFile.close();
+      }
+    }
+  }
+
+  return Result<void>::ok();
+}
+
+Result<void> removeOrphanedAsset(const std::string& projectPath, const std::string& assetPath) {
+  fs::path fullPath;
+
+  // Handle both absolute and relative paths
+  if (fs::path(assetPath).is_absolute()) {
+    fullPath = assetPath;
+  } else {
+    fullPath = fs::path(projectPath) / assetPath;
+  }
+
+  if (!fs::exists(fullPath)) {
+    return Result<void>::error("Asset file not found: " + fullPath.string());
+  }
+
+  std::error_code ec;
+  fs::remove(fullPath, ec);
+  if (ec) {
+    return Result<void>::error("Failed to remove asset: " + ec.message());
+  }
+
+  return Result<void>::ok();
+}
+
+Result<void> createDefaultProjectConfig(const std::string& projectPath,
+                                        const std::string& projectName) {
+  fs::path projectFile = fs::path(projectPath) / "project.json";
+
+  // Don't overwrite existing config
+  if (fs::exists(projectFile)) {
+    return Result<void>::error("project.json already exists");
+  }
+
+  std::ofstream file(projectFile);
+  if (!file.is_open()) {
+    return Result<void>::error("Failed to create project.json");
+  }
+
+  // Get current timestamp
+  auto now = std::chrono::system_clock::now();
+  auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
+
+  file << "{\n";
+  file << "  \"name\": \"" << projectName << "\",\n";
+  file << "  \"version\": \"1.0.0\",\n";
+  file << "  \"author\": \"\",\n";
+  file << "  \"description\": \"\",\n";
+  file << "  \"engineVersion\": \"0.2.0\",\n";
+  file << "  \"startScene\": \"\",\n";
+  file << "  \"createdAt\": " << timestamp << ",\n";
+  file << "  \"modifiedAt\": " << timestamp << ",\n";
+  file << "  \"defaultLocale\": \"en\",\n";
+  file << "  \"targetResolution\": \"1920x1080\",\n";
+  file << "  \"fullscreenDefault\": false,\n";
+  file << "  \"buildPreset\": \"release\",\n";
+  file << "  \"targetPlatforms\": [\"windows\", \"linux\", \"macos\"],\n";
+  file << "  \"playbackSourceMode\": \"Script\"\n";
+  file << "}\n";
+  file.close();
+
+  return Result<void>::ok();
+}
+
+Result<void> removeUnusedLocalizationKey(const std::string& projectPath, const std::string& key) {
+  fs::path locDir = fs::path(projectPath) / "Localization";
+  if (!fs::exists(locDir)) {
+    return Result<void>::error("Localization directory not found");
+  }
+
+  bool anyChanges = false;
+
+  // Remove key from all locale files
+  for (const auto& entry : fs::directory_iterator(locDir)) {
+    if (entry.path().extension() == ".json") {
+      std::string content;
+      if (!readFileToString(entry.path(), content)) {
+        continue;
+      }
+
+      // Create regex to match the key and its value (including comma handling)
+      // Note: Dynamic regex creation is unavoidable here as pattern depends on the key parameter
+      std::regex keyPattern("\\s*,?\\s*\"" + key + "\"\\s*:\\s*\"[^\"]*\"\\s*,?\\s*");
+      std::string modifiedContent = std::regex_replace(content, keyPattern, "");
+
+      // Clean up any double commas or trailing commas using cached patterns
+      modifiedContent =
+          std::regex_replace(modifiedContent, CachedRegexPatterns::doubleCommaPattern, ",");
+      modifiedContent =
+          std::regex_replace(modifiedContent, CachedRegexPatterns::trailingCommaPattern, "\n}");
+
+      if (modifiedContent != content) {
+        std::ofstream outFile(entry.path());
+        if (outFile.is_open()) {
+          outFile << modifiedContent;
+          outFile.close();
+          anyChanges = true;
+        }
+      }
+    }
+  }
+
+  if (anyChanges) {
+    return Result<void>::ok();
+  }
+  return Result<void>::error("Key not found in any localization file: " + key);
+}
+
+Result<void> commentOutLine(const std::string& filePath, int lineNumber) {
+  if (!fs::exists(filePath)) {
+    return Result<void>::error("File not found: " + filePath);
+  }
+
+  std::ifstream inFile(filePath);
+  if (!inFile.is_open()) {
+    return Result<void>::error("Failed to open file: " + filePath);
+  }
+
+  std::vector<std::string> lines;
+  std::string line;
+  int currentLine = 0;
+
+  while (std::getline(inFile, line)) {
+    currentLine++;
+    if (currentLine == lineNumber) {
+      // Comment out this line
+      lines.push_back("    // [DISABLED] " + line);
+    } else {
+      lines.push_back(line);
+    }
+  }
+  inFile.close();
+
+  // Write back
+  std::ofstream outFile(filePath);
+  if (!outFile.is_open()) {
+    return Result<void>::error("Failed to write file: " + filePath);
+  }
+
+  for (const auto& l : lines) {
+    outFile << l << "\n";
+  }
+  outFile.close();
+
+  return Result<void>::ok();
+}
+
+} // namespace QuickFixes
 
 } // namespace NovelMind::editor

@@ -234,6 +234,8 @@ enum class ShortcutCategory : u8 {
   Navigation,
   Tools,
   Window,
+  Script,
+  Build,
   Debug,
   Custom
 };
@@ -568,6 +570,21 @@ constexpr const char* DebugContinue = "debug.continue";
 constexpr const char* DebugStepOver = "debug.step_over";
 constexpr const char* DebugStepInto = "debug.step_into";
 constexpr const char* DebugStepOut = "debug.step_out";
+
+// Script Operations
+constexpr const char* ScriptFormat = "script.format";
+constexpr const char* ScriptGoToDefinition = "script.go_to_definition";
+constexpr const char* ScriptFindReferences = "script.find_references";
+constexpr const char* ScriptShowOutline = "script.show_outline";
+constexpr const char* ScriptToggleComment = "script.toggle_comment";
+constexpr const char* ScriptRun = "script.run";
+constexpr const char* ScriptCompile = "script.compile";
+
+// Build Operations
+constexpr const char* BuildProject = "build.project";
+constexpr const char* BuildRun = "build.run";
+constexpr const char* BuildClean = "build.clean";
+constexpr const char* BuildSettings = "build.settings";
 } // namespace Commands
 
 } // namespace NovelMind::editor

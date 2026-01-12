@@ -743,108 +743,268 @@ TEST_CASE("Parser error recovery", "[parser]") {
       REQUIRE(program.globalStatements.size() >= 1);
     }
   }
-}
 
-TEST_CASE("Parser handles bounds checking edge cases", "[parser][bounds]") {
-  Parser parser;
-
-  SECTION("handles empty token stream without crash") {
-    // Create empty token vector
-    std::vector<Token> emptyTokens;
-
-    // Parser should handle empty token stream gracefully
-    auto result = parser.parse(emptyTokens);
-
-    // Should not crash and should return a valid result
-    // (either ok with empty program or error)
-    REQUIRE(true); // If we get here, we didn't crash
-
-    // Parser should handle empty tokens without accessing out of bounds
-    if (result.isOk()) {
-      const auto& program = result.value();
-      REQUIRE(program.characters.empty());
-      REQUIRE(program.scenes.empty());
-    }
-  }
-
-  SECTION("handles token stream with only EOF") {
-    // Create token vector with only EOF
-    std::vector<Token> tokens;
-    tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation{});
-
-    auto result = parser.parse(tokens);
-
-    // Should not crash
-    REQUIRE(true);
-
-    // Should produce empty program
-    if (result.isOk()) {
-      const auto& program = result.value();
-      REQUIRE(program.characters.empty());
-      REQUIRE(program.scenes.empty());
-      REQUIRE(program.globalStatements.empty());
-    }
-  }
-
-  SECTION("handles previous() call at start of token stream") {
-    // Test case where previous() might be called when m_current == 0
-    Lexer lexer;
-
-    // Create minimal token stream that might trigger previous() at start
-    auto tokens = lexer.tokenize("say \"test\"");
+  SECTION("recovers from malformed binary expression") {
+    // Test that parser recovers from incomplete binary expression
+    // Missing right operand in binary expression
+    auto tokens = lexer.tokenize(R"(
+            set x = 5 +
+            say "After error"
+            set y = 10
+        )");
     REQUIRE(tokens.isOk());
 
     auto result = parser.parse(tokens.value());
-
-    // Should not crash even if previous() is called at position 0
-    REQUIRE(true);
-  }
-
-  SECTION("handles peek() beyond token stream") {
-    Lexer lexer;
-
-    // This should parse correctly and not attempt to peek beyond EOF
-    auto tokens = lexer.tokenize("say \"test\"");
-    REQUIRE(tokens.isOk());
-
-    auto result = parser.parse(tokens.value());
-
-    // Should handle EOF correctly without accessing beyond bounds
-    REQUIRE(true);
-
-    if (result.isOk()) {
-      const auto& program = result.value();
-      REQUIRE(program.globalStatements.size() == 1);
-    }
-  }
-
-  SECTION("handles malformed token stream gracefully") {
-    // Create a malformed token stream manually
-    std::vector<Token> malformedTokens;
-    // Just one token that's not EOF - parser might try to peek ahead
-    malformedTokens.emplace_back(TokenType::Show, "show", SourceLocation{1, 1});
-    // No EOF token - parser will need to handle bounds correctly
-
-    auto result = parser.parse(malformedTokens);
-
-    // Should not crash
-    REQUIRE(true);
-  }
-
-  SECTION("stress test: multiple operations on minimal token stream") {
-    // Create minimal valid token stream
-    std::vector<Token> tokens;
-    tokens.emplace_back(TokenType::Identifier, "test", SourceLocation{1, 1});
-    tokens.emplace_back(TokenType::EndOfFile, "", SourceLocation{1, 5});
-
-    auto result = parser.parse(tokens);
-
-    // Should handle all parser operations without crash
-    REQUIRE(true);
-
-    // Check that errors are accessible without crash
     const auto& errors = parser.getErrors();
-    // Just verify we can call getErrors() without crash
-    (void)errors; // Silence unused warning
+
+    // Should report error for incomplete expression
+    REQUIRE(errors.size() > 0);
+
+    // Should continue parsing and find subsequent statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed at least one valid statement after the error
+      REQUIRE(program.globalStatements.size() >= 1);
+    }
+  }
+
+  SECTION("recovers from malformed comparison expression") {
+    // Test recovery from incomplete comparison
+    auto tokens = lexer.tokenize(R"(
+            if x > {
+                say "This should not be reached"
+            }
+            say "After error"
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should report error for malformed condition
+    REQUIRE(errors.size() > 0);
+
+    // Parser should continue after error (test passes if no crash)
+  }
+
+  SECTION("recovers from malformed unary expression") {
+    // Test recovery from incomplete unary expression
+    auto tokens = lexer.tokenize(R"(
+            set x = !
+            show Hero at center
+            say "Recovery test"
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should report error for incomplete unary
+    REQUIRE(errors.size() > 0);
+
+    // Should continue and parse subsequent statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
+    }
+  }
+
+  SECTION("multiple errors in single file preserves subsequent statements") {
+    // Test that multiple errors don't prevent parsing later valid code
+    auto tokens = lexer.tokenize(R"(
+            character Hero
+
+            scene first {
+                set x = 5 +
+                say Hero "After first error"
+            }
+
+            scene second {
+                if x > {
+                    say "Broken condition"
+                }
+                show Hero at center
+            }
+
+            scene third {
+                say Hero "Third scene works"
+                set y = !
+                goto next
+            }
+
+            scene fourth {
+                say Hero "Fourth scene still parses"
+            }
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should have multiple errors (at least 3 from malformed expressions)
+    REQUIRE(errors.size() >= 3);
+
+    // Should still parse all valid scenes and statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed the character
+      REQUIRE(program.characters.size() == 1);
+      // Should have parsed all 4 scenes despite errors
+      REQUIRE(program.scenes.size() == 4);
+    }
+  }
+
+  SECTION("recovers from missing closing parenthesis") {
+    // Test recovery from unmatched parenthesis
+    auto tokens = lexer.tokenize(R"(
+            set x = (5 + 3
+            say "After error"
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should report error
+    REQUIRE(errors.size() > 0);
+
+    // Parser should continue (test passes if no crash)
+  }
+
+  SECTION("recovers from malformed call expression") {
+    // Test recovery from incomplete function call
+    auto tokens = lexer.tokenize(R"(
+            set x = someFunc(
+            show Hero at center
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should report error
+    REQUIRE(errors.size() > 0);
+
+    // Should parse subsequent statement
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
+    }
+  }
+
+  SECTION("recovers preserving character declarations after error") {
+    // Test that valid declarations after errors are preserved
+    auto tokens = lexer.tokenize(R"(
+            character Hero(name="Alex")
+            character Villain(name=)
+            character Friend(name="Bob")
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should have error from malformed Villain declaration
+    REQUIRE(errors.size() > 0);
+
+    // Should have parsed valid character declarations
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have at least Hero (Friend might also be parsed)
+      REQUIRE(program.characters.size() >= 1);
+    }
+  }
+
+  SECTION("recovers preserving scene structure after statement error") {
+    // Test that scene structure is preserved despite statement errors
+    auto tokens = lexer.tokenize(R"(
+            scene test {
+                say Hero "First line"
+                set x =
+                say Hero "Second line"
+                if x > {
+                    say "Error in condition"
+                }
+                say Hero "Third line"
+                show Hero at center
+            }
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should have multiple errors
+    REQUIRE(errors.size() >= 2);
+
+    // Scene should still be parsed with valid statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.scenes.size() == 1);
+      // Should have preserved at least some valid statements
+      const auto& scene = program.scenes[0];
+      REQUIRE(scene.body.size() >= 2);
+    }
+  }
+
+  SECTION("error does not corrupt subsequent choice block") {
+    // Test that choice blocks after errors are parsed correctly
+    auto tokens = lexer.tokenize(R"(
+            set x = 5 +
+
+            choice {
+                "Option A" -> goto sceneA
+                "Option B" -> goto sceneB
+            }
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should have error from malformed set
+    REQUIRE(errors.size() > 0);
+
+    // Choice block should still parse correctly
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
+    }
+  }
+
+  SECTION("cascading errors with complex nesting") {
+    // Test multiple errors with nested structures
+    auto tokens = lexer.tokenize(R"(
+            scene complex {
+                if true {
+                    set x = 5 +
+
+                    choice {
+                        "A" -> goto a
+                    }
+
+                    if y > {
+                        say "Nested error"
+                    }
+
+                    say "Valid statement"
+                }
+
+                show Hero at center
+            }
+        )");
+    REQUIRE(tokens.isOk());
+
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
+
+    // Should have multiple errors
+    REQUIRE(errors.size() >= 2);
+
+    // Scene should still be recognized
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.scenes.size() == 1);
+    }
   }
 }

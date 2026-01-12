@@ -174,6 +174,23 @@ else()
     message(STATUS "Freetype not found - text rendering fallback will be used")
 endif()
 
+# nlohmann/json for JSON parsing
+find_package(nlohmann_json QUIET)
+if(nlohmann_json_FOUND)
+    target_link_libraries(engine_core PRIVATE nlohmann_json::nlohmann_json)
+    message(STATUS "nlohmann/json found - using proper JSON parser")
+else()
+    message(STATUS "nlohmann/json not found - attempting to use system header")
+    # Try to find json.hpp in system includes
+    find_path(NLOHMANN_JSON_INCLUDE_DIR nlohmann/json.hpp)
+    if(NLOHMANN_JSON_INCLUDE_DIR)
+        target_include_directories(engine_core PRIVATE ${NLOHMANN_JSON_INCLUDE_DIR})
+        message(STATUS "Found nlohmann/json header at ${NLOHMANN_JSON_INCLUDE_DIR}")
+    else()
+        message(WARNING "nlohmann/json not found - voice manifest parsing may fail to compile")
+    endif()
+endif()
+
 # Define version
 target_compile_definitions(engine_core
     PUBLIC

@@ -72,12 +72,20 @@ void NMSceneGraphicsView::wheelEvent(QWheelEvent* event) {
   event->accept();
 }
 
+void NMSceneGraphicsView::updateCursor(const QCursor& newCursor) {
+  // Only set cursor if it's actually different to avoid redundant calls
+  if (m_currentCursor.shape() != newCursor.shape()) {
+    m_currentCursor = newCursor;
+    setCursor(newCursor);
+  }
+}
+
 void NMSceneGraphicsView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton) {
     // Start panning
     m_isPanning = true;
     m_lastPanPoint = event->pos();
-    setCursor(Qt::ClosedHandCursor);
+    updateCursor(Qt::ClosedHandCursor);
     event->accept();
     return;
   }
@@ -106,7 +114,7 @@ void NMSceneGraphicsView::mouseMoveEvent(QMouseEvent* event) {
 void NMSceneGraphicsView::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton && m_isPanning) {
     m_isPanning = false;
-    setCursor(Qt::ArrowCursor);
+    updateCursor(Qt::ArrowCursor);
     event->accept();
     return;
   }

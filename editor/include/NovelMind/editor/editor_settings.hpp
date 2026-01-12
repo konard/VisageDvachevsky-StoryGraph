@@ -14,7 +14,9 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/renderer/color.hpp"
 #include <functional>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -147,6 +149,9 @@ private:
   EditorApp* m_editor = nullptr;
   std::string m_layoutsPath;
   std::unordered_map<std::string, EditorLayout> m_savedLayouts;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -297,6 +302,9 @@ public:
 private:
   std::unordered_map<std::string, HotkeyAction> m_actions;
   std::unordered_map<std::string, HotkeyCallback> m_callbacks;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -517,6 +525,9 @@ private:
   std::unordered_map<std::string, Theme> m_themes;
   std::string m_currentThemeName;
   Theme m_currentTheme;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -612,6 +623,9 @@ public:
 private:
   EditorPreferences m_prefs;
   std::string m_prefsPath;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 } // namespace NovelMind::editor

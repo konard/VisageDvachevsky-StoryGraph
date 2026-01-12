@@ -154,12 +154,13 @@ public:
   // Parent/child relationship
   void setParent(SceneObjectBase* parent);
   [[nodiscard]] SceneObjectBase* getParent() const { return m_parent; }
-  void addChild(std::unique_ptr<SceneObjectBase> child);
+  bool addChild(std::unique_ptr<SceneObjectBase> child);
   std::unique_ptr<SceneObjectBase> removeChild(const std::string& id);
   [[nodiscard]] SceneObjectBase* findChild(const std::string& id);
   [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>>& getChildren() const {
     return m_children;
   }
+  [[nodiscard]] int getDepth() const;
 
   /// Maximum depth for recursive scene graph traversal to prevent stack
   /// overflow
@@ -180,7 +181,9 @@ public:
 
   // Lifecycle
   virtual void update(f64 deltaTime);
+  void updateWithDepth(f64 deltaTime, int depth);
   virtual void render(renderer::IRenderer& renderer) = 0;
+  void renderWithDepth(renderer::IRenderer& renderer, int depth);
 
   // Serialization
   [[nodiscard]] virtual SceneObjectState saveState() const;

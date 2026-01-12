@@ -73,9 +73,9 @@ private:
   void initKeywords();
 
   [[nodiscard]] bool isAtEnd() const;
-  [[nodiscard]] char peek() const;
-  [[nodiscard]] char peekNext() const;
-  char advance();
+  [[nodiscard]] unsigned char peek() const;
+  [[nodiscard]] unsigned char peekNext() const;
+  unsigned char advance();
   bool match(char expected);
 
   void skipWhitespace();

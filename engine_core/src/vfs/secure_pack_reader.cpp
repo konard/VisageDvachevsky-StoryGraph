@@ -8,15 +8,15 @@ constexpr u32 PACK_FLAG_ENCRYPTED = 1u << 0;
 
 SecurePackFileSystem::SecurePackFileSystem() = default;
 
-void SecurePackFileSystem::setPublicKeyPem(const std::string& pem) {
+void SecurePackFileSystem::setPublicKeyPem(const std::string &pem) {
   m_publicKeyPem = pem;
 }
 
-void SecurePackFileSystem::setPublicKeyPath(const std::string& path) {
+void SecurePackFileSystem::setPublicKeyPath(const std::string &path) {
   m_publicKeyPath = path;
 }
 
-void SecurePackFileSystem::setDecryptionKey(const Core::SecureVector<u8>& key) {
+void SecurePackFileSystem::setDecryptionKey(const Core::SecureVector<u8> &key) {
   m_decryptionKey = key;
 }
 
@@ -46,7 +46,7 @@ Result<void> SecurePackFileSystem::configureReader() {
   return Result<void>::ok();
 }
 
-Result<void> SecurePackFileSystem::mount(const std::string& packPath) {
+Result<void> SecurePackFileSystem::mount(const std::string &packPath) {
   unmountAll();
   m_packPath = packPath;
 
@@ -60,7 +60,8 @@ Result<void> SecurePackFileSystem::mount(const std::string& packPath) {
     return openResult;
   }
 
-  if ((m_reader->packFlags() & PACK_FLAG_ENCRYPTED) != 0 && m_decryptionKey.empty()) {
+  if ((m_reader->packFlags() & PACK_FLAG_ENCRYPTED) != 0 &&
+      m_decryptionKey.empty()) {
     m_reader->closePack();
     return Result<void>::error("Encrypted pack requires decryption key");
   }
@@ -68,7 +69,60 @@ Result<void> SecurePackFileSystem::mount(const std::string& packPath) {
   return Result<void>::ok();
 }
 
-void SecurePackFileSystem::unmount(const std::string& packPath) {
+std::future<Result<void>> SecurePackFileSystem::mountAsync(
+    const std::string &packPath, ProgressCallback progressCallback) {
+  // Launch async task to mount secure pack in background thread
+  return std::async(std::launch::async,
+                    [this, packPath, progressCallback]() -> Result<void> {
+    // Report progress: Starting
+    if (progressCallback) {
+      progressCallback(0, 4, "Initializing secure pack reader");
+    }
+
+    unmountAll();
+    m_packPath = packPath;
+
+    // Report progress: Configuring reader
+    if (progressCallback) {
+      progressCallback(1, 4, "Configuring encryption/security");
+    }
+
+    auto configResult = configureReader();
+    if (configResult.isError()) {
+      return configResult;
+    }
+
+    // Report progress: Opening pack
+    if (progressCallback) {
+      progressCallback(2, 4, "Opening secure pack");
+    }
+
+    auto openResult = m_reader->openPack(packPath);
+    if (openResult.isError()) {
+      return openResult;
+    }
+
+    // Report progress: Validating encryption
+    if (progressCallback) {
+      progressCallback(3, 4, "Validating encryption keys");
+    }
+
+    if ((m_reader->packFlags() & PACK_FLAG_ENCRYPTED) != 0 &&
+        m_decryptionKey.empty()) {
+      m_reader->closePack();
+      return Result<void>::error("Encrypted pack requires decryption key");
+    }
+
+    // Report progress: Complete
+    if (progressCallback) {
+      progressCallback(4, 4, "Secure pack mounted successfully");
+    }
+
+    return Result<void>::ok();
+  });
+}
+
+void SecurePackFileSystem::unmount(const std::string &packPath) {
   if (m_packPath == packPath) {
     unmountAll();
   }
@@ -81,18 +135,20 @@ void SecurePackFileSystem::unmountAll() {
   m_packPath.clear();
 }
 
-Result<std::vector<u8>> SecurePackFileSystem::readFile(const std::string& resourceId) const {
+Result<std::vector<u8>>
+SecurePackFileSystem::readFile(const std::string &resourceId) const {
   if (!m_reader || !m_reader->isOpen()) {
     return Result<std::vector<u8>>::error("Pack not mounted");
   }
   return m_reader->readResource(resourceId);
 }
 
-bool SecurePackFileSystem::exists(const std::string& resourceId) const {
+bool SecurePackFileSystem::exists(const std::string &resourceId) const {
   return m_reader && m_reader->isOpen() && m_reader->exists(resourceId);
 }
 
-std::optional<ResourceInfo> SecurePackFileSystem::getInfo(const std::string& resourceId) const {
+std::optional<ResourceInfo>
+SecurePackFileSystem::getInfo(const std::string &resourceId) const {
   if (!m_reader || !m_reader->isOpen()) {
     return std::nullopt;
   }
@@ -110,7 +166,8 @@ std::optional<ResourceInfo> SecurePackFileSystem::getInfo(const std::string& res
   return info;
 }
 
-std::vector<std::string> SecurePackFileSystem::listResources(ResourceType type) const {
+std::vector<std::string>
+SecurePackFileSystem::listResources(ResourceType type) const {
   if (!m_reader || !m_reader->isOpen()) {
     return {};
   }
@@ -121,7 +178,7 @@ std::vector<std::string> SecurePackFileSystem::listResources(ResourceType type) 
   }
 
   std::vector<std::string> filtered;
-  for (const auto& id : resources) {
+  for (const auto &id : resources) {
     auto meta = m_reader->getResourceMeta(id);
     if (meta.has_value() && static_cast<ResourceType>(meta->type) == type) {
       filtered.push_back(id);

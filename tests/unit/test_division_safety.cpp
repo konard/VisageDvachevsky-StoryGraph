@@ -218,24 +218,24 @@ TEST_CASE("Gizmo scale - near-zero distance protection", "[gizmo][safety][editor
 
 TEST_CASE("Gizmo scale - minimum scale enforcement", "[gizmo][safety][editor]") {
   // This test verifies that the scale gizmo enforces minimum and maximum scale
-  // values as defined in nm_scene_view_gizmo.cpp:306-307
+  // values as defined in nm_scene_view_gizmo.cpp:456-457
   //
-  // constexpr double kMinScale = 0.1;
-  // constexpr double kMaxScale = 10.0;
+  // constexpr qreal kMinScale = 0.001;
+  // constexpr qreal kMaxScale = 10000.0;
 
-  constexpr double kMinScale = 0.1;
-  constexpr double kMaxScale = 10.0;
+  constexpr qreal kMinScale = 0.001;
+  constexpr qreal kMaxScale = 10000.0;
 
   // Test case 1: Scale below minimum should be clamped
-  double dragStartScaleX = 0.5;
-  double scaleFactor = 0.1; // Would result in 0.05
-  double newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+  qreal dragStartScaleX = 0.5;
+  qreal scaleFactor = 0.0001; // Would result in 0.00005
+  qreal newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
   CHECK(newScaleX == Catch::Approx(kMinScale));
   CHECK(newScaleX >= kMinScale);
 
   // Test case 2: Scale above maximum should be clamped
-  dragStartScaleX = 5.0;
-  scaleFactor = 3.0; // Would result in 15.0
+  dragStartScaleX = 5000.0;
+  scaleFactor = 3.0; // Would result in 15000.0
   newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
   CHECK(newScaleX == Catch::Approx(kMaxScale));
   CHECK(newScaleX <= kMaxScale);

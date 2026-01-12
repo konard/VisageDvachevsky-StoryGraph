@@ -112,7 +112,8 @@ public:
 
   /**
    * @brief Construct a debugger for a VM
-   * @param vm The virtual machine to debug (must outlive the debugger)
+   * @param vm The virtual machine to debug (must not be null, must outlive the debugger)
+   * @pre vm must not be null (enforced by assertion in debug builds)
    */
   explicit VMDebugger(VirtualMachine* vm);
   ~VMDebugger();
