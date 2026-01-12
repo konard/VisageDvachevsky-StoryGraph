@@ -119,6 +119,7 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
+        unit/test_event_bus_stress.cpp
         unit/test_gizmo_memory.cpp
         unit/test_gizmo_dpi_scaling.cpp
         unit/test_gizmo_rotation_normalization.cpp

@@ -839,10 +839,52 @@ void NMVoiceManagerPanel::onMediaErrorOccurred() {
   resetPlaybackUI();
 }
 
-// Note: All async duration probing methods (startDurationProbing(),
-// processNextDurationProbe(), onProbeDurationFinished(), onDurationProbed(),
-// getCachedDuration(), cacheDuration(), updateDurationsInList())
-// moved to nm_voice_manager_panel_duration.cpp
+// Async duration probing
+void NMVoiceManagerPanel::startDurationProbing() {
+  if (!m_manifest || !m_probeThreadPool) {
+    return;
+  }
+
+  // RACE-1 fix: Atomic check-and-cancel for thread safety
+  bool wasProbing = m_isProbing.exchange(false);
+
+  if (wasProbing) {
+    // Cancel current probes
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    for (auto it = m_activeProbeTasks.begin(); it != m_activeProbeTasks.end(); ++it) {
+      it.value()->store(true);
+    }
+    m_activeProbeTasks.clear();
+    m_probeQueue.clear();
+  }
+
+  // Build queue under lock to prevent concurrent modification
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    m_probeQueue.clear();
+
+    // Copy manifest lines to avoid iterator invalidation during iteration
+    auto lines = m_manifest->getLines();
+
+    for (const auto& line : lines) {
+      auto* localeFile = line.getFile(m_currentLocale.toStdString());
+      if (localeFile && !localeFile->filePath.empty()) {
+        QString filePath = QString::fromStdString(localeFile->filePath);
+        // Check if we have a valid cached duration
+        double cached = getCachedDuration(filePath);
+        if (cached <= 0 && !m_activeProbeTasks.contains(filePath)) {
+          m_probeQueue.enqueue(filePath);
+        }
+      }
+    }
+  }
+
+  // Start probing with atomic guard to prevent double-start
+  bool queueNotEmpty = false;
+  {
+    std::lock_guard<std::mutex> lock(m_probeMutex);
+    queueNotEmpty = !m_probeQueue.isEmpty();
+  }
 
 // ============================================================================
 // Slot handlers
