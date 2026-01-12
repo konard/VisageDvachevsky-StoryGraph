@@ -130,6 +130,15 @@ Value VirtualMachine::getVariable(const std::string &name) const {
   return std::monostate{};
 }
 
+const Value& VirtualMachine::getVariableRef(const std::string &name) const {
+  static const Value nullValue = std::monostate{};
+  auto it = m_variables.find(name);
+  if (it != m_variables.end()) {
+    return it->second;
+  }
+  return nullValue;
+}
+
 bool VirtualMachine::hasVariable(const std::string &name) const {
   return m_variables.find(name) != m_variables.end();
 }
@@ -271,13 +280,26 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::DUP:
     if (!m_stack.empty()) {
-      push(m_stack.back());
+      // Optimize: Check security guard and duplicate directly to avoid extra copy
+      if (!m_securityGuard.checkStackPush(m_stack.size())) {
+        NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+        m_halted = true;
+        break;
+      }
+      m_stack.push_back(m_stack.back());
     }
     break;
 
   case OpCode::LOAD_VAR: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
@@ -569,7 +591,14 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::LOAD_GLOBAL: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
