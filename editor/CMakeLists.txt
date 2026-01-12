@@ -93,6 +93,9 @@ add_library(novelmind_editor STATIC
     src/build_platform.cpp
     src/build_scripts.cpp
     src/build_size_analyzer.cpp
+    src/build_size_scanner.cpp
+    src/build_size_report.cpp
+    src/build_size_ui.cpp
 
     # Abstraction interfaces and adapters (issue #150)
     src/adapters/QtAudioPlayer.cpp
