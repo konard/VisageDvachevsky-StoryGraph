@@ -1,13 +1,17 @@
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
+#include "NovelMind/core/endian.hpp"
 #include <bit>
 
 namespace NovelMind::scripting {
 
-// Static assertions to ensure type punning with bit_cast is safe
-static_assert(sizeof(f32) == sizeof(u32), "f32 and u32 must have the same size for bit_cast");
-static_assert(std::is_trivially_copyable_v<f32>, "f32 must be trivially copyable for bit_cast");
-static_assert(std::is_trivially_copyable_v<u32>, "u32 must be trivially copyable for bit_cast");
+// Float serialization assumptions:
+// - f32 (float) is exactly 4 bytes (32 bits), matching u32
+// - IEEE 754 single-precision format is used (ubiquitous on modern platforms)
+// - std::bit_cast provides well-defined, portable conversion without UB
+// - All floats are serialized in little-endian byte order for cross-platform compatibility
+static_assert(sizeof(f32) == sizeof(u32), "Float size must match u32 for bit_cast serialization");
+static_assert(std::numeric_limits<f32>::is_iec559, "IEEE 754 (IEC 559) float format required");
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
@@ -341,12 +345,12 @@ void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) 
   // Handle transition if specified
   if (stmt.transition.has_value()) {
     u32 transIndex = addString(stmt.transition.value());
-    // Push duration (convert float to int representation using bit_cast)
-    // This is portable and well-defined (C++20), avoiding strict aliasing issues
+    // Push duration (convert float to portable little-endian representation)
+    // Uses bit_cast (C++20) for well-defined float->u32 conversion, then converts to little-endian
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      durInt = std::bit_cast<u32>(dur);
+      durInt = serializeFloat(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
@@ -363,7 +367,7 @@ void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) 
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      durInt = std::bit_cast<u32>(dur);
+      durInt = serializeFloat(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
@@ -509,8 +513,8 @@ void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) 
 }
 
 void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
-  // Convert float duration to int representation
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+  // Convert float duration to portable little-endian representation
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::WAIT, durInt, loc);
 }
 
@@ -527,7 +531,7 @@ void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) 
 void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) {
   if (stmt.fadeOut.has_value()) {
     f32 dur = stmt.fadeOut.value();
-    u32 durInt = std::bit_cast<u32>(dur);
+    u32 durInt = serializeFloat(dur);
     emitOp(OpCode::PUSH_INT, durInt);
   }
 
@@ -552,7 +556,7 @@ void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
 
 void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   u32 typeIndex = addString(stmt.type);
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
   emitOp(OpCode::TRANSITION, typeIndex);
 }
@@ -584,14 +588,14 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const Sour
   if (stmt.position == Position::Custom) {
     f32 x = stmt.customX.value_or(0.5f);
     f32 y = stmt.customY.value_or(0.5f);
-    u32 xInt = std::bit_cast<u32>(x);
-    u32 yInt = std::bit_cast<u32>(y);
+    u32 xInt = serializeFloat(x);
+    u32 yInt = serializeFloat(y);
     emitOp(OpCode::PUSH_FLOAT, xInt);
     emitOp(OpCode::PUSH_FLOAT, yInt);
   }
 
-  // Push duration (convert float to int representation)
-  u32 durInt = std::bit_cast<u32>(stmt.duration);
+  // Push duration (convert float to portable little-endian representation)
+  u32 durInt = serializeFloat(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
 
   // Emit the MOVE_CHARACTER opcode with character string index
@@ -625,7 +629,7 @@ void Compiler::compileLiteral(const LiteralExpr &expr) {
         } else if constexpr (std::is_same_v<T, i32>) {
           emitOp(OpCode::PUSH_INT, static_cast<u32>(val));
         } else if constexpr (std::is_same_v<T, f32>) {
-          u32 intRep = std::bit_cast<u32>(val);
+          u32 intRep = serializeFloat(val);
           emitOp(OpCode::PUSH_FLOAT, intRep);
         } else if constexpr (std::is_same_v<T, bool>) {
           emitOp(OpCode::PUSH_BOOL, val ? 1 : 0);

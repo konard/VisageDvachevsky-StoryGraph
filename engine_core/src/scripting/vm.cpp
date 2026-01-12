@@ -1,5 +1,6 @@
 #include "NovelMind/scripting/vm.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/core/endian.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
 #include <bit>
@@ -253,8 +254,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::PUSH_FLOAT: {
-    // Deserialize float from bytecode using bit_cast (well-defined, no UB)
-    f32 val = std::bit_cast<f32>(instr.operand);
+    // Deserialize float from bytecode (converts from little-endian)
+    f32 val = deserializeFloat(instr.operand);
     push(val);
     break;
   }
@@ -801,7 +802,7 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         break;
       }
       case OpCode::WAIT:
-        args.emplace_back(static_cast<i32>(instr.operand));
+        args.emplace_back(deserializeFloat(instr.operand));
         break;
       case OpCode::TRANSITION: {
         // Only one stack argument (duration), type comes from operand

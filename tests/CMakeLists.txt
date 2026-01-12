@@ -68,6 +68,8 @@ add_executable(unit_tests
     unit/test_interpreter_deserialize.cpp
     unit/test_compiler_float_serialization.cpp
     unit/test_scene_object_handle_thread_safety.cpp
+    # Issue #504 - Portable float serialization tests (endianness conversion)
+    unit/test_endian_serialization.cpp
 )
 # Note: test_build_system.cpp requires editor library, included only in integration_tests
 
