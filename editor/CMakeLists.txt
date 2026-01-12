@@ -170,6 +170,10 @@ add_library(novelmind_editor STATIC
     src/qt/panels/nm_inspector_panel_group.cpp
     src/qt/panels/nm_console_panel.cpp
     src/qt/panels/nm_asset_browser_panel.cpp
+    src/qt/panels/asset_browser_categorizer.cpp
+    src/qt/panels/asset_browser_thumbnails.cpp
+    src/qt/panels/asset_browser_preview.cpp
+    src/qt/panels/asset_browser_scanner.cpp
     src/qt/panels/nm_scene_palette_panel.cpp
     src/qt/panels/nm_hierarchy_panel.cpp
     src/qt/panels/nm_script_editor_panel.cpp
@@ -268,6 +272,10 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/panels/nm_inspector_panel.hpp
     include/NovelMind/editor/qt/panels/nm_console_panel.hpp
     include/NovelMind/editor/qt/panels/nm_asset_browser_panel.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_categorizer.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_thumbnails.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_preview.hpp
+    include/NovelMind/editor/qt/panels/asset_browser_scanner.hpp
     include/NovelMind/editor/qt/panels/nm_scene_palette_panel.hpp
     include/NovelMind/editor/qt/panels/nm_hierarchy_panel.hpp
     include/NovelMind/editor/qt/panels/nm_script_editor_panel.hpp
