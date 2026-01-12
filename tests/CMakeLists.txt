@@ -50,6 +50,10 @@ add_executable(unit_tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
     unit/test_secure_memory.cpp
+    unit/test_resource_cache.cpp
+    unit/test_resource_id.cpp
+    unit/test_resource_manager.cpp
+    unit/test_cached_file_system.cpp
     unit/test_event_bus.cpp
     unit/test_interpreter_deserialize.cpp
     unit/test_compiler_float_serialization.cpp
