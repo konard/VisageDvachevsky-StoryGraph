@@ -34,7 +34,7 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
     if (pending.instructionIndex >= m_output.instructions.size()) {
       error("Internal compiler error: Invalid pending jump index " +
             std::to_string(pending.instructionIndex) + " (program size: " +
-            std::to_string(m_output.instructions.size()) + ")");
+            std::to_string(m_output.instructions.size()) + ")", pending.location);
       continue;
     }
 
@@ -42,7 +42,7 @@ Result<CompiledScript> Compiler::compile(const Program &program, const std::stri
     if (it != m_labels.end()) {
       m_output.instructions[pending.instructionIndex].operand = it->second;
     } else {
-      error("Undefined label: " + pending.targetLabel);
+      error("Undefined label: " + pending.targetLabel, pending.location);
     }
   }
 
@@ -364,7 +364,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
         // Forward reference to scene/label
         u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
         emitOp(OpCode::JUMP, 0);
-        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
+        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
         for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
@@ -379,7 +379,7 @@ void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &l
       if (option.gotoTarget.has_value()) {
         u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
         emitOp(OpCode::JUMP, 0);
-        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value()});
+        m_pendingJumps.push_back({jumpIndex, option.gotoTarget.value(), loc});
       } else {
         for (const auto &bodyStmt : option.body) {
           if (bodyStmt) {
@@ -437,7 +437,7 @@ void Compiler::compileIfStmt(const IfStmt &stmt, [[maybe_unused]] const SourceLo
 void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) {
   u32 jumpIndex = static_cast<u32>(m_output.instructions.size());
   emitOp(OpCode::GOTO_SCENE, 0, loc);
-  m_pendingJumps.push_back({jumpIndex, stmt.target});
+  m_pendingJumps.push_back({jumpIndex, stmt.target, loc});
 }
 
 void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {

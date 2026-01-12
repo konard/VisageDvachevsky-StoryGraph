@@ -23,6 +23,7 @@ add_executable(unit_tests
     unit/test_lexer.cpp
     unit/test_parser.cpp
     unit/test_validator.cpp
+    unit/test_compiler.cpp
     unit/test_story_graph.cpp
     unit/test_dialogue_localization.cpp
     unit/test_dialogue_box.cpp
