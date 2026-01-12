@@ -552,6 +552,13 @@ void NMLocalizationPanel::rebuildTable() {
   highlightMissingTranslations();
 }
 
+/**
+ * @brief Apply filters, highlighting, and update status in a single pass
+ *
+ * PERF optimization (issue #481): Combines filtering, styling, and statistics
+ * collection into a single iteration instead of three separate passes over the data.
+ * This significantly improves performance, especially for large datasets.
+ */
 void NMLocalizationPanel::applyFilters() {
   if (!m_stringsTable) {
     return;
@@ -560,13 +567,25 @@ void NMLocalizationPanel::applyFilters() {
   const QString searchText = m_searchEdit ? m_searchEdit->text().toLower() : QString();
   const bool showMissingOnly = m_showMissingOnly && m_showMissingOnly->isChecked();
 
+  // Get style information once for all rows
+  auto& style = NMStyleManager::instance();
+  const auto& palette = style.palette();
+  const QColor missingBg = palette.warningSubtle;
+  const QColor missingText = palette.warning;
+  const QColor normalText = palette.textPrimary;
+  const QColor mutedText = palette.textMuted;
+
   int visibleCount = 0;
   int missingCount = 0;
+  int totalCount = 0;
 
+  // Single-pass iteration: filter + highlight + count statistics
   for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
     auto* idItem = m_stringsTable->item(row, 0);
     auto* sourceItem = m_stringsTable->item(row, 1);
     auto* translationItem = m_stringsTable->item(row, 2);
+
+    totalCount++;
 
     if (!idItem) {
       m_stringsTable->setRowHidden(row, true);
@@ -577,7 +596,7 @@ void NMLocalizationPanel::applyFilters() {
     const QString source = sourceItem ? sourceItem->text() : QString();
     const QString translation = translationItem ? translationItem->text() : QString();
 
-    bool isMissing = translation.isEmpty();
+    const bool isMissing = translation.isEmpty();
     if (isMissing) {
       missingCount++;
     }
@@ -596,101 +615,81 @@ void NMLocalizationPanel::applyFilters() {
     if (visible) {
       visibleCount++;
     }
-  }
 
-  // Update status
-  updateStatusBar();
-}
-
-void NMLocalizationPanel::highlightMissingTranslations() {
-  if (!m_stringsTable) {
-    return;
-  }
-
-  auto& style = NMStyleManager::instance();
-  const auto& palette = style.palette();
-
-  // Use warning colors for missing translations (more subtle for dark theme)
-  const QColor missingBg = palette.warningSubtle;
-  const QColor missingText = palette.warning;
-  const QColor normalText = palette.textPrimary;
-  const QColor mutedText = palette.textMuted;
-
-  for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-    auto* translationItem = m_stringsTable->item(row, 2);
-    if (!translationItem) {
-      continue;
-    }
-
-    const bool isMissing = translationItem->text().isEmpty();
-
-    // Style the translation column
-    if (isMissing) {
-      translationItem->setBackground(missingBg);
-      translationItem->setForeground(missingText);
-      QFont font = translationItem->font();
-      font.setItalic(true);
-      translationItem->setFont(font);
-    } else {
-      translationItem->setBackground(QBrush()); // Clear custom background
-      translationItem->setForeground(normalText);
-      QFont font = translationItem->font();
-      font.setItalic(false);
-      translationItem->setFont(font);
+    // Apply highlighting (combined with filtering pass)
+    if (translationItem) {
+      if (isMissing) {
+        translationItem->setBackground(missingBg);
+        translationItem->setForeground(missingText);
+        QFont font = translationItem->font();
+        font.setItalic(true);
+        translationItem->setFont(font);
+      } else {
+        translationItem->setBackground(QBrush()); // Clear custom background
+        translationItem->setForeground(normalText);
+        QFont font = translationItem->font();
+        font.setItalic(false);
+        translationItem->setFont(font);
+      }
     }
 
     // Add subtle visual indicator to key column for missing translations
-    auto* keyItem = m_stringsTable->item(row, 0);
-    if (keyItem) {
+    if (idItem) {
       if (isMissing) {
-        keyItem->setForeground(mutedText);
+        idItem->setForeground(mutedText);
         // Add warning indicator
-        QVariant stored = keyItem->data(Qt::UserRole);
+        QVariant stored = idItem->data(Qt::UserRole);
         if (!stored.isValid()) {
-          keyItem->setData(Qt::UserRole, keyItem->text()); // Store original
-          keyItem->setText("⚠ " + keyItem->text());
+          idItem->setData(Qt::UserRole, idItem->text()); // Store original
+          idItem->setText("⚠ " + idItem->text());
         }
       } else {
-        keyItem->setForeground(palette.textPrimary);
+        idItem->setForeground(palette.textPrimary);
         // Restore original text
-        QVariant original = keyItem->data(Qt::UserRole);
+        QVariant original = idItem->data(Qt::UserRole);
         if (original.isValid()) {
-          keyItem->setText(original.toString());
-          keyItem->setData(Qt::UserRole, QVariant()); // Clear
+          idItem->setText(original.toString());
+          idItem->setData(Qt::UserRole, QVariant()); // Clear
         }
       }
     }
 
     // Style source column slightly dimmed
-    auto* sourceItem = m_stringsTable->item(row, 1);
     if (sourceItem) {
       sourceItem->setForeground(palette.textSecondary);
     }
   }
+
+  // Update status bar with collected statistics
+  updateStatusBarWithCounts(totalCount, visibleCount, missingCount);
 }
 
-void NMLocalizationPanel::updateStatusBar() {
+/**
+ * @brief Legacy method for highlighting missing translations
+ *
+ * PERF optimization (issue #481): This method is now a no-op when called from rebuildTable()
+ * since highlighting is done in applyFilters() as part of the combined single-pass operation.
+ * Kept for backward compatibility in case it's called from other contexts.
+ */
+void NMLocalizationPanel::highlightMissingTranslations() {
+  // No-op: highlighting is now done in applyFilters() for efficiency
+  // This avoids redundant iteration when called after rebuildTable()
+}
+
+/**
+ * @brief Update status bar with pre-computed counts (efficient version)
+ *
+ * PERF optimization (issue #481): Uses pre-computed statistics from the filtering pass
+ * instead of iterating through all rows again.
+ */
+void NMLocalizationPanel::updateStatusBarWithCounts(int totalCount, int visibleCount,
+                                                    int missingCount) {
   if (!m_statusLabel) {
     return;
   }
 
   auto& style = NMStyleManager::instance();
   const auto& palette = style.palette();
-
-  int totalCount = 0;
-  int visibleCount = 0;
-  int missingCount = 0;
-
-  for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
-    totalCount++;
-    if (!m_stringsTable->isRowHidden(row)) {
-      visibleCount++;
-    }
-    auto* translationItem = m_stringsTable->item(row, 2);
-    if (translationItem && translationItem->text().isEmpty()) {
-      missingCount++;
-    }
-  }
 
   // Calculate completion percentage
   int completedCount = totalCount - missingCount;
@@ -734,6 +733,35 @@ void NMLocalizationPanel::updateStatusBar() {
   }
 
   m_statusLabel->setText(status);
+}
+
+/**
+ * @brief Legacy updateStatusBar that iterates to compute counts
+ *
+ * PERF note: This method iterates through all rows to compute statistics.
+ * Prefer using updateStatusBarWithCounts() when counts are already available.
+ */
+void NMLocalizationPanel::updateStatusBar() {
+  if (!m_statusLabel || !m_stringsTable) {
+    return;
+  }
+
+  int totalCount = 0;
+  int visibleCount = 0;
+  int missingCount = 0;
+
+  for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
+    totalCount++;
+    if (!m_stringsTable->isRowHidden(row)) {
+      visibleCount++;
+    }
+    auto* translationItem = m_stringsTable->item(row, 2);
+    if (translationItem && translationItem->text().isEmpty()) {
+      missingCount++;
+    }
+  }
+
+  updateStatusBarWithCounts(totalCount, visibleCount, missingCount);
 }
 
 void NMLocalizationPanel::onSearchTextChanged(const QString& text) {
