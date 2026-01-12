@@ -1,14 +1,11 @@
 #include "NovelMind/editor/project_integrity.hpp"
-#include "NovelMind/editor/project_manager.hpp"
+#include "NovelMind/editor/project_graph_analyzer.hpp"
+#include "NovelMind/editor/project_asset_tracker.hpp"
+#include "NovelMind/editor/project_validators.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <filesystem>
-#include <fstream>
-#include <queue>
-#include <regex>
-#include <sstream>
-#include <unordered_set>
 
 namespace fs = std::filesystem;
 
@@ -343,96 +340,15 @@ void ProjectIntegrityChecker::cancelCheck() {
   m_cancelRequested = true;
 }
 
+
 // ============================================================================
-// Check Functions
+// Delegating Methods to Specialized Modules
 // ============================================================================
 
 void ProjectIntegrityChecker::checkProjectConfiguration(std::vector<IntegrityIssue>& issues) {
-  fs::path projectFile = fs::path(m_projectPath) / "project.json";
-
-  if (!fs::exists(projectFile)) {
-    IntegrityIssue issue;
-    issue.severity = IssueSeverity::Critical;
-    issue.category = IssueCategory::Configuration;
-    issue.code = "C001";
-    issue.message = "Project configuration file not found";
-    issue.filePath = projectFile.string();
-    issue.hasQuickFix = true;
-    issue.quickFixDescription = "Create default project.json";
-    issues.push_back(issue);
-    return;
-  }
-
-  // Check version compatibility
-  auto& pm = ProjectManager::instance();
-  if (pm.hasOpenProject()) {
-    const auto& metadata = pm.getMetadata();
-    std::string projectVersion = metadata.engineVersion;
-    std::string currentVersion = "0.2.0"; // Should be from a constant
-
-    if (!projectVersion.empty() && projectVersion != currentVersion) {
-      // Simple version comparison - could be more sophisticated
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Warning;
-      issue.category = IssueCategory::Configuration;
-      issue.code = "C004";
-      issue.message = "Project was created with engine version " + projectVersion +
-                      " (current: " + currentVersion + ")";
-      issue.filePath = projectFile.string();
-      issue.suggestions.push_back("Update project to current engine version");
-      issue.suggestions.push_back("Some features may not work as expected");
-      issues.push_back(issue);
-    }
-  }
-
-  // Check for required folders
-  std::vector<std::pair<std::string, std::string>> requiredFolders = {
-      {"Assets", "Assets folder"}, {"Scripts", "Scripts folder"}, {"Scenes", "Scenes folder"}};
-
-  for (const auto& [folder, name] : requiredFolders) {
-    fs::path folderPath = fs::path(m_projectPath) / folder;
-    if (!fs::exists(folderPath)) {
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Warning;
-      issue.category = IssueCategory::Configuration;
-      issue.code = "C002";
-      issue.message = name + " is missing";
-      issue.filePath = folderPath.string();
-      issue.hasQuickFix = true;
-      issue.quickFixDescription = "Create " + folder + " directory";
-      issues.push_back(issue);
-    }
-  }
-
-  // Check for start scene/entry point
-  if (pm.hasOpenProject()) {
-    std::string startScene = pm.getStartScene();
-    if (startScene.empty()) {
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Error;
-      issue.category = IssueCategory::Configuration;
-      issue.code = "C003";
-      issue.message = "No start scene defined";
-      issue.suggestions.push_back("Set a start scene in Project Settings");
-      issue.hasQuickFix = true;
-      issue.quickFixDescription = "Set first scene as start scene";
-      issues.push_back(issue);
-    } else {
-      // Check if start scene exists
-      fs::path sceneFile = fs::path(m_projectPath) / "Scenes" / (startScene + ".nmscene");
-      if (!fs::exists(sceneFile)) {
-        IntegrityIssue issue;
-        issue.severity = IssueSeverity::Error;
-        issue.category = IssueCategory::Scene;
-        issue.code = "S001";
-        issue.message = "Start scene '" + startScene + "' not found";
-        issue.filePath = sceneFile.string();
-        issue.hasQuickFix = true;
-        issue.quickFixDescription = "Create scene file";
-        issues.push_back(issue);
-      }
-    }
-  }
+  ProjectValidators validators;
+  validators.setProjectPath(m_projectPath);
+  validators.checkProjectConfiguration(issues);
 }
 
 void ProjectIntegrityChecker::checkSceneReferences(std::vector<IntegrityIssue>& issues) {
@@ -530,27 +446,10 @@ void ProjectIntegrityChecker::checkSceneReferences(std::vector<IntegrityIssue>& 
 }
 
 void ProjectIntegrityChecker::scanProjectAssets() {
-  m_projectAssets.clear();
-
-  fs::path assetsDir = fs::path(m_projectPath) / "Assets";
-  if (!fs::exists(assetsDir)) {
-    return;
-  }
-
-  std::vector<std::string> assetExtensions = {".png",  ".jpg", ".jpeg",    ".gif", ".bmp",
-                                              ".webp", ".ogg", ".wav",     ".mp3", ".flac",
-                                              ".ttf",  ".otf", ".nmscript"};
-
-  for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
-    if (entry.is_regular_file()) {
-      std::string ext = entry.path().extension().string();
-      std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-
-      if (std::find(assetExtensions.begin(), assetExtensions.end(), ext) != assetExtensions.end()) {
-        m_projectAssets.insert(fs::relative(entry.path(), m_projectPath).string());
-      }
-    }
-  }
+  ProjectAssetTracker tracker;
+  tracker.setProjectPath(m_projectPath);
+  tracker.scanProjectAssets();
+  m_projectAssets = tracker.getProjectAssets();
 }
 
 void ProjectIntegrityChecker::collectAssetReferences() {
@@ -604,54 +503,19 @@ void ProjectIntegrityChecker::collectAssetReferences() {
 }
 
 void ProjectIntegrityChecker::checkAssetReferences(std::vector<IntegrityIssue>& issues) {
-  for (const auto& ref : m_referencedAssets) {
-    // Check if referenced asset exists in project
-    bool found = false;
-    for (const auto& asset : m_projectAssets) {
-      if (asset.find(ref) != std::string::npos || fs::path(asset).filename().string() == ref) {
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Error;
-      issue.category = IssueCategory::Asset;
-      issue.code = "A002";
-      issue.message = "Referenced asset not found: " + ref;
-      issue.hasQuickFix = true;
-      issue.quickFixDescription = "Create placeholder asset";
-      issues.push_back(issue);
-    }
-  }
+  ProjectAssetTracker tracker;
+  tracker.setProjectPath(m_projectPath);
+  tracker.scanProjectAssets();
+  tracker.collectAssetReferences();
+  tracker.checkAssetReferences(issues);
 }
 
 void ProjectIntegrityChecker::findOrphanedAssets(std::vector<IntegrityIssue>& issues) {
-  for (const auto& asset : m_projectAssets) {
-    std::string filename = fs::path(asset).filename().string();
-
-    bool isReferenced = false;
-    for (const auto& ref : m_referencedAssets) {
-      if (asset.find(ref) != std::string::npos || filename == ref) {
-        isReferenced = true;
-        break;
-      }
-    }
-
-    if (!isReferenced) {
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Info;
-      issue.category = IssueCategory::Asset;
-      issue.code = "A003";
-      issue.message = "Asset is not referenced: " + asset;
-      issue.filePath = (fs::path(m_projectPath) / asset).string();
-      issue.suggestions.push_back("Remove unused asset to reduce build size");
-      issue.hasQuickFix = true;
-      issue.quickFixDescription = "Remove unused asset file";
-      issues.push_back(issue);
-    }
-  }
+  ProjectAssetTracker tracker;
+  tracker.setProjectPath(m_projectPath);
+  tracker.scanProjectAssets();
+  tracker.collectAssetReferences();
+  tracker.findOrphanedAssets(issues);
 }
 
 void ProjectIntegrityChecker::checkVoiceLines(std::vector<IntegrityIssue>& issues) {
@@ -741,71 +605,17 @@ void ProjectIntegrityChecker::scanLocalizationFiles() {
 }
 
 void ProjectIntegrityChecker::checkLocalizationKeys(std::vector<IntegrityIssue>& issues) {
-  if (m_localizationStrings.empty()) {
-    return;
-  }
-
-  // Get all unique keys across all locales
-  std::unordered_set<std::string> allKeys;
-  for (const auto& [locale, keys] : m_localizationStrings) {
-    for (const auto& key : keys) {
-      allKeys.insert(key);
-    }
-  }
-
-  // Check for duplicate keys within each locale
-  for (const auto& [locale, keys] : m_localizationStrings) {
-    std::unordered_set<std::string> seen;
-    for (const auto& key : keys) {
-      if (seen.count(key) > 0) {
-        IntegrityIssue issue;
-        issue.severity = IssueSeverity::Warning;
-        issue.category = IssueCategory::Localization;
-        issue.code = "L001";
-        issue.message = "Duplicate localization key in " + locale + ": " + key;
-        issue.filePath = (fs::path(m_projectPath) / "Localization" / (locale + ".json")).string();
-        issues.push_back(issue);
-      }
-      seen.insert(key);
-    }
-  }
+  ProjectValidators validators;
+  validators.setProjectPath(m_projectPath);
+  validators.scanLocalizationFiles();
+  validators.checkLocalizationKeys(issues);
 }
 
 void ProjectIntegrityChecker::checkMissingTranslations(std::vector<IntegrityIssue>& issues) {
-  if (m_localizationStrings.size() < 2) {
-    return; // Need at least 2 locales to compare
-  }
-
-  // Get reference locale (usually the default)
-  std::string refLocale = "en";
-  if (m_localizationStrings.find(refLocale) == m_localizationStrings.end()) {
-    refLocale = m_localizationStrings.begin()->first;
-  }
-
-  const auto& refKeys = m_localizationStrings[refLocale];
-  std::unordered_set<std::string> refKeySet(refKeys.begin(), refKeys.end());
-
-  for (const auto& [locale, keys] : m_localizationStrings) {
-    if (locale == refLocale)
-      continue;
-
-    std::unordered_set<std::string> localeKeySet(keys.begin(), keys.end());
-
-    // Check for missing translations
-    for (const auto& key : refKeySet) {
-      if (localeKeySet.find(key) == localeKeySet.end()) {
-        IntegrityIssue issue;
-        issue.severity = IssueSeverity::Warning;
-        issue.category = IssueCategory::Localization;
-        issue.code = "L002";
-        issue.message = "Missing translation for '" + key + "' in " + locale;
-        issue.filePath = (fs::path(m_projectPath) / "Localization" / (locale + ".json")).string();
-        issue.hasQuickFix = true;
-        issue.quickFixDescription = "Add key with empty value";
-        issues.push_back(issue);
-      }
-    }
-  }
+  ProjectValidators validators;
+  validators.setProjectPath(m_projectPath);
+  validators.scanLocalizationFiles();
+  validators.checkMissingTranslations(issues);
 }
 
 void ProjectIntegrityChecker::checkUnusedStrings(std::vector<IntegrityIssue>& issues) {
@@ -1411,41 +1221,16 @@ void ProjectIntegrityChecker::checkDeadEnds(std::vector<IntegrityIssue>& issues)
   }
 }
 
-void ProjectIntegrityChecker::checkScriptSyntax(std::vector<IntegrityIssue>& /*issues*/) {
-  // Would use the lexer/parser to validate syntax
-  // Complex implementation - placeholder for now
+void ProjectIntegrityChecker::checkScriptSyntax(std::vector<IntegrityIssue>& issues) {
+  ProjectValidators validators;
+  validators.setProjectPath(m_projectPath);
+  validators.checkScriptSyntax(issues);
 }
 
 void ProjectIntegrityChecker::checkResourceConflicts(std::vector<IntegrityIssue>& issues) {
-  // Check for duplicate asset IDs
-  std::unordered_map<std::string, std::vector<std::string>> assetsByName;
-
-  fs::path assetsDir = fs::path(m_projectPath) / "Assets";
-  if (!fs::exists(assetsDir)) {
-    return;
-  }
-
-  for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
-    if (entry.is_regular_file()) {
-      std::string filename = entry.path().filename().string();
-      assetsByName[filename].push_back(entry.path().string());
-    }
-  }
-
-  for (const auto& [name, paths] : assetsByName) {
-    if (paths.size() > 1) {
-      IntegrityIssue issue;
-      issue.severity = IssueSeverity::Warning;
-      issue.category = IssueCategory::Resource;
-      issue.code = "R001";
-      issue.message = "Duplicate asset name: " + name;
-      issue.context = "Found in " + std::to_string(paths.size()) + " locations";
-      for (const auto& path : paths) {
-        issue.suggestions.push_back("  - " + path);
-      }
-      issues.push_back(issue);
-    }
-  }
+  ProjectValidators validators;
+  validators.setProjectPath(m_projectPath);
+  validators.checkResourceConflicts(issues);
 }
 
 IntegritySummary

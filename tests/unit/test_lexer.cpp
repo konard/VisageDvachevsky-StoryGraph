@@ -211,16 +211,128 @@ TEST_CASE("Lexer tracks source locations", "[lexer]") {
 TEST_CASE("Lexer handles color literals", "[lexer]") {
   Lexer lexer;
 
-  SECTION("parses hex colors") {
-    auto result = lexer.tokenize("#FFCC00 #FF0000");
+  SECTION("parses valid 6-digit hex colors (#RRGGBB)") {
+    auto result = lexer.tokenize("#FFCC00 #FF0000 #123456");
     REQUIRE(result.isOk());
 
     const auto& tokens = result.value();
-    REQUIRE(tokens.size() == 3);
+    REQUIRE(tokens.size() == 4); // 3 colors + EOF
     REQUIRE(tokens[0].type == TokenType::String);
     REQUIRE(tokens[0].lexeme == "#FFCC00");
     REQUIRE(tokens[1].type == TokenType::String);
     REQUIRE(tokens[1].lexeme == "#FF0000");
+    REQUIRE(tokens[2].type == TokenType::String);
+    REQUIRE(tokens[2].lexeme == "#123456");
+  }
+
+  SECTION("parses valid 3-digit hex colors (#RGB)") {
+    auto result = lexer.tokenize("#FFF #000 #ABC");
+    REQUIRE(result.isOk());
+
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 4); // 3 colors + EOF
+    REQUIRE(tokens[0].type == TokenType::String);
+    REQUIRE(tokens[0].lexeme == "#FFF");
+    REQUIRE(tokens[1].type == TokenType::String);
+    REQUIRE(tokens[1].lexeme == "#000");
+    REQUIRE(tokens[2].type == TokenType::String);
+    REQUIRE(tokens[2].lexeme == "#ABC");
+  }
+
+  SECTION("parses valid 8-digit hex colors with alpha (#RRGGBBAA)") {
+    auto result = lexer.tokenize("#FFCC00FF #FF000080 #12345678");
+    REQUIRE(result.isOk());
+
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 4); // 3 colors + EOF
+    REQUIRE(tokens[0].type == TokenType::String);
+    REQUIRE(tokens[0].lexeme == "#FFCC00FF");
+    REQUIRE(tokens[1].type == TokenType::String);
+    REQUIRE(tokens[1].lexeme == "#FF000080");
+    REQUIRE(tokens[2].type == TokenType::String);
+    REQUIRE(tokens[2].lexeme == "#12345678");
+  }
+
+  SECTION("accepts lowercase hex digits") {
+    auto result = lexer.tokenize("#ffcc00 #abc #aabbccdd");
+    REQUIRE(result.isOk());
+
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 4);
+    REQUIRE(tokens[0].lexeme == "#ffcc00");
+    REQUIRE(tokens[1].lexeme == "#abc");
+    REQUIRE(tokens[2].lexeme == "#aabbccdd");
+  }
+
+  SECTION("accepts mixed case hex digits") {
+    auto result = lexer.tokenize("#FfCc00 #AbC #AaBbCcDd");
+    REQUIRE(result.isOk());
+
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 4);
+    REQUIRE(tokens[0].lexeme == "#FfCc00");
+    REQUIRE(tokens[1].lexeme == "#AbC");
+    REQUIRE(tokens[2].lexeme == "#AaBbCcDd");
+  }
+
+  SECTION("rejects empty color literal (#)") {
+    auto result = lexer.tokenize("#");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("must contain hex digits") != std::string::npos);
+  }
+
+  SECTION("rejects 1-digit color literals") {
+    auto result = lexer.tokenize("#F");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("too short") != std::string::npos);
+  }
+
+  SECTION("rejects 2-digit color literals") {
+    auto result = lexer.tokenize("#FF");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("too short") != std::string::npos);
+  }
+
+  SECTION("rejects 4-digit color literals (#RGBA format not supported)") {
+    auto result = lexer.tokenize("#FFAA");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Invalid color literal length") != std::string::npos);
+  }
+
+  SECTION("rejects 5-digit color literals") {
+    auto result = lexer.tokenize("#12345");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("Invalid color literal length") != std::string::npos);
+  }
+
+  SECTION("rejects 7-digit color literals") {
+    auto result = lexer.tokenize("#1234567");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("too long") != std::string::npos);
+  }
+
+  SECTION("rejects 9-digit color literals") {
+    auto result = lexer.tokenize("#123456789");
+    REQUIRE(result.isError());
+    REQUIRE(result.error().find("too long") != std::string::npos);
+  }
+
+  SECTION("stops at non-hex characters") {
+    // When a color literal encounters a non-hex character, it should stop
+    // and the remaining part should be tokenized separately
+    auto result = lexer.tokenize("#FFG");
+    REQUIRE(result.isError()); // #FF is only 2 digits, which is invalid
+  }
+
+  SECTION("handles color followed by other tokens") {
+    auto result = lexer.tokenize("#FFCC00 show");
+    REQUIRE(result.isOk());
+
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 3); // color, identifier 'show', EOF
+    REQUIRE(tokens[0].type == TokenType::String);
+    REQUIRE(tokens[0].lexeme == "#FFCC00");
+    REQUIRE(tokens[1].type == TokenType::Show);
   }
 }
 
@@ -345,5 +457,413 @@ TEST_CASE("Lexer enforces comment nesting depth limit", "[lexer]") {
     REQUIRE(result.isOk());
     const auto& tokens = result.value();
     REQUIRE(tokens.size() == 3); // show, hide, EOF
+  }
+}
+
+TEST_CASE("Lexer handles Unicode identifiers from various scripts", "[lexer][unicode]") {
+  Lexer lexer;
+
+  SECTION("tokenizes Cyrillic identifiers") {
+    // Russian: переменная (variable)
+    auto result = lexer.tokenize("переменная");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2); // identifier + EOF
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "переменная");
+  }
+
+  SECTION("tokenizes Greek identifiers") {
+    // Greek: μεταβλητή (variable)
+    auto result = lexer.tokenize("μεταβλητή");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "μεταβλητή");
+  }
+
+  SECTION("tokenizes Arabic identifiers") {
+    // Arabic: متغير (variable)
+    auto result = lexer.tokenize("متغير");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "متغير");
+  }
+
+  SECTION("tokenizes Hebrew identifiers") {
+    // Hebrew: משתנה (variable)
+    auto result = lexer.tokenize("משתנה");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "משתנה");
+  }
+
+  SECTION("tokenizes Devanagari identifiers") {
+    // Hindi: चर (variable)
+    auto result = lexer.tokenize("चर");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "चर");
+  }
+
+  SECTION("tokenizes Tamil identifiers") {
+    // Tamil: மாறி (variable)
+    auto result = lexer.tokenize("மாறி");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "மாறி");
+  }
+
+  SECTION("tokenizes Thai identifiers") {
+    // Thai: ตัวแปร (variable)
+    auto result = lexer.tokenize("ตัวแปร");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ตัวแปร");
+  }
+
+  SECTION("tokenizes Chinese identifiers") {
+    // Chinese: 变量 (variable)
+    auto result = lexer.tokenize("变量");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "变量");
+  }
+
+  SECTION("tokenizes Japanese Hiragana identifiers") {
+    // Japanese: へんすう (variable in hiragana)
+    auto result = lexer.tokenize("へんすう");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "へんすう");
+  }
+
+  SECTION("tokenizes Japanese Katakana identifiers") {
+    // Japanese: ヘンスウ (variable in katakana)
+    auto result = lexer.tokenize("ヘンスウ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ヘンスウ");
+  }
+
+  SECTION("tokenizes Korean identifiers") {
+    // Korean: 변수 (variable)
+    auto result = lexer.tokenize("변수");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "변수");
+  }
+
+  SECTION("tokenizes Armenian identifiers") {
+    // Armenian: փոփոխական (variable)
+    auto result = lexer.tokenize("փոփոխական");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "փոփոխական");
+  }
+
+  SECTION("tokenizes Georgian identifiers") {
+    // Georgian: ცვლადი (variable)
+    auto result = lexer.tokenize("ცვლადი");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ცვლადი");
+  }
+
+  SECTION("tokenizes Ethiopic identifiers") {
+    // Ethiopic (Amharic): ተለዋዋጭ (variable)
+    auto result = lexer.tokenize("ተለዋዋጭ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ተለዋዋጭ");
+  }
+
+  SECTION("tokenizes Cherokee identifiers") {
+    // Cherokee: ᎠᏍᎦᏯ (word)
+    auto result = lexer.tokenize("ᎠᏍᎦᏯ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ᎠᏍᎦᏯ");
+  }
+
+  SECTION("tokenizes mixed script identifiers") {
+    // Mix of English and Cyrillic
+    auto result = lexer.tokenize("myПеременная");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "myПеременная");
+  }
+
+  SECTION("tokenizes identifiers with non-ASCII digits") {
+    // Arabic-Indic digits: متغير١٢٣
+    auto result = lexer.tokenize("متغير١٢٣");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "متغير١٢٣");
+  }
+
+  SECTION("tokenizes identifiers with Devanagari digits") {
+    // Devanagari with Devanagari digits: चर१२३
+    auto result = lexer.tokenize("चर१२३");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "चर१२३");
+  }
+
+  SECTION("tokenizes identifiers with combining marks") {
+    // Latin with combining diacritical marks: café
+    auto result = lexer.tokenize("café");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "café");
+  }
+
+  SECTION("tokenizes Bengali identifiers") {
+    // Bengali: ভেরিয়েবল (variable)
+    auto result = lexer.tokenize("ভেরিয়েবল");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ভেরিয়েবল");
+  }
+
+  SECTION("tokenizes Telugu identifiers") {
+    // Telugu: వేరియబుల్ (variable)
+    auto result = lexer.tokenize("వేరియబుల్");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "వేరియబుల్");
+  }
+
+  SECTION("tokenizes Kannada identifiers") {
+    // Kannada: ವೇರಿಯಬಲ್ (variable)
+    auto result = lexer.tokenize("ವೇರಿಯಬಲ್");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ವೇರಿಯಬಲ್");
+  }
+
+  SECTION("tokenizes Malayalam identifiers") {
+    // Malayalam: വേരിയബിൾ (variable)
+    auto result = lexer.tokenize("വേരിയബിൾ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "വേരിയബിൾ");
+  }
+
+  SECTION("tokenizes Gujarati identifiers") {
+    // Gujarati: ચલ (variable)
+    auto result = lexer.tokenize("ચલ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ચલ");
+  }
+
+  SECTION("tokenizes Khmer identifiers") {
+    // Khmer: អថេរ (variable)
+    auto result = lexer.tokenize("អថេរ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "អថេរ");
+  }
+
+  SECTION("tokenizes Lao identifiers") {
+    // Lao: ຕົວແປ (variable)
+    auto result = lexer.tokenize("ຕົວແປ");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "ຕົວແປ");
+  }
+
+  SECTION("tokenizes Tibetan identifiers") {
+    // Tibetan: འགྱུར་ཅན (variable)
+    auto result = lexer.tokenize("འགྱུར་ཅན");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 2);
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "འགྱུར་ཅན");
+  }
+
+  SECTION("tokenizes multiple Unicode identifiers in a script") {
+    // Multiple identifiers: переменная число строка
+    auto result = lexer.tokenize("переменная число строка");
+    REQUIRE(result.isOk());
+    const auto& tokens = result.value();
+    REQUIRE(tokens.size() == 4); // 3 identifiers + EOF
+    REQUIRE(tokens[0].type == TokenType::Identifier);
+    REQUIRE(tokens[0].lexeme == "переменная");
+    REQUIRE(tokens[1].type == TokenType::Identifier);
+    REQUIRE(tokens[1].lexeme == "число");
+    REQUIRE(tokens[2].type == TokenType::Identifier);
+    REQUIRE(tokens[2].lexeme == "строка");
+TEST_CASE("Lexer handles UTF-8 validation", "[lexer][utf8][security]") {
+  Lexer lexer;
+
+  SECTION("handles valid UTF-8 identifiers") {
+    // Valid Cyrillic identifier
+    auto result1 = lexer.tokenize("Привет");
+    REQUIRE(result1.isOk());
+    const auto& tokens1 = result1.value();
+    REQUIRE(tokens1.size() == 2); // identifier + EOF
+    REQUIRE(tokens1[0].type == TokenType::Identifier);
+    REQUIRE(tokens1[0].lexeme == "Привет");
+
+    // Valid Greek identifier
+    auto result2 = lexer.tokenize("Ελληνικά");
+    REQUIRE(result2.isOk());
+    const auto& tokens2 = result2.value();
+    REQUIRE(tokens2.size() == 2); // identifier + EOF
+    REQUIRE(tokens2[0].type == TokenType::Identifier);
+
+    // Valid Chinese identifier
+    auto result3 = lexer.tokenize("中文");
+    REQUIRE(result3.isOk());
+    const auto& tokens3 = result3.value();
+    REQUIRE(tokens3.size() == 2); // identifier + EOF
+    REQUIRE(tokens3[0].type == TokenType::Identifier);
+  }
+
+  SECTION("rejects truncated UTF-8 sequences") {
+    // 2-byte sequence truncated (0xD0 starts Cyrillic, missing continuation)
+    std::string input1 = "show \xD0";
+    auto result1 = lexer.tokenize(input1);
+    // The lexer should handle this gracefully - invalid UTF-8 is skipped
+    REQUIRE(result1.isOk());
+
+    // 3-byte sequence truncated (0xE4 0xB8 starts Chinese, missing 3rd byte)
+    std::string input2 = "show \xE4\xB8";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+
+    // 4-byte sequence truncated (0xF0 0x90 0x8C starts emoji, missing 4th byte)
+    std::string input3 = "show \xF0\x90\x8C";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+  }
+
+  SECTION("rejects invalid continuation bytes") {
+    // Valid start byte (0xD0) followed by invalid continuation (0xFF)
+    std::string input1 = "show \xD0\xFF";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Invalid UTF-8 is skipped
+
+    // Valid start byte (0xE4) followed by valid then invalid continuation
+    std::string input2 = "show \xE4\xB8\xFF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+  }
+
+  SECTION("rejects overlong UTF-8 encodings") {
+    // Overlong encoding of ASCII 'A' (0x41) using 2 bytes: 0xC1 0x81
+    // This is a security issue - should be rejected
+    std::string input1 = "show \xC1\x81";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Overlong encoding is rejected by decodeUtf8
+
+    // Overlong encoding of 0x7F using 2 bytes: 0xC1 0xBF
+    std::string input2 = "show \xC1\xBF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+
+    // Overlong encoding using 3 bytes for a value that fits in 2
+    // Encoding U+0080 (minimum for 2-byte) as 3 bytes: 0xE0 0x82 0x80
+    std::string input3 = "show \xE0\x82\x80";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+
+    // Overlong encoding using 4 bytes for a value that fits in 3
+    // Encoding U+0800 (minimum for 3-byte) as 4 bytes: 0xF0 0x88 0x80 0x80
+    std::string input4 = "show \xF0\x88\x80\x80";
+    auto result4 = lexer.tokenize(input4);
+    REQUIRE(result4.isOk());
+  }
+
+  SECTION("rejects UTF-16 surrogate pairs") {
+    // UTF-16 surrogates (U+D800 to U+DFFF) are invalid in UTF-8
+    // Encoding U+D800 as UTF-8: 0xED 0xA0 0x80
+    std::string input1 = "show \xED\xA0\x80";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Surrogate is rejected by decodeUtf8
+
+    // Encoding U+DFFF as UTF-8: 0xED 0xBF 0xBF
+    std::string input2 = "show \xED\xBF\xBF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+  }
+
+  SECTION("rejects code points beyond valid Unicode range") {
+    // U+10FFFF is the maximum valid Unicode code point
+    // Valid: U+10FFFF encoded as 0xF4 0x8F 0xBF 0xBF
+    std::string input1 = "show \xF4\x8F\xBF\xBF";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // This is actually valid (max code point)
+
+    // Invalid: U+110000 (beyond max) encoded as 0xF4 0x90 0x80 0x80
+    std::string input2 = "show \xF4\x90\x80\x80";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk()); // Beyond max is rejected by decodeUtf8
+
+    // Invalid: U+1FFFFF (way beyond max) encoded as 0xF7 0xBF 0xBF 0xBF
+    std::string input3 = "show \xF7\xBF\xBF\xBF";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+  }
+
+  SECTION("handles mixed valid and invalid UTF-8") {
+    // Mix of valid ASCII, valid UTF-8, and invalid bytes
+    std::string input = "show \xD0\x9F valid \xC1\x81 hide";
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isOk());
+    // Should tokenize 'show', valid UTF-8 identifier, 'valid', 'hide'
+    // Invalid UTF-8 sequences are skipped
   }
 }

@@ -14,6 +14,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
+#include "NovelMind/editor/qt/nm_style_manager.hpp"
 #include <QApplication>
 #include <QGraphicsScene>
 #include <memory>
