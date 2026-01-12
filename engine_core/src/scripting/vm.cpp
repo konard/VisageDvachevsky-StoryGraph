@@ -809,7 +809,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   default:
-    NOVELMIND_LOG_WARN("Unknown opcode");
+    NOVELMIND_LOG_WARN("Unknown opcode: 0x" +
+                       std::to_string(static_cast<u8>(instr.opcode)) +
+                       " at bytecode offset " + std::to_string(m_ip));
     break;
   }
 }
