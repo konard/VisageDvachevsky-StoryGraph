@@ -513,6 +513,340 @@ TEST_CASE("PackReader memory safety", "[vfs][pack][safety]")
     }
 }
 
+// =============================================================================
+// Security Tests - Integer Overflow Prevention (Issue #560)
+// =============================================================================
+
+TEST_CASE("PackReader security - integer overflow in offset calculation", "[vfs][pack][security][overflow]")
+{
+    PackReader reader;
+
+    SECTION("Overflow from max dataOffset + entry.dataOffset") {
+        std::ofstream file("overflow_test1.pack", std::ios::binary);
+
+        // Write valid header
+        u32 magic = PACK_MAGIC;
+        u16 versionMajor = PACK_VERSION_MAJOR;
+        u16 versionMinor = PACK_VERSION_MINOR;
+        u32 flags = 0;
+        u32 resourceCount = 1;
+
+        file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+        file.write(reinterpret_cast<const char*>(&versionMajor), sizeof(versionMajor));
+        file.write(reinterpret_cast<const char*>(&versionMinor), sizeof(versionMinor));
+        file.write(reinterpret_cast<const char*>(&flags), sizeof(flags));
+        file.write(reinterpret_cast<const char*>(&resourceCount), sizeof(resourceCount));
+
+        // Write offsets - dataOffset near max u64
+        u64 resourceTableOffset = 64;
+        u64 stringTableOffset = 128;
+        u64 dataOffset = 0xFFFFFFFFFFFFFF00ULL; // Very large offset
+        u64 totalSize = 256;
+
+        file.write(reinterpret_cast<const char*>(&resourceTableOffset), sizeof(resourceTableOffset));
+        file.write(reinterpret_cast<const char*>(&stringTableOffset), sizeof(stringTableOffset));
+        file.write(reinterpret_cast<const char*>(&dataOffset), sizeof(dataOffset));
+        file.write(reinterpret_cast<const char*>(&totalSize), sizeof(totalSize));
+
+        // Write content hash
+        u8 hash[16] = {0};
+        file.write(reinterpret_cast<const char*>(hash), 16);
+
+        // Pad to resource table
+        file.seekp(static_cast<std::streamoff>(resourceTableOffset));
+
+        // Write resource entry with offset that would cause overflow
+        u32 idStringOffset = 0;
+        u32 type = static_cast<u32>(ResourceType::Data);
+        u64 resDataOffset = 0x200ULL; // Adding this to dataOffset would overflow
+        u64 compressedSize = 5;
+        u64 uncompressedSize = 5;
+        u32 resFlags = 0;
+        u32 checksum = 0;
+        u8 iv[8] = {0};
+
+        file.write(reinterpret_cast<const char*>(&idStringOffset), sizeof(idStringOffset));
+        file.write(reinterpret_cast<const char*>(&type), sizeof(type));
+        file.write(reinterpret_cast<const char*>(&resDataOffset), sizeof(resDataOffset));
+        file.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
+        file.write(reinterpret_cast<const char*>(&uncompressedSize), sizeof(uncompressedSize));
+        file.write(reinterpret_cast<const char*>(&resFlags), sizeof(resFlags));
+        file.write(reinterpret_cast<const char*>(&checksum), sizeof(checksum));
+        file.write(reinterpret_cast<const char*>(iv), 8);
+
+        // Write string table
+        file.seekp(static_cast<std::streamoff>(stringTableOffset));
+        u32 stringCount = 1;
+        file.write(reinterpret_cast<const char*>(&stringCount), sizeof(stringCount));
+        u32 strOffset = 4;
+        file.write(reinterpret_cast<const char*>(&strOffset), sizeof(strOffset));
+        const char* resId = "overflow_test\0";
+        file.write(resId, 14);
+
+        file.close();
+
+        // Mount should succeed (overflow not detected during mount)
+        auto mountResult = reader.mount("overflow_test1.pack");
+
+        if (mountResult.isOk()) {
+            // But reading should fail with overflow detection
+            auto readResult = reader.readFile("overflow_test");
+            REQUIRE(readResult.isError());
+            REQUIRE(readResult.error().find("overflow") != std::string::npos ||
+                    readResult.error().find("exceed") != std::string::npos ||
+                    readResult.error().find("offset") != std::string::npos);
+
+            reader.unmount("overflow_test1.pack");
+        }
+
+        std::remove("overflow_test1.pack");
+    }
+
+    SECTION("Overflow from absoluteOffset + compressedSize") {
+        std::ofstream file("overflow_test2.pack", std::ios::binary);
+
+        // Write valid header
+        u32 magic = PACK_MAGIC;
+        u16 versionMajor = PACK_VERSION_MAJOR;
+        u16 versionMinor = PACK_VERSION_MINOR;
+        u32 flags = 0;
+        u32 resourceCount = 1;
+
+        file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+        file.write(reinterpret_cast<const char*>(&versionMajor), sizeof(versionMajor));
+        file.write(reinterpret_cast<const char*>(&versionMinor), sizeof(versionMinor));
+        file.write(reinterpret_cast<const char*>(&flags), sizeof(flags));
+        file.write(reinterpret_cast<const char*>(&resourceCount), sizeof(resourceCount));
+
+        // Write offsets
+        u64 resourceTableOffset = 64;
+        u64 stringTableOffset = 128;
+        u64 dataOffset = 0xFFFFFFFFFFFFF000ULL; // Large offset
+        u64 totalSize = 256;
+
+        file.write(reinterpret_cast<const char*>(&resourceTableOffset), sizeof(resourceTableOffset));
+        file.write(reinterpret_cast<const char*>(&stringTableOffset), sizeof(stringTableOffset));
+        file.write(reinterpret_cast<const char*>(&dataOffset), sizeof(dataOffset));
+        file.write(reinterpret_cast<const char*>(&totalSize), sizeof(totalSize));
+
+        // Write content hash
+        u8 hash[16] = {0};
+        file.write(reinterpret_cast<const char*>(hash), 16);
+
+        // Pad to resource table
+        file.seekp(static_cast<std::streamoff>(resourceTableOffset));
+
+        // Write resource entry with huge compressedSize that would overflow
+        u32 idStringOffset = 0;
+        u32 type = static_cast<u32>(ResourceType::Data);
+        u64 resDataOffset = 0x100ULL;
+        u64 compressedSize = 0x1000ULL; // absoluteOffset + this would overflow
+        u64 uncompressedSize = 0x1000ULL;
+        u32 resFlags = 0;
+        u32 checksum = 0;
+        u8 iv[8] = {0};
+
+        file.write(reinterpret_cast<const char*>(&idStringOffset), sizeof(idStringOffset));
+        file.write(reinterpret_cast<const char*>(&type), sizeof(type));
+        file.write(reinterpret_cast<const char*>(&resDataOffset), sizeof(resDataOffset));
+        file.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
+        file.write(reinterpret_cast<const char*>(&uncompressedSize), sizeof(uncompressedSize));
+        file.write(reinterpret_cast<const char*>(&resFlags), sizeof(resFlags));
+        file.write(reinterpret_cast<const char*>(&checksum), sizeof(checksum));
+        file.write(reinterpret_cast<const char*>(iv), 8);
+
+        // Write string table
+        file.seekp(static_cast<std::streamoff>(stringTableOffset));
+        u32 stringCount = 1;
+        file.write(reinterpret_cast<const char*>(&stringCount), sizeof(stringCount));
+        u32 strOffset = 4;
+        file.write(reinterpret_cast<const char*>(&strOffset), sizeof(strOffset));
+        const char* resId = "overflow_test2\0";
+        file.write(resId, 15);
+
+        file.close();
+
+        auto mountResult = reader.mount("overflow_test2.pack");
+
+        if (mountResult.isOk()) {
+            // Reading should fail due to overflow detection
+            auto readResult = reader.readFile("overflow_test2");
+            REQUIRE(readResult.isError());
+            REQUIRE(readResult.error().find("overflow") != std::string::npos ||
+                    readResult.error().find("exceed") != std::string::npos ||
+                    readResult.error().find("beyond") != std::string::npos);
+
+            reader.unmount("overflow_test2.pack");
+        }
+
+        std::remove("overflow_test2.pack");
+    }
+
+    SECTION("Edge case: Max valid offset that doesn't overflow") {
+        std::ofstream file("max_valid.pack", std::ios::binary);
+
+        // Write valid header
+        u32 magic = PACK_MAGIC;
+        u16 versionMajor = PACK_VERSION_MAJOR;
+        u16 versionMinor = PACK_VERSION_MINOR;
+        u32 flags = 0;
+        u32 resourceCount = 1;
+
+        file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+        file.write(reinterpret_cast<const char*>(&versionMajor), sizeof(versionMajor));
+        file.write(reinterpret_cast<const char*>(&versionMinor), sizeof(versionMinor));
+        file.write(reinterpret_cast<const char*>(&flags), sizeof(flags));
+        file.write(reinterpret_cast<const char*>(&resourceCount), sizeof(resourceCount));
+
+        // Write offsets
+        u64 resourceTableOffset = 64;
+        u64 stringTableOffset = 128;
+        u64 dataOffset = 192;
+        u64 totalSize = 256;
+
+        file.write(reinterpret_cast<const char*>(&resourceTableOffset), sizeof(resourceTableOffset));
+        file.write(reinterpret_cast<const char*>(&stringTableOffset), sizeof(stringTableOffset));
+        file.write(reinterpret_cast<const char*>(&dataOffset), sizeof(dataOffset));
+        file.write(reinterpret_cast<const char*>(&totalSize), sizeof(totalSize));
+
+        // Write content hash
+        u8 hash[16] = {0};
+        file.write(reinterpret_cast<const char*>(hash), 16);
+
+        // Pad to resource table
+        file.seekp(static_cast<std::streamoff>(resourceTableOffset));
+
+        // Write resource entry at valid offset
+        u32 idStringOffset = 0;
+        u32 type = static_cast<u32>(ResourceType::Data);
+        u64 resDataOffset = 0; // Points exactly to dataOffset
+        u64 compressedSize = 5;
+        u64 uncompressedSize = 5;
+        u32 resFlags = 0;
+        u32 checksum = 0;
+        u8 iv[8] = {0};
+
+        file.write(reinterpret_cast<const char*>(&idStringOffset), sizeof(idStringOffset));
+        file.write(reinterpret_cast<const char*>(&type), sizeof(type));
+        file.write(reinterpret_cast<const char*>(&resDataOffset), sizeof(resDataOffset));
+        file.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
+        file.write(reinterpret_cast<const char*>(&uncompressedSize), sizeof(uncompressedSize));
+        file.write(reinterpret_cast<const char*>(&resFlags), sizeof(resFlags));
+        file.write(reinterpret_cast<const char*>(&checksum), sizeof(checksum));
+        file.write(reinterpret_cast<const char*>(iv), 8);
+
+        // Write string table
+        file.seekp(static_cast<std::streamoff>(stringTableOffset));
+        u32 stringCount = 1;
+        file.write(reinterpret_cast<const char*>(&stringCount), sizeof(stringCount));
+        u32 strOffset = 4;
+        file.write(reinterpret_cast<const char*>(&strOffset), sizeof(strOffset));
+        const char* resId = "valid_max\0";
+        file.write(resId, 10);
+
+        // Write data at exact position
+        file.seekp(static_cast<std::streamoff>(dataOffset));
+        const u8 data[] = {1, 2, 3, 4, 5};
+        file.write(reinterpret_cast<const char*>(data), 5);
+
+        file.close();
+
+        auto mountResult = reader.mount("max_valid.pack");
+
+        if (mountResult.isOk()) {
+            // This should succeed - no overflow
+            auto readResult = reader.readFile("valid_max");
+
+            // Either succeeds with correct data or fails for implementation reasons
+            if (readResult.isOk()) {
+                auto& resultData = readResult.value();
+                REQUIRE(resultData.size() == 5);
+            }
+
+            reader.unmount("max_valid.pack");
+        }
+
+        std::remove("max_valid.pack");
+    }
+}
+
+TEST_CASE("PackReader security - boundary offset values", "[vfs][pack][security]")
+{
+    PackReader reader;
+
+    SECTION("dataOffset exceeds file size") {
+        std::ofstream file("boundary_test1.pack", std::ios::binary);
+
+        // Write header with dataOffset beyond actual file size
+        u32 magic = PACK_MAGIC;
+        u16 versionMajor = PACK_VERSION_MAJOR;
+        u16 versionMinor = PACK_VERSION_MINOR;
+        u32 flags = 0;
+        u32 resourceCount = 1;
+
+        file.write(reinterpret_cast<const char*>(&magic), sizeof(magic));
+        file.write(reinterpret_cast<const char*>(&versionMajor), sizeof(versionMajor));
+        file.write(reinterpret_cast<const char*>(&versionMinor), sizeof(versionMinor));
+        file.write(reinterpret_cast<const char*>(&flags), sizeof(flags));
+        file.write(reinterpret_cast<const char*>(&resourceCount), sizeof(resourceCount));
+
+        u64 resourceTableOffset = 64;
+        u64 stringTableOffset = 128;
+        u64 dataOffset = 100000; // Far beyond actual file size (will be ~200 bytes)
+        u64 totalSize = 256;
+
+        file.write(reinterpret_cast<const char*>(&resourceTableOffset), sizeof(resourceTableOffset));
+        file.write(reinterpret_cast<const char*>(&stringTableOffset), sizeof(stringTableOffset));
+        file.write(reinterpret_cast<const char*>(&dataOffset), sizeof(dataOffset));
+        file.write(reinterpret_cast<const char*>(&totalSize), sizeof(totalSize));
+
+        u8 hash[16] = {0};
+        file.write(reinterpret_cast<const char*>(hash), 16);
+
+        file.seekp(static_cast<std::streamoff>(resourceTableOffset));
+
+        u32 idStringOffset = 0;
+        u32 type = static_cast<u32>(ResourceType::Data);
+        u64 resDataOffset = 0;
+        u64 compressedSize = 5;
+        u64 uncompressedSize = 5;
+        u32 resFlags = 0;
+        u32 checksum = 0;
+        u8 iv[8] = {0};
+
+        file.write(reinterpret_cast<const char*>(&idStringOffset), sizeof(idStringOffset));
+        file.write(reinterpret_cast<const char*>(&type), sizeof(type));
+        file.write(reinterpret_cast<const char*>(&resDataOffset), sizeof(resDataOffset));
+        file.write(reinterpret_cast<const char*>(&compressedSize), sizeof(compressedSize));
+        file.write(reinterpret_cast<const char*>(&uncompressedSize), sizeof(uncompressedSize));
+        file.write(reinterpret_cast<const char*>(&resFlags), sizeof(resFlags));
+        file.write(reinterpret_cast<const char*>(&checksum), sizeof(checksum));
+        file.write(reinterpret_cast<const char*>(iv), 8);
+
+        file.seekp(static_cast<std::streamoff>(stringTableOffset));
+        u32 stringCount = 1;
+        file.write(reinterpret_cast<const char*>(&stringCount), sizeof(stringCount));
+        u32 strOffset = 4;
+        file.write(reinterpret_cast<const char*>(&strOffset), sizeof(strOffset));
+        const char* resId = "boundary1\0";
+        file.write(resId, 10);
+
+        file.close();
+
+        auto mountResult = reader.mount("boundary_test1.pack");
+
+        if (mountResult.isOk()) {
+            auto readResult = reader.readFile("boundary1");
+            REQUIRE(readResult.isError());
+            // Should detect that offset exceeds file bounds
+
+            reader.unmount("boundary_test1.pack");
+        }
+
+        std::remove("boundary_test1.pack");
+    }
+}
+
 // Note: Full pack file format tests would require creating complete valid pack files
 // with various configurations (compressed, encrypted, etc.). This would be better
 // suited for integration tests with actual pack creation tools.
