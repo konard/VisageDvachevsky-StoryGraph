@@ -56,7 +56,7 @@
 
 namespace NovelMind::editor::qt {
 
-void NMScriptEditorPanel::loadSampleScript(const QString &sampleId) {
+void NMScriptEditorPanel::loadSampleScript(const QString& sampleId) {
   // Sample script content based on sampleId
   QString scriptContent;
   QString fileName;
@@ -296,16 +296,14 @@ scene learning_ending {
 }
 )";
   } else {
-    core::Logger::instance().warning("Unknown sample script ID: " +
-                                     sampleId.toStdString());
+    core::Logger::instance().warning("Unknown sample script ID: " + sampleId.toStdString());
     return;
   }
 
   // Create sample script in project scripts folder
   const QString scriptsPath = scriptsRootPath();
   if (scriptsPath.isEmpty()) {
-    core::Logger::instance().warning(
-        "Cannot load sample script: No scripts folder found");
+    core::Logger::instance().warning("Cannot load sample script: No scripts folder found");
     return;
   }
 
@@ -318,15 +316,13 @@ scene learning_ending {
     out << scriptContent;
     file.close();
 
-    core::Logger::instance().info("Created sample script: " +
-                                  fullPath.toStdString());
+    core::Logger::instance().info("Created sample script: " + fullPath.toStdString());
 
     // Refresh file list and open the sample
     refreshFileList();
     openScript(fullPath);
   } else {
-    core::Logger::instance().error("Failed to create sample script: " +
-                                   fullPath.toStdString());
+    core::Logger::instance().error("Failed to create sample script: " + fullPath.toStdString());
   }
 }
 
@@ -344,7 +340,7 @@ void NMScriptEditorPanel::saveState() {
   // Save open files
   QStringList openFiles;
   for (int i = 0; i < m_tabs->count(); ++i) {
-    QWidget *widget = m_tabs->widget(i);
+    QWidget* widget = m_tabs->widget(i);
     QString path = m_tabPaths.value(widget);
     if (!path.isEmpty()) {
       openFiles.append(path);
@@ -357,7 +353,7 @@ void NMScriptEditorPanel::saveState() {
 
   // Save cursor positions for each open file
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->widget(i))) {
       QString path = m_tabPaths.value(editor);
       if (!path.isEmpty()) {
         QTextCursor cursor = editor->textCursor();
@@ -396,15 +392,16 @@ void NMScriptEditorPanel::restoreState() {
     QStringList openFiles = settings.value("scriptEditor/openFiles").toStringList();
     int activeIndex = settings.value("scriptEditor/activeFileIndex", 0).toInt();
 
-    for (const QString &path : openFiles) {
+    for (const QString& path : openFiles) {
       if (QFileInfo::exists(path)) {
         openScript(path);
 
         // Restore cursor position if enabled
         bool restoreCursor = settings.value("editor.script.restore_cursor_position", true).toBool();
         if (restoreCursor) {
-          if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget())) {
-            int cursorPos = settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
+          if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget())) {
+            int cursorPos =
+                settings.value(QString("scriptEditor/cursorPos/%1").arg(path), 0).toInt();
             QTextCursor cursor = editor->textCursor();
             cursor.setPosition(cursorPos);
             editor->setTextCursor(cursor);
@@ -431,8 +428,9 @@ void NMScriptEditorPanel::applySettings() {
   m_diagnosticsTimer.setInterval(diagnosticDelay);
 
   // Apply settings to all open editors
-  for (auto *editor : editors()) {
-    if (!editor) continue;
+  for (auto* editor : editors()) {
+    if (!editor)
+      continue;
 
     // Font settings
     QString fontFamily = settings.value("editor.script.font_family", "monospace").toString();

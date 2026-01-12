@@ -37,7 +37,7 @@ public:
   // IAudioPlayer Implementation
   // =========================================================================
 
-  bool load(const std::string &filePath) override {
+  bool load(const std::string& filePath) override {
     m_loadedFile = filePath;
     m_loadCount++;
     m_mediaStatus = AudioMediaStatus::Loaded;
@@ -85,9 +85,7 @@ public:
     m_currentPositionMs = 0;
   }
 
-  [[nodiscard]] f32 getDuration() const override {
-    return m_mockDuration;
-  }
+  [[nodiscard]] f32 getDuration() const override { return m_mockDuration; }
 
   [[nodiscard]] i64 getDurationMs() const override {
     return static_cast<i64>(m_mockDuration * 1000.0f);
@@ -97,9 +95,7 @@ public:
     return static_cast<f32>(m_currentPositionMs) / 1000.0f;
   }
 
-  [[nodiscard]] i64 getPositionMs() const override {
-    return m_currentPositionMs;
-  }
+  [[nodiscard]] i64 getPositionMs() const override { return m_currentPositionMs; }
 
   bool setPosition(f32 seconds) override {
     m_currentPositionMs = static_cast<i64>(seconds * 1000.0f);
@@ -111,9 +107,7 @@ public:
     return true;
   }
 
-  [[nodiscard]] f32 getVolume() const override {
-    return m_volume;
-  }
+  [[nodiscard]] f32 getVolume() const override { return m_volume; }
 
   bool setVolume(f32 volume) override {
     m_volume = volume;
@@ -133,37 +127,27 @@ public:
     return m_playbackState == AudioPlaybackState::Stopped;
   }
 
-  [[nodiscard]] AudioPlaybackState getPlaybackState() const override {
-    return m_playbackState;
-  }
+  [[nodiscard]] AudioPlaybackState getPlaybackState() const override { return m_playbackState; }
 
-  [[nodiscard]] AudioMediaStatus getMediaStatus() const override {
-    return m_mediaStatus;
-  }
+  [[nodiscard]] AudioMediaStatus getMediaStatus() const override { return m_mediaStatus; }
 
-  [[nodiscard]] std::string getCurrentFilePath() const override {
-    return m_loadedFile;
-  }
+  [[nodiscard]] std::string getCurrentFilePath() const override { return m_loadedFile; }
 
-  [[nodiscard]] std::string getErrorString() const override {
-    return m_mockErrorString;
-  }
+  [[nodiscard]] std::string getErrorString() const override { return m_mockErrorString; }
 
   void setOnPlaybackFinished(std::function<void()> callback) override {
     m_onPlaybackFinished = std::move(callback);
   }
 
-  void setOnError(std::function<void(const std::string &)> callback) override {
+  void setOnError(std::function<void(const std::string&)> callback) override {
     m_onError = std::move(callback);
   }
 
-  void setOnPlaybackStateChanged(
-      std::function<void(AudioPlaybackState)> callback) override {
+  void setOnPlaybackStateChanged(std::function<void(AudioPlaybackState)> callback) override {
     m_onPlaybackStateChanged = std::move(callback);
   }
 
-  void setOnMediaStatusChanged(
-      std::function<void(AudioMediaStatus)> callback) override {
+  void setOnMediaStatusChanged(std::function<void(AudioMediaStatus)> callback) override {
     m_onMediaStatusChanged = std::move(callback);
   }
 
@@ -195,9 +179,7 @@ public:
    * @brief Set mock error string
    * @param error Error message to return
    */
-  void setMockErrorString(const std::string &error) {
-    m_mockErrorString = error;
-  }
+  void setMockErrorString(const std::string& error) { m_mockErrorString = error; }
 
   /**
    * @brief Set mock media status
@@ -218,9 +200,7 @@ public:
    * @brief Get the file path that was loaded
    * @return Loaded file path
    */
-  [[nodiscard]] const std::string &getLoadedFile() const {
-    return m_loadedFile;
-  }
+  [[nodiscard]] const std::string& getLoadedFile() const { return m_loadedFile; }
 
   /**
    * @brief Get number of times load() was called
@@ -296,7 +276,7 @@ public:
    * @brief Simulate an error occurring
    * @param error Error message
    */
-  void simulateError(const std::string &error) {
+  void simulateError(const std::string& error) {
     m_mockErrorString = error;
     if (m_onError) {
       m_onError(error);
@@ -347,7 +327,7 @@ private:
 
   // Callbacks
   std::function<void()> m_onPlaybackFinished;
-  std::function<void(const std::string &)> m_onError;
+  std::function<void(const std::string&)> m_onError;
   std::function<void(AudioPlaybackState)> m_onPlaybackStateChanged;
   std::function<void(AudioMediaStatus)> m_onMediaStatusChanged;
   std::function<void(i64)> m_onDurationChanged;

@@ -83,5 +83,4 @@ ProjectIntegrityChecker::calculateSummary(const std::vector<IntegrityIssue>& iss
   return summary;
 }
 
-
 } // namespace NovelMind::editor

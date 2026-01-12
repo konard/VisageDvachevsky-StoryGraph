@@ -128,15 +128,12 @@ struct EditorEvent {
   std::string source; // Source component that generated the event
 
   explicit EditorEvent(EditorEventType t) : type(t) {
-    timestamp = static_cast<u64>(
-        std::chrono::steady_clock::now().time_since_epoch().count());
+    timestamp = static_cast<u64>(std::chrono::steady_clock::now().time_since_epoch().count());
   }
 
   virtual ~EditorEvent() = default;
 
-  [[nodiscard]] virtual std::string getDescription() const {
-    return "EditorEvent";
-  }
+  [[nodiscard]] virtual std::string getDescription() const { return "EditorEvent"; }
 
   /**
    * @brief Generate a key for event deduplication
@@ -165,8 +162,7 @@ struct SelectionChangedEvent : EditorEvent {
   SelectionChangedEvent() : EditorEvent(EditorEventType::SelectionChanged) {}
 
   [[nodiscard]] std::string getDescription() const override {
-    return "Selection changed: " + std::to_string(selectedIds.size()) +
-           " items";
+    return "Selection changed: " + std::to_string(selectedIds.size()) + " items";
   }
 };
 
@@ -191,16 +187,14 @@ struct PropertyChangeStartedEvent : EditorEvent {
   std::string objectId;
   std::string propertyName;
 
-  PropertyChangeStartedEvent()
-      : EditorEvent(EditorEventType::PropertyChangeStarted) {}
+  PropertyChangeStartedEvent() : EditorEvent(EditorEventType::PropertyChangeStarted) {}
 };
 
 struct PropertyChangeEndedEvent : EditorEvent {
   std::string objectId;
   std::string propertyName;
 
-  PropertyChangeEndedEvent()
-      : EditorEvent(EditorEventType::PropertyChangeEnded) {}
+  PropertyChangeEndedEvent() : EditorEvent(EditorEventType::PropertyChangeEnded) {}
 };
 
 // ============================================================================
@@ -240,8 +234,7 @@ struct GraphConnectionAddedEvent : EditorEvent {
   scripting::NodeId toNode = 0;
   std::string toPort;
 
-  GraphConnectionAddedEvent()
-      : EditorEvent(EditorEventType::GraphConnectionAdded) {}
+  GraphConnectionAddedEvent() : EditorEvent(EditorEventType::GraphConnectionAdded) {}
 };
 
 struct GraphConnectionRemovedEvent : EditorEvent {
@@ -250,8 +243,7 @@ struct GraphConnectionRemovedEvent : EditorEvent {
   scripting::NodeId toNode = 0;
   std::string toPort;
 
-  GraphConnectionRemovedEvent()
-      : EditorEvent(EditorEventType::GraphConnectionRemoved) {}
+  GraphConnectionRemovedEvent() : EditorEvent(EditorEventType::GraphConnectionRemoved) {}
 };
 
 struct GraphValidationChangedEvent : EditorEvent {
@@ -259,8 +251,7 @@ struct GraphValidationChangedEvent : EditorEvent {
   std::vector<std::string> errors;
   std::vector<std::string> warnings;
 
-  GraphValidationChangedEvent()
-      : EditorEvent(EditorEventType::GraphValidationChanged) {}
+  GraphValidationChangedEvent() : EditorEvent(EditorEventType::GraphValidationChanged) {}
 };
 
 // ============================================================================
@@ -272,16 +263,14 @@ struct TimelineKeyframeEvent : EditorEvent {
   u64 keyframeIndex = 0;
   f64 time = 0.0;
 
-  explicit TimelineKeyframeEvent(EditorEventType eventType)
-      : EditorEvent(eventType) {}
+  explicit TimelineKeyframeEvent(EditorEventType eventType) : EditorEvent(eventType) {}
 };
 
 struct TimelineTrackEvent : EditorEvent {
   std::string trackId;
   std::string trackType;
 
-  explicit TimelineTrackEvent(EditorEventType eventType)
-      : EditorEvent(eventType) {}
+  explicit TimelineTrackEvent(EditorEventType eventType) : EditorEvent(eventType) {}
 };
 
 struct TimelinePlaybackChangedEvent : EditorEvent {
@@ -290,8 +279,7 @@ struct TimelinePlaybackChangedEvent : EditorEvent {
   bool isPaused = false;
   f64 playbackSpeed = 1.0;
 
-  TimelinePlaybackChangedEvent()
-      : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
+  TimelinePlaybackChangedEvent() : EditorEvent(EditorEventType::TimelinePlaybackChanged) {}
 };
 
 // ============================================================================
@@ -302,8 +290,7 @@ struct SceneObjectEvent : EditorEvent {
   std::string objectId;
   std::string objectType;
 
-  explicit SceneObjectEvent(EditorEventType eventType)
-      : EditorEvent(eventType) {}
+  explicit SceneObjectEvent(EditorEventType eventType) : EditorEvent(eventType) {}
 };
 
 struct SceneObjectTransformedEvent : EditorEvent {
@@ -314,8 +301,7 @@ struct SceneObjectTransformedEvent : EditorEvent {
   f32 oldScaleX = 1.0f, oldScaleY = 1.0f;
   f32 newScaleX = 1.0f, newScaleY = 1.0f;
 
-  SceneObjectTransformedEvent()
-      : EditorEvent(EditorEventType::SceneObjectTransformed) {}
+  SceneObjectTransformedEvent() : EditorEvent(EditorEventType::SceneObjectTransformed) {}
 };
 
 // ============================================================================
@@ -414,8 +400,7 @@ struct DiagnosticEvent : EditorEvent {
 
   std::vector<Diagnostic> diagnostics;
 
-  explicit DiagnosticEvent(EditorEventType eventType)
-      : EditorEvent(eventType) {}
+  explicit DiagnosticEvent(EditorEventType eventType) : EditorEvent(eventType) {}
 };
 
 // ============================================================================
@@ -448,17 +433,17 @@ struct ThemeChangedEvent : EditorEvent {
 /**
  * @brief Type-erased event handler
  */
-using EventHandler = std::function<void(const EditorEvent &)>;
+using EventHandler = std::function<void(const EditorEvent&)>;
 
 /**
  * @brief Typed event handler
  */
-template <typename T> using TypedEventHandler = std::function<void(const T &)>;
+template <typename T> using TypedEventHandler = std::function<void(const T&)>;
 
 /**
  * @brief Event filter predicate
  */
-using EventFilter = std::function<bool(const EditorEvent &)>;
+using EventFilter = std::function<bool(const EditorEvent&)>;
 
 /**
  * @brief Subscription handle for unsubscribing
@@ -471,9 +456,7 @@ public:
   [[nodiscard]] u64 getId() const { return m_id; }
   [[nodiscard]] bool isValid() const { return m_id != 0; }
 
-  bool operator==(const EventSubscription &other) const {
-    return m_id == other.m_id;
-  }
+  bool operator==(const EventSubscription& other) const { return m_id == other.m_id; }
 
 private:
   u64 m_id = 0;
@@ -499,13 +482,13 @@ public:
   ~EventBus();
 
   // Prevent copying
-  EventBus(const EventBus &) = delete;
-  EventBus &operator=(const EventBus &) = delete;
+  EventBus(const EventBus&) = delete;
+  EventBus& operator=(const EventBus&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static EventBus &instance();
+  static EventBus& instance();
 
   // =========================================================================
   // Publishing
@@ -514,7 +497,7 @@ public:
   /**
    * @brief Publish an event immediately
    */
-  void publish(const EditorEvent &event);
+  void publish(const EditorEvent& event);
 
   /**
    * @brief Publish an event with move semantics
@@ -536,8 +519,7 @@ public:
    * @note Named emitEvent instead of emit to avoid conflict with Qt's emit
    * macro
    */
-  template <typename T, typename... Args>
-  void emitEvent([[maybe_unused]] Args &&...args) {
+  template <typename T, typename... Args> void emitEvent([[maybe_unused]] Args&&... args) {
     auto event = std::make_unique<T>();
     // Initialize event with args if needed (via aggregate init or setters)
     publish(std::move(event));
@@ -565,10 +547,9 @@ public:
   /**
    * @brief Subscribe with typed handler
    */
-  template <typename T>
-  EventSubscription subscribe(TypedEventHandler<T> handler) {
-    return subscribe([handler = std::move(handler)](const EditorEvent &event) {
-      if (auto *typed = dynamic_cast<const T *>(&event)) {
+  template <typename T> EventSubscription subscribe(TypedEventHandler<T> handler) {
+    return subscribe([handler = std::move(handler)](const EditorEvent& event) {
+      if (auto* typed = dynamic_cast<const T*>(&event)) {
         handler(*typed);
       }
     });
@@ -577,7 +558,7 @@ public:
   /**
    * @brief Unsubscribe using subscription handle
    */
-  void unsubscribe(const EventSubscription &subscription);
+  void unsubscribe(const EventSubscription& subscription);
 
   /**
    * @brief Unsubscribe all handlers for a specific event type
@@ -659,12 +640,12 @@ private:
   // Pending operation for deferred subscription modifications
   struct PendingOperation {
     enum class Type { Add, Remove, RemoveByType, RemoveAll } type;
-    Subscriber subscriber;        // For Add
-    u64 subscriptionId = 0;       // For Remove
-    EditorEventType eventType;    // For RemoveByType
+    Subscriber subscriber;     // For Add
+    u64 subscriptionId = 0;    // For Remove
+    EditorEventType eventType; // For RemoveByType
   };
 
-  void dispatchEvent(const EditorEvent &event);
+  void dispatchEvent(const EditorEvent& event);
   void processPendingOperations();
 
   std::vector<Subscriber> m_subscribers;
@@ -682,7 +663,7 @@ private:
 
   // Deduplication support
   bool m_deduplicationEnabled = false;
-  u64 m_deduplicationWindowMs = 100; // Default: 100ms window
+  u64 m_deduplicationWindowMs = 100;                   // Default: 100ms window
   std::unordered_map<std::string, u64> m_recentEvents; // event key -> timestamp
 
   mutable std::mutex m_mutex;
@@ -695,7 +676,7 @@ class ScopedEventSubscription {
 public:
   ScopedEventSubscription() = default;
 
-  ScopedEventSubscription(EventBus *bus, EventSubscription subscription)
+  ScopedEventSubscription(EventBus* bus, EventSubscription subscription)
       : m_bus(bus), m_subscription(subscription) {}
 
   ~ScopedEventSubscription() {
@@ -705,13 +686,13 @@ public:
   }
 
   // Move only
-  ScopedEventSubscription(ScopedEventSubscription &&other) noexcept
+  ScopedEventSubscription(ScopedEventSubscription&& other) noexcept
       : m_bus(other.m_bus), m_subscription(other.m_subscription) {
     other.m_bus = nullptr;
     other.m_subscription = EventSubscription();
   }
 
-  ScopedEventSubscription &operator=(ScopedEventSubscription &&other) noexcept {
+  ScopedEventSubscription& operator=(ScopedEventSubscription&& other) noexcept {
     if (this != &other) {
       if (m_bus && m_subscription.isValid()) {
         m_bus->unsubscribe(m_subscription);
@@ -724,21 +705,20 @@ public:
     return *this;
   }
 
-  ScopedEventSubscription(const ScopedEventSubscription &) = delete;
-  ScopedEventSubscription &operator=(const ScopedEventSubscription &) = delete;
+  ScopedEventSubscription(const ScopedEventSubscription&) = delete;
+  ScopedEventSubscription& operator=(const ScopedEventSubscription&) = delete;
 
   [[nodiscard]] bool isValid() const { return m_subscription.isValid(); }
 
 private:
-  EventBus *m_bus = nullptr;
+  EventBus* m_bus = nullptr;
   EventSubscription m_subscription;
 };
 
 /**
  * @brief Helper macro to subscribe to events with automatic unsubscription
  */
-#define NM_SUBSCRIBE_EVENT(bus, type, handler)                                 \
-  ScopedEventSubscription(&(bus),                                              \
-                          (bus).subscribe(EditorEventType::type, handler))
+#define NM_SUBSCRIBE_EVENT(bus, type, handler)                                                     \
+  ScopedEventSubscription(&(bus), (bus).subscribe(EditorEventType::type, handler))
 
 } // namespace NovelMind::editor

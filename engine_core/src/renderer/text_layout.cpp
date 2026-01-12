@@ -8,9 +8,8 @@ namespace NovelMind::renderer {
 
 // RichTextParser implementation
 
-std::vector<TextSegment>
-RichTextParser::parse(const std::string &text,
-                      const TextStyle &defaultStyle) const {
+std::vector<TextSegment> RichTextParser::parse(const std::string& text,
+                                               const TextStyle& defaultStyle) const {
   std::vector<TextSegment> segments;
   TextStyle currentStyle = defaultStyle;
   std::string currentText;
@@ -94,8 +93,7 @@ RichTextParser::parse(const std::string &text,
   return segments;
 }
 
-std::optional<InlineCommand>
-RichTextParser::parseCommand(const std::string &commandStr) const {
+std::optional<InlineCommand> RichTextParser::parseCommand(const std::string& commandStr) const {
   // Parse key=value format
   size_t eqPos = commandStr.find('=');
   std::string key, value;
@@ -109,9 +107,7 @@ RichTextParser::parseCommand(const std::string &commandStr) const {
 
   // Convert to lowercase for comparison
   std::transform(key.begin(), key.end(), key.begin(),
-                 [](unsigned char c) -> char {
-                   return static_cast<char>(std::tolower(c));
-                 });
+                 [](unsigned char c) -> char { return static_cast<char>(std::tolower(c)); });
 
   // Wait command: {w=0.5} or {wait=0.5}
   if (key == "w" || key == "wait") {
@@ -175,7 +171,7 @@ RichTextParser::parseCommand(const std::string &commandStr) const {
   return std::nullopt;
 }
 
-Color RichTextParser::parseColor(const std::string &colorStr) const {
+Color RichTextParser::parseColor(const std::string& colorStr) const {
   std::string s = colorStr;
 
   // Remove leading #
@@ -230,19 +226,27 @@ void TextLayoutEngine::setFontAtlas(std::shared_ptr<FontAtlas> atlas) {
   m_fontAtlas = std::move(atlas);
 }
 
-void TextLayoutEngine::setMaxWidth(f32 width) { m_maxWidth = width; }
+void TextLayoutEngine::setMaxWidth(f32 width) {
+  m_maxWidth = width;
+}
 
-void TextLayoutEngine::setLineHeight(f32 height) { m_lineHeight = height; }
+void TextLayoutEngine::setLineHeight(f32 height) {
+  m_lineHeight = height;
+}
 
-void TextLayoutEngine::setAlignment(TextAlign align) { m_alignment = align; }
+void TextLayoutEngine::setAlignment(TextAlign align) {
+  m_alignment = align;
+}
 
-void TextLayoutEngine::setRightToLeft(bool enabled) { m_rightToLeft = enabled; }
+void TextLayoutEngine::setRightToLeft(bool enabled) {
+  m_rightToLeft = enabled;
+}
 
-void TextLayoutEngine::setDefaultStyle(const TextStyle &style) {
+void TextLayoutEngine::setDefaultStyle(const TextStyle& style) {
   m_defaultStyle = style;
 }
 
-TextLayout TextLayoutEngine::layout(const std::string &text) const {
+TextLayout TextLayoutEngine::layout(const std::string& text) const {
   TextLayout result;
 
   // Parse rich text into segments
@@ -257,7 +261,7 @@ TextLayout TextLayoutEngine::layout(const std::string &text) const {
   f32 lineHeight = baseLineHeight;
   i32 charCount = 0;
 
-  for (const auto &segment : segments) {
+  for (const auto& segment : segments) {
     if (segment.isCommand()) {
       // Add command segment to current line
       result.commandIndices.push_back(static_cast<size_t>(charCount));
@@ -266,7 +270,7 @@ TextLayout TextLayoutEngine::layout(const std::string &text) const {
     }
 
     // Process text segment
-    const std::string &segText = segment.text;
+    const std::string& segText = segment.text;
     std::string currentWord;
 
     for (size_t i = 0; i < segText.length(); ++i) {
@@ -299,8 +303,7 @@ TextLayout TextLayoutEngine::layout(const std::string &text) const {
           f32 wordWidth = measureWord(currentWord, segment.style);
 
           // Check if we need to wrap
-          if (m_maxWidth > 0.0f && lineWidth + wordWidth > m_maxWidth &&
-              lineWidth > 0.0f) {
+          if (m_maxWidth > 0.0f && lineWidth + wordWidth > m_maxWidth && lineWidth > 0.0f) {
             // Wrap to next line
             currentLine.width = lineWidth;
             currentLine.height = lineHeight;
@@ -341,8 +344,7 @@ TextLayout TextLayoutEngine::layout(const std::string &text) const {
       f32 wordWidth = measureWord(currentWord, segment.style);
 
       // Check if we need to wrap
-      if (m_maxWidth > 0.0f && lineWidth + wordWidth > m_maxWidth &&
-          lineWidth > 0.0f) {
+      if (m_maxWidth > 0.0f && lineWidth + wordWidth > m_maxWidth && lineWidth > 0.0f) {
         currentLine.width = lineWidth;
         currentLine.height = lineHeight;
         result.lines.push_back(std::move(currentLine));
@@ -376,23 +378,21 @@ TextLayout TextLayoutEngine::layout(const std::string &text) const {
   return result;
 }
 
-std::pair<f32, f32>
-TextLayoutEngine::measureText(const std::string &text) const {
+std::pair<f32, f32> TextLayoutEngine::measureText(const std::string& text) const {
   auto layout = this->layout(text);
   return {layout.totalWidth, layout.totalHeight};
 }
 
-i32 TextLayoutEngine::getCharacterAtPosition(const TextLayout &layout, f32 x,
-                                             f32 y) const {
+i32 TextLayoutEngine::getCharacterAtPosition(const TextLayout& layout, f32 x, f32 y) const {
   f32 currentY = 0.0f;
   i32 charIndex = 0;
 
-  for (const auto &line : layout.lines) {
+  for (const auto& line : layout.lines) {
     if (y >= currentY && y < currentY + line.height) {
       // Found the line
       f32 currentX = layout.rightToLeft ? line.width : 0.0f;
 
-      for (const auto &segment : line.segments) {
+      for (const auto& segment : line.segments) {
         if (segment.isCommand()) {
           continue;
         }
@@ -421,7 +421,7 @@ i32 TextLayoutEngine::getCharacterAtPosition(const TextLayout &layout, f32 x,
     currentY += line.height;
 
     // Count characters in line
-    for (const auto &segment : line.segments) {
+    for (const auto& segment : line.segments) {
       if (!segment.isCommand()) {
         charIndex += static_cast<i32>(segment.text.length());
       }
@@ -431,16 +431,15 @@ i32 TextLayoutEngine::getCharacterAtPosition(const TextLayout &layout, f32 x,
   return -1;
 }
 
-std::pair<f32, f32>
-TextLayoutEngine::getCharacterPosition(const TextLayout &layout,
-                                       i32 targetIndex) const {
+std::pair<f32, f32> TextLayoutEngine::getCharacterPosition(const TextLayout& layout,
+                                                           i32 targetIndex) const {
   f32 currentY = 0.0f;
   i32 charIndex = 0;
 
-  for (const auto &line : layout.lines) {
+  for (const auto& line : layout.lines) {
     f32 currentX = layout.rightToLeft ? line.width : 0.0f;
 
-    for (const auto &segment : line.segments) {
+    for (const auto& segment : line.segments) {
       if (segment.isCommand()) {
         continue;
       }
@@ -466,8 +465,7 @@ TextLayoutEngine::getCharacterPosition(const TextLayout &layout,
   return {0.0f, currentY};
 }
 
-std::vector<std::string>
-TextLayoutEngine::breakIntoWords(const std::string &text) const {
+std::vector<std::string> TextLayoutEngine::breakIntoWords(const std::string& text) const {
   std::vector<std::string> words;
   std::string current;
 
@@ -489,11 +487,10 @@ TextLayoutEngine::breakIntoWords(const std::string &text) const {
   return words;
 }
 
-f32 TextLayoutEngine::measureChar(char c, const TextStyle &style) const {
+f32 TextLayoutEngine::measureChar(char c, const TextStyle& style) const {
   // Use atlas metrics when available for precise width
   if (m_fontAtlas && m_fontAtlas->isValid()) {
-    if (const auto *glyph =
-            m_fontAtlas->getGlyph(static_cast<unsigned char>(c))) {
+    if (const auto* glyph = m_fontAtlas->getGlyph(static_cast<unsigned char>(c))) {
       return glyph->advanceX;
     }
   }
@@ -511,13 +508,13 @@ f32 TextLayoutEngine::measureChar(char c, const TextStyle &style) const {
   }
 
   // Wide characters
-  static const char *wideChars = "WMQOCD";
+  static const char* wideChars = "WMQOCD";
   if (std::strchr(wideChars, std::toupper(c))) {
     return style.size * 0.7f;
   }
 
   // Narrow characters
-  static const char *narrowChars = "iIlj1!|";
+  static const char* narrowChars = "iIlj1!|";
   if (std::strchr(narrowChars, c)) {
     return style.size * 0.3f;
   }
@@ -525,8 +522,7 @@ f32 TextLayoutEngine::measureChar(char c, const TextStyle &style) const {
   return style.size * 0.5f;
 }
 
-f32 TextLayoutEngine::measureWord(const std::string &word,
-                                  const TextStyle &style) const {
+f32 TextLayoutEngine::measureWord(const std::string& word, const TextStyle& style) const {
   f32 width = 0.0f;
   for (char c : word) {
     width += measureChar(c, style);
@@ -538,7 +534,7 @@ f32 TextLayoutEngine::measureWord(const std::string &word,
 
 TypewriterAnimator::TypewriterAnimator() = default;
 
-void TypewriterAnimator::setLayout(const TextLayout &layout) {
+void TypewriterAnimator::setLayout(const TextLayout& layout) {
   m_layout = &layout;
   m_state = TypewriterState{};
   m_state.targetCharIndex = static_cast<f32>(layout.totalCharacters);
@@ -595,8 +591,8 @@ void TypewriterAnimator::update(f64 deltaTime) {
   if (currentChar > 0 && currentChar < m_layout->totalCharacters) {
     // Get the character at current position
     i32 charIndex = 0;
-    for (const auto &line : m_layout->lines) {
-      for (const auto &segment : line.segments) {
+    for (const auto& line : m_layout->lines) {
+      for (const auto& segment : line.segments) {
         if (segment.isCommand()) {
           continue;
         }
@@ -643,16 +639,19 @@ bool TypewriterAnimator::isWaitingForInput() const {
   return m_state.waitingForInput;
 }
 
-bool TypewriterAnimator::isComplete() const { return m_state.complete; }
+bool TypewriterAnimator::isComplete() const {
+  return m_state.complete;
+}
 
-const TypewriterState &TypewriterAnimator::getState() const { return m_state; }
+const TypewriterState& TypewriterAnimator::getState() const {
+  return m_state;
+}
 
-const TextStyle &TypewriterAnimator::getCurrentStyle() const {
+const TextStyle& TypewriterAnimator::getCurrentStyle() const {
   return m_currentStyle;
 }
 
-void TypewriterAnimator::setCommandCallback(
-    std::function<void(const InlineCommand &)> callback) {
+void TypewriterAnimator::setCommandCallback(std::function<void(const InlineCommand&)> callback) {
   m_commandCallback = std::move(callback);
 }
 
@@ -670,15 +669,15 @@ void TypewriterAnimator::processCommands() {
 
     // Find the command in the layout
     size_t cmdCount = 0;
-    for (const auto &line : m_layout->lines) {
-      for (const auto &segment : line.segments) {
+    for (const auto& line : m_layout->lines) {
+      for (const auto& segment : line.segments) {
         if (segment.isCommand()) {
           if (cmdCount == m_nextCommandIndex) {
-            const auto &cmd = segment.command.value();
+            const auto& cmd = segment.command.value();
 
             // Handle command
             std::visit(
-                [this](const auto &c) {
+                [this](const auto& c) {
                   using T = std::decay_t<decltype(c)>;
 
                   if constexpr (std::is_same_v<T, WaitCommand>) {

@@ -16,16 +16,16 @@ Theme::Theme() {
   m_defaultStyle = Style{};
 }
 
-void Theme::setStyle(const std::string &name, const Style &style) {
+void Theme::setStyle(const std::string& name, const Style& style) {
   m_styles[name] = style;
 }
 
-const Style &Theme::getStyle(const std::string &name) const {
+const Style& Theme::getStyle(const std::string& name) const {
   auto it = m_styles.find(name);
   return (it != m_styles.end()) ? it->second : m_defaultStyle;
 }
 
-bool Theme::hasStyle(const std::string &name) const {
+bool Theme::hasStyle(const std::string& name) const {
   return m_styles.find(name) != m_styles.end();
 }
 

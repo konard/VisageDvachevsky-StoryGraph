@@ -2,14 +2,11 @@
 
 namespace NovelMind::editor::qt {
 
-QString NMStyleManager::colorToStyleString(const QColor &color) {
-  return QString("rgb(%1, %2, %3)")
-      .arg(color.red())
-      .arg(color.green())
-      .arg(color.blue());
+QString NMStyleManager::colorToStyleString(const QColor& color) {
+  return QString("rgb(%1, %2, %3)").arg(color.red()).arg(color.green()).arg(color.blue());
 }
 
-QString NMStyleManager::colorToRgbaString(const QColor &color, int alpha) {
+QString NMStyleManager::colorToRgbaString(const QColor& color, int alpha) {
   return QString("rgba(%1, %2, %3, %4)")
       .arg(color.red())
       .arg(color.green())
@@ -18,8 +15,8 @@ QString NMStyleManager::colorToRgbaString(const QColor &color, int alpha) {
 }
 
 QString NMStyleManager::getStyleSheet() const {
-  const auto &p = m_palette;
-  const auto &pa = m_panelAccents;
+  const auto& p = m_palette;
+  const auto& pa = m_panelAccents;
 
   // Generate comprehensive stylesheet for premium dark theme
   // Design philosophy: Editor-grade UI that's both beautiful and functional

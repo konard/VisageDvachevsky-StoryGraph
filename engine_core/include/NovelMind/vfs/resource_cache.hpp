@@ -26,8 +26,7 @@ struct CacheStats {
 
   [[nodiscard]] f64 hitRate() const {
     const auto total = hitCount + missCount;
-    return total > 0 ? static_cast<f64>(hitCount) / static_cast<f64>(total)
-                     : 0.0;
+    return total > 0 ? static_cast<f64>(hitCount) / static_cast<f64>(total) : 0.0;
   }
 };
 
@@ -36,18 +35,18 @@ public:
   explicit ResourceCache(usize maxSize = 64 * 1024 * 1024);
   ~ResourceCache() = default;
 
-  ResourceCache(const ResourceCache &) = delete;
-  ResourceCache &operator=(const ResourceCache &) = delete;
+  ResourceCache(const ResourceCache&) = delete;
+  ResourceCache& operator=(const ResourceCache&) = delete;
 
   void setMaxSize(usize maxSize);
   [[nodiscard]] usize maxSize() const { return m_maxSize; }
 
-  [[nodiscard]] std::optional<std::vector<u8>> get(const ResourceId &id);
-  void put(const ResourceId &id, std::vector<u8> data);
-  void remove(const ResourceId &id);
+  [[nodiscard]] std::optional<std::vector<u8>> get(const ResourceId& id);
+  void put(const ResourceId& id, std::vector<u8> data);
+  void remove(const ResourceId& id);
   void clear();
 
-  [[nodiscard]] bool contains(const ResourceId &id) const;
+  [[nodiscard]] bool contains(const ResourceId& id) const;
   [[nodiscard]] usize currentSize() const { return m_currentSize; }
   [[nodiscard]] usize entryCount() const { return m_cache.size(); }
 
@@ -56,7 +55,7 @@ public:
 
 private:
   void evictIfNeeded(usize requiredSpace);
-  void updateAccessOrder(const ResourceId &id);
+  void updateAccessOrder(const ResourceId& id);
 
   mutable std::mutex m_mutex;
   usize m_maxSize;
@@ -64,8 +63,7 @@ private:
 
   std::unordered_map<ResourceId, CacheEntry> m_cache;
   std::list<ResourceId> m_accessOrder;
-  std::unordered_map<ResourceId, std::list<ResourceId>::iterator>
-      m_orderIterators;
+  std::unordered_map<ResourceId, std::list<ResourceId>::iterator> m_orderIterators;
 
   mutable CacheStats m_stats;
 };

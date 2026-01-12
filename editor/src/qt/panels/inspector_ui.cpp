@@ -42,7 +42,8 @@ QWidget* InspectorUI::setupContent(QWidget* parent) {
   containerLayout->addWidget(m_scrollArea, 1);
 
   // No selection label
-  m_noSelectionLabel = new QLabel(QObject::tr("Select an object to view its properties"), container);
+  m_noSelectionLabel =
+      new QLabel(QObject::tr("Select an object to view its properties"), container);
   m_noSelectionLabel->setObjectName("InspectorEmptyState");
   m_noSelectionLabel->setAlignment(Qt::AlignCenter);
   m_noSelectionLabel->setWordWrap(true);

@@ -7,7 +7,7 @@ EventBus::EventBus() = default;
 
 EventBus::~EventBus() = default;
 
-EventBus &EventBus::instance() {
+EventBus& EventBus::instance() {
   // Thread-safe in C++11+ due to magic statics
   static EventBus instance;
   return instance;
@@ -17,7 +17,7 @@ EventBus &EventBus::instance() {
 // Publishing
 // ============================================================================
 
-void EventBus::publish(const EditorEvent &event) {
+void EventBus::publish(const EditorEvent& event) {
   if (m_synchronous) {
     dispatchEvent(event);
   } else {
@@ -66,7 +66,7 @@ void EventBus::processQueuedEvents() {
   }
 }
 
-void EventBus::dispatchEvent(const EditorEvent &event) {
+void EventBus::dispatchEvent(const EditorEvent& event) {
   // Check for duplicate events if deduplication is enabled
   if (m_deduplicationEnabled) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -126,12 +126,11 @@ void EventBus::dispatchEvent(const EditorEvent &event) {
 
   // Dispatch to all matching subscribers without holding the mutex
   // This allows handlers to safely call subscribe/unsubscribe
-  for (const auto &subscriber : subscribersCopy) {
+  for (const auto& subscriber : subscribersCopy) {
     bool shouldHandle = true;
 
     // Check type filter
-    if (subscriber.typeFilter.has_value() &&
-        subscriber.typeFilter.value() != event.type) {
+    if (subscriber.typeFilter.has_value() && subscriber.typeFilter.value() != event.type) {
       shouldHandle = false;
     }
 
@@ -160,7 +159,7 @@ void EventBus::dispatchEvent(const EditorEvent &event) {
 void EventBus::processPendingOperations() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &op : m_pendingOperations) {
+  for (const auto& op : m_pendingOperations) {
     switch (op.type) {
     case PendingOperation::Type::Add:
       m_subscribers.push_back(op.subscriber);
@@ -169,20 +168,17 @@ void EventBus::processPendingOperations() {
     case PendingOperation::Type::Remove:
       m_subscribers.erase(
           std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                         [&op](const Subscriber &sub) {
-                           return sub.id == op.subscriptionId;
-                         }),
+                         [&op](const Subscriber& sub) { return sub.id == op.subscriptionId; }),
           m_subscribers.end());
       break;
 
     case PendingOperation::Type::RemoveByType:
-      m_subscribers.erase(
-          std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                         [&op](const Subscriber &sub) {
-                           return sub.typeFilter.has_value() &&
-                                  sub.typeFilter.value() == op.eventType;
-                         }),
-          m_subscribers.end());
+      m_subscribers.erase(std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                                         [&op](const Subscriber& sub) {
+                                           return sub.typeFilter.has_value() &&
+                                                  sub.typeFilter.value() == op.eventType;
+                                         }),
+                          m_subscribers.end());
       break;
 
     case PendingOperation::Type::RemoveAll:
@@ -219,8 +215,7 @@ EventSubscription EventBus::subscribe(EventHandler handler) {
   return EventSubscription(sub.id);
 }
 
-EventSubscription EventBus::subscribe(EditorEventType type,
-                                      EventHandler handler) {
+EventSubscription EventBus::subscribe(EditorEventType type, EventHandler handler) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   Subscriber sub;
@@ -242,8 +237,7 @@ EventSubscription EventBus::subscribe(EditorEventType type,
   return EventSubscription(sub.id);
 }
 
-EventSubscription EventBus::subscribe(EventFilter filter,
-                                      EventHandler handler) {
+EventSubscription EventBus::subscribe(EventFilter filter, EventHandler handler) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   Subscriber sub;
@@ -265,7 +259,7 @@ EventSubscription EventBus::subscribe(EventFilter filter,
   return EventSubscription(sub.id);
 }
 
-void EventBus::unsubscribe(const EventSubscription &subscription) {
+void EventBus::unsubscribe(const EventSubscription& subscription) {
   if (!subscription.isValid()) {
     return;
   }
@@ -280,12 +274,11 @@ void EventBus::unsubscribe(const EventSubscription &subscription) {
     m_pendingOperations.push_back(std::move(op));
   } else {
     // Apply immediately
-    m_subscribers.erase(
-        std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                       [&subscription](const Subscriber &sub) {
-                         return sub.id == subscription.getId();
-                       }),
-        m_subscribers.end());
+    m_subscribers.erase(std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                                       [&subscription](const Subscriber& sub) {
+                                         return sub.id == subscription.getId();
+                                       }),
+                        m_subscribers.end());
   }
 }
 
@@ -300,13 +293,12 @@ void EventBus::unsubscribeAll(EditorEventType type) {
     m_pendingOperations.push_back(std::move(op));
   } else {
     // Apply immediately
-    m_subscribers.erase(
-        std::remove_if(m_subscribers.begin(), m_subscribers.end(),
-                       [type](const Subscriber &sub) {
-                         return sub.typeFilter.has_value() &&
-                                sub.typeFilter.value() == type;
-                       }),
-        m_subscribers.end());
+    m_subscribers.erase(std::remove_if(m_subscribers.begin(), m_subscribers.end(),
+                                       [type](const Subscriber& sub) {
+                                         return sub.typeFilter.has_value() &&
+                                                sub.typeFilter.value() == type;
+                                       }),
+                        m_subscribers.end());
   }
 }
 
@@ -340,8 +332,7 @@ std::vector<std::string> EventBus::getRecentEvents(size_t count) const {
     return m_eventHistory;
   }
 
-  return std::vector<std::string>(m_eventHistory.end() -
-                                      static_cast<std::ptrdiff_t>(count),
+  return std::vector<std::string>(m_eventHistory.end() - static_cast<std::ptrdiff_t>(count),
                                   m_eventHistory.end());
 }
 
@@ -354,9 +345,13 @@ void EventBus::clearHistory() {
 // Configuration
 // ============================================================================
 
-void EventBus::setSynchronous(bool sync) { m_synchronous = sync; }
+void EventBus::setSynchronous(bool sync) {
+  m_synchronous = sync;
+}
 
-bool EventBus::isSynchronous() const { return m_synchronous; }
+bool EventBus::isSynchronous() const {
+  return m_synchronous;
+}
 
 void EventBus::setDeduplicationEnabled(bool enabled) {
   std::lock_guard<std::mutex> lock(m_mutex);

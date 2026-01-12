@@ -79,7 +79,7 @@ struct LaunchOptions {
   bool version = false;       // Show version
 };
 
-using OnLauncherError = std::function<void(const LauncherError &)>;
+using OnLauncherError = std::function<void(const LauncherError&)>;
 using OnLauncherStateChanged = std::function<void(LauncherState)>;
 
 /**
@@ -125,8 +125,8 @@ public:
   ~GameLauncher();
 
   // Non-copyable
-  GameLauncher(const GameLauncher &) = delete;
-  GameLauncher &operator=(const GameLauncher &) = delete;
+  GameLauncher(const GameLauncher&) = delete;
+  GameLauncher& operator=(const GameLauncher&) = delete;
 
   // =========================================================================
   // Initialization
@@ -138,7 +138,7 @@ public:
    * @param argv Argument values from main()
    * @return Success or error
    */
-  Result<void> initialize(int argc, char *argv[]);
+  Result<void> initialize(int argc, char* argv[]);
 
   /**
    * @brief Initialize with explicit options (for embedding)
@@ -146,8 +146,7 @@ public:
    * @param options Launch options
    * @return Success or error
    */
-  Result<void> initialize(const std::string &basePath,
-                          const LaunchOptions &options = {});
+  Result<void> initialize(const std::string& basePath, const LaunchOptions& options = {});
 
   // =========================================================================
   // Main Loop
@@ -186,19 +185,17 @@ public:
    * - Technical details
    * - Suggestion for fixing
    */
-  void showError(const LauncherError &error);
+  void showError(const LauncherError& error);
 
   /**
    * @brief Show error from result
    */
-  void showError(const std::string &error);
+  void showError(const std::string& error);
 
   /**
    * @brief Get last error
    */
-  [[nodiscard]] const LauncherError &getLastError() const {
-    return m_lastError;
-  }
+  [[nodiscard]] const LauncherError& getLastError() const { return m_lastError; }
 
   // =========================================================================
   // System Access
@@ -207,37 +204,37 @@ public:
   /**
    * @brief Get the configuration manager
    */
-  [[nodiscard]] ConfigManager *getConfigManager();
+  [[nodiscard]] ConfigManager* getConfigManager();
 
   /**
    * @brief Get the game settings
    */
-  [[nodiscard]] GameSettings *getGameSettings();
+  [[nodiscard]] GameSettings* getGameSettings();
 
   /**
    * @brief Get the pack manager
    */
-  [[nodiscard]] vfs::MultiPackManager *getPackManager();
+  [[nodiscard]] vfs::MultiPackManager* getPackManager();
 
   /**
    * @brief Get the script runtime
    */
-  [[nodiscard]] scripting::ScriptRuntime *getScriptRuntime();
+  [[nodiscard]] scripting::ScriptRuntime* getScriptRuntime();
 
   /**
    * @brief Get the localization manager
    */
-  [[nodiscard]] localization::LocalizationManager *getLocalizationManager();
+  [[nodiscard]] localization::LocalizationManager* getLocalizationManager();
 
   /**
    * @brief Get the input manager
    */
-  [[nodiscard]] input::InputManager *getInputManager();
+  [[nodiscard]] input::InputManager* getInputManager();
 
   /**
    * @brief Get the current configuration
    */
-  [[nodiscard]] const RuntimeConfig &getConfig() const;
+  [[nodiscard]] const RuntimeConfig& getConfig() const;
 
   // =========================================================================
   // Callbacks
@@ -258,7 +255,7 @@ public:
   /**
    * @brief Print usage/help
    */
-  static void printHelp(const char *programName);
+  static void printHelp(const char* programName);
 
   /**
    * @brief Get executable directory
@@ -268,7 +265,7 @@ public:
   /**
    * @brief Parse command-line arguments
    */
-  [[nodiscard]] static LaunchOptions parseArgs(int argc, char *argv[]);
+  [[nodiscard]] static LaunchOptions parseArgs(int argc, char* argv[]);
 
 private:
   // Initialization steps
@@ -294,20 +291,18 @@ private:
 
   // Input action checking
   [[nodiscard]] bool isActionTriggered(InputAction action) const;
-  [[nodiscard]] input::Key stringToKey(const std::string &keyName) const;
-  [[nodiscard]] input::MouseButton
-  stringToMouseButton(const std::string &buttonName) const;
+  [[nodiscard]] input::Key stringToKey(const std::string& keyName) const;
+  [[nodiscard]] input::MouseButton stringToMouseButton(const std::string& buttonName) const;
 
   // State management
   void setState(LauncherState state);
-  void setError(const std::string &code, const std::string &message,
-                const std::string &details = "",
-                const std::string &suggestion = "");
+  void setError(const std::string& code, const std::string& message,
+                const std::string& details = "", const std::string& suggestion = "");
 
   // Logging
-  void logInfo(const std::string &message);
-  void logWarning(const std::string &message);
-  void logError(const std::string &message);
+  void logInfo(const std::string& message);
+  void logWarning(const std::string& message);
+  void logError(const std::string& message);
 
   // Member variables
   std::string m_basePath;

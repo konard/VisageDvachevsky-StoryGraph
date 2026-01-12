@@ -36,8 +36,7 @@ private:
    * @brief Convert objects to binding manager format
    */
   void prepareBindingTargets(const QList<NMSceneObject*>& objects,
-                             std::vector<std::string>& objectIds,
-                             std::vector<void*>& objectPtrs);
+                             std::vector<std::string>& objectIds, std::vector<void*>& objectPtrs);
 };
 
 } // namespace NovelMind::editor::qt

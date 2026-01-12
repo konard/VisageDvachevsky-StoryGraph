@@ -26,8 +26,7 @@ struct LexerError {
   SourceLocation location;
 
   LexerError() = default;
-  LexerError(std::string msg, SourceLocation loc)
-      : message(std::move(msg)), location(loc) {}
+  LexerError(std::string msg, SourceLocation loc) : message(std::move(msg)), location(loc) {}
 };
 
 /**
@@ -68,7 +67,7 @@ public:
   /**
    * @brief Get all errors encountered during tokenization
    */
-  [[nodiscard]] const std::vector<LexerError> &getErrors() const;
+  [[nodiscard]] const std::vector<LexerError>& getErrors() const;
 
 private:
   void initKeywords();
@@ -85,15 +84,15 @@ private:
 
   Token scanToken();
   Token makeToken(TokenType type);
-  Token makeToken(TokenType type, const std::string &lexeme);
-  Token errorToken(const std::string &message);
+  Token makeToken(TokenType type, const std::string& lexeme);
+  Token errorToken(const std::string& message);
 
   Token scanString();
   Token scanNumber();
   Token scanIdentifier();
   Token scanColorLiteral();
 
-  [[nodiscard]] TokenType identifierType(const std::string &lexeme) const;
+  [[nodiscard]] TokenType identifierType(const std::string& lexeme) const;
 
   std::string_view m_source;
   size_t m_start;

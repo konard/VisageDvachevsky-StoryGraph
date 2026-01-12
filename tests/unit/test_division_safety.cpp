@@ -26,8 +26,7 @@ using namespace NovelMind::audio;
 // CameraPath Division by Zero Protection Tests
 // =============================================================================
 
-TEST_CASE("CameraPath evaluatePosition - empty path returns default",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluatePosition - empty path returns default", "[camera][safety]") {
   CameraPath path;
 
   Vec2 pos = path.evaluatePosition(0.0f);
@@ -39,8 +38,7 @@ TEST_CASE("CameraPath evaluatePosition - empty path returns default",
   CHECK(pos.y == Catch::Approx(0.0f));
 }
 
-TEST_CASE("CameraPath evaluatePosition - single point returns that point",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluatePosition - single point returns that point", "[camera][safety]") {
   CameraPath path;
   CameraPathPoint point;
   point.position = Vec2{10.0f, 20.0f};
@@ -57,8 +55,7 @@ TEST_CASE("CameraPath evaluatePosition - single point returns that point",
   CHECK(pos.y == Catch::Approx(20.0f));
 }
 
-TEST_CASE("CameraPath evaluatePosition - two points interpolates correctly",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluatePosition - two points interpolates correctly", "[camera][safety]") {
   CameraPath path;
   path.setTotalDuration(1.0f);
 
@@ -80,8 +77,7 @@ TEST_CASE("CameraPath evaluatePosition - two points interpolates correctly",
   CHECK(!std::isinf(pos.y));
 }
 
-TEST_CASE("CameraPath evaluatePosition - no NaN or Inf on edge cases",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluatePosition - no NaN or Inf on edge cases", "[camera][safety]") {
   CameraPath path;
 
   // Test with various time values on empty path
@@ -94,8 +90,7 @@ TEST_CASE("CameraPath evaluatePosition - no NaN or Inf on edge cases",
   CHECK(!std::isinf(pos.x));
 }
 
-TEST_CASE("CameraPath evaluateZoom - empty path returns default",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluateZoom - empty path returns default", "[camera][safety]") {
   CameraPath path;
 
   f32 zoom = path.evaluateZoom(0.0f);
@@ -104,8 +99,7 @@ TEST_CASE("CameraPath evaluateZoom - empty path returns default",
   CHECK(!std::isinf(zoom));
 }
 
-TEST_CASE("CameraPath evaluateZoom - single point returns that zoom",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluateZoom - single point returns that zoom", "[camera][safety]") {
   CameraPath path;
   CameraPathPoint point;
   point.position = Vec2{0.0f, 0.0f};
@@ -119,8 +113,7 @@ TEST_CASE("CameraPath evaluateZoom - single point returns that zoom",
   CHECK(zoom == Catch::Approx(2.5f));
 }
 
-TEST_CASE("CameraPath evaluateRotation - empty path returns default",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluateRotation - empty path returns default", "[camera][safety]") {
   CameraPath path;
 
   f32 rotation = path.evaluateRotation(0.0f);
@@ -129,8 +122,7 @@ TEST_CASE("CameraPath evaluateRotation - empty path returns default",
   CHECK(!std::isinf(rotation));
 }
 
-TEST_CASE("CameraPath evaluateRotation - single point returns that rotation",
-          "[camera][safety]") {
+TEST_CASE("CameraPath evaluateRotation - single point returns that rotation", "[camera][safety]") {
   CameraPath path;
   CameraPathPoint point;
   point.position = Vec2{0.0f, 0.0f};
@@ -174,8 +166,7 @@ TEST_CASE("CameraPath - zero duration protection", "[camera][safety]") {
 // AudioRecorder Duration Calculation Protection Tests
 // =============================================================================
 
-TEST_CASE("AudioRecorder getRecordingDuration - zero sampleRate returns 0",
-          "[audio][safety]") {
+TEST_CASE("AudioRecorder getRecordingDuration - zero sampleRate returns 0", "[audio][safety]") {
   AudioRecorder recorder;
   // Note: We can't easily set internal state without initialization,
   // but we can verify the default behavior
@@ -189,8 +180,7 @@ TEST_CASE("AudioRecorder getRecordingDuration - zero sampleRate returns 0",
 // Gizmo Scale Division by Zero Protection Tests
 // =============================================================================
 
-TEST_CASE("Gizmo scale - near-zero distance protection",
-          "[gizmo][safety][editor]") {
+TEST_CASE("Gizmo scale - near-zero distance protection", "[gizmo][safety][editor]") {
   // This test verifies that the scale gizmo handles near-zero drag start
   // distances safely without division by zero errors.
   //
@@ -239,8 +229,7 @@ TEST_CASE("Gizmo scale - minimum scale enforcement", "[gizmo][safety][editor]") 
   // Test case 1: Scale below minimum should be clamped
   qreal dragStartScaleX = 0.5;
   qreal scaleFactor = 0.0001; // Would result in 0.00005
-  qreal newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale,
-                                kMaxScale);
+  qreal newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
   CHECK(newScaleX == Catch::Approx(kMinScale));
   CHECK(newScaleX >= kMinScale);
 

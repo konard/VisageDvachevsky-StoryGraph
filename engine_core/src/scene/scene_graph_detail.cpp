@@ -11,7 +11,7 @@ const float kDefaultChoiceWidth = 600.0f;
 const float kDefaultChoiceHeight = 320.0f;
 const float kDefaultChoicePadding = 18.0f;
 
-float parseFloat(const std::optional<std::string> &value, float fallback) {
+float parseFloat(const std::optional<std::string>& value, float fallback) {
   if (!value.has_value()) {
     return fallback;
   }
@@ -22,11 +22,11 @@ float parseFloat(const std::optional<std::string> &value, float fallback) {
   }
 }
 
-bool parseBool(const std::optional<std::string> &value, bool fallback) {
+bool parseBool(const std::optional<std::string>& value, bool fallback) {
   if (!value.has_value()) {
     return fallback;
   }
-  const std::string &text = *value;
+  const std::string& text = *value;
   if (text == "true" || text == "1" || text == "yes" || text == "on") {
     return true;
   }
@@ -36,9 +36,8 @@ bool parseBool(const std::optional<std::string> &value, bool fallback) {
   return fallback;
 }
 
-[[maybe_unused]] NovelMind::renderer::Color
-parseColor(const std::optional<std::string> &value,
-           const NovelMind::renderer::Color &fallback) {
+[[maybe_unused]] NovelMind::renderer::Color parseColor(const std::optional<std::string>& value,
+                                                       const NovelMind::renderer::Color& fallback) {
   if (!value.has_value()) {
     return fallback;
   }
@@ -55,16 +54,15 @@ parseColor(const std::optional<std::string> &value,
           static_cast<NovelMind::u8>(r), static_cast<NovelMind::u8>(g),
           static_cast<NovelMind::u8>(b), static_cast<NovelMind::u8>(a));
     }
-    return NovelMind::renderer::Color(static_cast<NovelMind::u8>(r),
-                                      static_cast<NovelMind::u8>(g),
+    return NovelMind::renderer::Color(static_cast<NovelMind::u8>(r), static_cast<NovelMind::u8>(g),
                                       static_cast<NovelMind::u8>(b), 255);
   }
 
   return fallback;
 }
 
-std::string getTextProperty(const SceneObjectBase &obj, const std::string &key,
-                            const std::string &fallback) {
+std::string getTextProperty(const SceneObjectBase& obj, const std::string& key,
+                            const std::string& fallback) {
   auto value = obj.getProperty(key);
   if (value.has_value() && !value->empty()) {
     return *value;

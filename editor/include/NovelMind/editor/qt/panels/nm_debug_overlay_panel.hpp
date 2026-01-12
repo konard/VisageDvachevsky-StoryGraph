@@ -36,7 +36,7 @@ class NMDebugOverlayPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMDebugOverlayPanel(QWidget *parent = nullptr);
+  explicit NMDebugOverlayPanel(QWidget* parent = nullptr);
   ~NMDebugOverlayPanel() override = default;
 
   void onInitialize() override;
@@ -47,59 +47,57 @@ public:
   DebugDisplayMode displayMode() const { return m_displayMode; }
 
 private slots:
-  void onVariablesChanged(const QVariantMap &variables);
-  void onFlagsChanged(const QVariantMap &flags);
-  void onCallStackChanged(const QStringList &stack);
-  void onStackFramesChanged(const QVariantList &frames);
+  void onVariablesChanged(const QVariantMap& variables);
+  void onFlagsChanged(const QVariantMap& flags);
+  void onCallStackChanged(const QStringList& stack);
+  void onStackFramesChanged(const QVariantList& frames);
   void onPlayModeChanged(int mode);
-  void onCurrentNodeChanged(const QString &nodeId);
-  void onExecutionStepChanged(int stepIndex, int totalSteps,
-                              const QString &instruction);
-  void onVariableItemDoubleClicked(QTreeWidgetItem *item, int column);
+  void onCurrentNodeChanged(const QString& nodeId);
+  void onExecutionStepChanged(int stepIndex, int totalSteps, const QString& instruction);
+  void onVariableItemDoubleClicked(QTreeWidgetItem* item, int column);
   void onDisplayModeChanged();
 
 private:
   void setupUI();
   void setupToolBar();
-  void updateVariablesTab(const QVariantMap &variables,
-                          const QVariantMap &flags);
-  void updateCallStackTab(const QStringList &stack);
+  void updateVariablesTab(const QVariantMap& variables, const QVariantMap& flags);
+  void updateCallStackTab(const QStringList& stack);
   void updateCurrentInstructionTab();
-  void updateStackFrames(const QVariantList &frames);
-  void editVariable(const QString &name, const QVariant &currentValue);
+  void updateStackFrames(const QVariantList& frames);
+  void editVariable(const QString& name, const QVariant& currentValue);
   void updateTabsVisibility();
   void updatePerformanceMetrics(double deltaTime);
 
   // UI Elements
-  QToolBar *m_toolBar = nullptr;
-  QTabWidget *m_tabWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QTabWidget* m_tabWidget = nullptr;
 
   // Variables Tab
-  QTreeWidget *m_variablesTree = nullptr;
+  QTreeWidget* m_variablesTree = nullptr;
 
   // Call Stack Tab
-  QListWidget *m_callStackList = nullptr;
+  QListWidget* m_callStackList = nullptr;
 
   // Current Instruction Tab
-  QWidget *m_instructionWidget = nullptr;
-  QLabel *m_currentNodeLabel = nullptr;
-  QLabel *m_instructionIndexLabel = nullptr;
-  QLabel *m_instructionCodeLabel = nullptr;
-  QTreeWidget *m_stackFramesTree = nullptr;
+  QWidget* m_instructionWidget = nullptr;
+  QLabel* m_currentNodeLabel = nullptr;
+  QLabel* m_instructionIndexLabel = nullptr;
+  QLabel* m_instructionCodeLabel = nullptr;
+  QTreeWidget* m_stackFramesTree = nullptr;
 
   // Animations Tab
-  QTreeWidget *m_animationsTree = nullptr;
+  QTreeWidget* m_animationsTree = nullptr;
 
   // Audio Tab
-  QTreeWidget *m_audioTree = nullptr;
+  QTreeWidget* m_audioTree = nullptr;
 
   // Performance Tab
-  QTreeWidget *m_performanceTree = nullptr;
-  QTreeWidgetItem *m_frameTimeItem = nullptr;
-  QTreeWidgetItem *m_fpsItem = nullptr;
-  QTreeWidgetItem *m_memoryItem = nullptr;
-  QTreeWidgetItem *m_objectCountItem = nullptr;
-  QTreeWidgetItem *m_instructionRateItem = nullptr;
+  QTreeWidget* m_performanceTree = nullptr;
+  QTreeWidgetItem* m_frameTimeItem = nullptr;
+  QTreeWidgetItem* m_fpsItem = nullptr;
+  QTreeWidgetItem* m_memoryItem = nullptr;
+  QTreeWidgetItem* m_objectCountItem = nullptr;
+  QTreeWidgetItem* m_instructionRateItem = nullptr;
 
   // State
   DebugDisplayMode m_displayMode = DebugDisplayMode::Extended;

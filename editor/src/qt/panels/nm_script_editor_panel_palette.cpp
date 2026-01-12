@@ -15,37 +15,34 @@ namespace NovelMind::editor::qt {
 // NMScriptCommandPalette - VSCode-like Command Palette
 // ============================================================================
 
-NMScriptCommandPalette::NMScriptCommandPalette(QWidget *parent)
-    : QWidget(parent) {
+NMScriptCommandPalette::NMScriptCommandPalette(QWidget* parent) : QWidget(parent) {
   setWindowFlags(Qt::Popup | Qt::FramelessWindowHint);
   setFixedWidth(500);
   setMaximumHeight(400);
 
-  const auto &palette = NMStyleManager::instance().palette();
-  setStyleSheet(
-      QString("QWidget { background-color: %1; border: 1px solid %2; }"
-              "QLineEdit { background-color: %3; color: %4; border: none; "
-              "padding: 8px; font-size: 14px; }"
-              "QListWidget { background-color: %1; color: %4; border: none; }"
-              "QListWidget::item { padding: 6px 12px; }"
-              "QListWidget::item:selected { background-color: %5; }"
-              "QListWidget::item:hover { background-color: %6; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.borderLight.name())
-          .arg(palette.bgDark.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.accentPrimary.name())
-          .arg(palette.bgLight.name()));
+  const auto& palette = NMStyleManager::instance().palette();
+  setStyleSheet(QString("QWidget { background-color: %1; border: 1px solid %2; }"
+                        "QLineEdit { background-color: %3; color: %4; border: none; "
+                        "padding: 8px; font-size: 14px; }"
+                        "QListWidget { background-color: %1; color: %4; border: none; }"
+                        "QListWidget::item { padding: 6px 12px; }"
+                        "QListWidget::item:selected { background-color: %5; }"
+                        "QListWidget::item:hover { background-color: %6; }")
+                    .arg(palette.bgMedium.name())
+                    .arg(palette.borderLight.name())
+                    .arg(palette.bgDark.name())
+                    .arg(palette.textPrimary.name())
+                    .arg(palette.accentPrimary.name())
+                    .arg(palette.bgLight.name()));
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
   m_filterEdit = new QLineEdit(this);
   m_filterEdit->setPlaceholderText(tr("> Type a command..."));
   m_filterEdit->installEventFilter(this);
-  connect(m_filterEdit, &QLineEdit::textChanged, this,
-          &NMScriptCommandPalette::onFilterChanged);
+  connect(m_filterEdit, &QLineEdit::textChanged, this, &NMScriptCommandPalette::onFilterChanged);
 
   m_commandList = new QListWidget(this);
   connect(m_commandList, &QListWidget::itemActivated, this,
@@ -57,7 +54,7 @@ NMScriptCommandPalette::NMScriptCommandPalette(QWidget *parent)
   layout->addWidget(m_commandList);
 }
 
-void NMScriptCommandPalette::addCommand(const Command &cmd) {
+void NMScriptCommandPalette::addCommand(const Command& cmd) {
   m_commands.append(cmd);
 }
 
@@ -76,9 +73,9 @@ void NMScriptCommandPalette::show() {
   raise();
 }
 
-bool NMScriptCommandPalette::eventFilter(QObject *obj, QEvent *event) {
+bool NMScriptCommandPalette::eventFilter(QObject* obj, QEvent* event) {
   if (obj == m_filterEdit && event->type() == QEvent::KeyPress) {
-    auto *keyEvent = static_cast<QKeyEvent *>(event);
+    auto* keyEvent = static_cast<QKeyEvent*>(event);
 
     if (keyEvent->key() == Qt::Key_Escape) {
       hide();
@@ -102,7 +99,7 @@ bool NMScriptCommandPalette::eventFilter(QObject *obj, QEvent *event) {
     }
 
     if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
-      QListWidgetItem *item = m_commandList->currentItem();
+      QListWidgetItem* item = m_commandList->currentItem();
       if (item) {
         onItemActivated(item);
       }
@@ -113,11 +110,11 @@ bool NMScriptCommandPalette::eventFilter(QObject *obj, QEvent *event) {
   return QWidget::eventFilter(obj, event);
 }
 
-void NMScriptCommandPalette::onFilterChanged(const QString &filter) {
+void NMScriptCommandPalette::onFilterChanged(const QString& filter) {
   updateCommandList(filter);
 }
 
-void NMScriptCommandPalette::onItemActivated(QListWidgetItem *item) {
+void NMScriptCommandPalette::onItemActivated(QListWidgetItem* item) {
   if (!item) {
     return;
   }
@@ -132,11 +129,11 @@ void NMScriptCommandPalette::onItemActivated(QListWidgetItem *item) {
   }
 }
 
-void NMScriptCommandPalette::updateCommandList(const QString &filter) {
+void NMScriptCommandPalette::updateCommandList(const QString& filter) {
   m_commandList->clear();
 
   for (int i = 0; i < static_cast<int>(m_commands.size()); ++i) {
-    const Command &cmd = m_commands[i];
+    const Command& cmd = m_commands[i];
 
     // Filter by name or category
     if (!filter.isEmpty() && !cmd.name.contains(filter, Qt::CaseInsensitive) &&
@@ -149,7 +146,7 @@ void NMScriptCommandPalette::updateCommandList(const QString &filter) {
       label += QString("  [%1]").arg(cmd.shortcut);
     }
 
-    auto *item = new QListWidgetItem(label);
+    auto* item = new QListWidgetItem(label);
     item->setData(Qt::UserRole, i);
     if (!cmd.category.isEmpty()) {
       item->setToolTip(cmd.category);

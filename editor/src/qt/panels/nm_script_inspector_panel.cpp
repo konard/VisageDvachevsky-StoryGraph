@@ -16,7 +16,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMScriptInspectorPanel::NMScriptInspectorPanel(QWidget *parent)
+NMScriptInspectorPanel::NMScriptInspectorPanel(QWidget* parent)
     : NMDockPanel("Script Inspector", parent) {
   setupUI();
 }
@@ -24,7 +24,7 @@ NMScriptInspectorPanel::NMScriptInspectorPanel(QWidget *parent)
 void NMScriptInspectorPanel::onInitialize() {
   NMDockPanel::onInitialize();
 
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   // Connect to controller signals
   connect(&controller, &NMPlayModeController::variablesChanged, this,
@@ -48,15 +48,17 @@ void NMScriptInspectorPanel::onInitialize() {
   onCurrentNodeChanged(controller.currentNodeId());
 }
 
-void NMScriptInspectorPanel::onShutdown() { NMDockPanel::onShutdown(); }
+void NMScriptInspectorPanel::onShutdown() {
+  NMDockPanel::onShutdown();
+}
 
 void NMScriptInspectorPanel::onUpdate(double deltaTime) {
   NMDockPanel::onUpdate(deltaTime);
 }
 
 void NMScriptInspectorPanel::setupUI() {
-  auto *contentWidget = new QWidget;
-  auto *layout = new QVBoxLayout(contentWidget);
+  auto* contentWidget = new QWidget;
+  auto* layout = new QVBoxLayout(contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -67,7 +69,7 @@ void NMScriptInspectorPanel::setupUI() {
   // Tab widget for different views
   m_tabWidget = new QTabWidget;
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Setup tabs
   setupVariablesTab();
@@ -75,12 +77,10 @@ void NMScriptInspectorPanel::setupUI() {
   setupWatchTab();
   setupSceneHistoryTab();
 
-  m_tabWidget->addTab(m_variablesWidget, iconMgr.getIcon("info", 16),
-                      "Variables");
+  m_tabWidget->addTab(m_variablesWidget, iconMgr.getIcon("info", 16), "Variables");
   m_tabWidget->addTab(m_flagsWidget, iconMgr.getIcon("flag", 16), "Flags");
   m_tabWidget->addTab(m_watchWidget, iconMgr.getIcon("eye", 16), "Watch");
-  m_tabWidget->addTab(m_sceneHistoryWidget, iconMgr.getIcon("history", 16),
-                      "Scene History");
+  m_tabWidget->addTab(m_sceneHistoryWidget, iconMgr.getIcon("history", 16), "Scene History");
 
   layout->addWidget(m_tabWidget);
 
@@ -92,14 +92,14 @@ void NMScriptInspectorPanel::setupToolBar() {
   m_toolBar->setObjectName("ScriptInspectorToolBar");
   m_toolBar->setIconSize(QSize(16, 16));
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Refresh button
-  auto *refreshBtn = new QToolButton;
+  auto* refreshBtn = new QToolButton;
   refreshBtn->setIcon(iconMgr.getIcon("refresh", 16));
   refreshBtn->setToolTip("Refresh all values");
   connect(refreshBtn, &QToolButton::clicked, this, [this]() {
-    auto &controller = NMPlayModeController::instance();
+    auto& controller = NMPlayModeController::instance();
     onVariablesChanged(controller.currentVariables());
     onFlagsChanged(controller.currentFlags());
     updateWatchTree();
@@ -109,7 +109,7 @@ void NMScriptInspectorPanel::setupToolBar() {
   m_toolBar->addSeparator();
 
   // Status indicator
-  auto *statusLabel = new QLabel("Status: Stopped");
+  auto* statusLabel = new QLabel("Status: Stopped");
   statusLabel->setObjectName("statusLabel");
   m_toolBar->addWidget(statusLabel);
 
@@ -117,19 +117,18 @@ void NMScriptInspectorPanel::setupToolBar() {
 
   // Current scene indicator
   m_currentSceneLabel = new QLabel("Scene: -");
-  m_currentSceneLabel->setStyleSheet(
-      "QLabel { color: #4caf50; font-weight: bold; }");
+  m_currentSceneLabel->setStyleSheet("QLabel { color: #4caf50; font-weight: bold; }");
   m_toolBar->addWidget(m_currentSceneLabel);
 }
 
 void NMScriptInspectorPanel::setupVariablesTab() {
   m_variablesWidget = new QWidget;
-  auto *layout = new QVBoxLayout(m_variablesWidget);
+  auto* layout = new QVBoxLayout(m_variablesWidget);
   layout->setContentsMargins(4, 4, 4, 4);
 
   // Filter input
-  auto *filterLayout = new QHBoxLayout;
-  auto *filterLabel = new QLabel("Filter:");
+  auto* filterLayout = new QHBoxLayout;
+  auto* filterLabel = new QLabel("Filter:");
   m_variablesFilter = new QLineEdit;
   m_variablesFilter->setPlaceholderText("Filter variables...");
   m_variablesFilter->setClearButtonEnabled(true);
@@ -148,29 +147,26 @@ void NMScriptInspectorPanel::setupVariablesTab() {
   m_variablesTree->header()->setStretchLastSection(false);
   m_variablesTree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_variablesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-  m_variablesTree->header()->setSectionResizeMode(2,
-                                                  QHeaderView::ResizeToContents);
+  m_variablesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 
   connect(m_variablesTree, &QTreeWidget::itemDoubleClicked, this,
           &NMScriptInspectorPanel::onVariableItemDoubleClicked);
 
   layout->addWidget(m_variablesTree);
 
-  auto *helpLabel =
-      new QLabel("Double-click to edit (only when paused)");
-  helpLabel->setStyleSheet(
-      "QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
+  auto* helpLabel = new QLabel("Double-click to edit (only when paused)");
+  helpLabel->setStyleSheet("QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
   layout->addWidget(helpLabel);
 }
 
 void NMScriptInspectorPanel::setupFlagsTab() {
   m_flagsWidget = new QWidget;
-  auto *layout = new QVBoxLayout(m_flagsWidget);
+  auto* layout = new QVBoxLayout(m_flagsWidget);
   layout->setContentsMargins(4, 4, 4, 4);
 
   // Filter input
-  auto *filterLayout = new QHBoxLayout;
-  auto *filterLabel = new QLabel("Filter:");
+  auto* filterLayout = new QHBoxLayout;
+  auto* filterLabel = new QLabel("Filter:");
   m_flagsFilter = new QLineEdit;
   m_flagsFilter->setPlaceholderText("Filter flags...");
   m_flagsFilter->setClearButtonEnabled(true);
@@ -178,8 +174,7 @@ void NMScriptInspectorPanel::setupFlagsTab() {
   filterLayout->addWidget(m_flagsFilter);
   layout->addLayout(filterLayout);
 
-  connect(m_flagsFilter, &QLineEdit::textChanged, this,
-          &NMScriptInspectorPanel::updateFlagsTree);
+  connect(m_flagsFilter, &QLineEdit::textChanged, this, &NMScriptInspectorPanel::updateFlagsTree);
 
   // Flags tree
   m_flagsTree = new QTreeWidget;
@@ -193,27 +188,24 @@ void NMScriptInspectorPanel::setupFlagsTab() {
 
   layout->addWidget(m_flagsTree);
 
-  auto *helpLabel =
-      new QLabel("Double-click to toggle flag (only when paused)");
-  helpLabel->setStyleSheet(
-      "QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
+  auto* helpLabel = new QLabel("Double-click to toggle flag (only when paused)");
+  helpLabel->setStyleSheet("QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
   layout->addWidget(helpLabel);
 }
 
 void NMScriptInspectorPanel::setupWatchTab() {
   m_watchWidget = new QWidget;
-  auto *layout = new QVBoxLayout(m_watchWidget);
+  auto* layout = new QVBoxLayout(m_watchWidget);
   layout->setContentsMargins(4, 4, 4, 4);
 
   // Input row for adding watch expressions
-  auto *inputLayout = new QHBoxLayout;
+  auto* inputLayout = new QHBoxLayout;
   m_watchInput = new QLineEdit;
   m_watchInput->setPlaceholderText("Enter expression (e.g., points >= 100)");
 
   m_addWatchBtn = new QPushButton("Add");
   m_addWatchBtn->setToolTip("Add watch expression");
-  connect(m_addWatchBtn, &QPushButton::clicked, this,
-          &NMScriptInspectorPanel::onAddWatchClicked);
+  connect(m_addWatchBtn, &QPushButton::clicked, this, &NMScriptInspectorPanel::onAddWatchClicked);
   connect(m_watchInput, &QLineEdit::returnPressed, this,
           &NMScriptInspectorPanel::onAddWatchClicked);
 
@@ -245,18 +237,16 @@ void NMScriptInspectorPanel::setupWatchTab() {
 
   layout->addWidget(m_watchTree);
 
-  auto *helpLabel = new QLabel(
-      "Supported: variable names, comparisons (==, !=, <, >, <=, >=), "
-      "logical ops (&&, ||)");
-  helpLabel->setStyleSheet(
-      "QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
+  auto* helpLabel = new QLabel("Supported: variable names, comparisons (==, !=, <, >, <=, >=), "
+                               "logical ops (&&, ||)");
+  helpLabel->setStyleSheet("QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
   helpLabel->setWordWrap(true);
   layout->addWidget(helpLabel);
 }
 
 void NMScriptInspectorPanel::setupSceneHistoryTab() {
   m_sceneHistoryWidget = new QWidget;
-  auto *layout = new QVBoxLayout(m_sceneHistoryWidget);
+  auto* layout = new QVBoxLayout(m_sceneHistoryWidget);
   layout->setContentsMargins(4, 4, 4, 4);
 
   // Scene history list
@@ -268,35 +258,33 @@ void NMScriptInspectorPanel::setupSceneHistoryTab() {
 
   layout->addWidget(m_sceneHistoryList);
 
-  auto *helpLabel =
-      new QLabel("Double-click to navigate to scene in Story Graph");
-  helpLabel->setStyleSheet(
-      "QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
+  auto* helpLabel = new QLabel("Double-click to navigate to scene in Story Graph");
+  helpLabel->setStyleSheet("QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
   layout->addWidget(helpLabel);
 }
 
-void NMScriptInspectorPanel::onVariablesChanged(const QVariantMap &variables) {
+void NMScriptInspectorPanel::onVariablesChanged(const QVariantMap& variables) {
   m_currentVariables = variables;
   updateVariablesTree();
   updateWatchTree(); // Watch expressions may depend on variables
 }
 
-void NMScriptInspectorPanel::onFlagsChanged(const QVariantMap &flags) {
+void NMScriptInspectorPanel::onFlagsChanged(const QVariantMap& flags) {
   m_currentFlags = flags;
   updateFlagsTree();
   updateWatchTree(); // Watch expressions may depend on flags
 }
 
-void NMScriptInspectorPanel::onCallStackChanged(const QStringList &stack) {
+void NMScriptInspectorPanel::onCallStackChanged(const QStringList& stack) {
   m_currentCallStack = stack;
 }
 
-void NMScriptInspectorPanel::onStackFramesChanged(const QVariantList &frames) {
+void NMScriptInspectorPanel::onStackFramesChanged(const QVariantList& frames) {
   m_currentStackFrames = frames;
 }
 
 void NMScriptInspectorPanel::onPlayModeChanged(int mode) {
-  auto *statusLabel = m_toolBar->findChild<QLabel *>("statusLabel");
+  auto* statusLabel = m_toolBar->findChild<QLabel*>("statusLabel");
   if (statusLabel) {
     QString statusText;
     QString color;
@@ -315,12 +303,11 @@ void NMScriptInspectorPanel::onPlayModeChanged(int mode) {
       break;
     }
     statusLabel->setText(statusText);
-    statusLabel->setStyleSheet(
-        QString("QLabel { color: %1; font-weight: bold; }").arg(color));
+    statusLabel->setStyleSheet(QString("QLabel { color: %1; font-weight: bold; }").arg(color));
   }
 }
 
-void NMScriptInspectorPanel::onCurrentNodeChanged(const QString &nodeId) {
+void NMScriptInspectorPanel::onCurrentNodeChanged(const QString& nodeId) {
   m_currentNodeId = nodeId;
 
   // Extract scene name from node ID if possible
@@ -337,8 +324,7 @@ void NMScriptInspectorPanel::onCurrentNodeChanged(const QString &nodeId) {
     }
   }
 
-  m_currentSceneLabel->setText(QString("Scene: %1").arg(
-      sceneName.isEmpty() ? "-" : sceneName));
+  m_currentSceneLabel->setText(QString("Scene: %1").arg(sceneName.isEmpty() ? "-" : sceneName));
 
   // Add to scene history if different from last
   if (!sceneName.isEmpty()) {
@@ -355,23 +341,20 @@ void NMScriptInspectorPanel::updateVariablesTree() {
   QString filter = m_variablesFilter->text().toLower();
 
   // Create groups
-  auto *globalGroup =
-      new QTreeWidgetItem(m_variablesTree, {"Global Variables", "", ""});
+  auto* globalGroup = new QTreeWidgetItem(m_variablesTree, {"Global Variables", "", ""});
   globalGroup->setExpanded(true);
   globalGroup->setForeground(0, QBrush(QColor("#0078d4")));
 
-  auto *localGroup =
-      new QTreeWidgetItem(m_variablesTree, {"Local Variables", "", ""});
+  auto* localGroup = new QTreeWidgetItem(m_variablesTree, {"Local Variables", "", ""});
   localGroup->setExpanded(true);
   localGroup->setForeground(0, QBrush(QColor("#0078d4")));
 
   int globalCount = 0;
   int localCount = 0;
 
-  for (auto it = m_currentVariables.constBegin();
-       it != m_currentVariables.constEnd(); ++it) {
-    const QString &name = it.key();
-    const QVariant &value = it.value();
+  for (auto it = m_currentVariables.constBegin(); it != m_currentVariables.constEnd(); ++it) {
+    const QString& name = it.key();
+    const QVariant& value = it.value();
 
     // Apply filter
     if (!filter.isEmpty() && !name.toLower().contains(filter)) {
@@ -388,9 +371,9 @@ void NMScriptInspectorPanel::updateVariablesTree() {
 
     // Determine if local or global (simple heuristic: underscore prefix = local)
     bool isLocal = name.startsWith("_");
-    auto *parentGroup = isLocal ? localGroup : globalGroup;
+    auto* parentGroup = isLocal ? localGroup : globalGroup;
 
-    auto *item = new QTreeWidgetItem(parentGroup, {name, valueStr, typeStr});
+    auto* item = new QTreeWidgetItem(parentGroup, {name, valueStr, typeStr});
 
     // Color-code by type
     QColor valueColor;
@@ -423,12 +406,10 @@ void NMScriptInspectorPanel::updateVariablesTree() {
 
   // Remove empty groups
   if (globalCount == 0) {
-    delete m_variablesTree->takeTopLevelItem(
-        m_variablesTree->indexOfTopLevelItem(globalGroup));
+    delete m_variablesTree->takeTopLevelItem(m_variablesTree->indexOfTopLevelItem(globalGroup));
   }
   if (localCount == 0) {
-    delete m_variablesTree->takeTopLevelItem(
-        m_variablesTree->indexOfTopLevelItem(localGroup));
+    delete m_variablesTree->takeTopLevelItem(m_variablesTree->indexOfTopLevelItem(localGroup));
   }
 
   if (m_currentVariables.isEmpty()) {
@@ -441,9 +422,8 @@ void NMScriptInspectorPanel::updateFlagsTree() {
 
   QString filter = m_flagsFilter->text().toLower();
 
-  for (auto it = m_currentFlags.constBegin(); it != m_currentFlags.constEnd();
-       ++it) {
-    const QString &name = it.key();
+  for (auto it = m_currentFlags.constBegin(); it != m_currentFlags.constEnd(); ++it) {
+    const QString& name = it.key();
     const bool value = it.value().toBool();
 
     // Apply filter
@@ -451,14 +431,12 @@ void NMScriptInspectorPanel::updateFlagsTree() {
       continue;
     }
 
-    auto *item =
-        new QTreeWidgetItem(m_flagsTree, {name, value ? "true" : "false"});
-    item->setForeground(1,
-                        QBrush(value ? QColor("#4caf50") : QColor("#f44336")));
+    auto* item = new QTreeWidgetItem(m_flagsTree, {name, value ? "true" : "false"});
+    item->setForeground(1, QBrush(value ? QColor("#4caf50") : QColor("#f44336")));
     item->setData(0, Qt::UserRole, name);
 
     // Add icon indicator
-    auto &iconMgr = NMIconManager::instance();
+    auto& iconMgr = NMIconManager::instance();
     item->setIcon(1, iconMgr.getIcon(value ? "check" : "x", 16));
   }
 
@@ -470,16 +448,15 @@ void NMScriptInspectorPanel::updateFlagsTree() {
 void NMScriptInspectorPanel::updateWatchTree() {
   m_watchTree->clear();
 
-  for (const QString &expr : m_watchExpressions) {
+  for (const QString& expr : m_watchExpressions) {
     auto result = evaluateExpression(expr);
 
-    auto *item = new QTreeWidgetItem(m_watchTree, {expr, result.result});
+    auto* item = new QTreeWidgetItem(m_watchTree, {expr, result.result});
 
     if (result.isValid) {
       if (result.isBoolean) {
         bool boolValue = result.result == "true";
-        item->setForeground(
-            1, QBrush(boolValue ? QColor("#4caf50") : QColor("#f44336")));
+        item->setForeground(1, QBrush(boolValue ? QColor("#4caf50") : QColor("#f44336")));
       } else {
         item->setForeground(1, QBrush(QColor("#b5cea8")));
       }
@@ -492,8 +469,7 @@ void NMScriptInspectorPanel::updateWatchTree() {
   }
 
   if (m_watchExpressions.isEmpty()) {
-    new QTreeWidgetItem(m_watchTree,
-                        {"(No watch expressions)", "Add one above"});
+    new QTreeWidgetItem(m_watchTree, {"(No watch expressions)", "Add one above"});
   }
 }
 
@@ -502,16 +478,14 @@ void NMScriptInspectorPanel::updateSceneHistoryList() {
 
   const qsizetype historyCount = m_sceneHistory.size();
   for (qsizetype i = historyCount - 1; i >= 0; --i) {
-    const QString &scene = m_sceneHistory[i];
-    auto *item = new QListWidgetItem(
-        QString("%1. %2")
-            .arg(static_cast<int>(historyCount - i))
-            .arg(scene));
+    const QString& scene = m_sceneHistory[i];
+    auto* item =
+        new QListWidgetItem(QString("%1. %2").arg(static_cast<int>(historyCount - i)).arg(scene));
 
     if (i == historyCount - 1) {
       // Current scene
       item->setForeground(QBrush(QColor("#4caf50")));
-      auto &iconMgr = NMIconManager::instance();
+      auto& iconMgr = NMIconManager::instance();
       item->setIcon(iconMgr.getIcon("arrow-right", 16));
     }
 
@@ -527,8 +501,7 @@ void NMScriptInspectorPanel::updateSceneHistoryList() {
   }
 }
 
-WatchExpressionResult
-NMScriptInspectorPanel::evaluateExpression(const QString &expression) const {
+WatchExpressionResult NMScriptInspectorPanel::evaluateExpression(const QString& expression) const {
   WatchExpressionResult result;
   result.expression = expression;
   result.isValid = false;
@@ -545,8 +518,7 @@ NMScriptInspectorPanel::evaluateExpression(const QString &expression) const {
   if (m_currentVariables.contains(trimmed)) {
     result.result = m_currentVariables.value(trimmed).toString();
     result.isValid = true;
-    result.isBoolean = m_currentVariables.value(trimmed).metaType().id() ==
-                       QMetaType::Bool;
+    result.isBoolean = m_currentVariables.value(trimmed).metaType().id() == QMetaType::Bool;
     return result;
   }
 
@@ -563,7 +535,7 @@ NMScriptInspectorPanel::evaluateExpression(const QString &expression) const {
 }
 
 WatchExpressionResult
-NMScriptInspectorPanel::parseSimpleExpression(const QString &expression) const {
+NMScriptInspectorPanel::parseSimpleExpression(const QString& expression) const {
   WatchExpressionResult result;
   result.expression = expression;
   result.isValid = false;
@@ -575,7 +547,7 @@ NMScriptInspectorPanel::parseSimpleExpression(const QString &expression) const {
   if (expr.contains("&&")) {
     QStringList parts = expr.split("&&");
     bool allTrue = true;
-    for (const QString &part : parts) {
+    for (const QString& part : parts) {
       auto subResult = evaluateExpression(part.trimmed());
       if (!subResult.isValid) {
         result.result = "(invalid)";
@@ -593,7 +565,7 @@ NMScriptInspectorPanel::parseSimpleExpression(const QString &expression) const {
   if (expr.contains("||")) {
     QStringList parts = expr.split("||");
     bool anyTrue = false;
-    for (const QString &part : parts) {
+    for (const QString& part : parts) {
       auto subResult = evaluateExpression(part.trimmed());
       if (!subResult.isValid) {
         result.result = "(invalid)";
@@ -609,8 +581,7 @@ NMScriptInspectorPanel::parseSimpleExpression(const QString &expression) const {
   }
 
   // Handle comparison operators
-  static const QRegularExpression comparisonRx(
-      R"(^\s*(\w+)\s*(==|!=|<=|>=|<|>)\s*(.+)\s*$)");
+  static const QRegularExpression comparisonRx(R"(^\s*(\w+)\s*(==|!=|<=|>=|<|>)\s*(.+)\s*$)");
   auto match = comparisonRx.match(expr);
 
   if (match.hasMatch()) {
@@ -680,18 +651,17 @@ NMScriptInspectorPanel::parseSimpleExpression(const QString &expression) const {
   return result;
 }
 
-void NMScriptInspectorPanel::onVariableItemDoubleClicked(
-    QTreeWidgetItem *item, [[maybe_unused]] int column) {
+void NMScriptInspectorPanel::onVariableItemDoubleClicked(QTreeWidgetItem* item,
+                                                         [[maybe_unused]] int column) {
   if (!item->parent()) {
     // Clicked on a group, not a variable
     return;
   }
 
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   if (!controller.isPaused()) {
-    QMessageBox::information(this, "Edit Variable",
-                             "Variables can only be edited when paused.");
+    QMessageBox::information(this, "Edit Variable", "Variables can only be edited when paused.");
     return;
   }
 
@@ -704,13 +674,12 @@ void NMScriptInspectorPanel::onVariableItemDoubleClicked(
   editVariable(varName, currentValue);
 }
 
-void NMScriptInspectorPanel::onFlagItemDoubleClicked(
-    QTreeWidgetItem *item, [[maybe_unused]] int column) {
-  auto &controller = NMPlayModeController::instance();
+void NMScriptInspectorPanel::onFlagItemDoubleClicked(QTreeWidgetItem* item,
+                                                     [[maybe_unused]] int column) {
+  auto& controller = NMPlayModeController::instance();
 
   if (!controller.isPaused()) {
-    QMessageBox::information(this, "Toggle Flag",
-                             "Flags can only be toggled when paused.");
+    QMessageBox::information(this, "Toggle Flag", "Flags can only be toggled when paused.");
     return;
   }
 
@@ -723,8 +692,8 @@ void NMScriptInspectorPanel::onFlagItemDoubleClicked(
   editFlag(flagName, currentValue);
 }
 
-void NMScriptInspectorPanel::onWatchItemDoubleClicked(
-    QTreeWidgetItem *item, [[maybe_unused]] int column) {
+void NMScriptInspectorPanel::onWatchItemDoubleClicked(QTreeWidgetItem* item,
+                                                      [[maybe_unused]] int column) {
   const QString expr = item->data(0, Qt::UserRole).toString();
   if (!expr.isEmpty()) {
     // Copy expression to input for editing
@@ -733,8 +702,7 @@ void NMScriptInspectorPanel::onWatchItemDoubleClicked(
   }
 }
 
-void NMScriptInspectorPanel::onSceneHistoryItemDoubleClicked(
-    QListWidgetItem *item) {
+void NMScriptInspectorPanel::onSceneHistoryItemDoubleClicked(QListWidgetItem* item) {
   const QString sceneId = item->data(Qt::UserRole).toString();
   if (!sceneId.isEmpty()) {
     emit navigateToSceneRequested(sceneId);
@@ -756,7 +724,7 @@ void NMScriptInspectorPanel::onAddWatchClicked() {
 }
 
 void NMScriptInspectorPanel::onRemoveWatchClicked() {
-  auto *current = m_watchTree->currentItem();
+  auto* current = m_watchTree->currentItem();
   if (!current) {
     return;
   }
@@ -771,14 +739,14 @@ void NMScriptInspectorPanel::onClearWatchClicked() {
   updateWatchTree();
 }
 
-void NMScriptInspectorPanel::addWatchExpression(const QString &expression) {
+void NMScriptInspectorPanel::addWatchExpression(const QString& expression) {
   if (!m_watchExpressions.contains(expression)) {
     m_watchExpressions.append(expression);
     updateWatchTree();
   }
 }
 
-void NMScriptInspectorPanel::removeWatchExpression(const QString &expression) {
+void NMScriptInspectorPanel::removeWatchExpression(const QString& expression) {
   m_watchExpressions.removeAll(expression);
   updateWatchTree();
 }
@@ -788,19 +756,18 @@ void NMScriptInspectorPanel::clearWatchExpressions() {
   updateWatchTree();
 }
 
-void NMScriptInspectorPanel::editVariable(const QString &name,
-                                          const QVariant &currentValue) {
+void NMScriptInspectorPanel::editVariable(const QString& name, const QVariant& currentValue) {
   bool ok = false;
   QVariant newValue;
 
   if (currentValue.metaType().id() == QMetaType::QString) {
-    newValue = NMInputDialog::getText(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        QLineEdit::Normal, currentValue.toString(), &ok);
+    newValue = NMInputDialog::getText(this, "Edit Variable",
+                                      QString("Enter new value for '%1':").arg(name),
+                                      QLineEdit::Normal, currentValue.toString(), &ok);
   } else if (currentValue.metaType().id() == QMetaType::Int) {
-    newValue = NMInputDialog::getInt(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        currentValue.toInt(), -2147483647, 2147483647, 1, &ok);
+    newValue =
+        NMInputDialog::getInt(this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
+                              currentValue.toInt(), -2147483647, 2147483647, 1, &ok);
   } else if (currentValue.metaType().id() == QMetaType::Double) {
     newValue = NMInputDialog::getDouble(
         this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
@@ -808,9 +775,9 @@ void NMScriptInspectorPanel::editVariable(const QString &name,
         std::numeric_limits<double>::max(), 2, &ok);
   } else {
     // Unsupported type, edit as string
-    newValue = NMInputDialog::getText(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        QLineEdit::Normal, currentValue.toString(), &ok);
+    newValue = NMInputDialog::getText(this, "Edit Variable",
+                                      QString("Enter new value for '%1':").arg(name),
+                                      QLineEdit::Normal, currentValue.toString(), &ok);
   }
 
   if (ok) {
@@ -818,7 +785,7 @@ void NMScriptInspectorPanel::editVariable(const QString &name,
   }
 }
 
-void NMScriptInspectorPanel::editFlag(const QString &name, bool currentValue) {
+void NMScriptInspectorPanel::editFlag(const QString& name, bool currentValue) {
   // Simply toggle the flag
   NMPlayModeController::instance().setVariable(name, !currentValue);
 }

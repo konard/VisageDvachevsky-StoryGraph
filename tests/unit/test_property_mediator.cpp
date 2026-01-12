@@ -49,9 +49,7 @@ TEST_CASE("PropertyMediator produces single event per property change",
 
   // Subscribe to InspectorPropertyChangedEvent
   auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&eventCount](const InspectorPropertyChangedEvent &event) {
-        eventCount++;
-      });
+      [&eventCount](const InspectorPropertyChangedEvent& event) { eventCount++; });
 
   // Publish a property change event
   InspectorPropertyChangedEvent event;
@@ -92,7 +90,7 @@ TEST_CASE("PropertyMediator prevents infinite feedback loops",
 
   // Subscribe to InspectorPropertyChangedEvent and simulate feedback
   auto propSub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&eventCount, &bus](const InspectorPropertyChangedEvent &event) {
+      [&eventCount, &bus](const InspectorPropertyChangedEvent& event) {
         eventCount++;
 
         // Simulate pathological case: handler tries to publish another property event
@@ -108,9 +106,7 @@ TEST_CASE("PropertyMediator prevents infinite feedback loops",
 
   // Subscribe to UpdateInspectorPropertyEvent
   auto updateSub = bus.subscribe<UpdateInspectorPropertyEvent>(
-      [&updateCount](const UpdateInspectorPropertyEvent &event) {
-        updateCount++;
-      });
+      [&updateCount](const UpdateInspectorPropertyEvent& event) { updateCount++; });
 
   // Trigger initial property change
   InspectorPropertyChangedEvent initialEvent;
@@ -146,9 +142,7 @@ TEST_CASE("PropertyMediator handles rapid property changes without freeze",
   std::atomic<int> eventCount{0};
 
   auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&eventCount](const InspectorPropertyChangedEvent &event) {
-        eventCount++;
-      });
+      [&eventCount](const InspectorPropertyChangedEvent& event) { eventCount++; });
 
   // Simulate rapid property editing (e.g., dragging slider in inspector)
   const int rapidChangeCount = 50;
@@ -193,7 +187,7 @@ TEST_CASE("PropertyMediator re-entrancy guard prevents recursive processing",
 
   // Subscribe to property changed events
   auto propSub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&propEventCount, &bus](const InspectorPropertyChangedEvent &event) {
+      [&propEventCount, &bus](const InspectorPropertyChangedEvent& event) {
         propEventCount++;
 
         // Simulate case where property change triggers position change
@@ -207,7 +201,7 @@ TEST_CASE("PropertyMediator re-entrancy guard prevents recursive processing",
 
   // Subscribe to position changed events
   auto posSub = bus.subscribe<SceneObjectPositionChangedEvent>(
-      [&positionEventCount, &bus](const SceneObjectPositionChangedEvent &event) {
+      [&positionEventCount, &bus](const SceneObjectPositionChangedEvent& event) {
         positionEventCount++;
 
         // This could trigger another property event, creating a loop
@@ -222,9 +216,7 @@ TEST_CASE("PropertyMediator re-entrancy guard prevents recursive processing",
   // Subscribe to update events to track cascading
   std::atomic<int> updateEventCount{0};
   auto updateSub = bus.subscribe<UpdateInspectorPropertyEvent>(
-      [&updateEventCount](const UpdateInspectorPropertyEvent &event) {
-        updateEventCount++;
-      });
+      [&updateEventCount](const UpdateInspectorPropertyEvent& event) { updateEventCount++; });
 
   // Trigger initial property change
   InspectorPropertyChangedEvent initialEvent;
@@ -262,19 +254,13 @@ TEST_CASE("PropertyMediator handles different property types independently",
   std::atomic<int> transformEventCount{0};
 
   auto propSub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&propertyEventCount](const InspectorPropertyChangedEvent &) {
-        propertyEventCount++;
-      });
+      [&propertyEventCount](const InspectorPropertyChangedEvent&) { propertyEventCount++; });
 
   auto posSub = bus.subscribe<SceneObjectPositionChangedEvent>(
-      [&positionEventCount](const SceneObjectPositionChangedEvent &) {
-        positionEventCount++;
-      });
+      [&positionEventCount](const SceneObjectPositionChangedEvent&) { positionEventCount++; });
 
   auto transformSub = bus.subscribe<SceneObjectTransformFinishedEvent>(
-      [&transformEventCount](const SceneObjectTransformFinishedEvent &) {
-        transformEventCount++;
-      });
+      [&transformEventCount](const SceneObjectTransformFinishedEvent&) { transformEventCount++; });
 
   // Publish different event types
   InspectorPropertyChangedEvent propEvent;
@@ -320,19 +306,13 @@ TEST_CASE("PropertyMediator handles property changes during object transform",
 
   // Subscribe to all property-related events
   auto propSub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&totalEvents](const InspectorPropertyChangedEvent &) {
-        totalEvents++;
-      });
+      [&totalEvents](const InspectorPropertyChangedEvent&) { totalEvents++; });
 
   auto posSub = bus.subscribe<SceneObjectPositionChangedEvent>(
-      [&totalEvents](const SceneObjectPositionChangedEvent &) {
-        totalEvents++;
-      });
+      [&totalEvents](const SceneObjectPositionChangedEvent&) { totalEvents++; });
 
   auto transformSub = bus.subscribe<SceneObjectTransformFinishedEvent>(
-      [&totalEvents](const SceneObjectTransformFinishedEvent &) {
-        totalEvents++;
-      });
+      [&totalEvents](const SceneObjectTransformFinishedEvent&) { totalEvents++; });
 
   // Simulate user dragging object (position changes)
   for (int i = 0; i < 10; ++i) {
@@ -376,7 +356,7 @@ TEST_CASE("PropertyMediator ignores events with empty objectId",
   std::atomic<int> eventCount{0};
 
   auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&eventCount](const InspectorPropertyChangedEvent &event) {
+      [&eventCount](const InspectorPropertyChangedEvent& event) {
         // This simulates what PropertyMediator does - ignore empty objectId
         if (!event.objectId.isEmpty()) {
           eventCount++;
@@ -419,7 +399,7 @@ TEST_CASE("PropertyMediator handles concurrent changes on different objects",
   std::mutex mapMutex;
 
   auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&objectEventCounts, &mapMutex](const InspectorPropertyChangedEvent &event) {
+      [&objectEventCounts, &mapMutex](const InspectorPropertyChangedEvent& event) {
         std::lock_guard<std::mutex> lock(mapMutex);
         objectEventCounts[event.objectId]++;
       });
@@ -427,7 +407,7 @@ TEST_CASE("PropertyMediator handles concurrent changes on different objects",
   // Simulate editing multiple objects simultaneously (e.g., multi-select)
   std::vector<QString> objects = {"obj1", "obj2", "obj3", "obj4", "obj5"};
 
-  for (const auto &objId : objects) {
+  for (const auto& objId : objects) {
     for (int i = 0; i < 5; ++i) {
       InspectorPropertyChangedEvent event;
       event.objectId = objId;
@@ -440,7 +420,7 @@ TEST_CASE("PropertyMediator handles concurrent changes on different objects",
   processEvents(200);
 
   // Each object should have received exactly 5 events
-  for (const auto &objId : objects) {
+  for (const auto& objId : objects) {
     REQUIRE(objectEventCounts[objId] == 5);
   }
 
@@ -457,9 +437,7 @@ TEST_CASE("PropertyMediator performance test - no event spam",
   std::atomic<int> eventCount{0};
 
   auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-      [&eventCount](const InspectorPropertyChangedEvent &) {
-        eventCount++;
-      });
+      [&eventCount](const InspectorPropertyChangedEvent&) { eventCount++; });
 
   auto start = std::chrono::high_resolution_clock::now();
 
@@ -499,7 +477,7 @@ TEST_CASE("PropertyMediator prevents UpdateInspectorPropertyEvent loops",
   std::atomic<int> updateEventCount{0};
 
   auto sub = bus.subscribe<UpdateInspectorPropertyEvent>(
-      [&updateEventCount, &bus](const UpdateInspectorPropertyEvent &event) {
+      [&updateEventCount, &bus](const UpdateInspectorPropertyEvent& event) {
         updateEventCount++;
 
         // Simulate feedback: update triggers another update
@@ -539,7 +517,7 @@ TEST_CASE("PropertyMediator meets all acceptance criteria from issue #453",
   SECTION("Property changes produce exactly one event per change") {
     std::atomic<int> count{0};
     auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-        [&count](const InspectorPropertyChangedEvent &) { count++; });
+        [&count](const InspectorPropertyChangedEvent&) { count++; });
 
     InspectorPropertyChangedEvent event;
     event.objectId = "test";
@@ -555,7 +533,7 @@ TEST_CASE("PropertyMediator meets all acceptance criteria from issue #453",
   SECTION("No infinite loops possible") {
     std::atomic<int> count{0};
     auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-        [&count, &bus](const InspectorPropertyChangedEvent &event) {
+        [&count, &bus](const InspectorPropertyChangedEvent& event) {
           count++;
           if (count < 100) { // Try to create loop
             InspectorPropertyChangedEvent e;
@@ -582,7 +560,7 @@ TEST_CASE("PropertyMediator meets all acceptance criteria from issue #453",
   SECTION("UI remains responsive during rapid edits") {
     std::atomic<int> count{0};
     auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-        [&count](const InspectorPropertyChangedEvent &) { count++; });
+        [&count](const InspectorPropertyChangedEvent&) { count++; });
 
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 30; ++i) {
@@ -609,8 +587,8 @@ TEST_CASE("PropertyMediator meets all acceptance criteria from issue #453",
     std::atomic<int> skippedCount{0};
 
     auto sub = bus.subscribe<InspectorPropertyChangedEvent>(
-        [&processing, &processedCount, &skippedCount, &bus](
-            const InspectorPropertyChangedEvent &event) {
+        [&processing, &processedCount, &skippedCount,
+         &bus](const InspectorPropertyChangedEvent& event) {
           if (processing) {
             skippedCount++;
             return; // Simulate re-entrancy guard

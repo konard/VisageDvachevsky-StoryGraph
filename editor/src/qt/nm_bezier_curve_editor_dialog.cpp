@@ -28,7 +28,7 @@ namespace NovelMind::editor::qt {
 // Canvas size constant - moved here to avoid dependency on dialog class
 static constexpr int BEZIER_CANVAS_SIZE = 300;
 
-NMBezierCurveView::NMBezierCurveView(QGraphicsScene *scene, QWidget *parent)
+NMBezierCurveView::NMBezierCurveView(QGraphicsScene* scene, QWidget* parent)
     : QGraphicsView(scene, parent) {
   setRenderHint(QPainter::Antialiasing);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
@@ -39,7 +39,7 @@ NMBezierCurveView::NMBezierCurveView(QGraphicsScene *scene, QWidget *parent)
   setFixedSize(BEZIER_CANVAS_SIZE + 2, BEZIER_CANVAS_SIZE + 2);
 }
 
-void NMBezierCurveView::resizeEvent(QResizeEvent *event) {
+void NMBezierCurveView::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
   emit viewResized();
 }
@@ -48,11 +48,9 @@ void NMBezierCurveView::resizeEvent(QResizeEvent *event) {
 // NMBezierControlPointItem Implementation
 // =============================================================================
 
-NMBezierControlPointItem::NMBezierControlPointItem(PointType type, qreal x,
-                                                   qreal y,
-                                                   QGraphicsItem *parent)
+NMBezierControlPointItem::NMBezierControlPointItem(PointType type, qreal x, qreal y,
+                                                   QGraphicsItem* parent)
     : QGraphicsEllipseItem(-6, -6, 12, 12, parent), m_type(type) {
-
   setPos(x, y);
   setAcceptHoverEvents(true);
   setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable |
@@ -73,15 +71,14 @@ NMBezierControlPointItem::NMBezierControlPointItem(PointType type, qreal x,
   setZValue(10);
 }
 
-void NMBezierControlPointItem::mousePressEvent(
-    QGraphicsSceneMouseEvent *event) {
+void NMBezierControlPointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   if (!m_draggable)
     return;
   m_dragging = true;
   QGraphicsEllipseItem::mousePressEvent(event);
 }
 
-void NMBezierControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+void NMBezierControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
   if (!m_draggable || !m_dragging)
     return;
 
@@ -89,8 +86,7 @@ void NMBezierControlPointItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
   emit positionChanged(m_type, pos());
 }
 
-void NMBezierControlPointItem::mouseReleaseEvent(
-    QGraphicsSceneMouseEvent *event) {
+void NMBezierControlPointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   if (m_dragging) {
     m_dragging = false;
     emit dragFinished();
@@ -98,15 +94,13 @@ void NMBezierControlPointItem::mouseReleaseEvent(
   QGraphicsEllipseItem::mouseReleaseEvent(event);
 }
 
-void NMBezierControlPointItem::hoverEnterEvent(
-    QGraphicsSceneHoverEvent *event) {
+void NMBezierControlPointItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
   setBrush(QBrush(m_hoverColor));
   setCursor(Qt::SizeAllCursor);
   QGraphicsEllipseItem::hoverEnterEvent(event);
 }
 
-void NMBezierControlPointItem::hoverLeaveEvent(
-    QGraphicsSceneHoverEvent *event) {
+void NMBezierControlPointItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
   setBrush(QBrush(m_normalColor));
   unsetCursor();
   QGraphicsEllipseItem::hoverLeaveEvent(event);
@@ -116,8 +110,7 @@ void NMBezierControlPointItem::hoverLeaveEvent(
 // NMBezierCurveEditorDialog Implementation
 // =============================================================================
 
-NMBezierCurveEditorDialog::NMBezierCurveEditorDialog(const Keyframe *keyframe,
-                                                     QWidget *parent)
+NMBezierCurveEditorDialog::NMBezierCurveEditorDialog(const Keyframe* keyframe, QWidget* parent)
     : QDialog(parent) {
   setWindowTitle(tr("Bezier Curve Editor"));
   setModal(true);
@@ -129,8 +122,7 @@ NMBezierCurveEditorDialog::NMBezierCurveEditorDialog(const Keyframe *keyframe,
     if (keyframe->easing == EasingType::Custom) {
       // Use existing handle data
       m_controlPoint1 = QPointF(keyframe->handleOutX, keyframe->handleOutY);
-      m_controlPoint2 =
-          QPointF(1.0f + keyframe->handleInX, 1.0f + keyframe->handleInY);
+      m_controlPoint2 = QPointF(1.0f + keyframe->handleInX, 1.0f + keyframe->handleInY);
     } else {
       // Set defaults based on easing type
       switch (keyframe->easing) {
@@ -162,12 +154,12 @@ NMBezierCurveEditorDialog::NMBezierCurveEditorDialog(const Keyframe *keyframe,
 }
 
 void NMBezierCurveEditorDialog::buildUi() {
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(16, 16, 16, 16);
   mainLayout->setSpacing(12);
 
   // Curve canvas area
-  auto *canvasLayout = new QHBoxLayout();
+  auto* canvasLayout = new QHBoxLayout();
   canvasLayout->addStretch();
 
   m_curveScene = new QGraphicsScene(this);
@@ -180,18 +172,17 @@ void NMBezierCurveEditorDialog::buildUi() {
   mainLayout->addLayout(canvasLayout);
 
   // Presets group
-  auto *presetsGroup = new QGroupBox(tr("Presets"), this);
+  auto* presetsGroup = new QGroupBox(tr("Presets"), this);
   setupPresetButtons(presetsGroup);
   mainLayout->addWidget(presetsGroup);
 
   // Control points group
-  auto *controlsGroup = new QGroupBox(tr("Control Points"), this);
+  auto* controlsGroup = new QGroupBox(tr("Control Points"), this);
   setupSpinBoxes(controlsGroup);
   mainLayout->addWidget(controlsGroup);
 
   // Dialog buttons
-  auto *buttonBox = new QDialogButtonBox(
-      QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+  auto* buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
   connect(buttonBox, &QDialogButtonBox::accepted, this, [this]() {
     m_result.easingType = EasingType::Custom;
     // Convert control points back to handle format
@@ -216,10 +207,8 @@ void NMBezierCurveEditorDialog::buildUi() {
   for (int i = 0; i <= 10; ++i) {
     qreal x = rect.left() + (rect.width() * i / 10);
     qreal y = rect.top() + (rect.height() * i / 10);
-    m_curveScene->addLine(x, rect.top(), x, rect.bottom(), gridPen)
-        ->setZValue(-2);
-    m_curveScene->addLine(rect.left(), y, rect.right(), y, gridPen)
-        ->setZValue(-2);
+    m_curveScene->addLine(x, rect.top(), x, rect.bottom(), gridPen)->setZValue(-2);
+    m_curveScene->addLine(rect.left(), y, rect.right(), y, gridPen)->setZValue(-2);
   }
 
   // Axis lines (border)
@@ -227,83 +216,72 @@ void NMBezierCurveEditorDialog::buildUi() {
 
   // Diagonal reference line (linear interpolation)
   QPen diagonalPen(QColor("#555555"), 1, Qt::DashLine);
-  m_curveScene
-      ->addLine(rect.left(), rect.bottom(), rect.right(), rect.top(),
-                diagonalPen)
+  m_curveScene->addLine(rect.left(), rect.bottom(), rect.right(), rect.top(), diagonalPen)
       ->setZValue(-1);
 
   // Create start/end point indicators (not draggable)
   QPointF startScenePos = normalizedToScene(0.0, 0.0);
   QPointF endScenePos = normalizedToScene(1.0, 1.0);
 
-  auto *startPoint =
-      new NMBezierControlPointItem(NMBezierControlPointItem::StartPoint,
-                                   startScenePos.x(), startScenePos.y());
+  auto* startPoint = new NMBezierControlPointItem(NMBezierControlPointItem::StartPoint,
+                                                  startScenePos.x(), startScenePos.y());
   startPoint->setDraggable(false);
   m_curveScene->addItem(startPoint);
 
-  auto *endPoint = new NMBezierControlPointItem(
-      NMBezierControlPointItem::EndPoint, endScenePos.x(), endScenePos.y());
+  auto* endPoint = new NMBezierControlPointItem(NMBezierControlPointItem::EndPoint, endScenePos.x(),
+                                                endScenePos.y());
   endPoint->setDraggable(false);
   m_curveScene->addItem(endPoint);
 
   // Create control point handles
-  QPointF cp1Scene =
-      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene =
-      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   // Handle lines
-  m_handleLine1 = m_curveScene->addLine(
-      startScenePos.x(), startScenePos.y(), cp1Scene.x(), cp1Scene.y(),
-      QPen(QColor("#888888"), 1, Qt::DashLine));
+  m_handleLine1 = m_curveScene->addLine(startScenePos.x(), startScenePos.y(), cp1Scene.x(),
+                                        cp1Scene.y(), QPen(QColor("#888888"), 1, Qt::DashLine));
   m_handleLine1->setZValue(5);
 
-  m_handleLine2 = m_curveScene->addLine(
-      endScenePos.x(), endScenePos.y(), cp2Scene.x(), cp2Scene.y(),
-      QPen(QColor("#888888"), 1, Qt::DashLine));
+  m_handleLine2 = m_curveScene->addLine(endScenePos.x(), endScenePos.y(), cp2Scene.x(),
+                                        cp2Scene.y(), QPen(QColor("#888888"), 1, Qt::DashLine));
   m_handleLine2->setZValue(5);
 
   // Control points (draggable)
-  m_cp1Item = new NMBezierControlPointItem(
-      NMBezierControlPointItem::ControlPoint1, cp1Scene.x(), cp1Scene.y());
+  m_cp1Item = new NMBezierControlPointItem(NMBezierControlPointItem::ControlPoint1, cp1Scene.x(),
+                                           cp1Scene.y());
   connect(m_cp1Item, &NMBezierControlPointItem::positionChanged, this,
           &NMBezierCurveEditorDialog::onControlPointMoved);
   m_curveScene->addItem(m_cp1Item);
 
-  m_cp2Item = new NMBezierControlPointItem(
-      NMBezierControlPointItem::ControlPoint2, cp2Scene.x(), cp2Scene.y());
+  m_cp2Item = new NMBezierControlPointItem(NMBezierControlPointItem::ControlPoint2, cp2Scene.x(),
+                                           cp2Scene.y());
   connect(m_cp2Item, &NMBezierControlPointItem::positionChanged, this,
           &NMBezierCurveEditorDialog::onControlPointMoved);
   m_curveScene->addItem(m_cp2Item);
 
   // Initial curve path
-  m_curvePathItem =
-      m_curveScene->addPath(QPainterPath(), QPen(QColor("#33cc66"), 2.5));
+  m_curvePathItem = m_curveScene->addPath(QPainterPath(), QPen(QColor("#33cc66"), 2.5));
   m_curvePathItem->setZValue(1);
 }
 
-void NMBezierCurveEditorDialog::setupPresetButtons(QWidget *container) {
-  auto *layout = new QHBoxLayout(container);
+void NMBezierCurveEditorDialog::setupPresetButtons(QWidget* container) {
+  auto* layout = new QHBoxLayout(container);
 
   auto& iconMgr = NMIconManager::instance();
 
   m_linearBtn = new QPushButton(tr("Linear"), container);
   m_linearBtn->setIcon(iconMgr.getIcon("easing-linear", 16));
-  connect(m_linearBtn, &QPushButton::clicked, this,
-          &NMBezierCurveEditorDialog::onPresetLinear);
+  connect(m_linearBtn, &QPushButton::clicked, this, &NMBezierCurveEditorDialog::onPresetLinear);
   layout->addWidget(m_linearBtn);
 
   m_easeInBtn = new QPushButton(tr("Ease In"), container);
   m_easeInBtn->setIcon(iconMgr.getIcon("easing-ease-in", 16));
-  connect(m_easeInBtn, &QPushButton::clicked, this,
-          &NMBezierCurveEditorDialog::onPresetEaseIn);
+  connect(m_easeInBtn, &QPushButton::clicked, this, &NMBezierCurveEditorDialog::onPresetEaseIn);
   layout->addWidget(m_easeInBtn);
 
   m_easeOutBtn = new QPushButton(tr("Ease Out"), container);
   m_easeOutBtn->setIcon(iconMgr.getIcon("easing-ease-out", 16));
-  connect(m_easeOutBtn, &QPushButton::clicked, this,
-          &NMBezierCurveEditorDialog::onPresetEaseOut);
+  connect(m_easeOutBtn, &QPushButton::clicked, this, &NMBezierCurveEditorDialog::onPresetEaseOut);
   layout->addWidget(m_easeOutBtn);
 
   m_easeInOutBtn = new QPushButton(tr("Ease In-Out"), container);
@@ -313,8 +291,8 @@ void NMBezierCurveEditorDialog::setupPresetButtons(QWidget *container) {
   layout->addWidget(m_easeInOutBtn);
 }
 
-void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget *container) {
-  auto *layout = new QGridLayout(container);
+void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget* container) {
+  auto* layout = new QGridLayout(container);
 
   // Control Point 1
   layout->addWidget(new QLabel(tr("Control Point 1:"), container), 0, 0);
@@ -324,8 +302,8 @@ void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget *container) {
   m_cp1XSpin->setSingleStep(0.01);
   m_cp1XSpin->setDecimals(2);
   m_cp1XSpin->setValue(m_controlPoint1.x());
-  connect(m_cp1XSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMBezierCurveEditorDialog::onSpinBoxChanged);
+  connect(m_cp1XSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMBezierCurveEditorDialog::onSpinBoxChanged);
   layout->addWidget(new QLabel("X:", container), 0, 1);
   layout->addWidget(m_cp1XSpin, 0, 2);
 
@@ -334,8 +312,8 @@ void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget *container) {
   m_cp1YSpin->setSingleStep(0.01);
   m_cp1YSpin->setDecimals(2);
   m_cp1YSpin->setValue(m_controlPoint1.y());
-  connect(m_cp1YSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMBezierCurveEditorDialog::onSpinBoxChanged);
+  connect(m_cp1YSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMBezierCurveEditorDialog::onSpinBoxChanged);
   layout->addWidget(new QLabel("Y:", container), 0, 3);
   layout->addWidget(m_cp1YSpin, 0, 4);
 
@@ -347,8 +325,8 @@ void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget *container) {
   m_cp2XSpin->setSingleStep(0.01);
   m_cp2XSpin->setDecimals(2);
   m_cp2XSpin->setValue(m_controlPoint2.x());
-  connect(m_cp2XSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMBezierCurveEditorDialog::onSpinBoxChanged);
+  connect(m_cp2XSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMBezierCurveEditorDialog::onSpinBoxChanged);
   layout->addWidget(new QLabel("X:", container), 1, 1);
   layout->addWidget(m_cp2XSpin, 1, 2);
 
@@ -357,14 +335,14 @@ void NMBezierCurveEditorDialog::setupSpinBoxes(QWidget *container) {
   m_cp2YSpin->setSingleStep(0.01);
   m_cp2YSpin->setDecimals(2);
   m_cp2YSpin->setValue(m_controlPoint2.y());
-  connect(m_cp2YSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMBezierCurveEditorDialog::onSpinBoxChanged);
+  connect(m_cp2YSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMBezierCurveEditorDialog::onSpinBoxChanged);
   layout->addWidget(new QLabel("Y:", container), 1, 3);
   layout->addWidget(m_cp2YSpin, 1, 4);
 }
 
-void NMBezierCurveEditorDialog::onControlPointMoved(
-    NMBezierControlPointItem::PointType type, QPointF newPos) {
+void NMBezierCurveEditorDialog::onControlPointMoved(NMBezierControlPointItem::PointType type,
+                                                    QPointF newPos) {
   QPointF normalized = sceneToNormalized(newPos);
 
   // Clamp X to valid range
@@ -401,10 +379,8 @@ void NMBezierCurveEditorDialog::onSpinBoxChanged() {
   m_controlPoint2 = QPointF(m_cp2XSpin->value(), m_cp2YSpin->value());
 
   // Update visual positions
-  QPointF cp1Scene =
-      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene =
-      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   m_cp1Item->setPos(cp1Scene);
   m_cp2Item->setPos(cp2Scene);
@@ -412,10 +388,11 @@ void NMBezierCurveEditorDialog::onSpinBoxChanged() {
   updateCurveVisualization();
 }
 
-void NMBezierCurveEditorDialog::onViewResized() { updateCurveVisualization(); }
+void NMBezierCurveEditorDialog::onViewResized() {
+  updateCurveVisualization();
+}
 
-void NMBezierCurveEditorDialog::setControlPoints(const QPointF &cp1,
-                                                 const QPointF &cp2) {
+void NMBezierCurveEditorDialog::setControlPoints(const QPointF& cp1, const QPointF& cp2) {
   m_controlPoint1 = cp1;
   m_controlPoint2 = cp2;
 
@@ -455,16 +432,12 @@ void NMBezierCurveEditorDialog::updateCurveVisualization() {
   [[maybe_unused]] QRectF rect = usableRect();
   QPointF startScenePos = normalizedToScene(0.0, 0.0);
   QPointF endScenePos = normalizedToScene(1.0, 1.0);
-  QPointF cp1Scene =
-      normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
-  QPointF cp2Scene =
-      normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
+  QPointF cp1Scene = normalizedToScene(m_controlPoint1.x(), m_controlPoint1.y());
+  QPointF cp2Scene = normalizedToScene(m_controlPoint2.x(), m_controlPoint2.y());
 
   // Update handle lines
-  m_handleLine1->setLine(startScenePos.x(), startScenePos.y(), cp1Scene.x(),
-                         cp1Scene.y());
-  m_handleLine2->setLine(endScenePos.x(), endScenePos.y(), cp2Scene.x(),
-                         cp2Scene.y());
+  m_handleLine1->setLine(startScenePos.x(), startScenePos.y(), cp1Scene.x(), cp1Scene.y());
+  m_handleLine2->setLine(endScenePos.x(), endScenePos.y(), cp2Scene.x(), cp2Scene.y());
 
   // Build bezier path
   QPainterPath curvePath;
@@ -491,8 +464,7 @@ QPointF NMBezierCurveEditorDialog::normalizedToScene(qreal x, qreal y) const {
   return QPointF(sceneX, sceneY);
 }
 
-QPointF
-NMBezierCurveEditorDialog::sceneToNormalized(const QPointF &scenePos) const {
+QPointF NMBezierCurveEditorDialog::sceneToNormalized(const QPointF& scenePos) const {
   QRectF rect = usableRect();
   qreal x = (scenePos.x() - rect.left()) / rect.width();
   qreal y = (rect.bottom() - scenePos.y()) / rect.height();
@@ -500,13 +472,11 @@ NMBezierCurveEditorDialog::sceneToNormalized(const QPointF &scenePos) const {
 }
 
 QRectF NMBezierCurveEditorDialog::usableRect() const {
-  return QRectF(MARGIN, MARGIN, CANVAS_SIZE - 2 * MARGIN,
-                CANVAS_SIZE - 2 * MARGIN);
+  return QRectF(MARGIN, MARGIN, CANVAS_SIZE - 2 * MARGIN, CANVAS_SIZE - 2 * MARGIN);
 }
 
-bool NMBezierCurveEditorDialog::getEasing(QWidget *parent,
-                                          const Keyframe *keyframe,
-                                          BezierCurveResult &outResult) {
+bool NMBezierCurveEditorDialog::getEasing(QWidget* parent, const Keyframe* keyframe,
+                                          BezierCurveResult& outResult) {
   NMBezierCurveEditorDialog dialog(keyframe, parent);
   if (dialog.exec() == QDialog::Accepted) {
     outResult = dialog.result();

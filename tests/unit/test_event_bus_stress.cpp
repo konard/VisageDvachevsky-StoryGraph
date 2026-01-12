@@ -57,9 +57,7 @@ TEST_CASE("EventBus Stress: High frequency event publishing",
   SECTION("10,000 events with single subscriber") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -84,9 +82,7 @@ TEST_CASE("EventBus Stress: High frequency event publishing",
     std::atomic<int> eventCount{0};
     std::atomic<bool> stopFlag{false};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     // Simulate high-frequency event stream
     auto publisherThread = std::thread([&bus, &stopFlag]() {
@@ -109,7 +105,7 @@ TEST_CASE("EventBus Stress: High frequency event publishing",
     publisherThread.join();
 
     // Should receive close to 5000 events (5 seconds * 1000 events/sec)
-    REQUIRE(eventCount >= 4900);  // Allow some tolerance for timing
+    REQUIRE(eventCount >= 4900); // Allow some tolerance for timing
     REQUIRE(eventCount <= 5100);
 
     bus.unsubscribe(sub);
@@ -121,19 +117,13 @@ TEST_CASE("EventBus Stress: High frequency event publishing",
     std::atomic<int> graphEvents{0};
 
     auto sub1 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&selectionEvents](const EditorEvent &) {
-                                selectionEvents++;
-                              });
+                              [&selectionEvents](const EditorEvent&) { selectionEvents++; });
 
     auto sub2 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&propertyEvents](const EditorEvent &) {
-                                propertyEvents++;
-                              });
+                              [&propertyEvents](const EditorEvent&) { propertyEvents++; });
 
     auto sub3 = bus.subscribe(EditorEventType::GraphNodeAdded,
-                              [&graphEvents](const EditorEvent &) {
-                                graphEvents++;
-                              });
+                              [&graphEvents](const EditorEvent&) { graphEvents++; });
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -170,8 +160,7 @@ TEST_CASE("EventBus Stress: High frequency event publishing",
 // Many Subscribers Scalability Tests
 // ============================================================================
 
-TEST_CASE("EventBus Stress: Many subscribers",
-          "[unit][editor][eventbus][stress][scalability]") {
+TEST_CASE("EventBus Stress: Many subscribers", "[unit][editor][eventbus][stress][scalability]") {
   EventBus bus;
 
   SECTION("1,000 subscribers receiving same event") {
@@ -180,9 +169,7 @@ TEST_CASE("EventBus Stress: Many subscribers",
 
     // Subscribe 1,000 handlers
     for (int i = 0; i < 1000; i++) {
-      auto sub = bus.subscribe([&totalCalls](const EditorEvent &) {
-        totalCalls++;
-      });
+      auto sub = bus.subscribe([&totalCalls](const EditorEvent&) { totalCalls++; });
       subscriptions.push_back(sub);
     }
 
@@ -204,7 +191,7 @@ TEST_CASE("EventBus Stress: Many subscribers",
     REQUIRE(duration.count() < 2000);
 
     // Clean up
-    for (auto &sub : subscriptions) {
+    for (auto& sub : subscriptions) {
       bus.unsubscribe(sub);
     }
   }
@@ -219,21 +206,15 @@ TEST_CASE("EventBus Stress: Many subscribers",
     for (int i = 0; i < 500; i++) {
       if (i % 3 == 0) {
         auto sub = bus.subscribe(EditorEventType::SelectionChanged,
-                                [&selectionCount](const EditorEvent &) {
-                                  selectionCount++;
-                                });
+                                 [&selectionCount](const EditorEvent&) { selectionCount++; });
         subscriptions.push_back(sub);
       } else if (i % 3 == 1) {
         auto sub = bus.subscribe(EditorEventType::PropertyChanged,
-                                [&propertyCount](const EditorEvent &) {
-                                  propertyCount++;
-                                });
+                                 [&propertyCount](const EditorEvent&) { propertyCount++; });
         subscriptions.push_back(sub);
       } else {
         auto sub = bus.subscribe(EditorEventType::GraphNodeAdded,
-                                [&graphCount](const EditorEvent &) {
-                                  graphCount++;
-                                });
+                                 [&graphCount](const EditorEvent&) { graphCount++; });
         subscriptions.push_back(sub);
       }
     }
@@ -253,12 +234,12 @@ TEST_CASE("EventBus Stress: Many subscribers",
     }
 
     // Each event type should have ~167 subscribers and ~100 events
-    REQUIRE(selectionCount > 15000);  // ~167 * 100
+    REQUIRE(selectionCount > 15000); // ~167 * 100
     REQUIRE(propertyCount > 15000);
     REQUIRE(graphCount > 15000);
 
     // Clean up
-    for (auto &sub : subscriptions) {
+    for (auto& sub : subscriptions) {
       bus.unsubscribe(sub);
     }
   }
@@ -290,9 +271,7 @@ TEST_CASE("EventBus Stress: Many subscribers",
         // Add a subscriber
         {
           std::lock_guard<std::mutex> lock(subsMutex);
-          auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-            eventCount++;
-          });
+          auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
           activeSubs.push_back(sub);
         }
 
@@ -315,7 +294,7 @@ TEST_CASE("EventBus Stress: Many subscribers",
     REQUIRE(eventCount > 0);
 
     // Clean up remaining subscribers
-    for (auto &sub : activeSubs) {
+    for (auto& sub : activeSubs) {
       bus.unsubscribe(sub);
     }
   }
@@ -325,8 +304,7 @@ TEST_CASE("EventBus Stress: Many subscribers",
 // Long Handler Chains Tests
 // ============================================================================
 
-TEST_CASE("EventBus Stress: Long handler chains",
-          "[unit][editor][eventbus][stress][chains]") {
+TEST_CASE("EventBus Stress: Long handler chains", "[unit][editor][eventbus][stress][chains]") {
   EventBus bus;
 
   SECTION("Handler chain triggering nested events") {
@@ -337,36 +315,34 @@ TEST_CASE("EventBus Stress: Long handler chains",
 
     // Depth 3: Leaf handler
     auto sub3 = bus.subscribe(EditorEventType::ErrorOccurred,
-                              [&depth3Count](const EditorEvent &) {
-                                depth3Count++;
-                              });
+                              [&depth3Count](const EditorEvent&) { depth3Count++; });
 
     // Depth 2: Triggers ErrorOccurred
-    auto sub2 = bus.subscribe(EditorEventType::WarningOccurred,
-                              [&bus, &depth2Count](const EditorEvent &) {
-                                depth2Count++;
-                                ErrorEvent errEvent(EditorEventType::ErrorOccurred);
-                                errEvent.message = "Chain depth 2 -> 3";
-                                bus.publish(errEvent);
-                              });
+    auto sub2 =
+        bus.subscribe(EditorEventType::WarningOccurred, [&bus, &depth2Count](const EditorEvent&) {
+          depth2Count++;
+          ErrorEvent errEvent(EditorEventType::ErrorOccurred);
+          errEvent.message = "Chain depth 2 -> 3";
+          bus.publish(errEvent);
+        });
 
     // Depth 1: Triggers WarningOccurred
-    auto sub1 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&bus, &depth1Count](const EditorEvent &) {
-                                depth1Count++;
-                                ErrorEvent warnEvent(EditorEventType::WarningOccurred);
-                                warnEvent.message = "Chain depth 1 -> 2";
-                                bus.publish(warnEvent);
-                              });
+    auto sub1 =
+        bus.subscribe(EditorEventType::PropertyChanged, [&bus, &depth1Count](const EditorEvent&) {
+          depth1Count++;
+          ErrorEvent warnEvent(EditorEventType::WarningOccurred);
+          warnEvent.message = "Chain depth 1 -> 2";
+          bus.publish(warnEvent);
+        });
 
     // Depth 0: Triggers PropertyChanged
-    auto sub0 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&bus, &depth0Count](const EditorEvent &) {
-                                depth0Count++;
-                                PropertyChangedEvent propEvent;
-                                propEvent.objectId = "test";
-                                bus.publish(propEvent);
-                              });
+    auto sub0 =
+        bus.subscribe(EditorEventType::SelectionChanged, [&bus, &depth0Count](const EditorEvent&) {
+          depth0Count++;
+          PropertyChangedEvent propEvent;
+          propEvent.objectId = "test";
+          bus.publish(propEvent);
+        });
 
     // Trigger the chain
     SelectionChangedEvent selEvent;
@@ -391,15 +367,13 @@ TEST_CASE("EventBus Stress: Long handler chains",
 
     // Secondary handlers (triggered by primary handlers)
     auto sub2 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&secondaryEvents](const EditorEvent &) {
-                                secondaryEvents++;
-                              });
+                              [&secondaryEvents](const EditorEvent&) { secondaryEvents++; });
 
     // Primary handlers that each trigger a new event
     std::vector<EventSubscription> primarySubs;
     for (int i = 0; i < 10; i++) {
       auto sub = bus.subscribe(EditorEventType::SelectionChanged,
-                               [&bus, &primaryEvents](const EditorEvent &) {
+                               [&bus, &primaryEvents](const EditorEvent&) {
                                  primaryEvents++;
                                  PropertyChangedEvent propEvent;
                                  bus.publish(propEvent);
@@ -416,7 +390,7 @@ TEST_CASE("EventBus Stress: Long handler chains",
     REQUIRE(secondaryEvents == 10);
 
     // Clean up
-    for (auto &sub : primarySubs) {
+    for (auto& sub : primarySubs) {
       bus.unsubscribe(sub);
     }
     bus.unsubscribe(sub2);
@@ -428,36 +402,33 @@ TEST_CASE("EventBus Stress: Long handler chains",
 
     // Create chain of 10 handlers, each triggering the next
     for (int depth = 0; depth < 10; depth++) {
-      EditorEventType currentType = static_cast<EditorEventType>(
-          static_cast<u32>(EditorEventType::Custom) + depth);
-      EditorEventType nextType = static_cast<EditorEventType>(
-          static_cast<u32>(EditorEventType::Custom) + depth + 1);
+      EditorEventType currentType =
+          static_cast<EditorEventType>(static_cast<u32>(EditorEventType::Custom) + depth);
+      EditorEventType nextType =
+          static_cast<EditorEventType>(static_cast<u32>(EditorEventType::Custom) + depth + 1);
 
       if (depth < 9) {
         // Intermediate handler - triggers next level
-        auto sub = bus.subscribe(currentType,
-                                 [&bus, &depthCounts, depth, nextType](const EditorEvent &) {
-                                   depthCounts[depth]++;
-                                   StressTestEvent nextEvent;
-                                   nextEvent.type = nextType;
-                                   nextEvent.sequenceNumber = depth + 1;
-                                   bus.publish(nextEvent);
-                                 });
+        auto sub =
+            bus.subscribe(currentType, [&bus, &depthCounts, depth, nextType](const EditorEvent&) {
+              depthCounts[depth]++;
+              StressTestEvent nextEvent;
+              nextEvent.type = nextType;
+              nextEvent.sequenceNumber = depth + 1;
+              bus.publish(nextEvent);
+            });
         subs.push_back(sub);
       } else {
         // Leaf handler - doesn't trigger more events
-        auto sub = bus.subscribe(currentType,
-                                 [&depthCounts, depth](const EditorEvent &) {
-                                   depthCounts[depth]++;
-                                 });
+        auto sub = bus.subscribe(
+            currentType, [&depthCounts, depth](const EditorEvent&) { depthCounts[depth]++; });
         subs.push_back(sub);
       }
     }
 
     // Trigger the chain
     StressTestEvent rootEvent;
-    rootEvent.type = static_cast<EditorEventType>(
-        static_cast<u32>(EditorEventType::Custom));
+    rootEvent.type = static_cast<EditorEventType>(static_cast<u32>(EditorEventType::Custom));
     bus.publish(rootEvent);
 
     // Verify all depths were reached
@@ -466,7 +437,7 @@ TEST_CASE("EventBus Stress: Long handler chains",
     }
 
     // Clean up
-    for (auto &sub : subs) {
+    for (auto& sub : subs) {
       bus.unsubscribe(sub);
     }
   }
@@ -476,15 +447,14 @@ TEST_CASE("EventBus Stress: Long handler chains",
 // Memory Usage Under Load Tests
 // ============================================================================
 
-TEST_CASE("EventBus Stress: Memory usage under load",
-          "[unit][editor][eventbus][stress][memory]") {
+TEST_CASE("EventBus Stress: Memory usage under load", "[unit][editor][eventbus][stress][memory]") {
   EventBus bus;
 
   SECTION("Large payload events") {
     std::atomic<size_t> totalBytesReceived{0};
 
-    auto sub = bus.subscribe([&totalBytesReceived](const EditorEvent &event) {
-      if (auto *largeEvent = dynamic_cast<const LargePayloadEvent *>(&event)) {
+    auto sub = bus.subscribe([&totalBytesReceived](const EditorEvent& event) {
+      if (auto* largeEvent = dynamic_cast<const LargePayloadEvent*>(&event)) {
         totalBytesReceived += largeEvent->data.size();
       }
     });
@@ -492,7 +462,7 @@ TEST_CASE("EventBus Stress: Memory usage under load",
     // Publish 1000 events with 10KB payload each
     for (int i = 0; i < 1000; i++) {
       auto event = std::make_unique<LargePayloadEvent>();
-      event->data.resize(10 * 1024);  // 10KB
+      event->data.resize(10 * 1024); // 10KB
       bus.publish(std::move(event));
     }
 
@@ -511,9 +481,7 @@ TEST_CASE("EventBus Stress: Memory usage under load",
 
       // Add 100 subscribers
       for (int i = 0; i < 100; i++) {
-        auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-          eventCount++;
-        });
+        auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
         subs.push_back(sub);
       }
 
@@ -522,7 +490,7 @@ TEST_CASE("EventBus Stress: Memory usage under load",
       bus.publish(event);
 
       // Remove all subscribers
-      for (auto &sub : subs) {
+      for (auto& sub : subs) {
         bus.unsubscribe(sub);
       }
     }
@@ -532,11 +500,11 @@ TEST_CASE("EventBus Stress: Memory usage under load",
   }
 
   SECTION("Event queue growth and processing") {
-    bus.setSynchronous(false);  // Enable queued mode
+    bus.setSynchronous(false); // Enable queued mode
 
     std::atomic<int> processedEvents{0};
 
-    auto sub = bus.subscribe([&processedEvents](const EditorEvent &) {
+    auto sub = bus.subscribe([&processedEvents](const EditorEvent&) {
       processedEvents++;
       // Simulate slow handler
       std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -558,9 +526,9 @@ TEST_CASE("EventBus Stress: Memory usage under load",
 
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     // With 10µs per event, 5000 events should take ~50ms minimum
-    REQUIRE(duration.count() >= 40);  // Allow some tolerance
+    REQUIRE(duration.count() >= 40); // Allow some tolerance
 
-    bus.setSynchronous(true);  // Restore default
+    bus.setSynchronous(true); // Restore default
     bus.unsubscribe(sub);
   }
 
@@ -569,9 +537,7 @@ TEST_CASE("EventBus Stress: Memory usage under load",
 
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     // Publish many events to fill history buffer multiple times
     // History is limited to MAX_HISTORY_SIZE (100 events)
@@ -594,9 +560,7 @@ TEST_CASE("EventBus Stress: Memory usage under load",
   SECTION("Stress test with all event types") {
     std::atomic<int> totalEvents{0};
 
-    auto sub = bus.subscribe([&totalEvents](const EditorEvent &) {
-      totalEvents++;
-    });
+    auto sub = bus.subscribe([&totalEvents](const EditorEvent&) { totalEvents++; });
 
     // Publish 100 of each standard event type
     for (int i = 0; i < 100; i++) {
@@ -648,9 +612,7 @@ TEST_CASE("EventBus Benchmark: Publishing performance",
 
   BENCHMARK("Publish 1000 events with 1 subscriber") {
     std::atomic<int> count{0};
-    auto sub = bus.subscribe([&count](const EditorEvent &) {
-      count++;
-    });
+    auto sub = bus.subscribe([&count](const EditorEvent&) { count++; });
 
     for (int i = 0; i < 1000; i++) {
       StressTestEvent event;
@@ -666,9 +628,7 @@ TEST_CASE("EventBus Benchmark: Publishing performance",
     std::vector<EventSubscription> subs;
 
     for (int i = 0; i < 100; i++) {
-      subs.push_back(bus.subscribe([&count](const EditorEvent &) {
-        count++;
-      }));
+      subs.push_back(bus.subscribe([&count](const EditorEvent&) { count++; }));
     }
 
     for (int i = 0; i < 1000; i++) {
@@ -676,7 +636,7 @@ TEST_CASE("EventBus Benchmark: Publishing performance",
       bus.publish(event);
     }
 
-    for (auto &sub : subs) {
+    for (auto& sub : subs) {
       bus.unsubscribe(sub);
     }
     return count.load();
@@ -684,10 +644,8 @@ TEST_CASE("EventBus Benchmark: Publishing performance",
 
   BENCHMARK("Publish 1000 events with type filtering") {
     std::atomic<int> count{0};
-    auto sub = bus.subscribe(EditorEventType::SelectionChanged,
-                            [&count](const EditorEvent &) {
-                              count++;
-                            });
+    auto sub =
+        bus.subscribe(EditorEventType::SelectionChanged, [&count](const EditorEvent&) { count++; });
 
     for (int i = 0; i < 1000; i++) {
       SelectionChangedEvent event;
@@ -707,10 +665,10 @@ TEST_CASE("EventBus Benchmark: Subscription performance",
     std::vector<EventSubscription> subs;
 
     for (int i = 0; i < 1000; i++) {
-      subs.push_back(bus.subscribe([](const EditorEvent &) {}));
+      subs.push_back(bus.subscribe([](const EditorEvent&) {}));
     }
 
-    for (auto &sub : subs) {
+    for (auto& sub : subs) {
       bus.unsubscribe(sub);
     }
 
@@ -721,9 +679,7 @@ TEST_CASE("EventBus Benchmark: Subscription performance",
     bus.setSynchronous(false);
 
     std::atomic<int> count{0};
-    auto sub = bus.subscribe([&count](const EditorEvent &) {
-      count++;
-    });
+    auto sub = bus.subscribe([&count](const EditorEvent&) { count++; });
 
     for (int i = 0; i < 1000; i++) {
       auto event = std::make_unique<StressTestEvent>();

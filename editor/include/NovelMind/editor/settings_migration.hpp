@@ -25,10 +25,9 @@ public:
    * @param toVersion Target schema version
    * @return Result indicating success or error with migration details
    */
-  static Result<void> migrate(
-      std::unordered_map<std::string, SettingValue> &values,
-      const std::unordered_map<std::string, SettingDefinition> &definitions,
-      i32 fromVersion, i32 toVersion);
+  static Result<void> migrate(std::unordered_map<std::string, SettingValue>& values,
+                              const std::unordered_map<std::string, SettingDefinition>& definitions,
+                              i32 fromVersion, i32 toVersion);
 
   /**
    * @brief Get the current schema version
@@ -43,9 +42,9 @@ private:
    * @param definitions Map of setting definitions
    * @return Result indicating success or error
    */
-  static Result<void> migrateV1ToV2(
-      std::unordered_map<std::string, SettingValue> &values,
-      const std::unordered_map<std::string, SettingDefinition> &definitions);
+  static Result<void>
+  migrateV1ToV2(std::unordered_map<std::string, SettingValue>& values,
+                const std::unordered_map<std::string, SettingDefinition>& definitions);
 };
 
 } // namespace NovelMind::editor

@@ -10,33 +10,29 @@
 
 namespace NovelMind::editor {
 
-std::string SettingsValidation::validateValue(const std::string &key,
-                                              const SettingValue &value,
-                                              const SettingDefinition &definition) {
+std::string SettingsValidation::validateValue(const std::string& key, const SettingValue& value,
+                                              const SettingDefinition& definition) {
   // Type-specific validation
-  if (definition.type == SettingType::Int ||
-      definition.type == SettingType::IntRange) {
+  if (definition.type == SettingType::Int || definition.type == SettingType::IntRange) {
     try {
       i32 intVal = std::get<i32>(value);
       if (definition.type == SettingType::IntRange) {
         if (intVal < static_cast<i32>(definition.minValue) ||
             intVal > static_cast<i32>(definition.maxValue)) {
-          return "Value out of range [" +
-                 std::to_string(static_cast<i32>(definition.minValue)) + ", " +
-                 std::to_string(static_cast<i32>(definition.maxValue)) + "]";
+          return "Value out of range [" + std::to_string(static_cast<i32>(definition.minValue)) +
+                 ", " + std::to_string(static_cast<i32>(definition.maxValue)) + "]";
         }
       }
     } catch (...) {
       return "Invalid type (expected Int)";
     }
-  } else if (definition.type == SettingType::Float ||
-             definition.type == SettingType::FloatRange) {
+  } else if (definition.type == SettingType::Float || definition.type == SettingType::FloatRange) {
     try {
       f32 floatVal = std::get<f32>(value);
       if (definition.type == SettingType::FloatRange) {
         if (floatVal < definition.minValue || floatVal > definition.maxValue) {
-          return "Value out of range [" + std::to_string(definition.minValue) +
-                 ", " + std::to_string(definition.maxValue) + "]";
+          return "Value out of range [" + std::to_string(definition.minValue) + ", " +
+                 std::to_string(definition.maxValue) + "]";
         }
       }
     } catch (...) {
@@ -48,16 +44,14 @@ std::string SettingsValidation::validateValue(const std::string &key,
     } catch (...) {
       return "Invalid type (expected Bool)";
     }
-  } else if (definition.type == SettingType::String ||
-             definition.type == SettingType::Path ||
+  } else if (definition.type == SettingType::String || definition.type == SettingType::Path ||
              definition.type == SettingType::Enum) {
     try {
       std::string strVal = std::get<std::string>(value);
       if (definition.type == SettingType::Enum) {
         // Check if value is in enum options
-        if (std::find(definition.enumOptions.begin(),
-                      definition.enumOptions.end(),
-                      strVal) == definition.enumOptions.end()) {
+        if (std::find(definition.enumOptions.begin(), definition.enumOptions.end(), strVal) ==
+            definition.enumOptions.end()) {
           return "Invalid enum value";
         }
       }

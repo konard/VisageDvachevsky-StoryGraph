@@ -24,8 +24,7 @@ public:
    * @param clip Output clip (will be created if successful)
    * @return true if successful, false otherwise
    */
-  static bool loadWavFile(const QString &filePath,
-                          std::unique_ptr<VoiceClip> &clip);
+  static bool loadWavFile(const QString& filePath, std::unique_ptr<VoiceClip>& clip);
 
   /**
    * @brief Save a VoiceClip to a WAV file
@@ -33,7 +32,7 @@ public:
    * @param clip Clip to save
    * @return true if successful, false otherwise
    */
-  static bool saveWavFile(const QString &filePath, const VoiceClip *clip);
+  static bool saveWavFile(const QString& filePath, const VoiceClip* clip);
 };
 
 } // namespace NovelMind::editor::qt

@@ -33,8 +33,7 @@ class Camera2D;
  */
 struct ParallaxLayer {
   std::string id;
-  f32 depth =
-      1.0f; // 1.0 = moves with camera, 0.0 = stationary, >1.0 = foreground
+  f32 depth = 1.0f; // 1.0 = moves with camera, 0.0 = stationary, >1.0 = foreground
   f32 offsetX = 0.0f;
   f32 offsetY = 0.0f;
   bool repeatX = false;
@@ -92,14 +91,12 @@ public:
   CameraPath();
   ~CameraPath() = default;
 
-  void addPoint(const CameraPathPoint &point);
+  void addPoint(const CameraPathPoint& point);
   void removePoint(size_t index);
-  void updatePoint(size_t index, const CameraPathPoint &point);
+  void updatePoint(size_t index, const CameraPathPoint& point);
   void clear();
 
-  [[nodiscard]] const std::vector<CameraPathPoint> &getPoints() const {
-    return m_points;
-  }
+  [[nodiscard]] const std::vector<CameraPathPoint>& getPoints() const { return m_points; }
   [[nodiscard]] size_t getPointCount() const { return m_points.size(); }
 
   [[nodiscard]] f32 getTotalDuration() const { return m_totalDuration; }
@@ -149,19 +146,17 @@ public:
 
   // Position
   void setPosition(f32 x, f32 y);
-  void setPosition(const Vec2 &pos);
+  void setPosition(const Vec2& pos);
   [[nodiscard]] Vec2 getPosition() const { return m_position; }
 
   void move(f32 dx, f32 dy);
-  void moveTo(f32 x, f32 y, f32 duration,
-              scene::EaseType easing = scene::EaseType::EaseInOutQuad);
+  void moveTo(f32 x, f32 y, f32 duration, scene::EaseType easing = scene::EaseType::EaseInOutQuad);
 
   // Zoom
   void setZoom(f32 zoom);
   [[nodiscard]] f32 getZoom() const { return m_zoom; }
 
-  void zoomTo(f32 zoom, f32 duration,
-              scene::EaseType easing = scene::EaseType::EaseInOutQuad);
+  void zoomTo(f32 zoom, f32 duration, scene::EaseType easing = scene::EaseType::EaseInOutQuad);
   void zoomAt(f32 zoom, f32 x, f32 y, f32 duration,
               scene::EaseType easing = scene::EaseType::EaseInOutQuad);
 
@@ -169,8 +164,7 @@ public:
   void setRotation(f32 angle);
   [[nodiscard]] f32 getRotation() const { return m_rotation; }
 
-  void rotateTo(f32 angle, f32 duration,
-                scene::EaseType easing = scene::EaseType::EaseInOutQuad);
+  void rotateTo(f32 angle, f32 duration, scene::EaseType easing = scene::EaseType::EaseInOutQuad);
 
   // Combined movement
   void transitionTo(f32 x, f32 y, f32 zoom, f32 rotation, f32 duration,
@@ -181,43 +175,40 @@ public:
   [[nodiscard]] Vec2 getViewportSize() const { return m_viewportSize; }
 
   // Bounds
-  void setBounds(const CameraBounds &bounds);
-  [[nodiscard]] const CameraBounds &getBounds() const { return m_bounds; }
+  void setBounds(const CameraBounds& bounds);
+  [[nodiscard]] const CameraBounds& getBounds() const { return m_bounds; }
 
   void clearBounds();
 
   // Shake
-  void shake(const CameraShake &shake);
+  void shake(const CameraShake& shake);
   void shake(f32 intensity, f32 duration);
   void addTrauma(f32 amount); // Trauma-based shake
   void stopShake();
   [[nodiscard]] bool isShaking() const { return m_shakeActive; }
 
   // Path following
-  void followPath(const CameraPath &path);
+  void followPath(const CameraPath& path);
   void stopPath();
   [[nodiscard]] bool isFollowingPath() const { return m_pathActive; }
 
   // Target following
-  void setTarget(const CameraTarget &target);
+  void setTarget(const CameraTarget& target);
   void clearTarget();
   [[nodiscard]] bool hasTarget() const { return m_hasTarget; }
 
-  using TargetResolver =
-      std::function<std::optional<Vec2>(const std::string &objectId)>;
+  using TargetResolver = std::function<std::optional<Vec2>(const std::string& objectId)>;
   void setTargetResolver(TargetResolver resolver);
 
   // Parallax
-  void addParallaxLayer(const ParallaxLayer &layer);
-  void removeParallaxLayer(const std::string &layerId);
-  void updateParallaxLayer(const std::string &layerId,
-                           const ParallaxLayer &layer);
-  [[nodiscard]] const ParallaxLayer *
-  getParallaxLayer(const std::string &layerId) const;
+  void addParallaxLayer(const ParallaxLayer& layer);
+  void removeParallaxLayer(const std::string& layerId);
+  void updateParallaxLayer(const std::string& layerId, const ParallaxLayer& layer);
+  [[nodiscard]] const ParallaxLayer* getParallaxLayer(const std::string& layerId) const;
   [[nodiscard]] std::vector<ParallaxLayer> getParallaxLayers() const;
 
   // Get offset for a parallax layer
-  [[nodiscard]] Vec2 getParallaxOffset(const std::string &layerId) const;
+  [[nodiscard]] Vec2 getParallaxOffset(const std::string& layerId) const;
   [[nodiscard]] Vec2 getParallaxOffset(f32 depth) const;
 
   // Update
@@ -235,7 +226,7 @@ public:
   [[nodiscard]] Vec2 worldToScreen(f32 worldX, f32 worldY) const;
 
   // Visibility check
-  [[nodiscard]] bool isVisible(const Rect &bounds) const;
+  [[nodiscard]] bool isVisible(const Rect& bounds) const;
   [[nodiscard]] bool isVisible(f32 x, f32 y, f32 width, f32 height) const;
 
   // State
@@ -313,25 +304,20 @@ public:
   ~CameraManager() = default;
 
   // Camera management
-  void addCamera(const std::string &name, std::unique_ptr<Camera2D> camera);
-  void removeCamera(const std::string &name);
-  [[nodiscard]] Camera2D *getCamera(const std::string &name);
+  void addCamera(const std::string& name, std::unique_ptr<Camera2D> camera);
+  void removeCamera(const std::string& name);
+  [[nodiscard]] Camera2D* getCamera(const std::string& name);
   [[nodiscard]] std::vector<std::string> getCameraNames() const;
 
   // Active camera
-  void setActiveCamera(const std::string &name);
-  [[nodiscard]] Camera2D *getActiveCamera();
-  [[nodiscard]] const std::string &getActiveCameraName() const {
-    return m_activeCameraName;
-  }
+  void setActiveCamera(const std::string& name);
+  [[nodiscard]] Camera2D* getActiveCamera();
+  [[nodiscard]] const std::string& getActiveCameraName() const { return m_activeCameraName; }
 
   // Camera transitions
-  void
-  transitionToCamera(const std::string &cameraName, f32 duration,
-                     scene::EaseType easing = scene::EaseType::EaseInOutQuad);
-  [[nodiscard]] bool isTransitioningBetweenCameras() const {
-    return m_isCameraTransition;
-  }
+  void transitionToCamera(const std::string& cameraName, f32 duration,
+                          scene::EaseType easing = scene::EaseType::EaseInOutQuad);
+  [[nodiscard]] bool isTransitioningBetweenCameras() const { return m_isCameraTransition; }
 
   // Update all cameras
   void update(f64 deltaTime);
@@ -364,11 +350,11 @@ CameraShake createExplosionShake();
 CameraShake createHeartbeatShake();
 
 // Pan presets
-void applySlowPan(Camera2D &camera, f32 targetX, f32 targetY);
-void applyCinematicPan(Camera2D &camera, f32 targetX, f32 targetY);
-void applyDramaticZoom(Camera2D &camera, f32 targetZoom);
-void applyCloseUp(Camera2D &camera, f32 x, f32 y);
-void applyEstablishingShot(Camera2D &camera);
+void applySlowPan(Camera2D& camera, f32 targetX, f32 targetY);
+void applyCinematicPan(Camera2D& camera, f32 targetX, f32 targetY);
+void applyDramaticZoom(Camera2D& camera, f32 targetZoom);
+void applyCloseUp(Camera2D& camera, f32 x, f32 y);
+void applyEstablishingShot(Camera2D& camera);
 
 // Parallax presets
 std::vector<ParallaxLayer> createSimpleParallax();

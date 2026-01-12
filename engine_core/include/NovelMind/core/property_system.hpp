@@ -58,11 +58,9 @@ struct Vector2 {
   Vector2() = default;
   Vector2(f32 x_, f32 y_) : x(x_), y(y_) {}
 
-  bool operator==(const Vector2 &other) const {
-    return x == other.x && y == other.y;
-  }
+  bool operator==(const Vector2& other) const { return x == other.x && y == other.y; }
 
-  bool operator!=(const Vector2 &other) const { return !(*this == other); }
+  bool operator!=(const Vector2& other) const { return !(*this == other); }
 };
 
 /**
@@ -76,11 +74,11 @@ struct Vector3 {
   Vector3() = default;
   Vector3(f32 x_, f32 y_, f32 z_) : x(x_), y(y_), z(z_) {}
 
-  bool operator==(const Vector3 &other) const {
+  bool operator==(const Vector3& other) const {
     return x == other.x && y == other.y && z == other.z;
   }
 
-  bool operator!=(const Vector3 &other) const { return !(*this == other); }
+  bool operator!=(const Vector3& other) const { return !(*this == other); }
 };
 
 /**
@@ -123,15 +121,14 @@ struct Color {
       return (static_cast<u32>(ri) << 24) | (static_cast<u32>(gi) << 16) |
              (static_cast<u32>(bi) << 8) | static_cast<u32>(ai);
     }
-    return (static_cast<u32>(ri) << 16) | (static_cast<u32>(gi) << 8) |
-           static_cast<u32>(bi);
+    return (static_cast<u32>(ri) << 16) | (static_cast<u32>(gi) << 8) | static_cast<u32>(bi);
   }
 
-  bool operator==(const Color &other) const {
+  bool operator==(const Color& other) const {
     return r == other.r && g == other.g && b == other.b && a == other.a;
   }
 
-  bool operator!=(const Color &other) const { return !(*this == other); }
+  bool operator!=(const Color& other) const { return !(*this == other); }
 };
 
 /**
@@ -143,16 +140,16 @@ struct AssetRef {
   std::string uuid;      // Optional UUID for asset tracking
 
   AssetRef() = default;
-  AssetRef(const std::string &type, const std::string &assetPath)
+  AssetRef(const std::string& type, const std::string& assetPath)
       : assetType(type), path(assetPath) {}
 
   [[nodiscard]] bool isEmpty() const { return path.empty(); }
 
-  bool operator==(const AssetRef &other) const {
+  bool operator==(const AssetRef& other) const {
     return assetType == other.assetType && path == other.path;
   }
 
-  bool operator!=(const AssetRef &other) const { return !(*this == other); }
+  bool operator!=(const AssetRef& other) const { return !(*this == other); }
 };
 
 /**
@@ -163,15 +160,13 @@ struct CurveRef {
   std::string curveName;
 
   CurveRef() = default;
-  explicit CurveRef(const std::string &id) : curveId(id) {}
+  explicit CurveRef(const std::string& id) : curveId(id) {}
 
   [[nodiscard]] bool isEmpty() const { return curveId.empty(); }
 
-  bool operator==(const CurveRef &other) const {
-    return curveId == other.curveId;
-  }
+  bool operator==(const CurveRef& other) const { return curveId == other.curveId; }
 
-  bool operator!=(const CurveRef &other) const { return !(*this == other); }
+  bool operator!=(const CurveRef& other) const { return !(*this == other); }
 };
 
 /**
@@ -183,11 +178,11 @@ struct EnumValue {
   std::vector<std::pair<i32, std::string>> options;
 
   EnumValue() = default;
-  EnumValue(i32 val, const std::string &n) : value(val), name(n) {}
+  EnumValue(i32 val, const std::string& n) : value(val), name(n) {}
 
-  bool operator==(const EnumValue &other) const { return value == other.value; }
+  bool operator==(const EnumValue& other) const { return value == other.value; }
 
-  bool operator!=(const EnumValue &other) const { return !(*this == other); }
+  bool operator!=(const EnumValue& other) const { return !(*this == other); }
 };
 
 /**
@@ -196,16 +191,15 @@ struct EnumValue {
  * the objects, this marker is used to indicate "multiple values" in the UI.
  */
 struct MultipleValues {
-  bool operator==(const MultipleValues &) const { return true; }
-  bool operator!=(const MultipleValues &) const { return false; }
+  bool operator==(const MultipleValues&) const { return true; }
+  bool operator!=(const MultipleValues&) const { return false; }
 };
 
 /**
  * @brief Property value variant type
  */
-using PropertyValue =
-    std::variant<std::nullptr_t, bool, i32, i64, f32, f64, std::string, Vector2,
-                 Vector3, Color, AssetRef, CurveRef, EnumValue, MultipleValues>;
+using PropertyValue = std::variant<std::nullptr_t, bool, i32, i64, f32, f64, std::string, Vector2,
+                                   Vector3, Color, AssetRef, CurveRef, EnumValue, MultipleValues>;
 
 /**
  * @brief Property type enumeration
@@ -315,7 +309,7 @@ struct PropertyMeta {
   i32 order = 0;           // Display order within category
 
   PropertyMeta() = default;
-  PropertyMeta(const std::string &n, const std::string &display, PropertyType t)
+  PropertyMeta(const std::string& n, const std::string& display, PropertyType t)
       : name(n), displayName(display), type(t) {}
 };
 
@@ -329,45 +323,43 @@ public:
   /**
    * @brief Get property value from object
    */
-  [[nodiscard]] virtual PropertyValue getValue(const void *object) const = 0;
+  [[nodiscard]] virtual PropertyValue getValue(const void* object) const = 0;
 
   /**
    * @brief Set property value on object
    */
-  virtual void setValue(void *object, const PropertyValue &value) const = 0;
+  virtual void setValue(void* object, const PropertyValue& value) const = 0;
 
   /**
    * @brief Get the property metadata
    */
-  [[nodiscard]] virtual const PropertyMeta &getMeta() const = 0;
+  [[nodiscard]] virtual const PropertyMeta& getMeta() const = 0;
 };
 
 /**
  * @brief Type-safe property accessor implementation
  */
-template <typename T, typename PropType>
-class PropertyAccessor : public IPropertyAccessor {
+template <typename T, typename PropType> class PropertyAccessor : public IPropertyAccessor {
 public:
-  using Getter = std::function<PropType(const T &)>;
-  using Setter = std::function<void(T &, const PropType &)>;
+  using Getter = std::function<PropType(const T&)>;
+  using Setter = std::function<void(T&, const PropType&)>;
 
-  PropertyAccessor(const PropertyMeta &meta, Getter getter, Setter setter)
-      : m_meta(meta), m_getter(std::move(getter)), m_setter(std::move(setter)) {
-  }
+  PropertyAccessor(const PropertyMeta& meta, Getter getter, Setter setter)
+      : m_meta(meta), m_getter(std::move(getter)), m_setter(std::move(setter)) {}
 
-  [[nodiscard]] PropertyValue getValue(const void *object) const override {
-    const auto *obj = static_cast<const T *>(object);
+  [[nodiscard]] PropertyValue getValue(const void* object) const override {
+    const auto* obj = static_cast<const T*>(object);
     return PropertyValue(m_getter(*obj));
   }
 
-  void setValue(void *object, const PropertyValue &value) const override {
-    auto *obj = static_cast<T *>(object);
-    if (auto *val = std::get_if<PropType>(&value)) {
+  void setValue(void* object, const PropertyValue& value) const override {
+    auto* obj = static_cast<T*>(object);
+    if (auto* val = std::get_if<PropType>(&value)) {
       m_setter(*obj, *val);
     }
   }
 
-  [[nodiscard]] const PropertyMeta &getMeta() const override { return m_meta; }
+  [[nodiscard]] const PropertyMeta& getMeta() const override { return m_meta; }
 
 private:
   PropertyMeta m_meta;
@@ -380,7 +372,7 @@ private:
  */
 class TypeInfo {
 public:
-  explicit TypeInfo(const std::string &typeName);
+  explicit TypeInfo(const std::string& typeName);
   ~TypeInfo();
 
   /**
@@ -391,25 +383,22 @@ public:
   /**
    * @brief Get all property accessors
    */
-  [[nodiscard]] const std::vector<std::unique_ptr<IPropertyAccessor>> &
-  getProperties() const;
+  [[nodiscard]] const std::vector<std::unique_ptr<IPropertyAccessor>>& getProperties() const;
 
   /**
    * @brief Find property by name
    */
-  [[nodiscard]] const IPropertyAccessor *
-  findProperty(const std::string &name) const;
+  [[nodiscard]] const IPropertyAccessor* findProperty(const std::string& name) const;
 
   /**
    * @brief Get type name
    */
-  [[nodiscard]] const std::string &getTypeName() const { return m_typeName; }
+  [[nodiscard]] const std::string& getTypeName() const { return m_typeName; }
 
   /**
    * @brief Get properties grouped by category
    */
-  [[nodiscard]] std::vector<
-      std::pair<std::string, std::vector<const IPropertyAccessor *>>>
+  [[nodiscard]] std::vector<std::pair<std::string, std::vector<const IPropertyAccessor*>>>
   getPropertiesByCategory() const;
 
 private:
@@ -426,23 +415,22 @@ public:
   /**
    * @brief Get singleton instance
    */
-  static PropertyRegistry &instance();
+  static PropertyRegistry& instance();
 
   /**
    * @brief Register type information
    */
-  void registerType(const std::type_index &type,
-                    std::unique_ptr<TypeInfo> info);
+  void registerType(const std::type_index& type, std::unique_ptr<TypeInfo> info);
 
   /**
    * @brief Get type information
    */
-  [[nodiscard]] const TypeInfo *getTypeInfo(const std::type_index &type) const;
+  [[nodiscard]] const TypeInfo* getTypeInfo(const std::type_index& type) const;
 
   /**
    * @brief Template version for convenience
    */
-  template <typename T> [[nodiscard]] const TypeInfo *getTypeInfo() const {
+  template <typename T> [[nodiscard]] const TypeInfo* getTypeInfo() const {
     return getTypeInfo(std::type_index(typeid(T)));
   }
 
@@ -463,21 +451,20 @@ private:
  */
 template <typename T> class TypeInfoBuilder {
 public:
-  explicit TypeInfoBuilder(const std::string &typeName)
+  explicit TypeInfoBuilder(const std::string& typeName)
       : m_info(std::make_unique<TypeInfo>(typeName)) {}
 
   /**
    * @brief Add a property with getter/setter
    */
   template <typename PropType>
-  TypeInfoBuilder &property(const std::string &name,
-                            const std::string &displayName,
-                            std::function<PropType(const T &)> getter,
-                            std::function<void(T &, const PropType &)> setter) {
+  TypeInfoBuilder& property(const std::string& name, const std::string& displayName,
+                            std::function<PropType(const T&)> getter,
+                            std::function<void(T&, const PropType&)> setter) {
     PropertyMeta meta(name, displayName, deducePropertyType<PropType>());
     meta.order = m_orderCounter++;
-    m_info->addProperty(std::make_unique<PropertyAccessor<T, PropType>>(
-        meta, std::move(getter), std::move(setter)));
+    m_info->addProperty(std::make_unique<PropertyAccessor<T, PropType>>(meta, std::move(getter),
+                                                                        std::move(setter)));
     return *this;
   }
 
@@ -485,24 +472,21 @@ public:
    * @brief Add a property with metadata
    */
   template <typename PropType>
-  TypeInfoBuilder &property(PropertyMeta meta,
-                            std::function<PropType(const T &)> getter,
-                            std::function<void(T &, const PropType &)> setter) {
+  TypeInfoBuilder& property(PropertyMeta meta, std::function<PropType(const T&)> getter,
+                            std::function<void(T&, const PropType&)> setter) {
     meta.type = deducePropertyType<PropType>();
     if (meta.order == 0) {
       meta.order = m_orderCounter++;
     }
-    m_info->addProperty(std::make_unique<PropertyAccessor<T, PropType>>(
-        meta, std::move(getter), std::move(setter)));
+    m_info->addProperty(std::make_unique<PropertyAccessor<T, PropType>>(meta, std::move(getter),
+                                                                        std::move(setter)));
     return *this;
   }
 
   /**
    * @brief Build and register the type info
    */
-  void build() {
-    PropertyRegistry::instance().registerType<T>(std::move(m_info));
-  }
+  void build() { PropertyRegistry::instance().registerType<T>(std::move(m_info)); }
 
   /**
    * @brief Get the built TypeInfo without registering
@@ -551,8 +535,7 @@ private:
 /**
  * @brief Helper macro for simple property registration
  */
-#define NM_PROPERTY(name, getter, setter)                                      \
-  .property(#name, #name, getter, setter)
+#define NM_PROPERTY(name, getter, setter) .property(#name, #name, getter, setter)
 
 /**
  * @brief Utility functions for property value conversion
@@ -561,29 +544,27 @@ namespace PropertyUtils {
 /**
  * @brief Convert property value to string
  */
-std::string toString(const PropertyValue &value);
+std::string toString(const PropertyValue& value);
 
 /**
  * @brief Parse property value from string
  */
-PropertyValue fromString(PropertyType type, const std::string &str);
+PropertyValue fromString(PropertyType type, const std::string& str);
 
 /**
  * @brief Get property type name
  */
-const char *getTypeName(PropertyType type);
+const char* getTypeName(PropertyType type);
 
 /**
  * @brief Validate property value against constraints
  */
-bool validate(const PropertyValue &value, const PropertyMeta &meta,
-              std::string *error = nullptr);
+bool validate(const PropertyValue& value, const PropertyMeta& meta, std::string* error = nullptr);
 
 /**
  * @brief Clamp value to range constraint
  */
-PropertyValue clampToRange(const PropertyValue &value,
-                           const RangeConstraint &range);
+PropertyValue clampToRange(const PropertyValue& value, const RangeConstraint& range);
 
 } // namespace PropertyUtils
 

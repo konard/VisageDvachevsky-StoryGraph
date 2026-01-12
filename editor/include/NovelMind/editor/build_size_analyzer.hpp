@@ -26,15 +26,7 @@ namespace NovelMind::editor {
 /**
  * @brief Asset category for analysis
  */
-enum class AssetCategory : u8 {
-  Images,
-  Audio,
-  Scripts,
-  Fonts,
-  Video,
-  Data,
-  Other
-};
+enum class AssetCategory : u8 { Images, Audio, Scripts, Fonts, Video, Data, Other };
 
 /**
  * @brief Compression type
@@ -190,9 +182,8 @@ public:
   virtual ~IBuildSizeListener() = default;
 
   virtual void onAnalysisStarted() = 0;
-  virtual void onAnalysisProgress(const std::string &currentTask,
-                                  f32 progress) = 0;
-  virtual void onAnalysisCompleted(const BuildSizeAnalysis &analysis) = 0;
+  virtual void onAnalysisProgress(const std::string& currentTask, f32 progress) = 0;
+  virtual void onAnalysisCompleted(const BuildSizeAnalysis& analysis) = 0;
 };
 
 /**
@@ -213,12 +204,12 @@ public:
   /**
    * @brief Set project path
    */
-  void setProjectPath(const std::string &projectPath);
+  void setProjectPath(const std::string& projectPath);
 
   /**
    * @brief Set configuration
    */
-  void setConfig(const BuildSizeAnalysisConfig &config);
+  void setConfig(const BuildSizeAnalysisConfig& config);
 
   /**
    * @brief Run full analysis
@@ -228,26 +219,24 @@ public:
   /**
    * @brief Get last analysis result
    */
-  [[nodiscard]] const BuildSizeAnalysis &getAnalysis() const {
-    return m_analysis;
-  }
+  [[nodiscard]] const BuildSizeAnalysis& getAnalysis() const { return m_analysis; }
 
   /**
    * @brief Add listener
    */
-  void addListener(IBuildSizeListener *listener);
+  void addListener(IBuildSizeListener* listener);
 
   /**
    * @brief Remove listener
    */
-  void removeListener(IBuildSizeListener *listener);
+  void removeListener(IBuildSizeListener* listener);
 
   // Optimization actions
 
   /**
    * @brief Apply an optimization suggestion
    */
-  Result<void> applyOptimization(const OptimizationSuggestion &suggestion);
+  Result<void> applyOptimization(const OptimizationSuggestion& suggestion);
 
   /**
    * @brief Apply all auto-fixable optimizations
@@ -274,27 +263,25 @@ public:
   /**
    * @brief Export analysis as HTML report
    */
-  Result<void> exportAsHtml(const std::string &outputPath) const;
+  Result<void> exportAsHtml(const std::string& outputPath) const;
 
   /**
    * @brief Export analysis as CSV
    */
-  Result<void> exportAsCsv(const std::string &outputPath) const;
+  Result<void> exportAsCsv(const std::string& outputPath) const;
 
 private:
-  void reportProgress(const std::string &task, f32 progress);
+  void reportProgress(const std::string& task, f32 progress);
 
   std::string m_projectPath;
   BuildSizeAnalysisConfig m_config;
   BuildSizeAnalysis m_analysis;
 
   std::unordered_map<std::string, std::vector<std::string>>
-      m_hashToFiles; // For duplicate detection
-  std::unordered_map<std::string, size_t>
-      m_pathToAssetIndex; // For O(1) asset lookup by path
+      m_hashToFiles;                                          // For duplicate detection
+  std::unordered_map<std::string, size_t> m_pathToAssetIndex; // For O(1) asset lookup by path
 
-  std::vector<IBuildSizeListener *> m_listeners;
+  std::vector<IBuildSizeListener*> m_listeners;
 };
-
 
 } // namespace NovelMind::editor

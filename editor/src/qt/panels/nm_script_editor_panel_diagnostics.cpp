@@ -56,9 +56,8 @@
 
 namespace NovelMind::editor::qt {
 
-QList<NMScriptIssue>
-NMScriptEditorPanel::validateSource(const QString &path,
-                                    const QString &source) const {
+QList<NMScriptIssue> NMScriptEditorPanel::validateSource(const QString& path,
+                                                         const QString& source) const {
   QList<NMScriptIssue> out;
   using namespace scripting;
 
@@ -66,9 +65,9 @@ NMScriptEditorPanel::validateSource(const QString &path,
 
   Lexer lexer;
   auto lexResult = lexer.tokenize(src);
-  for (const auto &err : lexer.getErrors()) {
-    out.push_back({path, static_cast<int>(err.location.line),
-                   QString::fromStdString(err.message), "error"});
+  for (const auto& err : lexer.getErrors()) {
+    out.push_back(
+        {path, static_cast<int>(err.location.line), QString::fromStdString(err.message), "error"});
   }
   if (!lexResult.isOk()) {
     return out;
@@ -76,9 +75,9 @@ NMScriptEditorPanel::validateSource(const QString &path,
 
   Parser parser;
   auto parseResult = parser.parse(lexResult.value());
-  for (const auto &err : parser.getErrors()) {
-    out.push_back({path, static_cast<int>(err.location.line),
-                   QString::fromStdString(err.message), "error"});
+  for (const auto& err : parser.getErrors()) {
+    out.push_back(
+        {path, static_cast<int>(err.location.line), QString::fromStdString(err.message), "error"});
   }
   if (!parseResult.isOk()) {
     return out;
@@ -91,22 +90,22 @@ NMScriptEditorPanel::validateSource(const QString &path,
     validator.setValidateAssets(true);
   }
   auto validation = validator.validate(parseResult.value());
-  for (const auto &err : validation.errors.all()) {
+  for (const auto& err : validation.errors.all()) {
     QString severity = "info";
     if (err.severity == Severity::Warning) {
       severity = "warning";
     } else if (err.severity == Severity::Error) {
       severity = "error";
     }
-    out.push_back({path, static_cast<int>(err.span.start.line),
-                   QString::fromStdString(err.message), severity});
+    out.push_back({path, static_cast<int>(err.span.start.line), QString::fromStdString(err.message),
+                   severity});
   }
 
   return out;
 }
 
 void NMScriptEditorPanel::runDiagnostics() {
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
@@ -126,7 +125,7 @@ void NMScriptEditorPanel::runDiagnostics() {
 }
 
 void NMScriptEditorPanel::onQuickFixRequested() {
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (!editor) {
     return;
   }
@@ -138,29 +137,28 @@ void NMScriptEditorPanel::onQuickFixRequested() {
   }
 }
 
-void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix> &fixes) {
-  auto *editor = currentEditor();
+void NMScriptEditorPanel::showQuickFixMenu(const QList<QuickFix>& fixes) {
+  auto* editor = currentEditor();
   if (!editor || fixes.isEmpty()) {
     return;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   QMenu menu(this);
-  menu.setStyleSheet(
-      QString("QMenu { background-color: %1; color: %2; border: 1px solid %3; }"
-              "QMenu::item { padding: 6px 20px; }"
-              "QMenu::item:selected { background-color: %4; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.borderLight.name())
-          .arg(palette.accentPrimary.name()));
+  menu.setStyleSheet(QString("QMenu { background-color: %1; color: %2; border: 1px solid %3; }"
+                             "QMenu::item { padding: 6px 20px; }"
+                             "QMenu::item:selected { background-color: %4; }")
+                         .arg(palette.bgMedium.name())
+                         .arg(palette.textPrimary.name())
+                         .arg(palette.borderLight.name())
+                         .arg(palette.accentPrimary.name()));
 
-  for (const auto &fix : fixes) {
-    QAction *action = menu.addAction(fix.title);
+  for (const auto& fix : fixes) {
+    QAction* action = menu.addAction(fix.title);
     action->setToolTip(fix.description);
     connect(action, &QAction::triggered, this, [this, fix]() {
-      if (auto *ed = currentEditor()) {
+      if (auto* ed = currentEditor()) {
         ed->applyQuickFix(fix);
         m_diagnosticsTimer.start();
       }

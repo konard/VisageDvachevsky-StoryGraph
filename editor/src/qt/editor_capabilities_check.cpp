@@ -14,7 +14,7 @@
 
 namespace NovelMind::editor::qt {
 
-const char *getPanelName(RequiredPanel panel) {
+const char* getPanelName(RequiredPanel panel) {
   switch (panel) {
   case RequiredPanel::SceneView:
     return "SceneView";
@@ -89,7 +89,7 @@ static std::string getCategoryForPanel(RequiredPanel panel) {
   return "Unknown";
 }
 
-static std::string getCategoryForAction(const char *actionId) {
+static std::string getCategoryForAction(const char* actionId) {
   std::string id(actionId);
   if (id.find("Audio:") == 0 || id.find("Voice:") == 0) {
     return "Audio";
@@ -118,8 +118,7 @@ static std::string getCategoryForAction(const char *actionId) {
   return "Unknown";
 }
 
-CapabilityCheckResult checkPanelAvailable(const NMMainWindow *window,
-                                          RequiredPanel panel) {
+CapabilityCheckResult checkPanelAvailable(const NMMainWindow* window, RequiredPanel panel) {
   CapabilityCheckResult result;
   result.category = getCategoryForPanel(panel);
   result.capability = std::string("Panel:") + getPanelName(panel);
@@ -195,8 +194,7 @@ CapabilityCheckResult checkPanelAvailable(const NMMainWindow *window,
   return result;
 }
 
-CapabilityCheckResult checkActionAvailable(const NMMainWindow *window,
-                                           const char *actionId) {
+CapabilityCheckResult checkActionAvailable(const NMMainWindow* window, const char* actionId) {
   CapabilityCheckResult result;
   result.category = getCategoryForAction(actionId);
   result.capability = actionId;
@@ -211,41 +209,32 @@ CapabilityCheckResult checkActionAvailable(const NMMainWindow *window,
   // In a more complete implementation, we would check specific action bindings
   std::string id(actionId);
 
-  if (id == RequiredActions::AUDIO_PREVIEW ||
-      id == RequiredActions::AUDIO_VOLUME ||
+  if (id == RequiredActions::AUDIO_PREVIEW || id == RequiredActions::AUDIO_VOLUME ||
       id == RequiredActions::VOICE_BINDING) {
     result.available = (window->voiceManagerPanel() != nullptr);
-  } else if (id == RequiredActions::LOC_EDIT ||
-             id == RequiredActions::LOC_IMPORT ||
-             id == RequiredActions::LOC_EXPORT ||
-             id == RequiredActions::LOC_MISSING) {
+  } else if (id == RequiredActions::LOC_EDIT || id == RequiredActions::LOC_IMPORT ||
+             id == RequiredActions::LOC_EXPORT || id == RequiredActions::LOC_MISSING) {
     result.available = (window->localizationPanel() != nullptr);
-  } else if (id == RequiredActions::ANIM_KEYFRAME ||
-             id == RequiredActions::ANIM_EASING ||
+  } else if (id == RequiredActions::ANIM_KEYFRAME || id == RequiredActions::ANIM_EASING ||
              id == RequiredActions::ANIM_PREVIEW) {
     result.available = (window->timelinePanel() != nullptr);
-  } else if (id == RequiredActions::SCENE_CREATE ||
-             id == RequiredActions::SCENE_DELETE ||
+  } else if (id == RequiredActions::SCENE_CREATE || id == RequiredActions::SCENE_DELETE ||
              id == RequiredActions::SCENE_TRANSFORM) {
     result.available = (window->sceneViewPanel() != nullptr);
   } else if (id == RequiredActions::SCENE_PROPERTY) {
     result.available = (window->inspectorPanel() != nullptr);
-  } else if (id == RequiredActions::SCRIPT_EDIT ||
-             id == RequiredActions::SCRIPT_COMPILE) {
+  } else if (id == RequiredActions::SCRIPT_EDIT || id == RequiredActions::SCRIPT_COMPILE) {
     result.available = (window->scriptEditorPanel() != nullptr);
   } else if (id == RequiredActions::SCRIPT_DEBUG) {
     result.available = (window->storyGraphPanel() != nullptr);
-  } else if (id == RequiredActions::PROJECT_CREATE ||
-             id == RequiredActions::PROJECT_OPEN ||
+  } else if (id == RequiredActions::PROJECT_CREATE || id == RequiredActions::PROJECT_OPEN ||
              id == RequiredActions::PROJECT_SAVE) {
     // These are menu actions, always available
     result.available = true;
-  } else if (id == RequiredActions::PLAY_START ||
-             id == RequiredActions::PLAY_PAUSE ||
+  } else if (id == RequiredActions::PLAY_START || id == RequiredActions::PLAY_PAUSE ||
              id == RequiredActions::PLAY_STEP) {
     result.available = (window->playToolbarPanel() != nullptr);
-  } else if (id == RequiredActions::DIAG_SHOW ||
-             id == RequiredActions::DIAG_NAVIGATE) {
+  } else if (id == RequiredActions::DIAG_SHOW || id == RequiredActions::DIAG_NAVIGATE) {
     result.available = (window->diagnosticsPanel() != nullptr);
   } else {
     result.available = false;
@@ -259,8 +248,7 @@ CapabilityCheckResult checkActionAvailable(const NMMainWindow *window,
   return result;
 }
 
-EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
-                                                 bool strict) {
+EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow* window, bool strict) {
   EditorCapabilitiesReport report;
   report.totalChecks = 0;
   report.passedChecks = 0;
@@ -269,15 +257,12 @@ EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
 
   // Check all required panels
   const RequiredPanel panels[] = {
-      RequiredPanel::SceneView,       RequiredPanel::Hierarchy,
-      RequiredPanel::Inspector,       RequiredPanel::StoryGraph,
-      RequiredPanel::ScriptEditor,    RequiredPanel::AssetBrowser,
-      RequiredPanel::Timeline,        RequiredPanel::CurveEditor,
-      RequiredPanel::VoiceManager,    RequiredPanel::VoiceStudio,
-      RequiredPanel::RecordingStudio, RequiredPanel::Localization,
-      RequiredPanel::Console,         RequiredPanel::Diagnostics,
-      RequiredPanel::DebugOverlay,    RequiredPanel::PlayToolbar,
-      RequiredPanel::ProjectSettings, RequiredPanel::BuildSettings};
+      RequiredPanel::SceneView,   RequiredPanel::Hierarchy,       RequiredPanel::Inspector,
+      RequiredPanel::StoryGraph,  RequiredPanel::ScriptEditor,    RequiredPanel::AssetBrowser,
+      RequiredPanel::Timeline,    RequiredPanel::CurveEditor,     RequiredPanel::VoiceManager,
+      RequiredPanel::VoiceStudio, RequiredPanel::RecordingStudio, RequiredPanel::Localization,
+      RequiredPanel::Console,     RequiredPanel::Diagnostics,     RequiredPanel::DebugOverlay,
+      RequiredPanel::PlayToolbar, RequiredPanel::ProjectSettings, RequiredPanel::BuildSettings};
 
   for (auto panel : panels) {
     auto result = checkPanelAvailable(window, panel);
@@ -288,28 +273,27 @@ EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
     } else {
       report.failedChecks++;
       if (strict) {
-        core::Logger::instance().error("CAPABILITY CHECK FAILED: Panel " +
-                                       result.capability + " is not available");
+        core::Logger::instance().error("CAPABILITY CHECK FAILED: Panel " + result.capability +
+                                       " is not available");
         assert(false && "Missing required panel");
       }
     }
   }
 
   // Check all required actions
-  const char *actions[] = {
-      RequiredActions::AUDIO_PREVIEW,   RequiredActions::AUDIO_VOLUME,
-      RequiredActions::VOICE_BINDING,   RequiredActions::LOC_EDIT,
-      RequiredActions::LOC_IMPORT,      RequiredActions::LOC_EXPORT,
-      RequiredActions::LOC_MISSING,     RequiredActions::ANIM_KEYFRAME,
-      RequiredActions::ANIM_EASING,     RequiredActions::ANIM_PREVIEW,
-      RequiredActions::SCENE_CREATE,    RequiredActions::SCENE_DELETE,
-      RequiredActions::SCENE_TRANSFORM, RequiredActions::SCENE_PROPERTY,
-      RequiredActions::SCRIPT_EDIT,     RequiredActions::SCRIPT_COMPILE,
-      RequiredActions::SCRIPT_DEBUG,    RequiredActions::PROJECT_CREATE,
-      RequiredActions::PROJECT_OPEN,    RequiredActions::PROJECT_SAVE,
-      RequiredActions::PLAY_START,      RequiredActions::PLAY_PAUSE,
-      RequiredActions::PLAY_STEP,       RequiredActions::DIAG_SHOW,
-      RequiredActions::DIAG_NAVIGATE};
+  const char* actions[] = {RequiredActions::AUDIO_PREVIEW,   RequiredActions::AUDIO_VOLUME,
+                           RequiredActions::VOICE_BINDING,   RequiredActions::LOC_EDIT,
+                           RequiredActions::LOC_IMPORT,      RequiredActions::LOC_EXPORT,
+                           RequiredActions::LOC_MISSING,     RequiredActions::ANIM_KEYFRAME,
+                           RequiredActions::ANIM_EASING,     RequiredActions::ANIM_PREVIEW,
+                           RequiredActions::SCENE_CREATE,    RequiredActions::SCENE_DELETE,
+                           RequiredActions::SCENE_TRANSFORM, RequiredActions::SCENE_PROPERTY,
+                           RequiredActions::SCRIPT_EDIT,     RequiredActions::SCRIPT_COMPILE,
+                           RequiredActions::SCRIPT_DEBUG,    RequiredActions::PROJECT_CREATE,
+                           RequiredActions::PROJECT_OPEN,    RequiredActions::PROJECT_SAVE,
+                           RequiredActions::PLAY_START,      RequiredActions::PLAY_PAUSE,
+                           RequiredActions::PLAY_STEP,       RequiredActions::DIAG_SHOW,
+                           RequiredActions::DIAG_NAVIGATE};
 
   for (auto actionId : actions) {
     auto result = checkActionAvailable(window, actionId);
@@ -320,8 +304,8 @@ EditorCapabilitiesReport checkEditorCapabilities(const NMMainWindow *window,
     } else {
       report.failedChecks++;
       if (strict) {
-        core::Logger::instance().error("CAPABILITY CHECK FAILED: Action " +
-                                       result.capability + " is not available");
+        core::Logger::instance().error("CAPABILITY CHECK FAILED: Action " + result.capability +
+                                       " is not available");
         assert(false && "Missing required action");
       }
     }
@@ -341,7 +325,7 @@ std::string EditorCapabilitiesReport::toString() const {
 
   if (failedChecks > 0) {
     ss << "--- Failed Capabilities ---\n";
-    for (const auto &result : results) {
+    for (const auto& result : results) {
       if (!result.available) {
         ss << "  [FAIL] " << result.category << "/" << result.capability;
         if (!result.details.empty()) {
@@ -363,26 +347,25 @@ std::string EditorCapabilitiesReport::toString() const {
   return ss.str();
 }
 
-void logCapabilitiesReport(const EditorCapabilitiesReport &report) {
-  auto &logger = core::Logger::instance();
+void logCapabilitiesReport(const EditorCapabilitiesReport& report) {
+  auto& logger = core::Logger::instance();
 
   logger.info("=== Editor Capabilities Check ===");
   logger.info("Total: " + std::to_string(report.totalChecks) +
               ", Passed: " + std::to_string(report.passedChecks) +
               ", Failed: " + std::to_string(report.failedChecks));
 
-  for (const auto &result : report.results) {
+  for (const auto& result : report.results) {
     if (!result.available) {
-      logger.warning("[MISSING] " + result.category + "/" + result.capability +
-                     ": " + result.details);
+      logger.warning("[MISSING] " + result.category + "/" + result.capability + ": " +
+                     result.details);
     }
   }
 
   if (report.allMandatoryPassed()) {
     logger.info("All mandatory capabilities available.");
   } else {
-    logger.warning(
-        "Some capabilities missing! Check docs/gui_core_parity_matrix.md");
+    logger.warning("Some capabilities missing! Check docs/gui_core_parity_matrix.md");
   }
 }
 

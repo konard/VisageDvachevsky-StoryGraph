@@ -32,14 +32,14 @@ std::string generateUniqueAssetId() {
   return ss.str();
 }
 
-std::string getFileExtension(const std::string &path) {
+std::string getFileExtension(const std::string& path) {
   fs::path p(path);
   std::string ext = p.extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
   return ext;
 }
 
-const char *assetTypeToString(AssetType type) {
+const char* assetTypeToString(AssetType type) {
   switch (type) {
   case AssetType::Image:
     return "image";
@@ -60,7 +60,7 @@ const char *assetTypeToString(AssetType type) {
   }
 }
 
-AssetType stringToAssetType(const std::string &str) {
+AssetType stringToAssetType(const std::string& str) {
   if (str == "image")
     return AssetType::Image;
   if (str == "audio")
@@ -88,18 +88,18 @@ std::vector<std::string> ImageImporter::getSupportedExtensions() const {
   return {".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp", ".tga"};
 }
 
-AssetType ImageImporter::getAssetType() const { return AssetType::Image; }
-
-bool ImageImporter::canImport(const std::string &path) const {
-  std::string ext = getFileExtension(path);
-  auto extensions = getSupportedExtensions();
-  return std::find(extensions.begin(), extensions.end(), ext) !=
-         extensions.end();
+AssetType ImageImporter::getAssetType() const {
+  return AssetType::Image;
 }
 
-Result<AssetMetadata> ImageImporter::import(const std::string &sourcePath,
-                                            const std::string &destPath,
-                                            AssetDatabase *database) {
+bool ImageImporter::canImport(const std::string& path) const {
+  std::string ext = getFileExtension(path);
+  auto extensions = getSupportedExtensions();
+  return std::find(extensions.begin(), extensions.end(), ext) != extensions.end();
+}
+
+Result<AssetMetadata> ImageImporter::import(const std::string& sourcePath,
+                                            const std::string& destPath, AssetDatabase* database) {
   if (!fs::exists(sourcePath)) {
     std::string errorMsg = "Failed to import image: Source file not found\n\n";
     errorMsg += "What went wrong: The image file '" + sourcePath + "' does not exist.\n\n";
@@ -131,16 +131,14 @@ Result<AssetMetadata> ImageImporter::import(const std::string &sourcePath,
       static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
                            fs::last_write_time(sourcePath).time_since_epoch())
                            .count());
-  metadata.importedTime =
-      static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count());
+  metadata.importedTime = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                               std::chrono::system_clock::now().time_since_epoch())
+                                               .count());
   metadata.fileSize = fs::file_size(sourcePath);
 
   // Generate thumbnail
   if (database) {
-    std::string thumbnailPath =
-        database->getThumbnailsPath() + "/" + metadata.id + ".png";
+    std::string thumbnailPath = database->getThumbnailsPath() + "/" + metadata.id + ".png";
     generateThumbnail(sourcePath, thumbnailPath);
     metadata.thumbnailPath = thumbnailPath;
   }
@@ -148,8 +146,8 @@ Result<AssetMetadata> ImageImporter::import(const std::string &sourcePath,
   return Result<AssetMetadata>::ok(std::move(metadata));
 }
 
-Result<AssetMetadata> ImageImporter::reimport(const AssetMetadata &existing,
-                                              AssetDatabase *database) {
+Result<AssetMetadata> ImageImporter::reimport(const AssetMetadata& existing,
+                                              AssetDatabase* database) {
   return import(existing.sourcePath, existing.importedPath, database);
 }
 
@@ -165,16 +163,16 @@ std::string ImageImporter::getDefaultSettingsJson() const {
     })";
 }
 
-void ImageImporter::setSettings(const ImageImportSettings &settings) {
+void ImageImporter::setSettings(const ImageImportSettings& settings) {
   m_settings = settings;
 }
 
-const ImageImportSettings &ImageImporter::getSettings() const {
+const ImageImportSettings& ImageImporter::getSettings() const {
   return m_settings;
 }
 
-Result<void> ImageImporter::processImage(const std::string &sourcePath,
-                                         const std::string &destPath) {
+Result<void> ImageImporter::processImage(const std::string& sourcePath,
+                                         const std::string& destPath) {
   try {
     if (sourcePath == destPath) {
       return Result<void>::ok();
@@ -183,7 +181,7 @@ Result<void> ImageImporter::processImage(const std::string &sourcePath,
     // In production, would use stb_image/stb_image_write for processing
     fs::copy(sourcePath, destPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
-  } catch (const fs::filesystem_error &e) {
+  } catch (const fs::filesystem_error& e) {
     std::string errorMsg = "Failed to process image file\n\n";
     errorMsg += "What went wrong: Could not copy or convert the image file.\n";
     errorMsg += "Source: " + sourcePath + "\n";
@@ -198,23 +196,21 @@ Result<void> ImageImporter::processImage(const std::string &sourcePath,
   }
 }
 
-Result<void>
-ImageImporter::generateThumbnail(const std::string &sourcePath,
-                                 const std::string &thumbnailPath) {
+Result<void> ImageImporter::generateThumbnail(const std::string& sourcePath,
+                                              const std::string& thumbnailPath) {
   // Generate a scaled thumbnail if possible, otherwise fall back to copy.
   try {
     fs::create_directories(fs::path(thumbnailPath).parent_path());
     QImage image(QString::fromStdString(sourcePath));
     if (!image.isNull()) {
-      QImage scaled =
-          image.scaled(256, 256, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      QImage scaled = image.scaled(256, 256, Qt::KeepAspectRatio, Qt::SmoothTransformation);
       if (scaled.save(QString::fromStdString(thumbnailPath))) {
         return Result<void>::ok();
       }
     }
     fs::copy(sourcePath, thumbnailPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
-  } catch (const fs::filesystem_error &e) {
+  } catch (const fs::filesystem_error& e) {
     std::string errorMsg = "Failed to generate thumbnail for image\n\n";
     errorMsg += "What went wrong: Could not create a thumbnail preview of the image.\n";
     errorMsg += "Source: " + sourcePath + "\n";
@@ -238,18 +234,19 @@ std::vector<std::string> AudioImporter::getSupportedExtensions() const {
   return {".wav", ".mp3", ".ogg", ".flac", ".aiff", ".opus"};
 }
 
-AssetType AudioImporter::getAssetType() const { return AssetType::Audio; }
-
-bool AudioImporter::canImport(const std::string &path) const {
-  std::string ext = getFileExtension(path);
-  auto extensions = getSupportedExtensions();
-  return std::find(extensions.begin(), extensions.end(), ext) !=
-         extensions.end();
+AssetType AudioImporter::getAssetType() const {
+  return AssetType::Audio;
 }
 
-Result<AssetMetadata> AudioImporter::import(const std::string &sourcePath,
-                                            const std::string &destPath,
-                                            AssetDatabase * /*database*/) {
+bool AudioImporter::canImport(const std::string& path) const {
+  std::string ext = getFileExtension(path);
+  auto extensions = getSupportedExtensions();
+  return std::find(extensions.begin(), extensions.end(), ext) != extensions.end();
+}
+
+Result<AssetMetadata> AudioImporter::import(const std::string& sourcePath,
+                                            const std::string& destPath,
+                                            AssetDatabase* /*database*/) {
   if (!fs::exists(sourcePath)) {
     std::string errorMsg = "Failed to import audio: Source file not found\n\n";
     errorMsg += "What went wrong: The audio file '" + sourcePath + "' does not exist.\n\n";
@@ -282,17 +279,16 @@ Result<AssetMetadata> AudioImporter::import(const std::string &sourcePath,
       static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
                            fs::last_write_time(sourcePath).time_since_epoch())
                            .count());
-  metadata.importedTime =
-      static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count());
+  metadata.importedTime = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                               std::chrono::system_clock::now().time_since_epoch())
+                                               .count());
   metadata.fileSize = fs::file_size(sourcePath);
 
   return Result<AssetMetadata>::ok(std::move(metadata));
 }
 
-Result<AssetMetadata> AudioImporter::reimport(const AssetMetadata &existing,
-                                              AssetDatabase *database) {
+Result<AssetMetadata> AudioImporter::reimport(const AssetMetadata& existing,
+                                              AssetDatabase* database) {
   return import(existing.sourcePath, existing.importedPath, database);
 }
 
@@ -307,16 +303,16 @@ std::string AudioImporter::getDefaultSettingsJson() const {
     })";
 }
 
-void AudioImporter::setSettings(const AudioImportSettings &settings) {
+void AudioImporter::setSettings(const AudioImportSettings& settings) {
   m_settings = settings;
 }
 
-const AudioImportSettings &AudioImporter::getSettings() const {
+const AudioImportSettings& AudioImporter::getSettings() const {
   return m_settings;
 }
 
-Result<void> AudioImporter::processAudio(const std::string &sourcePath,
-                                         const std::string &destPath) {
+Result<void> AudioImporter::processAudio(const std::string& sourcePath,
+                                         const std::string& destPath) {
   try {
     if (sourcePath == destPath) {
       return Result<void>::ok();
@@ -326,9 +322,8 @@ Result<void> AudioImporter::processAudio(const std::string &sourcePath,
     // processing
     fs::copy(sourcePath, destPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
-  } catch (const fs::filesystem_error &e) {
-    return Result<void>::error(std::string("Failed to process audio: ") +
-                               e.what());
+  } catch (const fs::filesystem_error& e) {
+    return Result<void>::error(std::string("Failed to process audio: ") + e.what());
   }
 }
 
@@ -342,21 +337,21 @@ std::vector<std::string> FontImporter::getSupportedExtensions() const {
   return {".ttf", ".otf", ".woff", ".woff2"};
 }
 
-AssetType FontImporter::getAssetType() const { return AssetType::Font; }
-
-bool FontImporter::canImport(const std::string &path) const {
-  std::string ext = getFileExtension(path);
-  auto extensions = getSupportedExtensions();
-  return std::find(extensions.begin(), extensions.end(), ext) !=
-         extensions.end();
+AssetType FontImporter::getAssetType() const {
+  return AssetType::Font;
 }
 
-Result<AssetMetadata> FontImporter::import(const std::string &sourcePath,
-                                           const std::string &destPath,
-                                           AssetDatabase * /*database*/) {
+bool FontImporter::canImport(const std::string& path) const {
+  std::string ext = getFileExtension(path);
+  auto extensions = getSupportedExtensions();
+  return std::find(extensions.begin(), extensions.end(), ext) != extensions.end();
+}
+
+Result<AssetMetadata> FontImporter::import(const std::string& sourcePath,
+                                           const std::string& destPath,
+                                           AssetDatabase* /*database*/) {
   if (!fs::exists(sourcePath)) {
-    return Result<AssetMetadata>::error("Source file does not exist: " +
-                                        sourcePath);
+    return Result<AssetMetadata>::error("Source file does not exist: " + sourcePath);
   }
 
   // Create destination directory if needed
@@ -380,17 +375,16 @@ Result<AssetMetadata> FontImporter::import(const std::string &sourcePath,
       static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
                            fs::last_write_time(sourcePath).time_since_epoch())
                            .count());
-  metadata.importedTime =
-      static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count());
+  metadata.importedTime = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                               std::chrono::system_clock::now().time_since_epoch())
+                                               .count());
   metadata.fileSize = fs::file_size(sourcePath);
 
   return Result<AssetMetadata>::ok(std::move(metadata));
 }
 
-Result<AssetMetadata> FontImporter::reimport(const AssetMetadata &existing,
-                                             AssetDatabase *database) {
+Result<AssetMetadata> FontImporter::reimport(const AssetMetadata& existing,
+                                             AssetDatabase* database) {
   return import(existing.sourcePath, existing.importedPath, database);
 }
 
@@ -404,16 +398,15 @@ std::string FontImporter::getDefaultSettingsJson() const {
     })";
 }
 
-void FontImporter::setSettings(const FontImportSettings &settings) {
+void FontImporter::setSettings(const FontImportSettings& settings) {
   m_settings = settings;
 }
 
-const FontImportSettings &FontImporter::getSettings() const {
+const FontImportSettings& FontImporter::getSettings() const {
   return m_settings;
 }
 
-Result<void> FontImporter::processFont(const std::string &sourcePath,
-                                       const std::string &destPath) {
+Result<void> FontImporter::processFont(const std::string& sourcePath, const std::string& destPath) {
   try {
     if (sourcePath == destPath) {
       return Result<void>::ok();
@@ -422,9 +415,8 @@ Result<void> FontImporter::processFont(const std::string &sourcePath,
     // In production, would use FreeType to generate font atlases
     fs::copy(sourcePath, destPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
-  } catch (const fs::filesystem_error &e) {
-    return Result<void>::error(std::string("Failed to process font: ") +
-                               e.what());
+  } catch (const fs::filesystem_error& e) {
+    return Result<void>::error(std::string("Failed to process font: ") + e.what());
   }
 }
 
@@ -445,7 +437,7 @@ AssetDatabase::~AssetDatabase() {
   }
 }
 
-Result<void> AssetDatabase::initialize(const std::string &projectPath) {
+Result<void> AssetDatabase::initialize(const std::string& projectPath) {
   if (m_initialized) {
     close();
   }
@@ -456,9 +448,8 @@ Result<void> AssetDatabase::initialize(const std::string &projectPath) {
   try {
     fs::create_directories(getAssetsPath());
     fs::create_directories(getThumbnailsPath());
-  } catch (const fs::filesystem_error &e) {
-    return Result<void>::error(std::string("Failed to create directories: ") +
-                               e.what());
+  } catch (const fs::filesystem_error& e) {
+    return Result<void>::error(std::string("Failed to create directories: ") + e.what());
   }
 
   // Try to load existing database
@@ -491,7 +482,7 @@ Result<void> AssetDatabase::save() {
     file << "# Version: 1.0\n";
     file << "asset_count=" << m_assets.size() << "\n";
 
-    for (const auto &[id, metadata] : m_assets) {
+    for (const auto& [id, metadata] : m_assets) {
       file << "\n[asset:" << id << "]\n";
       file << "name=" << metadata.name << "\n";
       file << "source=" << metadata.sourcePath << "\n";
@@ -500,9 +491,8 @@ Result<void> AssetDatabase::save() {
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save database: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save database: ") + e.what());
   }
 }
 
@@ -534,15 +524,14 @@ void AssetDatabase::close() {
 // Asset Registration
 // ============================================================================
 
-void AssetDatabase::registerAsset(const AssetMetadata &metadata) {
+void AssetDatabase::registerAsset(const AssetMetadata& metadata) {
   m_assets[metadata.id] = metadata;
   m_pathToId[metadata.importedPath] = metadata.id;
 
-  fireAssetChanged(
-      {AssetChangeType::Added, metadata.id, metadata.importedPath, ""});
+  fireAssetChanged({AssetChangeType::Added, metadata.id, metadata.importedPath, ""});
 }
 
-void AssetDatabase::unregisterAsset(const std::string &assetId) {
+void AssetDatabase::unregisterAsset(const std::string& assetId) {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
     std::string path = it->second.importedPath;
@@ -553,19 +542,17 @@ void AssetDatabase::unregisterAsset(const std::string &assetId) {
   }
 }
 
-void AssetDatabase::updateAsset(const AssetMetadata &metadata) {
+void AssetDatabase::updateAsset(const AssetMetadata& metadata) {
   m_assets[metadata.id] = metadata;
 
-  fireAssetChanged(
-      {AssetChangeType::Modified, metadata.id, metadata.importedPath, ""});
+  fireAssetChanged({AssetChangeType::Modified, metadata.id, metadata.importedPath, ""});
 }
 
 // ============================================================================
 // Asset Lookup
 // ============================================================================
 
-std::optional<AssetMetadata>
-AssetDatabase::getAsset(const std::string &assetId) const {
+std::optional<AssetMetadata> AssetDatabase::getAsset(const std::string& assetId) const {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
     return it->second;
@@ -573,8 +560,7 @@ AssetDatabase::getAsset(const std::string &assetId) const {
   return std::nullopt;
 }
 
-std::optional<AssetMetadata>
-AssetDatabase::getAssetByPath(const std::string &path) const {
+std::optional<AssetMetadata> AssetDatabase::getAssetByPath(const std::string& path) const {
   auto idIt = m_pathToId.find(path);
   if (idIt != m_pathToId.end()) {
     return getAsset(idIt->second);
@@ -582,10 +568,9 @@ AssetDatabase::getAssetByPath(const std::string &path) const {
   return std::nullopt;
 }
 
-std::vector<AssetMetadata>
-AssetDatabase::getAssetsByType(AssetType type) const {
+std::vector<AssetMetadata> AssetDatabase::getAssetsByType(AssetType type) const {
   std::vector<AssetMetadata> result;
-  for (const auto &[id, metadata] : m_assets) {
+  for (const auto& [id, metadata] : m_assets) {
     if (metadata.type == type) {
       result.push_back(metadata);
     }
@@ -593,29 +578,24 @@ AssetDatabase::getAssetsByType(AssetType type) const {
   return result;
 }
 
-std::vector<AssetMetadata>
-AssetDatabase::getAssetsByTag(const std::string &tag) const {
+std::vector<AssetMetadata> AssetDatabase::getAssetsByTag(const std::string& tag) const {
   std::vector<AssetMetadata> result;
-  for (const auto &[id, metadata] : m_assets) {
-    if (std::find(metadata.tags.begin(), metadata.tags.end(), tag) !=
-        metadata.tags.end()) {
+  for (const auto& [id, metadata] : m_assets) {
+    if (std::find(metadata.tags.begin(), metadata.tags.end(), tag) != metadata.tags.end()) {
       result.push_back(metadata);
     }
   }
   return result;
 }
 
-std::vector<AssetMetadata>
-AssetDatabase::searchAssets(const std::string &query) const {
+std::vector<AssetMetadata> AssetDatabase::searchAssets(const std::string& query) const {
   std::vector<AssetMetadata> result;
   std::string lowerQuery = query;
-  std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(),
-                 ::tolower);
+  std::transform(lowerQuery.begin(), lowerQuery.end(), lowerQuery.begin(), ::tolower);
 
-  for (const auto &[id, metadata] : m_assets) {
+  for (const auto& [id, metadata] : m_assets) {
     std::string lowerName = metadata.name;
-    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
-                   ::tolower);
+    std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
 
     if (lowerName.find(lowerQuery) != std::string::npos) {
       result.push_back(metadata);
@@ -624,8 +604,7 @@ AssetDatabase::searchAssets(const std::string &query) const {
   return result;
 }
 
-const std::unordered_map<std::string, AssetMetadata> &
-AssetDatabase::getAllAssets() const {
+const std::unordered_map<std::string, AssetMetadata>& AssetDatabase::getAllAssets() const {
   return m_assets;
 }
 
@@ -633,20 +612,17 @@ AssetDatabase::getAllAssets() const {
 // Import Operations
 // ============================================================================
 
-Result<AssetMetadata>
-AssetDatabase::importAsset(const std::string &sourcePath) {
+Result<AssetMetadata> AssetDatabase::importAsset(const std::string& sourcePath) {
   std::string fileName = fs::path(sourcePath).filename().string();
   std::string destPath = getAssetsPath() + "/" + fileName;
   return importAssetToPath(sourcePath, destPath);
 }
 
-Result<AssetMetadata>
-AssetDatabase::importAssetToPath(const std::string &sourcePath,
-                                 const std::string &destPath) {
-  IAssetImporter *importer = getImporterForFile(sourcePath);
+Result<AssetMetadata> AssetDatabase::importAssetToPath(const std::string& sourcePath,
+                                                       const std::string& destPath) {
+  IAssetImporter* importer = getImporterForFile(sourcePath);
   if (!importer) {
-    return Result<AssetMetadata>::error("No importer found for file: " +
-                                        sourcePath);
+    return Result<AssetMetadata>::error("No importer found for file: " + sourcePath);
   }
 
   auto result = importer->import(sourcePath, destPath, this);
@@ -666,13 +642,13 @@ AssetDatabase::importAssetToPath(const std::string &sourcePath,
   return result;
 }
 
-Result<AssetMetadata> AssetDatabase::reimportAsset(const std::string &assetId) {
+Result<AssetMetadata> AssetDatabase::reimportAsset(const std::string& assetId) {
   auto metadata = getAsset(assetId);
   if (!metadata) {
     return Result<AssetMetadata>::error("Asset not found: " + assetId);
   }
 
-  IAssetImporter *importer = getImporterForFile(metadata->sourcePath);
+  IAssetImporter* importer = getImporterForFile(metadata->sourcePath);
   if (!importer) {
     return Result<AssetMetadata>::error("No importer found for asset");
   }
@@ -680,8 +656,7 @@ Result<AssetMetadata> AssetDatabase::reimportAsset(const std::string &assetId) {
   auto result = importer->reimport(*metadata, this);
   if (result.isOk()) {
     updateAsset(result.value());
-    fireAssetChanged({AssetChangeType::Reimported, assetId,
-                      result.value().importedPath, ""});
+    fireAssetChanged({AssetChangeType::Reimported, assetId, result.value().importedPath, ""});
   }
 
   return result;
@@ -689,7 +664,7 @@ Result<AssetMetadata> AssetDatabase::reimportAsset(const std::string &assetId) {
 
 Result<void> AssetDatabase::reimportAllOfType(AssetType type) {
   auto assets = getAssetsByType(type);
-  for (const auto &asset : assets) {
+  for (const auto& asset : assets) {
     auto result = reimportAsset(asset.id);
     if (!result.isOk()) {
       // Log error but continue with other assets
@@ -699,15 +674,15 @@ Result<void> AssetDatabase::reimportAllOfType(AssetType type) {
 }
 
 void AssetDatabase::checkForChanges() {
-  for (auto &[id, metadata] : m_assets) {
+  for (auto& [id, metadata] : m_assets) {
     if (!fs::exists(metadata.sourcePath)) {
       continue;
     }
 
-    u64 currentModTime = static_cast<u64>(
-        std::chrono::duration_cast<std::chrono::seconds>(
-            fs::last_write_time(metadata.sourcePath).time_since_epoch())
-            .count());
+    u64 currentModTime =
+        static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                             fs::last_write_time(metadata.sourcePath).time_since_epoch())
+                             .count());
 
     if (currentModTime != metadata.sourceModifiedTime) {
       // File has changed, reimport
@@ -718,15 +693,15 @@ void AssetDatabase::checkForChanges() {
 
 std::vector<std::string> AssetDatabase::getOutdatedAssets() const {
   std::vector<std::string> outdated;
-  for (const auto &[id, metadata] : m_assets) {
+  for (const auto& [id, metadata] : m_assets) {
     if (!fs::exists(metadata.sourcePath)) {
       continue;
     }
 
-    u64 currentModTime = static_cast<u64>(
-        std::chrono::duration_cast<std::chrono::seconds>(
-            fs::last_write_time(metadata.sourcePath).time_since_epoch())
-            .count());
+    u64 currentModTime =
+        static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                             fs::last_write_time(metadata.sourcePath).time_since_epoch())
+                             .count());
 
     if (currentModTime != metadata.sourceModifiedTime) {
       outdated.push_back(id);
@@ -739,11 +714,10 @@ std::vector<std::string> AssetDatabase::getOutdatedAssets() const {
 // Dependency Tracking
 // ============================================================================
 
-void AssetDatabase::addDependency(const std::string &assetId,
-                                  const std::string &dependsOnId) {
+void AssetDatabase::addDependency(const std::string& assetId, const std::string& dependsOnId) {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
-    auto &deps = it->second.dependsOn;
+    auto& deps = it->second.dependsOn;
     if (std::find(deps.begin(), deps.end(), dependsOnId) == deps.end()) {
       deps.push_back(dependsOnId);
     }
@@ -751,30 +725,28 @@ void AssetDatabase::addDependency(const std::string &assetId,
 
   auto depIt = m_assets.find(dependsOnId);
   if (depIt != m_assets.end()) {
-    auto &refs = depIt->second.referencedBy;
+    auto& refs = depIt->second.referencedBy;
     if (std::find(refs.begin(), refs.end(), assetId) == refs.end()) {
       refs.push_back(assetId);
     }
   }
 }
 
-void AssetDatabase::removeDependency(const std::string &assetId,
-                                     const std::string &dependsOnId) {
+void AssetDatabase::removeDependency(const std::string& assetId, const std::string& dependsOnId) {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
-    auto &deps = it->second.dependsOn;
+    auto& deps = it->second.dependsOn;
     deps.erase(std::remove(deps.begin(), deps.end(), dependsOnId), deps.end());
   }
 
   auto depIt = m_assets.find(dependsOnId);
   if (depIt != m_assets.end()) {
-    auto &refs = depIt->second.referencedBy;
+    auto& refs = depIt->second.referencedBy;
     refs.erase(std::remove(refs.begin(), refs.end(), assetId), refs.end());
   }
 }
 
-std::vector<std::string>
-AssetDatabase::getDependents(const std::string &assetId) const {
+std::vector<std::string> AssetDatabase::getDependents(const std::string& assetId) const {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
     return it->second.referencedBy;
@@ -782,8 +754,7 @@ AssetDatabase::getDependents(const std::string &assetId) const {
   return {};
 }
 
-std::vector<std::string>
-AssetDatabase::getDependencies(const std::string &assetId) const {
+std::vector<std::string> AssetDatabase::getDependencies(const std::string& assetId) const {
   auto it = m_assets.find(assetId);
   if (it != m_assets.end()) {
     return it->second.dependsOn;
@@ -807,9 +778,8 @@ void AssetDatabase::registerImporter(std::unique_ptr<IAssetImporter> importer) {
   m_importers.push_back(std::move(importer));
 }
 
-IAssetImporter *
-AssetDatabase::getImporterForFile(const std::string &path) const {
-  for (const auto &importer : m_importers) {
+IAssetImporter* AssetDatabase::getImporterForFile(const std::string& path) const {
+  for (const auto& importer : m_importers) {
     if (importer->canImport(path)) {
       return importer.get();
     }
@@ -837,34 +807,34 @@ std::string AssetDatabase::getDatabasePath() const {
 // Private Helpers
 // ============================================================================
 
-void AssetDatabase::fireAssetChanged(const AssetChangeEvent &event) {
+void AssetDatabase::fireAssetChanged(const AssetChangeEvent& event) {
   if (m_onAssetChanged) {
     m_onAssetChanged(event);
   }
 }
 
-std::string AssetDatabase::generateAssetId(const std::string & /*path*/) {
+std::string AssetDatabase::generateAssetId(const std::string& /*path*/) {
   return generateUniqueAssetId();
 }
 
-std::string AssetDatabase::computeChecksum(const std::string &path) {
+std::string AssetDatabase::computeChecksum(const std::string& path) {
   // In production, would compute actual checksum (MD5, SHA, etc.)
   // For now, return empty
   (void)path;
   return "";
 }
 
-AssetType AssetDatabase::detectAssetType(const std::string &path) const {
-  IAssetImporter *importer = getImporterForFile(path);
+AssetType AssetDatabase::detectAssetType(const std::string& path) const {
+  IAssetImporter* importer = getImporterForFile(path);
   if (importer) {
     return importer->getAssetType();
   }
   return AssetType::Unknown;
 }
 
-void AssetDatabase::scanDirectory(const std::string &path) {
+void AssetDatabase::scanDirectory(const std::string& path) {
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(path)) {
+    for (const auto& entry : fs::recursive_directory_iterator(path)) {
       if (entry.is_regular_file()) {
         std::string filePath = entry.path().string();
         if (!getAssetByPath(filePath)) {
@@ -873,7 +843,7 @@ void AssetDatabase::scanDirectory(const std::string &path) {
         }
       }
     }
-  } catch (const fs::filesystem_error &) {
+  } catch (const fs::filesystem_error&) {
     // Ignore filesystem errors during scan
   }
 }

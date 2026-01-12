@@ -33,15 +33,13 @@
 namespace NovelMind::editor::qt {
 
 // Key validation: allows alphanumeric, underscore, dot, dash
-const QRegularExpression NMLocalizationPanel::s_keyValidationRegex(
-    QStringLiteral("^[A-Za-z0-9_.-]+$"));
+const QRegularExpression
+    NMLocalizationPanel::s_keyValidationRegex(QStringLiteral("^[A-Za-z0-9_.-]+$"));
 
 NMLocalizationPanel::NMLocalizationPanel(QWidget* parent)
-    : NMDockPanel("Localization Manager", parent)
-    , m_dataModel(m_localization)
-    , m_ioHelper(m_localization, m_dataModel)
-    , m_searchHelper(m_dataModel)
-    , m_uiHelper(m_dataModel, m_localization) {}
+    : NMDockPanel("Localization Manager", parent), m_dataModel(m_localization),
+      m_ioHelper(m_localization, m_dataModel), m_searchHelper(m_dataModel),
+      m_uiHelper(m_dataModel, m_localization) {}
 
 NMLocalizationPanel::~NMLocalizationPanel() = default;
 

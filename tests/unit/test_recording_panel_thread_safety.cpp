@@ -87,8 +87,7 @@ TEST_CASE("Recording panel concurrent callback safety", "[recording][threading]"
 // Mock-based Thread Safety Tests
 // ============================================================================
 
-TEST_CASE("Recording panel with mock audio player - no threading issues",
-          "[recording][mock]") {
+TEST_CASE("Recording panel with mock audio player - no threading issues", "[recording][mock]") {
   // MockAudioPlayer doesn't spawn threads, so callbacks are synchronous
   // This is safe for testing business logic without threading concerns
   // Note: Actual MockAudioPlayer tests are in abstraction_interface_tests

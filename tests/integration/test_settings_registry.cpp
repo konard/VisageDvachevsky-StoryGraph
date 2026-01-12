@@ -472,6 +472,7 @@ TEST_CASE("NMSettingsRegistry - Helper functions", "[settings_registry]") {
 
   SECTION("settingScopeToString") {
     CHECK(std::string(settingScopeToString(SettingScope::User)).find("User") != std::string::npos);
-    CHECK(std::string(settingScopeToString(SettingScope::Project)).find("Project") != std::string::npos);
+    CHECK(std::string(settingScopeToString(SettingScope::Project)).find("Project") !=
+          std::string::npos);
   }
 }

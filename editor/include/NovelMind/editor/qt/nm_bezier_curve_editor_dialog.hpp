@@ -33,10 +33,10 @@ class NMBezierCurveView : public QGraphicsView {
   Q_OBJECT
 
 public:
-  explicit NMBezierCurveView(QGraphicsScene *scene, QWidget *parent = nullptr);
+  explicit NMBezierCurveView(QGraphicsScene* scene, QWidget* parent = nullptr);
 
 protected:
-  void resizeEvent(QResizeEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
 
 signals:
   void viewResized();
@@ -51,8 +51,7 @@ class NMBezierControlPointItem : public QObject, public QGraphicsEllipseItem {
 public:
   enum PointType { StartPoint, EndPoint, ControlPoint1, ControlPoint2 };
 
-  NMBezierControlPointItem(PointType type, qreal x, qreal y,
-                           QGraphicsItem *parent = nullptr);
+  NMBezierControlPointItem(PointType type, qreal x, qreal y, QGraphicsItem* parent = nullptr);
 
   [[nodiscard]] PointType pointType() const { return m_type; }
   void setDraggable(bool draggable) { m_draggable = draggable; }
@@ -62,11 +61,11 @@ signals:
   void dragFinished();
 
 protected:
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
   PointType m_type;
@@ -106,8 +105,7 @@ public:
    * @param keyframe Keyframe to edit (used to initialize control points)
    * @param parent Parent widget
    */
-  explicit NMBezierCurveEditorDialog(const Keyframe *keyframe,
-                                     QWidget *parent = nullptr);
+  explicit NMBezierCurveEditorDialog(const Keyframe* keyframe, QWidget* parent = nullptr);
 
   /**
    * @brief Get the result after dialog is accepted
@@ -131,12 +129,10 @@ public:
    * @param outResult Output result if accepted
    * @return true if user accepted, false if cancelled
    */
-  static bool getEasing(QWidget *parent, const Keyframe *keyframe,
-                        BezierCurveResult &outResult);
+  static bool getEasing(QWidget* parent, const Keyframe* keyframe, BezierCurveResult& outResult);
 
 private slots:
-  void onControlPointMoved(NMBezierControlPointItem::PointType type,
-                           QPointF newPos);
+  void onControlPointMoved(NMBezierControlPointItem::PointType type, QPointF newPos);
   void onPresetLinear();
   void onPresetEaseIn();
   void onPresetEaseOut();
@@ -146,39 +142,39 @@ private slots:
 
 private:
   void buildUi();
-  void setupPresetButtons(QWidget *container);
-  void setupSpinBoxes(QWidget *container);
+  void setupPresetButtons(QWidget* container);
+  void setupSpinBoxes(QWidget* container);
   void updateCurveVisualization();
   void updateSpinBoxesFromControlPoints();
-  void setControlPoints(const QPointF &cp1, const QPointF &cp2);
+  void setControlPoints(const QPointF& cp1, const QPointF& cp2);
 
   // Coordinate conversion
   QPointF normalizedToScene(qreal x, qreal y) const;
-  QPointF sceneToNormalized(const QPointF &scenePos) const;
+  QPointF sceneToNormalized(const QPointF& scenePos) const;
   QRectF usableRect() const;
 
   // UI components
-  NMBezierCurveView *m_curveView = nullptr;
-  QGraphicsScene *m_curveScene = nullptr;
+  NMBezierCurveView* m_curveView = nullptr;
+  QGraphicsScene* m_curveScene = nullptr;
 
   // Control point items
-  NMBezierControlPointItem *m_cp1Item = nullptr;
-  NMBezierControlPointItem *m_cp2Item = nullptr;
-  QGraphicsLineItem *m_handleLine1 = nullptr;
-  QGraphicsLineItem *m_handleLine2 = nullptr;
-  QGraphicsPathItem *m_curvePathItem = nullptr;
+  NMBezierControlPointItem* m_cp1Item = nullptr;
+  NMBezierControlPointItem* m_cp2Item = nullptr;
+  QGraphicsLineItem* m_handleLine1 = nullptr;
+  QGraphicsLineItem* m_handleLine2 = nullptr;
+  QGraphicsPathItem* m_curvePathItem = nullptr;
 
   // Spinboxes for precise control
-  QDoubleSpinBox *m_cp1XSpin = nullptr;
-  QDoubleSpinBox *m_cp1YSpin = nullptr;
-  QDoubleSpinBox *m_cp2XSpin = nullptr;
-  QDoubleSpinBox *m_cp2YSpin = nullptr;
+  QDoubleSpinBox* m_cp1XSpin = nullptr;
+  QDoubleSpinBox* m_cp1YSpin = nullptr;
+  QDoubleSpinBox* m_cp2XSpin = nullptr;
+  QDoubleSpinBox* m_cp2YSpin = nullptr;
 
   // Preset buttons
-  QPushButton *m_linearBtn = nullptr;
-  QPushButton *m_easeInBtn = nullptr;
-  QPushButton *m_easeOutBtn = nullptr;
-  QPushButton *m_easeInOutBtn = nullptr;
+  QPushButton* m_linearBtn = nullptr;
+  QPushButton* m_easeInBtn = nullptr;
+  QPushButton* m_easeOutBtn = nullptr;
+  QPushButton* m_easeInOutBtn = nullptr;
 
   // Control points (normalized 0-1)
   QPointF m_controlPoint1{0.42f, 0.0f}; // Default ease-in-out

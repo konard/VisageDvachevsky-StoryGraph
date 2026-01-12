@@ -19,7 +19,7 @@ struct QtAppFixture {
   QtAppFixture() {
     if (!QCoreApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test")};
+      static char* argv[] = {const_cast<char*>("test")};
       static QCoreApplication app(argc, argv);
     }
   }

@@ -138,8 +138,7 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Enum,
       SettingScope::User,
       std::string("default"),
-      {"default", "story_focused", "scene_focused", "script_focused",
-       "minimal"},
+      {"default", "story_focused", "scene_focused", "script_focused", "minimal"},
       0.0f,  // minValue
       1.0f,  // maxValue
       {},    // validator
@@ -277,13 +276,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::String,
       SettingScope::User,
       std::string("monospace"),
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"font", "editor"}     // tags
+      {},                // enumOptions
+      0.0f,              // minValue
+      1.0f,              // maxValue
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   registerSetting({
@@ -295,12 +294,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       14,
       {},
-      8.0f,   // min
-      32.0f,  // max
-      {},     // validator
-      false,  // requiresRestart
-      false,  // isAdvanced
-      {"font", "editor"}     // tags
+      8.0f,              // min
+      32.0f,             // max
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   registerSetting({
@@ -311,13 +310,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"font", "editor"}     // tags
+      {},                // enumOptions
+      0.0f,              // minValue
+      1.0f,              // maxValue
+      {},                // validator
+      false,             // requiresRestart
+      false,             // isAdvanced
+      {"font", "editor"} // tags
   });
 
   // ========== Script Editor - Display Settings ==========
@@ -329,13 +328,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   registerSetting({
@@ -346,13 +345,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   registerSetting({
@@ -363,13 +362,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"display", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      false,                // isAdvanced
+      {"display", "editor"} // tags
   });
 
   // ========== Script Editor - Indentation Settings ==========
@@ -381,13 +380,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"indentation", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"indentation", "editor"} // tags
   });
 
   // ========== Script Editor - Diagnostics Settings ==========
@@ -400,12 +399,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       600,
       {},
-      100.0f,  // min
-      2000.0f, // max
-      {},      // validator
-      false,   // requiresRestart
-      false,   // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      100.0f,                   // min
+      2000.0f,                  // max
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -416,13 +415,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -433,13 +432,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -450,13 +449,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -467,13 +466,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      false, // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      {},                       // enumOptions
+      0.0f,                     // minValue
+      1.0f,                     // maxValue
+      {},                       // validator
+      false,                    // requiresRestart
+      false,                    // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   registerSetting({
@@ -485,12 +484,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       100,
       {},
-      10.0f,   // min
-      1000.0f, // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"diagnostics", "editor"}     // tags
+      10.0f,                    // min
+      1000.0f,                  // max
+      {},                       // validator
+      false,                    // requiresRestart
+      true,                     // isAdvanced
+      {"diagnostics", "editor"} // tags
   });
 
   // ========== Script Editor - Advanced Settings ==========
@@ -502,13 +501,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       false,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"auto-save", "editor"}     // tags
+      {},                     // enumOptions
+      0.0f,                   // minValue
+      1.0f,                   // maxValue
+      {},                     // validator
+      false,                  // requiresRestart
+      true,                   // isAdvanced
+      {"auto-save", "editor"} // tags
   });
 
   registerSetting({
@@ -520,12 +519,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       30,
       {},
-      5.0f,    // min
-      300.0f,  // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"auto-save", "editor"}     // tags
+      5.0f,                   // min
+      300.0f,                 // max
+      {},                     // validator
+      false,                  // requiresRestart
+      true,                   // isAdvanced
+      {"auto-save", "editor"} // tags
   });
 
   registerSetting({
@@ -536,13 +535,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"session", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      true,                 // isAdvanced
+      {"session", "editor"} // tags
   });
 
   registerSetting({
@@ -553,13 +552,13 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingType::Bool,
       SettingScope::User,
       true,
-      {},    // enumOptions
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"session", "editor"}     // tags
+      {},                   // enumOptions
+      0.0f,                 // minValue
+      1.0f,                 // maxValue
+      {},                   // validator
+      false,                // requiresRestart
+      true,                 // isAdvanced
+      {"session", "editor"} // tags
   });
 
   registerSetting({
@@ -571,12 +570,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       std::string("enabled"),
       {"enabled", "disabled", "prompt"},
-      0.0f,  // minValue
-      1.0f,  // maxValue
-      {},    // validator
-      false, // requiresRestart
-      true,  // isAdvanced
-      {"file-watcher", "editor"}     // tags
+      0.0f,                      // minValue
+      1.0f,                      // maxValue
+      {},                        // validator
+      false,                     // requiresRestart
+      true,                      // isAdvanced
+      {"file-watcher", "editor"} // tags
   });
 
   registerSetting({
@@ -588,12 +587,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       1000,
       {},
-      100.0f,   // min
-      10000.0f, // max
-      {},       // validator
-      false,    // requiresRestart
-      true,     // isAdvanced
-      {"performance", "editor"}     // tags
+      100.0f,                   // min
+      10000.0f,                 // max
+      {},                       // validator
+      false,                    // requiresRestart
+      true,                     // isAdvanced
+      {"performance", "editor"} // tags
   });
 
   registerSetting({
@@ -605,12 +604,12 @@ void NMSettingsRegistry::registerEditorDefaults() {
       SettingScope::User,
       100,
       {},
-      0.0f,    // min
-      500.0f,  // max
-      {},      // validator
-      false,   // requiresRestart
-      true,    // isAdvanced
-      {"performance", "minimap", "editor"}     // tags
+      0.0f,                                // min
+      500.0f,                              // max
+      {},                                  // validator
+      false,                               // requiresRestart
+      true,                                // isAdvanced
+      {"performance", "minimap", "editor"} // tags
   });
 
   // ========== Audio ==========

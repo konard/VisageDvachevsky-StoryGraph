@@ -16,19 +16,16 @@ EditorStateManager::EditorStateManager() {
   // Set default state path
   namespace fs = std::filesystem;
 #ifdef _WIN32
-  const char *appData = std::getenv("APPDATA");
+  const char* appData = std::getenv("APPDATA");
   if (appData) {
-    m_statePath =
-        (fs::path(appData) / "NovelMind" / "editor_state.json").string();
+    m_statePath = (fs::path(appData) / "NovelMind" / "editor_state.json").string();
   } else {
     m_statePath = "editor_state.json";
   }
 #else
-  const char *home = std::getenv("HOME");
+  const char* home = std::getenv("HOME");
   if (home) {
-    m_statePath =
-        (fs::path(home) / ".config" / "novelmind" / "editor_state.json")
-            .string();
+    m_statePath = (fs::path(home) / ".config" / "novelmind" / "editor_state.json").string();
   } else {
     m_statePath = "editor_state.json";
   }
@@ -41,7 +38,7 @@ EditorStateManager::~EditorStateManager() {
   }
 }
 
-EditorStateManager &EditorStateManager::instance() {
+EditorStateManager& EditorStateManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<EditorStateManager>();
   }
@@ -70,7 +67,7 @@ Result<void> EditorStateManager::load() {
   std::string content = buffer.str();
 
   // Parse theme
-  auto parseString = [&content](const std::string &key) -> std::string {
+  auto parseString = [&content](const std::string& key) -> std::string {
     auto pos = content.find("\"" + key + "\"");
     if (pos == std::string::npos)
       return "";
@@ -117,12 +114,10 @@ Result<void> EditorStateManager::save() {
   file << "    \"uiScale\": " << m_state.preferences.uiScale << ",\n";
   file << "    \"fontFamily\": \"" << m_state.preferences.fontFamily << "\",\n";
   file << "    \"fontSize\": " << m_state.preferences.fontSize << ",\n";
-  file << "    \"autoSave\": "
-       << (m_state.preferences.autoSave ? "true" : "false") << ",\n";
-  file << "    \"autoSaveIntervalMinutes\": "
-       << m_state.preferences.autoSaveIntervalMinutes << ",\n";
-  file << "    \"undoHistorySize\": " << m_state.preferences.undoHistorySize
-       << "\n";
+  file << "    \"autoSave\": " << (m_state.preferences.autoSave ? "true" : "false") << ",\n";
+  file << "    \"autoSaveIntervalMinutes\": " << m_state.preferences.autoSaveIntervalMinutes
+       << ",\n";
+  file << "    \"undoHistorySize\": " << m_state.preferences.undoHistorySize << "\n";
   file << "  },\n";
 
   file << "  \"activeLayout\": \"" << m_state.activeLayoutName << "\",\n";
@@ -138,10 +133,9 @@ Result<void> EditorStateManager::save() {
   file << "  ],\n";
 
   file << "  \"lastSession\": {\n";
-  file << "    \"projectPath\": \"" << m_state.lastSession.projectPath
-       << "\",\n";
-  file << "    \"cleanShutdown\": "
-       << (m_state.lastSession.cleanShutdown ? "true" : "false") << "\n";
+  file << "    \"projectPath\": \"" << m_state.lastSession.projectPath << "\",\n";
+  file << "    \"cleanShutdown\": " << (m_state.lastSession.cleanShutdown ? "true" : "false")
+       << "\n";
   file << "  }\n";
 
   file << "}\n";
@@ -150,9 +144,11 @@ Result<void> EditorStateManager::save() {
   return Result<void>::ok();
 }
 
-std::string EditorStateManager::getStatePath() const { return m_statePath; }
+std::string EditorStateManager::getStatePath() const {
+  return m_statePath;
+}
 
-void EditorStateManager::setStatePath(const std::string &path) {
+void EditorStateManager::setStatePath(const std::string& path) {
   m_statePath = path;
 }
 
@@ -169,16 +165,16 @@ void EditorStateManager::resetToDefaults() {
 // Preferences
 // ============================================================================
 
-const EditorPreferences &EditorStateManager::getPreferences() const {
+const EditorPreferences& EditorStateManager::getPreferences() const {
   return m_state.preferences;
 }
 
-EditorPreferences &EditorStateManager::getPreferences() {
+EditorPreferences& EditorStateManager::getPreferences() {
   m_dirty = true;
   return m_state.preferences;
 }
 
-void EditorStateManager::setPreferences(const EditorPreferences &prefs) {
+void EditorStateManager::setPreferences(const EditorPreferences& prefs) {
   m_state.preferences = prefs;
   m_dirty = true;
   notifyPreferencesChanged();
@@ -188,12 +184,12 @@ void EditorStateManager::setPreferences(const EditorPreferences &prefs) {
 // Layouts
 // ============================================================================
 
-const std::vector<LayoutPreset> &EditorStateManager::getLayouts() const {
+const std::vector<LayoutPreset>& EditorStateManager::getLayouts() const {
   return m_state.layouts;
 }
 
-const LayoutPreset *EditorStateManager::getActiveLayout() const {
-  for (const auto &layout : m_state.layouts) {
+const LayoutPreset* EditorStateManager::getActiveLayout() const {
+  for (const auto& layout : m_state.layouts) {
     if (layout.name == m_state.activeLayoutName) {
       return &layout;
     }
@@ -201,8 +197,8 @@ const LayoutPreset *EditorStateManager::getActiveLayout() const {
   return nullptr;
 }
 
-bool EditorStateManager::setActiveLayout(const std::string &name) {
-  for (const auto &layout : m_state.layouts) {
+bool EditorStateManager::setActiveLayout(const std::string& name) {
+  for (const auto& layout : m_state.layouts) {
     if (layout.name == name) {
       m_state.activeLayoutName = name;
       m_dirty = true;
@@ -213,15 +209,13 @@ bool EditorStateManager::setActiveLayout(const std::string &name) {
   return false;
 }
 
-void EditorStateManager::saveCurrentLayoutAs(
-    const std::string &name, const std::vector<PanelState> &panels) {
+void EditorStateManager::saveCurrentLayoutAs(const std::string& name,
+                                             const std::vector<PanelState>& panels) {
   // Remove existing layout with same name (if not built-in)
-  m_state.layouts.erase(std::remove_if(m_state.layouts.begin(),
-                                       m_state.layouts.end(),
-                                       [&name](const LayoutPreset &l) {
-                                         return l.name == name && !l.isBuiltIn;
-                                       }),
-                        m_state.layouts.end());
+  m_state.layouts.erase(
+      std::remove_if(m_state.layouts.begin(), m_state.layouts.end(),
+                     [&name](const LayoutPreset& l) { return l.name == name && !l.isBuiltIn; }),
+      m_state.layouts.end());
 
   LayoutPreset preset;
   preset.name = name;
@@ -234,10 +228,9 @@ void EditorStateManager::saveCurrentLayoutAs(
   notifyLayoutChanged();
 }
 
-bool EditorStateManager::deleteLayout(const std::string &name) {
-  auto it =
-      std::find_if(m_state.layouts.begin(), m_state.layouts.end(),
-                   [&name](const LayoutPreset &l) { return l.name == name; });
+bool EditorStateManager::deleteLayout(const std::string& name) {
+  auto it = std::find_if(m_state.layouts.begin(), m_state.layouts.end(),
+                         [&name](const LayoutPreset& l) { return l.name == name; });
 
   if (it != m_state.layouts.end() && !it->isBuiltIn) {
     m_state.layouts.erase(it);
@@ -251,11 +244,13 @@ bool EditorStateManager::deleteLayout(const std::string &name) {
   return false;
 }
 
-void EditorStateManager::resetLayoutToDefault() { setActiveLayout("Default"); }
+void EditorStateManager::resetLayoutToDefault() {
+  setActiveLayout("Default");
+}
 
 std::vector<std::string> EditorStateManager::getBuiltInLayoutNames() const {
   std::vector<std::string> names;
-  for (const auto &layout : m_state.layouts) {
+  for (const auto& layout : m_state.layouts) {
     if (layout.isBuiltIn) {
       names.push_back(layout.name);
     }
@@ -267,13 +262,13 @@ std::vector<std::string> EditorStateManager::getBuiltInLayoutNames() const {
 // Hotkeys
 // ============================================================================
 
-const std::vector<HotkeyBinding> &EditorStateManager::getHotkeys() const {
+const std::vector<HotkeyBinding>& EditorStateManager::getHotkeys() const {
   return m_state.hotkeys;
 }
 
 std::optional<HotkeyBinding>
-EditorStateManager::getHotkeyForAction(const std::string &action) const {
-  for (const auto &hk : m_state.hotkeys) {
+EditorStateManager::getHotkeyForAction(const std::string& action) const {
+  for (const auto& hk : m_state.hotkeys) {
     if (hk.action == action && hk.enabled) {
       return hk;
     }
@@ -281,11 +276,10 @@ EditorStateManager::getHotkeyForAction(const std::string &action) const {
   return std::nullopt;
 }
 
-void EditorStateManager::setHotkey(const std::string &action,
-                                   const std::string &key,
-                                   const std::string &context) {
+void EditorStateManager::setHotkey(const std::string& action, const std::string& key,
+                                   const std::string& context) {
   // Update existing or add new
-  for (auto &hk : m_state.hotkeys) {
+  for (auto& hk : m_state.hotkeys) {
     if (hk.action == action) {
       hk.key = key;
       hk.context = context;
@@ -307,13 +301,11 @@ void EditorStateManager::setHotkey(const std::string &action,
   notifyHotkeysChanged();
 }
 
-void EditorStateManager::removeHotkey(const std::string &action) {
-  m_state.hotkeys.erase(std::remove_if(m_state.hotkeys.begin(),
-                                       m_state.hotkeys.end(),
-                                       [&action](const HotkeyBinding &hk) {
-                                         return hk.action == action;
-                                       }),
-                        m_state.hotkeys.end());
+void EditorStateManager::removeHotkey(const std::string& action) {
+  m_state.hotkeys.erase(
+      std::remove_if(m_state.hotkeys.begin(), m_state.hotkeys.end(),
+                     [&action](const HotkeyBinding& hk) { return hk.action == action; }),
+      m_state.hotkeys.end());
   m_dirty = true;
   notifyHotkeysChanged();
 }
@@ -326,14 +318,12 @@ void EditorStateManager::resetHotkeysToDefaults() {
 }
 
 std::vector<std::string>
-EditorStateManager::checkHotkeyConflicts(const std::string &key,
-                                         const std::string &context) const {
+EditorStateManager::checkHotkeyConflicts(const std::string& key, const std::string& context) const {
   std::vector<std::string> conflicts;
 
-  for (const auto &hk : m_state.hotkeys) {
+  for (const auto& hk : m_state.hotkeys) {
     if (hk.key == key && hk.enabled) {
-      if (context == "global" || hk.context == "global" ||
-          context == hk.context) {
+      if (context == "global" || hk.context == "global" || context == hk.context) {
         conflicts.push_back(hk.action);
       }
     }
@@ -346,11 +336,11 @@ EditorStateManager::checkHotkeyConflicts(const std::string &key,
 // Recent Projects
 // ============================================================================
 
-const std::vector<std::string> &EditorStateManager::getRecentProjects() const {
+const std::vector<std::string>& EditorStateManager::getRecentProjects() const {
   return m_state.recentProjects;
 }
 
-void EditorStateManager::addRecentProject(const std::string &path) {
+void EditorStateManager::addRecentProject(const std::string& path) {
   // Remove if exists
   removeRecentProject(path);
 
@@ -358,19 +348,17 @@ void EditorStateManager::addRecentProject(const std::string &path) {
   m_state.recentProjects.insert(m_state.recentProjects.begin(), path);
 
   // Trim to max
-  if (m_state.recentProjects.size() >
-      static_cast<size_t>(m_state.preferences.maxRecentProjects)) {
-    m_state.recentProjects.resize(
-        static_cast<size_t>(m_state.preferences.maxRecentProjects));
+  if (m_state.recentProjects.size() > static_cast<size_t>(m_state.preferences.maxRecentProjects)) {
+    m_state.recentProjects.resize(static_cast<size_t>(m_state.preferences.maxRecentProjects));
   }
 
   m_dirty = true;
 }
 
-void EditorStateManager::removeRecentProject(const std::string &path) {
-  m_state.recentProjects.erase(std::remove(m_state.recentProjects.begin(),
-                                           m_state.recentProjects.end(), path),
-                               m_state.recentProjects.end());
+void EditorStateManager::removeRecentProject(const std::string& path) {
+  m_state.recentProjects.erase(
+      std::remove(m_state.recentProjects.begin(), m_state.recentProjects.end(), path),
+      m_state.recentProjects.end());
   m_dirty = true;
 }
 
@@ -383,21 +371,20 @@ void EditorStateManager::clearRecentProjects() {
 // Session Management
 // ============================================================================
 
-void EditorStateManager::saveSession(const SessionState &session) {
+void EditorStateManager::saveSession(const SessionState& session) {
   m_state.lastSession = session;
-  m_state.lastSession.timestamp = static_cast<f64>(
-      std::chrono::system_clock::now().time_since_epoch().count());
+  m_state.lastSession.timestamp =
+      static_cast<f64>(std::chrono::system_clock::now().time_since_epoch().count());
   m_dirty = true;
   save();
 }
 
-const SessionState &EditorStateManager::getLastSession() const {
+const SessionState& EditorStateManager::getLastSession() const {
   return m_state.lastSession;
 }
 
 bool EditorStateManager::hasRecoverableSession() const {
-  return !m_state.lastSession.projectPath.empty() &&
-         !m_state.lastSession.cleanShutdown;
+  return !m_state.lastSession.projectPath.empty() && !m_state.lastSession.cleanShutdown;
 }
 
 void EditorStateManager::markCleanShutdown() {
@@ -415,8 +402,7 @@ void EditorStateManager::clearSession() {
 // Key-Value Storage
 // ============================================================================
 
-std::optional<StateValue>
-EditorStateManager::getValue(const std::string &key) const {
+std::optional<StateValue> EditorStateManager::getValue(const std::string& key) const {
   auto it = m_keyValueStore.find(key);
   if (it != m_keyValueStore.end()) {
     return it->second;
@@ -424,18 +410,17 @@ EditorStateManager::getValue(const std::string &key) const {
   return std::nullopt;
 }
 
-void EditorStateManager::setValue(const std::string &key,
-                                  const StateValue &value) {
+void EditorStateManager::setValue(const std::string& key, const StateValue& value) {
   m_keyValueStore[key] = value;
   m_dirty = true;
 }
 
-void EditorStateManager::removeValue(const std::string &key) {
+void EditorStateManager::removeValue(const std::string& key) {
   m_keyValueStore.erase(key);
   m_dirty = true;
 }
 
-bool EditorStateManager::hasValue(const std::string &key) const {
+bool EditorStateManager::hasValue(const std::string& key) const {
   return m_keyValueStore.find(key) != m_keyValueStore.end();
 }
 
@@ -443,17 +428,16 @@ bool EditorStateManager::hasValue(const std::string &key) const {
 // Change Notification
 // ============================================================================
 
-void EditorStateManager::addListener(IStateListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void EditorStateManager::addListener(IStateListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void EditorStateManager::removeListener(IStateListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void EditorStateManager::removeListener(IStateListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
 // ============================================================================
@@ -492,41 +476,32 @@ void EditorStateManager::initializeDefaults() {
 
   // Default hotkeys
   m_state.hotkeys = {
-      {"file.new", "Ctrl+N", "global", true},
-      {"file.open", "Ctrl+O", "global", true},
-      {"file.save", "Ctrl+S", "global", true},
-      {"file.saveAs", "Ctrl+Shift+S", "global", true},
-      {"edit.undo", "Ctrl+Z", "global", true},
-      {"edit.redo", "Ctrl+Y", "global", true},
-      {"edit.cut", "Ctrl+X", "global", true},
-      {"edit.copy", "Ctrl+C", "global", true},
-      {"edit.paste", "Ctrl+V", "global", true},
-      {"edit.delete", "Delete", "global", true},
-      {"edit.selectAll", "Ctrl+A", "global", true},
-      {"view.zoomIn", "Ctrl++", "global", true},
-      {"view.zoomOut", "Ctrl+-", "global", true},
-      {"view.resetZoom", "Ctrl+0", "global", true},
-      {"play.start", "F5", "global", true},
-      {"play.pause", "F6", "global", true},
-      {"play.stop", "Shift+F5", "global", true},
-      {"build.project", "F7", "global", true},
+      {"file.new", "Ctrl+N", "global", true},       {"file.open", "Ctrl+O", "global", true},
+      {"file.save", "Ctrl+S", "global", true},      {"file.saveAs", "Ctrl+Shift+S", "global", true},
+      {"edit.undo", "Ctrl+Z", "global", true},      {"edit.redo", "Ctrl+Y", "global", true},
+      {"edit.cut", "Ctrl+X", "global", true},       {"edit.copy", "Ctrl+C", "global", true},
+      {"edit.paste", "Ctrl+V", "global", true},     {"edit.delete", "Delete", "global", true},
+      {"edit.selectAll", "Ctrl+A", "global", true}, {"view.zoomIn", "Ctrl++", "global", true},
+      {"view.zoomOut", "Ctrl+-", "global", true},   {"view.resetZoom", "Ctrl+0", "global", true},
+      {"play.start", "F5", "global", true},         {"play.pause", "F6", "global", true},
+      {"play.stop", "Shift+F5", "global", true},    {"build.project", "F7", "global", true},
   };
 }
 
 void EditorStateManager::notifyPreferencesChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onPreferencesChanged();
   }
 }
 
 void EditorStateManager::notifyLayoutChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onLayoutChanged();
   }
 }
 
 void EditorStateManager::notifyHotkeysChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onHotkeysChanged();
   }
 }

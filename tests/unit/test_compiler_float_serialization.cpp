@@ -13,29 +13,34 @@
 using namespace NovelMind::scripting;
 
 // Helper function to compile and run a script with a wait statement
-static bool compileAndCheckWait(f32 duration, f32 &extractedDuration) {
+static bool compileAndCheckWait(f32 duration, f32& extractedDuration) {
   // Create script with wait statement
   std::string script = "scene test { wait " + std::to_string(duration) + " }";
 
   Lexer lexer;
   auto tokens = lexer.tokenize(script);
-  if (!tokens.isOk()) return false;
+  if (!tokens.isOk())
+    return false;
 
   Parser parser;
   auto parse = parser.parse(tokens.value());
-  if (!parse.isOk()) return false;
+  if (!parse.isOk())
+    return false;
 
   Compiler compiler;
   auto compiled = compiler.compile(parse.value());
-  if (!compiled.isOk()) return false;
+  if (!compiled.isOk())
+    return false;
 
   // Load and execute the script to extract the duration
   ScriptRuntime runtime;
   auto loadResult = runtime.load(compiled.value());
-  if (!loadResult.isOk()) return false;
+  if (!loadResult.isOk())
+    return false;
 
   auto gotoResult = runtime.gotoScene("test");
-  if (!gotoResult.isOk()) return false;
+  if (!gotoResult.isOk())
+    return false;
 
   // Run until waiting state
   for (int i = 0; i < 20 && runtime.getState() != RuntimeState::WaitingTimer; ++i) {
@@ -133,17 +138,21 @@ TEST_CASE("Compiler float serialization", "[scripting][issue-446][compiler]") {
 
   SECTION("Float round-trip serialization preserves bit pattern") {
     // Test that serialization and deserialization are exact inverses
-    std::vector<f32> testValues = {
-      0.0f, -0.0f, 1.0f, -1.0f,
-      0.5f, -0.5f, 3.14159f, -3.14159f,
-      std::numeric_limits<f32>::min(),
-      std::numeric_limits<f32>::max(),
-      std::numeric_limits<f32>::lowest(),
-      std::numeric_limits<f32>::epsilon(),
-      std::numeric_limits<f32>::infinity(),
-      -std::numeric_limits<f32>::infinity(),
-      std::numeric_limits<f32>::quiet_NaN()
-    };
+    std::vector<f32> testValues = {0.0f,
+                                   -0.0f,
+                                   1.0f,
+                                   -1.0f,
+                                   0.5f,
+                                   -0.5f,
+                                   3.14159f,
+                                   -3.14159f,
+                                   std::numeric_limits<f32>::min(),
+                                   std::numeric_limits<f32>::max(),
+                                   std::numeric_limits<f32>::lowest(),
+                                   std::numeric_limits<f32>::epsilon(),
+                                   std::numeric_limits<f32>::infinity(),
+                                   -std::numeric_limits<f32>::infinity(),
+                                   std::numeric_limits<f32>::quiet_NaN()};
 
     for (f32 originalValue : testValues) {
       f32 extracted = 0.0f;
@@ -163,7 +172,7 @@ TEST_CASE("Compiler float serialization", "[scripting][issue-446][compiler]") {
 
   SECTION("Transition duration float serialization") {
     // Test transition statements which also use float serialization
-    const char *script = R"(
+    const char* script = R"(
 scene test {
   show "char1" at center with transition "fade" duration 2.5
 }
@@ -188,7 +197,7 @@ scene test {
 
   SECTION("Move statement with custom position float serialization") {
     // Test move statements which serialize x and y coordinates as floats
-    const char *script = R"(
+    const char* script = R"(
 scene test {
   show "char1" at center
   move "char1" to custom (0.75, 0.25) duration 1.0
@@ -212,7 +221,7 @@ scene test {
 
   SECTION("Stop music with fadeout float serialization") {
     // Test stop statements which use optional float fadeout duration
-    const char *script = R"(
+    const char* script = R"(
 scene test {
   play music "song.mp3"
   stop music fadeout 3.5

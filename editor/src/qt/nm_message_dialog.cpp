@@ -48,7 +48,7 @@ QString dialogIconText(NMMessageType type) {
 }
 
 QColor dialogIconColor(NMMessageType type) {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   switch (type) {
   case NMMessageType::Info:
     return palette.info;
@@ -64,9 +64,8 @@ QColor dialogIconColor(NMMessageType type) {
 
 } // namespace
 
-NMMessageDialog::NMMessageDialog(QWidget *parent, const QString &title,
-                                 const QString &message, NMMessageType type,
-                                 const QList<NMDialogButton> &buttons,
+NMMessageDialog::NMMessageDialog(QWidget* parent, const QString& title, const QString& message,
+                                 NMMessageType type, const QList<NMDialogButton>& buttons,
                                  NMDialogButton defaultButton)
     : QDialog(parent) {
   setWindowTitle(title);
@@ -80,29 +79,27 @@ NMMessageDialog::NMMessageDialog(QWidget *parent, const QString &title,
   detail::animateDialogIn(this);
 }
 
-void NMMessageDialog::buildUi(const QString &message, NMMessageType type,
-                              const QList<NMDialogButton> &buttons,
-                              NMDialogButton defaultButton) {
-  auto *mainLayout = new QVBoxLayout(this);
+void NMMessageDialog::buildUi(const QString& message, NMMessageType type,
+                              const QList<NMDialogButton>& buttons, NMDialogButton defaultButton) {
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(10, 10, 10, 10);
   mainLayout->setSpacing(8);
 
-  auto *contentLayout = new QHBoxLayout();
+  auto* contentLayout = new QHBoxLayout();
   contentLayout->setSpacing(10);
 
-  auto *iconLabel = new QLabel(this);
+  auto* iconLabel = new QLabel(this);
   iconLabel->setFixedSize(28, 28);
   iconLabel->setAlignment(Qt::AlignCenter);
   iconLabel->setText(dialogIconText(type));
   const QColor iconColor = dialogIconColor(type);
-  iconLabel->setStyleSheet(
-      QString("background-color: %1; color: %2; "
-              "border-radius: 16px; font-weight: 700;")
-          .arg(NMStyleManager::colorToStyleString(iconColor))
-          .arg(NMStyleManager::colorToStyleString(
-              NMStyleManager::instance().palette().textPrimary)));
+  iconLabel->setStyleSheet(QString("background-color: %1; color: %2; "
+                                   "border-radius: 16px; font-weight: 700;")
+                               .arg(NMStyleManager::colorToStyleString(iconColor))
+                               .arg(NMStyleManager::colorToStyleString(
+                                   NMStyleManager::instance().palette().textPrimary)));
 
-  auto *messageLabel = new QLabel(message, this);
+  auto* messageLabel = new QLabel(message, this);
   messageLabel->setWordWrap(true);
   messageLabel->setObjectName("NMMessageText");
 
@@ -110,13 +107,12 @@ void NMMessageDialog::buildUi(const QString &message, NMMessageType type,
   contentLayout->addWidget(messageLabel, 1);
   mainLayout->addLayout(contentLayout);
 
-  auto *buttonsLayout = new QHBoxLayout();
+  auto* buttonsLayout = new QHBoxLayout();
   buttonsLayout->addStretch();
 
   for (const auto button : buttons) {
-    auto *btn = new QPushButton(dialogButtonText(button), this);
-    btn->setObjectName(button == defaultButton ? "NMPrimaryButton"
-                                               : "NMSecondaryButton");
+    auto* btn = new QPushButton(dialogButtonText(button), this);
+    btn->setObjectName(button == defaultButton ? "NMPrimaryButton" : "NMSecondaryButton");
     if (button == defaultButton) {
       btn->setDefault(true);
       btn->setAutoDefault(true);
@@ -131,36 +127,35 @@ void NMMessageDialog::buildUi(const QString &message, NMMessageType type,
   mainLayout->addLayout(buttonsLayout);
 }
 
-NMDialogButton NMMessageDialog::showInfo(QWidget *parent, const QString &title,
-                                         const QString &message) {
-  NMMessageDialog dialog(parent, title, message, NMMessageType::Info,
-                         {NMDialogButton::Ok}, NMDialogButton::Ok);
+NMDialogButton NMMessageDialog::showInfo(QWidget* parent, const QString& title,
+                                         const QString& message) {
+  NMMessageDialog dialog(parent, title, message, NMMessageType::Info, {NMDialogButton::Ok},
+                         NMDialogButton::Ok);
   dialog.exec();
   return dialog.choice();
 }
 
-NMDialogButton NMMessageDialog::showWarning(QWidget *parent,
-                                            const QString &title,
-                                            const QString &message) {
-  NMMessageDialog dialog(parent, title, message, NMMessageType::Warning,
-                         {NMDialogButton::Ok}, NMDialogButton::Ok);
+NMDialogButton NMMessageDialog::showWarning(QWidget* parent, const QString& title,
+                                            const QString& message) {
+  NMMessageDialog dialog(parent, title, message, NMMessageType::Warning, {NMDialogButton::Ok},
+                         NMDialogButton::Ok);
   dialog.exec();
   return dialog.choice();
 }
 
-NMDialogButton NMMessageDialog::showError(QWidget *parent, const QString &title,
-                                          const QString &message) {
-  NMMessageDialog dialog(parent, title, message, NMMessageType::Error,
-                         {NMDialogButton::Ok}, NMDialogButton::Ok);
+NMDialogButton NMMessageDialog::showError(QWidget* parent, const QString& title,
+                                          const QString& message) {
+  NMMessageDialog dialog(parent, title, message, NMMessageType::Error, {NMDialogButton::Ok},
+                         NMDialogButton::Ok);
   dialog.exec();
   return dialog.choice();
 }
 
-NMDialogButton NMMessageDialog::showQuestion(
-    QWidget *parent, const QString &title, const QString &message,
-    const QList<NMDialogButton> &buttons, NMDialogButton defaultButton) {
-  NMMessageDialog dialog(parent, title, message, NMMessageType::Question,
-                         buttons, defaultButton);
+NMDialogButton NMMessageDialog::showQuestion(QWidget* parent, const QString& title,
+                                             const QString& message,
+                                             const QList<NMDialogButton>& buttons,
+                                             NMDialogButton defaultButton) {
+  NMMessageDialog dialog(parent, title, message, NMMessageType::Question, buttons, defaultButton);
   dialog.exec();
   return dialog.choice();
 }

@@ -16,22 +16,22 @@ public:
   SceneManager();
   ~SceneManager();
 
-  Result<void> loadScene(const std::string &sceneId);
+  Result<void> loadScene(const std::string& sceneId);
   void unloadScene();
 
   void update(f64 deltaTime);
-  void render(renderer::IRenderer &renderer);
+  void render(renderer::IRenderer& renderer);
 
   void addToLayer(LayerType layer, std::unique_ptr<SceneObject> object);
-  void removeFromLayer(LayerType layer, const std::string &objectId);
+  void removeFromLayer(LayerType layer, const std::string& objectId);
   void clearLayer(LayerType layer);
 
-  SceneObject *findObject(const std::string &id);
+  SceneObject* findObject(const std::string& id);
 
-  [[nodiscard]] const std::string &getCurrentSceneId() const;
+  [[nodiscard]] const std::string& getCurrentSceneId() const;
 
 private:
-  std::vector<std::unique_ptr<SceneObject>> &getLayer(LayerType layer);
+  std::vector<std::unique_ptr<SceneObject>>& getLayer(LayerType layer);
 
   std::string m_currentSceneId;
   std::vector<std::unique_ptr<SceneObject>> m_backgroundLayer;

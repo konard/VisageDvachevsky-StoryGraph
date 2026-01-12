@@ -42,7 +42,7 @@ public:
   SaveManager();
   ~SaveManager();
 
-  Result<void> save(i32 slot, const SaveData &data);
+  Result<void> save(i32 slot, const SaveData& data);
   Result<SaveData> load(i32 slot);
   Result<void> deleteSave(i32 slot);
 
@@ -52,25 +52,24 @@ public:
 
   [[nodiscard]] i32 getMaxSlots() const;
 
-  void setSavePath(const std::string &path);
-  [[nodiscard]] const std::string &getSavePath() const;
+  void setSavePath(const std::string& path);
+  [[nodiscard]] const std::string& getSavePath() const;
 
-  void setConfig(const SaveConfig &config);
-  [[nodiscard]] const SaveConfig &getConfig() const;
+  void setConfig(const SaveConfig& config);
+  [[nodiscard]] const SaveConfig& getConfig() const;
 
-  Result<void> saveAuto(const SaveData &data);
+  Result<void> saveAuto(const SaveData& data);
   Result<SaveData> loadAuto();
   [[nodiscard]] bool autoSaveExists() const;
 
 private:
   [[nodiscard]] std::string getSlotFilename(i32 slot) const;
   [[nodiscard]] std::string getAutoSaveFilename() const;
-  [[nodiscard]] static u32 calculateChecksum(const SaveData &data);
+  [[nodiscard]] static u32 calculateChecksum(const SaveData& data);
 
-  Result<void> saveToFile(const std::string &filename, SaveData data);
-  Result<SaveData> loadFromFile(const std::string &filename);
-  [[nodiscard]] std::optional<SaveMetadata>
-  readMetadata(const std::string &filename) const;
+  Result<void> saveToFile(const std::string& filename, SaveData data);
+  Result<SaveData> loadFromFile(const std::string& filename);
+  [[nodiscard]] std::optional<SaveMetadata> readMetadata(const std::string& filename) const;
 
   std::string m_savePath;
   SaveConfig m_config;

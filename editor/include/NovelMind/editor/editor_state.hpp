@@ -99,8 +99,7 @@ struct SessionState {
   std::string projectPath;
   std::vector<std::string> openFiles;
   std::string activeFile;
-  std::unordered_map<std::string, std::string>
-      panelStates; // Panel-specific state
+  std::unordered_map<std::string, std::string> panelStates; // Panel-specific state
   f64 timestamp = 0.0;
   bool cleanShutdown = false;
 };
@@ -120,8 +119,7 @@ struct EditorState {
 /**
  * @brief State value types for key-value storage
  */
-using StateValue = std::variant<bool, i32, i64, f32, f64, std::string,
-                                std::vector<std::string>>;
+using StateValue = std::variant<bool, i32, i64, f32, f64, std::string, std::vector<std::string>>;
 
 /**
  * @brief Editor state manager
@@ -139,13 +137,13 @@ public:
   ~EditorStateManager();
 
   // Prevent copying
-  EditorStateManager(const EditorStateManager &) = delete;
-  EditorStateManager &operator=(const EditorStateManager &) = delete;
+  EditorStateManager(const EditorStateManager&) = delete;
+  EditorStateManager& operator=(const EditorStateManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static EditorStateManager &instance();
+  static EditorStateManager& instance();
 
   // =========================================================================
   // Persistence
@@ -169,7 +167,7 @@ public:
   /**
    * @brief Set state file path
    */
-  void setStatePath(const std::string &path);
+  void setStatePath(const std::string& path);
 
   /**
    * @brief Reset to default state
@@ -183,29 +181,27 @@ public:
   /**
    * @brief Get preferences
    */
-  [[nodiscard]] const EditorPreferences &getPreferences() const;
+  [[nodiscard]] const EditorPreferences& getPreferences() const;
 
   /**
    * @brief Get mutable preferences
    */
-  EditorPreferences &getPreferences();
+  EditorPreferences& getPreferences();
 
   /**
    * @brief Set preferences
    */
-  void setPreferences(const EditorPreferences &prefs);
+  void setPreferences(const EditorPreferences& prefs);
 
   /**
    * @brief Get specific preference value
    */
-  template <typename T>
-  [[nodiscard]] std::optional<T> getPreference(const std::string &key) const;
+  template <typename T> [[nodiscard]] std::optional<T> getPreference(const std::string& key) const;
 
   /**
    * @brief Set specific preference value
    */
-  template <typename T>
-  void setPreference(const std::string &key, const T &value);
+  template <typename T> void setPreference(const std::string& key, const T& value);
 
   // =========================================================================
   // Layouts
@@ -214,28 +210,27 @@ public:
   /**
    * @brief Get all layout presets
    */
-  [[nodiscard]] const std::vector<LayoutPreset> &getLayouts() const;
+  [[nodiscard]] const std::vector<LayoutPreset>& getLayouts() const;
 
   /**
    * @brief Get active layout
    */
-  [[nodiscard]] const LayoutPreset *getActiveLayout() const;
+  [[nodiscard]] const LayoutPreset* getActiveLayout() const;
 
   /**
    * @brief Set active layout by name
    */
-  bool setActiveLayout(const std::string &name);
+  bool setActiveLayout(const std::string& name);
 
   /**
    * @brief Save current layout as preset
    */
-  void saveCurrentLayoutAs(const std::string &name,
-                           const std::vector<PanelState> &panels);
+  void saveCurrentLayoutAs(const std::string& name, const std::vector<PanelState>& panels);
 
   /**
    * @brief Delete a layout preset
    */
-  bool deleteLayout(const std::string &name);
+  bool deleteLayout(const std::string& name);
 
   /**
    * @brief Reset layout to default
@@ -254,24 +249,23 @@ public:
   /**
    * @brief Get all hotkey bindings
    */
-  [[nodiscard]] const std::vector<HotkeyBinding> &getHotkeys() const;
+  [[nodiscard]] const std::vector<HotkeyBinding>& getHotkeys() const;
 
   /**
    * @brief Get hotkey for action
    */
-  [[nodiscard]] std::optional<HotkeyBinding>
-  getHotkeyForAction(const std::string &action) const;
+  [[nodiscard]] std::optional<HotkeyBinding> getHotkeyForAction(const std::string& action) const;
 
   /**
    * @brief Set hotkey for action
    */
-  void setHotkey(const std::string &action, const std::string &key,
-                 const std::string &context = "global");
+  void setHotkey(const std::string& action, const std::string& key,
+                 const std::string& context = "global");
 
   /**
    * @brief Remove hotkey for action
    */
-  void removeHotkey(const std::string &action);
+  void removeHotkey(const std::string& action);
 
   /**
    * @brief Reset hotkeys to defaults
@@ -281,9 +275,8 @@ public:
   /**
    * @brief Check for hotkey conflicts
    */
-  [[nodiscard]] std::vector<std::string>
-  checkHotkeyConflicts(const std::string &key,
-                       const std::string &context) const;
+  [[nodiscard]] std::vector<std::string> checkHotkeyConflicts(const std::string& key,
+                                                              const std::string& context) const;
 
   // =========================================================================
   // Recent Projects
@@ -292,17 +285,17 @@ public:
   /**
    * @brief Get recent projects
    */
-  [[nodiscard]] const std::vector<std::string> &getRecentProjects() const;
+  [[nodiscard]] const std::vector<std::string>& getRecentProjects() const;
 
   /**
    * @brief Add to recent projects
    */
-  void addRecentProject(const std::string &path);
+  void addRecentProject(const std::string& path);
 
   /**
    * @brief Remove from recent projects
    */
-  void removeRecentProject(const std::string &path);
+  void removeRecentProject(const std::string& path);
 
   /**
    * @brief Clear recent projects
@@ -316,12 +309,12 @@ public:
   /**
    * @brief Save current session state
    */
-  void saveSession(const SessionState &session);
+  void saveSession(const SessionState& session);
 
   /**
    * @brief Get last session state
    */
-  [[nodiscard]] const SessionState &getLastSession() const;
+  [[nodiscard]] const SessionState& getLastSession() const;
 
   /**
    * @brief Check if there's a recoverable session
@@ -345,23 +338,22 @@ public:
   /**
    * @brief Get state value
    */
-  [[nodiscard]] std::optional<StateValue>
-  getValue(const std::string &key) const;
+  [[nodiscard]] std::optional<StateValue> getValue(const std::string& key) const;
 
   /**
    * @brief Set state value
    */
-  void setValue(const std::string &key, const StateValue &value);
+  void setValue(const std::string& key, const StateValue& value);
 
   /**
    * @brief Remove state value
    */
-  void removeValue(const std::string &key);
+  void removeValue(const std::string& key);
 
   /**
    * @brief Check if key exists
    */
-  [[nodiscard]] bool hasValue(const std::string &key) const;
+  [[nodiscard]] bool hasValue(const std::string& key) const;
 
   // =========================================================================
   // Change Notification
@@ -378,8 +370,8 @@ public:
     virtual void onHotkeysChanged() {}
   };
 
-  void addListener(IStateListener *listener);
-  void removeListener(IStateListener *listener);
+  void addListener(IStateListener* listener);
+  void removeListener(IStateListener* listener);
 
 private:
   void initializeDefaults();
@@ -390,7 +382,7 @@ private:
   EditorState m_state;
   std::string m_statePath;
   std::unordered_map<std::string, StateValue> m_keyValueStore;
-  std::vector<IStateListener *> m_listeners;
+  std::vector<IStateListener*> m_listeners;
   bool m_dirty = false;
 
   static std::unique_ptr<EditorStateManager> s_instance;

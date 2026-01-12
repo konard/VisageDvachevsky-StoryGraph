@@ -27,9 +27,9 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor {
 
-void BuildSizeScanner::scanAssets(const std::string &projectPath,
-                                  const BuildSizeAnalysisConfig &config,
-                                  std::vector<AssetSizeInfo> &assets) {
+void BuildSizeScanner::scanAssets(const std::string& projectPath,
+                                  const BuildSizeAnalysisConfig& config,
+                                  std::vector<AssetSizeInfo>& assets) {
   if (projectPath.empty()) {
     return;
   }
@@ -42,7 +42,7 @@ void BuildSizeScanner::scanAssets(const std::string &projectPath,
   // Scan assets directory
   fs::path assetsDir = projectDir / "assets";
   if (fs::exists(assetsDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(assetsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
       if (!entry.is_regular_file()) {
         continue;
       }
@@ -78,7 +78,7 @@ void BuildSizeScanner::scanAssets(const std::string &projectPath,
 
       // Check exclude patterns
       bool excluded = false;
-      for (const auto &pattern : config.excludePatterns) {
+      for (const auto& pattern : config.excludePatterns) {
         if (entry.path().string().find(pattern) != std::string::npos) {
           excluded = true;
           break;
@@ -94,8 +94,7 @@ void BuildSizeScanner::scanAssets(const std::string &projectPath,
       info.name = entry.path().filename().string();
       info.category = category;
       info.originalSize = static_cast<u64>(entry.file_size());
-      info.compressedSize =
-          info.originalSize; // Will be updated during analysis
+      info.compressedSize = info.originalSize; // Will be updated during analysis
 
       assets.push_back(info);
     }
@@ -104,7 +103,7 @@ void BuildSizeScanner::scanAssets(const std::string &projectPath,
   // Scan scripts directory
   fs::path scriptsDir = projectDir / "scripts";
   if (fs::exists(scriptsDir) && config.analyzeScripts) {
-    for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".nms" || ext == ".nmscript") {
@@ -123,8 +122,8 @@ void BuildSizeScanner::scanAssets(const std::string &projectPath,
 }
 
 void BuildSizeScanner::analyzeAsset(
-    AssetSizeInfo &info, const BuildSizeAnalysisConfig &config,
-    std::unordered_map<std::string, std::vector<std::string>> &hashToFiles) {
+    AssetSizeInfo& info, const BuildSizeAnalysisConfig& config,
+    std::unordered_map<std::string, std::vector<std::string>>& hashToFiles) {
   // Compute file hash for duplicate detection
   std::string hash = computeFileHash(info.path);
 
@@ -151,10 +150,9 @@ void BuildSizeScanner::analyzeAsset(
       if (info.imageWidth > config.maxImageDimension ||
           info.imageHeight > config.maxImageDimension) {
         info.isOversized = true;
-        info.optimizationSuggestions.push_back(
-            "Image dimensions exceed " +
-            std::to_string(config.maxImageDimension) +
-            "px. Consider resizing.");
+        info.optimizationSuggestions.push_back("Image dimensions exceed " +
+                                               std::to_string(config.maxImageDimension) +
+                                               "px. Consider resizing.");
       }
     }
 #endif
@@ -188,9 +186,7 @@ void BuildSizeScanner::analyzeAsset(
     QObject::connect(&decoder, &QAudioDecoder::finished, [&]() { loop.quit(); });
 
     QObject::connect(
-        &decoder,
-        static_cast<void (QAudioDecoder::*)(QAudioDecoder::Error)>(
-            &QAudioDecoder::error),
+        &decoder, static_cast<void (QAudioDecoder::*)(QAudioDecoder::Error)>(&QAudioDecoder::error),
         [&](QAudioDecoder::Error) { loop.quit(); });
 
     // Timeout to prevent hanging
@@ -212,8 +208,8 @@ void BuildSizeScanner::analyzeAsset(
           f64 totalSamples = static_cast<f64>(info.originalSize) /
                              static_cast<f64>(bytesPerSample) /
                              static_cast<f64>(info.audioChannels);
-          info.audioDuration = static_cast<f32>(totalSamples) /
-                               static_cast<f32>(info.audioSampleRate);
+          info.audioDuration =
+              static_cast<f32>(totalSamples) / static_cast<f32>(info.audioSampleRate);
         }
       }
     }
@@ -230,21 +226,19 @@ void BuildSizeScanner::analyzeAsset(
 }
 
 u64 BuildSizeScanner::detectDuplicates(
-    const std::unordered_map<std::string, std::vector<std::string>>
-        &hashToFiles,
-    std::vector<AssetSizeInfo> &assets,
-    std::vector<DuplicateGroup> &duplicates) {
+    const std::unordered_map<std::string, std::vector<std::string>>& hashToFiles,
+    std::vector<AssetSizeInfo>& assets, std::vector<DuplicateGroup>& duplicates) {
   u64 totalWastedSpace = 0;
 
-  for (const auto &[hash, files] : hashToFiles) {
+  for (const auto& [hash, files] : hashToFiles) {
     if (files.size() > 1) {
       // Additional safety: verify all files have the same size
       // This provides defense-in-depth against hash collisions
       u64 firstFileSize = 0;
       bool sizeMismatch = false;
 
-      for (const auto &path : files) {
-        for (const auto &asset : assets) {
+      for (const auto& path : files) {
+        for (const auto& asset : assets) {
           if (asset.path == path) {
             if (firstFileSize == 0) {
               firstFileSize = asset.originalSize;
@@ -273,13 +267,13 @@ u64 BuildSizeScanner::detectDuplicates(
 
       // Mark duplicates in assets
       bool first = true;
-      for (const auto &path : files) {
+      for (const auto& path : files) {
         if (first) {
           first = false;
           continue;
         }
 
-        for (auto &asset : assets) {
+        for (auto& asset : assets) {
           if (asset.path == path) {
             asset.isDuplicate = true;
             asset.duplicateOf = files[0];
@@ -295,9 +289,9 @@ u64 BuildSizeScanner::detectDuplicates(
   return totalWastedSpace;
 }
 
-u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
-                                   std::vector<AssetSizeInfo> &assets,
-                                   std::vector<std::string> &unusedAssets) {
+u64 BuildSizeScanner::detectUnused(const std::string& projectPath,
+                                   std::vector<AssetSizeInfo>& assets,
+                                   std::vector<std::string>& unusedAssets) {
   // Parse all scripts and scenes to find asset references
   std::unordered_set<std::string> referencedAssets;
 
@@ -310,7 +304,7 @@ u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
   // Parse script files for asset references
   fs::path scriptsDir = projectDir / "scripts";
   if (fs::exists(scriptsDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".nms" || ext == ".nmscript") {
@@ -323,7 +317,7 @@ u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
   // Parse scene files for asset references
   fs::path scenesDir = projectDir / "scenes";
   if (fs::exists(scenesDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(scenesDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".json" || ext == ".scene") {
@@ -335,7 +329,7 @@ u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
 
   // Mark assets as unused if they're not referenced
   u64 unusedSpace = 0;
-  for (auto &asset : assets) {
+  for (auto& asset : assets) {
     // Check if the asset path or filename is referenced
     bool isReferenced = false;
 
@@ -352,8 +346,7 @@ u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
     // Check relative path from project
     fs::path assetPath(asset.path);
     fs::path relativePath = fs::relative(assetPath, projectDir);
-    if (referencedAssets.find(relativePath.string()) !=
-        referencedAssets.end()) {
+    if (referencedAssets.find(relativePath.string()) != referencedAssets.end()) {
       isReferenced = true;
     }
 
@@ -368,8 +361,7 @@ u64 BuildSizeScanner::detectUnused(const std::string &projectPath,
 }
 
 void BuildSizeScanner::parseFileForAssetReferences(
-    const std::string &filePath,
-    std::unordered_set<std::string> &referencedAssets) {
+    const std::string& filePath, std::unordered_set<std::string>& referencedAssets) {
   std::ifstream file(filePath);
   if (!file.is_open()) {
     return;
@@ -392,9 +384,8 @@ void BuildSizeScanner::parseFileForAssetReferences(
           if (extPos != std::string::npos) {
             std::string ext = reference.substr(extPos);
             // Check if it's a known asset extension
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
-                ext == ".ogg" || ext == ".wav" || ext == ".mp3" ||
-                ext == ".ttf" || ext == ".otf" || ext == ".mp4" ||
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ogg" ||
+                ext == ".wav" || ext == ".mp3" || ext == ".ttf" || ext == ".otf" || ext == ".mp4" ||
                 ext == ".webm") {
               referencedAssets.insert(reference);
 
@@ -415,21 +406,19 @@ void BuildSizeScanner::parseFileForAssetReferences(
   }
 }
 
-u64 BuildSizeScanner::generateSuggestions(
-    const std::vector<AssetSizeInfo> &assets,
-    const std::vector<DuplicateGroup> &duplicates,
-    const std::vector<std::string> &unusedAssets,
-    std::vector<OptimizationSuggestion> &suggestions) {
+u64 BuildSizeScanner::generateSuggestions(const std::vector<AssetSizeInfo>& assets,
+                                          const std::vector<DuplicateGroup>& duplicates,
+                                          const std::vector<std::string>& unusedAssets,
+                                          std::vector<OptimizationSuggestion>& suggestions) {
   u64 potentialSavings = 0;
 
   // Suggest removing duplicates
-  for (const auto &dup : duplicates) {
+  for (const auto& dup : duplicates) {
     OptimizationSuggestion suggestion;
     suggestion.priority = OptimizationSuggestion::Priority::High;
     suggestion.type = OptimizationSuggestion::Type::RemoveDuplicate;
     suggestion.assetPath = dup.paths[1]; // First duplicate
-    suggestion.description =
-        "Remove duplicate file (same content as " + dup.paths[0] + ")";
+    suggestion.description = "Remove duplicate file (same content as " + dup.paths[0] + ")";
     suggestion.estimatedSavings = dup.singleFileSize;
     suggestion.canAutoFix = true;
 
@@ -438,7 +427,7 @@ u64 BuildSizeScanner::generateSuggestions(
   }
 
   // Suggest optimizing large images
-  for (const auto &asset : assets) {
+  for (const auto& asset : assets) {
     if (asset.category == AssetCategory::Images && asset.isOversized) {
       OptimizationSuggestion suggestion;
       suggestion.priority = OptimizationSuggestion::Priority::Medium;
@@ -447,7 +436,7 @@ u64 BuildSizeScanner::generateSuggestions(
 
       // Format bytes helper (inline for this file)
       auto formatBytes = [](u64 bytes) -> std::string {
-        const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+        const char* units[] = {"B", "KB", "MB", "GB", "TB"};
         i32 unitIndex = 0;
         f64 size = static_cast<f64>(bytes);
 
@@ -460,14 +449,12 @@ u64 BuildSizeScanner::generateSuggestions(
         if (unitIndex == 0) {
           oss << bytes << " " << units[unitIndex];
         } else {
-          oss << std::fixed << std::setprecision(2) << size << " "
-              << units[unitIndex];
+          oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
         }
         return oss.str();
       };
 
-      suggestion.description = "Large image detected (" +
-                               formatBytes(asset.originalSize) +
+      suggestion.description = "Large image detected (" + formatBytes(asset.originalSize) +
                                "). Consider resizing or compressing.";
       suggestion.estimatedSavings = asset.originalSize / 2; // Rough estimate
       suggestion.canAutoFix = false;
@@ -484,7 +471,7 @@ u64 BuildSizeScanner::generateSuggestions(
 
       // Format bytes helper (inline for this file)
       auto formatBytes = [](u64 bytes) -> std::string {
-        const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+        const char* units[] = {"B", "KB", "MB", "GB", "TB"};
         i32 unitIndex = 0;
         f64 size = static_cast<f64>(bytes);
 
@@ -497,14 +484,12 @@ u64 BuildSizeScanner::generateSuggestions(
         if (unitIndex == 0) {
           oss << bytes << " " << units[unitIndex];
         } else {
-          oss << std::fixed << std::setprecision(2) << size << " "
-              << units[unitIndex];
+          oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
         }
         return oss.str();
       };
 
-      suggestion.description = "Large audio file detected (" +
-                               formatBytes(asset.originalSize) +
+      suggestion.description = "Large audio file detected (" + formatBytes(asset.originalSize) +
                                "). Consider using OGG Vorbis.";
       suggestion.estimatedSavings = asset.originalSize / 3; // Rough estimate
       suggestion.canAutoFix = false;
@@ -515,8 +500,8 @@ u64 BuildSizeScanner::generateSuggestions(
   }
 
   // Suggest removing unused assets
-  for (const auto &unusedPath : unusedAssets) {
-    for (const auto &asset : assets) {
+  for (const auto& unusedPath : unusedAssets) {
+    for (const auto& asset : assets) {
       if (asset.path == unusedPath) {
         OptimizationSuggestion suggestion;
         suggestion.priority = OptimizationSuggestion::Priority::High;
@@ -535,22 +520,21 @@ u64 BuildSizeScanner::generateSuggestions(
 
   // Sort suggestions by estimated savings (descending)
   std::sort(suggestions.begin(), suggestions.end(),
-            [](const OptimizationSuggestion &a,
-               const OptimizationSuggestion &b) {
+            [](const OptimizationSuggestion& a, const OptimizationSuggestion& b) {
               return a.estimatedSavings > b.estimatedSavings;
             });
 
   return potentialSavings;
 }
 
-void BuildSizeScanner::calculateSummaries(
-    const std::vector<AssetSizeInfo> &assets, u64 totalOriginalSize,
-    std::vector<CategorySummary> &categorySummaries) {
+void BuildSizeScanner::calculateSummaries(const std::vector<AssetSizeInfo>& assets,
+                                          u64 totalOriginalSize,
+                                          std::vector<CategorySummary>& categorySummaries) {
   // Group by category
   std::unordered_map<AssetCategory, CategorySummary> categoryMap;
 
-  for (const auto &asset : assets) {
-    auto &summary = categoryMap[asset.category];
+  for (const auto& asset : assets) {
+    auto& summary = categoryMap[asset.category];
     summary.category = asset.category;
     summary.fileCount++;
     summary.totalOriginalSize += asset.originalSize;
@@ -558,17 +542,15 @@ void BuildSizeScanner::calculateSummaries(
   }
 
   // Calculate percentages and averages
-  for (auto &[category, summary] : categoryMap) {
+  for (auto& [category, summary] : categoryMap) {
     if (totalOriginalSize > 0) {
-      summary.percentageOfTotal =
-          static_cast<f32>(summary.totalOriginalSize) /
-          static_cast<f32>(totalOriginalSize) * 100.0f;
+      summary.percentageOfTotal = static_cast<f32>(summary.totalOriginalSize) /
+                                  static_cast<f32>(totalOriginalSize) * 100.0f;
     }
 
     if (summary.totalOriginalSize > 0) {
-      summary.averageCompressionRatio =
-          static_cast<f32>(summary.totalCompressedSize) /
-          static_cast<f32>(summary.totalOriginalSize);
+      summary.averageCompressionRatio = static_cast<f32>(summary.totalCompressedSize) /
+                                        static_cast<f32>(summary.totalOriginalSize);
     }
 
     categorySummaries.push_back(summary);
@@ -576,12 +558,12 @@ void BuildSizeScanner::calculateSummaries(
 
   // Sort by size (descending)
   std::sort(categorySummaries.begin(), categorySummaries.end(),
-            [](const CategorySummary &a, const CategorySummary &b) {
+            [](const CategorySummary& a, const CategorySummary& b) {
               return a.totalOriginalSize > b.totalOriginalSize;
             });
 }
 
-std::string BuildSizeScanner::computeFileHash(const std::string &path) {
+std::string BuildSizeScanner::computeFileHash(const std::string& path) {
   // Use SHA-256 for cryptographically secure hash to prevent collisions
   try {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
@@ -595,30 +577,29 @@ std::string BuildSizeScanner::computeFileHash(const std::string &path) {
     // Read entire file into memory for hashing
     // For very large files, this could be optimized with streaming
     std::vector<u8> fileData(static_cast<size_t>(fileSize));
-    file.read(reinterpret_cast<char *>(fileData.data()), fileSize);
+    file.read(reinterpret_cast<char*>(fileData.data()), fileSize);
 
     if (file.gcount() != fileSize) {
       return "";
     }
 
     // Calculate SHA-256 hash using existing secure implementation
-    auto hash = VFS::PackIntegrityChecker::calculateSha256(
-        fileData.data(), static_cast<usize>(fileSize));
+    auto hash =
+        VFS::PackIntegrityChecker::calculateSha256(fileData.data(), static_cast<usize>(fileSize));
 
     // Convert hash to hex string
     std::ostringstream oss;
-    for (const auto &byte : hash) {
-      oss << std::hex << std::setw(2) << std::setfill('0')
-          << static_cast<int>(byte);
+    for (const auto& byte : hash) {
+      oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
     }
     return oss.str();
 
-  } catch (const std::exception &) {
+  } catch (const std::exception&) {
     return "";
   }
 }
 
-CompressionType BuildSizeScanner::detectCompression(const std::string &path) {
+CompressionType BuildSizeScanner::detectCompression(const std::string& path) {
   std::string ext = fs::path(path).extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
@@ -635,19 +616,19 @@ CompressionType BuildSizeScanner::detectCompression(const std::string &path) {
   return CompressionType::None;
 }
 
-AssetCategory BuildSizeScanner::categorizeAsset(const std::string &path) {
+AssetCategory BuildSizeScanner::categorizeAsset(const std::string& path) {
   std::string ext = fs::path(path).extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
   // Images
-  if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" ||
-      ext == ".gif" || ext == ".webp" || ext == ".tga") {
+  if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif" ||
+      ext == ".webp" || ext == ".tga") {
     return AssetCategory::Images;
   }
 
   // Audio
-  if (ext == ".ogg" || ext == ".wav" || ext == ".mp3" || ext == ".flac" ||
-      ext == ".aac" || ext == ".m4a") {
+  if (ext == ".ogg" || ext == ".wav" || ext == ".mp3" || ext == ".flac" || ext == ".aac" ||
+      ext == ".m4a") {
     return AssetCategory::Audio;
   }
 
@@ -667,8 +648,8 @@ AssetCategory BuildSizeScanner::categorizeAsset(const std::string &path) {
   }
 
   // Data
-  if (ext == ".xml" || ext == ".yaml" || ext == ".yml" || ext == ".csv" ||
-      ext == ".dat" || ext == ".bin") {
+  if (ext == ".xml" || ext == ".yaml" || ext == ".yml" || ext == ".csv" || ext == ".dat" ||
+      ext == ".bin") {
     return AssetCategory::Data;
   }
 

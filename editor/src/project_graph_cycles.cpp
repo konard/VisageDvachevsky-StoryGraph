@@ -79,8 +79,8 @@ void ProjectGraphAnalyzer::detectCycles(std::vector<IntegrityIssue>& issues) {
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         std::string currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         size_t braceStart = content.find('{', sceneStart);
         if (braceStart == std::string::npos) {
@@ -180,7 +180,8 @@ void ProjectGraphAnalyzer::detectCycles(std::vector<IntegrityIssue>& issues) {
             issue.message = "Cycle detected in story graph";
             issue.context = cyclePath;
             issue.filePath = sceneFiles[node];
-            issue.suggestions.push_back("Verify if this cycle is intentional (e.g., gameplay loop)");
+            issue.suggestions.push_back(
+                "Verify if this cycle is intentional (e.g., gameplay loop)");
             issue.suggestions.push_back("Add an 'end' statement to break unintended loops");
             issue.suggestions.push_back("Ensure player has a way to exit the cycle");
             issue.hasQuickFix = false;
@@ -206,6 +207,5 @@ void ProjectGraphAnalyzer::detectCycles(std::vector<IntegrityIssue>& issues) {
     }
   }
 }
-
 
 } // namespace NovelMind::editor

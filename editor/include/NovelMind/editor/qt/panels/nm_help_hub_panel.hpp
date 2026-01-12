@@ -36,7 +36,7 @@ class NMHelpHubPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMHelpHubPanel(QWidget *parent = nullptr);
+  explicit NMHelpHubPanel(QWidget* parent = nullptr);
   ~NMHelpHubPanel() override;
 
   // NMDockPanel overrides
@@ -53,7 +53,7 @@ public slots:
   /**
    * @brief Filter tutorials by search text
    */
-  void filterTutorials(const QString &searchText);
+  void filterTutorials(const QString& searchText);
 
   /**
    * @brief Filter tutorials by level
@@ -61,8 +61,8 @@ public slots:
   void filterByLevel(int levelIndex);
 
 private slots:
-  void onTutorialItemClicked(QTreeWidgetItem *item, int column);
-  void onTutorialItemDoubleClicked(QTreeWidgetItem *item, int column);
+  void onTutorialItemClicked(QTreeWidgetItem* item, int column);
+  void onTutorialItemDoubleClicked(QTreeWidgetItem* item, int column);
   void onStartButtonClicked();
   void onResetProgressButtonClicked();
   void onDisableButtonClicked();
@@ -80,31 +80,31 @@ private:
   QColor getStateColor(guided_learning::TutorialState state) const;
 
   // UI Components
-  QWidget *m_contentWidget = nullptr;
+  QWidget* m_contentWidget = nullptr;
 
   // Search and filter
-  QLineEdit *m_searchEdit = nullptr;
-  QComboBox *m_levelFilter = nullptr;
+  QLineEdit* m_searchEdit = nullptr;
+  QComboBox* m_levelFilter = nullptr;
 
   // Tutorial tree (categories -> tutorials)
-  QTreeWidget *m_tutorialTree = nullptr;
+  QTreeWidget* m_tutorialTree = nullptr;
 
   // Details panel
-  QWidget *m_detailsPanel = nullptr;
-  QLabel *m_titleLabel = nullptr;
-  QLabel *m_descriptionLabel = nullptr;
-  QLabel *m_levelLabel = nullptr;
-  QLabel *m_durationLabel = nullptr;
-  QLabel *m_progressLabel = nullptr;
+  QWidget* m_detailsPanel = nullptr;
+  QLabel* m_titleLabel = nullptr;
+  QLabel* m_descriptionLabel = nullptr;
+  QLabel* m_levelLabel = nullptr;
+  QLabel* m_durationLabel = nullptr;
+  QLabel* m_progressLabel = nullptr;
 
   // Action buttons
-  QPushButton *m_startButton = nullptr;
-  QPushButton *m_resetProgressButton = nullptr;
-  QPushButton *m_disableButton = nullptr;
+  QPushButton* m_startButton = nullptr;
+  QPushButton* m_resetProgressButton = nullptr;
+  QPushButton* m_disableButton = nullptr;
 
   // Footer
-  QPushButton *m_resetAllButton = nullptr;
-  QPushButton *m_settingsButton = nullptr;
+  QPushButton* m_resetAllButton = nullptr;
+  QPushButton* m_settingsButton = nullptr;
 
   // State
   QString m_selectedTutorialId;

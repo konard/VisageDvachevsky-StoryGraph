@@ -12,7 +12,7 @@ namespace NovelMind::editor {
 // Error code to string
 // ============================================================================
 
-const char *projectJsonErrorToString(ProjectJsonError error) {
+const char* projectJsonErrorToString(ProjectJsonError error) {
   switch (error) {
   // Parse errors
   case ProjectJsonError::ParseError:
@@ -73,7 +73,7 @@ const char *projectJsonErrorToString(ProjectJsonError error) {
 // JSON String Escaping
 // ============================================================================
 
-std::string ProjectJsonHandler::escapeJsonString(const std::string &str) {
+std::string ProjectJsonHandler::escapeJsonString(const std::string& str) {
   std::string result;
   result.reserve(str.size() * 2); // Reserve extra space for escapes
 
@@ -116,7 +116,7 @@ std::string ProjectJsonHandler::escapeJsonString(const std::string &str) {
   return result;
 }
 
-std::string ProjectJsonHandler::unescapeJsonString(const std::string &str) {
+std::string ProjectJsonHandler::unescapeJsonString(const std::string& str) {
   std::string result;
   result.reserve(str.size());
 
@@ -194,7 +194,7 @@ std::string ProjectJsonHandler::unescapeJsonString(const std::string &str) {
 // JSON Parsing
 // ============================================================================
 
-Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
+Result<JsonObject> ProjectJsonHandler::parseJson(const std::string& json) {
   JsonObject obj;
 
   // Simple regex-based parser for flat JSON objects
@@ -237,7 +237,7 @@ Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
   // Pattern: "key"\s*:\s*value
   std::regex kvPattern("\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\"" // Quoted key
                        "\\s*:\\s*"                          // Colon separator
-                       "(" // Value alternatives:
+                       "("                                  // Value alternatives:
                        "\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\"" // Quoted string
                        "|(-?\\d+\\.?\\d*)"                  // Number
                        "|true|false|null"                   // Boolean/null
@@ -279,8 +279,7 @@ Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
         // Array of strings
         std::vector<std::string> arr;
         std::regex arrPattern("\"([^\"\\\\]*(\\\\.[^\"\\\\]*)*)\"");
-        auto arrBegin = std::sregex_iterator(fullValue.begin(), fullValue.end(),
-                                             arrPattern);
+        auto arrBegin = std::sregex_iterator(fullValue.begin(), fullValue.end(), arrPattern);
         auto arrEnd = std::sregex_iterator();
         for (auto arrIt = arrBegin; arrIt != arrEnd; ++arrIt) {
           arr.push_back(unescapeJsonString((*arrIt)[1].str()));
@@ -295,8 +294,8 @@ Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
             obj[key] = static_cast<i64>(std::stoll(fullValue));
           }
         } catch (...) {
-          return Result<JsonObject>::error("Invalid number value for key '" +
-                                           key + "': " + fullValue);
+          return Result<JsonObject>::error("Invalid number value for key '" + key +
+                                           "': " + fullValue);
         }
       }
     }
@@ -310,158 +309,144 @@ Result<JsonObject> ProjectJsonHandler::parseJson(const std::string &json) {
 // ============================================================================
 
 template <>
-Result<std::string> ProjectJsonHandler::getField(const JsonObject &obj,
-                                                 const std::string &key) {
+Result<std::string> ProjectJsonHandler::getField(const JsonObject& obj, const std::string& key) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<std::string>::error("Missing required field: " + key);
   }
 
-  if (auto *val = std::get_if<std::string>(&it->second)) {
+  if (auto* val = std::get_if<std::string>(&it->second)) {
     return Result<std::string>::ok(*val);
   }
 
-  return Result<std::string>::error("Field '" + key +
-                                    "' has wrong type (expected string)");
+  return Result<std::string>::error("Field '" + key + "' has wrong type (expected string)");
 }
 
 template <>
-Result<i64> ProjectJsonHandler::getField(const JsonObject &obj,
-                                         const std::string &key) {
+Result<i64> ProjectJsonHandler::getField(const JsonObject& obj, const std::string& key) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<i64>::error("Missing required field: " + key);
   }
 
-  if (auto *val = std::get_if<i64>(&it->second)) {
+  if (auto* val = std::get_if<i64>(&it->second)) {
     return Result<i64>::ok(*val);
   }
 
-  return Result<i64>::error("Field '" + key +
-                            "' has wrong type (expected integer)");
+  return Result<i64>::error("Field '" + key + "' has wrong type (expected integer)");
 }
 
 template <>
-Result<bool> ProjectJsonHandler::getField(const JsonObject &obj,
-                                          const std::string &key) {
+Result<bool> ProjectJsonHandler::getField(const JsonObject& obj, const std::string& key) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<bool>::error("Missing required field: " + key);
   }
 
-  if (auto *val = std::get_if<bool>(&it->second)) {
+  if (auto* val = std::get_if<bool>(&it->second)) {
     return Result<bool>::ok(*val);
   }
 
-  return Result<bool>::error("Field '" + key +
-                             "' has wrong type (expected boolean)");
+  return Result<bool>::error("Field '" + key + "' has wrong type (expected boolean)");
 }
 
 template <>
-Result<std::vector<std::string>>
-ProjectJsonHandler::getField(const JsonObject &obj, const std::string &key) {
+Result<std::vector<std::string>> ProjectJsonHandler::getField(const JsonObject& obj,
+                                                              const std::string& key) {
   auto it = obj.find(key);
   if (it == obj.end()) {
-    return Result<std::vector<std::string>>::error("Missing required field: " +
-                                                   key);
+    return Result<std::vector<std::string>>::error("Missing required field: " + key);
   }
 
-  if (auto *val = std::get_if<std::vector<std::string>>(&it->second)) {
+  if (auto* val = std::get_if<std::vector<std::string>>(&it->second)) {
     return Result<std::vector<std::string>>::ok(*val);
   }
 
-  return Result<std::vector<std::string>>::error(
-      "Field '" + key + "' has wrong type (expected array)");
+  return Result<std::vector<std::string>>::error("Field '" + key +
+                                                 "' has wrong type (expected array)");
 }
 
 template <>
-Result<std::string>
-ProjectJsonHandler::getOptionalField(const JsonObject &obj,
-                                     const std::string &key,
-                                     const std::string &defaultValue) {
+Result<std::string> ProjectJsonHandler::getOptionalField(const JsonObject& obj,
+                                                         const std::string& key,
+                                                         const std::string& defaultValue) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<std::string>::ok(defaultValue);
   }
 
-  if (auto *val = std::get_if<std::string>(&it->second)) {
+  if (auto* val = std::get_if<std::string>(&it->second)) {
     return Result<std::string>::ok(*val);
   }
 
-  return Result<std::string>::error("Field '" + key +
-                                    "' has wrong type (expected string)");
+  return Result<std::string>::error("Field '" + key + "' has wrong type (expected string)");
 }
 
 template <>
-Result<i64> ProjectJsonHandler::getOptionalField(const JsonObject &obj,
-                                                 const std::string &key,
-                                                 const i64 &defaultValue) {
+Result<i64> ProjectJsonHandler::getOptionalField(const JsonObject& obj, const std::string& key,
+                                                 const i64& defaultValue) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<i64>::ok(defaultValue);
   }
 
   // Try i64 first
-  if (auto *val = std::get_if<i64>(&it->second)) {
+  if (auto* val = std::get_if<i64>(&it->second)) {
     return Result<i64>::ok(*val);
   }
 
   // Try f64 and convert if it's a whole number
-  if (auto *val = std::get_if<f64>(&it->second)) {
+  if (auto* val = std::get_if<f64>(&it->second)) {
     f64 doubleVal = *val;
     i64 intVal = static_cast<i64>(doubleVal);
     // Check if conversion is safe (no fractional part)
     if (doubleVal == static_cast<f64>(intVal)) {
       return Result<i64>::ok(intVal);
     }
-    return Result<i64>::error("Field '" + key +
-                              "' is a floating-point number, expected integer");
+    return Result<i64>::error("Field '" + key + "' is a floating-point number, expected integer");
   }
 
-  return Result<i64>::error("Field '" + key +
-                            "' has wrong type (expected integer)");
+  return Result<i64>::error("Field '" + key + "' has wrong type (expected integer)");
 }
 
 template <>
-Result<bool> ProjectJsonHandler::getOptionalField(const JsonObject &obj,
-                                                  const std::string &key,
-                                                  const bool &defaultValue) {
+Result<bool> ProjectJsonHandler::getOptionalField(const JsonObject& obj, const std::string& key,
+                                                  const bool& defaultValue) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<bool>::ok(defaultValue);
   }
 
-  if (auto *val = std::get_if<bool>(&it->second)) {
+  if (auto* val = std::get_if<bool>(&it->second)) {
     return Result<bool>::ok(*val);
   }
 
-  return Result<bool>::error("Field '" + key +
-                             "' has wrong type (expected boolean)");
+  return Result<bool>::error("Field '" + key + "' has wrong type (expected boolean)");
 }
 
 template <>
-Result<std::vector<std::string>> ProjectJsonHandler::getOptionalField(
-    const JsonObject &obj, const std::string &key,
-    const std::vector<std::string> &defaultValue) {
+Result<std::vector<std::string>>
+ProjectJsonHandler::getOptionalField(const JsonObject& obj, const std::string& key,
+                                     const std::vector<std::string>& defaultValue) {
   auto it = obj.find(key);
   if (it == obj.end()) {
     return Result<std::vector<std::string>>::ok(defaultValue);
   }
 
-  if (auto *val = std::get_if<std::vector<std::string>>(&it->second)) {
+  if (auto* val = std::get_if<std::vector<std::string>>(&it->second)) {
     return Result<std::vector<std::string>>::ok(*val);
   }
 
-  return Result<std::vector<std::string>>::error(
-      "Field '" + key + "' has wrong type (expected array)");
+  return Result<std::vector<std::string>>::error("Field '" + key +
+                                                 "' has wrong type (expected array)");
 }
 
 // ============================================================================
 // Parse from String
 // ============================================================================
 
-Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
-                                                 ProjectMetadata &outMetadata) {
+Result<void> ProjectJsonHandler::parseFromString(const std::string& json,
+                                                 ProjectMetadata& outMetadata) {
   // Parse JSON
   auto parseResult = parseJson(json);
   if (parseResult.isError()) {
@@ -478,15 +463,14 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
 
   u32 version = static_cast<u32>(versionResult.value());
   if (version > getCurrentVersion()) {
-    return Result<void>::error(
-        "Unsupported project version " + std::to_string(version) +
-        " (current version: " + std::to_string(getCurrentVersion()) + ")");
+    return Result<void>::error("Unsupported project version " + std::to_string(version) +
+                               " (current version: " + std::to_string(getCurrentVersion()) + ")");
   }
 
   if (version < getMinSupportedVersion()) {
-    return Result<void>::error("Project version " + std::to_string(version) +
-                               " is too old (minimum supported: " +
-                               std::to_string(getMinSupportedVersion()) + ")");
+    return Result<void>::error(
+        "Project version " + std::to_string(version) +
+        " is too old (minimum supported: " + std::to_string(getMinSupportedVersion()) + ")");
   }
 
   // Migrate if needed
@@ -523,8 +507,7 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
   }
   outMetadata.description = descriptionField.value();
 
-  auto engineVersionField =
-      getOptionalField<std::string>(obj, "engineVersion", "0.2.0");
+  auto engineVersionField = getOptionalField<std::string>(obj, "engineVersion", "0.2.0");
   if (engineVersionField.isError()) {
     return Result<void>::error(engineVersionField.error());
   }
@@ -536,29 +519,25 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
   }
   outMetadata.startScene = startSceneField.value();
 
-  auto defaultLocaleField =
-      getOptionalField<std::string>(obj, "defaultLocale", "en");
+  auto defaultLocaleField = getOptionalField<std::string>(obj, "defaultLocale", "en");
   if (defaultLocaleField.isError()) {
     return Result<void>::error(defaultLocaleField.error());
   }
   outMetadata.defaultLocale = defaultLocaleField.value();
 
-  auto targetResolutionField =
-      getOptionalField<std::string>(obj, "targetResolution", "1920x1080");
+  auto targetResolutionField = getOptionalField<std::string>(obj, "targetResolution", "1920x1080");
   if (targetResolutionField.isError()) {
     return Result<void>::error(targetResolutionField.error());
   }
   outMetadata.targetResolution = targetResolutionField.value();
 
-  auto fullscreenDefaultField =
-      getOptionalField<bool>(obj, "fullscreenDefault", false);
+  auto fullscreenDefaultField = getOptionalField<bool>(obj, "fullscreenDefault", false);
   if (fullscreenDefaultField.isError()) {
     return Result<void>::error(fullscreenDefaultField.error());
   }
   outMetadata.fullscreenDefault = fullscreenDefaultField.value();
 
-  auto buildPresetField =
-      getOptionalField<std::string>(obj, "buildPreset", "release");
+  auto buildPresetField = getOptionalField<std::string>(obj, "buildPreset", "release");
   if (buildPresetField.isError()) {
     return Result<void>::error(buildPresetField.error());
   }
@@ -585,16 +564,14 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
 
   // Target platforms (array)
   auto platformsResult = getOptionalField<std::vector<std::string>>(
-      obj, "targetPlatforms",
-      std::vector<std::string>{"windows", "linux", "macos"});
+      obj, "targetPlatforms", std::vector<std::string>{"windows", "linux", "macos"});
   if (platformsResult.isError()) {
     return Result<void>::error(platformsResult.error());
   }
   outMetadata.targetPlatforms = platformsResult.value();
 
   // Playback source mode (issue #82, #100)
-  auto playbackModeResult =
-      getOptionalField<std::string>(obj, "playbackSourceMode", "Script");
+  auto playbackModeResult = getOptionalField<std::string>(obj, "playbackSourceMode", "Script");
   if (playbackModeResult.isError()) {
     return Result<void>::error(playbackModeResult.error());
   }
@@ -620,9 +597,8 @@ Result<void> ProjectJsonHandler::parseFromString(const std::string &json,
 // Serialize to String
 // ============================================================================
 
-Result<void>
-ProjectJsonHandler::serializeToString(const ProjectMetadata &metadata,
-                                      std::string &outJson) {
+Result<void> ProjectJsonHandler::serializeToString(const ProjectMetadata& metadata,
+                                                   std::string& outJson) {
   // Validate before serializing
   auto validateResult = validate(metadata);
   if (validateResult.isError()) {
@@ -636,23 +612,16 @@ ProjectJsonHandler::serializeToString(const ProjectMetadata &metadata,
   json << "  \"name\": \"" << escapeJsonString(metadata.name) << "\",\n";
   json << "  \"version\": \"" << escapeJsonString(metadata.version) << "\",\n";
   json << "  \"author\": \"" << escapeJsonString(metadata.author) << "\",\n";
-  json << "  \"description\": \"" << escapeJsonString(metadata.description)
-       << "\",\n";
-  json << "  \"engineVersion\": \"" << escapeJsonString(metadata.engineVersion)
-       << "\",\n";
+  json << "  \"description\": \"" << escapeJsonString(metadata.description) << "\",\n";
+  json << "  \"engineVersion\": \"" << escapeJsonString(metadata.engineVersion) << "\",\n";
   json << "  \"createdAt\": " << metadata.createdAt << ",\n";
   json << "  \"modifiedAt\": " << metadata.modifiedAt << ",\n";
   json << "  \"lastOpenedAt\": " << metadata.lastOpenedAt << ",\n";
-  json << "  \"startScene\": \"" << escapeJsonString(metadata.startScene)
-       << "\",\n";
-  json << "  \"defaultLocale\": \"" << escapeJsonString(metadata.defaultLocale)
-       << "\",\n";
-  json << "  \"targetResolution\": \""
-       << escapeJsonString(metadata.targetResolution) << "\",\n";
-  json << "  \"fullscreenDefault\": "
-       << (metadata.fullscreenDefault ? "true" : "false") << ",\n";
-  json << "  \"buildPreset\": \"" << escapeJsonString(metadata.buildPreset)
-       << "\",\n";
+  json << "  \"startScene\": \"" << escapeJsonString(metadata.startScene) << "\",\n";
+  json << "  \"defaultLocale\": \"" << escapeJsonString(metadata.defaultLocale) << "\",\n";
+  json << "  \"targetResolution\": \"" << escapeJsonString(metadata.targetResolution) << "\",\n";
+  json << "  \"fullscreenDefault\": " << (metadata.fullscreenDefault ? "true" : "false") << ",\n";
+  json << "  \"buildPreset\": \"" << escapeJsonString(metadata.buildPreset) << "\",\n";
   json << "  \"targetPlatforms\": [";
   for (size_t i = 0; i < metadata.targetPlatforms.size(); ++i) {
     if (i > 0)
@@ -686,8 +655,8 @@ ProjectJsonHandler::serializeToString(const ProjectMetadata &metadata,
 // Load from File
 // ============================================================================
 
-Result<void> ProjectJsonHandler::loadFromFile(const std::string &path,
-                                              ProjectMetadata &outMetadata) {
+Result<void> ProjectJsonHandler::loadFromFile(const std::string& path,
+                                              ProjectMetadata& outMetadata) {
   namespace fs = std::filesystem;
 
   // Check file exists
@@ -718,8 +687,8 @@ Result<void> ProjectJsonHandler::loadFromFile(const std::string &path,
 // Save to File (Atomic)
 // ============================================================================
 
-Result<void> ProjectJsonHandler::saveToFile(const std::string &path,
-                                            const ProjectMetadata &metadata) {
+Result<void> ProjectJsonHandler::saveToFile(const std::string& path,
+                                            const ProjectMetadata& metadata) {
   namespace fs = std::filesystem;
 
   // Serialize to string
@@ -738,23 +707,20 @@ Result<void> ProjectJsonHandler::saveToFile(const std::string &path,
   {
     std::ofstream tempFile(tempPath);
     if (!tempFile.is_open()) {
-      return Result<void>::error("Failed to create temporary file: " +
-                                 tempPath.string());
+      return Result<void>::error("Failed to create temporary file: " + tempPath.string());
     }
 
     tempFile << json;
     tempFile.flush();
 
     if (tempFile.fail()) {
-      return Result<void>::error("Failed to write to temporary file: " +
-                                 tempPath.string());
+      return Result<void>::error("Failed to write to temporary file: " + tempPath.string());
     }
   }
 
   // Verify temp file was written
   if (!fs::exists(tempPath)) {
-    return Result<void>::error("Temporary file was not created: " +
-                               tempPath.string());
+    return Result<void>::error("Temporary file was not created: " + tempPath.string());
   }
 
   // Rename temp file to target (atomic operation)
@@ -773,7 +739,7 @@ Result<void> ProjectJsonHandler::saveToFile(const std::string &path,
 // Validation
 // ============================================================================
 
-Result<void> ProjectJsonHandler::validate(const ProjectMetadata &metadata) {
+Result<void> ProjectJsonHandler::validate(const ProjectMetadata& metadata) {
   // Name must not be empty
   if (metadata.name.empty()) {
     return Result<void>::error("Project name cannot be empty");
@@ -783,8 +749,7 @@ Result<void> ProjectJsonHandler::validate(const ProjectMetadata &metadata) {
   const std::string invalidChars = "<>:\"/\\|?*";
   for (char c : metadata.name) {
     if (invalidChars.find(c) != std::string::npos) {
-      return Result<void>::error("Project name contains invalid character: " +
-                                 std::string(1, c));
+      return Result<void>::error("Project name contains invalid character: " + std::string(1, c));
     }
   }
 
@@ -800,9 +765,8 @@ Result<void> ProjectJsonHandler::validate(const ProjectMetadata &metadata) {
   if (!metadata.targetResolution.empty()) {
     std::regex resolutionPattern(R"(\d+x\d+)");
     if (!std::regex_match(metadata.targetResolution, resolutionPattern)) {
-      return Result<void>::error(
-          "Invalid resolution format: " + metadata.targetResolution +
-          " (expected WIDTHxHEIGHT)");
+      return Result<void>::error("Invalid resolution format: " + metadata.targetResolution +
+                                 " (expected WIDTHxHEIGHT)");
     }
   }
 
@@ -813,8 +777,7 @@ Result<void> ProjectJsonHandler::validate(const ProjectMetadata &metadata) {
 // Migration
 // ============================================================================
 
-Result<void> ProjectJsonHandler::migrateFromVersion(u32 version,
-                                                    JsonObject &obj) {
+Result<void> ProjectJsonHandler::migrateFromVersion(u32 version, JsonObject& obj) {
   // Currently only version 1 is supported, no migration needed
   // Future versions can implement migration logic here
 

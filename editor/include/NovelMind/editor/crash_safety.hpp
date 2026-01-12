@@ -133,10 +133,10 @@ class ICrashSafetyListener {
 public:
   virtual ~ICrashSafetyListener() = default;
 
-  virtual void onErrorOccurred(const RuntimeError &error) = 0;
-  virtual void onRecoveryStarted(const std::string &checkpointDescription) = 0;
+  virtual void onErrorOccurred(const RuntimeError& error) = 0;
+  virtual void onRecoveryStarted(const std::string& checkpointDescription) = 0;
   virtual void onRecoveryCompleted(bool success) = 0;
-  virtual void onCheckpointCreated(const std::string &description) = 0;
+  virtual void onCheckpointCreated(const std::string& description) = 0;
   virtual void onRuntimeIsolated() = 0;
   virtual void onRuntimeResumed() = 0;
 };
@@ -146,13 +146,13 @@ public:
  */
 class ErrorBoundary {
 public:
-  ErrorBoundary(CrashSafetyManager *manager, const std::string &context);
+  ErrorBoundary(CrashSafetyManager* manager, const std::string& context);
   ~ErrorBoundary();
 
   /**
    * @brief Execute a function within the error boundary
    */
-  template <typename F> Result<void> execute(F &&func);
+  template <typename F> Result<void> execute(F&& func);
 
   /**
    * @brief Check if an error occurred
@@ -162,10 +162,10 @@ public:
   /**
    * @brief Get the captured error
    */
-  [[nodiscard]] const RuntimeError &getError() const { return m_error; }
+  [[nodiscard]] const RuntimeError& getError() const { return m_error; }
 
 private:
-  CrashSafetyManager *m_manager;
+  CrashSafetyManager* m_manager;
   std::string m_context;
   bool m_hasError = false;
   RuntimeError m_error;
@@ -188,17 +188,17 @@ public:
   /**
    * @brief Initialize with runtime host
    */
-  void initialize(EditorRuntimeHost *runtimeHost);
+  void initialize(EditorRuntimeHost* runtimeHost);
 
   /**
    * @brief Set configuration
    */
-  void setConfig(const CrashSafetyConfig &config);
+  void setConfig(const CrashSafetyConfig& config);
 
   /**
    * @brief Get current configuration
    */
-  [[nodiscard]] const CrashSafetyConfig &getConfig() const { return m_config; }
+  [[nodiscard]] const CrashSafetyConfig& getConfig() const { return m_config; }
 
   /**
    * @brief Update (check for timeouts, create auto-checkpoints)
@@ -210,21 +210,18 @@ public:
   /**
    * @brief Report a runtime error
    */
-  void reportError(const RuntimeError &error);
+  void reportError(const RuntimeError& error);
 
   /**
    * @brief Create error from exception
    */
-  RuntimeError createErrorFromException(const std::exception &ex,
-                                        ErrorType type,
-                                        const std::string &context);
+  RuntimeError createErrorFromException(const std::exception& ex, ErrorType type,
+                                        const std::string& context);
 
   /**
    * @brief Get recent errors
    */
-  [[nodiscard]] const std::vector<RuntimeError> &getRecentErrors() const {
-    return m_recentErrors;
-  }
+  [[nodiscard]] const std::vector<RuntimeError>& getRecentErrors() const { return m_recentErrors; }
 
   /**
    * @brief Clear error history
@@ -241,7 +238,7 @@ public:
   /**
    * @brief Create a checkpoint
    */
-  Result<void> createCheckpoint(const std::string &description = "");
+  Result<void> createCheckpoint(const std::string& description = "");
 
   /**
    * @brief Restore to a checkpoint
@@ -256,7 +253,7 @@ public:
   /**
    * @brief Get available checkpoints
    */
-  [[nodiscard]] const std::vector<RuntimeCheckpoint> &getCheckpoints() const {
+  [[nodiscard]] const std::vector<RuntimeCheckpoint>& getCheckpoints() const {
     return m_checkpoints;
   }
 
@@ -319,28 +316,26 @@ public:
   /**
    * @brief Check if watchdog has triggered
    */
-  [[nodiscard]] bool hasWatchdogTriggered() const {
-    return m_watchdogTriggered;
-  }
+  [[nodiscard]] bool hasWatchdogTriggered() const { return m_watchdogTriggered; }
 
   // Listeners
 
   /**
    * @brief Add crash safety listener
    */
-  void addListener(ICrashSafetyListener *listener);
+  void addListener(ICrashSafetyListener* listener);
 
   /**
    * @brief Remove listener
    */
-  void removeListener(ICrashSafetyListener *listener);
+  void removeListener(ICrashSafetyListener* listener);
 
   // Logging
 
   /**
    * @brief Write error to log file
    */
-  void logError(const RuntimeError &error);
+  void logError(const RuntimeError& error);
 
   /**
    * @brief Get error log path
@@ -350,20 +345,20 @@ public:
 private:
   void createAutoCheckpoint();
   void trimCheckpoints();
-  void notifyErrorOccurred(const RuntimeError &error);
-  void notifyRecoveryStarted(const std::string &description);
+  void notifyErrorOccurred(const RuntimeError& error);
+  void notifyRecoveryStarted(const std::string& description);
   void notifyRecoveryCompleted(bool success);
-  void notifyCheckpointCreated(const std::string &description);
+  void notifyCheckpointCreated(const std::string& description);
   void notifyRuntimeIsolated();
   void notifyRuntimeResumed();
 
   RuntimeCheckpoint captureCurrentState();
-  void restoreState(const RuntimeCheckpoint &checkpoint);
+  void restoreState(const RuntimeCheckpoint& checkpoint);
 
   std::string formatStackTrace();
   std::string getCurrentContext();
 
-  EditorRuntimeHost *m_runtimeHost = nullptr;
+  EditorRuntimeHost* m_runtimeHost = nullptr;
   CrashSafetyConfig m_config;
 
   // Error state
@@ -386,7 +381,7 @@ private:
   f64 m_watchdogElapsed = 0.0;
 
   // Listeners
-  std::vector<ICrashSafetyListener *> m_listeners;
+  std::vector<ICrashSafetyListener*> m_listeners;
 };
 
 /**
@@ -394,16 +389,16 @@ private:
  */
 class SafeExecution {
 public:
-  SafeExecution(CrashSafetyManager *manager, const std::string &context);
+  SafeExecution(CrashSafetyManager* manager, const std::string& context);
   ~SafeExecution();
 
-  template <typename F> Result<void> run(F &&func);
+  template <typename F> Result<void> run(F&& func);
 
   [[nodiscard]] bool succeeded() const { return m_succeeded; }
-  [[nodiscard]] const RuntimeError &getError() const { return m_error; }
+  [[nodiscard]] const RuntimeError& getError() const { return m_error; }
 
 private:
-  CrashSafetyManager *m_manager;
+  CrashSafetyManager* m_manager;
   std::string m_context;
   bool m_succeeded = true;
   RuntimeError m_error;
@@ -414,7 +409,7 @@ private:
  */
 class MemoryGuard {
 public:
-  MemoryGuard(CrashSafetyManager *manager, size_t maxMemoryBytes);
+  MemoryGuard(CrashSafetyManager* manager, size_t maxMemoryBytes);
   ~MemoryGuard();
 
   /**
@@ -433,7 +428,7 @@ public:
   [[nodiscard]] size_t getLimit() const { return m_maxMemory; }
 
 private:
-  CrashSafetyManager *m_manager;
+  CrashSafetyManager* m_manager;
   size_t m_maxMemory;
   size_t m_initialUsage;
 };
@@ -443,7 +438,7 @@ private:
  */
 class HotReloadGuard {
 public:
-  HotReloadGuard(CrashSafetyManager *manager);
+  HotReloadGuard(CrashSafetyManager* manager);
   ~HotReloadGuard();
 
   /**
@@ -452,7 +447,7 @@ public:
   Result<void> executeReload(std::function<Result<void>()> reloadFunc);
 
 private:
-  CrashSafetyManager *m_manager;
+  CrashSafetyManager* m_manager;
   RuntimeCheckpoint m_preReloadCheckpoint;
   bool m_checkpointCreated = false;
 };

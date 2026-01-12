@@ -80,8 +80,7 @@ enum class EaseType : u8 {
     return 1.0f - (1.0f - t) * (1.0f - t);
 
   case EaseType::EaseInOutQuad:
-    return t < 0.5f ? 2.0f * t * t
-                    : 1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) / 2.0f;
+    return t < 0.5f ? 2.0f * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 2.0f) / 2.0f;
 
   case EaseType::EaseInCubic:
     return t * t * t;
@@ -90,8 +89,7 @@ enum class EaseType : u8 {
     return 1.0f - std::pow(1.0f - t, 3.0f);
 
   case EaseType::EaseInOutCubic:
-    return t < 0.5f ? 4.0f * t * t * t
-                    : 1.0f - std::pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
+    return t < 0.5f ? 4.0f * t * t * t : 1.0f - std::pow(-2.0f * t + 2.0f, 3.0f) / 2.0f;
 
   case EaseType::EaseInSine:
     return 1.0f - std::cos((t * PI) / 2.0f);
@@ -126,11 +124,8 @@ enum class EaseType : u8 {
 
   case EaseType::EaseInOutBack:
     return t < 0.5f
-               ? (std::pow(2.0f * t, 2.0f) * ((c2 + 1.0f) * 2.0f * t - c2)) /
-                     2.0f
-               : (std::pow(2.0f * t - 2.0f, 2.0f) *
-                      ((c2 + 1.0f) * (t * 2.0f - 2.0f) + c2) +
-                  2.0f) /
+               ? (std::pow(2.0f * t, 2.0f) * ((c2 + 1.0f) * 2.0f * t - c2)) / 2.0f
+               : (std::pow(2.0f * t - 2.0f, 2.0f) * ((c2 + 1.0f) * (t * 2.0f - 2.0f) + c2) + 2.0f) /
                      2.0f;
 
   case EaseType::EaseOutBounce: {
@@ -154,38 +149,33 @@ enum class EaseType : u8 {
     return 1.0f - ease(EaseType::EaseOutBounce, 1.0f - t);
 
   case EaseType::EaseInOutBounce:
-    return t < 0.5f
-               ? (1.0f - ease(EaseType::EaseOutBounce, 1.0f - 2.0f * t)) / 2.0f
-               : (1.0f + ease(EaseType::EaseOutBounce, 2.0f * t - 1.0f)) / 2.0f;
+    return t < 0.5f ? (1.0f - ease(EaseType::EaseOutBounce, 1.0f - 2.0f * t)) / 2.0f
+                    : (1.0f + ease(EaseType::EaseOutBounce, 2.0f * t - 1.0f)) / 2.0f;
 
   case EaseType::EaseInElastic:
     if (t == 0.0f)
       return 0.0f;
     if (t == 1.0f)
       return 1.0f;
-    return -std::pow(2.0f, 10.0f * t - 10.0f) *
-           std::sin((t * 10.0f - 10.75f) * c4);
+    return -std::pow(2.0f, 10.0f * t - 10.0f) * std::sin((t * 10.0f - 10.75f) * c4);
 
   case EaseType::EaseOutElastic:
     if (t == 0.0f)
       return 0.0f;
     if (t == 1.0f)
       return 1.0f;
-    return std::pow(2.0f, -10.0f * t) * std::sin((t * 10.0f - 0.75f) * c4) +
-           1.0f;
+    return std::pow(2.0f, -10.0f * t) * std::sin((t * 10.0f - 0.75f) * c4) + 1.0f;
 
   case EaseType::EaseInOutElastic:
     if (t == 0.0f)
       return 0.0f;
     if (t == 1.0f)
       return 1.0f;
-    return t < 0.5f ? -(std::pow(2.0f, 20.0f * t - 10.0f) *
-                        std::sin((20.0f * t - 11.125f) * c5)) /
-                          2.0f
-                    : (std::pow(2.0f, -20.0f * t + 10.0f) *
-                       std::sin((20.0f * t - 11.125f) * c5)) /
-                              2.0f +
-                          1.0f;
+    return t < 0.5f
+               ? -(std::pow(2.0f, 20.0f * t - 10.0f) * std::sin((20.0f * t - 11.125f) * c5)) / 2.0f
+               : (std::pow(2.0f, -20.0f * t + 10.0f) * std::sin((20.0f * t - 11.125f) * c5)) /
+                         2.0f +
+                     1.0f;
   }
 
   return t;
@@ -209,9 +199,8 @@ public:
   using CompletionCallback = std::function<void()>;
 
   Tween(f32 duration, EaseType easing = EaseType::Linear)
-      : m_duration(duration), m_elapsed(0.0f), m_easing(easing),
-        m_state(AnimationState::Idle), m_loops(1), m_currentLoop(0),
-        m_yoyo(false), m_forward(true) {}
+      : m_duration(duration), m_elapsed(0.0f), m_easing(easing), m_state(AnimationState::Idle),
+        m_loops(1), m_currentLoop(0), m_yoyo(false), m_forward(true) {}
 
   virtual ~Tween() = default;
 
@@ -306,7 +295,7 @@ public:
   /**
    * @brief Set number of loops (0 = infinite)
    */
-  Tween &setLoops(i32 loops) {
+  Tween& setLoops(i32 loops) {
     m_loops = loops;
     return *this;
   }
@@ -314,7 +303,7 @@ public:
   /**
    * @brief Enable yoyo mode (reverse after each loop)
    */
-  Tween &setYoyo(bool yoyo) {
+  Tween& setYoyo(bool yoyo) {
     m_yoyo = yoyo;
     return *this;
   }
@@ -322,7 +311,7 @@ public:
   /**
    * @brief Set completion callback
    */
-  Tween &onComplete(CompletionCallback callback) {
+  Tween& onComplete(CompletionCallback callback) {
     m_onComplete = std::move(callback);
     return *this;
   }
@@ -330,16 +319,12 @@ public:
   /**
    * @brief Check if animation is complete
    */
-  [[nodiscard]] bool isComplete() const {
-    return m_state == AnimationState::Completed;
-  }
+  [[nodiscard]] bool isComplete() const { return m_state == AnimationState::Completed; }
 
   /**
    * @brief Check if animation is running
    */
-  [[nodiscard]] bool isRunning() const {
-    return m_state == AnimationState::Running;
-  }
+  [[nodiscard]] bool isRunning() const { return m_state == AnimationState::Running; }
 
   /**
    * @brief Get animation state
@@ -376,8 +361,7 @@ protected:
  */
 class FloatTween : public Tween {
 public:
-  FloatTween(f32 *target, f32 from, f32 to, f32 duration,
-             EaseType easing = EaseType::Linear)
+  FloatTween(f32* target, f32 from, f32 to, f32 duration, EaseType easing = EaseType::Linear)
       : Tween(duration, easing), m_target(target), m_from(from), m_to(to) {}
 
   void start() override {
@@ -395,7 +379,7 @@ protected:
   }
 
 private:
-  f32 *m_target;
+  f32* m_target;
   f32 m_from;
   f32 m_to;
 };
@@ -405,10 +389,10 @@ private:
  */
 class PositionTween : public Tween {
 public:
-  PositionTween(f32 *targetX, f32 *targetY, f32 fromX, f32 fromY, f32 toX,
-                f32 toY, f32 duration, EaseType easing = EaseType::Linear)
-      : Tween(duration, easing), m_targetX(targetX), m_targetY(targetY),
-        m_fromX(fromX), m_fromY(fromY), m_toX(toX), m_toY(toY) {}
+  PositionTween(f32* targetX, f32* targetY, f32 fromX, f32 fromY, f32 toX, f32 toY, f32 duration,
+                EaseType easing = EaseType::Linear)
+      : Tween(duration, easing), m_targetX(targetX), m_targetY(targetY), m_fromX(fromX),
+        m_fromY(fromY), m_toX(toX), m_toY(toY) {}
 
   void start() override {
     Tween::start();
@@ -427,8 +411,8 @@ protected:
   }
 
 private:
-  f32 *m_targetX;
-  f32 *m_targetY;
+  f32* m_targetX;
+  f32* m_targetY;
   f32 m_fromX, m_fromY;
   f32 m_toX, m_toY;
 };
@@ -438,9 +422,8 @@ private:
  */
 class ColorTween : public Tween {
 public:
-  ColorTween(renderer::Color *target, const renderer::Color &from,
-             const renderer::Color &to, f32 duration,
-             EaseType easing = EaseType::Linear)
+  ColorTween(renderer::Color* target, const renderer::Color& from, const renderer::Color& to,
+             f32 duration, EaseType easing = EaseType::Linear)
       : Tween(duration, easing), m_target(target), m_from(from), m_to(to) {}
 
   void start() override {
@@ -460,7 +443,7 @@ protected:
   }
 
 private:
-  renderer::Color *m_target;
+  renderer::Color* m_target;
   renderer::Color m_from;
   renderer::Color m_to;
 };
@@ -472,8 +455,7 @@ class CallbackTween : public Tween {
 public:
   using UpdateCallback = std::function<void(f32)>;
 
-  CallbackTween(UpdateCallback callback, f32 duration,
-                EaseType easing = EaseType::Linear)
+  CallbackTween(UpdateCallback callback, f32 duration, EaseType easing = EaseType::Linear)
       : Tween(duration, easing), m_callback(std::move(callback)) {}
 
 protected:
@@ -497,7 +479,7 @@ public:
   /**
    * @brief Add a tween to run in sequence
    */
-  AnimationTimeline &append(std::unique_ptr<Tween> tween) {
+  AnimationTimeline& append(std::unique_ptr<Tween> tween) {
     if (tween) {
       m_sequence.push_back(std::move(tween));
     }
@@ -507,7 +489,7 @@ public:
   /**
    * @brief Add a tween to run in parallel with the last one
    */
-  AnimationTimeline &join(std::unique_ptr<Tween> tween) {
+  AnimationTimeline& join(std::unique_ptr<Tween> tween) {
     if (tween) {
       m_parallel.push_back(std::move(tween));
     }
@@ -517,7 +499,7 @@ public:
   /**
    * @brief Add a delay before the next tween
    */
-  AnimationTimeline &delay(f32 seconds) {
+  AnimationTimeline& delay(f32 seconds) {
     auto delayTween = std::make_unique<CallbackTween>([](f32) {}, seconds);
     m_sequence.push_back(std::move(delayTween));
     return *this;
@@ -542,7 +524,7 @@ public:
 
     // Update parallel animations
     bool allParallelComplete = true;
-    for (auto &tween : m_activeParallel) {
+    for (auto& tween : m_activeParallel) {
       if (tween && tween->update(deltaTime)) {
         allParallelComplete = false;
       }
@@ -550,7 +532,7 @@ public:
 
     // Update current sequence tween
     if (m_currentIndex < m_sequence.size()) {
-      auto &current = m_sequence[m_currentIndex];
+      auto& current = m_sequence[m_currentIndex];
       if (current && !current->update(deltaTime)) {
         // Current tween complete, move to next
         ++m_currentIndex;
@@ -584,7 +566,7 @@ public:
   /**
    * @brief Set completion callback
    */
-  AnimationTimeline &onComplete(std::function<void()> callback) {
+  AnimationTimeline& onComplete(std::function<void()> callback) {
     m_onComplete = std::move(callback);
     return *this;
   }
@@ -592,7 +574,7 @@ public:
 private:
   void startCurrentGroup() {
     if (m_currentIndex < m_sequence.size()) {
-      auto &tween = m_sequence[m_currentIndex];
+      auto& tween = m_sequence[m_currentIndex];
       if (tween) {
         tween->start();
       }
@@ -601,7 +583,7 @@ private:
     // Start all parallel tweens
     m_activeParallel = std::move(m_parallel);
     m_parallel.clear();
-    for (auto &tween : m_activeParallel) {
+    for (auto& tween : m_activeParallel) {
       if (tween) {
         tween->start();
       }
@@ -624,7 +606,7 @@ public:
   /**
    * @brief Add a tween to be managed
    */
-  void add(const std::string &id, std::unique_ptr<Tween> tween) {
+  void add(const std::string& id, std::unique_ptr<Tween> tween) {
     if (tween) {
       tween->start();
       m_tweens[id] = std::move(tween);
@@ -634,7 +616,7 @@ public:
   /**
    * @brief Add a timeline to be managed
    */
-  void add(const std::string &id, std::unique_ptr<AnimationTimeline> timeline) {
+  void add(const std::string& id, std::unique_ptr<AnimationTimeline> timeline) {
     if (timeline) {
       timeline->start();
       m_timelines[id] = std::move(timeline);
@@ -673,7 +655,7 @@ public:
   /**
    * @brief Stop and remove an animation by ID
    */
-  void stop(const std::string &id) {
+  void stop(const std::string& id) {
     auto tweenIt = m_tweens.find(id);
     if (tweenIt != m_tweens.end()) {
       if (tweenIt->second) {
@@ -703,22 +685,18 @@ public:
   /**
    * @brief Check if an animation exists
    */
-  [[nodiscard]] bool has(const std::string &id) const {
-    return m_tweens.find(id) != m_tweens.end() ||
-           m_timelines.find(id) != m_timelines.end();
+  [[nodiscard]] bool has(const std::string& id) const {
+    return m_tweens.find(id) != m_tweens.end() || m_timelines.find(id) != m_timelines.end();
   }
 
   /**
    * @brief Get number of active animations
    */
-  [[nodiscard]] size_t count() const {
-    return m_tweens.size() + m_timelines.size();
-  }
+  [[nodiscard]] size_t count() const { return m_tweens.size() + m_timelines.size(); }
 
 private:
   std::unordered_map<std::string, std::unique_ptr<Tween>> m_tweens;
-  std::unordered_map<std::string, std::unique_ptr<AnimationTimeline>>
-      m_timelines;
+  std::unordered_map<std::string, std::unique_ptr<AnimationTimeline>> m_timelines;
 };
 
 } // namespace NovelMind::scene

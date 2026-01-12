@@ -47,9 +47,9 @@ public:
 
   // Generate script-like input with random keywords
   std::string randomScriptLike(size_t statements) {
-    static const char *keywords[] = {
-        "character", "scene", "show", "hide", "say",    "choice", "goto",
-        "if",        "set",   "flag", "at",   "center", "left",   "right"};
+    static const char* keywords[] = {"character", "scene",  "show", "hide", "say",
+                                     "choice",    "goto",   "if",   "set",  "flag",
+                                     "at",        "center", "left", "right"};
     std::uniform_int_distribution<size_t> kwDist(0, 13);
     std::uniform_int_distribution<size_t> lenDist(1, 20);
 
@@ -69,17 +69,15 @@ private:
 };
 
 // Malformed script patterns
-const char *MALFORMED_SCRIPTS[] = {
+const char* MALFORMED_SCRIPTS[] = {
     // Empty and whitespace
     "", "   ", "\n\n\n", "\t\t\t",
 
     // Unclosed brackets and braces
-    "scene test {", "scene test { say", "character Test(name=\"",
-    "choice { \"Option\" ->",
+    "scene test {", "scene test { say", "character Test(name=\"", "choice { \"Option\" ->",
 
     // Invalid syntax
-    "scene {}", "character ()", "scene test { { { { { }",
-    "say \"unclosed string",
+    "scene {}", "character ()", "scene test { { { { { }", "say \"unclosed string",
 
     // Deeply nested
     "scene s { if a { if b { if c { if d { if e { } } } } } }",
@@ -97,7 +95,7 @@ const char *MALFORMED_SCRIPTS[] = {
     nullptr // End marker
 };
 
-bool isValidOrErrorGraceful(const std::string &input) {
+bool isValidOrErrorGraceful(const std::string& input) {
   try {
     Lexer lexer;
     auto tokenResult = lexer.tokenize(input);
@@ -230,13 +228,12 @@ TEST_CASE("Fuzz - Parser handles unbalanced braces", "[fuzzing][parser]") {
       "scene test { }" // Valid case - should pass
   };
 
-  for (const auto &input : testCases) {
+  for (const auto& input : testCases) {
     CHECK(isValidOrErrorGraceful(input));
   }
 }
 
-TEST_CASE("Fuzz - Parser handles deeply nested structures",
-          "[fuzzing][parser]") {
+TEST_CASE("Fuzz - Parser handles deeply nested structures", "[fuzzing][parser]") {
   // Build deeply nested if statements
   std::string deepNest = "scene test {\n";
   for (int i = 0; i < 100; ++i) {
@@ -251,8 +248,7 @@ TEST_CASE("Fuzz - Parser handles deeply nested structures",
   CHECK(isValidOrErrorGraceful(deepNest));
 }
 
-TEST_CASE("Fuzz - Parser handles random script-like input",
-          "[fuzzing][parser]") {
+TEST_CASE("Fuzz - Parser handles random script-like input", "[fuzzing][parser]") {
   RandomGenerator gen(11111);
 
   for (int i = 0; i < 10; ++i) {
@@ -265,9 +261,8 @@ TEST_CASE("Fuzz - Parser handles random script-like input",
 // Validator Fuzzing Tests
 // =============================================================================
 
-TEST_CASE("Fuzz - Validator handles cyclic scene references",
-          "[fuzzing][validator]") {
-  const char *cyclic = R"(
+TEST_CASE("Fuzz - Validator handles cyclic scene references", "[fuzzing][validator]") {
+  const char* cyclic = R"(
 scene a { goto b }
 scene b { goto c }
 scene c { goto a }
@@ -275,9 +270,8 @@ scene c { goto a }
   CHECK(isValidOrErrorGraceful(cyclic));
 }
 
-TEST_CASE("Fuzz - Validator handles duplicate identifiers",
-          "[fuzzing][validator]") {
-  const char *duplicates = R"(
+TEST_CASE("Fuzz - Validator handles duplicate identifiers", "[fuzzing][validator]") {
+  const char* duplicates = R"(
 character Hero(name="Hero", color="#FF0000")
 character Hero(name="Hero2", color="#00FF00")
 scene intro { }
@@ -286,9 +280,8 @@ scene intro { }
   CHECK(isValidOrErrorGraceful(duplicates));
 }
 
-TEST_CASE("Fuzz - Validator handles undefined references",
-          "[fuzzing][validator]") {
-  const char *undefined = R"(
+TEST_CASE("Fuzz - Validator handles undefined references", "[fuzzing][validator]") {
+  const char* undefined = R"(
 scene test {
     show UndefinedChar at center
     say AnotherUndefined "text"
@@ -332,7 +325,7 @@ TEST_CASE("Fuzz - Compiler patchJump bounds checking", "[fuzzing][compiler]") {
       "say Hero \"b\" } }",
   };
 
-  for (const auto &script : testScripts) {
+  for (const auto& script : testScripts) {
     try {
       Lexer lexer;
       auto tokens = lexer.tokenize(script);
@@ -360,8 +353,7 @@ TEST_CASE("Fuzz - Compiler patchJump bounds checking", "[fuzzing][compiler]") {
   }
 }
 
-TEST_CASE("Fuzz - Compiler handles edge case expressions",
-          "[fuzzing][compiler]") {
+TEST_CASE("Fuzz - Compiler handles edge case expressions", "[fuzzing][compiler]") {
   std::vector<std::string> expressions = {
       "scene test { set x = 0 }",
       "scene test { set x = -1 }",
@@ -373,7 +365,7 @@ TEST_CASE("Fuzz - Compiler handles edge case expressions",
       "scene test { if true { if true { if true { } } } }",
   };
 
-  for (const auto &expr : expressions) {
+  for (const auto& expr : expressions) {
     try {
       Lexer lexer;
       auto tokens = lexer.tokenize(expr);
@@ -447,8 +439,7 @@ TEST_CASE("Fuzz - Full pipeline handles random input", "[fuzzing][e2e]") {
   RandomGenerator gen(99999);
 
   for (int iteration = 0; iteration < 5; ++iteration) {
-    std::string input =
-        gen.randomScriptLike(static_cast<size_t>(iteration * 5 + 1));
+    std::string input = gen.randomScriptLike(static_cast<size_t>(iteration * 5 + 1));
 
     Lexer lexer;
     auto tokens = lexer.tokenize(input);
@@ -482,8 +473,7 @@ TEST_CASE("Fuzz - Full pipeline handles random input", "[fuzzing][e2e]") {
 
     // Load and run if we got valid bytecode
     VirtualMachine vm;
-    auto loadResult =
-        vm.load(bytecode.value().instructions, bytecode.value().stringTable);
+    auto loadResult = vm.load(bytecode.value().instructions, bytecode.value().stringTable);
     if (loadResult.isOk()) {
       // Run with limited steps to avoid infinite loops
       for (int step = 0; step < 1000 && !vm.isHalted(); ++step) {
@@ -495,9 +485,8 @@ TEST_CASE("Fuzz - Full pipeline handles random input", "[fuzzing][e2e]") {
   }
 }
 
-TEST_CASE("Fuzz - Lexer stress test with repeated tokenization",
-          "[fuzzing][stress]") {
-  const char *script = R"(
+TEST_CASE("Fuzz - Lexer stress test with repeated tokenization", "[fuzzing][stress]") {
+  const char* script = R"(
 character Hero(name="Hero", color="#FF0000")
 scene test {
     show Hero at center

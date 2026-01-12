@@ -30,24 +30,23 @@ struct DebugOverlayConfig {
 
 class DebugOverlay {
 public:
-  static DebugOverlay &instance();
+  static DebugOverlay& instance();
 
   void setEnabled(bool enabled) { m_enabled = enabled; }
   [[nodiscard]] bool isEnabled() const { return m_enabled; }
 
-  void setConfig(const DebugOverlayConfig &config) { m_config = config; }
-  [[nodiscard]] const DebugOverlayConfig &config() const { return m_config; }
+  void setConfig(const DebugOverlayConfig& config) { m_config = config; }
+  [[nodiscard]] const DebugOverlayConfig& config() const { return m_config; }
 
   void update(f32 deltaTime);
   void render();
 
-  void setMetric(const std::string &name, const std::string &value,
-                 const std::string &category = "");
-  void setMetric(const std::string &name, i64 value,
-                 const std::string &category = "");
-  void setMetric(const std::string &name, f64 value,
-                 const std::string &category = "", int precision = 2);
-  void removeMetric(const std::string &name);
+  void setMetric(const std::string& name, const std::string& value,
+                 const std::string& category = "");
+  void setMetric(const std::string& name, i64 value, const std::string& category = "");
+  void setMetric(const std::string& name, f64 value, const std::string& category = "",
+                 int precision = 2);
+  void removeMetric(const std::string& name);
 
   void addDrawCalls(u32 count) { m_drawCalls += count; }
   void setDrawCalls(u32 count) { m_drawCalls = count; }
@@ -65,11 +64,8 @@ public:
   [[nodiscard]] std::vector<DebugMetric> getAllMetrics() const;
   [[nodiscard]] std::string getFormattedOutput() const;
 
-  using RenderCallback =
-      std::function<void(const std::string &text, i32 x, i32 y)>;
-  void setRenderCallback(RenderCallback callback) {
-    m_renderCallback = std::move(callback);
-  }
+  using RenderCallback = std::function<void(const std::string& text, i32 x, i32 y)>;
+  void setRenderCallback(RenderCallback callback) { m_renderCallback = std::move(callback); }
 
   void beginFrame();
   void endFrame();
@@ -78,8 +74,8 @@ private:
   DebugOverlay() = default;
   ~DebugOverlay() = default;
 
-  DebugOverlay(const DebugOverlay &) = delete;
-  DebugOverlay &operator=(const DebugOverlay &) = delete;
+  DebugOverlay(const DebugOverlay&) = delete;
+  DebugOverlay& operator=(const DebugOverlay&) = delete;
 
   [[nodiscard]] std::string formatBytes(usize bytes) const;
 
@@ -103,9 +99,9 @@ private:
 };
 
 #ifdef NOVELMIND_DEBUG
-#define NOVELMIND_DEBUG_METRIC(name, value)                                    \
+#define NOVELMIND_DEBUG_METRIC(name, value)                                                        \
   NovelMind::Core::DebugOverlay::instance().setMetric(name, value)
-#define NOVELMIND_DEBUG_METRIC_CAT(name, value, category)                      \
+#define NOVELMIND_DEBUG_METRIC_CAT(name, value, category)                                          \
   NovelMind::Core::DebugOverlay::instance().setMetric(name, value, category)
 #else
 #define NOVELMIND_DEBUG_METRIC(name, value)

@@ -31,17 +31,16 @@ class IVirtualFileSystem {
 public:
   virtual ~IVirtualFileSystem() = default;
 
-  virtual Result<void> mount(const std::string &packPath) = 0;
-  virtual void unmount(const std::string &packPath) = 0;
+  virtual Result<void> mount(const std::string& packPath) = 0;
+  virtual void unmount(const std::string& packPath) = 0;
   virtual void unmountAll() = 0;
 
-  [[nodiscard]] virtual Result<std::vector<u8>>
-  readFile(const std::string &resourceId) const = 0;
+  [[nodiscard]] virtual Result<std::vector<u8>> readFile(const std::string& resourceId) const = 0;
 
-  [[nodiscard]] virtual bool exists(const std::string &resourceId) const = 0;
+  [[nodiscard]] virtual bool exists(const std::string& resourceId) const = 0;
 
   [[nodiscard]] virtual std::optional<ResourceInfo>
-  getInfo(const std::string &resourceId) const = 0;
+  getInfo(const std::string& resourceId) const = 0;
 
   [[nodiscard]] virtual std::vector<std::string>
   listResources(ResourceType type = ResourceType::Unknown) const = 0;

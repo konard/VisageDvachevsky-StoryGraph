@@ -63,8 +63,7 @@ enum class VoiceLineStatus : u8 {
 /**
  * @brief Convert status to string
  */
-[[nodiscard]] inline const char *
-voiceLineStatusToString(VoiceLineStatus status) {
+[[nodiscard]] inline const char* voiceLineStatusToString(VoiceLineStatus status) {
   switch (status) {
   case VoiceLineStatus::Missing:
     return "missing";
@@ -83,8 +82,7 @@ voiceLineStatusToString(VoiceLineStatus status) {
 /**
  * @brief Parse status from string
  */
-[[nodiscard]] inline VoiceLineStatus
-voiceLineStatusFromString(const std::string &str) {
+[[nodiscard]] inline VoiceLineStatus voiceLineStatusFromString(const std::string& str) {
   if (str == "missing")
     return VoiceLineStatus::Missing;
   if (str == "recorded")
@@ -138,10 +136,9 @@ struct VoiceManifestLine {
   std::string scene;   // Scene identifier
 
   // Optional fields
-  std::vector<std::string>
-      tags;                    // Tags for organization (e.g., "calm", "angry")
-  std::string notes;           // Notes for actors/directors
-  f32 durationOverride = 0.0f; // Manual duration override (0 = use actual)
+  std::vector<std::string> tags; // Tags for organization (e.g., "calm", "angry")
+  std::string notes;             // Notes for actors/directors
+  f32 durationOverride = 0.0f;   // Manual duration override (0 = use actual)
 
   // File mappings per locale
   std::unordered_map<std::string, VoiceLocaleFile> files;
@@ -153,8 +150,7 @@ struct VoiceManifestLine {
   /**
    * @brief Get file for a specific locale
    */
-  [[nodiscard]] const VoiceLocaleFile *
-  getFile(const std::string &locale) const {
+  [[nodiscard]] const VoiceLocaleFile* getFile(const std::string& locale) const {
     auto it = files.find(locale);
     return (it != files.end()) ? &it->second : nullptr;
   }
@@ -162,7 +158,7 @@ struct VoiceManifestLine {
   /**
    * @brief Get mutable file for a specific locale, creating if needed
    */
-  VoiceLocaleFile &getOrCreateFile(const std::string &locale) {
+  VoiceLocaleFile& getOrCreateFile(const std::string& locale) {
     auto it = files.find(locale);
     if (it != files.end()) {
       return it->second;
@@ -174,7 +170,7 @@ struct VoiceManifestLine {
   /**
    * @brief Check if file exists for locale
    */
-  [[nodiscard]] bool hasFile(const std::string &locale) const {
+  [[nodiscard]] bool hasFile(const std::string& locale) const {
     auto file = getFile(locale);
     return file && file->status != VoiceLineStatus::Missing;
   }
@@ -190,7 +186,7 @@ struct VoiceManifestLine {
     bool hasNeedsReview = false;
     bool allApproved = true;
 
-    for (const auto &[locale, file] : files) {
+    for (const auto& [locale, file] : files) {
       if (file.status == VoiceLineStatus::Missing)
         hasMissing = true;
       if (file.status == VoiceLineStatus::NeedsReview)
@@ -219,11 +215,9 @@ struct NamingConvention {
   /**
    * @brief Generate path from pattern and values
    */
-  [[nodiscard]] std::string generatePath(const std::string &locale,
-                                         const std::string &id,
-                                         const std::string &scene = "",
-                                         const std::string &speaker = "",
-                                         u32 take = 1) const;
+  [[nodiscard]] std::string generatePath(const std::string& locale, const std::string& id,
+                                         const std::string& scene = "",
+                                         const std::string& speaker = "", u32 take = 1) const;
 
   /**
    * @brief Predefined naming conventions
@@ -233,8 +227,7 @@ struct NamingConvention {
   }
 
   static NamingConvention sceneSpeakerBased() {
-    return {"{scene}/{speaker}/{id}_take{take}.ogg",
-            "Scene/Speaker folders with take"};
+    return {"{scene}/{speaker}/{id}_take{take}.ogg", "Scene/Speaker folders with take"};
   }
 
   static NamingConvention flatById() {
@@ -301,12 +294,12 @@ public:
   ~VoiceManifest();
 
   // Non-copyable
-  VoiceManifest(const VoiceManifest &) = delete;
-  VoiceManifest &operator=(const VoiceManifest &) = delete;
+  VoiceManifest(const VoiceManifest&) = delete;
+  VoiceManifest& operator=(const VoiceManifest&) = delete;
 
   // Move semantics
-  VoiceManifest(VoiceManifest &&) noexcept;
-  VoiceManifest &operator=(VoiceManifest &&) noexcept;
+  VoiceManifest(VoiceManifest&&) noexcept;
+  VoiceManifest& operator=(VoiceManifest&&) noexcept;
 
   // =========================================================================
   // Project Configuration
@@ -315,70 +308,62 @@ public:
   /**
    * @brief Set project name
    */
-  void setProjectName(const std::string &name);
+  void setProjectName(const std::string& name);
 
   /**
    * @brief Get project name
    */
-  [[nodiscard]] const std::string &getProjectName() const {
-    return m_projectName;
-  }
+  [[nodiscard]] const std::string& getProjectName() const { return m_projectName; }
 
   /**
    * @brief Set default locale
    */
-  void setDefaultLocale(const std::string &locale);
+  void setDefaultLocale(const std::string& locale);
 
   /**
    * @brief Get default locale
    */
-  [[nodiscard]] const std::string &getDefaultLocale() const {
-    return m_defaultLocale;
-  }
+  [[nodiscard]] const std::string& getDefaultLocale() const { return m_defaultLocale; }
 
   /**
    * @brief Add a supported locale
    */
-  void addLocale(const std::string &locale);
+  void addLocale(const std::string& locale);
 
   /**
    * @brief Remove a locale
    */
-  void removeLocale(const std::string &locale);
+  void removeLocale(const std::string& locale);
 
   /**
    * @brief Get all supported locales
    */
-  [[nodiscard]] const std::vector<std::string> &getLocales() const {
-    return m_locales;
-  }
+  [[nodiscard]] const std::vector<std::string>& getLocales() const { return m_locales; }
 
   /**
    * @brief Check if locale is supported
    */
-  [[nodiscard]] bool hasLocale(const std::string &locale) const;
+  [[nodiscard]] bool hasLocale(const std::string& locale) const;
 
   /**
    * @brief Set naming convention
    */
-  void setNamingConvention(const NamingConvention &convention);
+  void setNamingConvention(const NamingConvention& convention);
 
   /**
    * @brief Get naming convention
    */
-  [[nodiscard]] const NamingConvention &getNamingConvention() const {
-    return m_namingConvention;
-  }
+  [[nodiscard]] const NamingConvention& getNamingConvention() const { return m_namingConvention; }
 
   /**
    * @brief Set base path for voice assets
    */
-  void setBasePath(const std::string &path);
+  void setBasePath(const std::string& path);
 
   /**
    * @brief Get base path for voice assets
    */
-  [[nodiscard]] const std::string &getBasePath() const { return m_basePath; }
+  [[nodiscard]] const std::string& getBasePath() const { return m_basePath; }
 
   // =========================================================================
   // Voice Lines
@@ -389,65 +374,60 @@ public:
    * @param line Voice line to add
    * @return Success or error if ID already exists
    */
-  Result<void> addLine(const VoiceManifestLine &line);
+  Result<void> addLine(const VoiceManifestLine& line);
 
   /**
    * @brief Update an existing voice line
    * @param line Voice line with updated data
    * @return Success or error if ID not found
    */
-  Result<void> updateLine(const VoiceManifestLine &line);
+  Result<void> updateLine(const VoiceManifestLine& line);
 
   /**
    * @brief Remove a voice line
    * @param lineId Voice line ID to remove
    */
-  void removeLine(const std::string &lineId);
+  void removeLine(const std::string& lineId);
 
   /**
    * @brief Get a voice line by ID
    * @param lineId Voice line ID
    * @return Pointer to line or nullptr if not found
    */
-  [[nodiscard]] const VoiceManifestLine *
-  getLine(const std::string &lineId) const;
+  [[nodiscard]] const VoiceManifestLine* getLine(const std::string& lineId) const;
 
   /**
    * @brief Get mutable voice line by ID
    */
-  VoiceManifestLine *getLineMutable(const std::string &lineId);
+  VoiceManifestLine* getLineMutable(const std::string& lineId);
 
   /**
    * @brief Get all voice lines
    */
-  [[nodiscard]] const std::vector<VoiceManifestLine> &getLines() const {
-    return m_lines;
-  }
+  [[nodiscard]] const std::vector<VoiceManifestLine>& getLines() const { return m_lines; }
 
   /**
    * @brief Get lines filtered by speaker
    */
-  [[nodiscard]] std::vector<const VoiceManifestLine *>
-  getLinesBySpeaker(const std::string &speaker) const;
+  [[nodiscard]] std::vector<const VoiceManifestLine*>
+  getLinesBySpeaker(const std::string& speaker) const;
 
   /**
    * @brief Get lines filtered by scene
    */
-  [[nodiscard]] std::vector<const VoiceManifestLine *>
-  getLinesByScene(const std::string &scene) const;
+  [[nodiscard]] std::vector<const VoiceManifestLine*>
+  getLinesByScene(const std::string& scene) const;
 
   /**
    * @brief Get lines filtered by status
    */
-  [[nodiscard]] std::vector<const VoiceManifestLine *>
-  getLinesByStatus(VoiceLineStatus status,
-                   const std::string &locale = "") const;
+  [[nodiscard]] std::vector<const VoiceManifestLine*>
+  getLinesByStatus(VoiceLineStatus status, const std::string& locale = "") const;
 
   /**
    * @brief Get lines filtered by tag
    */
-  [[nodiscard]] std::vector<const VoiceManifestLine *>
-  getLinesByTag(const std::string &tag) const;
+  [[nodiscard]] std::vector<const VoiceManifestLine*> getLinesByTag(const std::string& tag) const;
 
   /**
    * @brief Get all unique speakers
@@ -472,7 +452,7 @@ public:
   /**
    * @brief Check if line exists
    */
-  [[nodiscard]] bool hasLine(const std::string &lineId) const;
+  [[nodiscard]] bool hasLine(const std::string& lineId) const;
 
   /**
    * @brief Clear all lines
@@ -490,8 +470,7 @@ public:
    * @param take Take information
    * @return Success or error
    */
-  Result<void> addTake(const std::string &lineId, const std::string &locale,
-                       const VoiceTake &take);
+  Result<void> addTake(const std::string& lineId, const std::string& locale, const VoiceTake& take);
 
   /**
    * @brief Set active take for a voice line
@@ -500,8 +479,7 @@ public:
    * @param takeIndex Index of the take to activate
    * @return Success or error
    */
-  Result<void> setActiveTake(const std::string &lineId,
-                             const std::string &locale, u32 takeIndex);
+  Result<void> setActiveTake(const std::string& lineId, const std::string& locale, u32 takeIndex);
 
   /**
    * @brief Get all takes for a voice line
@@ -509,8 +487,8 @@ public:
    * @param locale Locale
    * @return Vector of takes or empty if not found
    */
-  [[nodiscard]] std::vector<VoiceTake>
-  getTakes(const std::string &lineId, const std::string &locale) const;
+  [[nodiscard]] std::vector<VoiceTake> getTakes(const std::string& lineId,
+                                                const std::string& locale) const;
 
   /**
    * @brief Remove a take from a voice line
@@ -519,8 +497,7 @@ public:
    * @param takeNumber Take number to remove
    * @return Success or error
    */
-  Result<void> removeTake(const std::string &lineId, const std::string &locale,
-                          u32 takeNumber);
+  Result<void> removeTake(const std::string& lineId, const std::string& locale, u32 takeNumber);
 
   // =========================================================================
   // Status Management
@@ -529,22 +506,20 @@ public:
   /**
    * @brief Set status for a voice line locale
    */
-  Result<void> setStatus(const std::string &lineId, const std::string &locale,
+  Result<void> setStatus(const std::string& lineId, const std::string& locale,
                          VoiceLineStatus status);
 
   /**
    * @brief Mark file as recorded
    */
-  Result<void> markAsRecorded(const std::string &lineId,
-                              const std::string &locale,
-                              const std::string &filePath);
+  Result<void> markAsRecorded(const std::string& lineId, const std::string& locale,
+                              const std::string& filePath);
 
   /**
    * @brief Mark file as imported
    */
-  Result<void> markAsImported(const std::string &lineId,
-                              const std::string &locale,
-                              const std::string &filePath);
+  Result<void> markAsImported(const std::string& lineId, const std::string& locale,
+                              const std::string& filePath);
 
   // =========================================================================
   // Validation
@@ -555,15 +530,12 @@ public:
    * @param checkFiles If true, verify that files exist on disk
    * @return Vector of validation errors (empty if valid)
    */
-  [[nodiscard]] std::vector<ManifestValidationError>
-  validate(bool checkFiles = false) const;
+  [[nodiscard]] std::vector<ManifestValidationError> validate(bool checkFiles = false) const;
 
   /**
    * @brief Check if manifest is valid
    */
-  [[nodiscard]] bool isValid(bool checkFiles = false) const {
-    return validate(checkFiles).empty();
-  }
+  [[nodiscard]] bool isValid(bool checkFiles = false) const { return validate(checkFiles).empty(); }
 
   // =========================================================================
   // Statistics
@@ -583,8 +555,7 @@ public:
     f32 totalDuration = 0.0f;
   };
 
-  [[nodiscard]] CoverageStats
-  getCoverageStats(const std::string &locale = "") const;
+  [[nodiscard]] CoverageStats getCoverageStats(const std::string& locale = "") const;
 
   // =========================================================================
   // File I/O
@@ -593,17 +564,17 @@ public:
   /**
    * @brief Load manifest from JSON file
    */
-  Result<void> loadFromFile(const std::string &filePath);
+  Result<void> loadFromFile(const std::string& filePath);
 
   /**
    * @brief Load manifest from JSON string
    */
-  Result<void> loadFromString(const std::string &jsonContent);
+  Result<void> loadFromString(const std::string& jsonContent);
 
   /**
    * @brief Save manifest to JSON file
    */
-  Result<void> saveToFile(const std::string &filePath) const;
+  Result<void> saveToFile(const std::string& filePath) const;
 
   /**
    * @brief Export manifest as JSON string
@@ -616,8 +587,7 @@ public:
    * @param locale Locale for the imported data
    * @return Success or error with details
    */
-  Result<void> importFromCsv(const std::string &csvPath,
-                             const std::string &locale);
+  Result<void> importFromCsv(const std::string& csvPath, const std::string& locale);
 
   /**
    * @brief Export to legacy CSV format
@@ -625,15 +595,14 @@ public:
    * @param locale Locale to export (empty for all)
    * @return Success or error
    */
-  Result<void> exportToCsv(const std::string &csvPath,
-                           const std::string &locale = "") const;
+  Result<void> exportToCsv(const std::string& csvPath, const std::string& locale = "") const;
 
   /**
    * @brief Export template manifest for recording
    * This creates a manifest with all lines but no file paths,
    * suitable for voice recording workflow
    */
-  Result<void> exportTemplate(const std::string &filePath) const;
+  Result<void> exportTemplate(const std::string& filePath) const;
 
   // =========================================================================
   // Generation
@@ -653,22 +622,20 @@ public:
    * @param overwriteExisting If true, regenerate existing paths
    * @return Number of paths generated
    */
-  u32 generateFilePaths(const std::string &locale,
-                        bool overwriteExisting = false);
+  u32 generateFilePaths(const std::string& locale, bool overwriteExisting = false);
 
   /**
    * @brief Create output directories for the naming convention
    */
-  Result<void> createOutputDirectories(const std::string &locale) const;
+  Result<void> createOutputDirectories(const std::string& locale) const;
 
   // =========================================================================
   // Callbacks
   // =========================================================================
 
-  using OnLineChanged = std::function<void(const std::string &lineId)>;
-  using OnStatusChanged =
-      std::function<void(const std::string &lineId, const std::string &locale,
-                         VoiceLineStatus status)>;
+  using OnLineChanged = std::function<void(const std::string& lineId)>;
+  using OnStatusChanged = std::function<void(const std::string& lineId, const std::string& locale,
+                                             VoiceLineStatus status)>;
 
   void setOnLineChanged(OnLineChanged callback);
   void setOnStatusChanged(OnStatusChanged callback);
@@ -691,14 +658,13 @@ private:
 
   // Internal helpers
   void rebuildIndex();
-  void fireLineChanged(const std::string &lineId);
-  void fireStatusChanged(const std::string &lineId, const std::string &locale,
+  void fireLineChanged(const std::string& lineId);
+  void fireStatusChanged(const std::string& lineId, const std::string& locale,
                          VoiceLineStatus status);
 
   // Security: Path validation
-  [[nodiscard]] bool isValidRelativePath(const std::string &path) const;
-  [[nodiscard]] Result<std::string>
-  sanitizeAndResolvePath(const std::string &relativePath) const;
+  [[nodiscard]] bool isValidRelativePath(const std::string& path) const;
+  [[nodiscard]] Result<std::string> sanitizeAndResolvePath(const std::string& relativePath) const;
 };
 
 } // namespace NovelMind::audio

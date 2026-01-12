@@ -34,8 +34,7 @@ struct TestEvent : EditorEvent {
 // Performance Tests
 // ============================================================================
 
-TEST_CASE("EventBus: Dispatch performance without copy",
-          "[unit][editor][eventbus][perf]") {
+TEST_CASE("EventBus: Dispatch performance without copy", "[unit][editor][eventbus][perf]") {
   EventBus bus;
 
   SECTION("Performance with 100 subscribers") {
@@ -44,9 +43,7 @@ TEST_CASE("EventBus: Dispatch performance without copy",
     std::atomic<int> callCount{0};
 
     for (int i = 0; i < 100; i++) {
-      auto sub = bus.subscribe([&callCount](const EditorEvent &) {
-        callCount++;
-      });
+      auto sub = bus.subscribe([&callCount](const EditorEvent&) { callCount++; });
       subscriptions.push_back(sub);
     }
 
@@ -69,7 +66,7 @@ TEST_CASE("EventBus: Dispatch performance without copy",
     REQUIRE(duration.count() < 500);
 
     // Clean up
-    for (auto &sub : subscriptions) {
+    for (auto& sub : subscriptions) {
       bus.unsubscribe(sub);
     }
   }
@@ -81,9 +78,7 @@ TEST_CASE("EventBus: Dispatch performance without copy",
     // Add 50 subscribers
     std::vector<EventSubscription> subscriptions;
     for (int i = 0; i < 50; i++) {
-      auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-        eventCount++;
-      });
+      auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
       subscriptions.push_back(sub);
     }
 
@@ -96,7 +91,7 @@ TEST_CASE("EventBus: Dispatch performance without copy",
     REQUIRE(eventCount == 50 * 100);
 
     // Clean up
-    for (auto &sub : subscriptions) {
+    for (auto& sub : subscriptions) {
       bus.unsubscribe(sub);
     }
   }
@@ -116,14 +111,13 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     EventSubscription newSub;
 
     // Create handler that subscribes during dispatch
-    auto sub1 = bus.subscribe([&](const EditorEvent &event) {
+    auto sub1 = bus.subscribe([&](const EditorEvent& event) {
       eventCount++;
 
       // Subscribe a new handler during first event
       if (eventCount == 1) {
-        newSub = bus.subscribe([&newSubscriberEvents](const EditorEvent &) {
-          newSubscriberEvents++;
-        });
+        newSub =
+            bus.subscribe([&newSubscriberEvents](const EditorEvent&) { newSubscriberEvents++; });
       }
     });
 
@@ -150,7 +144,7 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     EventSubscription sub1, sub2;
 
     // Create handler that unsubscribes another handler
-    sub1 = bus.subscribe([&](const EditorEvent &) {
+    sub1 = bus.subscribe([&](const EditorEvent&) {
       event1Count++;
       if (event1Count == 1) {
         // Unsubscribe sub2 during dispatch
@@ -158,9 +152,7 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
       }
     });
 
-    sub2 = bus.subscribe([&event2Count](const EditorEvent &) {
-      event2Count++;
-    });
+    sub2 = bus.subscribe([&event2Count](const EditorEvent&) { event2Count++; });
 
     // Dispatch first event
     TestEvent event1;
@@ -185,7 +177,7 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     EventSubscription outerSub, innerSub, newSub;
 
     // Outer handler that triggers nested dispatch
-    outerSub = bus.subscribe([&](const EditorEvent &event) {
+    outerSub = bus.subscribe([&](const EditorEvent& event) {
       outerCount++;
 
       // Trigger nested dispatch on first event
@@ -197,15 +189,13 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     });
 
     // Inner handler that modifies subscriptions during nested dispatch
-    innerSub = bus.subscribe([&](const EditorEvent &event) {
-      const TestEvent *testEvent = dynamic_cast<const TestEvent *>(&event);
+    innerSub = bus.subscribe([&](const EditorEvent& event) {
+      const TestEvent* testEvent = dynamic_cast<const TestEvent*>(&event);
       if (testEvent && testEvent->value == 999) {
         innerCount++;
 
         // Add new subscriber during nested dispatch
-        newSub = bus.subscribe([&newSubCount](const EditorEvent &) {
-          newSubCount++;
-        });
+        newSub = bus.subscribe([&newSubCount](const EditorEvent&) { newSubCount++; });
       }
     });
 
@@ -214,8 +204,8 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     outerEvent.value = 1;
     bus.publish(outerEvent);
 
-    REQUIRE(outerCount == 2); // Called twice (outer + nested)
-    REQUIRE(innerCount == 1); // Called once (nested only)
+    REQUIRE(outerCount == 2);  // Called twice (outer + nested)
+    REQUIRE(innerCount == 1);  // Called once (nested only)
     REQUIRE(newSubCount == 0); // Not called yet
 
     // Dispatch another event - new subscriber should be active
@@ -235,14 +225,14 @@ TEST_CASE("EventBus: Modify subscribers during dispatch",
     std::atomic<int> count3{0};
 
     auto sub1 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&count1](const EditorEvent &) { count1++; });
+                              [&count1](const EditorEvent&) { count1++; });
     auto sub2 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&count2](const EditorEvent &) { count2++; });
+                              [&count2](const EditorEvent&) { count2++; });
     auto sub3 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&count3](const EditorEvent &) { count3++; });
+                              [&count3](const EditorEvent&) { count3++; });
 
     // Handler that unsubscribes all SelectionChanged handlers
-    auto subUnsubscriber = bus.subscribe([&](const EditorEvent &event) {
+    auto subUnsubscriber = bus.subscribe([&](const EditorEvent& event) {
       if (event.type == EditorEventType::SelectionChanged) {
         bus.unsubscribeAll(EditorEventType::SelectionChanged);
       }
@@ -296,9 +286,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     // Subscribe handlers
     std::vector<EventSubscription> subs;
     for (int i = 0; i < 10; i++) {
-      auto sub = bus.subscribe([&handlerCallCount](const EditorEvent &) {
-        handlerCallCount++;
-      });
+      auto sub = bus.subscribe([&handlerCallCount](const EditorEvent&) { handlerCallCount++; });
       subs.push_back(sub);
     }
 
@@ -315,7 +303,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     }
 
     // Wait for all threads
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       t.join();
     }
 
@@ -324,7 +312,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     REQUIRE(handlerCallCount == 4000); // 400 events * 10 handlers
 
     // Clean up
-    for (auto &sub : subs) {
+    for (auto& sub : subs) {
       bus.unsubscribe(sub);
     }
   }
@@ -354,9 +342,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
         std::vector<EventSubscription> localSubs;
         while (running) {
           // Add subscriber
-          auto sub = bus.subscribe([&](const EditorEvent &) {
-            handlerCallCount++;
-          });
+          auto sub = bus.subscribe([&](const EditorEvent&) { handlerCallCount++; });
           localSubs.push_back(sub);
 
           std::this_thread::sleep_for(std::chrono::microseconds(200));
@@ -369,7 +355,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
         }
 
         // Cleanup
-        for (auto &sub : localSubs) {
+        for (auto& sub : localSubs) {
           bus.unsubscribe(sub);
         }
       });
@@ -380,7 +366,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     running = false;
 
     // Wait for all threads
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       if (t.joinable()) {
         t.join();
       }
@@ -397,9 +383,9 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     std::vector<EventSubscription> recursiveSubs;
 
     // Handler that subscribes during dispatch
-    auto sub = bus.subscribe([&](const EditorEvent &) {
+    auto sub = bus.subscribe([&](const EditorEvent&) {
       if (recursiveSubCount < 10) {
-        auto newSub = bus.subscribe([](const EditorEvent &) {});
+        auto newSub = bus.subscribe([](const EditorEvent&) {});
         recursiveSubs.push_back(newSub);
         recursiveSubCount++;
       }
@@ -418,7 +404,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
     }
 
     // Wait for all threads
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       t.join();
     }
 
@@ -427,7 +413,7 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
 
     // Clean up
     bus.unsubscribe(sub);
-    for (auto &s : recursiveSubs) {
+    for (auto& s : recursiveSubs) {
       bus.unsubscribe(s);
     }
   }
@@ -437,16 +423,13 @@ TEST_CASE("EventBus: Concurrent dispatch from multiple threads",
 // Correctness Tests
 // ============================================================================
 
-TEST_CASE("EventBus: Basic functionality still works",
-          "[unit][editor][eventbus][correctness]") {
+TEST_CASE("EventBus: Basic functionality still works", "[unit][editor][eventbus][correctness]") {
   EventBus bus;
 
   SECTION("Simple subscribe and publish") {
     int callCount = 0;
 
-    auto sub = bus.subscribe([&callCount](const EditorEvent &) {
-      callCount++;
-    });
+    auto sub = bus.subscribe([&callCount](const EditorEvent&) { callCount++; });
 
     TestEvent event;
     bus.publish(event);
@@ -461,14 +444,10 @@ TEST_CASE("EventBus: Basic functionality still works",
     int propertyCount = 0;
 
     auto sub1 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&selectionCount](const EditorEvent &) {
-                                selectionCount++;
-                              });
+                              [&selectionCount](const EditorEvent&) { selectionCount++; });
 
     auto sub2 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&propertyCount](const EditorEvent &) {
-                                propertyCount++;
-                              });
+                              [&propertyCount](const EditorEvent&) { propertyCount++; });
 
     SelectionChangedEvent selEvent;
     bus.publish(selEvent);
@@ -488,9 +467,9 @@ TEST_CASE("EventBus: Basic functionality still works",
     int count2 = 0;
     int count3 = 0;
 
-    auto sub1 = bus.subscribe([&count1](const EditorEvent &) { count1++; });
-    auto sub2 = bus.subscribe([&count2](const EditorEvent &) { count2++; });
-    auto sub3 = bus.subscribe([&count3](const EditorEvent &) { count3++; });
+    auto sub1 = bus.subscribe([&count1](const EditorEvent&) { count1++; });
+    auto sub2 = bus.subscribe([&count2](const EditorEvent&) { count2++; });
+    auto sub3 = bus.subscribe([&count3](const EditorEvent&) { count3++; });
 
     TestEvent event;
     bus.publish(event);
@@ -509,16 +488,13 @@ TEST_CASE("EventBus: Basic functionality still works",
 // Event Deduplication Tests (Issue #480)
 // ============================================================================
 
-TEST_CASE("EventBus: Event deduplication",
-          "[unit][editor][eventbus][deduplication]") {
+TEST_CASE("EventBus: Event deduplication", "[unit][editor][eventbus][deduplication]") {
   EventBus bus;
 
   SECTION("Duplicate events deduplicated within time window") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     // Enable deduplication with 100ms window
     bus.setDeduplicationEnabled(true);
@@ -550,9 +526,7 @@ TEST_CASE("EventBus: Event deduplication",
   SECTION("Deduplication can be disabled") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     // Deduplication is disabled by default
     REQUIRE_FALSE(bus.isDeduplicationEnabled());
@@ -572,9 +546,7 @@ TEST_CASE("EventBus: Event deduplication",
   SECTION("Time window is configurable") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     // Set custom deduplication window
     bus.setDeduplicationEnabled(true);
@@ -606,9 +578,7 @@ TEST_CASE("EventBus: Event deduplication",
   SECTION("No event loss - events after window are processed") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     bus.setDeduplicationEnabled(true);
     bus.setDeduplicationWindow(50);
@@ -634,16 +604,13 @@ TEST_CASE("EventBus: Event deduplication",
   }
 }
 
-TEST_CASE("EventBus: Rapid duplicate events",
-          "[unit][editor][eventbus][deduplication]") {
+TEST_CASE("EventBus: Rapid duplicate events", "[unit][editor][eventbus][deduplication]") {
   EventBus bus;
 
   SECTION("Rapid duplicates within window are ignored") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     bus.setDeduplicationEnabled(true);
     bus.setDeduplicationWindow(100);
@@ -671,14 +638,10 @@ TEST_CASE("EventBus: Rapid duplicate events",
     std::atomic<int> propertyCount{0};
 
     auto sub1 = bus.subscribe(EditorEventType::SelectionChanged,
-                              [&selectionCount](const EditorEvent &) {
-                                selectionCount++;
-                              });
+                              [&selectionCount](const EditorEvent&) { selectionCount++; });
 
     auto sub2 = bus.subscribe(EditorEventType::PropertyChanged,
-                              [&propertyCount](const EditorEvent &) {
-                                propertyCount++;
-                              });
+                              [&propertyCount](const EditorEvent&) { propertyCount++; });
 
     bus.setDeduplicationEnabled(true);
     bus.setDeduplicationWindow(100);
@@ -703,9 +666,7 @@ TEST_CASE("EventBus: Rapid duplicate events",
   SECTION("Deduplication clears cache when disabled") {
     std::atomic<int> eventCount{0};
 
-    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
-      eventCount++;
-    });
+    auto sub = bus.subscribe([&eventCount](const EditorEvent&) { eventCount++; });
 
     bus.setDeduplicationEnabled(true);
     bus.setDeduplicationWindow(1000); // Long window

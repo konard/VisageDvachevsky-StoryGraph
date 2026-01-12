@@ -24,11 +24,7 @@ namespace NovelMind::editor {
 /**
  * @brief Playback state enumeration
  */
-enum class AudioPlaybackState : u8 {
-  Stopped = 0,
-  Playing = 1,
-  Paused = 2
-};
+enum class AudioPlaybackState : u8 { Stopped = 0, Playing = 1, Paused = 2 };
 
 /**
  * @brief Media loading status enumeration
@@ -63,7 +59,7 @@ public:
    * @param filePath Path to the audio file
    * @return true if load was initiated successfully
    */
-  virtual bool load(const std::string &filePath) = 0;
+  virtual bool load(const std::string& filePath) = 0;
 
   /**
    * @brief Start playback
@@ -207,21 +203,19 @@ public:
    * @brief Set callback for when an error occurs
    * @param callback Function to call with error message
    */
-  virtual void setOnError(std::function<void(const std::string &)> callback) = 0;
+  virtual void setOnError(std::function<void(const std::string&)> callback) = 0;
 
   /**
    * @brief Set callback for when playback state changes
    * @param callback Function to call with new state
    */
-  virtual void setOnPlaybackStateChanged(
-      std::function<void(AudioPlaybackState)> callback) = 0;
+  virtual void setOnPlaybackStateChanged(std::function<void(AudioPlaybackState)> callback) = 0;
 
   /**
    * @brief Set callback for when media status changes
    * @param callback Function to call with new status
    */
-  virtual void setOnMediaStatusChanged(
-      std::function<void(AudioMediaStatus)> callback) = 0;
+  virtual void setOnMediaStatusChanged(std::function<void(AudioMediaStatus)> callback) = 0;
 
   /**
    * @brief Set callback for when duration becomes known

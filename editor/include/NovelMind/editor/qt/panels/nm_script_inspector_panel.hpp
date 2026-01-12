@@ -66,7 +66,7 @@ class NMScriptInspectorPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMScriptInspectorPanel(QWidget *parent = nullptr);
+  explicit NMScriptInspectorPanel(QWidget* parent = nullptr);
   ~NMScriptInspectorPanel() override = default;
 
   void onInitialize() override;
@@ -79,13 +79,13 @@ public:
    * @brief Add a watch expression to monitor
    * @param expression The expression to watch (e.g., "points >= 100")
    */
-  void addWatchExpression(const QString &expression);
+  void addWatchExpression(const QString& expression);
 
   /**
    * @brief Remove a watch expression
    * @param expression The expression to remove
    */
-  void removeWatchExpression(const QString &expression);
+  void removeWatchExpression(const QString& expression);
 
   /**
    * @brief Clear all watch expressions
@@ -101,28 +101,28 @@ signals:
   /**
    * @brief Emitted when user clicks on a scene in history to navigate
    */
-  void navigateToSceneRequested(const QString &sceneId);
+  void navigateToSceneRequested(const QString& sceneId);
 
   /**
    * @brief Emitted when user requests to jump to variable definition
    */
-  void navigateToVariableDefinition(const QString &variableName,
-                                    const QString &scriptPath, int line);
+  void navigateToVariableDefinition(const QString& variableName, const QString& scriptPath,
+                                    int line);
 
 private slots:
   // Controller signals
-  void onVariablesChanged(const QVariantMap &variables);
-  void onFlagsChanged(const QVariantMap &flags);
-  void onCallStackChanged(const QStringList &stack);
-  void onStackFramesChanged(const QVariantList &frames);
+  void onVariablesChanged(const QVariantMap& variables);
+  void onFlagsChanged(const QVariantMap& flags);
+  void onCallStackChanged(const QStringList& stack);
+  void onStackFramesChanged(const QVariantList& frames);
   void onPlayModeChanged(int mode);
-  void onCurrentNodeChanged(const QString &nodeId);
+  void onCurrentNodeChanged(const QString& nodeId);
 
   // UI interactions
-  void onVariableItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onFlagItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onWatchItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onSceneHistoryItemDoubleClicked(QListWidgetItem *item);
+  void onVariableItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onFlagItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onWatchItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onSceneHistoryItemDoubleClicked(QListWidgetItem* item);
   void onAddWatchClicked();
   void onRemoveWatchClicked();
   void onClearWatchClicked();
@@ -140,47 +140,47 @@ private:
   void updateWatchTree();
   void updateSceneHistoryList();
 
-  void editVariable(const QString &name, const QVariant &currentValue);
-  void editFlag(const QString &name, bool currentValue);
+  void editVariable(const QString& name, const QVariant& currentValue);
+  void editFlag(const QString& name, bool currentValue);
 
   /**
    * @brief Evaluate a watch expression against current runtime state
    * @param expression The expression to evaluate
    * @return Result with value and validity
    */
-  WatchExpressionResult evaluateExpression(const QString &expression) const;
+  WatchExpressionResult evaluateExpression(const QString& expression) const;
 
   /**
    * @brief Parse a simple expression (supports: comparisons, logical ops)
    */
-  WatchExpressionResult parseSimpleExpression(const QString &expression) const;
+  WatchExpressionResult parseSimpleExpression(const QString& expression) const;
 
   // UI Elements
-  QToolBar *m_toolBar = nullptr;
-  QTabWidget *m_tabWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QTabWidget* m_tabWidget = nullptr;
 
   // Variables Tab
-  QWidget *m_variablesWidget = nullptr;
-  QTreeWidget *m_variablesTree = nullptr;
-  QLineEdit *m_variablesFilter = nullptr;
+  QWidget* m_variablesWidget = nullptr;
+  QTreeWidget* m_variablesTree = nullptr;
+  QLineEdit* m_variablesFilter = nullptr;
 
   // Flags Tab
-  QWidget *m_flagsWidget = nullptr;
-  QTreeWidget *m_flagsTree = nullptr;
-  QLineEdit *m_flagsFilter = nullptr;
+  QWidget* m_flagsWidget = nullptr;
+  QTreeWidget* m_flagsTree = nullptr;
+  QLineEdit* m_flagsFilter = nullptr;
 
   // Watch Tab
-  QWidget *m_watchWidget = nullptr;
-  QTreeWidget *m_watchTree = nullptr;
-  QLineEdit *m_watchInput = nullptr;
-  QPushButton *m_addWatchBtn = nullptr;
-  QPushButton *m_removeWatchBtn = nullptr;
-  QPushButton *m_clearWatchBtn = nullptr;
+  QWidget* m_watchWidget = nullptr;
+  QTreeWidget* m_watchTree = nullptr;
+  QLineEdit* m_watchInput = nullptr;
+  QPushButton* m_addWatchBtn = nullptr;
+  QPushButton* m_removeWatchBtn = nullptr;
+  QPushButton* m_clearWatchBtn = nullptr;
 
   // Scene History Tab
-  QWidget *m_sceneHistoryWidget = nullptr;
-  QListWidget *m_sceneHistoryList = nullptr;
-  QLabel *m_currentSceneLabel = nullptr;
+  QWidget* m_sceneHistoryWidget = nullptr;
+  QListWidget* m_sceneHistoryList = nullptr;
+  QLabel* m_currentSceneLabel = nullptr;
 
   // State
   QVariantMap m_currentVariables;

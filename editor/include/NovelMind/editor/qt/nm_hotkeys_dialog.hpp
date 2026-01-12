@@ -55,8 +55,7 @@ class NMHotkeysDialog final : public QDialog {
   Q_OBJECT
 
 public:
-  explicit NMHotkeysDialog(const QList<NMHotkeyEntry> &entries,
-                           QWidget *parent = nullptr);
+  explicit NMHotkeysDialog(const QList<NMHotkeyEntry>& entries, QWidget* parent = nullptr);
 
   /**
    * @brief Get modified hotkeys
@@ -71,19 +70,19 @@ public:
   /**
    * @brief Export hotkeys to file
    */
-  bool exportToFile(const QString &filePath) const;
+  bool exportToFile(const QString& filePath) const;
 
   /**
    * @brief Import hotkeys from file
    */
-  bool importFromFile(const QString &filePath);
+  bool importFromFile(const QString& filePath);
 
 signals:
-  void hotkeyChanged(const QString &actionId, const QString &newShortcut);
-  void conflictDetected(const NMHotkeyConflict &conflict);
+  void hotkeyChanged(const QString& actionId, const QString& newShortcut);
+  void conflictDetected(const NMHotkeyConflict& conflict);
 
 private slots:
-  void onItemDoubleClicked(QTreeWidgetItem *item, int column);
+  void onItemDoubleClicked(QTreeWidgetItem* item, int column);
   void onRecordShortcut();
   void onResetToDefault();
   void onResetAllToDefaults();
@@ -92,26 +91,26 @@ private slots:
   void onApplyClicked();
 
 private:
-  void buildUi(const QList<NMHotkeyEntry> &entries);
-  void applyFilter(const QString &text);
+  void buildUi(const QList<NMHotkeyEntry>& entries);
+  void applyFilter(const QString& text);
   void updateConflictWarnings();
   void highlightConflicts();
-  void setShortcutForItem(QTreeWidgetItem *item, const QString &shortcut);
+  void setShortcutForItem(QTreeWidgetItem* item, const QString& shortcut);
   QString recordKeySequence();
 
-  QLineEdit *m_filterEdit = nullptr;
-  QTreeWidget *m_tree = nullptr;
-  QPushButton *m_recordBtn = nullptr;
-  QPushButton *m_resetBtn = nullptr;
-  QPushButton *m_resetAllBtn = nullptr;
-  QPushButton *m_exportBtn = nullptr;
-  QPushButton *m_importBtn = nullptr;
-  QPushButton *m_applyBtn = nullptr;
-  QLabel *m_conflictLabel = nullptr;
+  QLineEdit* m_filterEdit = nullptr;
+  QTreeWidget* m_tree = nullptr;
+  QPushButton* m_recordBtn = nullptr;
+  QPushButton* m_resetBtn = nullptr;
+  QPushButton* m_resetAllBtn = nullptr;
+  QPushButton* m_exportBtn = nullptr;
+  QPushButton* m_importBtn = nullptr;
+  QPushButton* m_applyBtn = nullptr;
+  QLabel* m_conflictLabel = nullptr;
 
   QHash<QString, NMHotkeyEntry> m_entries;
-  QHash<QString, QTreeWidgetItem *> m_itemLookup;
-  QTreeWidgetItem *m_recordingItem = nullptr;
+  QHash<QString, QTreeWidgetItem*> m_itemLookup;
+  QTreeWidgetItem* m_recordingItem = nullptr;
   bool m_isRecording = false;
 };
 

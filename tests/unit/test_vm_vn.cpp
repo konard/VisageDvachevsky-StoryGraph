@@ -20,8 +20,7 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
     REQUIRE(vm.load(program, strings).isOk());
 
     std::vector<Value> args;
-    vm.registerCallback(OpCode::SAY,
-                        [&args](const std::vector<Value> &in) { args = in; });
+    vm.registerCallback(OpCode::SAY, [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
     vm.step();
@@ -44,7 +43,7 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
 
     std::vector<Value> args;
     vm.registerCallback(OpCode::SHOW_CHARACTER,
-                        [&args](const std::vector<Value> &in) { args = in; });
+                        [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
     vm.step();
@@ -58,18 +57,14 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
   SECTION("CHOICE collects count and options") {
     VirtualMachine vm;
     std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 2},
-        {OpCode::PUSH_STRING, 0},
-        {OpCode::PUSH_STRING, 1},
-        {OpCode::CHOICE, 2},
-        {OpCode::HALT, 0},
+        {OpCode::PUSH_INT, 2}, {OpCode::PUSH_STRING, 0}, {OpCode::PUSH_STRING, 1},
+        {OpCode::CHOICE, 2},   {OpCode::HALT, 0},
     };
     std::vector<std::string> strings = {"Left", "Right"};
     REQUIRE(vm.load(program, strings).isOk());
 
     std::vector<Value> args;
-    vm.registerCallback(OpCode::CHOICE,
-                        [&args](const std::vector<Value> &in) { args = in; });
+    vm.registerCallback(OpCode::CHOICE, [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
     vm.step();
@@ -96,8 +91,7 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
     REQUIRE(vm.load(program, strings).isOk());
 
     std::vector<Value> args;
-    vm.registerCallback(OpCode::TRANSITION,
-                        [&args](const std::vector<Value> &in) { args = in; });
+    vm.registerCallback(OpCode::TRANSITION, [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
     vm.step();
@@ -120,8 +114,7 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
     REQUIRE(vm.load(program, {}).isOk());
 
     std::vector<Value> args;
-    vm.registerCallback(OpCode::STOP_MUSIC,
-                        [&args](const std::vector<Value> &in) { args = in; });
+    vm.registerCallback(OpCode::STOP_MUSIC, [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
     vm.step();
@@ -139,8 +132,7 @@ TEST_CASE("VM VN opcodes pass args", "[scripting]") {
     REQUIRE(vm.load(program, {}).isOk());
 
     std::vector<Value> args;
-    vm.registerCallback(OpCode::GOTO_SCENE,
-                        [&args](const std::vector<Value> &in) { args = in; });
+    vm.registerCallback(OpCode::GOTO_SCENE, [&args](const std::vector<Value>& in) { args = in; });
 
     vm.step();
 
@@ -158,11 +150,11 @@ TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
     // Simple test: GOTO_SCENE should pass the correct entry point to callback
     // and the callback can set the IP to redirect execution
     std::vector<Instruction> program = {
-        {OpCode::GOTO_SCENE, 3},  // Jump to instruction 3
-        {OpCode::HALT, 0},        // Should not reach (1)
-        {OpCode::HALT, 0},        // Should not reach (2)
-        {OpCode::PUSH_INT, 42},   // Target instruction (3)
-        {OpCode::HALT, 0},        // End (4)
+        {OpCode::GOTO_SCENE, 3}, // Jump to instruction 3
+        {OpCode::HALT, 0},       // Should not reach (1)
+        {OpCode::HALT, 0},       // Should not reach (2)
+        {OpCode::PUSH_INT, 42},  // Target instruction (3)
+        {OpCode::HALT, 0},       // End (4)
     };
     REQUIRE(vm.load(program, {}).isOk());
 
@@ -171,7 +163,7 @@ TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
     bool reachedTarget = false;
 
     vm.registerCallback(OpCode::GOTO_SCENE,
-                        [&gotoExecuted, &gotoTarget, &vm](const std::vector<Value> &args) {
+                        [&gotoExecuted, &gotoTarget, &vm](const std::vector<Value>& args) {
                           gotoExecuted = true;
                           if (!args.empty()) {
                             gotoTarget = asInt(args[0]);
@@ -192,7 +184,7 @@ TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
     // Now the IP should be at instruction 3 (PUSH_INT 42)
     // Step should execute it
     vm.step();
-    reachedTarget = true;  // If we got here, the jump worked
+    reachedTarget = true; // If we got here, the jump worked
 
     // Verify we executed instruction 3 (PUSH_INT 42)
     REQUIRE(reachedTarget);
@@ -210,12 +202,12 @@ TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
     VirtualMachine vm;
     // Test the sequence: SAY -> GOTO_SCENE -> target instruction
     std::vector<Instruction> program = {
-        {OpCode::PUSH_NULL, 0},   // 0: speaker
-        {OpCode::SAY, 0},         // 1: say
-        {OpCode::GOTO_SCENE, 4},  // 2: goto instruction 4
-        {OpCode::HALT, 0},        // 3: should not reach
-        {OpCode::PUSH_INT, 99},   // 4: target
-        {OpCode::HALT, 0},        // 5: end
+        {OpCode::PUSH_NULL, 0},  // 0: speaker
+        {OpCode::SAY, 0},        // 1: say
+        {OpCode::GOTO_SCENE, 4}, // 2: goto instruction 4
+        {OpCode::HALT, 0},       // 3: should not reach
+        {OpCode::PUSH_INT, 99},  // 4: target
+        {OpCode::HALT, 0},       // 5: end
     };
     std::vector<std::string> strings = {"test"};
     REQUIRE(vm.load(program, strings).isOk());
@@ -224,17 +216,14 @@ TEST_CASE("VM dialogue to choice transition", "[scripting][issue-73]") {
     bool gotoExecuted = false;
 
     vm.registerCallback(OpCode::SAY,
-                        [&sayExecuted](const std::vector<Value> &) {
-                          sayExecuted = true;
-                        });
+                        [&sayExecuted](const std::vector<Value>&) { sayExecuted = true; });
 
-    vm.registerCallback(OpCode::GOTO_SCENE,
-                        [&gotoExecuted, &vm](const std::vector<Value> &args) {
-                          gotoExecuted = true;
-                          if (!args.empty()) {
-                            vm.setIP(static_cast<u32>(asInt(args[0])));
-                          }
-                        });
+    vm.registerCallback(OpCode::GOTO_SCENE, [&gotoExecuted, &vm](const std::vector<Value>& args) {
+      gotoExecuted = true;
+      if (!args.empty()) {
+        vm.setIP(static_cast<u32>(asInt(args[0])));
+      }
+    });
 
     // Step 1: PUSH_NULL
     vm.step();

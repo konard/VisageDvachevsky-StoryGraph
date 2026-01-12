@@ -13,15 +13,13 @@
 namespace NovelMind::editor {
 
 Result<void> SettingsPersistence::loadFromJson(
-    const std::string &path, SettingScope scope,
-    const std::unordered_map<std::string, SettingDefinition> &definitions,
-    std::unordered_map<std::string, SettingValue> &values,
-    i32 &schemaVersion) {
+    const std::string& path, SettingScope scope,
+    const std::unordered_map<std::string, SettingDefinition>& definitions,
+    std::unordered_map<std::string, SettingValue>& values, i32& schemaVersion) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(path)) {
-    NOVELMIND_LOG_INFO(
-        std::string("Settings file not found, using defaults: ") + path);
+    NOVELMIND_LOG_INFO(std::string("Settings file not found, using defaults: ") + path);
     return Result<void>::ok();
   }
 
@@ -58,8 +56,7 @@ Result<void> SettingsPersistence::loadFromJson(
       // Parse key-value pairs
       if (line.find("\":") != std::string::npos && line[0] == '"') {
         auto colonPos = line.find("\":");
-        std::string key =
-            line.substr(1, colonPos - 1); // Extract key between quotes
+        std::string key = line.substr(1, colonPos - 1); // Extract key between quotes
         std::string valueStr = line.substr(colonPos + 2);
 
         // Remove trailing comma and whitespace
@@ -72,24 +69,21 @@ Result<void> SettingsPersistence::loadFromJson(
         // Find definition for this key
         auto defIt = definitions.find(key);
         if (defIt != definitions.end() && defIt->second.scope == scope) {
-          const auto &def = defIt->second;
+          const auto& def = defIt->second;
 
           // Parse value based on type
           if (def.type == SettingType::Bool) {
             bool val = (valueStr == "true");
             values[key] = val;
-          } else if (def.type == SettingType::Int ||
-                     def.type == SettingType::IntRange) {
+          } else if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
             i32 val = std::stoi(valueStr);
             values[key] = val;
-          } else if (def.type == SettingType::Float ||
-                     def.type == SettingType::FloatRange) {
+          } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
             f32 val = std::stof(valueStr);
             values[key] = val;
           } else {
             // String type - remove quotes
-            if (valueStr.size() >= 2 && valueStr.front() == '"' &&
-                valueStr.back() == '"') {
+            if (valueStr.size() >= 2 && valueStr.front() == '"' && valueStr.back() == '"') {
               valueStr = valueStr.substr(1, valueStr.size() - 2);
             }
             values[key] = detail::unescapeJson(valueStr);
@@ -102,17 +96,15 @@ Result<void> SettingsPersistence::loadFromJson(
 
     NOVELMIND_LOG_INFO(std::string("Loaded settings from: ") + path);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to load settings: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to load settings: ") + e.what());
   }
 }
 
 Result<void> SettingsPersistence::saveToJson(
-    const std::string &path, SettingScope scope,
-    const std::unordered_map<std::string, SettingDefinition> &definitions,
-    const std::unordered_map<std::string, SettingValue> &values,
-    i32 schemaVersion) {
+    const std::string& path, SettingScope scope,
+    const std::unordered_map<std::string, SettingDefinition>& definitions,
+    const std::unordered_map<std::string, SettingValue>& values, i32 schemaVersion) {
   namespace fs = std::filesystem;
 
   try {
@@ -133,7 +125,7 @@ Result<void> SettingsPersistence::saveToJson(
     file << "  \"settings\": {\n";
 
     bool first = true;
-    for (const auto &[key, def] : definitions) {
+    for (const auto& [key, def] : definitions) {
       if (def.scope != scope)
         continue;
 
@@ -147,14 +139,12 @@ Result<void> SettingsPersistence::saveToJson(
 
       file << "    \"" << detail::escapeJson(key) << "\": ";
 
-      const auto &value = valueIt->second;
+      const auto& value = valueIt->second;
       if (def.type == SettingType::Bool) {
         file << (std::get<bool>(value) ? "true" : "false");
-      } else if (def.type == SettingType::Int ||
-                 def.type == SettingType::IntRange) {
+      } else if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
         file << std::get<i32>(value);
-      } else if (def.type == SettingType::Float ||
-                 def.type == SettingType::FloatRange) {
+      } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
         file << std::get<f32>(value);
       } else {
         file << "\"" << detail::escapeJson(std::get<std::string>(value)) << "\"";
@@ -166,9 +156,8 @@ Result<void> SettingsPersistence::saveToJson(
 
     NOVELMIND_LOG_INFO(std::string("Saved settings to: ") + path);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save settings: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save settings: ") + e.what());
   }
 }
 

@@ -5,21 +5,19 @@
 
 namespace NovelMind::editor::qt {
 
-bool isImageExtension(const QString &extension) {
+bool isImageExtension(const QString& extension) {
   const QString ext = extension.toLower();
-  return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-         ext == "gif";
+  return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "gif";
 }
 
-bool isAudioExtension(const QString &extension) {
+bool isAudioExtension(const QString& extension) {
   const QString ext = extension.toLower();
   return ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac";
 }
 
-NMAssetFilterProxy::NMAssetFilterProxy(QObject *parent)
-    : QSortFilterProxyModel(parent) {}
+NMAssetFilterProxy::NMAssetFilterProxy(QObject* parent) : QSortFilterProxyModel(parent) {}
 
-void NMAssetFilterProxy::setNameFilterText(const QString &text) {
+void NMAssetFilterProxy::setNameFilterText(const QString& text) {
   m_nameFilter = text.trimmed();
   invalidateFilter();
 }
@@ -29,14 +27,13 @@ void NMAssetFilterProxy::setTypeFilterIndex(int index) {
   invalidateFilter();
 }
 
-void NMAssetFilterProxy::setPinnedDirectory(const QString &path) {
+void NMAssetFilterProxy::setPinnedDirectory(const QString& path) {
   m_pinnedDirectory = QDir::cleanPath(path);
   invalidateFilter();
 }
 
-bool NMAssetFilterProxy::filterAcceptsRow(
-    int sourceRow, const QModelIndex &sourceParent) const {
-  auto *fsModel = qobject_cast<QFileSystemModel *>(sourceModel());
+bool NMAssetFilterProxy::filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const {
+  auto* fsModel = qobject_cast<QFileSystemModel*>(sourceModel());
   if (!fsModel) {
     return true;
   }
@@ -68,8 +65,7 @@ bool NMAssetFilterProxy::filterAcceptsRow(
   const QString ext = info.suffix().toLower();
   switch (m_typeFilterIndex) {
   case 1: // Images
-    return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-           ext == "gif";
+    return ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "gif";
   case 2: // Audio
     return ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac";
   case 3: // Fonts

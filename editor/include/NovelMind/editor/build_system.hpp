@@ -114,7 +114,7 @@ struct BuildConfig {
   // Asset settings
   bool packAssets = true;
   bool encryptAssets = false;
-  std::string encryptionKeyPath; // Path to key file (never the key itself)
+  std::string encryptionKeyPath;        // Path to key file (never the key itself)
   Core::SecureVector<u8> encryptionKey; // 32-byte AES-256 key (secure, zeroed on destruction)
   CompressionLevel compression = CompressionLevel::Balanced;
 
@@ -314,8 +314,9 @@ public:
   [[nodiscard]] static std::array<u8, 32> calculateSha256(const u8* data, usize size);
   [[nodiscard]] static Result<std::vector<u8>> compressData(const std::vector<u8>& data,
                                                             CompressionLevel level);
-  [[nodiscard]] static Result<std::vector<u8>>
-  encryptData(const std::vector<u8>& data, const Core::SecureVector<u8>& key, std::array<u8, 12>& ivOut);
+  [[nodiscard]] static Result<std::vector<u8>> encryptData(const std::vector<u8>& data,
+                                                           const Core::SecureVector<u8>& key,
+                                                           std::array<u8, 12>& ivOut);
 
   // Resource type detection
   [[nodiscard]] static ResourceType getResourceTypeFromExtension(const std::string& path);
@@ -330,7 +331,8 @@ public:
   // Key management
   [[nodiscard]] static Result<Core::SecureVector<u8>>
   loadEncryptionKeyFromEnv(); // Load from NOVELMIND_PACK_AES_KEY_HEX or _FILE
-  [[nodiscard]] static Result<Core::SecureVector<u8>> loadEncryptionKeyFromFile(const std::string& path);
+  [[nodiscard]] static Result<Core::SecureVector<u8>>
+  loadEncryptionKeyFromFile(const std::string& path);
   [[nodiscard]] static Result<std::vector<u8>> signData(const std::vector<u8>& data,
                                                         const std::string& privateKeyPath);
 

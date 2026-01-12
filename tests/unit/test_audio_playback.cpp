@@ -96,8 +96,8 @@ TEST_CASE("VoiceConfig - Default values and ducking", "[audio][config][voice]") 
 
   SECTION("Default voice configuration") {
     CHECK(config.volume == 1.0f);
-    CHECK(config.duckMusic == true);      // Music ducking enabled
-    CHECK(config.duckAmount == 0.3f);     // 30% volume during voice
+    CHECK(config.duckMusic == true);        // Music ducking enabled
+    CHECK(config.duckAmount == 0.3f);       // 30% volume during voice
     CHECK(config.duckFadeDuration == 0.2f); // 200ms duck fade
   }
 
@@ -124,9 +124,9 @@ TEST_CASE("VoiceConfig - Default values and ducking", "[audio][config][voice]") 
 
 TEST_CASE("AudioChannel - Channel enumeration", "[audio][channel]") {
   SECTION("All audio channels are defined") {
-    std::vector<AudioChannel> channels = {
-        AudioChannel::Master, AudioChannel::Music, AudioChannel::Sound,
-        AudioChannel::Voice,  AudioChannel::Ambient, AudioChannel::UI};
+    std::vector<AudioChannel> channels = {AudioChannel::Master,  AudioChannel::Music,
+                                          AudioChannel::Sound,   AudioChannel::Voice,
+                                          AudioChannel::Ambient, AudioChannel::UI};
 
     CHECK(channels.size() == 6);
   }
@@ -146,9 +146,9 @@ TEST_CASE("AudioChannel - Channel enumeration", "[audio][channel]") {
 
 TEST_CASE("PlaybackState - State enumeration", "[audio][playback]") {
   SECTION("All playback states are defined") {
-    std::vector<PlaybackState> states = {
-        PlaybackState::Stopped, PlaybackState::Playing, PlaybackState::Paused,
-        PlaybackState::FadingIn, PlaybackState::FadingOut};
+    std::vector<PlaybackState> states = {PlaybackState::Stopped, PlaybackState::Playing,
+                                         PlaybackState::Paused, PlaybackState::FadingIn,
+                                         PlaybackState::FadingOut};
 
     CHECK(states.size() == 5);
   }
@@ -180,8 +180,7 @@ TEST_CASE("AudioSource - Playing state check", "[audio][playback]") {
 TEST_CASE("AudioTransition - Transition types", "[audio][transition]") {
   SECTION("All transition types are defined") {
     std::vector<AudioTransition> transitions = {
-        AudioTransition::Immediate, AudioTransition::FadeOut,
-        AudioTransition::CrossFade};
+        AudioTransition::Immediate, AudioTransition::FadeOut, AudioTransition::CrossFade};
 
     CHECK(transitions.size() == 3);
   }
@@ -201,9 +200,8 @@ TEST_CASE("AudioEvent - Event types", "[audio][event]") {
 
   SECTION("All event types are defined") {
     std::vector<EventType> eventTypes = {
-        EventType::Started,  EventType::Stopped, EventType::Paused,
-        EventType::Resumed,  EventType::Looped,  EventType::FadeComplete,
-        EventType::Error};
+        EventType::Started, EventType::Stopped,      EventType::Paused, EventType::Resumed,
+        EventType::Looped,  EventType::FadeComplete, EventType::Error};
 
     CHECK(eventTypes.size() == 7);
   }
@@ -281,7 +279,7 @@ TEST_CASE("AudioSource - Pan control", "[audio][source][pan]") {
   AudioSource source;
 
   SECTION("Set pan") {
-    source.setPan(0.0f); // Center
+    source.setPan(0.0f);  // Center
     source.setPan(-1.0f); // Full left
     source.setPan(1.0f);  // Full right
     // Verify no crash
@@ -410,7 +408,7 @@ TEST_CASE("AudioSource - Playback position", "[audio][source][position]") {
 TEST_CASE("AudioCallback - Callback function", "[audio][callback]") {
   SECTION("Create audio callback") {
     bool callbackInvoked = false;
-    AudioCallback callback = [&callbackInvoked](const AudioEvent &event) {
+    AudioCallback callback = [&callbackInvoked](const AudioEvent& event) {
       callbackInvoked = true;
       (void)event;
     };
@@ -425,9 +423,7 @@ TEST_CASE("AudioCallback - Callback function", "[audio][callback]") {
 
   SECTION("Callback receives event data") {
     AudioEvent receivedEvent;
-    AudioCallback callback = [&receivedEvent](const AudioEvent &event) {
-      receivedEvent = event;
-    };
+    AudioCallback callback = [&receivedEvent](const AudioEvent& event) { receivedEvent = event; };
 
     AudioEvent testEvent;
     testEvent.type = AudioEvent::Type::Stopped;
@@ -441,7 +437,7 @@ TEST_CASE("AudioCallback - Callback function", "[audio][callback]") {
 
   SECTION("Multiple event types") {
     std::vector<AudioEvent::Type> receivedTypes;
-    AudioCallback callback = [&receivedTypes](const AudioEvent &event) {
+    AudioCallback callback = [&receivedTypes](const AudioEvent& event) {
       receivedTypes.push_back(event.type);
     };
 
@@ -636,7 +632,7 @@ TEST_CASE("Audio - Error event handling", "[audio][error]") {
 
   SECTION("Handle error in callback") {
     std::string capturedError;
-    AudioCallback callback = [&capturedError](const AudioEvent &event) {
+    AudioCallback callback = [&capturedError](const AudioEvent& event) {
       if (event.type == AudioEvent::Type::Error) {
         capturedError = event.errorMessage;
       }

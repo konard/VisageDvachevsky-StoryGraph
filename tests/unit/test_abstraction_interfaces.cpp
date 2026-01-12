@@ -163,7 +163,7 @@ TEST_CASE("MockAudioPlayer callbacks", "[audio][mock][callbacks]") {
 
   SECTION("error callback") {
     std::string receivedError;
-    player.setOnError([&](const std::string &error) { receivedError = error; });
+    player.setOnError([&](const std::string& error) { receivedError = error; });
 
     player.simulateError("Test error message");
 
@@ -411,7 +411,7 @@ TEST_CASE("ServiceLocator audio player registration", "[servicelocator]") {
 
   SECTION("register and retrieve player") {
     auto mockPlayer = std::make_unique<MockAudioPlayer>();
-    MockAudioPlayer *rawPtr = mockPlayer.get();
+    MockAudioPlayer* rawPtr = mockPlayer.get();
 
     ServiceLocator::registerAudioPlayer(std::move(mockPlayer));
 
@@ -442,7 +442,7 @@ TEST_CASE("ServiceLocator file system registration", "[servicelocator]") {
 
   SECTION("register and retrieve file system") {
     auto mockFs = std::make_unique<MockFileSystem>();
-    MockFileSystem *rawPtr = mockFs.get();
+    MockFileSystem* rawPtr = mockFs.get();
 
     ServiceLocator::registerFileSystem(std::move(mockFs));
 
@@ -451,8 +451,7 @@ TEST_CASE("ServiceLocator file system registration", "[servicelocator]") {
   }
 
   SECTION("file system factory") {
-    ServiceLocator::registerFileSystemFactory(
-        []() { return std::make_unique<MockFileSystem>(); });
+    ServiceLocator::registerFileSystemFactory([]() { return std::make_unique<MockFileSystem>(); });
 
     auto fs = ServiceLocator::createFileSystem();
     REQUIRE(fs != nullptr);

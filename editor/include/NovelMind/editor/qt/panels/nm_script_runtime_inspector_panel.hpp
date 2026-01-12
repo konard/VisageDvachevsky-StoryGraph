@@ -45,13 +45,13 @@ namespace NovelMind::editor::qt {
  * @brief Execution state for display purposes
  */
 enum class DebugExecutionState {
-  Idle,              ///< Not running
-  Running,           ///< Running normally
-  PausedBreakpoint,  ///< Paused at a breakpoint
-  PausedStep,        ///< Paused after step
-  PausedUser,        ///< Paused by user
-  WaitingInput,      ///< Waiting for user input
-  Halted             ///< Execution complete
+  Idle,             ///< Not running
+  Running,          ///< Running normally
+  PausedBreakpoint, ///< Paused at a breakpoint
+  PausedStep,       ///< Paused after step
+  PausedUser,       ///< Paused by user
+  WaitingInput,     ///< Waiting for user input
+  Halted            ///< Execution complete
 };
 
 /**
@@ -80,7 +80,7 @@ class NMScriptRuntimeInspectorPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMScriptRuntimeInspectorPanel(QWidget *parent = nullptr);
+  explicit NMScriptRuntimeInspectorPanel(QWidget* parent = nullptr);
   ~NMScriptRuntimeInspectorPanel() override;
 
   void onInitialize() override;
@@ -95,12 +95,12 @@ public:
    * @brief Set the debugger instance to monitor
    * @param debugger Pointer to the VM debugger (ownership not transferred)
    */
-  void setDebugger(scripting::VMDebugger *debugger);
+  void setDebugger(scripting::VMDebugger* debugger);
 
   /**
    * @brief Get the current debugger
    */
-  [[nodiscard]] scripting::VMDebugger *debugger() const { return m_debugger; }
+  [[nodiscard]] scripting::VMDebugger* debugger() const { return m_debugger; }
 
   /**
    * @brief Update execution state display
@@ -112,13 +112,13 @@ public:
    * @param filePath Path to source file
    * @param line Line number to highlight
    */
-  void navigateToSource(const QString &filePath, int line);
+  void navigateToSource(const QString& filePath, int line);
 
 signals:
   /**
    * @brief Emitted when user requests to navigate to source location
    */
-  void sourceNavigationRequested(const QString &filePath, int line);
+  void sourceNavigationRequested(const QString& filePath, int line);
 
   /**
    * @brief Emitted when a breakpoint is toggled
@@ -165,19 +165,18 @@ private slots:
   void onStopClicked();
 
   // Data update handlers (from play mode controller)
-  void onVariablesChanged(const QVariantMap &variables);
-  void onFlagsChanged(const QVariantMap &flags);
-  void onCallStackChanged(const QStringList &stack);
-  void onCurrentNodeChanged(const QString &nodeId);
-  void onExecutionStepChanged(int stepIndex, int totalSteps,
-                              const QString &instruction);
+  void onVariablesChanged(const QVariantMap& variables);
+  void onFlagsChanged(const QVariantMap& flags);
+  void onCallStackChanged(const QStringList& stack);
+  void onCurrentNodeChanged(const QString& nodeId);
+  void onExecutionStepChanged(int stepIndex, int totalSteps, const QString& instruction);
   void onPlayModeChanged(int mode);
 
   // UI interaction handlers
-  void onVariableItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onBreakpointItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onCallStackItemDoubleClicked(QListWidgetItem *item);
-  void onHistoryItemClicked(QTreeWidgetItem *item, int column);
+  void onVariableItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onBreakpointItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onCallStackItemDoubleClicked(QListWidgetItem* item);
+  void onHistoryItemClicked(QTreeWidgetItem* item, int column);
   void onAddBreakpointClicked();
   void onRemoveBreakpointClicked();
   void onClearBreakpointsClicked();
@@ -199,9 +198,9 @@ private:
   void updateHistoryDisplay();
   void updatePerformanceMetrics(double deltaTime);
 
-  void editVariable(const QString &name, const QVariant &currentValue);
-  QString formatValue(const QVariant &value) const;
-  QString getValueTypeString(const QVariant &value) const;
+  void editVariable(const QString& name, const QVariant& currentValue);
+  QString formatValue(const QVariant& value) const;
+  QString getValueTypeString(const QVariant& value) const;
   QString getStateString(DebugExecutionState state) const;
   QIcon getStateIcon(DebugExecutionState state) const;
 
@@ -210,52 +209,52 @@ private:
   // =========================================================================
 
   // Main layout
-  QToolBar *m_toolBar = nullptr;
-  QTabWidget *m_tabWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QTabWidget* m_tabWidget = nullptr;
 
   // Control buttons
-  QToolButton *m_continueBtn = nullptr;
-  QToolButton *m_pauseBtn = nullptr;
-  QToolButton *m_stepIntoBtn = nullptr;
-  QToolButton *m_stepOverBtn = nullptr;
-  QToolButton *m_stepOutBtn = nullptr;
-  QToolButton *m_stopBtn = nullptr;
+  QToolButton* m_continueBtn = nullptr;
+  QToolButton* m_pauseBtn = nullptr;
+  QToolButton* m_stepIntoBtn = nullptr;
+  QToolButton* m_stepOverBtn = nullptr;
+  QToolButton* m_stepOutBtn = nullptr;
+  QToolButton* m_stopBtn = nullptr;
 
   // Status display
-  QLabel *m_statusLabel = nullptr;
-  QLabel *m_sceneLabel = nullptr;
-  QLabel *m_lineLabel = nullptr;
+  QLabel* m_statusLabel = nullptr;
+  QLabel* m_sceneLabel = nullptr;
+  QLabel* m_lineLabel = nullptr;
 
   // Variables Tab
-  QTreeWidget *m_variablesTree = nullptr;
-  QToolButton *m_addWatchBtn = nullptr;
-  QToolButton *m_refreshVarsBtn = nullptr;
+  QTreeWidget* m_variablesTree = nullptr;
+  QToolButton* m_addWatchBtn = nullptr;
+  QToolButton* m_refreshVarsBtn = nullptr;
 
   // Call Stack Tab
-  QListWidget *m_callStackList = nullptr;
+  QListWidget* m_callStackList = nullptr;
 
   // Breakpoints Tab
-  QTreeWidget *m_breakpointsTree = nullptr;
-  QToolButton *m_addBpBtn = nullptr;
-  QToolButton *m_removeBpBtn = nullptr;
-  QToolButton *m_clearBpsBtn = nullptr;
+  QTreeWidget* m_breakpointsTree = nullptr;
+  QToolButton* m_addBpBtn = nullptr;
+  QToolButton* m_removeBpBtn = nullptr;
+  QToolButton* m_clearBpsBtn = nullptr;
 
   // History Tab
-  QTreeWidget *m_historyTree = nullptr;
-  QToolButton *m_clearHistoryBtn = nullptr;
+  QTreeWidget* m_historyTree = nullptr;
+  QToolButton* m_clearHistoryBtn = nullptr;
 
   // Performance Tab
-  QTreeWidget *m_performanceTree = nullptr;
-  QTreeWidgetItem *m_frameTimeItem = nullptr;
-  QTreeWidgetItem *m_instructionRateItem = nullptr;
-  QTreeWidgetItem *m_memoryItem = nullptr;
-  QTreeWidgetItem *m_sceneTimeItem = nullptr;
+  QTreeWidget* m_performanceTree = nullptr;
+  QTreeWidgetItem* m_frameTimeItem = nullptr;
+  QTreeWidgetItem* m_instructionRateItem = nullptr;
+  QTreeWidgetItem* m_memoryItem = nullptr;
+  QTreeWidgetItem* m_sceneTimeItem = nullptr;
 
   // =========================================================================
   // State
   // =========================================================================
 
-  scripting::VMDebugger *m_debugger = nullptr;
+  scripting::VMDebugger* m_debugger = nullptr;
   DebugExecutionState m_executionState = DebugExecutionState::Idle;
 
   // Cached data for display

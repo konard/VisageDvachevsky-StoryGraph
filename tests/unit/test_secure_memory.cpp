@@ -58,8 +58,7 @@ TEST_CASE("secureZeroMemory zeros memory", "[secure_memory][zeroing]") {
 // SecureAllocator Tests
 // =============================================================================
 
-TEST_CASE("SecureAllocator allocates and deallocates correctly",
-          "[secure_memory][allocator]") {
+TEST_CASE("SecureAllocator allocates and deallocates correctly", "[secure_memory][allocator]") {
   SECTION("Allocates memory") {
     SecureAllocator<u8> allocator;
     u8* ptr = allocator.allocate(32);
@@ -270,8 +269,7 @@ TEST_CASE("Memory locking functions work correctly", "[secure_memory][locking]")
 // Integration Tests
 // =============================================================================
 
-TEST_CASE("Secure memory integration with encryption keys",
-          "[secure_memory][integration]") {
+TEST_CASE("Secure memory integration with encryption keys", "[secure_memory][integration]") {
   SECTION("Simulates encryption key lifecycle") {
     // Load key
     SecureVector<u8> key(32);

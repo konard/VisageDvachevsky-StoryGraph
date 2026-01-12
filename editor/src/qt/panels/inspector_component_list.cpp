@@ -13,8 +13,8 @@ class NMSceneObject;
 InspectorComponentList::InspectorComponentList(NMInspectorPanel* panel) : m_panel(panel) {}
 
 void InspectorComponentList::prepareBindingTargets(const QList<NMSceneObject*>& objects,
-                                                    std::vector<std::string>& objectIds,
-                                                    std::vector<void*>& objectPtrs) {
+                                                   std::vector<std::string>& objectIds,
+                                                   std::vector<void*>& objectPtrs) {
   for (auto* obj : objects) {
     if (obj) {
       objectIds.push_back(obj->id().toStdString());
@@ -24,7 +24,7 @@ void InspectorComponentList::prepareBindingTargets(const QList<NMSceneObject*>& 
 }
 
 void InspectorComponentList::createMultiObjectPropertyGroups(const QList<NMSceneObject*>& objects,
-                                                              bool editable) {
+                                                             bool editable) {
   // Use InspectorBindingManager to handle multi-object editing
   auto& inspector = InspectorBindingManager::instance();
 

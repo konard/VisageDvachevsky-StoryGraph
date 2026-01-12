@@ -5,7 +5,7 @@
 
 namespace NovelMind::Core {
 
-Profiler &Profiler::instance() {
+Profiler& Profiler::instance() {
   static Profiler instance;
   return instance;
 }
@@ -18,7 +18,7 @@ void Profiler::beginFrame() {
   m_frameStart = std::chrono::steady_clock::now();
 
   std::lock_guard<std::mutex> lock(m_mutex);
-  for (auto &[threadId, data] : m_threadData) {
+  for (auto& [threadId, data] : m_threadData) {
     data.frameSamples.clear();
   }
 }
@@ -29,21 +29,19 @@ void Profiler::endFrame() {
   }
 
   const auto frameEnd = std::chrono::steady_clock::now();
-  m_lastFrameTime.store(
-      std::chrono::duration<f64, std::milli>(frameEnd - m_frameStart).count(),
-      std::memory_order_relaxed);
+  m_lastFrameTime.store(std::chrono::duration<f64, std::milli>(frameEnd - m_frameStart).count(),
+                        std::memory_order_relaxed);
   ++m_frameCount;
 }
 
-void Profiler::beginSample(const std::string &name,
-                           const std::string &category) {
+void Profiler::beginSample(const std::string& name, const std::string& category) {
   if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
   // Thread safety: Hold lock for entire operation
   std::lock_guard<std::mutex> lock(m_mutex);
-  auto &threadData = m_threadData[std::this_thread::get_id()];
+  auto& threadData = m_threadData[std::this_thread::get_id()];
 
   ProfileSample sample;
   sample.name = name;
@@ -56,25 +54,24 @@ void Profiler::beginSample(const std::string &name,
   ++threadData.currentDepth;
 }
 
-void Profiler::endSample(const std::string &name) {
+void Profiler::endSample(const std::string& name) {
   if (!m_enabled.load(std::memory_order_relaxed)) {
     return;
   }
 
   // Thread safety: Hold lock for entire operation
   std::lock_guard<std::mutex> lock(m_mutex);
-  auto &threadData = m_threadData[std::this_thread::get_id()];
+  auto& threadData = m_threadData[std::this_thread::get_id()];
 
   if (threadData.activeSamples.empty()) {
     return;
   }
 
-  for (auto it = threadData.activeSamples.rbegin();
-       it != threadData.activeSamples.rend(); ++it) {
+  for (auto it = threadData.activeSamples.rbegin(); it != threadData.activeSamples.rend(); ++it) {
     if (it->name == name) {
       it->endTime = std::chrono::steady_clock::now();
 
-      auto &stats = m_stats[name];
+      auto& stats = m_stats[name];
       stats.name = name;
       ++stats.callCount;
 
@@ -100,14 +97,12 @@ std::vector<ProfileSample> Profiler::getFrameSamples() const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   std::vector<ProfileSample> result;
-  for (const auto &[threadId, data] : m_threadData) {
-    result.insert(result.end(), data.frameSamples.begin(),
-                  data.frameSamples.end());
+  for (const auto& [threadId, data] : m_threadData) {
+    result.insert(result.end(), data.frameSamples.begin(), data.frameSamples.end());
   }
 
-  std::sort(result.begin(), result.end(), [](const auto &a, const auto &b) {
-    return a.startTime < b.startTime;
-  });
+  std::sort(result.begin(), result.end(),
+            [](const auto& a, const auto& b) { return a.startTime < b.startTime; });
 
   return result;
 }
@@ -126,7 +121,7 @@ void Profiler::reset() {
   m_lastFrameTime.store(0.0, std::memory_order_relaxed);
 }
 
-bool Profiler::exportToJson(const std::string &filename) const {
+bool Profiler::exportToJson(const std::string& filename) const {
   std::ofstream file(filename);
   if (!file.is_open()) {
     return false;
@@ -141,7 +136,7 @@ bool Profiler::exportToJson(const std::string &filename) const {
   file << "  \"stats\": [\n";
 
   bool first = true;
-  for (const auto &[name, stats] : m_stats) {
+  for (const auto& [name, stats] : m_stats) {
     if (!first) {
       file << ",\n";
     }
@@ -150,14 +145,10 @@ bool Profiler::exportToJson(const std::string &filename) const {
     file << "    {\n";
     file << "      \"name\": \"" << name << "\",\n";
     file << "      \"callCount\": " << stats.callCount << ",\n";
-    file << "      \"totalMs\": " << std::fixed << std::setprecision(3)
-         << stats.totalMs << ",\n";
-    file << "      \"minMs\": " << std::fixed << std::setprecision(3)
-         << stats.minMs << ",\n";
-    file << "      \"maxMs\": " << std::fixed << std::setprecision(3)
-         << stats.maxMs << ",\n";
-    file << "      \"avgMs\": " << std::fixed << std::setprecision(3)
-         << stats.avgMs << "\n";
+    file << "      \"totalMs\": " << std::fixed << std::setprecision(3) << stats.totalMs << ",\n";
+    file << "      \"minMs\": " << std::fixed << std::setprecision(3) << stats.minMs << ",\n";
+    file << "      \"maxMs\": " << std::fixed << std::setprecision(3) << stats.maxMs << ",\n";
+    file << "      \"avgMs\": " << std::fixed << std::setprecision(3) << stats.avgMs << "\n";
     file << "    }";
   }
 
@@ -167,7 +158,7 @@ bool Profiler::exportToJson(const std::string &filename) const {
   return true;
 }
 
-bool Profiler::exportToChromeTrace(const std::string &filename) const {
+bool Profiler::exportToChromeTrace(const std::string& filename) const {
   std::ofstream file(filename);
   if (!file.is_open()) {
     return false;
@@ -178,16 +169,15 @@ bool Profiler::exportToChromeTrace(const std::string &filename) const {
   file << "{\"traceEvents\":[\n";
 
   bool first = true;
-  for (const auto &[threadId, data] : m_threadData) {
-    for (const auto &sample : data.frameSamples) {
+  for (const auto& [threadId, data] : m_threadData) {
+    for (const auto& sample : data.frameSamples) {
       if (!first) {
         file << ",\n";
       }
       first = false;
 
       const auto startUs =
-          std::chrono::duration_cast<std::chrono::microseconds>(
-              sample.startTime.time_since_epoch())
+          std::chrono::duration_cast<std::chrono::microseconds>(sample.startTime.time_since_epoch())
               .count();
 
       std::ostringstream tidStr;
@@ -195,8 +185,7 @@ bool Profiler::exportToChromeTrace(const std::string &filename) const {
 
       file << "{";
       file << "\"name\":\"" << sample.name << "\",";
-      file << "\"cat\":\""
-           << (sample.category.empty() ? "default" : sample.category) << "\",";
+      file << "\"cat\":\"" << (sample.category.empty() ? "default" : sample.category) << "\",";
       file << "\"ph\":\"X\",";
       file << "\"ts\":" << startUs << ",";
       file << "\"dur\":" << sample.durationUs() << ",";
@@ -211,7 +200,7 @@ bool Profiler::exportToChromeTrace(const std::string &filename) const {
   return true;
 }
 
-Profiler::ThreadData &Profiler::getThreadData() {
+Profiler::ThreadData& Profiler::getThreadData() {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_threadData[std::this_thread::get_id()];
 }

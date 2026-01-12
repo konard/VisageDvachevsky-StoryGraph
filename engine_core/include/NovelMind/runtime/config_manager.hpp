@@ -23,7 +23,7 @@ namespace NovelMind::runtime {
 /**
  * @brief Callback for configuration changes
  */
-using ConfigChangeCallback = std::function<void(const RuntimeConfig &)>;
+using ConfigChangeCallback = std::function<void(const RuntimeConfig&)>;
 
 /**
  * @brief Configuration Manager
@@ -45,15 +45,15 @@ public:
   ~ConfigManager();
 
   // Non-copyable
-  ConfigManager(const ConfigManager &) = delete;
-  ConfigManager &operator=(const ConfigManager &) = delete;
+  ConfigManager(const ConfigManager&) = delete;
+  ConfigManager& operator=(const ConfigManager&) = delete;
 
   /**
    * @brief Initialize with a base directory
    * @param basePath Path to game's root directory (where config/ is located)
    * @return Success or error message
    */
-  Result<void> initialize(const std::string &basePath);
+  Result<void> initialize(const std::string& basePath);
 
   /**
    * @brief Load configuration from files
@@ -76,12 +76,12 @@ public:
   /**
    * @brief Get the current merged configuration
    */
-  [[nodiscard]] const RuntimeConfig &getConfig() const { return m_config; }
+  [[nodiscard]] const RuntimeConfig& getConfig() const { return m_config; }
 
   /**
    * @brief Get mutable configuration for modifications
    */
-  RuntimeConfig &getConfigMutable() { return m_config; }
+  RuntimeConfig& getConfigMutable() { return m_config; }
 
   /**
    * @brief Reset configuration to defaults
@@ -122,7 +122,7 @@ public:
   /**
    * @brief Get the base path
    */
-  [[nodiscard]] const std::string &getBasePath() const { return m_basePath; }
+  [[nodiscard]] const std::string& getBasePath() const { return m_basePath; }
 
   /**
    * @brief Get the config directory path
@@ -162,34 +162,33 @@ public:
   void setAutoAdvanceEnabled(bool enabled);
 
   // Localization
-  void setLocale(const std::string &locale);
+  void setLocale(const std::string& locale);
 
   // Input
-  void setInputBinding(InputAction action, const InputBinding &binding);
-  [[nodiscard]] const InputBinding &getInputBinding(InputAction action) const;
+  void setInputBinding(InputAction action, const InputBinding& binding);
+  [[nodiscard]] const InputBinding& getInputBinding(InputAction action) const;
 
 private:
   /**
    * @brief Load configuration from a JSON file
    */
-  Result<void> loadFromFile(const std::string &path, bool isUserConfig);
+  Result<void> loadFromFile(const std::string& path, bool isUserConfig);
 
   /**
    * @brief Parse JSON string into RuntimeConfig
    */
-  Result<void> parseJson(const std::string &json, RuntimeConfig &config,
-                         bool isUserConfig);
+  Result<void> parseJson(const std::string& json, RuntimeConfig& config, bool isUserConfig);
 
   /**
    * @brief Serialize RuntimeConfig to JSON string
    */
-  [[nodiscard]] std::string serializeToJson(const RuntimeConfig &config,
+  [[nodiscard]] std::string serializeToJson(const RuntimeConfig& config,
                                             bool userSettingsOnly) const;
 
   /**
    * @brief Merge user config into base config
    */
-  void mergeConfig(const RuntimeConfig &userConfig);
+  void mergeConfig(const RuntimeConfig& userConfig);
 
   std::string m_basePath;
   RuntimeConfig m_config;

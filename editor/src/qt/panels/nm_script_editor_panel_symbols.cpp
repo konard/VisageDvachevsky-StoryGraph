@@ -67,7 +67,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
     }
-    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (empty root)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshSymbolIndex completed (empty root)");
     return;
   }
 
@@ -76,7 +77,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   if (!fs::exists(base)) {
     pushCompletionsToEditors();
     refreshSymbolList();
-    core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed (root not exists)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshSymbolIndex completed (root not exists)");
     return;
   }
 
@@ -88,8 +90,8 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   QSet<QString> seenVoices;
   QSet<QString> seenMusic;
 
-  auto insertMap = [](QHash<QString, QString> &map, QSet<QString> &seen,
-                      const QString &value, const QString &filePath) {
+  auto insertMap = [](QHash<QString, QString>& map, QSet<QString>& seen, const QString& value,
+                      const QString& filePath) {
     const QString key = value.toLower();
     if (value.isEmpty() || seen.contains(key)) {
       return;
@@ -98,8 +100,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
     map.insert(value, filePath);
   };
 
-  auto insertList = [](QStringList &list, QSet<QString> &seen,
-                       const QString &value) {
+  auto insertList = [](QStringList& list, QSet<QString>& seen, const QString& value) {
     const QString key = value.toLower();
     if (value.isEmpty() || seen.contains(key)) {
       return;
@@ -109,25 +110,23 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   };
 
   const QRegularExpression reScene("\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reCharacter(
-      "\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reSetFlag(
-      "\\bset\\s+flag\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reCharacter("\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reSetFlag("\\bset\\s+flag\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reFlag("\\bflag\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reSetVar(
-      "\\bset\\s+(?!flag\\s)([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reSetVar("\\bset\\s+(?!flag\\s)([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reBackground("show\\s+background\\s+\"([^\"]+)\"");
   const QRegularExpression reVoice("play\\s+voice\\s+\"([^\"]+)\"");
   const QRegularExpression reMusic("play\\s+music\\s+\"([^\"]+)\"");
 
   QList<NMScriptIssue> issues;
 
-  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for symbol index");
+  core::Logger::instance().info(
+      "applyProjectToPanels: Starting directory iteration for symbol index");
   int filesProcessed = 0;
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
         continue;
       }
@@ -144,7 +143,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
       // Collect symbols with line numbers
       const QStringList lines = content.split('\n');
       for (int lineNum = 0; lineNum < lines.size(); ++lineNum) {
-        const QString &line = lines[lineNum];
+        const QString& line = lines[lineNum];
 
         // Scenes with line numbers
         QRegularExpressionMatch sceneMatch = reScene.match(line);
@@ -169,7 +168,7 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         }
       }
 
-      auto collect = [&](const QRegularExpression &regex, auto &&callback) {
+      auto collect = [&](const QRegularExpression& regex, auto&& callback) {
         QRegularExpressionMatchIterator it = regex.globalMatch(content);
         while (it.hasNext()) {
           const QRegularExpressionMatch match = it.next();
@@ -177,29 +176,28 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
         }
       };
 
-      collect(reSetFlag, [&](const QString &value) {
+      collect(reSetFlag, [&](const QString& value) {
         insertMap(m_symbolIndex.flags, seenFlags, value, path);
       });
-      collect(reFlag, [&](const QString &value) {
+      collect(reFlag, [&](const QString& value) {
         insertMap(m_symbolIndex.flags, seenFlags, value, path);
       });
-      collect(reSetVar, [&](const QString &value) {
+      collect(reSetVar, [&](const QString& value) {
         insertMap(m_symbolIndex.variables, seenVariables, value, path);
       });
-      collect(reBackground, [&](const QString &value) {
+      collect(reBackground, [&](const QString& value) {
         insertList(m_symbolIndex.backgrounds, seenBackgrounds, value);
       });
-      collect(reVoice, [&](const QString &value) {
-        insertList(m_symbolIndex.voices, seenVoices, value);
-      });
-      collect(reMusic, [&](const QString &value) {
-        insertList(m_symbolIndex.music, seenMusic, value);
-      });
+      collect(reVoice,
+              [&](const QString& value) { insertList(m_symbolIndex.voices, seenVoices, value); });
+      collect(reMusic,
+              [&](const QString& value) { insertList(m_symbolIndex.music, seenMusic, value); });
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration for symbol index completed, processed " + std::to_string(filesProcessed) + " files");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to build script symbols: ") + e.what());
+    core::Logger::instance().info(
+        "applyProjectToPanels: Directory iteration for symbol index completed, processed " +
+        std::to_string(filesProcessed) + " files");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to build script symbols: ") + e.what());
   }
 
   core::Logger::instance().info("applyProjectToPanels: Adding project context assets");
@@ -207,29 +205,26 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   if (m_projectContext) {
     // Add available backgrounds
     auto backgrounds = m_projectContext->getAvailableBackgrounds();
-    for (const auto &bg : backgrounds) {
-      insertList(m_symbolIndex.backgrounds, seenBackgrounds,
-                 QString::fromStdString(bg));
+    for (const auto& bg : backgrounds) {
+      insertList(m_symbolIndex.backgrounds, seenBackgrounds, QString::fromStdString(bg));
     }
 
     // Add available music
     auto music = m_projectContext->getAvailableAudio("music");
-    for (const auto &track : music) {
-      insertList(m_symbolIndex.music, seenMusic,
-                 QString::fromStdString(track));
+    for (const auto& track : music) {
+      insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(track));
     }
 
     // Add available sound effects
     auto sounds = m_projectContext->getAvailableAudio("sound");
-    for (const auto &sfx : sounds) {
+    for (const auto& sfx : sounds) {
       insertList(m_symbolIndex.music, seenMusic, QString::fromStdString(sfx));
     }
 
     // Add available voices
     auto voices = m_projectContext->getAvailableAudio("voice");
-    for (const auto &voice : voices) {
-      insertList(m_symbolIndex.voices, seenVoices,
-                 QString::fromStdString(voice));
+    for (const auto& voice : voices) {
+      insertList(m_symbolIndex.voices, seenVoices, QString::fromStdString(voice));
     }
   }
 
@@ -243,13 +238,12 @@ void NMScriptEditorPanel::refreshSymbolIndex() {
   core::Logger::instance().info("applyProjectToPanels: refreshSymbolIndex completed");
 }
 
-QList<NMScriptEditor::CompletionEntry>
-NMScriptEditorPanel::buildProjectCompletionEntries() const {
+QList<NMScriptEditor::CompletionEntry> NMScriptEditorPanel::buildProjectCompletionEntries() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QList<NMScriptEditor::CompletionEntry> entries;
 
-  auto addEntries = [&entries](const QStringList &list, const QString &detail) {
-    for (const auto &item : list) {
+  auto addEntries = [&entries](const QStringList& list, const QString& detail) {
+    for (const auto& item : list) {
       entries.push_back({item, detail});
     }
   };
@@ -268,23 +262,20 @@ NMScriptEditorPanel::buildProjectCompletionEntries() const {
 QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
-  auto relPath = [](const QString &path) {
+  auto relPath = [](const QString& path) {
     if (path.isEmpty()) {
       return QString();
     }
-    return QString::fromStdString(
-        ProjectManager::instance().toRelativePath(path.toStdString()));
+    return QString::fromStdString(ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString>& map, const QString& label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString key = it.key();
       const QString path = relPath(it.value());
-      docs.insert(
-          key.toLower(),
-          QString("%1 \"%2\"%3")
-              .arg(label, key,
-                   path.isEmpty() ? QString() : QString(" (%1)").arg(path)));
+      docs.insert(key.toLower(),
+                  QString("%1 \"%2\"%3")
+                      .arg(label, key, path.isEmpty() ? QString() : QString(" (%1)").arg(path)));
     }
   };
 
@@ -293,13 +284,13 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectHoverDocs() const {
   addDocs(m_symbolIndex.flags, tr("Flag"));
   addDocs(m_symbolIndex.variables, tr("Variable"));
 
-  for (const auto &bg : m_symbolIndex.backgrounds) {
+  for (const auto& bg : m_symbolIndex.backgrounds) {
     docs.insert(bg.toLower(), tr("Background asset \"%1\"").arg(bg));
   }
-  for (const auto &m : m_symbolIndex.music) {
+  for (const auto& m : m_symbolIndex.music) {
     docs.insert(m.toLower(), tr("Music track \"%1\"").arg(m));
   }
-  for (const auto &v : m_symbolIndex.voices) {
+  for (const auto& v : m_symbolIndex.voices) {
     docs.insert(v.toLower(), tr("Voice asset \"%1\"").arg(v));
   }
 
@@ -310,15 +301,14 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, QString> docs;
 
-  auto relPath = [](const QString &path) {
+  auto relPath = [](const QString& path) {
     if (path.isEmpty()) {
       return QString();
     }
-    return QString::fromStdString(
-        ProjectManager::instance().toRelativePath(path.toStdString()));
+    return QString::fromStdString(ProjectManager::instance().toRelativePath(path.toStdString()));
   };
 
-  auto addDocs = [&](const QHash<QString, QString> &map, const QString &label) {
+  auto addDocs = [&](const QHash<QString, QString>& map, const QString& label) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
       const QString name = it.key();
       const QString file = relPath(it.value());
@@ -326,8 +316,7 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
       html += QString("<p>%1 definition%2</p>")
                   .arg(label.toHtmlEscaped(),
                        file.isEmpty() ? QString()
-                                      : QString(" in <code>%1</code>")
-                                            .arg(file.toHtmlEscaped()));
+                                      : QString(" in <code>%1</code>").arg(file.toHtmlEscaped()));
       docs.insert(name.toLower(), html);
     }
   };
@@ -337,10 +326,10 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
   addDocs(m_symbolIndex.flags, tr("Flag"));
   addDocs(m_symbolIndex.variables, tr("Variable"));
 
-  auto addSimple = [&](const QStringList &list, const QString &label) {
-    for (const auto &item : list) {
-      QString html = QString("<h3>%1</h3><p>%2</p>")
-                         .arg(item.toHtmlEscaped(), label.toHtmlEscaped());
+  auto addSimple = [&](const QStringList& list, const QString& label) {
+    for (const auto& item : list) {
+      QString html =
+          QString("<h3>%1</h3><p>%2</p>").arg(item.toHtmlEscaped(), label.toHtmlEscaped());
       docs.insert(item.toLower(), html);
     }
   };
@@ -353,12 +342,11 @@ QHash<QString, QString> NMScriptEditorPanel::buildProjectDocHtml() const {
 }
 
 void NMScriptEditorPanel::pushCompletionsToEditors() {
-  QList<NMScriptEditor::CompletionEntry> entries =
-      detail::buildKeywordEntries();
+  QList<NMScriptEditor::CompletionEntry> entries = detail::buildKeywordEntries();
   entries.append(buildProjectCompletionEntries());
 
   QHash<QString, NMScriptEditor::CompletionEntry> merged;
-  for (const auto &entry : entries) {
+  for (const auto& entry : entries) {
     const QString key = entry.text.toLower();
     if (!merged.contains(key)) {
       merged.insert(key, entry);
@@ -367,29 +355,26 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
 
   QList<NMScriptEditor::CompletionEntry> combined = merged.values();
   std::sort(combined.begin(), combined.end(),
-            [](const NMScriptEditor::CompletionEntry &a,
-               const NMScriptEditor::CompletionEntry &b) {
+            [](const NMScriptEditor::CompletionEntry& a, const NMScriptEditor::CompletionEntry& b) {
               return a.text.compare(b.text, Qt::CaseInsensitive) < 0;
             });
 
   QHash<QString, QString> hoverDocs = detail::buildHoverDocs();
   const QHash<QString, QString> projectHoverDocs = buildProjectHoverDocs();
-  for (auto it = projectHoverDocs.constBegin();
-       it != projectHoverDocs.constEnd(); ++it) {
+  for (auto it = projectHoverDocs.constBegin(); it != projectHoverDocs.constEnd(); ++it) {
     hoverDocs.insert(it.key(), it.value());
   }
 
   QHash<QString, QString> docHtml = detail::buildDocHtml();
   const QHash<QString, QString> projectDocHtml = buildProjectDocHtml();
-  for (auto it = projectDocHtml.constBegin(); it != projectDocHtml.constEnd();
-       ++it) {
+  for (auto it = projectDocHtml.constBegin(); it != projectDocHtml.constEnd(); ++it) {
     docHtml.insert(it.key(), it.value());
   }
 
   // Build symbol locations for go-to-definition
   const auto symbolLocations = buildSymbolLocations();
 
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setCompletionEntries(combined);
     editor->setHoverDocs(hoverDocs);
     editor->setProjectDocs(projectHoverDocs);
@@ -400,7 +385,7 @@ void NMScriptEditorPanel::pushCompletionsToEditors() {
   m_diagnosticsTimer.start();
 }
 
-void NMScriptEditorPanel::onSymbolListActivated(QListWidgetItem *item) {
+void NMScriptEditorPanel::onSymbolListActivated(QListWidgetItem* item) {
   if (!item) {
     return;
   }
@@ -425,16 +410,13 @@ void NMScriptEditorPanel::refreshSymbolList() {
   m_symbolList->clear();
 
   QMutexLocker locker(&m_symbolIndexMutex);
-  const auto &palette = NMStyleManager::instance().palette();
-  auto addItems = [this, &palette](const QHash<QString, QString> &map,
-                                   const QString &typeLabel,
-                                   const QColor &color) {
+  const auto& palette = NMStyleManager::instance().palette();
+  auto addItems = [this, &palette](const QHash<QString, QString>& map, const QString& typeLabel,
+                                   const QColor& color) {
     for (auto it = map.constBegin(); it != map.constEnd(); ++it) {
-      auto *item =
-          new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
+      auto* item = new QListWidgetItem(QString("%1 (%2)").arg(it.key(), typeLabel));
       item->setData(Qt::UserRole, it.value());
-      item->setData(Qt::UserRole + 1,
-                    m_symbolIndex.sceneLines.value(it.key(), 1));
+      item->setData(Qt::UserRole + 1, m_symbolIndex.sceneLines.value(it.key(), 1));
       item->setForeground(color);
       m_symbolList->addItem(item);
     }
@@ -446,26 +428,23 @@ void NMScriptEditorPanel::refreshSymbolList() {
   addItems(m_symbolIndex.variables, tr("variable"), QColor(200, 170, 255));
 }
 
-void NMScriptEditorPanel::filterSymbolList(const QString &filter) {
+void NMScriptEditorPanel::filterSymbolList(const QString& filter) {
   if (!m_symbolList) {
     return;
   }
   for (int i = 0; i < m_symbolList->count(); ++i) {
-    auto *item = m_symbolList->item(i);
-    const bool matches =
-        filter.isEmpty() || item->text().contains(filter, Qt::CaseInsensitive);
+    auto* item = m_symbolList->item(i);
+    const bool matches = filter.isEmpty() || item->text().contains(filter, Qt::CaseInsensitive);
     item->setHidden(!matches);
   }
 }
 
-QHash<QString, SymbolLocation>
-NMScriptEditorPanel::buildSymbolLocations() const {
+QHash<QString, SymbolLocation> NMScriptEditorPanel::buildSymbolLocations() const {
   QMutexLocker locker(&m_symbolIndexMutex);
   QHash<QString, SymbolLocation> locations;
 
   // Add scenes
-  for (auto it = m_symbolIndex.scenes.constBegin();
-       it != m_symbolIndex.scenes.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.scenes.constBegin(); it != m_symbolIndex.scenes.constEnd(); ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = m_symbolIndex.sceneLines.value(it.key(), 1);
@@ -474,8 +453,8 @@ NMScriptEditorPanel::buildSymbolLocations() const {
   }
 
   // Add characters
-  for (auto it = m_symbolIndex.characters.constBegin();
-       it != m_symbolIndex.characters.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.characters.constBegin(); it != m_symbolIndex.characters.constEnd();
+       ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = m_symbolIndex.characterLines.value(it.key(), 1);
@@ -484,8 +463,7 @@ NMScriptEditorPanel::buildSymbolLocations() const {
   }
 
   // Add flags and variables
-  for (auto it = m_symbolIndex.flags.constBegin();
-       it != m_symbolIndex.flags.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.flags.constBegin(); it != m_symbolIndex.flags.constEnd(); ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = 1;
@@ -493,8 +471,8 @@ NMScriptEditorPanel::buildSymbolLocations() const {
     locations.insert(it.key().toLower(), loc);
   }
 
-  for (auto it = m_symbolIndex.variables.constBegin();
-       it != m_symbolIndex.variables.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.variables.constBegin(); it != m_symbolIndex.variables.constEnd();
+       ++it) {
     SymbolLocation loc;
     loc.filePath = it.value();
     loc.line = 1;

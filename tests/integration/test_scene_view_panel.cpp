@@ -27,7 +27,7 @@ public:
   QtTestFixture() {
     if (!QApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test"), nullptr};
+      static char* argv[] = {const_cast<char*>("test"), nullptr};
       m_app = std::make_unique<QApplication>(argc, argv);
     }
   }
@@ -65,7 +65,7 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     REQUIRE(created);
 
     // Verify object was created
-    auto *obj = panel.findObjectById("char_001");
+    auto* obj = panel.findObjectById("char_001");
     REQUIRE(obj != nullptr);
     REQUIRE(obj->id() == "char_001");
     REQUIRE(obj->objectType() == NMSceneObjectType::Character);
@@ -75,10 +75,10 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     panel.selectObjectById("char_001");
 
     // Verify selection
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
     REQUIRE(scene->selectedObjectId() == "char_001");
-    auto *selectedObj = scene->selectedObject();
+    auto* selectedObj = scene->selectedObject();
     REQUIRE(selectedObj != nullptr);
     REQUIRE(selectedObj->id() == "char_001");
     REQUIRE(selectedObj->isObjectSelected());
@@ -96,7 +96,7 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(200, 150));
     panel.createObject("ui_001", NMSceneObjectType::UI, QPointF(50, 50));
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
 
     // Select first object
     panel.selectObjectById("bg_001");
@@ -105,13 +105,13 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     // Select second object (should deselect first)
     panel.selectObjectById("char_001");
     REQUIRE(scene->selectedObjectId() == "char_001");
-    auto *bg = panel.findObjectById("bg_001");
+    auto* bg = panel.findObjectById("bg_001");
     REQUIRE_FALSE(bg->isObjectSelected());
 
     // Select third object
     panel.selectObjectById("ui_001");
     REQUIRE(scene->selectedObjectId() == "ui_001");
-    auto *char_obj = panel.findObjectById("char_001");
+    auto* char_obj = panel.findObjectById("char_001");
     REQUIRE_FALSE(char_obj->isObjectSelected());
   }
 
@@ -122,7 +122,7 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(100, 100));
     panel.selectObjectById("char_001");
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene->selectedObjectId() == "char_001");
 
     // Clear selection
@@ -130,7 +130,7 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     REQUIRE(scene->selectedObjectId().isEmpty());
     REQUIRE(scene->selectedObject() == nullptr);
 
-    auto *obj = panel.findObjectById("char_001");
+    auto* obj = panel.findObjectById("char_001");
     REQUIRE_FALSE(obj->isObjectSelected());
   }
 
@@ -143,7 +143,7 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     // Try to select a non-existent object
     panel.selectObjectById("non_existent");
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     // Selection should fail gracefully (empty selection or no change)
     SUCCEED();
   }
@@ -158,12 +158,12 @@ TEST_CASE("SceneViewPanel: Object selection", "[integration][editor][scene_view]
     bool locked = panel.setObjectLocked("char_001", true);
     REQUIRE(locked);
 
-    auto *obj = panel.findObjectById("char_001");
+    auto* obj = panel.findObjectById("char_001");
     REQUIRE(obj->isLocked());
 
     // Should still be able to select locked objects (selection doesn't mean manipulation)
     panel.selectObjectById("char_001");
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene->selectedObjectId() == "char_001");
   }
 }
@@ -181,7 +181,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
 
     panel.setGizmoMode(NMTransformGizmo::GizmoMode::Move);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
     SUCCEED();
   }
@@ -219,7 +219,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
     REQUIRE(moved);
 
     // Verify new position
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     QPointF newPos = scene->getObjectPosition("char_001");
     REQUIRE(newPos.x() == 200);
     REQUIRE(newPos.y() == 250);
@@ -242,7 +242,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
     REQUIRE(rotated);
 
     // Verify rotation
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     qreal rotation = scene->getObjectRotation("char_001");
     REQUIRE(rotation == 45.0);
 
@@ -267,7 +267,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
     REQUIRE(scaled);
 
     // Verify scale
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     QPointF scale = scene->getObjectScale("char_001");
     REQUIRE(scale.x() == 2.0);
     REQUIRE(scale.y() == 2.0);
@@ -290,7 +290,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
     bool applied = panel.applyObjectTransform("char_001", QPointF(300, 400), 90.0, 1.5, 1.5);
     REQUIRE(applied);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
 
     // Verify all transforms
     QPointF pos = scene->getObjectPosition("char_001");
@@ -312,7 +312,7 @@ TEST_CASE("SceneViewPanel: Gizmo interaction", "[integration][editor][scene_view
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(100, 100));
     panel.setObjectLocked("char_001", true);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene->isObjectLocked("char_001"));
 
     // Gizmo should not affect locked objects
@@ -332,7 +332,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *view = panel.graphicsView();
+    auto* view = panel.graphicsView();
     REQUIRE(view != nullptr);
 
     // Default zoom should be 1.0
@@ -357,7 +357,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *view = panel.graphicsView();
+    auto* view = panel.graphicsView();
     REQUIRE(view != nullptr);
 
     // Center on scene should not crash
@@ -369,7 +369,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *view = panel.graphicsView();
+    auto* view = panel.graphicsView();
     REQUIRE(view != nullptr);
 
     // Fit to scene should not crash
@@ -381,7 +381,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Grid should be visible by default
@@ -400,7 +400,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Default grid size should be 32.0
@@ -418,7 +418,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Snap to grid should be disabled by default
@@ -437,7 +437,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Toggle stage guides
@@ -450,7 +450,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Toggle safe frame
@@ -463,7 +463,7 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene != nullptr);
 
     // Toggle baseline
@@ -477,7 +477,8 @@ TEST_CASE("SceneViewPanel: Viewport navigation", "[integration][editor][scene_vi
 // Multi-Select Tests
 // =============================================================================
 
-TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scene_view][multi_select]") {
+TEST_CASE("SceneViewPanel: Multi-select operations",
+          "[integration][editor][scene_view][multi_select]") {
   QtTestFixture fixture;
 
   SECTION("Create multiple objects") {
@@ -497,7 +498,7 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
     REQUIRE(created4);
     REQUIRE(created5);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     auto objects = scene->sceneObjects();
     REQUIRE(objects.size() == 5);
   }
@@ -510,14 +511,14 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
     panel.createObject("obj_002", NMSceneObjectType::Character, QPointF(200, 200));
     panel.createObject("obj_003", NMSceneObjectType::UI, QPointF(300, 300));
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     auto objects = scene->sceneObjects();
 
     REQUIRE(objects.size() == 3);
 
     // Verify each object exists
     QStringList ids;
-    for (auto *obj : objects) {
+    for (auto* obj : objects) {
       ids.append(obj->id());
     }
 
@@ -534,7 +535,7 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
     panel.createObject("char_002", NMSceneObjectType::Character, QPointF(200, 200));
     panel.createObject("char_003", NMSceneObjectType::Character, QPointF(300, 300));
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene->sceneObjects().size() == 3);
 
     // Delete objects one by one
@@ -580,7 +581,7 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
     panel.scaleObject("char_002", 2.0, 2.0);
     panel.scaleObject("char_003", 2.0, 2.0);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
 
     // Verify scales
     QPointF scale1 = scene->getObjectScale("char_001");
@@ -598,7 +599,7 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
 
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(100, 100));
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     REQUIRE(scene->sceneObjects().size() == 1);
 
     // Duplicate the object
@@ -619,7 +620,7 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
 
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(100, 100));
 
-    auto *obj = panel.findObjectById("char_001");
+    auto* obj = panel.findObjectById("char_001");
     REQUIRE(obj != nullptr);
 
     // Rename the object
@@ -636,7 +637,8 @@ TEST_CASE("SceneViewPanel: Multi-select operations", "[integration][editor][scen
 // Drag and Drop Tests
 // =============================================================================
 
-TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][scene_view][drag_drop]") {
+TEST_CASE("SceneViewPanel: Drag and drop operations",
+          "[integration][editor][scene_view][drag_drop]") {
   QtTestFixture fixture;
 
   SECTION("Add object from asset path") {
@@ -647,7 +649,7 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
     bool added = panel.addObjectFromAsset("assets/characters/hero.png", QPointF(150, 200));
     REQUIRE(added);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     auto objects = scene->sceneObjects();
     REQUIRE(objects.size() == 1);
 
@@ -666,7 +668,7 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
                                           NMSceneObjectType::Character);
     REQUIRE(added);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     auto objects = scene->sceneObjects();
     REQUIRE(objects.size() == 1);
     REQUIRE(objects[0]->objectType() == NMSceneObjectType::Character);
@@ -678,26 +680,28 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
 
     // Add background
     panel.addObjectFromAsset("assets/backgrounds/forest.png", QPointF(0, 0),
-                            NMSceneObjectType::Background);
+                             NMSceneObjectType::Background);
 
     // Add character
     panel.addObjectFromAsset("assets/characters/hero.png", QPointF(200, 300),
-                            NMSceneObjectType::Character);
+                             NMSceneObjectType::Character);
 
     // Add UI element
-    panel.addObjectFromAsset("assets/ui/button.png", QPointF(50, 50),
-                            NMSceneObjectType::UI);
+    panel.addObjectFromAsset("assets/ui/button.png", QPointF(50, 50), NMSceneObjectType::UI);
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
     auto objects = scene->sceneObjects();
     REQUIRE(objects.size() == 3);
 
     // Verify types
     int bgCount = 0, charCount = 0, uiCount = 0;
-    for (auto *obj : objects) {
-      if (obj->objectType() == NMSceneObjectType::Background) bgCount++;
-      if (obj->objectType() == NMSceneObjectType::Character) charCount++;
-      if (obj->objectType() == NMSceneObjectType::UI) uiCount++;
+    for (auto* obj : objects) {
+      if (obj->objectType() == NMSceneObjectType::Background)
+        bgCount++;
+      if (obj->objectType() == NMSceneObjectType::Character)
+        charCount++;
+      if (obj->objectType() == NMSceneObjectType::UI)
+        uiCount++;
     }
 
     REQUIRE(bgCount == 1);
@@ -715,7 +719,7 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
     bool assetSet = panel.setObjectAsset("char_001", "assets/characters/villain.png");
     REQUIRE(assetSet);
 
-    auto *obj = panel.findObjectById("char_001");
+    auto* obj = panel.findObjectById("char_001");
     REQUIRE(obj != nullptr);
     REQUIRE(obj->assetPath() == "assets/characters/villain.png");
   }
@@ -724,7 +728,7 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
     NMSceneViewPanel panel;
     panel.onInitialize();
 
-    auto *view = panel.graphicsView();
+    auto* view = panel.graphicsView();
     REQUIRE(view != nullptr);
 
     // Create spy for drag active signal
@@ -739,7 +743,8 @@ TEST_CASE("SceneViewPanel: Drag and drop operations", "[integration][editor][sce
 // Object Properties and State Tests
 // =============================================================================
 
-TEST_CASE("SceneViewPanel: Object properties and state", "[integration][editor][scene_view][properties]") {
+TEST_CASE("SceneViewPanel: Object properties and state",
+          "[integration][editor][scene_view][properties]") {
   QtTestFixture fixture;
 
   SECTION("Set and get object visibility") {
@@ -763,7 +768,7 @@ TEST_CASE("SceneViewPanel: Object properties and state", "[integration][editor][
 
     panel.createObject("char_001", NMSceneObjectType::Character, QPointF(100, 100));
 
-    auto *scene = panel.graphicsScene();
+    auto* scene = panel.graphicsScene();
 
     // Lock object
     bool locked = panel.setObjectLocked("char_001", true);
@@ -820,11 +825,11 @@ TEST_CASE("SceneViewPanel: Object properties and state", "[integration][editor][
     REQUIRE(reparented);
 
     // Verify parent relationship
-    auto *child = panel.findObjectById("child_001");
+    auto* child = panel.findObjectById("child_001");
     REQUIRE(child != nullptr);
     REQUIRE(child->parentObjectId() == "parent_001");
 
-    auto *parent = panel.findObjectById("parent_001");
+    auto* parent = panel.findObjectById("parent_001");
     REQUIRE(parent != nullptr);
     REQUIRE(parent->childObjectIds().contains("child_001"));
   }
@@ -838,7 +843,7 @@ TEST_CASE("SceneViewPanel: Panel lifecycle", "[integration][editor][scene_view][
   QtTestFixture fixture;
 
   SECTION("Panel construction and destruction") {
-    auto *panel = new NMSceneViewPanel();
+    auto* panel = new NMSceneViewPanel();
     REQUIRE(panel != nullptr);
     delete panel;
   }

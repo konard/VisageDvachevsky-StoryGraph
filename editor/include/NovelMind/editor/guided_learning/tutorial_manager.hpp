@@ -53,13 +53,13 @@ public:
   /**
    * @brief Get singleton instance
    */
-  static NMTutorialManager &instance();
+  static NMTutorialManager& instance();
 
   /**
    * @brief Initialize the tutorial system
    * @param overlay Pointer to the overlay widget
    */
-  void initialize(NMHelpOverlay *overlay);
+  void initialize(NMHelpOverlay* overlay);
 
   /**
    * @brief Shutdown and cleanup
@@ -79,33 +79,32 @@ public:
    * @brief Load tutorials from a directory
    * Loads all .json files in the directory as tutorial definitions
    */
-  Result<u32> loadTutorialsFromDirectory(const std::string &directory);
+  Result<u32> loadTutorialsFromDirectory(const std::string& directory);
 
   /**
    * @brief Load a single tutorial from JSON file
    */
-  Result<void> loadTutorialFromFile(const std::string &filePath);
+  Result<void> loadTutorialFromFile(const std::string& filePath);
 
   /**
    * @brief Load a tutorial from JSON string
    */
-  Result<void> loadTutorialFromJson(const std::string &jsonContent);
+  Result<void> loadTutorialFromJson(const std::string& jsonContent);
 
   /**
    * @brief Register a tutorial definition programmatically
    */
-  void registerTutorial(const TutorialDefinition &tutorial);
+  void registerTutorial(const TutorialDefinition& tutorial);
 
   /**
    * @brief Unregister a tutorial
    */
-  void unregisterTutorial(const std::string &tutorialId);
+  void unregisterTutorial(const std::string& tutorialId);
 
   /**
    * @brief Get a tutorial definition
    */
-  [[nodiscard]] std::optional<TutorialDefinition>
-  getTutorial(const std::string &tutorialId) const;
+  [[nodiscard]] std::optional<TutorialDefinition> getTutorial(const std::string& tutorialId) const;
 
   /**
    * @brief Get all registered tutorials
@@ -116,19 +115,17 @@ public:
    * @brief Get tutorials by category
    */
   [[nodiscard]] std::vector<TutorialDefinition>
-  getTutorialsByCategory(const std::string &category) const;
+  getTutorialsByCategory(const std::string& category) const;
 
   /**
    * @brief Get tutorials by level
    */
-  [[nodiscard]] std::vector<TutorialDefinition>
-  getTutorialsByLevel(TutorialLevel level) const;
+  [[nodiscard]] std::vector<TutorialDefinition> getTutorialsByLevel(TutorialLevel level) const;
 
   /**
    * @brief Search tutorials by text
    */
-  [[nodiscard]] std::vector<TutorialDefinition>
-  searchTutorials(const std::string &query) const;
+  [[nodiscard]] std::vector<TutorialDefinition> searchTutorials(const std::string& query) const;
 
   // ========================================================================
   // Contextual Hints Management
@@ -137,18 +134,17 @@ public:
   /**
    * @brief Register a contextual hint
    */
-  void registerHint(const ContextualHint &hint);
+  void registerHint(const ContextualHint& hint);
 
   /**
    * @brief Unregister a contextual hint
    */
-  void unregisterHint(const std::string &hintId);
+  void unregisterHint(const std::string& hintId);
 
   /**
    * @brief Get a contextual hint definition
    */
-  [[nodiscard]] std::optional<ContextualHint>
-  getHint(const std::string &hintId) const;
+  [[nodiscard]] std::optional<ContextualHint> getHint(const std::string& hintId) const;
 
   /**
    * @brief Get all registered hints
@@ -163,7 +159,7 @@ public:
    * @brief Start a tutorial walkthrough
    * @return false if tutorial doesn't exist or prerequisites not met
    */
-  bool startTutorial(const std::string &tutorialId);
+  bool startTutorial(const std::string& tutorialId);
 
   /**
    * @brief Stop the currently active tutorial
@@ -194,9 +190,7 @@ public:
   /**
    * @brief Check if a tutorial is currently active
    */
-  [[nodiscard]] bool isTutorialActive() const {
-    return m_activeTutorial.has_value();
-  }
+  [[nodiscard]] bool isTutorialActive() const { return m_activeTutorial.has_value(); }
 
   /**
    * @brief Get the currently active tutorial ID
@@ -222,12 +216,12 @@ public:
    * Respects max show count and disabled state
    * @return false if hint was suppressed
    */
-  bool showHint(const std::string &hintId);
+  bool showHint(const std::string& hintId);
 
   /**
    * @brief Hide a currently shown hint
    */
-  void hideHint(const std::string &hintId);
+  void hideHint(const std::string& hintId);
 
   /**
    * @brief Hide all currently shown hints
@@ -237,7 +231,7 @@ public:
   /**
    * @brief Check if a hint is currently visible
    */
-  [[nodiscard]] bool isHintVisible(const std::string &hintId) const;
+  [[nodiscard]] bool isHintVisible(const std::string& hintId) const;
 
   // ========================================================================
   // Progress Management
@@ -246,23 +240,22 @@ public:
   /**
    * @brief Get progress for a tutorial
    */
-  [[nodiscard]] TutorialProgress
-  getTutorialProgress(const std::string &tutorialId) const;
+  [[nodiscard]] TutorialProgress getTutorialProgress(const std::string& tutorialId) const;
 
   /**
    * @brief Get progress for a hint
    */
-  [[nodiscard]] HintProgress getHintProgress(const std::string &hintId) const;
+  [[nodiscard]] HintProgress getHintProgress(const std::string& hintId) const;
 
   /**
    * @brief Reset progress for a tutorial
    */
-  void resetTutorialProgress(const std::string &tutorialId);
+  void resetTutorialProgress(const std::string& tutorialId);
 
   /**
    * @brief Reset progress for a hint
    */
-  void resetHintProgress(const std::string &hintId);
+  void resetHintProgress(const std::string& hintId);
 
   /**
    * @brief Reset all progress
@@ -272,37 +265,37 @@ public:
   /**
    * @brief Disable a tutorial (user choice)
    */
-  void disableTutorial(const std::string &tutorialId);
+  void disableTutorial(const std::string& tutorialId);
 
   /**
    * @brief Enable a previously disabled tutorial
    */
-  void enableTutorial(const std::string &tutorialId);
+  void enableTutorial(const std::string& tutorialId);
 
   /**
    * @brief Disable a hint (user choice)
    */
-  void disableHint(const std::string &hintId);
+  void disableHint(const std::string& hintId);
 
   /**
    * @brief Enable a previously disabled hint
    */
-  void enableHint(const std::string &hintId);
+  void enableHint(const std::string& hintId);
 
   /**
    * @brief Check if a tutorial is completed
    */
-  [[nodiscard]] bool isTutorialCompleted(const std::string &tutorialId) const;
+  [[nodiscard]] bool isTutorialCompleted(const std::string& tutorialId) const;
 
   /**
    * @brief Check if a tutorial is disabled
    */
-  [[nodiscard]] bool isTutorialDisabled(const std::string &tutorialId) const;
+  [[nodiscard]] bool isTutorialDisabled(const std::string& tutorialId) const;
 
   /**
    * @brief Check if all prerequisites for a tutorial are met
    */
-  [[nodiscard]] bool arePrerequisitesMet(const std::string &tutorialId) const;
+  [[nodiscard]] bool arePrerequisitesMet(const std::string& tutorialId) const;
 
   // ========================================================================
   // Persistence
@@ -311,17 +304,17 @@ public:
   /**
    * @brief Load progress from file
    */
-  Result<void> loadProgress(const std::string &filePath);
+  Result<void> loadProgress(const std::string& filePath);
 
   /**
    * @brief Save progress to file
    */
-  Result<void> saveProgress(const std::string &filePath) const;
+  Result<void> saveProgress(const std::string& filePath) const;
 
   /**
    * @brief Set the progress file path (for auto-save)
    */
-  void setProgressFilePath(const std::string &filePath);
+  void setProgressFilePath(const std::string& filePath);
 
   /**
    * @brief Auto-save progress (called periodically)
@@ -371,13 +364,12 @@ public:
   /**
    * @brief Register a custom condition evaluator
    */
-  void registerCustomCondition(const std::string &conditionId,
-                               CustomConditionCallback callback);
+  void registerCustomCondition(const std::string& conditionId, CustomConditionCallback callback);
 
   /**
    * @brief Unregister a custom condition evaluator
    */
-  void unregisterCustomCondition(const std::string &conditionId);
+  void unregisterCustomCondition(const std::string& conditionId);
 
   // ========================================================================
   // Event Integration
@@ -386,55 +378,53 @@ public:
   /**
    * @brief Notify that a panel was opened (for contextual triggers)
    */
-  void onPanelOpened(const std::string &panelId);
+  void onPanelOpened(const std::string& panelId);
 
   /**
    * @brief Notify that a panel entered empty state
    */
-  void onPanelEmptyState(const std::string &panelId, bool isEmpty);
+  void onPanelEmptyState(const std::string& panelId, bool isEmpty);
 
   /**
    * @brief Notify that an error occurred
    */
-  void onErrorOccurred(const std::string &errorCode,
-                       const std::string &context);
+  void onErrorOccurred(const std::string& errorCode, const std::string& context);
 
   /**
    * @brief Notify that a feature version was encountered
    */
-  void onFeatureVersionEncountered(const std::string &featureId,
-                                   const std::string &version);
+  void onFeatureVersionEncountered(const std::string& featureId, const std::string& version);
 
 signals:
   /**
    * @brief Emitted when a tutorial starts
    */
-  void tutorialStarted(const QString &tutorialId);
+  void tutorialStarted(const QString& tutorialId);
 
   /**
    * @brief Emitted when a tutorial step changes
    */
-  void tutorialStepChanged(const QString &tutorialId, int stepIndex);
+  void tutorialStepChanged(const QString& tutorialId, int stepIndex);
 
   /**
    * @brief Emitted when a tutorial completes
    */
-  void tutorialCompleted(const QString &tutorialId);
+  void tutorialCompleted(const QString& tutorialId);
 
   /**
    * @brief Emitted when a tutorial is stopped (without completing)
    */
-  void tutorialStopped(const QString &tutorialId);
+  void tutorialStopped(const QString& tutorialId);
 
   /**
    * @brief Emitted when a hint is shown
    */
-  void hintShown(const QString &hintId);
+  void hintShown(const QString& hintId);
 
   /**
    * @brief Emitted when a hint is hidden
    */
-  void hintHidden(const QString &hintId);
+  void hintHidden(const QString& hintId);
 
   /**
    * @brief Emitted when progress changes
@@ -451,14 +441,14 @@ private:
   ~NMTutorialManager() override = default;
 
   // Non-copyable
-  NMTutorialManager(const NMTutorialManager &) = delete;
-  NMTutorialManager &operator=(const NMTutorialManager &) = delete;
+  NMTutorialManager(const NMTutorialManager&) = delete;
+  NMTutorialManager& operator=(const NMTutorialManager&) = delete;
 
   // Internal helpers
   void displayCurrentStep();
   void hideCurrentStep();
   void updateStepProgress();
-  bool evaluateCondition(const StepCondition &condition);
+  bool evaluateCondition(const StepCondition& condition);
   void connectToEventBus();
 
   // Tutorial definitions (id -> definition)
@@ -481,7 +471,7 @@ private:
   std::unordered_map<std::string, CustomConditionCallback> m_customConditions;
 
   // Overlay reference (not owned)
-  NMHelpOverlay *m_overlay = nullptr;
+  NMHelpOverlay* m_overlay = nullptr;
 
   // State
   bool m_initialized = false;

@@ -15,13 +15,14 @@ namespace NovelMind::scene {
 
 SceneGraph::SceneGraph()
     : m_backgroundLayer("Background", LayerType::Background),
-      m_characterLayer("Characters", LayerType::Characters),
-      m_uiLayer("UI", LayerType::UI),
+      m_characterLayer("Characters", LayerType::Characters), m_uiLayer("UI", LayerType::UI),
       m_effectLayer("Effects", LayerType::Effects) {}
 
 SceneGraph::~SceneGraph() = default;
 
-void SceneGraph::setSceneId(const std::string &id) { m_sceneId = id; }
+void SceneGraph::setSceneId(const std::string& id) {
+  m_sceneId = id;
+}
 
 void SceneGraph::clear() {
   m_backgroundLayer.clear();
@@ -30,7 +31,7 @@ void SceneGraph::clear() {
   m_effectLayer.clear();
 }
 
-Layer &SceneGraph::getLayer(LayerType type) {
+Layer& SceneGraph::getLayer(LayerType type) {
   switch (type) {
   case LayerType::Background:
     return m_backgroundLayer;
@@ -44,8 +45,7 @@ Layer &SceneGraph::getLayer(LayerType type) {
   return m_backgroundLayer; // Default fallback
 }
 
-void SceneGraph::addToLayer(LayerType layer,
-                            std::unique_ptr<SceneObjectBase> object) {
+void SceneGraph::addToLayer(LayerType layer, std::unique_ptr<SceneObjectBase> object) {
   if (!object) {
     return;
   }
@@ -57,8 +57,8 @@ void SceneGraph::addToLayer(LayerType layer,
   onObjectAdded(id, type);
 }
 
-std::unique_ptr<SceneObjectBase>
-SceneGraph::removeFromLayer(LayerType layer, const std::string &id) {
+std::unique_ptr<SceneObjectBase> SceneGraph::removeFromLayer(LayerType layer,
+                                                             const std::string& id) {
   auto obj = getLayer(layer).removeObject(id);
   if (obj) {
     onObjectRemoved(id);
@@ -66,36 +66,34 @@ SceneGraph::removeFromLayer(LayerType layer, const std::string &id) {
   return obj;
 }
 
-SceneObjectBase *SceneGraph::findObject(const std::string &id) {
-  if (auto *obj = m_backgroundLayer.findObject(id)) {
+SceneObjectBase* SceneGraph::findObject(const std::string& id) {
+  if (auto* obj = m_backgroundLayer.findObject(id)) {
     return obj;
   }
-  if (auto *obj = m_characterLayer.findObject(id)) {
+  if (auto* obj = m_characterLayer.findObject(id)) {
     return obj;
   }
-  if (auto *obj = m_uiLayer.findObject(id)) {
+  if (auto* obj = m_uiLayer.findObject(id)) {
     return obj;
   }
-  if (auto *obj = m_effectLayer.findObject(id)) {
+  if (auto* obj = m_effectLayer.findObject(id)) {
     return obj;
   }
   return nullptr;
 }
 
-SceneObjectBase *SceneGraph::findObjectWithGeneration(const std::string &id,
-                                                       u64 generation) {
-  auto *obj = findObject(id);
+SceneObjectBase* SceneGraph::findObjectWithGeneration(const std::string& id, u64 generation) {
+  auto* obj = findObject(id);
   if (obj && obj->getGeneration() == generation) {
     return obj;
   }
   return nullptr;
 }
 
-std::vector<SceneObjectBase *>
-SceneGraph::findObjectsByTag(const std::string &tag) {
-  std::vector<SceneObjectBase *> result;
-  auto collect = [&result, &tag](Layer &layer) {
-    for (const auto &obj : layer.getObjects()) {
+std::vector<SceneObjectBase*> SceneGraph::findObjectsByTag(const std::string& tag) {
+  std::vector<SceneObjectBase*> result;
+  auto collect = [&result, &tag](Layer& layer) {
+    for (const auto& obj : layer.getObjects()) {
       if (obj->hasTag(tag)) {
         result.push_back(obj.get());
       }
@@ -108,11 +106,10 @@ SceneGraph::findObjectsByTag(const std::string &tag) {
   return result;
 }
 
-std::vector<SceneObjectBase *>
-SceneGraph::findObjectsByType(SceneObjectType type) {
-  std::vector<SceneObjectBase *> result;
-  auto collect = [&result, type](Layer &layer) {
-    for (const auto &obj : layer.getObjects()) {
+std::vector<SceneObjectBase*> SceneGraph::findObjectsByType(SceneObjectType type) {
+  std::vector<SceneObjectBase*> result;
+  auto collect = [&result, type](Layer& layer) {
+    for (const auto& obj : layer.getObjects()) {
       if (obj->getType() == type) {
         result.push_back(obj.get());
       }
@@ -125,7 +122,7 @@ SceneGraph::findObjectsByType(SceneObjectType type) {
   return result;
 }
 
-void SceneGraph::showBackground(const std::string &textureId) {
+void SceneGraph::showBackground(const std::string& textureId) {
   // Clear existing backgrounds
   m_backgroundLayer.clear();
 
@@ -136,13 +133,12 @@ void SceneGraph::showBackground(const std::string &textureId) {
   onObjectAdded("main_background", SceneObjectType::Background);
 }
 
-CharacterObject *SceneGraph::showCharacter(const std::string &id,
-                                           const std::string &characterId,
+CharacterObject* SceneGraph::showCharacter(const std::string& id, const std::string& characterId,
                                            CharacterObject::Position position) {
   // Check if character already exists
-  auto *existing = findObject(id);
+  auto* existing = findObject(id);
   if (existing && existing->getType() == SceneObjectType::Character) {
-    auto *character = static_cast<CharacterObject *>(existing);
+    auto* character = static_cast<CharacterObject*>(existing);
     character->setSlotPosition(position);
     character->setVisible(true);
     return character;
@@ -169,7 +165,7 @@ CharacterObject *SceneGraph::showCharacter(const std::string &id,
   }
   character->setPosition(x, 400.0f);
 
-  CharacterObject *ptr = character.get();
+  CharacterObject* ptr = character.get();
   registerObject(character.get());
   m_characterLayer.addObject(std::move(character));
   onObjectAdded(id, SceneObjectType::Character);
@@ -177,18 +173,17 @@ CharacterObject *SceneGraph::showCharacter(const std::string &id,
   return ptr;
 }
 
-void SceneGraph::hideCharacter(const std::string &id) {
-  auto *obj = findObject(id);
+void SceneGraph::hideCharacter(const std::string& id) {
+  auto* obj = findObject(id);
   if (obj) {
     obj->setVisible(false);
   }
 }
 
-DialogueUIObject *SceneGraph::showDialogue(const std::string &speaker,
-                                           const std::string &text) {
-  auto *existing = findObject("dialogue_box");
+DialogueUIObject* SceneGraph::showDialogue(const std::string& speaker, const std::string& text) {
+  auto* existing = findObject("dialogue_box");
   if (existing && existing->getType() == SceneObjectType::DialogueUI) {
-    auto *dialogue = static_cast<DialogueUIObject *>(existing);
+    auto* dialogue = static_cast<DialogueUIObject*>(existing);
     dialogue->setSpeaker(speaker);
     dialogue->setText(text);
     dialogue->setVisible(true);
@@ -202,7 +197,7 @@ DialogueUIObject *SceneGraph::showDialogue(const std::string &speaker,
   dialogue->setPosition(0.0f, 600.0f);
   dialogue->startTypewriter();
 
-  DialogueUIObject *ptr = dialogue.get();
+  DialogueUIObject* ptr = dialogue.get();
   registerObject(dialogue.get());
   m_uiLayer.addObject(std::move(dialogue));
   onObjectAdded("dialogue_box", SceneObjectType::DialogueUI);
@@ -211,17 +206,16 @@ DialogueUIObject *SceneGraph::showDialogue(const std::string &speaker,
 }
 
 void SceneGraph::hideDialogue() {
-  auto *obj = findObject("dialogue_box");
+  auto* obj = findObject("dialogue_box");
   if (obj) {
     obj->setVisible(false);
   }
 }
 
-ChoiceUIObject *SceneGraph::showChoices(
-    const std::vector<ChoiceUIObject::ChoiceOption> &choices) {
-  auto *existing = findObject("choice_menu");
+ChoiceUIObject* SceneGraph::showChoices(const std::vector<ChoiceUIObject::ChoiceOption>& choices) {
+  auto* existing = findObject("choice_menu");
   if (existing && existing->getType() == SceneObjectType::ChoiceUI) {
-    auto *menu = static_cast<ChoiceUIObject *>(existing);
+    auto* menu = static_cast<ChoiceUIObject*>(existing);
     menu->setChoices(choices);
     menu->setVisible(true);
     return menu;
@@ -231,7 +225,7 @@ ChoiceUIObject *SceneGraph::showChoices(
   menu->setChoices(choices);
   menu->setPosition(400.0f, 300.0f);
 
-  ChoiceUIObject *ptr = menu.get();
+  ChoiceUIObject* ptr = menu.get();
   registerObject(menu.get());
   m_uiLayer.addObject(std::move(menu));
   onObjectAdded("choice_menu", SceneObjectType::ChoiceUI);
@@ -240,7 +234,7 @@ ChoiceUIObject *SceneGraph::showChoices(
 }
 
 void SceneGraph::hideChoices() {
-  auto *obj = findObject("choice_menu");
+  auto* obj = findObject("choice_menu");
   if (obj) {
     obj->setVisible(false);
   }
@@ -253,17 +247,17 @@ void SceneGraph::update(f64 deltaTime) {
   m_effectLayer.update(deltaTime);
 }
 
-void SceneGraph::render(renderer::IRenderer &renderer) {
+void SceneGraph::render(renderer::IRenderer& renderer) {
   m_backgroundLayer.render(renderer);
   m_characterLayer.render(renderer);
   m_uiLayer.render(renderer);
   m_effectLayer.render(renderer);
 }
 
-void SceneGraph::setResourceManager(resource::ResourceManager *resources) {
+void SceneGraph::setResourceManager(resource::ResourceManager* resources) {
   m_resources = resources;
-  auto assignLayer = [this](Layer &layer) {
-    for (const auto &obj : layer.getObjects()) {
+  auto assignLayer = [this](Layer& layer) {
+    for (const auto& obj : layer.getObjects()) {
       if (obj) {
         obj->m_resources = m_resources;
       }
@@ -275,11 +269,10 @@ void SceneGraph::setResourceManager(resource::ResourceManager *resources) {
   assignLayer(m_effectLayer);
 }
 
-void SceneGraph::setLocalizationManager(
-    localization::LocalizationManager *localization) {
+void SceneGraph::setLocalizationManager(localization::LocalizationManager* localization) {
   m_localization = localization;
-  auto assignLayer = [this](Layer &layer) {
-    for (const auto &obj : layer.getObjects()) {
+  auto assignLayer = [this](Layer& layer) {
+    for (const auto& obj : layer.getObjects()) {
       if (obj) {
         obj->m_localization = m_localization;
       }
@@ -296,8 +289,8 @@ SceneState SceneGraph::saveState() const {
   state.sceneId = m_sceneId;
 
   // Save all objects from all layers
-  auto saveLayerObjects = [&state](const Layer &layer) {
-    for (const auto &obj : layer.getObjects()) {
+  auto saveLayerObjects = [&state](const Layer& layer) {
+    for (const auto& obj : layer.getObjects()) {
       state.objects.push_back(obj->saveState());
     }
   };
@@ -308,19 +301,18 @@ SceneState SceneGraph::saveState() const {
   saveLayerObjects(m_effectLayer);
 
   // Track active background and characters
-  auto *bg =
-      const_cast<Layer &>(m_backgroundLayer).findObject("main_background");
+  auto* bg = const_cast<Layer&>(m_backgroundLayer).findObject("main_background");
   if (bg) {
     // Use dynamic_cast for type-safe downcasting
     if (bg->getType() == SceneObjectType::Background) {
-      auto *bgObj = static_cast<const BackgroundObject *>(bg);
+      auto* bgObj = static_cast<const BackgroundObject*>(bg);
       state.activeBackground = bgObj->getTextureId();
     }
     // If type doesn't match, we silently skip - this can happen during scene
     // transitions when objects are being replaced
   }
 
-  for (const auto &obj : m_characterLayer.getObjects()) {
+  for (const auto& obj : m_characterLayer.getObjects()) {
     if (obj->isVisible()) {
       state.visibleCharacters.push_back(obj->getId());
     }
@@ -329,12 +321,12 @@ SceneState SceneGraph::saveState() const {
   return state;
 }
 
-void SceneGraph::loadState(const SceneState &state) {
+void SceneGraph::loadState(const SceneState& state) {
   clear();
   m_sceneId = state.sceneId;
 
   // Recreate objects from saved state
-  for (const auto &objState : state.objects) {
+  for (const auto& objState : state.objects) {
     std::unique_ptr<SceneObjectBase> obj;
     LayerType layer = LayerType::Background;
 
@@ -384,50 +376,45 @@ void SceneGraph::loadState(const SceneState &state) {
   }
 }
 
-void SceneGraph::addObserver(ISceneObserver *observer) {
-  if (observer && std::find(m_observers.begin(), m_observers.end(), observer) ==
-                      m_observers.end()) {
+void SceneGraph::addObserver(ISceneObserver* observer) {
+  if (observer &&
+      std::find(m_observers.begin(), m_observers.end(), observer) == m_observers.end()) {
     m_observers.push_back(observer);
   }
 }
 
-void SceneGraph::removeObserver(ISceneObserver *observer) {
+void SceneGraph::removeObserver(ISceneObserver* observer) {
   auto it = std::find(m_observers.begin(), m_observers.end(), observer);
   if (it != m_observers.end()) {
     m_observers.erase(it);
   }
 }
 
-void SceneGraph::onObjectAdded(const std::string &objectId,
-                               SceneObjectType type) {
-  notifyObservers(
-      [&](ISceneObserver *obs) { obs->onObjectAdded(objectId, type); });
+void SceneGraph::onObjectAdded(const std::string& objectId, SceneObjectType type) {
+  notifyObservers([&](ISceneObserver* obs) { obs->onObjectAdded(objectId, type); });
 }
 
-void SceneGraph::onObjectRemoved(const std::string &objectId) {
-  notifyObservers([&](ISceneObserver *obs) { obs->onObjectRemoved(objectId); });
+void SceneGraph::onObjectRemoved(const std::string& objectId) {
+  notifyObservers([&](ISceneObserver* obs) { obs->onObjectRemoved(objectId); });
 }
 
-void SceneGraph::onPropertyChanged(const PropertyChange &change) {
-  notifyObservers([&](ISceneObserver *obs) { obs->onPropertyChanged(change); });
+void SceneGraph::onPropertyChanged(const PropertyChange& change) {
+  notifyObservers([&](ISceneObserver* obs) { obs->onPropertyChanged(change); });
 }
 
-void SceneGraph::onLayerChanged(const std::string &objectId,
-                                const std::string &newLayer) {
-  notifyObservers(
-      [&](ISceneObserver *obs) { obs->onLayerChanged(objectId, newLayer); });
+void SceneGraph::onLayerChanged(const std::string& objectId, const std::string& newLayer) {
+  notifyObservers([&](ISceneObserver* obs) { obs->onLayerChanged(objectId, newLayer); });
 }
 
-void SceneGraph::notifyObservers(
-    const std::function<void(ISceneObserver *)> &notify) {
-  for (auto *observer : m_observers) {
+void SceneGraph::notifyObservers(const std::function<void(ISceneObserver*)>& notify) {
+  for (auto* observer : m_observers) {
     if (observer) {
       notify(observer);
     }
   }
 }
 
-void SceneGraph::registerObject(SceneObjectBase *obj) {
+void SceneGraph::registerObject(SceneObjectBase* obj) {
   if (obj) {
     obj->m_observer = this;
     obj->m_resources = m_resources;

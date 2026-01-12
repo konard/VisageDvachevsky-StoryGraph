@@ -29,7 +29,7 @@ namespace serialization {
  * @param panel The story graph panel
  * @param parent Parent widget for progress dialog
  */
-void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent);
+void syncGraphToScript(NMStoryGraphPanel* panel, QWidget* parent);
 
 /**
  * @brief Sync NMScript files to graph (Issue #127)
@@ -40,7 +40,7 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent);
  * @param panel The story graph panel
  * @param parent Parent widget for dialogs
  */
-void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent);
+void syncScriptToGraph(NMStoryGraphPanel* panel, QWidget* parent);
 
 // Helper struct for sync item data (Issue #96: async sync)
 struct SyncItem {
@@ -67,8 +67,7 @@ class SyncToScriptWorker : public QObject {
   Q_OBJECT
 
 public:
-  SyncToScriptWorker(QList<SyncItem> items,
-                     std::shared_ptr<std::atomic<bool>> cancelled)
+  SyncToScriptWorker(QList<SyncItem> items, std::shared_ptr<std::atomic<bool>> cancelled)
       : m_items(std::move(items)), m_cancelled(std::move(cancelled)) {}
 
 public slots:
@@ -76,7 +75,7 @@ public slots:
 
 signals:
   void progressUpdated(int current, int total);
-  void finished(const SyncResult &result);
+  void finished(const SyncResult& result);
 
 private:
   QList<SyncItem> m_items;

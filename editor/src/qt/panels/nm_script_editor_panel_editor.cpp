@@ -51,10 +51,8 @@ namespace NovelMind::editor::qt {
 namespace {
 
 int clampToInt(qsizetype value) {
-  const qsizetype minInt =
-      static_cast<qsizetype>(std::numeric_limits<int>::min());
-  const qsizetype maxInt =
-      static_cast<qsizetype>(std::numeric_limits<int>::max());
+  const qsizetype minInt = static_cast<qsizetype>(std::numeric_limits<int>::min());
+  const qsizetype maxInt = static_cast<qsizetype>(std::numeric_limits<int>::max());
   if (value < minInt) {
     return std::numeric_limits<int>::min();
   }
@@ -66,19 +64,17 @@ int clampToInt(qsizetype value) {
 
 class NMCompletionDelegate : public QStyledItemDelegate {
 public:
-  explicit NMCompletionDelegate(QObject *parent = nullptr)
-      : QStyledItemDelegate(parent) {}
+  explicit NMCompletionDelegate(QObject* parent = nullptr) : QStyledItemDelegate(parent) {}
 
-  void paint(QPainter *painter, const QStyleOptionViewItem &option,
-             const QModelIndex &index) const override {
+  void paint(QPainter* painter, const QStyleOptionViewItem& option,
+             const QModelIndex& index) const override {
     QStyleOptionViewItem opt(option);
     initStyleOption(&opt, index);
 
-    const auto &palette = NMStyleManager::instance().palette();
+    const auto& palette = NMStyleManager::instance().palette();
     painter->save();
 
-    QColor bg = (option.state & QStyle::State_Selected) ? palette.bgLight
-                                                        : palette.bgMedium;
+    QColor bg = (option.state & QStyle::State_Selected) ? palette.bgLight : palette.bgMedium;
     painter->fillRect(opt.rect, bg);
 
     QRect textRect = opt.rect.adjusted(8, 0, -8, 0);
@@ -97,8 +93,7 @@ public:
       badgeRect.setLeft(textRect.right() - badgeWidth);
       badgeRect.setWidth(badgeWidth);
       badgeRect.setHeight(badgeHeight);
-      badgeRect.moveCenter(
-          QPoint(badgeRect.center().x(), textRect.center().y()));
+      badgeRect.moveCenter(QPoint(badgeRect.center().x(), textRect.center().y()));
       textRect.setRight(badgeRect.left() - 8);
 
       painter->setRenderHint(QPainter::Antialiasing, true);
@@ -116,8 +111,7 @@ public:
     painter->restore();
   }
 
-  QSize sizeHint(const QStyleOptionViewItem &option,
-                 const QModelIndex &index) const override {
+  QSize sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const override {
     QSize base = QStyledItemDelegate::sizeHint(option, index);
     base.setHeight(std::max(base.height(), 22));
     return base;
@@ -126,7 +120,7 @@ public:
 
 class NMScriptEditorLineNumberArea : public QWidget {
 public:
-  explicit NMScriptEditorLineNumberArea(NMScriptEditor *editor)
+  explicit NMScriptEditorLineNumberArea(NMScriptEditor* editor)
       : QWidget(editor), m_editor(editor) {}
 
   [[nodiscard]] QSize sizeHint() const override {
@@ -134,39 +128,30 @@ public:
   }
 
 protected:
-  void paintEvent(QPaintEvent *event) override {
-    m_editor->lineNumberAreaPaintEvent(event);
-  }
+  void paintEvent(QPaintEvent* event) override { m_editor->lineNumberAreaPaintEvent(event); }
 
 private:
-  NMScriptEditor *m_editor = nullptr;
+  NMScriptEditor* m_editor = nullptr;
 };
 
 class NMScriptEditorFoldingArea : public QWidget {
 public:
-  explicit NMScriptEditorFoldingArea(NMScriptEditor *editor)
-      : QWidget(editor), m_editor(editor) {
+  explicit NMScriptEditorFoldingArea(NMScriptEditor* editor) : QWidget(editor), m_editor(editor) {
     setCursor(Qt::PointingHandCursor);
   }
 
-  [[nodiscard]] QSize sizeHint() const override {
-    return QSize(m_editor->foldingAreaWidth(), 0);
-  }
+  [[nodiscard]] QSize sizeHint() const override { return QSize(m_editor->foldingAreaWidth(), 0); }
 
 protected:
-  void paintEvent(QPaintEvent *event) override {
-    m_editor->foldingAreaPaintEvent(event);
-  }
+  void paintEvent(QPaintEvent* event) override { m_editor->foldingAreaPaintEvent(event); }
 
-  void mousePressEvent(QMouseEvent *event) override {
+  void mousePressEvent(QMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
       // Calculate which line was clicked
       QTextBlock block = m_editor->getFirstVisibleBlock();
-      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
-                                     .translated(m_editor->getContentOffset())
-                                     .top());
-      int bottom = top + static_cast<int>(
-                             m_editor->getBlockBoundingRect(block).height());
+      int top = static_cast<int>(
+          m_editor->getBlockBoundingGeometry(block).translated(m_editor->getContentOffset()).top());
+      int bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
 
       while (block.isValid() && top <= event->pos().y()) {
         if (block.isVisible() && bottom >= event->pos().y()) {
@@ -175,15 +160,14 @@ protected:
         }
         block = block.next();
         top = bottom;
-        bottom = top + static_cast<int>(
-                           m_editor->getBlockBoundingRect(block).height());
+        bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
       }
     }
     QWidget::mousePressEvent(event);
   }
 
 private:
-  NMScriptEditor *m_editor = nullptr;
+  NMScriptEditor* m_editor = nullptr;
 };
 
 /**
@@ -193,7 +177,7 @@ private:
  */
 class NMScriptEditorBreakpointGutter : public QWidget {
 public:
-  explicit NMScriptEditorBreakpointGutter(NMScriptEditor *editor)
+  explicit NMScriptEditorBreakpointGutter(NMScriptEditor* editor)
       : QWidget(editor), m_editor(editor) {
     setCursor(Qt::PointingHandCursor);
     setMouseTracking(true);
@@ -204,19 +188,15 @@ public:
   }
 
 protected:
-  void paintEvent(QPaintEvent *event) override {
-    m_editor->breakpointGutterPaintEvent(event);
-  }
+  void paintEvent(QPaintEvent* event) override { m_editor->breakpointGutterPaintEvent(event); }
 
-  void mousePressEvent(QMouseEvent *event) override {
+  void mousePressEvent(QMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
       // Calculate which line was clicked
       QTextBlock block = m_editor->getFirstVisibleBlock();
-      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
-                                     .translated(m_editor->getContentOffset())
-                                     .top());
-      int bottom = top + static_cast<int>(
-                             m_editor->getBlockBoundingRect(block).height());
+      int top = static_cast<int>(
+          m_editor->getBlockBoundingGeometry(block).translated(m_editor->getContentOffset()).top());
+      int bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
 
       while (block.isValid() && top <= event->pos().y()) {
         if (block.isVisible() && bottom >= event->pos().y()) {
@@ -226,26 +206,25 @@ protected:
         }
         block = block.next();
         top = bottom;
-        bottom = top + static_cast<int>(
-                           m_editor->getBlockBoundingRect(block).height());
+        bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
       }
     }
     QWidget::mousePressEvent(event);
   }
 
-  void mouseMoveEvent(QMouseEvent *event) override {
+  void mouseMoveEvent(QMouseEvent* event) override {
     // Update for potential hover effect
     update();
     QWidget::mouseMoveEvent(event);
   }
 
-  void leaveEvent(QEvent *event) override {
+  void leaveEvent(QEvent* event) override {
     update();
     QWidget::leaveEvent(event);
   }
 
 private:
-  NMScriptEditor *m_editor = nullptr;
+  NMScriptEditor* m_editor = nullptr;
 };
 
 /**
@@ -260,31 +239,24 @@ private:
  */
 class NMScriptEditorGraphGutter : public QWidget {
 public:
-  explicit NMScriptEditorGraphGutter(NMScriptEditor *editor)
-      : QWidget(editor), m_editor(editor) {
+  explicit NMScriptEditorGraphGutter(NMScriptEditor* editor) : QWidget(editor), m_editor(editor) {
     setCursor(Qt::PointingHandCursor);
     setMouseTracking(true);
     setToolTip(tr("Click to navigate to Story Graph node"));
   }
 
-  [[nodiscard]] QSize sizeHint() const override {
-    return QSize(m_editor->graphGutterWidth(), 0);
-  }
+  [[nodiscard]] QSize sizeHint() const override { return QSize(m_editor->graphGutterWidth(), 0); }
 
 protected:
-  void paintEvent(QPaintEvent *event) override {
-    m_editor->graphGutterPaintEvent(event);
-  }
+  void paintEvent(QPaintEvent* event) override { m_editor->graphGutterPaintEvent(event); }
 
-  void mousePressEvent(QMouseEvent *event) override {
+  void mousePressEvent(QMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
       // Calculate which line was clicked
       QTextBlock block = m_editor->getFirstVisibleBlock();
-      int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
-                                     .translated(m_editor->getContentOffset())
-                                     .top());
-      int bottom = top + static_cast<int>(
-                             m_editor->getBlockBoundingRect(block).height());
+      int top = static_cast<int>(
+          m_editor->getBlockBoundingGeometry(block).translated(m_editor->getContentOffset()).top());
+      int bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
 
       while (block.isValid() && top <= event->pos().y()) {
         if (block.isVisible() && bottom >= event->pos().y()) {
@@ -297,21 +269,18 @@ protected:
         }
         block = block.next();
         top = bottom;
-        bottom = top + static_cast<int>(
-                           m_editor->getBlockBoundingRect(block).height());
+        bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
       }
     }
     QWidget::mousePressEvent(event);
   }
 
-  void mouseMoveEvent(QMouseEvent *event) override {
+  void mouseMoveEvent(QMouseEvent* event) override {
     // Update tooltip based on hovered line
     QTextBlock block = m_editor->getFirstVisibleBlock();
-    int top = static_cast<int>(m_editor->getBlockBoundingGeometry(block)
-                                   .translated(m_editor->getContentOffset())
-                                   .top());
-    int bottom = top + static_cast<int>(
-                           m_editor->getBlockBoundingRect(block).height());
+    int top = static_cast<int>(
+        m_editor->getBlockBoundingGeometry(block).translated(m_editor->getContentOffset()).top());
+    int bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
 
     while (block.isValid() && top <= event->pos().y()) {
       if (block.isVisible() && bottom >= event->pos().y()) {
@@ -328,22 +297,21 @@ protected:
       }
       block = block.next();
       top = bottom;
-      bottom = top + static_cast<int>(
-                         m_editor->getBlockBoundingRect(block).height());
+      bottom = top + static_cast<int>(m_editor->getBlockBoundingRect(block).height());
     }
 
     update();
     QWidget::mouseMoveEvent(event);
   }
 
-  void leaveEvent(QEvent *event) override {
+  void leaveEvent(QEvent* event) override {
     setToolTip(QString());
     update();
     QWidget::leaveEvent(event);
   }
 
 private:
-  NMScriptEditor *m_editor = nullptr;
+  NMScriptEditor* m_editor = nullptr;
 };
 
 } // namespace
@@ -352,13 +320,13 @@ private:
 // NMScriptEditor
 // ============================================================================
 
-NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
+NMScriptEditor::NMScriptEditor(QWidget* parent) : QPlainTextEdit(parent) {
   setMouseTracking(true);
   setFont(NMStyleManager::instance().monospaceFont());
   setTabStopDistance(fontMetrics().horizontalAdvance(' ') * m_indentSize);
   setLineWrapMode(QPlainTextEdit::NoWrap);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   setStyleSheet(QString("QPlainTextEdit {"
                         "  background-color: %1;"
                         "  color: %2;"
@@ -372,20 +340,18 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
                     .arg(palette.bgDarkest.name()));
 
   m_breakpointGutter = new NMScriptEditorBreakpointGutter(this);
-  m_graphGutter = new NMScriptEditorGraphGutter(this);  // Issue #239
+  m_graphGutter = new NMScriptEditorGraphGutter(this); // Issue #239
   m_lineNumberArea = new NMScriptEditorLineNumberArea(this);
   m_foldingArea = new NMScriptEditorFoldingArea(this);
 
   connect(this, &QPlainTextEdit::blockCountChanged, this,
           &NMScriptEditor::updateLineNumberAreaWidth);
-  connect(this, &QPlainTextEdit::updateRequest, this,
-          &NMScriptEditor::updateLineNumberArea);
+  connect(this, &QPlainTextEdit::updateRequest, this, &NMScriptEditor::updateLineNumberArea);
   connect(this, &QPlainTextEdit::cursorPositionChanged, this,
           &NMScriptEditor::highlightCurrentLine);
   connect(this, &QPlainTextEdit::cursorPositionChanged, this,
           &NMScriptEditor::highlightMatchingBrackets);
-  connect(document(), &QTextDocument::contentsChanged, this,
-          &NMScriptEditor::updateFoldingRegions);
+  connect(document(), &QTextDocument::contentsChanged, this, &NMScriptEditor::updateFoldingRegions);
 
   updateLineNumberAreaWidth(0);
   highlightCurrentLine();
@@ -397,7 +363,7 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
   m_minimap->updateContent();
 
   m_baseCompletionWords = detail::buildCompletionWords();
-  auto *completer = new QCompleter(this);
+  auto* completer = new QCompleter(this);
   completer->setCaseSensitivity(Qt::CaseInsensitive);
   completer->setCompletionMode(QCompleter::PopupCompletion);
   completer->setFilterMode(Qt::MatchContains);
@@ -405,10 +371,9 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
   completer->setWidget(this);
   completer->popup()->setItemDelegate(new NMCompletionDelegate(completer));
   completer->popup()->setStyleSheet(
-      QString(
-          "QListView { background-color: %1; color: %2; border: 1px solid %3; }"
-          "QListView::item { padding: 4px 6px; }"
-          "QListView::item:selected { background: %4; color: %2; }")
+      QString("QListView { background-color: %1; color: %2; border: 1px solid %3; }"
+              "QListView::item { padding: 4px 6px; }"
+              "QListView::item:selected { background: %4; color: %2; }")
           .arg(palette.bgMedium.name())
           .arg(palette.textPrimary.name())
           .arg(palette.borderLight.name())
@@ -416,8 +381,8 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
   m_completer = completer;
   setCompletionEntries(detail::buildKeywordEntries());
 
-  connect(m_completer, QOverload<const QString &>::of(&QCompleter::activated),
-          this, &NMScriptEditor::insertCompletion);
+  connect(m_completer, QOverload<const QString&>::of(&QCompleter::activated), this,
+          &NMScriptEditor::insertCompletion);
   connect(document(), &QTextDocument::contentsChanged, this,
           &NMScriptEditor::refreshDynamicCompletions);
 
@@ -428,22 +393,20 @@ NMScriptEditor::NMScriptEditor(QWidget *parent) : QPlainTextEdit(parent) {
 
 NMScriptEditor::~NMScriptEditor() = default;
 
-void NMScriptEditor::setCompletionWords(const QStringList &words) {
+void NMScriptEditor::setCompletionWords(const QStringList& words) {
   QList<CompletionEntry> entries;
-  for (const auto &word : words) {
+  for (const auto& word : words) {
     entries.push_back({word, "keyword"});
   }
   setCompletionEntries(entries);
 }
 
-void NMScriptEditor::setCompletionEntries(
-    const QList<CompletionEntry> &entries) {
+void NMScriptEditor::setCompletionEntries(const QList<CompletionEntry>& entries) {
   m_staticCompletionEntries = entries;
   refreshDynamicCompletions();
 }
 
-static QHash<QString, QString>
-normalizedDocs(const QHash<QString, QString> &docs) {
+static QHash<QString, QString> normalizedDocs(const QHash<QString, QString>& docs) {
   QHash<QString, QString> result;
   for (auto it = docs.constBegin(); it != docs.constEnd(); ++it) {
     result.insert(it.key().toLower(), it.value());
@@ -451,45 +414,43 @@ normalizedDocs(const QHash<QString, QString> &docs) {
   return result;
 }
 
-void NMScriptEditor::setHoverDocs(const QHash<QString, QString> &docs) {
+void NMScriptEditor::setHoverDocs(const QHash<QString, QString>& docs) {
   m_hoverDocs = normalizedDocs(docs);
 }
 
-void NMScriptEditor::setDocHtml(const QHash<QString, QString> &docs) {
+void NMScriptEditor::setDocHtml(const QHash<QString, QString>& docs) {
   m_docHtml = normalizedDocs(docs);
 }
 
-void NMScriptEditor::setProjectDocs(const QHash<QString, QString> &docs) {
+void NMScriptEditor::setProjectDocs(const QHash<QString, QString>& docs) {
   const auto normalized = normalizedDocs(docs);
   for (auto it = normalized.constBegin(); it != normalized.constEnd(); ++it) {
     m_hoverDocs.insert(it.key(), it.value());
   }
 }
 
-void NMScriptEditor::setSymbolLocations(
-    const QHash<QString, SymbolLocation> &locations) {
+void NMScriptEditor::setSymbolLocations(const QHash<QString, SymbolLocation>& locations) {
   m_symbolLocations.clear();
   for (auto it = locations.constBegin(); it != locations.constEnd(); ++it) {
     m_symbolLocations.insert(it.key().toLower(), it.value());
   }
 }
 
-void NMScriptEditor::setDiagnostics(const QList<NMScriptIssue> &issues) {
+void NMScriptEditor::setDiagnostics(const QList<NMScriptIssue>& issues) {
   if (!m_highlighter) {
     return;
   }
   QHash<int, QList<NMScriptIssue>> byLine;
-  for (const auto &issue : issues) {
+  for (const auto& issue : issues) {
     byLine[issue.line].append(issue);
   }
   m_highlighter->setDiagnostics(byLine);
 }
 
-void NMScriptEditor::insertSnippet(const QString &snippetType) {
+void NMScriptEditor::insertSnippet(const QString& snippetType) {
   // Find matching snippet template
-  for (const auto &tmpl : detail::buildSnippetTemplates()) {
-    if (tmpl.prefix == snippetType ||
-        tmpl.name.toLower().contains(snippetType.toLower())) {
+  for (const auto& tmpl : detail::buildSnippetTemplates()) {
+    if (tmpl.prefix == snippetType || tmpl.name.toLower().contains(snippetType.toLower())) {
       insertSnippetTemplate(tmpl);
       return;
     }
@@ -537,7 +498,7 @@ void NMScriptEditor::insertSnippet(const QString &snippetType) {
   setTextCursor(cursor);
 }
 
-void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
+void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate& snippet) {
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
 
@@ -562,7 +523,7 @@ void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
 
   // Process matches in reverse order to maintain correct positions
   for (int i = static_cast<int>(matches.size()) - 1; i >= 0; --i) {
-    const auto &match = matches[i].second;
+    const auto& match = matches[i].second;
     const QString placeholder = match.captured(2);
     body.replace(match.capturedStart(), match.capturedLength(), placeholder);
   }
@@ -582,8 +543,7 @@ void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
 
     // Calculate actual position in document
     const int docPos = startPos + static_cast<int>(originalPos);
-    m_tabstopPositions.append(
-        {docPos, static_cast<int>(placeholder.length())});
+    m_tabstopPositions.append({docPos, static_cast<int>(placeholder.length())});
 
     offset += match.capturedLength() - placeholder.length();
     ++tabstopIndex;
@@ -595,10 +555,9 @@ void NMScriptEditor::insertSnippetTemplate(const SnippetTemplate &snippet) {
   if (!m_tabstopPositions.isEmpty()) {
     m_inSnippetMode = true;
     m_currentTabstop = 0;
-    const auto &firstTabstop = m_tabstopPositions[0];
+    const auto& firstTabstop = m_tabstopPositions[0];
     cursor.setPosition(firstTabstop.first);
-    cursor.setPosition(firstTabstop.first + firstTabstop.second,
-                       QTextCursor::KeepAnchor);
+    cursor.setPosition(firstTabstop.first + firstTabstop.second, QTextCursor::KeepAnchor);
     setTextCursor(cursor);
   } else {
     setTextCursor(cursor);
@@ -618,7 +577,7 @@ void NMScriptEditor::nextTabstop() {
     return;
   }
 
-  const auto &tabstop = m_tabstopPositions[m_currentTabstop];
+  const auto& tabstop = m_tabstopPositions[m_currentTabstop];
   QTextCursor cursor = textCursor();
   cursor.setPosition(tabstop.first);
   cursor.setPosition(tabstop.first + tabstop.second, QTextCursor::KeepAnchor);
@@ -632,7 +591,7 @@ void NMScriptEditor::previousTabstop() {
 
   if (m_currentTabstop > 0) {
     --m_currentTabstop;
-    const auto &tabstop = m_tabstopPositions[m_currentTabstop];
+    const auto& tabstop = m_tabstopPositions[m_currentTabstop];
     QTextCursor cursor = textCursor();
     cursor.setPosition(tabstop.first);
     cursor.setPosition(tabstop.first + tabstop.second, QTextCursor::KeepAnchor);
@@ -655,7 +614,7 @@ CompletionContext NMScriptEditor::getCompletionContext() const {
 
   // Check if inside a string
   int quoteCount = 0;
-  for (const QChar &ch : lineBeforeCursor) {
+  for (const QChar& ch : lineBeforeCursor) {
     if (ch == '"') {
       ++quoteCount;
     }
@@ -718,7 +677,7 @@ CompletionContext NMScriptEditor::getCompletionContext() const {
 }
 
 QList<NMScriptEditor::CompletionEntry>
-NMScriptEditor::getContextualCompletions(const QString &prefix) const {
+NMScriptEditor::getContextualCompletions(const QString& prefix) const {
   Q_UNUSED(prefix);
   // This would be called by the panel with symbol index
   // For now, return basic keywords
@@ -732,7 +691,7 @@ QList<QuickFix> NMScriptEditor::getQuickFixes(int line) const {
   return {};
 }
 
-void NMScriptEditor::applyQuickFix(const QuickFix &fix) {
+void NMScriptEditor::applyQuickFix(const QuickFix& fix) {
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
 
@@ -747,8 +706,7 @@ void NMScriptEditor::applyQuickFix(const QuickFix &fix) {
 
   if (fix.replacementLength > 0) {
     // Select and replace
-    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
-                        fix.replacementLength);
+    cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, fix.replacementLength);
   }
 
   cursor.insertText(fix.replacement);
@@ -818,8 +776,7 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
         // Check if still inside
         int braceCount = 1;
         int searchPos = braceAfterChoice + 1;
-        while (searchPos < static_cast<int>(text.size()) && searchPos < pos &&
-               braceCount > 0) {
+        while (searchPos < static_cast<int>(text.size()) && searchPos < pos && braceCount > 0) {
           if (text.at(searchPos) == '{') {
             ++braceCount;
           } else if (text.at(searchPos) == '}') {
@@ -835,8 +792,7 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
 
     // Find enclosing if block
     int ifPos = clampToInt(text.lastIndexOf("if ", pos));
-    if (ifPos > sceneStart &&
-        ifPos > clampToInt(text.lastIndexOf("choice", pos))) {
+    if (ifPos > sceneStart && ifPos > clampToInt(text.lastIndexOf("choice", pos))) {
       const int braceAfterIf = clampToInt(text.indexOf('{', ifPos));
       if (braceAfterIf >= 0 && braceAfterIf < pos) {
         breadcrumbs.append("if");
@@ -847,7 +803,7 @@ QStringList NMScriptEditor::getBreadcrumbs() const {
   return breadcrumbs;
 }
 
-QString NMScriptEditor::symbolAtPosition(const QPoint &pos) const {
+QString NMScriptEditor::symbolAtPosition(const QPoint& pos) const {
   QTextCursor cursor = cursorForPosition(pos);
   cursor.select(QTextCursor::WordUnderCursor);
   return cursor.selectedText();
@@ -877,22 +833,18 @@ void NMScriptEditor::showSnippetMenu() {
                      "QMenu::item:selected { background-color: #404040; }");
 
   menu.addAction(tr("Scene block"), this, [this]() { insertSnippet("scene"); });
-  menu.addAction(tr("Choice block"), this,
-                 [this]() { insertSnippet("choice"); });
+  menu.addAction(tr("Choice block"), this, [this]() { insertSnippet("choice"); });
   menu.addAction(tr("If/Else block"), this, [this]() { insertSnippet("if"); });
-  menu.addAction(tr("Goto statement"), this,
-                 [this]() { insertSnippet("goto"); });
+  menu.addAction(tr("Goto statement"), this, [this]() { insertSnippet("goto"); });
   menu.addSeparator();
-  menu.addAction(tr("Character declaration"), this,
-                 [this]() { insertSnippet("character"); });
+  menu.addAction(tr("Character declaration"), this, [this]() { insertSnippet("character"); });
   menu.addAction(tr("Say dialogue"), this, [this]() { insertSnippet("say"); });
-  menu.addAction(tr("Show background"), this,
-                 [this]() { insertSnippet("show"); });
+  menu.addAction(tr("Show background"), this, [this]() { insertSnippet("show"); });
 
   menu.exec(mapToGlobal(cursorRect().bottomLeft()));
 }
 
-void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
+void NMScriptEditor::keyPressEvent(QKeyEvent* event) {
   if (event->matches(QKeySequence::Save)) {
     emit requestSave();
     event->accept();
@@ -955,8 +907,7 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   }
 
   // Ctrl+.: Quick Fix (VSCode-like)
-  if (event->key() == Qt::Key_Period &&
-      (event->modifiers() & Qt::ControlModifier)) {
+  if (event->key() == Qt::Key_Period && (event->modifiers() & Qt::ControlModifier)) {
     const int line = textCursor().blockNumber() + 1;
     const auto fixes = getQuickFixes(line);
     if (!fixes.isEmpty()) {
@@ -967,8 +918,7 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
   }
 
   // Handle Tab for snippet navigation or normal indent
-  if ((event->key() == Qt::Key_Tab) &&
-      !(event->modifiers() & Qt::ControlModifier) &&
+  if ((event->key() == Qt::Key_Tab) && !(event->modifiers() & Qt::ControlModifier) &&
       !(event->modifiers() & Qt::ShiftModifier)) {
     if (m_inSnippetMode) {
       nextTabstop();
@@ -981,8 +931,7 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
 
   // Handle Shift+Tab for snippet navigation or normal outdent
   if ((event->key() == Qt::Key_Backtab) ||
-      ((event->key() == Qt::Key_Tab) &&
-       (event->modifiers() & Qt::ShiftModifier))) {
+      ((event->key() == Qt::Key_Tab) && (event->modifiers() & Qt::ShiftModifier))) {
     if (m_inSnippetMode) {
       previousTabstop();
       event->accept();
@@ -1010,8 +959,8 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
-  const bool isShortcut = (event->modifiers() & Qt::ControlModifier) &&
-                          event->key() == Qt::Key_Space;
+  const bool isShortcut =
+      (event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Space;
 
   if (!isShortcut) {
     QPlainTextEdit::keyPressEvent(event);
@@ -1036,33 +985,29 @@ void NMScriptEditor::keyPressEvent(QKeyEvent *event) {
     return;
   }
 
-  if (!m_completer->completionModel() ||
-      m_completer->completionModel()->rowCount() == 0) {
+  if (!m_completer->completionModel() || m_completer->completionModel()->rowCount() == 0) {
     m_completer->popup()->hide();
     return;
   }
 
   if (completionPrefix != m_completer->completionPrefix()) {
     m_completer->setCompletionPrefix(completionPrefix);
-    m_completer->popup()->setCurrentIndex(
-        m_completer->completionModel()->index(0, 0));
+    m_completer->popup()->setCurrentIndex(m_completer->completionModel()->index(0, 0));
   }
 
   QRect cr = cursorRect();
-  if (auto *popup = m_completer->popup()) {
+  if (auto* popup = m_completer->popup()) {
     const int baseWidth = popup->sizeHintForColumn(0);
-    const int scrollWidth = popup->verticalScrollBar()
-                                ? popup->verticalScrollBar()->sizeHint().width()
-                                : 0;
+    const int scrollWidth =
+        popup->verticalScrollBar() ? popup->verticalScrollBar()->sizeHint().width() : 0;
     cr.setWidth(baseWidth + scrollWidth);
     m_completer->complete(cr);
   }
 }
 
-void NMScriptEditor::mousePressEvent(QMouseEvent *event) {
+void NMScriptEditor::mousePressEvent(QMouseEvent* event) {
   // Ctrl+Click for go-to-definition
-  if (event->button() == Qt::LeftButton &&
-      (event->modifiers() & Qt::ControlModifier)) {
+  if (event->button() == Qt::LeftButton && (event->modifiers() & Qt::ControlModifier)) {
     const QString symbol = symbolAtPosition(event->pos());
     if (!symbol.isEmpty()) {
       const QString key = symbol.toLower();
@@ -1076,7 +1021,7 @@ void NMScriptEditor::mousePressEvent(QMouseEvent *event) {
   QPlainTextEdit::mousePressEvent(event);
 }
 
-void NMScriptEditor::mouseMoveEvent(QMouseEvent *event) {
+void NMScriptEditor::mouseMoveEvent(QMouseEvent* event) {
   QPlainTextEdit::mouseMoveEvent(event);
 
   // Change cursor to pointing hand when hovering over a navigable symbol with
@@ -1103,8 +1048,7 @@ void NMScriptEditor::mouseMoveEvent(QMouseEvent *event) {
 
   m_lastHoverToken = key;
   if (m_hoverDocs.contains(key)) {
-    QToolTip::showText(event->globalPosition().toPoint(),
-                       m_hoverDocs.value(key), this);
+    QToolTip::showText(event->globalPosition().toPoint(), m_hoverDocs.value(key), this);
     const QString html = m_docHtml.value(key);
     emit hoverDocChanged(key, html);
   } else {
@@ -1113,9 +1057,9 @@ void NMScriptEditor::mouseMoveEvent(QMouseEvent *event) {
   }
 }
 
-void NMScriptEditor::contextMenuEvent(QContextMenuEvent *event) {
-  QMenu *menu = createStandardContextMenu();
-  const auto &palette = NMStyleManager::instance().palette();
+void NMScriptEditor::contextMenuEvent(QContextMenuEvent* event) {
+  QMenu* menu = createStandardContextMenu();
+  const auto& palette = NMStyleManager::instance().palette();
   menu->setStyleSheet(QString("QMenu { background-color: %1; color: %2; }"
                               "QMenu::item:selected { background-color: %3; }")
                           .arg(palette.bgMedium.name())
@@ -1126,32 +1070,26 @@ void NMScriptEditor::contextMenuEvent(QContextMenuEvent *event) {
 
   const QString symbol = textUnderCursor();
   const bool hasSymbol = !symbol.isEmpty();
-  const bool isNavigable =
-      hasSymbol && m_symbolLocations.contains(symbol.toLower());
+  const bool isNavigable = hasSymbol && m_symbolLocations.contains(symbol.toLower());
 
-  QAction *gotoAction = menu->addAction(tr("Go to Definition (F12)"));
+  QAction* gotoAction = menu->addAction(tr("Go to Definition (F12)"));
   gotoAction->setEnabled(isNavigable);
-  connect(gotoAction, &QAction::triggered, this,
-          &NMScriptEditor::goToDefinition);
+  connect(gotoAction, &QAction::triggered, this, &NMScriptEditor::goToDefinition);
 
-  QAction *findRefsAction = menu->addAction(tr("Find References (Shift+F12)"));
+  QAction* findRefsAction = menu->addAction(tr("Find References (Shift+F12)"));
   findRefsAction->setEnabled(hasSymbol);
-  connect(findRefsAction, &QAction::triggered, this,
-          &NMScriptEditor::findReferences);
+  connect(findRefsAction, &QAction::triggered, this, &NMScriptEditor::findReferences);
 
-  if (isNavigable &&
-      m_symbolLocations.value(symbol.toLower()).filePath.contains("scene")) {
-    QAction *graphAction =
-        menu->addAction(tr("Navigate to Graph (Ctrl+Shift+G)"));
+  if (isNavigable && m_symbolLocations.value(symbol.toLower()).filePath.contains("scene")) {
+    QAction* graphAction = menu->addAction(tr("Navigate to Graph (Ctrl+Shift+G)"));
     connect(graphAction, &QAction::triggered, this,
             [this, symbol]() { emit navigateToGraphNodeRequested(symbol); });
   }
 
   menu->addSeparator();
 
-  QAction *snippetAction = menu->addAction(tr("Insert Snippet... (Ctrl+J)"));
-  connect(snippetAction, &QAction::triggered, this,
-          &NMScriptEditor::showSnippetMenu);
+  QAction* snippetAction = menu->addAction(tr("Insert Snippet... (Ctrl+J)"));
+  connect(snippetAction, &QAction::triggered, this, &NMScriptEditor::showSnippetMenu);
 
   menu->exec(event->globalPos());
   delete menu;
@@ -1170,8 +1108,7 @@ int NMScriptEditor::lineNumberAreaWidth() const {
     max /= 10;
     ++digits;
   }
-  const int space =
-      12 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
+  const int space = 12 + fontMetrics().horizontalAdvance(QLatin1Char('9')) * digits;
   return space;
 }
 
@@ -1179,12 +1116,12 @@ void NMScriptEditor::updateLineNumberAreaWidth(int newBlockCount) {
   Q_UNUSED(newBlockCount);
   const int rightMargin = m_minimapEnabled && m_minimap ? 120 : 0;
   // Issue #239: Include graph gutter width in left margin
-  setViewportMargins(
-      breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
-      rightMargin, 0);
+  setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() +
+                         foldingAreaWidth(),
+                     0, rightMargin, 0);
 }
 
-void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
+void NMScriptEditor::updateLineNumberArea(const QRect& rect, int dy) {
   if (dy) {
     if (m_breakpointGutter) {
       m_breakpointGutter->scroll(0, dy);
@@ -1201,16 +1138,14 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
     }
   } else {
     if (m_breakpointGutter) {
-      m_breakpointGutter->update(0, rect.y(), m_breakpointGutter->width(),
-                                 rect.height());
+      m_breakpointGutter->update(0, rect.y(), m_breakpointGutter->width(), rect.height());
     }
     // Issue #239: Update graph gutter
     if (m_graphGutter) {
       m_graphGutter->update(0, rect.y(), m_graphGutter->width(), rect.height());
     }
     if (m_lineNumberArea) {
-      m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(),
-                               rect.height());
+      m_lineNumberArea->update(0, rect.y(), m_lineNumberArea->width(), rect.height());
     }
     if (m_foldingArea) {
       m_foldingArea->update(0, rect.y(), m_foldingArea->width(), rect.height());
@@ -1222,63 +1157,57 @@ void NMScriptEditor::updateLineNumberArea(const QRect &rect, int dy) {
   }
 }
 
-void NMScriptEditor::resizeEvent(QResizeEvent *event) {
+void NMScriptEditor::resizeEvent(QResizeEvent* event) {
   QPlainTextEdit::resizeEvent(event);
 
   QRect cr = contentsRect();
   int xOffset = cr.left();
 
   if (m_breakpointGutter) {
-    m_breakpointGutter->setGeometry(
-        QRect(xOffset, cr.top(), breakpointGutterWidth(), cr.height()));
+    m_breakpointGutter->setGeometry(QRect(xOffset, cr.top(), breakpointGutterWidth(), cr.height()));
     xOffset += breakpointGutterWidth();
   }
 
   // Issue #239: Position graph gutter after breakpoint gutter
   if (m_graphGutter) {
-    m_graphGutter->setGeometry(
-        QRect(xOffset, cr.top(), graphGutterWidth(), cr.height()));
+    m_graphGutter->setGeometry(QRect(xOffset, cr.top(), graphGutterWidth(), cr.height()));
     xOffset += graphGutterWidth();
   }
 
   if (m_lineNumberArea) {
-    m_lineNumberArea->setGeometry(
-        QRect(xOffset, cr.top(), lineNumberAreaWidth(), cr.height()));
+    m_lineNumberArea->setGeometry(QRect(xOffset, cr.top(), lineNumberAreaWidth(), cr.height()));
     xOffset += lineNumberAreaWidth();
   }
 
   if (m_foldingArea) {
-    m_foldingArea->setGeometry(
-        QRect(xOffset, cr.top(), foldingAreaWidth(), cr.height()));
+    m_foldingArea->setGeometry(QRect(xOffset, cr.top(), foldingAreaWidth(), cr.height()));
   }
 
   if (m_minimap && m_minimapEnabled) {
     const int minimapWidth = 120;
-    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth,
-                           cr.height());
+    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth, cr.height());
   }
 }
 
-void NMScriptEditor::lineNumberAreaPaintEvent(QPaintEvent *event) {
+void NMScriptEditor::lineNumberAreaPaintEvent(QPaintEvent* event) {
   if (!m_lineNumberArea) {
     return;
   }
   QPainter painter(m_lineNumberArea);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   painter.fillRect(event->rect(), palette.bgMedium);
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = static_cast<int>(
-      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
   int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
   while (block.isValid() && top <= event->rect().bottom()) {
     if (block.isVisible() && bottom >= event->rect().top()) {
       const QString number = QString::number(blockNumber + 1);
       painter.setPen(palette.textSecondary);
-      painter.drawText(0, top, m_lineNumberArea->width() - 6,
-                       fontMetrics().height(), Qt::AlignRight, number);
+      painter.drawText(0, top, m_lineNumberArea->width() - 6, fontMetrics().height(),
+                       Qt::AlignRight, number);
     }
 
     block = block.next();
@@ -1294,10 +1223,9 @@ void NMScriptEditor::highlightCurrentLine() {
   }
 
   QTextEdit::ExtraSelection selection;
-  const auto &palette = NMStyleManager::instance().palette();
-  selection.format.setBackground(QColor(palette.bgLight.red(),
-                                        palette.bgLight.green(),
-                                        palette.bgLight.blue(), 60));
+  const auto& palette = NMStyleManager::instance().palette();
+  selection.format.setBackground(
+      QColor(palette.bgLight.red(), palette.bgLight.green(), palette.bgLight.blue(), 60));
   selection.format.setProperty(QTextFormat::FullWidthSelection, true);
   selection.cursor = textCursor();
   selection.cursor.clearSelection();
@@ -1305,11 +1233,10 @@ void NMScriptEditor::highlightCurrentLine() {
   setExtraSelections({selection});
 }
 
-QString NMScriptEditor::indentForCurrentLine(int *outLogicalIndent) const {
+QString NMScriptEditor::indentForCurrentLine(int* outLogicalIndent) const {
   const QString text = textCursor().block().text();
   int leading = 0;
-  while (leading < static_cast<int>(text.size()) &&
-         text.at(leading).isSpace()) {
+  while (leading < static_cast<int>(text.size()) && text.at(leading).isSpace()) {
     ++leading;
   }
   if (outLogicalIndent) {
@@ -1323,7 +1250,7 @@ QString NMScriptEditor::indentForCurrentLine(int *outLogicalIndent) const {
   return indent;
 }
 
-void NMScriptEditor::handleReturnKey(QKeyEvent *event) {
+void NMScriptEditor::handleReturnKey(QKeyEvent* event) {
   QTextCursor cursor = textCursor();
   cursor.beginEditBlock();
   const QString indent = indentForCurrentLine();
@@ -1334,12 +1261,12 @@ void NMScriptEditor::handleReturnKey(QKeyEvent *event) {
   event->accept();
 }
 
-void NMScriptEditor::handleTabKey(QKeyEvent *event) {
+void NMScriptEditor::handleTabKey(QKeyEvent* event) {
   indentSelection(m_indentSize);
   event->accept();
 }
 
-void NMScriptEditor::handleBacktabKey(QKeyEvent *event) {
+void NMScriptEditor::handleBacktabKey(QKeyEvent* event) {
   indentSelection(-m_indentSize);
   event->accept();
 }
@@ -1357,14 +1284,13 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < static_cast<int>(text.size()) &&
-             text.at(removable).isSpace() && removable < m_indentSize) {
+      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
+             removable < m_indentSize) {
         ++removable;
       }
       if (removable > 0) {
         cursor.setPosition(block.position());
-        cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
-                            removable);
+        cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, removable);
         cursor.removeSelectedText();
       }
     }
@@ -1384,14 +1310,13 @@ void NMScriptEditor::indentSelection(int delta) {
     } else {
       const QString text = block.text();
       int removable = 0;
-      while (removable < static_cast<int>(text.size()) &&
-             text.at(removable).isSpace() && removable < m_indentSize) {
+      while (removable < static_cast<int>(text.size()) && text.at(removable).isSpace() &&
+             removable < m_indentSize) {
         ++removable;
       }
       if (removable > 0) {
         lineCursor.setPosition(block.position());
-        lineCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
-                                removable);
+        lineCursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, removable);
         lineCursor.removeSelectedText();
         end -= removable;
       }
@@ -1402,16 +1327,14 @@ void NMScriptEditor::indentSelection(int delta) {
   cursor.endEditBlock();
 }
 
-void NMScriptEditor::insertCompletion(const QString &completion) {
+void NMScriptEditor::insertCompletion(const QString& completion) {
   if (!m_completer) {
     return;
   }
   QTextCursor cursor = textCursor();
-  const int prefixLength =
-      static_cast<int>(m_completer->completionPrefix().length());
+  const int prefixLength = static_cast<int>(m_completer->completionPrefix().length());
   cursor.movePosition(QTextCursor::Left, QTextCursor::MoveAnchor, prefixLength);
-  cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor,
-                      prefixLength);
+  cursor.movePosition(QTextCursor::Right, QTextCursor::KeepAnchor, prefixLength);
   cursor.insertText(completion);
   setTextCursor(cursor);
 }
@@ -1425,14 +1348,12 @@ void NMScriptEditor::refreshDynamicCompletions() {
   QStringList dynamicWords;
 
   const QRegularExpression reScene("\\bscene\\s+([A-Za-z_][A-Za-z0-9_]*)");
-  const QRegularExpression reCharacter(
-      "\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
+  const QRegularExpression reCharacter("\\bcharacter\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reSet("\\bset\\s+([A-Za-z_][A-Za-z0-9_]*)");
   const QRegularExpression reFlag("\\bflag\\s+([A-Za-z_][A-Za-z0-9_]*)");
 
-  const QRegularExpression *patterns[] = {&reScene, &reCharacter, &reSet,
-                                          &reFlag};
-  for (const auto *pattern : patterns) {
+  const QRegularExpression* patterns[] = {&reScene, &reCharacter, &reSet, &reFlag};
+  for (const auto* pattern : patterns) {
     QRegularExpressionMatchIterator it = pattern->globalMatch(text);
     while (it.hasNext()) {
       const QRegularExpressionMatch match = it.next();
@@ -1446,11 +1367,11 @@ void NMScriptEditor::refreshDynamicCompletions() {
   dynamicWords.removeDuplicates();
 
   QHash<QString, CompletionEntry> merged;
-  for (const auto &entry : m_staticCompletionEntries) {
+  for (const auto& entry : m_staticCompletionEntries) {
     merged.insert(entry.text.toLower(), entry);
   }
 
-  for (const auto &word : dynamicWords) {
+  for (const auto& word : dynamicWords) {
     const QString key = word.toLower();
     if (!merged.contains(key)) {
       merged.insert(key, {word, "local"});
@@ -1459,7 +1380,7 @@ void NMScriptEditor::refreshDynamicCompletions() {
 
   QList<CompletionEntry> combined = merged.values();
   std::sort(combined.begin(), combined.end(),
-            [](const CompletionEntry &a, const CompletionEntry &b) {
+            [](const CompletionEntry& a, const CompletionEntry& b) {
               return a.text.compare(b.text, Qt::CaseInsensitive) < 0;
             });
 
@@ -1467,16 +1388,14 @@ void NMScriptEditor::refreshDynamicCompletions() {
   m_cachedCompletionEntries = combined;
 }
 
-void NMScriptEditor::rebuildCompleterModel(
-    const QList<CompletionEntry> &entries) {
+void NMScriptEditor::rebuildCompleterModel(const QList<CompletionEntry>& entries) {
   if (!m_completer) {
     return;
   }
-  auto *model =
-      new QStandardItemModel(static_cast<int>(entries.size()), 1, m_completer);
+  auto* model = new QStandardItemModel(static_cast<int>(entries.size()), 1, m_completer);
   int row = 0;
-  for (const auto &entry : entries) {
-    auto *item = new QStandardItem(entry.text);
+  for (const auto& entry : entries) {
+    auto* item = new QStandardItem(entry.text);
     item->setData(entry.detail, Qt::UserRole + 1);
     model->setItem(row, 0, item);
     ++row;
@@ -1488,7 +1407,7 @@ void NMScriptEditor::rebuildCompleterModel(
 // Breakpoint Support
 // ============================================================================
 
-void NMScriptEditor::setBreakpoints(const QSet<int> &lines) {
+void NMScriptEditor::setBreakpoints(const QSet<int>& lines) {
   m_breakpoints = lines;
   if (m_breakpointGutter) {
     m_breakpointGutter->update();
@@ -1525,21 +1444,20 @@ void NMScriptEditor::setCurrentExecutionLine(int line) {
   viewport()->update();
 }
 
-void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent *event) {
+void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent* event) {
   if (!m_breakpointGutter) {
     return;
   }
 
   QPainter painter(m_breakpointGutter);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Fill background
   painter.fillRect(event->rect(), palette.bgMedium);
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = static_cast<int>(
-      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
   int bottom = top + static_cast<int>(blockBoundingRect(block).height());
   const int gutterWidth = breakpointGutterWidth();
 
@@ -1557,8 +1475,7 @@ void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent *event) {
         QPolygonF arrow;
         const int centerY = top + fontMetrics().height() / 2;
         const int arrowSize = 5;
-        arrow << QPointF(2, centerY - arrowSize)
-              << QPointF(gutterWidth - 2, centerY)
+        arrow << QPointF(2, centerY - arrowSize) << QPointF(gutterWidth - 2, centerY)
               << QPointF(2, centerY + arrowSize);
         painter.drawPolygon(arrow);
       }
@@ -1587,23 +1504,21 @@ void NMScriptEditor::breakpointGutterPaintEvent(QPaintEvent *event) {
 // Issue #239: Graph Integration Gutter Methods
 // ============================================================================
 
-void NMScriptEditor::setGraphConnectedScenes(
-    const QHash<int, QString> &sceneLines) {
+void NMScriptEditor::setGraphConnectedScenes(const QHash<int, QString>& sceneLines) {
   m_graphConnectedScenes = sceneLines;
   if (m_graphGutter) {
     m_graphGutter->update();
   }
-  qDebug() << "[ScriptEditor] Graph-connected scenes updated:"
-           << sceneLines.size() << "scenes";
+  qDebug() << "[ScriptEditor] Graph-connected scenes updated:" << sceneLines.size() << "scenes";
 }
 
-void NMScriptEditor::graphGutterPaintEvent(QPaintEvent *event) {
+void NMScriptEditor::graphGutterPaintEvent(QPaintEvent* event) {
   if (!m_graphGutter) {
     return;
   }
 
   QPainter painter(m_graphGutter);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Fill background
   painter.fillRect(event->rect(), palette.bgMedium);
@@ -1614,8 +1529,7 @@ void NMScriptEditor::graphGutterPaintEvent(QPaintEvent *event) {
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = static_cast<int>(
-      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
   int bottom = top + static_cast<int>(blockBoundingRect(block).height());
   const int gutterWidth = graphGutterWidth();
 
@@ -1635,10 +1549,10 @@ void NMScriptEditor::graphGutterPaintEvent(QPaintEvent *event) {
         const int centerY = top + fontMetrics().height() / 2;
 
         QPolygonF diamond;
-        diamond << QPointF(centerX, centerY - size / 2)      // Top
-                << QPointF(centerX + size / 2, centerY)      // Right
-                << QPointF(centerX, centerY + size / 2)      // Bottom
-                << QPointF(centerX - size / 2, centerY);     // Left
+        diamond << QPointF(centerX, centerY - size / 2)  // Top
+                << QPointF(centerX + size / 2, centerY)  // Right
+                << QPointF(centerX, centerY + size / 2)  // Bottom
+                << QPointF(centerX - size / 2, centerY); // Left
         painter.drawPolygon(diamond);
       }
     }

@@ -9,8 +9,7 @@ namespace NovelMind::editor::qt {
 
 NMLocalizationUI::NMLocalizationUI(NMLocalizationDataModel& dataModel,
                                    ::NovelMind::localization::LocalizationManager& localization)
-    : m_dataModel(dataModel)
-    , m_localization(localization) {}
+    : m_dataModel(dataModel), m_localization(localization) {}
 
 NMLocalizationUI::~NMLocalizationUI() = default;
 
@@ -298,7 +297,8 @@ void NMLocalizationUI::applyRTLLayout(QTableWidget* table, QLabel* previewOutput
   }
 }
 
-void NMLocalizationUI::updateTableCell(QTableWidget* table, const QString& key, const QString& value,
+void NMLocalizationUI::updateTableCell(QTableWidget* table, const QString& key,
+                                       const QString& value,
                                        const QHash<QString, int>& keyToRowMap) {
   if (!table) {
     return;

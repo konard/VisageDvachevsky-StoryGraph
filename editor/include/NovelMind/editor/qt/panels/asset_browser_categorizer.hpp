@@ -19,12 +19,12 @@ namespace NovelMind::editor::qt {
 /**
  * @brief Check if a file extension is an image format
  */
-bool isImageExtension(const QString &extension);
+bool isImageExtension(const QString& extension);
 
 /**
  * @brief Check if a file extension is an audio format
  */
-bool isAudioExtension(const QString &extension);
+bool isAudioExtension(const QString& extension);
 
 /**
  * @brief Proxy model for filtering assets by name and type
@@ -33,12 +33,12 @@ class NMAssetFilterProxy final : public QSortFilterProxyModel {
   Q_OBJECT
 
 public:
-  explicit NMAssetFilterProxy(QObject *parent = nullptr);
+  explicit NMAssetFilterProxy(QObject* parent = nullptr);
 
   /**
    * @brief Set the name filter text
    */
-  void setNameFilterText(const QString &text);
+  void setNameFilterText(const QString& text);
 
   /**
    * @brief Set the type filter index (0=All, 1=Images, 2=Audio, etc.)
@@ -48,11 +48,10 @@ public:
   /**
    * @brief Set the pinned directory for filtering
    */
-  void setPinnedDirectory(const QString &path);
+  void setPinnedDirectory(const QString& path);
 
 protected:
-  bool filterAcceptsRow(int sourceRow,
-                        const QModelIndex &sourceParent) const override;
+  bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override;
 
 private:
   QString m_nameFilter;

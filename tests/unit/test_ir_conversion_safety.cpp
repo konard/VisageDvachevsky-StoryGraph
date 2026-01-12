@@ -41,7 +41,7 @@ TEST_CASE("ASTToIRConverter handles simple scene conversion", "[ir][conversion][
   REQUIRE(result.isOk());
   REQUIRE(result.value() != nullptr);
 
-  auto &graph = result.value();
+  auto& graph = result.value();
   REQUIRE(graph->getSceneStartNode("test_scene") != 0);
 }
 
@@ -84,7 +84,7 @@ TEST_CASE("ASTToIRConverter handles multiple scenes", "[ir][conversion][safety]"
   REQUIRE(result.isOk());
   REQUIRE(result.value() != nullptr);
 
-  auto &graph = result.value();
+  auto& graph = result.value();
   for (int i = 0; i < 5; ++i) {
     REQUIRE(graph->getSceneStartNode("scene_" + std::to_string(i)) != 0);
   }
@@ -98,10 +98,7 @@ TEST_CASE("ASTToIRConverter handles expressions safely", "[ir][conversion][safet
   scene.name = "expr_test";
 
   // Create a literal expression
-  auto literalExpr = std::make_unique<Expression>(
-    LiteralExpr{42},
-    SourceLocation{}
-  );
+  auto literalExpr = std::make_unique<Expression>(LiteralExpr{42}, SourceLocation{});
 
   program.scenes.push_back(scene);
 
@@ -133,7 +130,7 @@ TEST_CASE("ASTToIRConverter handles character declarations", "[ir][conversion][s
   REQUIRE(result.isOk());
   REQUIRE(result.value() != nullptr);
 
-  auto &graph = result.value();
+  auto& graph = result.value();
   REQUIRE(graph->hasCharacter("alice"));
   REQUIRE(graph->hasCharacter("bob"));
 }
@@ -186,7 +183,7 @@ TEST_CASE("ASTToIRConverter handles complex scene with multiple statement types"
   REQUIRE(result.isOk());
   REQUIRE(result.value() != nullptr);
 
-  auto &graph = result.value();
+  auto& graph = result.value();
   // Verify the scene was created
   REQUIRE(graph->getSceneStartNode("complex_scene") != 0);
 
@@ -206,11 +203,11 @@ TEST_CASE("IRGraph createNode returns valid node ID", "[ir][safety]") {
   REQUIRE(id2 != id1);
 
   // Verify nodes can be retrieved
-  auto *node1 = graph.getNode(id1);
+  auto* node1 = graph.getNode(id1);
   REQUIRE(node1 != nullptr);
   REQUIRE(node1->getType() == IRNodeType::SceneStart);
 
-  auto *node2 = graph.getNode(id2);
+  auto* node2 = graph.getNode(id2);
   REQUIRE(node2 != nullptr);
   REQUIRE(node2->getType() == IRNodeType::Dialogue);
 }
@@ -219,11 +216,11 @@ TEST_CASE("IRGraph getNode returns nullptr for invalid ID", "[ir][safety]") {
   IRGraph graph;
 
   // Invalid node ID (0)
-  auto *node = graph.getNode(0);
+  auto* node = graph.getNode(0);
   REQUIRE(node == nullptr);
 
   // Non-existent node ID
-  auto *node2 = graph.getNode(9999);
+  auto* node2 = graph.getNode(9999);
   REQUIRE(node2 == nullptr);
 }
 
@@ -246,14 +243,14 @@ TEST_CASE("ASTToIRConverter round-trip preserves scene structure", "[ir][convers
   auto irResult = astToIR.convert(originalProgram);
   REQUIRE(irResult.isOk());
 
-  auto &graph = irResult.value();
+  auto& graph = irResult.value();
   REQUIRE(graph != nullptr);
 
   // Convert back to AST
   auto astResult = irToAST.convert(*graph);
   REQUIRE(astResult.isOk());
 
-  auto &program = astResult.value();
+  auto& program = astResult.value();
   REQUIRE(program.scenes.size() == 1);
   REQUIRE(program.scenes[0].name == "test_scene");
 }

@@ -155,5 +155,4 @@ void ProjectAssetTracker::findOrphanedAssets(std::vector<IntegrityIssue>& issues
   }
 }
 
-
 } // namespace NovelMind::editor

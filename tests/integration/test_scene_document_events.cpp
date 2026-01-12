@@ -26,7 +26,7 @@ public:
   QtTestFixture() {
     if (!QCoreApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test"), nullptr};
+      static char* argv[] = {const_cast<char*>("test"), nullptr};
       m_app = std::make_unique<QCoreApplication>(argc, argv);
     }
   }
@@ -128,14 +128,12 @@ TEST_CASE("SceneDocumentModifiedEvent: Event bus integration",
   QtTestFixture fixture;
 
   SECTION("Events are published through EventBus") {
-    auto &bus = EventBus::instance();
+    auto& bus = EventBus::instance();
     std::atomic<int> eventCount{0};
 
     // Subscribe to SceneDocumentModifiedEvent
     auto subscription = bus.subscribe<events::SceneDocumentModifiedEvent>(
-        [&eventCount](const events::SceneDocumentModifiedEvent &) {
-          ++eventCount;
-        });
+        [&eventCount](const events::SceneDocumentModifiedEvent&) { ++eventCount; });
 
     // Publish an event
     events::SceneDocumentModifiedEvent event;
@@ -153,15 +151,13 @@ TEST_CASE("SceneDocumentModifiedEvent: Event bus integration",
   }
 
   SECTION("Debouncer reduces event spam to EventBus") {
-    auto &bus = EventBus::instance();
+    auto& bus = EventBus::instance();
     std::atomic<int> eventCount{0};
     Debouncer saveDebouncer(50);
 
     // Subscribe to events
     auto subscription = bus.subscribe<events::SceneDocumentModifiedEvent>(
-        [&eventCount](const events::SceneDocumentModifiedEvent &) {
-          ++eventCount;
-        });
+        [&eventCount](const events::SceneDocumentModifiedEvent&) { ++eventCount; });
 
     // Simulate 20 rapid changes
     for (int i = 0; i < 20; ++i) {

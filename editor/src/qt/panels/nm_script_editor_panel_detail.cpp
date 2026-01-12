@@ -4,29 +4,26 @@
 namespace NovelMind::editor::qt::detail {
 
 QStringList buildCompletionWords() {
-  return {"and",       "or",         "not",      "true",       "false",
-          "if",        "else",       "then",     "scene",      "character",
-          "choice",    "goto",       "say",      "set",        "flag",
-          "show",      "hide",       "with",     "transition", "wait",
-          "play",      "stop",       "music",    "sound",      "voice",
-          "at",        "background", "left",     "center",     "right",
-          "loop",      "fade",       "dissolve", "slide_left", "slide_right",
-          "slide_up",  "slide_down", "shake",    "flash",      "fade_to",
-          "fade_from", "move",       "scale",    "rotate",     "textbox",
-          "set_speed", "allow_skip", "duration", "intensity",  "color",
-          "to"};
+  return {"and",        "or",     "not",        "true",       "false",       "if",
+          "else",       "then",   "scene",      "character",  "choice",      "goto",
+          "say",        "set",    "flag",       "show",       "hide",        "with",
+          "transition", "wait",   "play",       "stop",       "music",       "sound",
+          "voice",      "at",     "background", "left",       "center",      "right",
+          "loop",       "fade",   "dissolve",   "slide_left", "slide_right", "slide_up",
+          "slide_down", "shake",  "flash",      "fade_to",    "fade_from",   "move",
+          "scale",      "rotate", "textbox",    "set_speed",  "allow_skip",  "duration",
+          "intensity",  "color",  "to"};
 }
 
 QList<SnippetTemplate> buildSnippetTemplates() {
   QList<SnippetTemplate> templates;
 
   // Scene template
-  templates.append(
-      {"Scene Block",
-       "scene",
-       "Create a new scene with dialogue",
-       "scene ${1:scene_name} {\n  say ${2:Narrator} \"${3:Description}\"\n}\n",
-       {"scene_name", "Narrator", "Description"}});
+  templates.append({"Scene Block",
+                    "scene",
+                    "Create a new scene with dialogue",
+                    "scene ${1:scene_name} {\n  say ${2:Narrator} \"${3:Description}\"\n}\n",
+                    {"scene_name", "Narrator", "Description"}});
 
   // Character declaration
   templates.append({"Character Declaration",
@@ -44,22 +41,20 @@ QList<SnippetTemplate> buildSnippetTemplates() {
                     {"Character", "Dialogue text"}});
 
   // Choice block
-  templates.append(
-      {"Choice Block",
-       "choice",
-       "Present interactive options to player",
-       "choice {\n  \"${1:Option 1}\" -> ${2:scene_target1}\n  \"${3:Option "
-       "2}\" -> ${4:scene_target2}\n}\n",
-       {"Option 1", "scene_target1", "Option 2", "scene_target2"}});
+  templates.append({"Choice Block",
+                    "choice",
+                    "Present interactive options to player",
+                    "choice {\n  \"${1:Option 1}\" -> ${2:scene_target1}\n  \"${3:Option "
+                    "2}\" -> ${4:scene_target2}\n}\n",
+                    {"Option 1", "scene_target1", "Option 2", "scene_target2"}});
 
   // If/else block
-  templates.append(
-      {"If/Else Block",
-       "if",
-       "Conditional branch based on expression",
-       "if ${1:flag condition} {\n  ${2:// true branch}\n} else {\n  "
-       "${3:// false branch}\n}\n",
-       {"flag condition", "// true branch", "// false branch"}});
+  templates.append({"If/Else Block",
+                    "if",
+                    "Conditional branch based on expression",
+                    "if ${1:flag condition} {\n  ${2:// true branch}\n} else {\n  "
+                    "${3:// false branch}\n}\n",
+                    {"flag condition", "// true branch", "// false branch"}});
 
   // Goto statement
   templates.append({"Goto Statement",
@@ -111,11 +106,7 @@ QList<SnippetTemplate> buildSnippetTemplates() {
                     {"voice_id"}});
 
   // Wait
-  templates.append({"Wait",
-                    "wait",
-                    "Pause execution for duration",
-                    "wait ${1:1.0}\n",
-                    {"1.0"}});
+  templates.append({"Wait", "wait", "Pause execution for duration", "wait ${1:1.0}\n", {"1.0"}});
 
   // Transition
   templates.append({"Transition",
@@ -195,36 +186,29 @@ QHash<QString, QString> buildHoverDocs() {
 
 QHash<QString, QString> buildDocHtml() {
   QHash<QString, QString> docs;
-  docs.insert("scene",
-              "<h3>scene</h3>"
-              "<p>Define a scene block with statements.</p>"
-              "<p><b>Usage:</b> <code>scene &lt;id&gt; { ... }</code></p>"
-              "<pre>scene main {\n    \"Hello, world!\"\n}</pre>");
-  docs.insert(
-      "character",
-      "<h3>character</h3>"
-      "<p>Declare a character with display properties.</p>"
-      "<p><b>Usage:</b> <code>character &lt;id&gt;(name=\"Name\")</code></p>"
-      "<pre>character Hero(name=\"Alex\", color=\"#00AAFF\")</pre>");
-  docs.insert("say",
-              "<h3>say</h3>"
-              "<p>Display dialogue for a character.</p>"
-              "<p><b>Usage:</b> <code>say &lt;character&gt; \"text\"</code></p>"
-              "<pre>say hero \"We should go.\"</pre>");
-  docs.insert(
-      "choice",
-      "<h3>choice</h3>"
-      "<p>Present interactive options.</p>"
-      "<p><b>Usage:</b> <code>choice { \"Option\" -> scene_id }</code></p>"
-      "<pre>choice {\n    \"Go left\" -> left_path\n    \"Go right\" -> "
-      "right_path\n}</pre>");
-  docs.insert("show",
-              "<h3>show</h3>"
-              "<p>Show a background or character.</p>"
-              "<p><b>Usage:</b> <code>show background \"id\"</code></p>"
-              "<p><b>Usage:</b> <code>show &lt;character&gt; at left</code></p>"
-              "<p><b>Usage:</b> <code>show &lt;character&gt; at (x, y) with "
-              "\"expr\"</code></p>");
+  docs.insert("scene", "<h3>scene</h3>"
+                       "<p>Define a scene block with statements.</p>"
+                       "<p><b>Usage:</b> <code>scene &lt;id&gt; { ... }</code></p>"
+                       "<pre>scene main {\n    \"Hello, world!\"\n}</pre>");
+  docs.insert("character", "<h3>character</h3>"
+                           "<p>Declare a character with display properties.</p>"
+                           "<p><b>Usage:</b> <code>character &lt;id&gt;(name=\"Name\")</code></p>"
+                           "<pre>character Hero(name=\"Alex\", color=\"#00AAFF\")</pre>");
+  docs.insert("say", "<h3>say</h3>"
+                     "<p>Display dialogue for a character.</p>"
+                     "<p><b>Usage:</b> <code>say &lt;character&gt; \"text\"</code></p>"
+                     "<pre>say hero \"We should go.\"</pre>");
+  docs.insert("choice", "<h3>choice</h3>"
+                        "<p>Present interactive options.</p>"
+                        "<p><b>Usage:</b> <code>choice { \"Option\" -> scene_id }</code></p>"
+                        "<pre>choice {\n    \"Go left\" -> left_path\n    \"Go right\" -> "
+                        "right_path\n}</pre>");
+  docs.insert("show", "<h3>show</h3>"
+                      "<p>Show a background or character.</p>"
+                      "<p><b>Usage:</b> <code>show background \"id\"</code></p>"
+                      "<p><b>Usage:</b> <code>show &lt;character&gt; at left</code></p>"
+                      "<p><b>Usage:</b> <code>show &lt;character&gt; at (x, y) with "
+                      "\"expr\"</code></p>");
   docs.insert("hide", "<h3>hide</h3>"
                       "<p>Hide a background or character.</p>"
                       "<p><b>Usage:</b> <code>hide &lt;id&gt;</code></p>");
@@ -232,11 +216,10 @@ QHash<QString, QString> buildDocHtml() {
                      "<p>Assign a variable or flag.</p>"
                      "<p><b>Usage:</b> <code>set name = expr</code></p>"
                      "<pre>set affection = affection + 5</pre>");
-  docs.insert("flag",
-              "<h3>flag</h3>"
-              "<p>Access or set boolean flags.</p>"
-              "<p><b>Usage:</b> <code>set flag has_key = true</code></p>"
-              "<pre>if flag has_key { ... }</pre>");
+  docs.insert("flag", "<h3>flag</h3>"
+                      "<p>Access or set boolean flags.</p>"
+                      "<p><b>Usage:</b> <code>set flag has_key = true</code></p>"
+                      "<pre>if flag has_key { ... }</pre>");
   docs.insert("if", "<h3>if</h3>"
                     "<p>Conditional branch.</p>"
                     "<p><b>Usage:</b> <code>if expr { ... }</code></p>");
@@ -245,21 +228,19 @@ QHash<QString, QString> buildDocHtml() {
   docs.insert("goto", "<h3>goto</h3>"
                       "<p>Jump to another scene.</p>"
                       "<p><b>Usage:</b> <code>goto scene_id</code></p>");
-  docs.insert("play",
-              "<h3>play</h3>"
-              "<p>Play music, sound, or voice.</p>"
-              "<p><b>Usage:</b> <code>play music \"file.ogg\"</code></p>"
-              "<p><b>Options:</b> <code>loop=false</code></p>");
+  docs.insert("play", "<h3>play</h3>"
+                      "<p>Play music, sound, or voice.</p>"
+                      "<p><b>Usage:</b> <code>play music \"file.ogg\"</code></p>"
+                      "<p><b>Options:</b> <code>loop=false</code></p>");
   docs.insert("stop", "<h3>stop</h3>"
                       "<p>Stop music, sound, or voice.</p>"
                       "<p><b>Usage:</b> <code>stop music</code></p>"
                       "<p><b>Options:</b> <code>fade=1.0</code></p>");
-  docs.insert("transition",
-              "<h3>transition</h3>"
-              "<p>Run a visual transition.</p>"
-              "<p><b>Usage:</b> <code>transition fade 0.5</code></p>"
-              "<p><b>Types:</b> fade, dissolve, slide_left, slide_right, "
-              "slide_up, slide_down</p>");
+  docs.insert("transition", "<h3>transition</h3>"
+                            "<p>Run a visual transition.</p>"
+                            "<p><b>Usage:</b> <code>transition fade 0.5</code></p>"
+                            "<p><b>Types:</b> fade, dissolve, slide_left, slide_right, "
+                            "slide_up, slide_down</p>");
   docs.insert("slide_left", "<h3>slide_left</h3>"
                             "<p>Slide transition to the left.</p>");
   docs.insert("slide_right", "<h3>slide_right</h3>"
@@ -283,58 +264,53 @@ QHash<QString, QString> buildDocHtml() {
   docs.insert("flash", "<h3>flash</h3>"
                        "<p>Flash the screen.</p>"
                        "<p><b>Usage:</b> <code>flash 0.4</code></p>");
-  docs.insert("fade_to",
-              "<h3>fade_to</h3>"
-              "<p>Fade to color.</p>"
-              "<p><b>Usage:</b> <code>fade_to #000000 0.3</code></p>");
-  docs.insert("fade_from",
-              "<h3>fade_from</h3>"
-              "<p>Fade from color.</p>"
-              "<p><b>Usage:</b> <code>fade_from #000000 0.3</code></p>");
-  docs.insert("move",
-              "<h3>move</h3>"
-              "<p>Move a character to a position over time.</p>"
-              "<p><b>Usage:</b> <code>move hero to (0.5, 0.3) 1.0</code></p>");
+  docs.insert("fade_to", "<h3>fade_to</h3>"
+                         "<p>Fade to color.</p>"
+                         "<p><b>Usage:</b> <code>fade_to #000000 0.3</code></p>");
+  docs.insert("fade_from", "<h3>fade_from</h3>"
+                           "<p>Fade from color.</p>"
+                           "<p><b>Usage:</b> <code>fade_from #000000 0.3</code></p>");
+  docs.insert("move", "<h3>move</h3>"
+                      "<p>Move a character to a position over time.</p>"
+                      "<p><b>Usage:</b> <code>move hero to (0.5, 0.3) 1.0</code></p>");
   docs.insert("scale", "<h3>scale</h3>"
                        "<p>Scale a character over time.</p>"
                        "<p><b>Usage:</b> <code>scale hero 1.2 0.5</code></p>");
   docs.insert("rotate", "<h3>rotate</h3>"
                         "<p>Rotate a character over time.</p>"
                         "<p><b>Usage:</b> <code>rotate hero 15 0.3</code></p>");
-  docs.insert("background",
-              "<h3>background</h3>"
-              "<p>Background asset identifier.</p>"
-              "<p><b>Usage:</b> <code>show background \"bg_id\"</code></p>");
+  docs.insert("background", "<h3>background</h3>"
+                            "<p>Background asset identifier.</p>"
+                            "<p><b>Usage:</b> <code>show background \"bg_id\"</code></p>");
   docs.insert("textbox", "<h3>textbox</h3>"
                          "<p>Show or hide the dialogue textbox.</p>"
                          "<p><b>Usage:</b> <code>textbox show</code></p>");
   docs.insert("set_speed", "<h3>set_speed</h3>"
                            "<p>Set typewriter speed (chars/sec).</p>"
                            "<p><b>Usage:</b> <code>set_speed 30</code></p>");
-  docs.insert("allow_skip",
-              "<h3>allow_skip</h3>"
-              "<p>Enable or disable skip mode.</p>"
-              "<p><b>Usage:</b> <code>allow_skip true</code></p>");
+  docs.insert("allow_skip", "<h3>allow_skip</h3>"
+                            "<p>Enable or disable skip mode.</p>"
+                            "<p><b>Usage:</b> <code>allow_skip true</code></p>");
   return docs;
 }
 
 QList<NMScriptEditor::CompletionEntry> buildKeywordEntries() {
   QList<NMScriptEditor::CompletionEntry> entries;
-  for (const auto &word : buildCompletionWords()) {
+  for (const auto& word : buildCompletionWords()) {
     entries.push_back({word, "keyword"});
   }
   return entries;
 }
 
-QList<NMScriptEditor::CompletionEntry> getContextCompletions(
-    CompletionContext context, const QHash<QString, QString> &scenes,
-    const QHash<QString, QString> &characters,
-    const QHash<QString, QString> &flags,
-    const QHash<QString, QString> &variables, const QStringList &backgrounds,
-    const QStringList &music, const QStringList &voices) {
+QList<NMScriptEditor::CompletionEntry>
+getContextCompletions(CompletionContext context, const QHash<QString, QString>& scenes,
+                      const QHash<QString, QString>& characters,
+                      const QHash<QString, QString>& flags,
+                      const QHash<QString, QString>& variables, const QStringList& backgrounds,
+                      const QStringList& music, const QStringList& voices) {
   QList<NMScriptEditor::CompletionEntry> entries;
 
-  auto addEntry = [&entries](const QString &text, const QString &detail) {
+  auto addEntry = [&entries](const QString& text, const QString& detail) {
     NMScriptEditor::CompletionEntry entry;
     entry.text = text;
     entry.detail = detail;
@@ -344,7 +320,7 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   switch (context) {
   case CompletionContext::AfterSay:
     // Suggest character names
-    for (const auto &name : characters.keys()) {
+    for (const auto& name : characters.keys()) {
       addEntry(name, "character");
     }
     addEntry("Narrator", "narrator");
@@ -353,7 +329,7 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   case CompletionContext::AfterGoto:
   case CompletionContext::AfterScene:
     // Suggest scene names
-    for (const auto &name : scenes.keys()) {
+    for (const auto& name : scenes.keys()) {
       addEntry(name, "scene");
     }
     break;
@@ -361,17 +337,17 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   case CompletionContext::AfterShow:
     // Suggest backgrounds and characters
     addEntry("background", "keyword");
-    for (const auto &name : characters.keys()) {
+    for (const auto& name : characters.keys()) {
       addEntry(name, "character");
     }
-    for (const auto &bg : backgrounds) {
+    for (const auto& bg : backgrounds) {
       addEntry(bg, "background");
     }
     break;
 
   case CompletionContext::AfterHide:
     // Suggest characters
-    for (const auto &name : characters.keys()) {
+    for (const auto& name : characters.keys()) {
       addEntry(name, "character");
     }
     break;
@@ -392,10 +368,10 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   case CompletionContext::AfterSet:
     // Suggest existing variables and flags
     addEntry("flag", "keyword");
-    for (const auto &name : variables.keys()) {
+    for (const auto& name : variables.keys()) {
       addEntry(name, "variable");
     }
-    for (const auto &name : flags.keys()) {
+    for (const auto& name : flags.keys()) {
       addEntry(name, "flag");
     }
     break;
@@ -404,10 +380,10 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
     // Suggest flags and variables for conditions
     addEntry("flag", "keyword");
     addEntry("not", "keyword");
-    for (const auto &name : flags.keys()) {
+    for (const auto& name : flags.keys()) {
       addEntry(name, "flag");
     }
-    for (const auto &name : variables.keys()) {
+    for (const auto& name : variables.keys()) {
       addEntry(name, "variable");
     }
     break;
@@ -432,20 +408,20 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   case CompletionContext::AfterChoice:
     // Inside choice - suggest arrow syntax
     addEntry("->", "operator");
-    for (const auto &name : scenes.keys()) {
+    for (const auto& name : scenes.keys()) {
       addEntry(name, "scene");
     }
     break;
 
   case CompletionContext::InString:
     // Suggest asset paths
-    for (const auto &bg : backgrounds) {
+    for (const auto& bg : backgrounds) {
       addEntry(bg, "background");
     }
-    for (const auto &m : music) {
+    for (const auto& m : music) {
       addEntry(m, "music");
     }
-    for (const auto &v : voices) {
+    for (const auto& v : voices) {
       addEntry(v, "voice");
     }
     break;
@@ -463,11 +439,11 @@ QList<NMScriptEditor::CompletionEntry> getContextCompletions(
   return entries;
 }
 
-QHash<int, QList<QuickFix>>
-generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
+QHash<int, QList<QuickFix>> generateQuickFixes(const QList<NMScriptIssue>& issues,
+                                               const QString& source) {
   QHash<int, QList<QuickFix>> fixes;
 
-  for (const auto &issue : issues) {
+  for (const auto& issue : issues) {
     QList<QuickFix> lineFixes;
 
     // Check for common error patterns and suggest fixes
@@ -479,8 +455,8 @@ generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
       QRegularExpressionMatch match = re.match(msg);
       if (match.hasMatch()) {
         const QString sceneName = match.captured(1);
-        lineFixes.append({QString("Create scene '%1'").arg(sceneName),
-                          "Add a new scene definition", issue.line, 0,
+        lineFixes.append({QString("Create scene '%1'").arg(sceneName), "Add a new scene definition",
+                          issue.line, 0,
                           QString("scene %1 {\n  say Narrator \"New "
                                   "scene\"\n}\n\n")
                               .arg(sceneName),
@@ -489,53 +465,43 @@ generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
     }
 
     // Unknown character
-    if (msg.contains("unknown character") ||
-        msg.contains("undefined character")) {
+    if (msg.contains("unknown character") || msg.contains("undefined character")) {
       QRegularExpression re("character\\s+([A-Za-z_][A-Za-z0-9_]*)");
       QRegularExpressionMatch match = re.match(msg);
       if (match.hasMatch()) {
         const QString charName = match.captured(1);
-        lineFixes.append(
-            {QString("Declare character '%1'").arg(charName),
-             "Add a character declaration at the start", 1, 0,
-             QString("character %1(name=\"%1\", color=\"#4A9FD9\")\n\n")
-                 .arg(charName),
-             0});
+        lineFixes.append({QString("Declare character '%1'").arg(charName),
+                          "Add a character declaration at the start", 1, 0,
+                          QString("character %1(name=\"%1\", color=\"#4A9FD9\")\n\n").arg(charName),
+                          0});
       }
     }
 
     // Missing closing brace
     if (msg.contains("expected '}'") || msg.contains("missing '}'")) {
-      lineFixes.append(
-          {"Add missing '}'", "Insert closing brace", issue.line, 0, "}\n", 0});
+      lineFixes.append({"Add missing '}'", "Insert closing brace", issue.line, 0, "}\n", 0});
     }
 
     // Missing opening brace
     if (msg.contains("expected '{'") || msg.contains("missing '{'")) {
-      lineFixes.append({"Add missing '{'", "Insert opening brace", issue.line,
-                        0, " {\n", 0});
+      lineFixes.append({"Add missing '{'", "Insert opening brace", issue.line, 0, " {\n", 0});
     }
 
     // Missing quotes
     if (msg.contains("expected '\"'") || msg.contains("unterminated string")) {
-      lineFixes.append(
-          {"Close string", "Add closing quote", issue.line, 0, "\"", 0});
+      lineFixes.append({"Close string", "Add closing quote", issue.line, 0, "\"", 0});
     }
 
     // Typo suggestions (common misspellings)
     const QHash<QString, QString> typoFixes = {
-        {"scnee", "scene"},          {"charater", "character"},
-        {"choise", "choice"},        {"backgorund", "background"},
-        {"trasition", "transition"}, {"disolve", "dissolve"},
-        {"centter", "center"},       {"rigth", "right"}};
+        {"scnee", "scene"},           {"charater", "character"},   {"choise", "choice"},
+        {"backgorund", "background"}, {"trasition", "transition"}, {"disolve", "dissolve"},
+        {"centter", "center"},        {"rigth", "right"}};
 
     for (auto it = typoFixes.constBegin(); it != typoFixes.constEnd(); ++it) {
-      if (msg.contains(it.key()) ||
-          source.mid(0, 200).contains(it.key(), Qt::CaseInsensitive)) {
-        lineFixes.append(
-            {QString("Replace '%1' with '%2'").arg(it.key(), it.value()),
-             "Fix typo", issue.line, 0, it.value(),
-             static_cast<int>(it.key().length())});
+      if (msg.contains(it.key()) || source.mid(0, 200).contains(it.key(), Qt::CaseInsensitive)) {
+        lineFixes.append({QString("Replace '%1' with '%2'").arg(it.key(), it.value()), "Fix typo",
+                          issue.line, 0, it.value(), static_cast<int>(it.key().length())});
       }
     }
 
@@ -547,7 +513,7 @@ generateQuickFixes(const QList<NMScriptIssue> &issues, const QString &source) {
   return fixes;
 }
 
-QString getSyntaxHintForKeyword(const QString &keyword) {
+QString getSyntaxHintForKeyword(const QString& keyword) {
   static const QHash<QString, QString> hints = {
       {"scene", "scene <name> { <statements> }"},
       {"character", "character <id>(name=\"Name\", color=\"#RRGGBB\")"},

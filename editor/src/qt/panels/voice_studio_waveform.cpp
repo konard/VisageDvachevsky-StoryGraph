@@ -37,13 +37,13 @@ constexpr float MAX_DB = 0.0f;
 // WaveformWidget
 // ============================================================================
 
-WaveformWidget::WaveformWidget(QWidget *parent) : QWidget(parent) {
+WaveformWidget::WaveformWidget(QWidget* parent) : QWidget(parent) {
   setMinimumSize(400, 120);
   setMouseTracking(true);
   setFocusPolicy(Qt::StrongFocus);
 }
 
-void WaveformWidget::setClip(const VoiceClip *clip) {
+void WaveformWidget::setClip(const VoiceClip* clip) {
   m_clip = clip;
   if (m_clip) {
     updatePeakCache();
@@ -76,9 +76,13 @@ void WaveformWidget::setZoom(double samplesPerPixel) {
   update();
 }
 
-void WaveformWidget::zoomIn() { setZoom(m_samplesPerPixel * 0.5); }
+void WaveformWidget::zoomIn() {
+  setZoom(m_samplesPerPixel * 0.5);
+}
 
-void WaveformWidget::zoomOut() { setZoom(m_samplesPerPixel * 2.0); }
+void WaveformWidget::zoomOut() {
+  setZoom(m_samplesPerPixel * 2.0);
+}
 
 void WaveformWidget::zoomToFit() {
   if (!m_clip || m_clip->samples.empty()) {
@@ -96,7 +100,7 @@ void WaveformWidget::setScrollPosition(double seconds) {
   update();
 }
 
-void WaveformWidget::paintEvent(QPaintEvent *) {
+void WaveformWidget::paintEvent(QPaintEvent*) {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
 
@@ -110,8 +114,7 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   if (!m_clip || m_clip->samples.empty()) {
     // Draw placeholder text
     painter.setPen(Qt::gray);
-    painter.drawText(rect(), Qt::AlignCenter,
-                     tr("No audio loaded. Open a file or record."));
+    painter.drawText(rect(), Qt::AlignCenter, tr("No audio loaded. Open a file or record."));
     return;
   }
 
@@ -138,10 +141,8 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   const double scrollSamples = m_scrollPos * sampleRate;
 
   for (int x = 0; x < w; ++x) {
-    int64_t startSample =
-        static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
-    int64_t endSample =
-        static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
+    int64_t startSample = static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
+    int64_t endSample = static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
 
     if (startSample < 0)
       startSample = 0;
@@ -169,8 +170,7 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
 
   // Draw trim markers (if trimming is active)
   if (m_clip->edit.trimStartSamples > 0) {
-    double trimStartSec =
-        static_cast<double>(m_clip->edit.trimStartSamples) / sampleRate;
+    double trimStartSec = static_cast<double>(m_clip->edit.trimStartSamples) / sampleRate;
     int x = static_cast<int>(timeToX(trimStartSec));
     painter.setPen(QPen(TRIM_MARKER_COLOR, 2));
     painter.drawLine(x, 0, x, h);
@@ -185,8 +185,7 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   if (m_clip->edit.trimEndSamples > 0) {
     double clipDuration = m_clip->getDurationSeconds();
     double trimEndSec =
-        clipDuration -
-        static_cast<double>(m_clip->edit.trimEndSamples) / sampleRate;
+        clipDuration - static_cast<double>(m_clip->edit.trimEndSamples) / sampleRate;
     int x = static_cast<int>(timeToX(trimEndSec));
     painter.setPen(QPen(TRIM_MARKER_COLOR, 2));
     painter.drawLine(x, 0, x, h);
@@ -205,8 +204,7 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
 
     // Draw triangle at top
     QPolygon triangle;
-    triangle << QPoint(playheadX - 6, 0) << QPoint(playheadX + 6, 0)
-             << QPoint(playheadX, 10);
+    triangle << QPoint(playheadX - 6, 0) << QPoint(playheadX + 6, 0) << QPoint(playheadX, 10);
     painter.setBrush(PLAYHEAD_COLOR);
     painter.drawPolygon(triangle);
   }
@@ -217,7 +215,7 @@ void WaveformWidget::paintEvent(QPaintEvent *) {
   painter.drawRect(0, 0, w - 1, h - 1);
 }
 
-void WaveformWidget::mousePressEvent(QMouseEvent *event) {
+void WaveformWidget::mousePressEvent(QMouseEvent* event) {
   if (!m_clip)
     return;
 
@@ -247,7 +245,7 @@ void WaveformWidget::mousePressEvent(QMouseEvent *event) {
   update();
 }
 
-void WaveformWidget::mouseMoveEvent(QMouseEvent *event) {
+void WaveformWidget::mouseMoveEvent(QMouseEvent* event) {
   if (!m_clip)
     return;
 
@@ -267,14 +265,14 @@ void WaveformWidget::mouseMoveEvent(QMouseEvent *event) {
   }
 }
 
-void WaveformWidget::mouseReleaseEvent(QMouseEvent *event) {
+void WaveformWidget::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_isSelecting = false;
     m_isDragging = false;
   }
 }
 
-void WaveformWidget::wheelEvent(QWheelEvent *event) {
+void WaveformWidget::wheelEvent(QWheelEvent* event) {
   if (event->modifiers() & Qt::ControlModifier) {
     // Zoom with Ctrl+Wheel
     if (event->angleDelta().y() > 0) {
@@ -290,7 +288,9 @@ void WaveformWidget::wheelEvent(QWheelEvent *event) {
   event->accept();
 }
 
-void WaveformWidget::resizeEvent(QResizeEvent *) { updatePeakCache(); }
+void WaveformWidget::resizeEvent(QResizeEvent*) {
+  updatePeakCache();
+}
 
 double WaveformWidget::timeToX(double seconds) const {
   if (!m_clip || m_clip->format.sampleRate == 0)
@@ -321,10 +321,8 @@ void WaveformWidget::updatePeakCache() {
   const double scrollSamples = m_scrollPos * sampleRate;
 
   for (int x = 0; x < w; ++x) {
-    int64_t startSample =
-        static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
-    int64_t endSample =
-        static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
+    int64_t startSample = static_cast<int64_t>(scrollSamples + x * m_samplesPerPixel);
+    int64_t endSample = static_cast<int64_t>(scrollSamples + (x + 1) * m_samplesPerPixel);
 
     if (startSample < 0)
       startSample = 0;
@@ -349,7 +347,7 @@ void WaveformWidget::updatePeakCache() {
 // StudioVUMeterWidget
 // ============================================================================
 
-StudioVUMeterWidget::StudioVUMeterWidget(QWidget *parent) : QWidget(parent) {
+StudioVUMeterWidget::StudioVUMeterWidget(QWidget* parent) : QWidget(parent) {
   setMinimumSize(180, 24);
   setMaximumHeight(30);
 }
@@ -368,7 +366,7 @@ void StudioVUMeterWidget::reset() {
   update();
 }
 
-void StudioVUMeterWidget::paintEvent(QPaintEvent *) {
+void StudioVUMeterWidget::paintEvent(QPaintEvent*) {
   QPainter painter(this);
   painter.setRenderHint(QPainter::Antialiasing);
 

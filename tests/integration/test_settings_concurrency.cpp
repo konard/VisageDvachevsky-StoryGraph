@@ -148,7 +148,8 @@ TEST_CASE("NMSettingsRegistry - Concurrent read/write", "[settings_registry][con
   CHECK(readCount > 0); // At least some reads should have succeeded
 }
 
-TEST_CASE("NMSettingsRegistry - Concurrent callback registration", "[settings_registry][concurrency]") {
+TEST_CASE("NMSettingsRegistry - Concurrent callback registration",
+          "[settings_registry][concurrency]") {
   NMSettingsRegistry registry;
 
   SettingDefinition def;
@@ -166,10 +167,9 @@ TEST_CASE("NMSettingsRegistry - Concurrent callback registration", "[settings_re
   std::vector<std::thread> threads;
   for (int i = 0; i < 5; ++i) {
     threads.emplace_back([&registry, &callbackCount]() {
-      registry.registerChangeCallback("test.callback_value",
-        [&callbackCount](const std::string&, const SettingValue&) {
-          callbackCount++;
-        });
+      registry.registerChangeCallback(
+          "test.callback_value",
+          [&callbackCount](const std::string&, const SettingValue&) { callbackCount++; });
     });
   }
 
@@ -199,9 +199,7 @@ TEST_CASE("HotkeyManager - Concurrent action registration", "[hotkey_manager][co
       action.defaultBinding = {static_cast<i32>('A' + i), KeyModifier::Ctrl};
       action.currentBinding = action.defaultBinding;
 
-      manager.registerAction(action, [&registeredCount]() {
-        registeredCount++;
-      });
+      manager.registerAction(action, [&registeredCount]() { registeredCount++; });
     });
   }
 
@@ -240,7 +238,8 @@ TEST_CASE("ThemeManager - Concurrent theme registration", "[theme_manager][concu
   CHECK(themes.size() >= 10); // At least our 10 themes (may have built-in themes too)
 }
 
-TEST_CASE("PreferencesManager - Concurrent recent project updates", "[preferences_manager][concurrency]") {
+TEST_CASE("PreferencesManager - Concurrent recent project updates",
+          "[preferences_manager][concurrency]") {
   PreferencesManager manager;
 
   std::vector<std::thread> threads;

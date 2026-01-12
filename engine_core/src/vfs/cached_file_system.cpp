@@ -2,18 +2,17 @@
 
 namespace NovelMind::vfs {
 
-CachedFileSystem::CachedFileSystem(std::unique_ptr<IVirtualFileSystem> inner,
-                                   usize maxBytes)
+CachedFileSystem::CachedFileSystem(std::unique_ptr<IVirtualFileSystem> inner, usize maxBytes)
     : m_maxBytes(maxBytes), m_inner(std::move(inner)) {}
 
-Result<void> CachedFileSystem::mount(const std::string &packPath) {
+Result<void> CachedFileSystem::mount(const std::string& packPath) {
   if (m_inner) {
     return m_inner->mount(packPath);
   }
   return Result<void>::error("CachedFileSystem has no inner FS");
 }
 
-void CachedFileSystem::unmount(const std::string &packPath) {
+void CachedFileSystem::unmount(const std::string& packPath) {
   if (m_inner) {
     m_inner->unmount(packPath);
   }
@@ -27,8 +26,7 @@ void CachedFileSystem::unmountAll() {
   clearCache();
 }
 
-Result<std::vector<u8>>
-CachedFileSystem::readFile(const std::string &resourceId) const {
+Result<std::vector<u8>> CachedFileSystem::readFile(const std::string& resourceId) const {
   auto it = m_cache.find(resourceId);
   if (it != m_cache.end()) {
     touch(resourceId);
@@ -56,23 +54,21 @@ CachedFileSystem::readFile(const std::string &resourceId) const {
   return Result<std::vector<u8>>::ok(std::move(entry.data));
 }
 
-bool CachedFileSystem::exists(const std::string &resourceId) const {
+bool CachedFileSystem::exists(const std::string& resourceId) const {
   if (m_cache.find(resourceId) != m_cache.end()) {
     return true;
   }
   return m_inner ? m_inner->exists(resourceId) : false;
 }
 
-std::optional<ResourceInfo>
-CachedFileSystem::getInfo(const std::string &resourceId) const {
+std::optional<ResourceInfo> CachedFileSystem::getInfo(const std::string& resourceId) const {
   if (m_inner) {
     return m_inner->getInfo(resourceId);
   }
   return std::nullopt;
 }
 
-std::vector<std::string>
-CachedFileSystem::listResources(ResourceType type) const {
+std::vector<std::string> CachedFileSystem::listResources(ResourceType type) const {
   if (m_inner) {
     return m_inner->listResources(type);
   }
@@ -90,7 +86,7 @@ void CachedFileSystem::clearCache() {
   m_currentBytes = 0;
 }
 
-void CachedFileSystem::touch(const std::string &resourceId) const {
+void CachedFileSystem::touch(const std::string& resourceId) const {
   auto it = m_cache.find(resourceId);
   if (it == m_cache.end()) {
     return;
@@ -106,7 +102,7 @@ void CachedFileSystem::evictIfNeeded() const {
     return;
   }
   while (m_currentBytes > m_maxBytes && !m_lru.empty()) {
-    const std::string &key = m_lru.back();
+    const std::string& key = m_lru.back();
     auto it = m_cache.find(key);
     if (it != m_cache.end()) {
       m_currentBytes -= it->second.first.size;

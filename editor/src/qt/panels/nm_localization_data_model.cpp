@@ -51,8 +51,8 @@ void NMLocalizationDataModel::syncFromManager(const QString& defaultLocale,
     }
 
     // Check if missing translation for current locale
-    entry.isMissing =
-        !entry.translations.contains(currentLocale) || entry.translations.value(currentLocale).isEmpty();
+    entry.isMissing = !entry.translations.contains(currentLocale) ||
+                      entry.translations.value(currentLocale).isEmpty();
 
     m_entries[entry.key] = entry;
   }
@@ -81,10 +81,12 @@ void NMLocalizationDataModel::syncToManager(const QString& defaultLocale,
     const std::string id = entry.key.toStdString();
 
     if (entry.translations.contains(defaultLocale)) {
-      m_localization.setString(defaultLoc, id, entry.translations.value(defaultLocale).toStdString());
+      m_localization.setString(defaultLoc, id,
+                               entry.translations.value(defaultLocale).toStdString());
     }
     if (entry.translations.contains(currentLocale)) {
-      m_localization.setString(currentLoc, id, entry.translations.value(currentLocale).toStdString());
+      m_localization.setString(currentLoc, id,
+                               entry.translations.value(currentLocale).toStdString());
     }
   }
 }

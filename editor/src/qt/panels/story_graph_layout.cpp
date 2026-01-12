@@ -22,20 +22,18 @@ namespace NovelMind::editor::qt::layout {
  * 3. Proper coordinate assignment with all nodes in positive space
  * 4. Orphaned nodes placed in a separate region
  */
-void applyAutoLayout(NMStoryGraphScene *scene,
-                     const QList<NMGraphNodeItem *> &nodes,
-                     const QList<NMGraphConnectionItem *> &connections) {
+void applyAutoLayout(NMStoryGraphScene* scene, const QList<NMGraphNodeItem*>& nodes,
+                     const QList<NMGraphConnectionItem*>& connections) {
   if (!scene || nodes.isEmpty()) {
     return;
   }
 
   // Layout constants - can be made configurable in the future
-  const qreal horizontalSpacing = 280.0; // Increased for better readability
-  const qreal verticalSpacing = 160.0;   // Increased for better readability
-  const qreal startX = 100.0;            // Left margin
-  const qreal startY = 100.0;            // Top margin
-  [[maybe_unused]] const qreal orphanAreaGap =
-      100.0; // Gap before orphan section
+  const qreal horizontalSpacing = 280.0;              // Increased for better readability
+  const qreal verticalSpacing = 160.0;                // Increased for better readability
+  const qreal startX = 100.0;                         // Left margin
+  const qreal startY = 100.0;                         // Top margin
+  [[maybe_unused]] const qreal orphanAreaGap = 100.0; // Gap before orphan section
 
   // Build adjacency lists (forward and reverse)
   QHash<uint64_t, QList<uint64_t>> successors;   // node -> children
@@ -44,14 +42,14 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   QHash<uint64_t, int> outDegree;
   QSet<uint64_t> entryNodeSet;
 
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     successors[node->nodeId()] = QList<uint64_t>();
     predecessors[node->nodeId()] = QList<uint64_t>();
     inDegree[node->nodeId()] = 0;
     outDegree[node->nodeId()] = 0;
   }
 
-  for (auto *conn : connections) {
+  for (auto* conn : connections) {
     uint64_t fromId = conn->startNode()->nodeId();
     uint64_t toId = conn->endNode()->nodeId();
     successors[fromId].append(toId);
@@ -63,7 +61,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   // ===== STEP 1: Find entry nodes (sources) =====
   // Entry nodes are either marked as entry or have no incoming edges
   QList<uint64_t> entryNodes;
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     if (inDegree[node->nodeId()] == 0 || node->isEntry()) {
       entryNodes.append(node->nodeId());
       entryNodeSet.insert(node->nodeId());
@@ -71,7 +69,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   }
 
   // Then add nodes with no incoming edges (sources)
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (inDegree[id] == 0 && !entryNodeSet.contains(id)) {
       entryNodes.append(id);
@@ -92,7 +90,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   QQueue<uint64_t> zeroInDegreeQueue;
 
   // Initialize queue with sources
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     if (tempInDegree[node->nodeId()] == 0) {
       zeroInDegreeQueue.enqueue(node->nodeId());
       nodeLayers[node->nodeId()] = 0;
@@ -121,7 +119,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
 
   // Handle cycles: nodes not in topo order are part of cycles
   // Place them based on their connections to already-placed nodes
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (!visited.contains(id)) {
       // Find the minimum layer of any successor that's already placed
@@ -160,7 +158,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   QList<uint64_t> orphanedNodes;
   QSet<uint64_t> connectedNodes;
 
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     uint64_t id = node->nodeId();
     if (inDegree[id] == 0 && outDegree[id] == 0) {
       orphanedNodes.append(id);
@@ -185,18 +183,17 @@ void applyAutoLayout(NMStoryGraphScene *scene,
 
   // First, order the first layer: put entry nodes first, then by out-degree
   if (layerNodes.contains(0)) {
-    QList<uint64_t> &layer0 = layerNodes[0];
-    std::sort(layer0.begin(), layer0.end(),
-              [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
-                // Entry nodes come first
-                bool aIsEntry = entryNodeSet.contains(a);
-                bool bIsEntry = entryNodeSet.contains(b);
-                if (aIsEntry != bIsEntry) {
-                  return aIsEntry;
-                }
-                // Then sort by out-degree (more connections = more central)
-                return outDegree[a] > outDegree[b];
-              });
+    QList<uint64_t>& layer0 = layerNodes[0];
+    std::sort(layer0.begin(), layer0.end(), [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
+      // Entry nodes come first
+      bool aIsEntry = entryNodeSet.contains(a);
+      bool bIsEntry = entryNodeSet.contains(b);
+      if (aIsEntry != bIsEntry) {
+        return aIsEntry;
+      }
+      // Then sort by out-degree (more connections = more central)
+      return outDegree[a] > outDegree[b];
+    });
   }
 
   // Apply barycenter heuristic for subsequent layers
@@ -209,7 +206,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
         continue;
       }
 
-      QList<uint64_t> &currentLayer = layerNodes[layer];
+      QList<uint64_t>& currentLayer = layerNodes[layer];
       QHash<uint64_t, qreal> barycenter;
 
       // Calculate barycenter for each node based on predecessor positions
@@ -218,11 +215,9 @@ void applyAutoLayout(NMStoryGraphScene *scene,
         int count = 0;
 
         for (uint64_t predId : predecessors[nodeId]) {
-          if (nodeLayers.contains(predId) &&
-              nodeLayers[predId] == layer - 1 &&
+          if (nodeLayers.contains(predId) && nodeLayers[predId] == layer - 1 &&
               layerNodes.contains(layer - 1)) {
-            int predIndex =
-                static_cast<int>(layerNodes[layer - 1].indexOf(predId));
+            int predIndex = static_cast<int>(layerNodes[layer - 1].indexOf(predId));
             if (predIndex >= 0) {
               sum += predIndex;
               ++count;
@@ -234,16 +229,13 @@ void applyAutoLayout(NMStoryGraphScene *scene,
           barycenter[nodeId] = sum / count;
         } else {
           // No predecessors in previous layer, keep original position
-          barycenter[nodeId] =
-              static_cast<qreal>(currentLayer.indexOf(nodeId));
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
       // Sort by barycenter
       std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
     }
 
     // Backward sweep (maxLayer-1 down to 0)
@@ -252,7 +244,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
         continue;
       }
 
-      QList<uint64_t> &currentLayer = layerNodes[layer];
+      QList<uint64_t>& currentLayer = layerNodes[layer];
       QHash<uint64_t, qreal> barycenter;
 
       // Calculate barycenter for each node based on successor positions
@@ -261,11 +253,9 @@ void applyAutoLayout(NMStoryGraphScene *scene,
         int count = 0;
 
         for (uint64_t succId : successors[nodeId]) {
-          if (nodeLayers.contains(succId) &&
-              nodeLayers[succId] == layer + 1 &&
+          if (nodeLayers.contains(succId) && nodeLayers[succId] == layer + 1 &&
               layerNodes.contains(layer + 1)) {
-            int succIndex =
-                static_cast<int>(layerNodes[layer + 1].indexOf(succId));
+            int succIndex = static_cast<int>(layerNodes[layer + 1].indexOf(succId));
             if (succIndex >= 0) {
               sum += succIndex;
               ++count;
@@ -277,20 +267,17 @@ void applyAutoLayout(NMStoryGraphScene *scene,
           barycenter[nodeId] = sum / count;
         } else {
           // No successors in next layer, keep original position
-          barycenter[nodeId] =
-              static_cast<qreal>(currentLayer.indexOf(nodeId));
+          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
         }
       }
 
       // Sort by barycenter
       std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
+                [&barycenter](uint64_t a, uint64_t b) { return barycenter[a] < barycenter[b]; });
     }
   }
 
-  for (auto *node : nodes) {
+  for (auto* node : nodes) {
     if (!visited.contains(node->nodeId())) {
       maxLayer++;
       nodeLayers[node->nodeId()] = maxLayer;
@@ -300,15 +287,14 @@ void applyAutoLayout(NMStoryGraphScene *scene,
 
   // Position nodes
   for (int layer : layerNodes.keys()) {
-    const auto &nodesInLayer = layerNodes[layer];
+    const auto& nodesInLayer = layerNodes[layer];
     qreal y = startY + layer * verticalSpacing;
-    qreal totalWidth =
-        static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
+    qreal totalWidth = static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
     qreal x = startX - totalWidth / 2.0;
 
     for (int i = 0; i < nodesInLayer.size(); ++i) {
       uint64_t nodeId = nodesInLayer[i];
-      auto *node = scene->findNode(nodeId);
+      auto* node = scene->findNode(nodeId);
       if (node) {
         node->setPos(x + i * horizontalSpacing, y);
       }
@@ -316,7 +302,7 @@ void applyAutoLayout(NMStoryGraphScene *scene,
   }
 
   // Update all connection paths
-  for (auto *conn : connections) {
+  for (auto* conn : connections) {
     conn->updatePath();
   }
 }

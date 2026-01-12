@@ -46,10 +46,10 @@ struct SecurityViolation {
 class VMSecurityGuard {
 public:
   VMSecurityGuard() = default;
-  explicit VMSecurityGuard(const VMSecurityLimits &limits);
+  explicit VMSecurityGuard(const VMSecurityLimits& limits);
 
-  void setLimits(const VMSecurityLimits &limits) { m_limits = limits; }
-  [[nodiscard]] const VMSecurityLimits &limits() const { return m_limits; }
+  void setLimits(const VMSecurityLimits& limits) { m_limits = limits; }
+  [[nodiscard]] const VMSecurityLimits& limits() const { return m_limits; }
 
   void reset();
 
@@ -59,30 +59,26 @@ public:
   bool checkStringLength(usize length);
   bool checkVariableCount(usize count);
   bool checkLoopIteration(u32 loopId);
-  bool checkNativeCall(const std::string &functionName);
+  bool checkNativeCall(const std::string& functionName);
 
   void registerLoopEntry(u32 loopId);
   void registerLoopExit(u32 loopId);
 
-  void addAllowedNativeFunction(const std::string &name);
-  void removeAllowedNativeFunction(const std::string &name);
+  void addAllowedNativeFunction(const std::string& name);
+  void removeAllowedNativeFunction(const std::string& name);
   void clearAllowedNativeFunctions();
 
   [[nodiscard]] bool hasViolation() const { return !m_violations.empty(); }
-  [[nodiscard]] const std::vector<SecurityViolation> &violations() const {
-    return m_violations;
-  }
-  [[nodiscard]] const SecurityViolation *lastViolation() const;
+  [[nodiscard]] const std::vector<SecurityViolation>& violations() const { return m_violations; }
+  [[nodiscard]] const SecurityViolation* lastViolation() const;
 
   void clearViolations() { m_violations.clear(); }
 
-  using ViolationCallback = std::function<void(const SecurityViolation &)>;
-  void setViolationCallback(ViolationCallback callback) {
-    m_callback = std::move(callback);
-  }
+  using ViolationCallback = std::function<void(const SecurityViolation&)>;
+  void setViolationCallback(ViolationCallback callback) { m_callback = std::move(callback); }
 
 private:
-  void recordViolation(SecurityViolationType type, const std::string &message);
+  void recordViolation(SecurityViolationType type, const std::string& message);
 
   VMSecurityLimits m_limits;
   std::vector<SecurityViolation> m_violations;
@@ -99,11 +95,11 @@ class VMSandbox {
 public:
   VMSandbox() = default;
 
-  void setSecurityGuard(VMSecurityGuard *guard) { m_guard = guard; }
-  [[nodiscard]] VMSecurityGuard *securityGuard() const { return m_guard; }
+  void setSecurityGuard(VMSecurityGuard* guard) { m_guard = guard; }
+  [[nodiscard]] VMSecurityGuard* securityGuard() const { return m_guard; }
 
-  void setAllowedResourcePaths(const std::vector<std::string> &paths);
-  [[nodiscard]] bool isResourcePathAllowed(const std::string &path) const;
+  void setAllowedResourcePaths(const std::vector<std::string>& paths);
+  [[nodiscard]] bool isResourcePathAllowed(const std::string& path) const;
 
   void setMaxMemoryUsage(usize bytes) { m_maxMemory = bytes; }
   [[nodiscard]] usize maxMemoryUsage() const { return m_maxMemory; }
@@ -113,7 +109,7 @@ public:
   [[nodiscard]] usize currentMemoryUsage() const { return m_currentMemory; }
 
 private:
-  VMSecurityGuard *m_guard = nullptr;
+  VMSecurityGuard* m_guard = nullptr;
   std::vector<std::string> m_allowedResourcePaths;
   usize m_maxMemory = 64 * 1024 * 1024;
   usize m_currentMemory = 0;

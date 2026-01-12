@@ -22,14 +22,14 @@ namespace node_factory {
  * @param panel The story graph panel
  * @param nodeId The clicked node ID
  */
-void handleNodeClick(NMStoryGraphPanel *panel, uint64_t nodeId);
+void handleNodeClick(NMStoryGraphPanel* panel, uint64_t nodeId);
 
 /**
  * @brief Handle node double-click event
  * @param panel The story graph panel
  * @param nodeId The double-clicked node ID
  */
-void handleNodeDoubleClick(NMStoryGraphPanel *panel, uint64_t nodeId);
+void handleNodeDoubleClick(NMStoryGraphPanel* panel, uint64_t nodeId);
 
 /**
  * @brief Handle node added event
@@ -38,15 +38,15 @@ void handleNodeDoubleClick(NMStoryGraphPanel *panel, uint64_t nodeId);
  * @param nodeIdString The new node ID string
  * @param nodeType The node type
  */
-void handleNodeAdded(NMStoryGraphPanel *panel, uint64_t nodeId,
-                     const QString &nodeIdString, const QString &nodeType);
+void handleNodeAdded(NMStoryGraphPanel* panel, uint64_t nodeId, const QString& nodeIdString,
+                     const QString& nodeType);
 
 /**
  * @brief Handle node deleted event
  * @param panel The story graph panel
  * @param nodeId The deleted node ID
  */
-void handleNodeDeleted(NMStoryGraphPanel *panel, uint64_t nodeId);
+void handleNodeDeleted(NMStoryGraphPanel* panel, uint64_t nodeId);
 
 } // namespace node_factory
 } // namespace NovelMind::editor::qt

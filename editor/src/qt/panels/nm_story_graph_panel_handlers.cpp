@@ -39,8 +39,7 @@ void NMStoryGraphPanel::onZoomReset() {
 
 void NMStoryGraphPanel::onFitToGraph() {
   if (m_view && m_scene && !m_scene->items().isEmpty()) {
-    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50),
-                      Qt::KeepAspectRatio);
+    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50), Qt::KeepAspectRatio);
   }
 }
 
@@ -49,7 +48,7 @@ void NMStoryGraphPanel::onAutoLayout() {
     return;
   }
 
-  const auto &nodes = m_scene->nodes();
+  const auto& nodes = m_scene->nodes();
   if (nodes.isEmpty()) {
     return;
   }
@@ -75,11 +74,13 @@ void NMStoryGraphPanel::onAutoLayout() {
   }
 }
 
-void NMStoryGraphPanel::onCurrentNodeChanged(const QString &nodeId) {
+void NMStoryGraphPanel::onCurrentNodeChanged(const QString& nodeId) {
   updateCurrentNode(nodeId);
 }
 
-void NMStoryGraphPanel::onBreakpointsChanged() { updateNodeBreakpoints(); }
+void NMStoryGraphPanel::onBreakpointsChanged() {
+  updateNodeBreakpoints();
+}
 
 void NMStoryGraphPanel::onNodeClicked(uint64_t nodeId) {
   m_nodeIdToString.insert(nodeId, findNodeById(nodeId)->nodeIdString());
@@ -90,9 +91,8 @@ void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
   node_factory::handleNodeDoubleClick(this, nodeId);
 }
 
-void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId,
-                                    const QString &nodeIdString,
-                                    const QString &nodeType) {
+void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId, const QString& nodeIdString,
+                                    const QString& nodeType) {
   if (m_isRebuilding) {
     return;
   }
@@ -100,7 +100,7 @@ void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId,
   node_factory::handleNodeAdded(this, nodeId, nodeIdString, nodeType);
 
   // Save layout
-  auto *node = findNodeById(nodeId);
+  auto* node = findNodeById(nodeId);
   if (node) {
     LayoutNode layout = detail::buildLayoutFromNode(node);
     m_layoutNodes.insert(node->nodeIdString(), layout);
@@ -130,8 +130,7 @@ void NMStoryGraphPanel::onNodeDeleted(uint64_t nodeId) {
   }
 }
 
-void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId,
-                                          uint64_t toNodeId) {
+void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId, uint64_t toNodeId) {
   if (m_isRebuilding) {
     return;
   }
@@ -139,7 +138,7 @@ void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId,
   edge_manager::handleConnectionAdded(this, m_scene, fromNodeId, toNodeId);
 
   // Save the updated layout
-  auto *from = findNodeById(fromNodeId);
+  auto* from = findNodeById(fromNodeId);
   if (from && !m_isRebuilding) {
     LayoutNode layout = detail::buildLayoutFromNode(from);
     m_layoutNodes.insert(from->nodeIdString(), layout);
@@ -147,8 +146,7 @@ void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId,
   }
 }
 
-void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
-                                            uint64_t toNodeId) {
+void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId, uint64_t toNodeId) {
   if (m_isRebuilding) {
     return;
   }
@@ -156,7 +154,7 @@ void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
   edge_manager::handleConnectionDeleted(this, m_scene, fromNodeId, toNodeId);
 
   // Save the updated layout
-  auto *from = findNodeById(fromNodeId);
+  auto* from = findNodeById(fromNodeId);
   if (from && !m_isRebuilding) {
     LayoutNode layout = detail::buildLayoutFromNode(from);
     m_layoutNodes.insert(from->nodeIdString(), layout);
@@ -164,14 +162,13 @@ void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
   }
 }
 
-NMGraphNodeItem *
-NMStoryGraphPanel::findNodeByIdString(const QString &id) const {
+NMGraphNodeItem* NMStoryGraphPanel::findNodeByIdString(const QString& id) const {
   if (!m_scene)
     return nullptr;
 
   const auto items = m_scene->items();
-  for (auto *item : items) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : items) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       if (node->nodeIdString() == id) {
         return node;
       }
@@ -180,7 +177,7 @@ NMStoryGraphPanel::findNodeByIdString(const QString &id) const {
   return nullptr;
 }
 
-NMGraphNodeItem *NMStoryGraphPanel::findNodeById(uint64_t nodeId) const {
+NMGraphNodeItem* NMStoryGraphPanel::findNodeById(uint64_t nodeId) const {
   if (!m_scene) {
     return nullptr;
   }
@@ -191,17 +188,17 @@ void NMStoryGraphPanel::updateNodeBreakpoints() {
   if (!m_scene)
     return;
 
-  auto &playController = NMPlayModeController::instance();
+  auto& playController = NMPlayModeController::instance();
   const QSet<QString> breakpoints = playController.breakpoints();
 
   // Update all nodes - make a copy of the list to avoid iterator invalidation
-  QList<QGraphicsItem *> itemsCopy = m_scene->items();
-  for (auto *item : itemsCopy) {
+  QList<QGraphicsItem*> itemsCopy = m_scene->items();
+  for (auto* item : itemsCopy) {
     // Check if item is still valid (not deleted)
     if (!item || !m_scene->items().contains(item))
       continue;
 
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       // Extra safety: ensure node is still in scene
       if (node->scene() != m_scene)
         continue;
@@ -212,32 +209,29 @@ void NMStoryGraphPanel::updateNodeBreakpoints() {
   }
 }
 
-void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
+void NMStoryGraphPanel::updateCurrentNode(const QString& nodeId) {
   if (!m_scene) {
     qWarning() << "[StoryGraph] updateCurrentNode: scene is null!";
     return;
   }
 
-  qDebug() << "[StoryGraph] updateCurrentNode:" << nodeId << "(prev was"
-           << m_currentExecutingNode << ")";
+  qDebug() << "[StoryGraph] updateCurrentNode:" << nodeId << "(prev was" << m_currentExecutingNode
+           << ")";
 
   // Clear previous execution state
   if (!m_currentExecutingNode.isEmpty()) {
-    auto *prevNode = findNodeByIdString(m_currentExecutingNode);
+    auto* prevNode = findNodeByIdString(m_currentExecutingNode);
     if (prevNode) {
       // Double-check that node is still valid and in scene
-      if (prevNode->scene() == m_scene &&
-          m_scene->items().contains(prevNode)) {
-        qDebug() << "[StoryGraph] Clearing execution state on"
-                 << m_currentExecutingNode;
+      if (prevNode->scene() == m_scene && m_scene->items().contains(prevNode)) {
+        qDebug() << "[StoryGraph] Clearing execution state on" << m_currentExecutingNode;
         prevNode->setCurrentlyExecuting(false);
       } else {
         qWarning() << "[StoryGraph] Previous node" << m_currentExecutingNode
                    << "found but no longer valid in scene!";
       }
     } else {
-      qDebug() << "[StoryGraph] Warning: Previous node"
-               << m_currentExecutingNode
+      qDebug() << "[StoryGraph] Warning: Previous node" << m_currentExecutingNode
                << "not found in graph (may have been deleted)";
     }
   }
@@ -245,11 +239,10 @@ void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
   // Set new execution state
   m_currentExecutingNode = nodeId;
   if (!nodeId.isEmpty()) {
-    auto *currentNode = findNodeByIdString(nodeId);
+    auto* currentNode = findNodeByIdString(nodeId);
     if (currentNode) {
       // Double-check that node is still valid and in scene
-      if (currentNode->scene() == m_scene &&
-          m_scene->items().contains(currentNode)) {
+      if (currentNode->scene() == m_scene && m_scene->items().contains(currentNode)) {
         qDebug() << "[StoryGraph] Setting execution state on" << nodeId;
         currentNode->setCurrentlyExecuting(true);
 
@@ -284,7 +277,7 @@ void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
   }
 }
 
-void NMStoryGraphPanel::createNode(const QString &nodeType) {
+void NMStoryGraphPanel::createNode(const QString& nodeType) {
   if (!m_scene || !m_view)
     return;
 
@@ -301,12 +294,11 @@ void NMStoryGraphPanel::createNode(const QString &nodeType) {
       new CreateGraphNodeCommand(m_scene, effectiveType, centerPos));
 }
 
-void NMStoryGraphPanel::onNodeTypeSelected(const QString &nodeType) {
+void NMStoryGraphPanel::onNodeTypeSelected(const QString& nodeType) {
   createNode(nodeType);
 }
 
-void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
-                                            uint64_t toNodeId) {
+void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId, uint64_t toNodeId) {
   if (!m_scene || fromNodeId == 0 || toNodeId == 0 || fromNodeId == toNodeId)
     return;
 
@@ -316,22 +308,19 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
 
   // Check if this connection would create a cycle
   if (m_scene->wouldCreateCycle(fromNodeId, toNodeId)) {
-    auto *fromNode = findNodeById(fromNodeId);
-    auto *toNode = findNodeById(toNodeId);
+    auto* fromNode = findNodeById(fromNodeId);
+    auto* toNode = findNodeById(toNodeId);
 
-    QString fromName =
-        fromNode ? fromNode->title() : QString::number(fromNodeId);
+    QString fromName = fromNode ? fromNode->title() : QString::number(fromNodeId);
     QString toName = toNode ? toNode->title() : QString::number(toNodeId);
 
-    QString message =
-        tr("Cannot create connection: Adding connection from "
-           "'%1' to '%2' would create a cycle in the graph.")
-            .arg(fromName, toName);
+    QString message = tr("Cannot create connection: Adding connection from "
+                         "'%1' to '%2' would create a cycle in the graph.")
+                          .arg(fromName, toName);
 
     // Report to diagnostics system
     ErrorReporter::instance().reportGraphError(
-        message.toStdString(),
-        QString("Connection: %1 -> %2").arg(fromName, toName).toStdString());
+        message.toStdString(), QString("Connection: %1 -> %2").arg(fromName, toName).toStdString());
 
     // Show user feedback
     NMMessageDialog::showWarning(this, tr("Cycle Detected"), message);
@@ -342,14 +331,13 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
       new ConnectGraphNodesCommand(m_scene, fromNodeId, toNodeId));
 }
 
-void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
-                                                const QString &propertyName,
-                                                const QString &newValue) {
-  property_manager::applyNodePropertyChange(this, nodeIdString, propertyName,
-                                            newValue);
+void NMStoryGraphPanel::applyNodePropertyChange(const QString& nodeIdString,
+                                                const QString& propertyName,
+                                                const QString& newValue) {
+  property_manager::applyNodePropertyChange(this, nodeIdString, propertyName, newValue);
 
   if (!m_isRebuilding) {
-    auto *node = findNodeByIdString(nodeIdString);
+    auto* node = findNodeByIdString(nodeIdString);
     if (node) {
       LayoutNode layout = detail::buildLayoutFromNode(node);
       m_layoutNodes.insert(nodeIdString, layout);
@@ -364,11 +352,11 @@ void NMStoryGraphPanel::onDeleteSelected() {
 
   const auto selected = m_scene->selectedItems();
   QSet<uint64_t> nodesToDelete;
-  QList<NMGraphConnectionItem *> connectionsToDelete;
+  QList<NMGraphConnectionItem*> connectionsToDelete;
   QHash<uint64_t, QString> scriptFilesToDelete;
 
-  for (auto *item : selected) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : selected) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       nodesToDelete.insert(node->nodeId());
       const QString scriptPath = detail::resolveScriptPath(node);
       if (!scriptPath.isEmpty()) {
@@ -377,13 +365,13 @@ void NMStoryGraphPanel::onDeleteSelected() {
           scriptFilesToDelete.insert(node->nodeId(), info.absoluteFilePath());
         }
       }
-    } else if (auto *conn = qgraphicsitem_cast<NMGraphConnectionItem *>(item)) {
+    } else if (auto* conn = qgraphicsitem_cast<NMGraphConnectionItem*>(item)) {
       connectionsToDelete.append(conn);
     }
   }
 
   // Delete connections not covered by node deletion
-  for (auto *conn : connectionsToDelete) {
+  for (auto* conn : connectionsToDelete) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
@@ -392,40 +380,36 @@ void NMStoryGraphPanel::onDeleteSelected() {
     if (nodesToDelete.contains(fromId) || nodesToDelete.contains(toId)) {
       continue; // Will be handled by node deletion
     }
-    NMUndoManager::instance().pushCommand(
-        new DisconnectGraphNodesCommand(m_scene, fromId, toId));
+    NMUndoManager::instance().pushCommand(new DisconnectGraphNodesCommand(m_scene, fromId, toId));
   }
 
   for (auto nodeId : nodesToDelete) {
-    NMUndoManager::instance().pushCommand(
-        new DeleteGraphNodeCommand(m_scene, nodeId));
+    NMUndoManager::instance().pushCommand(new DeleteGraphNodeCommand(m_scene, nodeId));
     if (scriptFilesToDelete.contains(nodeId)) {
       QFile::remove(scriptFilesToDelete.value(nodeId));
     }
   }
 }
 
-void NMStoryGraphPanel::onNodesMoved(const QVector<GraphNodeMove> &moves) {
+void NMStoryGraphPanel::onNodesMoved(const QVector<GraphNodeMove>& moves) {
   if (!m_scene || moves.isEmpty()) {
     return;
   }
-  NMUndoManager::instance().pushCommand(
-      new MoveGraphNodesCommand(m_scene, moves));
+  NMUndoManager::instance().pushCommand(new MoveGraphNodesCommand(m_scene, moves));
 
   if (m_isRebuilding) {
     return;
   }
 
-  for (const auto &move : moves) {
-    if (auto *node = findNodeById(move.nodeId)) {
-      m_layoutNodes.insert(node->nodeIdString(),
-                           detail::buildLayoutFromNode(node));
+  for (const auto& move : moves) {
+    if (auto* node = findNodeById(move.nodeId)) {
+      m_layoutNodes.insert(node->nodeIdString(), detail::buildLayoutFromNode(node));
     }
   }
   detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
 }
 
-void NMStoryGraphPanel::onEntryNodeRequested(const QString &nodeIdString) {
+void NMStoryGraphPanel::onEntryNodeRequested(const QString& nodeIdString) {
   if (!m_scene || nodeIdString.isEmpty()) {
     return;
   }
@@ -433,10 +417,9 @@ void NMStoryGraphPanel::onEntryNodeRequested(const QString &nodeIdString) {
   m_layoutEntryScene = nodeIdString;
   ProjectManager::instance().setStartScene(nodeIdString.toStdString());
 
-  for (auto *item : m_scene->items()) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
-      node->setEntry(!m_layoutEntryScene.isEmpty() &&
-                     node->nodeIdString() == m_layoutEntryScene);
+  for (auto* item : m_scene->items()) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+      node->setEntry(!m_layoutEntryScene.isEmpty() && node->nodeIdString() == m_layoutEntryScene);
     }
   }
 
@@ -452,8 +435,8 @@ void NMStoryGraphPanel::onLocalePreviewChanged(int index) {
   emit localePreviewChanged(m_currentPreviewLocale);
 
   // Update dialogue nodes to show translated text or highlight missing
-  for (auto *item : m_scene->items()) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : m_scene->items()) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       if (node->isDialogueNode()) {
         // If source locale is selected, show original text
         if (m_currentPreviewLocale.isEmpty()) {
@@ -481,10 +464,9 @@ void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
 
   if (!m_isRebuilding) {
     // Save layout with new keys
-    for (auto *item : m_scene->items()) {
-      if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
-        m_layoutNodes.insert(node->nodeIdString(),
-                             detail::buildLayoutFromNode(node));
+    for (auto* item : m_scene->items()) {
+      if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+        m_layoutNodes.insert(node->nodeIdString(), detail::buildLayoutFromNode(node));
       }
     }
     detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
@@ -505,18 +487,16 @@ void NMStoryGraphPanel::onSyncScriptToGraph() {
 
   // Update internal state after sync
   if (m_scene) {
-    for (auto *node : m_scene->nodes()) {
+    for (auto* node : m_scene->nodes()) {
       m_nodeIdToString.insert(node->nodeId(), node->nodeIdString());
-      m_layoutNodes.insert(node->nodeIdString(),
-                           detail::buildLayoutFromNode(node));
+      m_layoutNodes.insert(node->nodeIdString(), detail::buildLayoutFromNode(node));
     }
 
     // Find entry scene
-    for (auto *node : m_scene->nodes()) {
+    for (auto* node : m_scene->nodes()) {
       if (node->isEntry()) {
         m_layoutEntryScene = node->nodeIdString();
-        ProjectManager::instance().setStartScene(
-            m_layoutEntryScene.toStdString());
+        ProjectManager::instance().setStartScene(m_layoutEntryScene.toStdString());
         break;
       }
     }
@@ -527,27 +507,25 @@ void NMStoryGraphPanel::onSyncScriptToGraph() {
   m_isRebuilding = false;
 }
 
-void NMStoryGraphPanel::onScriptFileCreationFailed(
-    uint64_t nodeId, const QString &nodeIdString,
-    const QString &errorMessage) {
+void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId, const QString& nodeIdString,
+                                                   const QString& errorMessage) {
   // Show error dialog to notify the user
   const QString title = tr("Script File Creation Failed");
-  const QString message =
-      tr("Failed to create script file for node '%1' (ID: %2).\n\n"
-         "Error: %3\n\n"
-         "Possible causes:\n"
-         "• Insufficient disk space\n"
-         "• Permission denied for the Scripts folder\n"
-         "• Invalid characters in node name\n"
-         "• Directory does not exist\n\n"
-         "The node has been marked with an error indicator. "
-         "You can hover over it to see the error details.")
-          .arg(nodeIdString)
-          .arg(nodeId)
-          .arg(errorMessage);
+  const QString message = tr("Failed to create script file for node '%1' (ID: %2).\n\n"
+                             "Error: %3\n\n"
+                             "Possible causes:\n"
+                             "• Insufficient disk space\n"
+                             "• Permission denied for the Scripts folder\n"
+                             "• Invalid characters in node name\n"
+                             "• Directory does not exist\n\n"
+                             "The node has been marked with an error indicator. "
+                             "You can hover over it to see the error details.")
+                              .arg(nodeIdString)
+                              .arg(nodeId)
+                              .arg(errorMessage);
 
-  qWarning() << "[StoryGraphPanel] Script file creation failed for node"
-             << nodeIdString << ":" << errorMessage;
+  qWarning() << "[StoryGraphPanel] Script file creation failed for node" << nodeIdString << ":"
+             << errorMessage;
 
   NMMessageDialog::showError(this, title, message);
 }

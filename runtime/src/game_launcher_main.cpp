@@ -25,18 +25,15 @@
 
 namespace {
 
-int runGameLauncher(int argc, char *argv[]) {
+int runGameLauncher(int argc, char* argv[]) {
   NovelMind::runtime::GameLauncher launcher;
 
   // Set up error callback for user-friendly error display
-  launcher.setOnError([](const NovelMind::runtime::LauncherError &error) {
+  launcher.setOnError([](const NovelMind::runtime::LauncherError& error) {
     std::cerr << "\n";
-    std::cerr
-        << "╔════════════════════════════════════════════════════════════╗\n";
-    std::cerr
-        << "║                    An Error Occurred                       ║\n";
-    std::cerr
-        << "╚════════════════════════════════════════════════════════════╝\n\n";
+    std::cerr << "╔════════════════════════════════════════════════════════════╗\n";
+    std::cerr << "║                    An Error Occurred                       ║\n";
+    std::cerr << "╚════════════════════════════════════════════════════════════╝\n\n";
     std::cerr << "Error: " << error.message << "\n\n";
 
     if (!error.details.empty()) {
@@ -67,4 +64,6 @@ int runGameLauncher(int argc, char *argv[]) {
 } // namespace
 
 // Standard main for console applications
-int main(int argc, char *argv[]) { return runGameLauncher(argc, argv); }
+int main(int argc, char* argv[]) {
+  return runGameLauncher(argc, argv);
+}

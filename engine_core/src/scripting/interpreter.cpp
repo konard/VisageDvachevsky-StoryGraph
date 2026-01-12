@@ -7,13 +7,11 @@ namespace NovelMind::scripting {
 
 constexpr u32 SCRIPT_MAGIC = 0x43534D4E; // "NMSC"
 
-ScriptInterpreter::ScriptInterpreter()
-    : m_vm(std::make_unique<VirtualMachine>()) {}
+ScriptInterpreter::ScriptInterpreter() : m_vm(std::make_unique<VirtualMachine>()) {}
 
 ScriptInterpreter::~ScriptInterpreter() = default;
 
-Result<void>
-ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
+Result<void> ScriptInterpreter::loadFromBytecode(const std::vector<u8>& bytecode) {
   // Header structure: magic(4) + version(2) + flags(2) + instrCount(4) +
   // constPool(4) + stringCount(4) + symbolTable(4) = 24 bytes
   constexpr usize HEADER_SIZE = 24;
@@ -47,8 +45,7 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
   // Validate version (currently only version 1 is supported)
   constexpr u16 SUPPORTED_VERSION = 1;
   if (version > SUPPORTED_VERSION) {
-    return Result<void>::error("Unsupported bytecode version: " +
-                               std::to_string(version));
+    return Result<void>::error("Unsupported bytecode version: " + std::to_string(version));
   }
 
   offset += sizeof(u16); // Skip flags
@@ -94,11 +91,9 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
   if (static_cast<usize>(instrCount) > MAX_SAFE_SIZE) {
     return Result<void>::error("Instruction count would cause overflow");
   }
-  usize requiredSize =
-      offset + (static_cast<usize>(instrCount) * INSTRUCTION_SIZE);
+  usize requiredSize = offset + (static_cast<usize>(instrCount) * INSTRUCTION_SIZE);
   if (requiredSize > bytecode.size() || requiredSize < offset) {
-    return Result<void>::error(
-        "Bytecode too small for declared instruction count");
+    return Result<void>::error("Bytecode too small for declared instruction count");
   }
 
   // Read instructions
@@ -107,8 +102,7 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   for (u32 i = 0; i < instrCount; ++i) {
     if (offset + INSTRUCTION_SIZE > bytecode.size()) {
-      return Result<void>::error("Unexpected end of bytecode at instruction " +
-                                 std::to_string(i));
+      return Result<void>::error("Unexpected end of bytecode at instruction " + std::to_string(i));
     }
 
     Instruction instr;
@@ -130,8 +124,7 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
 
   for (u32 i = 0; i < stringCount; ++i) {
     if (offset >= bytecode.size()) {
-      return Result<void>::error("Unexpected end of bytecode at string " +
-                                 std::to_string(i));
+      return Result<void>::error("Unexpected end of bytecode at string " + std::to_string(i));
     }
 
     std::string str;
@@ -146,8 +139,7 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
     }
 
     if (offset >= bytecode.size()) {
-      return Result<void>::error("Unterminated string at index " +
-                                 std::to_string(i));
+      return Result<void>::error("Unterminated string at index " + std::to_string(i));
     }
     ++offset; // Skip null terminator
     stringTable.push_back(str);
@@ -156,101 +148,115 @@ ScriptInterpreter::loadFromBytecode(const std::vector<u8> &bytecode) {
   return m_vm->load(program, stringTable);
 }
 
-void ScriptInterpreter::reset() { m_vm->reset(); }
+void ScriptInterpreter::reset() {
+  m_vm->reset();
+}
 
-bool ScriptInterpreter::step() { return m_vm->step(); }
+bool ScriptInterpreter::step() {
+  return m_vm->step();
+}
 
-void ScriptInterpreter::run() { m_vm->run(); }
+void ScriptInterpreter::run() {
+  m_vm->run();
+}
 
-void ScriptInterpreter::pause() { m_vm->pause(); }
+void ScriptInterpreter::pause() {
+  m_vm->pause();
+}
 
-void ScriptInterpreter::resume() { m_vm->resume(); }
+void ScriptInterpreter::resume() {
+  m_vm->resume();
+}
 
-bool ScriptInterpreter::isRunning() const { return m_vm->isRunning(); }
+bool ScriptInterpreter::isRunning() const {
+  return m_vm->isRunning();
+}
 
-bool ScriptInterpreter::isPaused() const { return m_vm->isPaused(); }
+bool ScriptInterpreter::isPaused() const {
+  return m_vm->isPaused();
+}
 
-bool ScriptInterpreter::isWaiting() const { return m_vm->isWaiting(); }
+bool ScriptInterpreter::isWaiting() const {
+  return m_vm->isWaiting();
+}
 
-void ScriptInterpreter::setVariable(const std::string &name, i32 value) {
+void ScriptInterpreter::setVariable(const std::string& name, i32 value) {
   m_vm->setVariable(name, value);
 }
 
-void ScriptInterpreter::setVariable(const std::string &name, f32 value) {
+void ScriptInterpreter::setVariable(const std::string& name, f32 value) {
   m_vm->setVariable(name, value);
 }
 
-void ScriptInterpreter::setVariable(const std::string &name,
-                                    const std::string &value) {
+void ScriptInterpreter::setVariable(const std::string& name, const std::string& value) {
   m_vm->setVariable(name, value);
 }
 
-void ScriptInterpreter::setVariable(const std::string &name, bool value) {
+void ScriptInterpreter::setVariable(const std::string& name, bool value) {
   m_vm->setVariable(name, value);
 }
 
-std::optional<i32>
-ScriptInterpreter::getIntVariable(const std::string &name) const {
+std::optional<i32> ScriptInterpreter::getIntVariable(const std::string& name) const {
   if (!m_vm->hasVariable(name)) {
     return std::nullopt;
   }
   Value val = m_vm->getVariable(name);
-  if (auto *p = std::get_if<i32>(&val)) {
+  if (auto* p = std::get_if<i32>(&val)) {
     return *p;
   }
   return std::nullopt;
 }
 
-std::optional<f32>
-ScriptInterpreter::getFloatVariable(const std::string &name) const {
+std::optional<f32> ScriptInterpreter::getFloatVariable(const std::string& name) const {
   if (!m_vm->hasVariable(name)) {
     return std::nullopt;
   }
   Value val = m_vm->getVariable(name);
-  if (auto *p = std::get_if<f32>(&val)) {
+  if (auto* p = std::get_if<f32>(&val)) {
     return *p;
   }
   return std::nullopt;
 }
 
-std::optional<std::string>
-ScriptInterpreter::getStringVariable(const std::string &name) const {
+std::optional<std::string> ScriptInterpreter::getStringVariable(const std::string& name) const {
   if (!m_vm->hasVariable(name)) {
     return std::nullopt;
   }
   Value val = m_vm->getVariable(name);
-  if (auto *p = std::get_if<std::string>(&val)) {
+  if (auto* p = std::get_if<std::string>(&val)) {
     return *p;
   }
   return std::nullopt;
 }
 
-std::optional<bool>
-ScriptInterpreter::getBoolVariable(const std::string &name) const {
+std::optional<bool> ScriptInterpreter::getBoolVariable(const std::string& name) const {
   if (!m_vm->hasVariable(name)) {
     return std::nullopt;
   }
   Value val = m_vm->getVariable(name);
-  if (auto *p = std::get_if<bool>(&val)) {
+  if (auto* p = std::get_if<bool>(&val)) {
     return *p;
   }
   return std::nullopt;
 }
 
-void ScriptInterpreter::setFlag(const std::string &name, bool value) {
+void ScriptInterpreter::setFlag(const std::string& name, bool value) {
   m_vm->setFlag(name, value);
 }
 
-bool ScriptInterpreter::getFlag(const std::string &name) const {
+bool ScriptInterpreter::getFlag(const std::string& name) const {
   return m_vm->getFlag(name);
 }
 
-void ScriptInterpreter::signalContinue() { m_vm->signalContinue(); }
+void ScriptInterpreter::signalContinue() {
+  m_vm->signalContinue();
+}
 
-void ScriptInterpreter::signalChoice(i32 choice) { m_vm->signalChoice(choice); }
+void ScriptInterpreter::signalChoice(i32 choice) {
+  m_vm->signalChoice(choice);
+}
 
-void ScriptInterpreter::registerCallback(
-    OpCode op, VirtualMachine::NativeCallback callback) {
+void ScriptInterpreter::registerCallback(OpCode op, VirtualMachine::NativeCallback callback) {
   m_vm->registerCallback(op, std::move(callback));
 }
 

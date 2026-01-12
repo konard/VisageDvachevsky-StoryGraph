@@ -47,8 +47,8 @@ public:
    * @brief Construct with a list of objects to block
    * @param objects Objects to block signals on
    */
-  explicit BatchSignalBlocker(const QVector<QObject *> &objects) {
-    for (auto *obj : objects) {
+  explicit BatchSignalBlocker(const QVector<QObject*>& objects) {
+    for (auto* obj : objects) {
       block(obj);
     }
   }
@@ -64,16 +64,16 @@ public:
   }
 
   // Non-copyable, non-movable for safety
-  BatchSignalBlocker(const BatchSignalBlocker &) = delete;
-  BatchSignalBlocker &operator=(const BatchSignalBlocker &) = delete;
-  BatchSignalBlocker(BatchSignalBlocker &&) = delete;
-  BatchSignalBlocker &operator=(BatchSignalBlocker &&) = delete;
+  BatchSignalBlocker(const BatchSignalBlocker&) = delete;
+  BatchSignalBlocker& operator=(const BatchSignalBlocker&) = delete;
+  BatchSignalBlocker(BatchSignalBlocker&&) = delete;
+  BatchSignalBlocker& operator=(BatchSignalBlocker&&) = delete;
 
   /**
    * @brief Block signals on an object
    * @param obj Object to block signals on
    */
-  void block(QObject *obj) {
+  void block(QObject* obj) {
     if (obj) {
       m_blockers.push_back(std::make_unique<QSignalBlocker>(obj));
     }
@@ -95,9 +95,7 @@ public:
    * @brief Get the number of blocked objects
    * @return Number of blocked objects
    */
-  [[nodiscard]] int blockedCount() const {
-    return static_cast<int>(m_blockers.size());
-  }
+  [[nodiscard]] int blockedCount() const { return static_cast<int>(m_blockers.size()); }
 
 private:
   QVector<std::unique_ptr<QSignalBlocker>> m_blockers;
@@ -130,8 +128,7 @@ public:
    * @param target Primary object to block signals on
    * @param completionCallback Callback to execute after batch completes
    */
-  BatchOperation(QObject *target,
-                 std::function<void()> completionCallback = nullptr)
+  BatchOperation(QObject* target, std::function<void()> completionCallback = nullptr)
       : m_target(target), m_completionCallback(std::move(completionCallback)),
         m_signalBlocker(target) {}
 
@@ -143,7 +140,7 @@ public:
    *
    * @param operation Function containing the batch operations
    */
-  template <typename Func> void execute(Func &&operation) {
+  template <typename Func> void execute(Func&& operation) {
     operation();
 
     // Allow signals before calling completion callback
@@ -158,13 +155,13 @@ public:
   }
 
   // Non-copyable, non-movable
-  BatchOperation(const BatchOperation &) = delete;
-  BatchOperation &operator=(const BatchOperation &) = delete;
-  BatchOperation(BatchOperation &&) = delete;
-  BatchOperation &operator=(BatchOperation &&) = delete;
+  BatchOperation(const BatchOperation&) = delete;
+  BatchOperation& operator=(const BatchOperation&) = delete;
+  BatchOperation(BatchOperation&&) = delete;
+  BatchOperation& operator=(BatchOperation&&) = delete;
 
 private:
-  QObject *m_target;
+  QObject* m_target;
   std::function<void()> m_completionCallback;
   QSignalBlocker m_signalBlocker;
 };
@@ -177,14 +174,12 @@ private:
  */
 class BatchUpdateGuard {
 public:
-  explicit BatchUpdateGuard(bool &flag) : m_flag(flag), m_wasActive(flag) {
-    m_flag = true;
-  }
+  explicit BatchUpdateGuard(bool& flag) : m_flag(flag), m_wasActive(flag) { m_flag = true; }
 
   ~BatchUpdateGuard() { m_flag = m_wasActive; }
 
-  BatchUpdateGuard(const BatchUpdateGuard &) = delete;
-  BatchUpdateGuard &operator=(const BatchUpdateGuard &) = delete;
+  BatchUpdateGuard(const BatchUpdateGuard&) = delete;
+  BatchUpdateGuard& operator=(const BatchUpdateGuard&) = delete;
 
   /**
    * @brief Check if a batch update was already active when guard was created
@@ -193,7 +188,7 @@ public:
   [[nodiscard]] bool wasAlreadyActive() const { return m_wasActive; }
 
 private:
-  bool &m_flag;
+  bool& m_flag;
   bool m_wasActive;
 };
 

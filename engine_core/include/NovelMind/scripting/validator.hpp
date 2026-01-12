@@ -41,7 +41,7 @@ public:
    * @param assetId Background asset identifier (e.g., "bg_city", "cafeteria")
    * @return true if the background asset exists
    */
-  [[nodiscard]] virtual bool backgroundExists(const std::string &assetId) const = 0;
+  [[nodiscard]] virtual bool backgroundExists(const std::string& assetId) const = 0;
 
   /**
    * @brief Check if an audio asset exists
@@ -49,15 +49,15 @@ public:
    * @param mediaType Type of media (sound, music, voice)
    * @return true if the audio asset exists
    */
-  [[nodiscard]] virtual bool audioExists(const std::string &assetPath,
-                                         const std::string &mediaType) const = 0;
+  [[nodiscard]] virtual bool audioExists(const std::string& assetPath,
+                                         const std::string& mediaType) const = 0;
 
   /**
    * @brief Check if a character sprite exists
    * @param characterId Character identifier
    * @return true if the character has sprite assets
    */
-  [[nodiscard]] virtual bool characterSpriteExists(const std::string &characterId) const = 0;
+  [[nodiscard]] virtual bool characterSpriteExists(const std::string& characterId) const = 0;
 };
 
 /**
@@ -88,7 +88,7 @@ struct ValidationResult {
  * @param sceneId The scene identifier
  * @return true if the .nmscene file exists
  */
-using SceneFileExistsCallback = std::function<bool(const std::string &sceneId)>;
+using SceneFileExistsCallback = std::function<bool(const std::string& sceneId)>;
 
 /**
  * @brief Callback for checking if an object exists in a scene
@@ -97,14 +97,14 @@ using SceneFileExistsCallback = std::function<bool(const std::string &sceneId)>;
  * @return true if the object exists in the scene file
  */
 using SceneObjectExistsCallback =
-    std::function<bool(const std::string &sceneId, const std::string &objectId)>;
+    std::function<bool(const std::string& sceneId, const std::string& objectId)>;
 
 /**
  * @brief Callback for checking if an asset file exists
  * @param assetPath The asset path
  * @return true if the asset file exists
  */
-using AssetFileExistsCallback = std::function<bool(const std::string &assetPath)>;
+using AssetFileExistsCallback = std::function<bool(const std::string& assetPath)>;
 
 /**
  * @brief AST Validator for semantic analysis
@@ -137,7 +137,7 @@ public:
    * @param program The program to validate
    * @return ValidationResult containing all errors and warnings
    */
-  [[nodiscard]] ValidationResult validate(const Program &program);
+  [[nodiscard]] ValidationResult validate(const Program& program);
 
   /**
    * @brief Configure whether to report unused symbols as warnings
@@ -153,7 +153,7 @@ public:
    * @brief Set project context for asset validation
    * @param context Project context providing asset existence checks
    */
-  void setProjectContext(IProjectContext *context);
+  void setProjectContext(IProjectContext* context);
 
   /**
    * @brief Configure whether to validate asset references
@@ -164,13 +164,13 @@ public:
    * @brief Set the source code for context in error messages
    * @param source The full source code string
    */
-  void setSource(const std::string &source);
+  void setSource(const std::string& source);
 
   /**
    * @brief Set the file path for error messages
    * @param path The file path
    */
-  void setFilePath(const std::string &path);
+  void setFilePath(const std::string& path);
 
   /**
    * @brief Set callback for checking scene file existence
@@ -195,65 +195,63 @@ private:
   void reset();
 
   // First pass: collect all definitions
-  void collectDefinitions(const Program &program);
-  void collectCharacterDefinition(const CharacterDecl &decl);
-  void collectSceneDefinition(const SceneDecl &decl);
+  void collectDefinitions(const Program& program);
+  void collectCharacterDefinition(const CharacterDecl& decl);
+  void collectSceneDefinition(const SceneDecl& decl);
 
   // Second pass: validate references and usage
-  void validateProgram(const Program &program);
-  void validateScene(const SceneDecl &decl);
-  void validateStatement(const Statement &stmt, bool &reachable);
-  void validateExpression(const Expression &expr);
+  void validateProgram(const Program& program);
+  void validateScene(const SceneDecl& decl);
+  void validateStatement(const Statement& stmt, bool& reachable);
+  void validateExpression(const Expression& expr);
 
   // Statement validators
-  void validateShowStmt(const ShowStmt &stmt);
-  void validateHideStmt(const HideStmt &stmt);
-  void validateSayStmt(const SayStmt &stmt);
-  void validateChoiceStmt(const ChoiceStmt &stmt, bool &reachable);
-  void validateIfStmt(const IfStmt &stmt, bool &reachable);
-  void validateGotoStmt(const GotoStmt &stmt, bool &reachable);
-  void validateWaitStmt(const WaitStmt &stmt);
-  void validatePlayStmt(const PlayStmt &stmt);
-  void validateStopStmt(const StopStmt &stmt);
-  void validateSetStmt(const SetStmt &stmt);
-  void validateTransitionStmt(const TransitionStmt &stmt);
-  void validateBlockStmt(const BlockStmt &stmt, bool &reachable);
+  void validateShowStmt(const ShowStmt& stmt);
+  void validateHideStmt(const HideStmt& stmt);
+  void validateSayStmt(const SayStmt& stmt);
+  void validateChoiceStmt(const ChoiceStmt& stmt, bool& reachable);
+  void validateIfStmt(const IfStmt& stmt, bool& reachable);
+  void validateGotoStmt(const GotoStmt& stmt, bool& reachable);
+  void validateWaitStmt(const WaitStmt& stmt);
+  void validatePlayStmt(const PlayStmt& stmt);
+  void validateStopStmt(const StopStmt& stmt);
+  void validateSetStmt(const SetStmt& stmt);
+  void validateTransitionStmt(const TransitionStmt& stmt);
+  void validateBlockStmt(const BlockStmt& stmt, bool& reachable);
 
   // Expression validators
-  void validateLiteral(const LiteralExpr &expr);
-  void validateIdentifier(const IdentifierExpr &expr, SourceLocation loc);
-  void validateBinary(const BinaryExpr &expr);
-  void validateUnary(const UnaryExpr &expr);
-  void validateCall(const CallExpr &expr, SourceLocation loc);
-  void validateProperty(const PropertyExpr &expr);
+  void validateLiteral(const LiteralExpr& expr);
+  void validateIdentifier(const IdentifierExpr& expr, SourceLocation loc);
+  void validateBinary(const BinaryExpr& expr);
+  void validateUnary(const UnaryExpr& expr);
+  void validateCall(const CallExpr& expr, SourceLocation loc);
+  void validateProperty(const PropertyExpr& expr);
 
   // Control flow analysis
-  void analyzeControlFlow(const Program &program);
-  void findReachableScenes(const std::string &startScene,
-                           std::unordered_set<std::string> &visited);
+  void analyzeControlFlow(const Program& program);
+  void findReachableScenes(const std::string& startScene, std::unordered_set<std::string>& visited);
 
   // Unused symbol detection
   void reportUnusedSymbols();
 
   // Helper methods
-  void markCharacterUsed(const std::string &name, SourceLocation loc);
-  void markSceneUsed(const std::string &name, SourceLocation loc);
-  void markVariableUsed(const std::string &name, SourceLocation loc);
-  void markVariableDefined(const std::string &name, SourceLocation loc);
+  void markCharacterUsed(const std::string& name, SourceLocation loc);
+  void markSceneUsed(const std::string& name, SourceLocation loc);
+  void markVariableUsed(const std::string& name, SourceLocation loc);
+  void markVariableDefined(const std::string& name, SourceLocation loc);
 
-  bool isCharacterDefined(const std::string &name) const;
-  bool isSceneDefined(const std::string &name) const;
-  bool isVariableDefined(const std::string &name) const;
+  bool isCharacterDefined(const std::string& name) const;
+  bool isSceneDefined(const std::string& name) const;
+  bool isVariableDefined(const std::string& name) const;
 
   // Error reporting
-  void error(ErrorCode code, const std::string &message, SourceLocation loc);
-  void warning(ErrorCode code, const std::string &message, SourceLocation loc);
-  void info(ErrorCode code, const std::string &message, SourceLocation loc);
+  void error(ErrorCode code, const std::string& message, SourceLocation loc);
+  void warning(ErrorCode code, const std::string& message, SourceLocation loc);
+  void info(ErrorCode code, const std::string& message, SourceLocation loc);
 
   // Enhanced error with suggestions
-  void errorWithSuggestions(ErrorCode code, const std::string &message,
-                            SourceLocation loc,
-                            const std::vector<std::string> &suggestions);
+  void errorWithSuggestions(ErrorCode code, const std::string& message, SourceLocation loc,
+                            const std::vector<std::string>& suggestions);
 
   // Helper to get all symbol names of a type
   [[nodiscard]] std::vector<std::string> getAllCharacterNames() const;
@@ -278,7 +276,7 @@ private:
   bool m_validateAssets = false;
 
   // Project context for asset validation
-  IProjectContext *m_projectContext = nullptr;
+  IProjectContext* m_projectContext = nullptr;
 
   // Source context for error messages
   std::string m_source;

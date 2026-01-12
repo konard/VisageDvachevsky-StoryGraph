@@ -14,9 +14,9 @@ using namespace NovelMind::scripting;
 
 // libFuzzer entry point
 // See: https://llvm.org/docs/LibFuzzer.html
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   // Convert raw bytes to string
-  std::string input(reinterpret_cast<const char *>(Data), Size);
+  std::string input(reinterpret_cast<const char*>(Data), Size);
 
   // Test full pipeline: lexer -> parser -> validator -> compiler -> VM
   try {
@@ -48,8 +48,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
 
     // Load and run in VM with execution limits
     VirtualMachine vm;
-    auto loadResult = vm.load(compileResult.value().instructions,
-                              compileResult.value().stringTable);
+    auto loadResult =
+        vm.load(compileResult.value().instructions, compileResult.value().stringTable);
     if (loadResult.isError()) {
       return 0; // VM load error is acceptable
     }

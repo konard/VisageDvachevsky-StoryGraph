@@ -19,51 +19,46 @@ namespace NovelMind::editor::qt {
 // NMFindReplaceWidget - VSCode-like Find and Replace
 // ============================================================================
 
-NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
-  const auto &palette = NMStyleManager::instance().palette();
-  setStyleSheet(
-      QString("QWidget { background-color: %1; }"
-              "QLineEdit { background-color: %2; color: %3; border: 1px solid "
-              "%4; padding: 4px; }"
-              "QCheckBox { color: %3; }"
-              "QPushButton { background-color: %5; color: %3; border: none; "
-              "padding: 4px 8px; }"
-              "QPushButton:hover { background-color: %6; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.bgDark.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.borderLight.name())
-          .arg(palette.bgLight.name())
-          .arg(palette.accentPrimary.name()));
+NMFindReplaceWidget::NMFindReplaceWidget(QWidget* parent) : QWidget(parent) {
+  const auto& palette = NMStyleManager::instance().palette();
+  setStyleSheet(QString("QWidget { background-color: %1; }"
+                        "QLineEdit { background-color: %2; color: %3; border: 1px solid "
+                        "%4; padding: 4px; }"
+                        "QCheckBox { color: %3; }"
+                        "QPushButton { background-color: %5; color: %3; border: none; "
+                        "padding: 4px 8px; }"
+                        "QPushButton:hover { background-color: %6; }")
+                    .arg(palette.bgMedium.name())
+                    .arg(palette.bgDark.name())
+                    .arg(palette.textPrimary.name())
+                    .arg(palette.borderLight.name())
+                    .arg(palette.bgLight.name())
+                    .arg(palette.accentPrimary.name()));
 
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(8, 8, 8, 8);
   mainLayout->setSpacing(6);
 
   // Search row
-  auto *searchRow = new QHBoxLayout();
+  auto* searchRow = new QHBoxLayout();
   m_searchEdit = new QLineEdit(this);
   m_searchEdit->setPlaceholderText(tr("Find"));
   m_searchEdit->setClearButtonEnabled(true);
-  connect(m_searchEdit, &QLineEdit::textChanged, this,
-          &NMFindReplaceWidget::onSearchTextChanged);
-  connect(m_searchEdit, &QLineEdit::returnPressed, this,
-          &NMFindReplaceWidget::findNext);
+  connect(m_searchEdit, &QLineEdit::textChanged, this, &NMFindReplaceWidget::onSearchTextChanged);
+  connect(m_searchEdit, &QLineEdit::returnPressed, this, &NMFindReplaceWidget::findNext);
 
   auto& iconMgr = NMIconManager::instance();
-  auto *findPrevBtn = new QPushButton(this);
+  auto* findPrevBtn = new QPushButton(this);
   findPrevBtn->setIcon(iconMgr.getIcon("arrow-left", 16));
   findPrevBtn->setToolTip(tr("Find Previous (Shift+Enter)"));
   findPrevBtn->setFixedWidth(30);
-  connect(findPrevBtn, &QPushButton::clicked, this,
-          &NMFindReplaceWidget::findPrevious);
+  connect(findPrevBtn, &QPushButton::clicked, this, &NMFindReplaceWidget::findPrevious);
 
-  auto *findNextBtn = new QPushButton(this);
+  auto* findNextBtn = new QPushButton(this);
   findNextBtn->setIcon(iconMgr.getIcon("arrow-right", 16));
   findNextBtn->setToolTip(tr("Find Next (Enter)"));
   findNextBtn->setFixedWidth(30);
-  connect(findNextBtn, &QPushButton::clicked, this,
-          &NMFindReplaceWidget::findNext);
+  connect(findNextBtn, &QPushButton::clicked, this, &NMFindReplaceWidget::findNext);
 
   m_matchCountLabel = new QLabel(this);
   m_matchCountLabel->setStyleSheet(
@@ -73,8 +68,7 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   m_closeBtn->setIcon(iconMgr.getIcon("file-close", 16));
   m_closeBtn->setFixedWidth(24);
   m_closeBtn->setToolTip(tr("Close (Escape)"));
-  connect(m_closeBtn, &QPushButton::clicked, this,
-          &NMFindReplaceWidget::closeRequested);
+  connect(m_closeBtn, &QPushButton::clicked, this, &NMFindReplaceWidget::closeRequested);
 
   searchRow->addWidget(m_searchEdit, 1);
   searchRow->addWidget(findPrevBtn);
@@ -83,7 +77,7 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   searchRow->addWidget(m_closeBtn);
 
   // Options row
-  auto *optionsRow = new QHBoxLayout();
+  auto* optionsRow = new QHBoxLayout();
   m_caseSensitive = new QCheckBox(tr("Aa"), this);
   m_caseSensitive->setToolTip(tr("Match Case"));
   connect(m_caseSensitive, &QCheckBox::toggled, this,
@@ -106,21 +100,19 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
 
   // Replace row (hidden by default in find-only mode)
   m_replaceRow = new QWidget(this);
-  auto *replaceLayout = new QHBoxLayout(m_replaceRow);
+  auto* replaceLayout = new QHBoxLayout(m_replaceRow);
   replaceLayout->setContentsMargins(0, 0, 0, 0);
 
   m_replaceEdit = new QLineEdit(m_replaceRow);
   m_replaceEdit->setPlaceholderText(tr("Replace"));
 
-  auto *replaceBtn = new QPushButton(tr("Replace"), m_replaceRow);
+  auto* replaceBtn = new QPushButton(tr("Replace"), m_replaceRow);
   replaceBtn->setIcon(iconMgr.getIcon("edit-paste", 16));
-  connect(replaceBtn, &QPushButton::clicked, this,
-          &NMFindReplaceWidget::replaceNext);
+  connect(replaceBtn, &QPushButton::clicked, this, &NMFindReplaceWidget::replaceNext);
 
-  auto *replaceAllBtn = new QPushButton(tr("Replace All"), m_replaceRow);
+  auto* replaceAllBtn = new QPushButton(tr("Replace All"), m_replaceRow);
   replaceAllBtn->setIcon(iconMgr.getIcon("edit-paste", 16));
-  connect(replaceAllBtn, &QPushButton::clicked, this,
-          &NMFindReplaceWidget::replaceAll);
+  connect(replaceAllBtn, &QPushButton::clicked, this, &NMFindReplaceWidget::replaceAll);
 
   replaceLayout->addWidget(m_replaceEdit, 1);
   replaceLayout->addWidget(replaceBtn);
@@ -134,7 +126,7 @@ NMFindReplaceWidget::NMFindReplaceWidget(QWidget *parent) : QWidget(parent) {
   setMaximumHeight(120);
 }
 
-void NMFindReplaceWidget::setEditor(NMScriptEditor *editor) {
+void NMFindReplaceWidget::setEditor(NMScriptEditor* editor) {
   m_editor = editor;
 }
 
@@ -154,13 +146,17 @@ void NMFindReplaceWidget::showReplace() {
   m_searchEdit->selectAll();
 }
 
-void NMFindReplaceWidget::setSearchText(const QString &text) {
+void NMFindReplaceWidget::setSearchText(const QString& text) {
   m_searchEdit->setText(text);
 }
 
-void NMFindReplaceWidget::findNext() { performSearch(true); }
+void NMFindReplaceWidget::findNext() {
+  performSearch(true);
+}
 
-void NMFindReplaceWidget::findPrevious() { performSearch(false); }
+void NMFindReplaceWidget::findPrevious() {
+  performSearch(false);
+}
 
 void NMFindReplaceWidget::replaceNext() {
   if (!m_editor) {
@@ -177,8 +173,7 @@ void NMFindReplaceWidget::replaceNext() {
   if (cursor.hasSelection() &&
       cursor.selectedText().compare(searchText, m_caseSensitive->isChecked()
                                                     ? Qt::CaseSensitive
-                                                    : Qt::CaseInsensitive) ==
-          0) {
+                                                    : Qt::CaseInsensitive) == 0) {
     cursor.insertText(replaceText);
     m_editor->setTextCursor(cursor);
   }
@@ -235,7 +230,7 @@ void NMFindReplaceWidget::replaceAll() {
   updateMatchCount();
 }
 
-void NMFindReplaceWidget::onSearchTextChanged(const QString &text) {
+void NMFindReplaceWidget::onSearchTextChanged(const QString& text) {
   Q_UNUSED(text);
   highlightAllMatches();
   updateMatchCount();

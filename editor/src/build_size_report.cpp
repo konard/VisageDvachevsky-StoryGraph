@@ -15,16 +15,13 @@ namespace fs = std::filesystem;
 
 namespace NovelMind::editor {
 
-Result<std::string>
-BuildSizeReport::exportAsJson(const BuildSizeAnalysis &analysis) const {
+Result<std::string> BuildSizeReport::exportAsJson(const BuildSizeAnalysis& analysis) const {
   std::ostringstream json;
   json << "{\n";
   json << "  \"totalOriginalSize\": " << analysis.totalOriginalSize << ",\n";
-  json << "  \"totalCompressedSize\": " << analysis.totalCompressedSize
-       << ",\n";
+  json << "  \"totalCompressedSize\": " << analysis.totalCompressedSize << ",\n";
   json << "  \"totalFileCount\": " << analysis.totalFileCount << ",\n";
-  json << "  \"overallCompressionRatio\": " << analysis.overallCompressionRatio
-       << ",\n";
+  json << "  \"overallCompressionRatio\": " << analysis.overallCompressionRatio << ",\n";
   json << "  \"totalWastedSpace\": " << analysis.totalWastedSpace << ",\n";
   json << "  \"unusedSpace\": " << analysis.unusedSpace << ",\n";
   json << "  \"potentialSavings\": " << analysis.potentialSavings << ",\n";
@@ -33,13 +30,12 @@ BuildSizeReport::exportAsJson(const BuildSizeAnalysis &analysis) const {
   // Categories
   json << "  \"categories\": [\n";
   for (size_t i = 0; i < analysis.categorySummaries.size(); i++) {
-    const auto &cat = analysis.categorySummaries[i];
+    const auto& cat = analysis.categorySummaries[i];
     json << "    {\n";
     json << "      \"category\": " << static_cast<int>(cat.category) << ",\n";
     json << "      \"fileCount\": " << cat.fileCount << ",\n";
     json << "      \"totalOriginalSize\": " << cat.totalOriginalSize << ",\n";
-    json << "      \"totalCompressedSize\": " << cat.totalCompressedSize
-         << ",\n";
+    json << "      \"totalCompressedSize\": " << cat.totalCompressedSize << ",\n";
     json << "      \"percentageOfTotal\": " << cat.percentageOfTotal << "\n";
     json << "    }";
     if (i < analysis.categorySummaries.size() - 1)
@@ -62,9 +58,8 @@ BuildSizeReport::exportAsJson(const BuildSizeAnalysis &analysis) const {
   return Result<std::string>::ok(json.str());
 }
 
-Result<void>
-BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
-                              const std::string &outputPath) const {
+Result<void> BuildSizeReport::exportAsHtml(const BuildSizeAnalysis& analysis,
+                                           const std::string& outputPath) const {
   std::ofstream file(outputPath);
   if (!file.is_open()) {
     return Result<void>::error("Cannot create HTML file: " + outputPath);
@@ -99,22 +94,17 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
   file << "  <table>\n";
   file << "    <tr><th>Metric</th><th>Value</th></tr>\n";
   file << "    <tr><td>Total Size</td><td class='size'>"
-       << SizeVisualization::formatBytes(analysis.totalOriginalSize)
+       << SizeVisualization::formatBytes(analysis.totalOriginalSize) << "</td></tr>\n";
+  file << "    <tr><td>File Count</td><td class='size'>" << analysis.totalFileCount
        << "</td></tr>\n";
-  file << "    <tr><td>File Count</td><td class='size'>"
-       << analysis.totalFileCount << "</td></tr>\n";
   file << "    <tr><td>Compression Ratio</td><td class='size'>" << std::fixed
-       << std::setprecision(2) << (analysis.overallCompressionRatio * 100)
-       << "%</td></tr>\n";
+       << std::setprecision(2) << (analysis.overallCompressionRatio * 100) << "%</td></tr>\n";
   file << "    <tr><td>Wasted Space (Duplicates)</td><td class='size'>"
-       << SizeVisualization::formatBytes(analysis.totalWastedSpace)
-       << "</td></tr>\n";
+       << SizeVisualization::formatBytes(analysis.totalWastedSpace) << "</td></tr>\n";
   file << "    <tr><td>Unused Space</td><td class='size'>"
-       << SizeVisualization::formatBytes(analysis.unusedSpace)
-       << "</td></tr>\n";
+       << SizeVisualization::formatBytes(analysis.unusedSpace) << "</td></tr>\n";
   file << "    <tr><td>Potential Savings</td><td class='size'>"
-       << SizeVisualization::formatBytes(analysis.potentialSavings)
-       << "</td></tr>\n";
+       << SizeVisualization::formatBytes(analysis.potentialSavings) << "</td></tr>\n";
   file << "  </table>\n";
 
   // Categories
@@ -122,7 +112,7 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
   file << "  <table>\n";
   file << "    <tr><th>Category</th><th>Files</th><th>Size</th><th>% of "
           "Total</th></tr>\n";
-  for (const auto &cat : analysis.categorySummaries) {
+  for (const auto& cat : analysis.categorySummaries) {
     std::string catName;
     switch (cat.category) {
     case AssetCategory::Images:
@@ -147,11 +137,10 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
       catName = "Other";
       break;
     }
-    file << "    <tr><td>" << catName << "</td><td class='size'>"
-         << cat.fileCount << "</td><td class='size'>"
-         << SizeVisualization::formatBytes(cat.totalOriginalSize)
-         << "</td><td class='size'>" << std::fixed << std::setprecision(1)
-         << cat.percentageOfTotal << "%</td></tr>\n";
+    file << "    <tr><td>" << catName << "</td><td class='size'>" << cat.fileCount
+         << "</td><td class='size'>" << SizeVisualization::formatBytes(cat.totalOriginalSize)
+         << "</td><td class='size'>" << std::fixed << std::setprecision(1) << cat.percentageOfTotal
+         << "%</td></tr>\n";
   }
   file << "  </table>\n";
 
@@ -162,7 +151,7 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
     file << "    "
             "<tr><th>Priority</th><th>Type</th><th>Asset</th><th>Description</"
             "th><th>Est. Savings</th></tr>\n";
-    for (const auto &sug : analysis.suggestions) {
+    for (const auto& sug : analysis.suggestions) {
       std::string priority;
       std::string priorityClass;
       switch (sug.priority) {
@@ -182,12 +171,10 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
         break;
       }
 
-      file << "    <tr><td class='" << priorityClass << "'>" << priority
-           << "</td><td>" << static_cast<int>(sug.type) << "</td><td>"
-           << sug.assetPath << "</td><td>" << sug.description
-           << "</td><td class='size'>"
-           << SizeVisualization::formatBytes(sug.estimatedSavings)
-           << "</td></tr>\n";
+      file << "    <tr><td class='" << priorityClass << "'>" << priority << "</td><td>"
+           << static_cast<int>(sug.type) << "</td><td>" << sug.assetPath << "</td><td>"
+           << sug.description << "</td><td class='size'>"
+           << SizeVisualization::formatBytes(sug.estimatedSavings) << "</td></tr>\n";
     }
     file << "  </table>\n";
   }
@@ -199,9 +186,8 @@ BuildSizeReport::exportAsHtml(const BuildSizeAnalysis &analysis,
   return Result<void>::ok();
 }
 
-Result<void>
-BuildSizeReport::exportAsCsv(const BuildSizeAnalysis &analysis,
-                             const std::string &outputPath) const {
+Result<void> BuildSizeReport::exportAsCsv(const BuildSizeAnalysis& analysis,
+                                          const std::string& outputPath) const {
   std::ofstream file(outputPath);
   if (!file.is_open()) {
     return Result<void>::error("Cannot create CSV file: " + outputPath);
@@ -212,7 +198,7 @@ BuildSizeReport::exportAsCsv(const BuildSizeAnalysis &analysis,
           "Ratio,Is Duplicate,Is Unused\n";
 
   // Assets
-  for (const auto &asset : analysis.assets) {
+  for (const auto& asset : analysis.assets) {
     std::string catName;
     switch (asset.category) {
     case AssetCategory::Images:
@@ -239,10 +225,9 @@ BuildSizeReport::exportAsCsv(const BuildSizeAnalysis &analysis,
     }
 
     file << "\"" << asset.path << "\","
-         << "\"" << asset.name << "\"," << catName << "," << asset.originalSize
-         << "," << asset.compressedSize << "," << asset.compressionRatio << ","
-         << (asset.isDuplicate ? "Yes" : "No") << ","
-         << (asset.isUnused ? "Yes" : "No") << "\n";
+         << "\"" << asset.name << "\"," << catName << "," << asset.originalSize << ","
+         << asset.compressedSize << "," << asset.compressionRatio << ","
+         << (asset.isDuplicate ? "Yes" : "No") << "," << (asset.isUnused ? "Yes" : "No") << "\n";
   }
 
   file.close();

@@ -28,16 +28,7 @@ class AssetDatabase;
 /**
  * @brief Asset type enumeration
  */
-enum class AssetType : u8 {
-  Unknown,
-  Image,
-  Audio,
-  Font,
-  Script,
-  Scene,
-  Localization,
-  Data
-};
+enum class AssetType : u8 { Unknown, Image, Audio, Font, Script, Scene, Localization, Data };
 
 /**
  * @brief Image compression format
@@ -140,8 +131,7 @@ public:
   /**
    * @brief Get supported file extensions
    */
-  [[nodiscard]] virtual std::vector<std::string>
-  getSupportedExtensions() const = 0;
+  [[nodiscard]] virtual std::vector<std::string> getSupportedExtensions() const = 0;
 
   /**
    * @brief Get the asset type this importer produces
@@ -151,7 +141,7 @@ public:
   /**
    * @brief Check if a file can be imported by this importer
    */
-  [[nodiscard]] virtual bool canImport(const std::string &path) const = 0;
+  [[nodiscard]] virtual bool canImport(const std::string& path) const = 0;
 
   /**
    * @brief Import an asset
@@ -161,14 +151,13 @@ public:
    * @return Metadata of imported asset or error
    */
   [[nodiscard]] virtual Result<AssetMetadata>
-  import(const std::string &sourcePath, const std::string &destPath,
-         AssetDatabase *database) = 0;
+  import(const std::string& sourcePath, const std::string& destPath, AssetDatabase* database) = 0;
 
   /**
    * @brief Reimport an asset (update existing)
    */
-  [[nodiscard]] virtual Result<AssetMetadata>
-  reimport(const AssetMetadata &existing, AssetDatabase *database) = 0;
+  [[nodiscard]] virtual Result<AssetMetadata> reimport(const AssetMetadata& existing,
+                                                       AssetDatabase* database) = 0;
 
   /**
    * @brief Get default import settings as JSON
@@ -184,28 +173,25 @@ public:
   ImageImporter();
   ~ImageImporter() override = default;
 
-  [[nodiscard]] std::vector<std::string>
-  getSupportedExtensions() const override;
+  [[nodiscard]] std::vector<std::string> getSupportedExtensions() const override;
   [[nodiscard]] AssetType getAssetType() const override;
-  [[nodiscard]] bool canImport(const std::string &path) const override;
-  [[nodiscard]] Result<AssetMetadata> import(const std::string &sourcePath,
-                                             const std::string &destPath,
-                                             AssetDatabase *database) override;
-  [[nodiscard]] Result<AssetMetadata>
-  reimport(const AssetMetadata &existing, AssetDatabase *database) override;
+  [[nodiscard]] bool canImport(const std::string& path) const override;
+  [[nodiscard]] Result<AssetMetadata> import(const std::string& sourcePath,
+                                             const std::string& destPath,
+                                             AssetDatabase* database) override;
+  [[nodiscard]] Result<AssetMetadata> reimport(const AssetMetadata& existing,
+                                               AssetDatabase* database) override;
   [[nodiscard]] std::string getDefaultSettingsJson() const override;
 
   /**
    * @brief Set import settings for next import
    */
-  void setSettings(const ImageImportSettings &settings);
-  [[nodiscard]] const ImageImportSettings &getSettings() const;
+  void setSettings(const ImageImportSettings& settings);
+  [[nodiscard]] const ImageImportSettings& getSettings() const;
 
 private:
-  Result<void> processImage(const std::string &sourcePath,
-                            const std::string &destPath);
-  Result<void> generateThumbnail(const std::string &sourcePath,
-                                 const std::string &thumbnailPath);
+  Result<void> processImage(const std::string& sourcePath, const std::string& destPath);
+  Result<void> generateThumbnail(const std::string& sourcePath, const std::string& thumbnailPath);
 
   ImageImportSettings m_settings;
 };
@@ -218,23 +204,21 @@ public:
   AudioImporter();
   ~AudioImporter() override = default;
 
-  [[nodiscard]] std::vector<std::string>
-  getSupportedExtensions() const override;
+  [[nodiscard]] std::vector<std::string> getSupportedExtensions() const override;
   [[nodiscard]] AssetType getAssetType() const override;
-  [[nodiscard]] bool canImport(const std::string &path) const override;
-  [[nodiscard]] Result<AssetMetadata> import(const std::string &sourcePath,
-                                             const std::string &destPath,
-                                             AssetDatabase *database) override;
-  [[nodiscard]] Result<AssetMetadata>
-  reimport(const AssetMetadata &existing, AssetDatabase *database) override;
+  [[nodiscard]] bool canImport(const std::string& path) const override;
+  [[nodiscard]] Result<AssetMetadata> import(const std::string& sourcePath,
+                                             const std::string& destPath,
+                                             AssetDatabase* database) override;
+  [[nodiscard]] Result<AssetMetadata> reimport(const AssetMetadata& existing,
+                                               AssetDatabase* database) override;
   [[nodiscard]] std::string getDefaultSettingsJson() const override;
 
-  void setSettings(const AudioImportSettings &settings);
-  [[nodiscard]] const AudioImportSettings &getSettings() const;
+  void setSettings(const AudioImportSettings& settings);
+  [[nodiscard]] const AudioImportSettings& getSettings() const;
 
 private:
-  Result<void> processAudio(const std::string &sourcePath,
-                            const std::string &destPath);
+  Result<void> processAudio(const std::string& sourcePath, const std::string& destPath);
 
   AudioImportSettings m_settings;
 };
@@ -247,23 +231,21 @@ public:
   FontImporter();
   ~FontImporter() override = default;
 
-  [[nodiscard]] std::vector<std::string>
-  getSupportedExtensions() const override;
+  [[nodiscard]] std::vector<std::string> getSupportedExtensions() const override;
   [[nodiscard]] AssetType getAssetType() const override;
-  [[nodiscard]] bool canImport(const std::string &path) const override;
-  [[nodiscard]] Result<AssetMetadata> import(const std::string &sourcePath,
-                                             const std::string &destPath,
-                                             AssetDatabase *database) override;
-  [[nodiscard]] Result<AssetMetadata>
-  reimport(const AssetMetadata &existing, AssetDatabase *database) override;
+  [[nodiscard]] bool canImport(const std::string& path) const override;
+  [[nodiscard]] Result<AssetMetadata> import(const std::string& sourcePath,
+                                             const std::string& destPath,
+                                             AssetDatabase* database) override;
+  [[nodiscard]] Result<AssetMetadata> reimport(const AssetMetadata& existing,
+                                               AssetDatabase* database) override;
   [[nodiscard]] std::string getDefaultSettingsJson() const override;
 
-  void setSettings(const FontImportSettings &settings);
-  [[nodiscard]] const FontImportSettings &getSettings() const;
+  void setSettings(const FontImportSettings& settings);
+  [[nodiscard]] const FontImportSettings& getSettings() const;
 
 private:
-  Result<void> processFont(const std::string &sourcePath,
-                           const std::string &destPath);
+  Result<void> processFont(const std::string& sourcePath, const std::string& destPath);
 
   FontImportSettings m_settings;
 };
@@ -286,7 +268,7 @@ struct AssetChangeEvent {
 /**
  * @brief Callback for asset changes
  */
-using OnAssetChanged = std::function<void(const AssetChangeEvent &)>;
+using OnAssetChanged = std::function<void(const AssetChangeEvent&)>;
 
 /**
  * @brief Asset Database - tracks and manages all project assets
@@ -310,7 +292,7 @@ public:
   /**
    * @brief Initialize database for a project
    */
-  Result<void> initialize(const std::string &projectPath);
+  Result<void> initialize(const std::string& projectPath);
 
   /**
    * @brief Save database to disk
@@ -334,17 +316,17 @@ public:
   /**
    * @brief Register an asset
    */
-  void registerAsset(const AssetMetadata &metadata);
+  void registerAsset(const AssetMetadata& metadata);
 
   /**
    * @brief Unregister an asset
    */
-  void unregisterAsset(const std::string &assetId);
+  void unregisterAsset(const std::string& assetId);
 
   /**
    * @brief Update asset metadata
    */
-  void updateAsset(const AssetMetadata &metadata);
+  void updateAsset(const AssetMetadata& metadata);
 
   // =========================================================================
   // Asset Lookup
@@ -353,38 +335,32 @@ public:
   /**
    * @brief Get asset by ID
    */
-  [[nodiscard]] std::optional<AssetMetadata>
-  getAsset(const std::string &assetId) const;
+  [[nodiscard]] std::optional<AssetMetadata> getAsset(const std::string& assetId) const;
 
   /**
    * @brief Get asset by path
    */
-  [[nodiscard]] std::optional<AssetMetadata>
-  getAssetByPath(const std::string &path) const;
+  [[nodiscard]] std::optional<AssetMetadata> getAssetByPath(const std::string& path) const;
 
   /**
    * @brief Get all assets of a type
    */
-  [[nodiscard]] std::vector<AssetMetadata>
-  getAssetsByType(AssetType type) const;
+  [[nodiscard]] std::vector<AssetMetadata> getAssetsByType(AssetType type) const;
 
   /**
    * @brief Get all assets with a tag
    */
-  [[nodiscard]] std::vector<AssetMetadata>
-  getAssetsByTag(const std::string &tag) const;
+  [[nodiscard]] std::vector<AssetMetadata> getAssetsByTag(const std::string& tag) const;
 
   /**
    * @brief Search assets by name
    */
-  [[nodiscard]] std::vector<AssetMetadata>
-  searchAssets(const std::string &query) const;
+  [[nodiscard]] std::vector<AssetMetadata> searchAssets(const std::string& query) const;
 
   /**
    * @brief Get all assets
    */
-  [[nodiscard]] const std::unordered_map<std::string, AssetMetadata> &
-  getAllAssets() const;
+  [[nodiscard]] const std::unordered_map<std::string, AssetMetadata>& getAllAssets() const;
 
   // =========================================================================
   // Import Operations
@@ -393,18 +369,18 @@ public:
   /**
    * @brief Import a file into the project
    */
-  Result<AssetMetadata> importAsset(const std::string &sourcePath);
+  Result<AssetMetadata> importAsset(const std::string& sourcePath);
 
   /**
    * @brief Import a file into a specific destination path
    */
-  Result<AssetMetadata> importAssetToPath(const std::string &sourcePath,
-                                          const std::string &destPath);
+  Result<AssetMetadata> importAssetToPath(const std::string& sourcePath,
+                                          const std::string& destPath);
 
   /**
    * @brief Reimport an asset
    */
-  Result<AssetMetadata> reimportAsset(const std::string &assetId);
+  Result<AssetMetadata> reimportAsset(const std::string& assetId);
 
   /**
    * @brief Reimport all assets of a type
@@ -428,26 +404,22 @@ public:
   /**
    * @brief Add a dependency between assets
    */
-  void addDependency(const std::string &assetId,
-                     const std::string &dependsOnId);
+  void addDependency(const std::string& assetId, const std::string& dependsOnId);
 
   /**
    * @brief Remove a dependency
    */
-  void removeDependency(const std::string &assetId,
-                        const std::string &dependsOnId);
+  void removeDependency(const std::string& assetId, const std::string& dependsOnId);
 
   /**
    * @brief Get assets that depend on a given asset
    */
-  [[nodiscard]] std::vector<std::string>
-  getDependents(const std::string &assetId) const;
+  [[nodiscard]] std::vector<std::string> getDependents(const std::string& assetId) const;
 
   /**
    * @brief Get assets that a given asset depends on
    */
-  [[nodiscard]] std::vector<std::string>
-  getDependencies(const std::string &assetId) const;
+  [[nodiscard]] std::vector<std::string> getDependencies(const std::string& assetId) const;
 
   // =========================================================================
   // Events
@@ -470,31 +442,27 @@ public:
   /**
    * @brief Get importer for file type
    */
-  [[nodiscard]] IAssetImporter *
-  getImporterForFile(const std::string &path) const;
+  [[nodiscard]] IAssetImporter* getImporterForFile(const std::string& path) const;
 
   // =========================================================================
   // Project Paths
   // =========================================================================
 
-  [[nodiscard]] const std::string &getProjectPath() const {
-    return m_projectPath;
-  }
+  [[nodiscard]] const std::string& getProjectPath() const { return m_projectPath; }
   [[nodiscard]] std::string getAssetsPath() const;
   [[nodiscard]] std::string getThumbnailsPath() const;
   [[nodiscard]] std::string getDatabasePath() const;
 
 private:
-  void fireAssetChanged(const AssetChangeEvent &event);
-  std::string generateAssetId(const std::string &path);
-  std::string computeChecksum(const std::string &path);
-  AssetType detectAssetType(const std::string &path) const;
-  void scanDirectory(const std::string &path);
+  void fireAssetChanged(const AssetChangeEvent& event);
+  std::string generateAssetId(const std::string& path);
+  std::string computeChecksum(const std::string& path);
+  AssetType detectAssetType(const std::string& path) const;
+  void scanDirectory(const std::string& path);
 
   std::string m_projectPath;
   std::unordered_map<std::string, AssetMetadata> m_assets;
-  std::unordered_map<std::string, std::string>
-      m_pathToId; // path -> assetId lookup
+  std::unordered_map<std::string, std::string> m_pathToId; // path -> assetId lookup
   std::vector<std::unique_ptr<IAssetImporter>> m_importers;
   OnAssetChanged m_onAssetChanged;
   bool m_initialized = false;
@@ -508,16 +476,16 @@ private:
 /**
  * @brief Get file extension in lowercase
  */
-[[nodiscard]] std::string getFileExtension(const std::string &path);
+[[nodiscard]] std::string getFileExtension(const std::string& path);
 
 /**
  * @brief Convert asset type to string
  */
-[[nodiscard]] const char *assetTypeToString(AssetType type);
+[[nodiscard]] const char* assetTypeToString(AssetType type);
 
 /**
  * @brief Convert string to asset type
  */
-[[nodiscard]] AssetType stringToAssetType(const std::string &str);
+[[nodiscard]] AssetType stringToAssetType(const std::string& str);
 
 } // namespace NovelMind::editor

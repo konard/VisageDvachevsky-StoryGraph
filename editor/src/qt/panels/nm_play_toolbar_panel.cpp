@@ -7,15 +7,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMPlayToolbarPanel::NMPlayToolbarPanel(QWidget *parent)
-    : NMDockPanel("Play Controls", parent) {
+NMPlayToolbarPanel::NMPlayToolbarPanel(QWidget* parent) : NMDockPanel("Play Controls", parent) {
   setupUI();
 }
 
 void NMPlayToolbarPanel::onInitialize() {
   NMDockPanel::onInitialize();
 
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   // Connect to controller signals
   connect(&controller, &NMPlayModeController::playModeChanged, this,
@@ -26,15 +25,14 @@ void NMPlayToolbarPanel::onInitialize() {
           &NMPlayToolbarPanel::onBreakpointHit);
 
   m_statusTimer.setSingleShot(true);
-  connect(&m_statusTimer, &QTimer::timeout, this,
-          &NMPlayToolbarPanel::updateStatusLabel);
+  connect(&m_statusTimer, &QTimer::timeout, this, &NMPlayToolbarPanel::updateStatusLabel);
 
   // Initialize playback source mode from project settings
   // Use QSignalBlocker to prevent signal loops during programmatic
   // initialization
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (pm.hasOpenProject()) {
-    const auto &meta = pm.getMetadata();
+    const auto& meta = pm.getMetadata();
     int modeIndex = static_cast<int>(meta.playbackSourceMode);
     if (m_sourceCombo && modeIndex >= 0 && modeIndex < m_sourceCombo->count()) {
       // Block signals to prevent onSourceModeChanged from triggering during
@@ -68,20 +66,20 @@ void NMPlayToolbarPanel::onUpdate(double deltaTime) {
 
 void NMPlayToolbarPanel::setupUI() {
   // Create content widget
-  auto *contentWidget = new QWidget;
-  auto *layout = new QVBoxLayout(contentWidget);
+  auto* contentWidget = new QWidget;
+  auto* layout = new QVBoxLayout(contentWidget);
   layout->setContentsMargins(4, 4, 4, 4);
   layout->setSpacing(4);
 
   // Wrap the toolbar in a scrollable container for adaptive layout
   // This ensures all play controls remain accessible when panel is small
   m_scrollableToolBar = new NMScrollableToolBar(this);
-  auto *toolbar = m_scrollableToolBar->toolbar();
+  auto* toolbar = m_scrollableToolBar->toolbar();
   m_scrollableToolBar->setToolBarObjectName("PlayControlBar");
   m_scrollableToolBar->setIconSize(QSize(24, 24));
   toolbar->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Play button
   m_playButton = new QPushButton;
@@ -91,8 +89,7 @@ void NMPlayToolbarPanel::setupUI() {
   m_playButton->setToolTip("Start or resume playback (F5)");
   m_playButton->setShortcut(Qt::Key_F5);
   m_playButton->setFlat(true);
-  connect(m_playButton, &QPushButton::clicked,
-          []() { NMPlayModeController::instance().play(); });
+  connect(m_playButton, &QPushButton::clicked, []() { NMPlayModeController::instance().play(); });
 
   // Pause button
   m_pauseButton = new QPushButton;
@@ -101,8 +98,7 @@ void NMPlayToolbarPanel::setupUI() {
   m_pauseButton->setText("Pause");
   m_pauseButton->setToolTip("Pause playback");
   m_pauseButton->setFlat(true);
-  connect(m_pauseButton, &QPushButton::clicked,
-          []() { NMPlayModeController::instance().pause(); });
+  connect(m_pauseButton, &QPushButton::clicked, []() { NMPlayModeController::instance().pause(); });
 
   // Stop button
   m_stopButton = new QPushButton;
@@ -112,8 +108,7 @@ void NMPlayToolbarPanel::setupUI() {
   m_stopButton->setToolTip("Stop playback and reset (Shift+F5)");
   m_stopButton->setShortcut(Qt::SHIFT | Qt::Key_F5);
   m_stopButton->setFlat(true);
-  connect(m_stopButton, &QPushButton::clicked,
-          []() { NMPlayModeController::instance().stop(); });
+  connect(m_stopButton, &QPushButton::clicked, []() { NMPlayModeController::instance().stop(); });
 
   // Step Forward button
   m_stepButton = new QPushButton;
@@ -136,9 +131,9 @@ void NMPlayToolbarPanel::setupUI() {
   m_skipButton->setChecked(false);
   m_skipButton->setFlat(true);
   connect(m_skipButton, &QPushButton::toggled, [this](bool checked) {
-    auto &controller = NMPlayModeController::instance();
+    auto& controller = NMPlayModeController::instance();
     if (controller.isRuntimeLoaded()) {
-      auto *runtime = controller.getScriptRuntime();
+      auto* runtime = controller.getScriptRuntime();
       if (runtime) {
         runtime->setSkipMode(checked);
       }
@@ -159,7 +154,7 @@ void NMPlayToolbarPanel::setupUI() {
   toolbar->addWidget(m_skipButton);
   toolbar->addSeparator();
 
-  QLabel *slotLabel = new QLabel("Slot");
+  QLabel* slotLabel = new QLabel("Slot");
   slotLabel->setObjectName("SaveSlotLabel");
   toolbar->addWidget(slotLabel);
 
@@ -237,34 +232,28 @@ void NMPlayToolbarPanel::setupUI() {
   toolbar->addSeparator();
 
   // Playback source selector (issue #82)
-  QLabel *sourceLabel = new QLabel(tr("Source:"));
+  QLabel* sourceLabel = new QLabel(tr("Source:"));
   sourceLabel->setObjectName("PlaybackSourceLabel");
-  sourceLabel->setToolTip(
-      tr("Playback source determines where story content comes from"));
+  sourceLabel->setToolTip(tr("Playback source determines where story content comes from"));
   toolbar->addWidget(sourceLabel);
 
   m_sourceCombo = new QComboBox;
   m_sourceCombo->setObjectName("PlaybackSourceCombo");
-  m_sourceCombo->addItem(tr("Script"),
-                         static_cast<int>(PlaybackSourceMode::Script));
-  m_sourceCombo->addItem(tr("Graph"),
-                         static_cast<int>(PlaybackSourceMode::Graph));
-  m_sourceCombo->addItem(tr("Mixed"),
-                         static_cast<int>(PlaybackSourceMode::Mixed));
-  m_sourceCombo->setToolTip(
-      tr("Script: NMScript files are authoritative\n"
-         "Graph: Story Graph visual data is authoritative\n"
-         "Mixed: Script + Graph overrides (Graph wins on conflicts)"));
+  m_sourceCombo->addItem(tr("Script"), static_cast<int>(PlaybackSourceMode::Script));
+  m_sourceCombo->addItem(tr("Graph"), static_cast<int>(PlaybackSourceMode::Graph));
+  m_sourceCombo->addItem(tr("Mixed"), static_cast<int>(PlaybackSourceMode::Mixed));
+  m_sourceCombo->setToolTip(tr("Script: NMScript files are authoritative\n"
+                               "Graph: Story Graph visual data is authoritative\n"
+                               "Mixed: Script + Graph overrides (Graph wins on conflicts)"));
   m_sourceCombo->setCurrentIndex(0);
-  connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMPlayToolbarPanel::onSourceModeChanged);
+  connect(m_sourceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMPlayToolbarPanel::onSourceModeChanged);
   toolbar->addWidget(m_sourceCombo);
 
   // Source indicator showing current active source
   m_sourceIndicator = new QLabel;
   m_sourceIndicator->setObjectName("PlaybackSourceIndicator");
-  m_sourceIndicator->setToolTip(
-      tr("Shows which data source is currently being used for playback"));
+  m_sourceIndicator->setToolTip(tr("Shows which data source is currently being used for playback"));
   toolbar->addWidget(m_sourceIndicator);
   toolbar->addSeparator();
 
@@ -286,7 +275,7 @@ void NMPlayToolbarPanel::updateButtonStates() {
   const bool isPlaying = (m_currentMode == NMPlayModeController::Playing);
   const bool isPaused = (m_currentMode == NMPlayModeController::Paused);
   const bool isStopped = (m_currentMode == NMPlayModeController::Stopped);
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
   const bool runtimeReady = controller.isRuntimeLoaded();
   const bool hasAutoSave = controller.hasAutoSave();
 
@@ -343,19 +332,18 @@ void NMPlayToolbarPanel::updateStatusLabel() {
           .arg(color, bg, border));
 }
 
-void NMPlayToolbarPanel::onPlayModeChanged(
-    NMPlayModeController::PlayMode mode) {
+void NMPlayToolbarPanel::onPlayModeChanged(NMPlayModeController::PlayMode mode) {
   m_currentMode = mode;
   updateButtonStates();
   updateStatusLabel();
 }
 
-void NMPlayToolbarPanel::onCurrentNodeChanged(const QString &nodeId) {
+void NMPlayToolbarPanel::onCurrentNodeChanged(const QString& nodeId) {
   m_currentNodeId = nodeId;
   updateStatusLabel();
 }
 
-void NMPlayToolbarPanel::onBreakpointHit(const QString &nodeId) {
+void NMPlayToolbarPanel::onBreakpointHit(const QString& nodeId) {
   // Visual feedback for breakpoint hit
   m_statusLabel->setText(QString("Breakpoint at %1").arg(nodeId));
   m_statusLabel->setStyleSheet(
@@ -363,8 +351,7 @@ void NMPlayToolbarPanel::onBreakpointHit(const QString &nodeId) {
       "#5a2b2b; border-radius: 10px; padding: 3px 8px; font-weight: 600; }");
 }
 
-void NMPlayToolbarPanel::showTransientStatus(const QString &text,
-                                             const QString &color) {
+void NMPlayToolbarPanel::showTransientStatus(const QString& text, const QString& color) {
   if (!m_statusLabel) {
     return;
   }
@@ -383,8 +370,7 @@ void NMPlayToolbarPanel::updateSourceIndicator(int index) {
     return;
   }
 
-  auto mode =
-      static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
+  auto mode = static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
 
   // Update indicator style based on selected mode
   QString indicatorText;
@@ -425,11 +411,10 @@ void NMPlayToolbarPanel::onSourceModeChanged(int index) {
     return;
   }
 
-  auto mode =
-      static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
+  auto mode = static_cast<PlaybackSourceMode>(m_sourceCombo->itemData(index).toInt());
 
   // Update project settings
-  auto &pm = ProjectManager::instance();
+  auto& pm = ProjectManager::instance();
   if (pm.hasOpenProject()) {
     auto meta = pm.getMetadata();
     meta.playbackSourceMode = mode;

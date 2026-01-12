@@ -40,9 +40,9 @@ class NMConsoleOutput : public QPlainTextEdit {
   Q_OBJECT
 
 public:
-  explicit NMConsoleOutput(QWidget *parent = nullptr);
+  explicit NMConsoleOutput(QWidget* parent = nullptr);
 
-  void appendLog(const LogEntry &entry);
+  void appendLog(const LogEntry& entry);
   void clear();
 
   void setShowDebug(bool show);
@@ -73,7 +73,7 @@ class NMConsolePanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMConsolePanel(QWidget *parent = nullptr);
+  explicit NMConsolePanel(QWidget* parent = nullptr);
   ~NMConsolePanel() override;
 
   void onInitialize() override;
@@ -82,16 +82,15 @@ public:
   /**
    * @brief Add a log message
    */
-  void log(LogLevel level, const QString &message,
-           const QString &source = QString());
+  void log(LogLevel level, const QString& message, const QString& source = QString());
 
   /**
    * @brief Convenience methods for different log levels
    */
-  void logDebug(const QString &message, const QString &source = QString());
-  void logInfo(const QString &message, const QString &source = QString());
-  void logWarning(const QString &message, const QString &source = QString());
-  void logError(const QString &message, const QString &source = QString());
+  void logDebug(const QString& message, const QString& source = QString());
+  void logInfo(const QString& message, const QString& source = QString());
+  void logWarning(const QString& message, const QString& source = QString());
+  void logError(const QString& message, const QString& source = QString());
 
   /**
    * @brief Clear all log messages
@@ -104,7 +103,7 @@ public:
   void copySelection();
 
 signals:
-  void logAdded(const LogEntry &entry);
+  void logAdded(const LogEntry& entry);
 
 private slots:
   void onClear();
@@ -119,9 +118,9 @@ private:
   void setupToolBar();
   void setupContent();
 
-  NMConsoleOutput *m_output = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
+  NMConsoleOutput* m_output = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

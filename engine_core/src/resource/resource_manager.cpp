@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 
 namespace {
 
-bool readFileToBytes(const std::string &path, std::vector<u8> &out) {
+bool readFileToBytes(const std::string& path, std::vector<u8>& out) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return false;
@@ -24,8 +24,7 @@ bool readFileToBytes(const std::string &path, std::vector<u8> &out) {
   out.resize(static_cast<size_t>(size));
   file.seekg(0, std::ios::beg);
   if (!out.empty()) {
-    file.read(reinterpret_cast<char *>(out.data()),
-              static_cast<std::streamsize>(out.size()));
+    file.read(reinterpret_cast<char*>(out.data()), static_cast<std::streamsize>(out.size()));
     if (!file) {
       return false;
     }
@@ -36,21 +35,24 @@ bool readFileToBytes(const std::string &path, std::vector<u8> &out) {
 
 } // namespace
 
-ResourceManager::ResourceManager(vfs::IVirtualFileSystem *vfs) : m_vfs(vfs) {}
+ResourceManager::ResourceManager(vfs::IVirtualFileSystem* vfs) : m_vfs(vfs) {}
 
-ResourceManager::~ResourceManager() { clearCache(); }
+ResourceManager::~ResourceManager() {
+  clearCache();
+}
 
-void ResourceManager::setVfs(vfs::IVirtualFileSystem *vfs) { m_vfs = vfs; }
+void ResourceManager::setVfs(vfs::IVirtualFileSystem* vfs) {
+  m_vfs = vfs;
+}
 
-void ResourceManager::setBasePath(const std::string &path) {
+void ResourceManager::setBasePath(const std::string& path) {
   m_basePath = path;
-  if (!m_basePath.empty() && m_basePath.back() != '/' &&
-      m_basePath.back() != '\\') {
+  if (!m_basePath.empty() && m_basePath.back() != '/' && m_basePath.back() != '\\') {
     m_basePath.push_back(fs::path::preferred_separator);
   }
 }
 
-Result<TextureHandle> ResourceManager::loadTexture(const std::string &id) {
+Result<TextureHandle> ResourceManager::loadTexture(const std::string& id) {
   if (id.empty()) {
     return Result<TextureHandle>::error("Texture id is empty");
   }
@@ -75,11 +77,11 @@ Result<TextureHandle> ResourceManager::loadTexture(const std::string &id) {
   return Result<TextureHandle>::ok(texture);
 }
 
-void ResourceManager::unloadTexture(const std::string &id) {
+void ResourceManager::unloadTexture(const std::string& id) {
   m_textures.erase(id);
 }
 
-Result<FontHandle> ResourceManager::loadFont(const std::string &id, i32 size) {
+Result<FontHandle> ResourceManager::loadFont(const std::string& id, i32 size) {
   if (id.empty()) {
     return Result<FontHandle>::error("Font id is empty");
   }
@@ -87,7 +89,7 @@ Result<FontHandle> ResourceManager::loadFont(const std::string &id, i32 size) {
     return Result<FontHandle>::error("Font size must be positive");
   }
 
-  auto &sizeMap = m_fonts[id];
+  auto& sizeMap = m_fonts[id];
   auto it = sizeMap.find(size);
   if (it != sizeMap.end() && it->second && it->second->isValid()) {
     return Result<FontHandle>::ok(it->second);
@@ -108,7 +110,7 @@ Result<FontHandle> ResourceManager::loadFont(const std::string &id, i32 size) {
   return Result<FontHandle>::ok(font);
 }
 
-void ResourceManager::unloadFont(const std::string &id, i32 size) {
+void ResourceManager::unloadFont(const std::string& id, i32 size) {
   auto it = m_fonts.find(id);
   if (it == m_fonts.end()) {
     return;
@@ -119,9 +121,8 @@ void ResourceManager::unloadFont(const std::string &id, i32 size) {
   }
 }
 
-Result<FontAtlasHandle>
-ResourceManager::loadFontAtlas(const std::string &id, i32 size,
-                               const std::string &charset) {
+Result<FontAtlasHandle> ResourceManager::loadFontAtlas(const std::string& id, i32 size,
+                                                       const std::string& charset) {
   if (charset.empty()) {
     return Result<FontAtlasHandle>::error("Font atlas charset is empty");
   }
@@ -131,8 +132,8 @@ ResourceManager::loadFontAtlas(const std::string &id, i32 size,
     return Result<FontAtlasHandle>::error(fontResult.error());
   }
 
-  auto &sizeMap = m_fontAtlases[id];
-  auto &charsetMap = sizeMap[size];
+  auto& sizeMap = m_fontAtlases[id];
+  auto& charsetMap = sizeMap[size];
   auto it = charsetMap.find(charset);
   if (it != charsetMap.end() && it->second && it->second->isValid()) {
     return Result<FontAtlasHandle>::ok(it->second);
@@ -148,7 +149,7 @@ ResourceManager::loadFontAtlas(const std::string &id, i32 size,
   return Result<FontAtlasHandle>::ok(atlas);
 }
 
-Result<std::vector<u8>> ResourceManager::readData(const std::string &id) const {
+Result<std::vector<u8>> ResourceManager::readData(const std::string& id) const {
   return readResource(id);
 }
 
@@ -158,11 +159,13 @@ void ResourceManager::clearCache() {
   m_fontAtlases.clear();
 }
 
-size_t ResourceManager::getTextureCount() const { return m_textures.size(); }
+size_t ResourceManager::getTextureCount() const {
+  return m_textures.size();
+}
 
 size_t ResourceManager::getFontCount() const {
   size_t count = 0;
-  for (const auto &pair : m_fonts) {
+  for (const auto& pair : m_fonts) {
     count += pair.second.size();
   }
   return count;
@@ -170,16 +173,15 @@ size_t ResourceManager::getFontCount() const {
 
 size_t ResourceManager::getFontAtlasCount() const {
   size_t count = 0;
-  for (const auto &fontEntry : m_fontAtlases) {
-    for (const auto &sizeEntry : fontEntry.second) {
+  for (const auto& fontEntry : m_fontAtlases) {
+    for (const auto& sizeEntry : fontEntry.second) {
       count += sizeEntry.second.size();
     }
   }
   return count;
 }
 
-Result<std::vector<u8>>
-ResourceManager::readResource(const std::string &id) const {
+Result<std::vector<u8>> ResourceManager::readResource(const std::string& id) const {
   std::vector<u8> data;
 
   std::string path = resolvePath(id);
@@ -197,7 +199,7 @@ ResourceManager::readResource(const std::string &id) const {
   return Result<std::vector<u8>>::error("Failed to read resource: " + id);
 }
 
-std::string ResourceManager::resolvePath(const std::string &id) const {
+std::string ResourceManager::resolvePath(const std::string& id) const {
   if (id.empty()) {
     return {};
   }

@@ -21,10 +21,10 @@ const std::vector<QString> kAudioExtensions = {".wav", ".ogg", ".mp3", ".opus"};
 
 } // namespace
 
-ScriptProjectContext::ScriptProjectContext(const QString &projectPath)
+ScriptProjectContext::ScriptProjectContext(const QString& projectPath)
     : m_projectPath(projectPath) {}
 
-void ScriptProjectContext::setProjectPath(const QString &projectPath) {
+void ScriptProjectContext::setProjectPath(const QString& projectPath) {
   m_projectPath = projectPath;
 }
 
@@ -41,7 +41,7 @@ QString ScriptProjectContext::backgroundsPath() const {
   return assetsPath() + "/images";
 }
 
-QString ScriptProjectContext::audioPath(const std::string &mediaType) const {
+QString ScriptProjectContext::audioPath(const std::string& mediaType) const {
   QString audioDir = assetsPath() + "/audio";
 
   // Map media type to subdirectory
@@ -87,15 +87,15 @@ QString ScriptProjectContext::spritesPath() const {
   return assetsPath() + "/images";
 }
 
-bool ScriptProjectContext::fileExistsWithExtensions(
-    const QString &directory, const QString &baseName,
-    const std::vector<QString> &extensions) const {
+bool ScriptProjectContext::fileExistsWithExtensions(const QString& directory,
+                                                    const QString& baseName,
+                                                    const std::vector<QString>& extensions) const {
   QDir dir(directory);
   if (!dir.exists()) {
     return false;
   }
 
-  for (const QString &ext : extensions) {
+  for (const QString& ext : extensions) {
     QString fullPath = directory + "/" + baseName + ext;
     if (QFileInfo::exists(fullPath)) {
       return true;
@@ -105,8 +105,9 @@ bool ScriptProjectContext::fileExistsWithExtensions(
   return false;
 }
 
-std::vector<std::string> ScriptProjectContext::getFilesInDirectory(
-    const QString &directory, const std::vector<QString> &extensions) const {
+std::vector<std::string>
+ScriptProjectContext::getFilesInDirectory(const QString& directory,
+                                          const std::vector<QString>& extensions) const {
   std::vector<std::string> result;
 
   QDir dir(directory);
@@ -115,26 +116,25 @@ std::vector<std::string> ScriptProjectContext::getFilesInDirectory(
   }
 
   QStringList nameFilters;
-  for (const QString &ext : extensions) {
+  for (const QString& ext : extensions) {
     nameFilters << ("*" + ext);
   }
 
-  QFileInfoList files =
-      dir.entryInfoList(nameFilters, QDir::Files, QDir::Name);
-  for (const QFileInfo &fileInfo : files) {
+  QFileInfoList files = dir.entryInfoList(nameFilters, QDir::Files, QDir::Name);
+  for (const QFileInfo& fileInfo : files) {
     result.push_back(fileInfo.completeBaseName().toStdString());
   }
 
   return result;
 }
 
-bool ScriptProjectContext::backgroundExists(const std::string &assetId) const {
+bool ScriptProjectContext::backgroundExists(const std::string& assetId) const {
   QString bgId = QString::fromStdString(assetId);
   return fileExistsWithExtensions(backgroundsPath(), bgId, kImageExtensions);
 }
 
-bool ScriptProjectContext::audioExists(const std::string &assetPath,
-                                       const std::string &mediaType) const {
+bool ScriptProjectContext::audioExists(const std::string& assetPath,
+                                       const std::string& mediaType) const {
   QString audioFile = QString::fromStdString(assetPath);
   QString audioDir = audioPath(mediaType);
 
@@ -150,8 +150,7 @@ bool ScriptProjectContext::audioExists(const std::string &assetPath,
   }
 }
 
-bool ScriptProjectContext::characterSpriteExists(
-    const std::string &characterId) const {
+bool ScriptProjectContext::characterSpriteExists(const std::string& characterId) const {
   QString charId = QString::fromStdString(characterId);
   QString spritePath = spritesPath();
 
@@ -171,7 +170,7 @@ bool ScriptProjectContext::characterSpriteExists(
   if (QDir(charDir).exists()) {
     QDir dir(charDir);
     QStringList nameFilters;
-    for (const QString &ext : kImageExtensions) {
+    for (const QString& ext : kImageExtensions) {
       nameFilters << ("*" + ext);
     }
     if (!dir.entryList(nameFilters, QDir::Files).isEmpty()) {
@@ -182,27 +181,24 @@ bool ScriptProjectContext::characterSpriteExists(
   return false;
 }
 
-std::vector<std::string>
-ScriptProjectContext::getAvailableBackgrounds() const {
+std::vector<std::string> ScriptProjectContext::getAvailableBackgrounds() const {
   return getFilesInDirectory(backgroundsPath(), kImageExtensions);
 }
 
 std::vector<std::string>
-ScriptProjectContext::getAvailableAudio(const std::string &mediaType) const {
+ScriptProjectContext::getAvailableAudio(const std::string& mediaType) const {
   return getFilesInDirectory(audioPath(mediaType), kAudioExtensions);
 }
 
-std::vector<std::string>
-ScriptProjectContext::getAvailableCharacters() const {
+std::vector<std::string> ScriptProjectContext::getAvailableCharacters() const {
   std::vector<std::string> characters;
   QString spritePath = spritesPath();
 
   // Get all image files
-  std::vector<std::string> files =
-      getFilesInDirectory(spritePath, kImageExtensions);
+  std::vector<std::string> files = getFilesInDirectory(spritePath, kImageExtensions);
 
   // Extract character names (remove "char_" prefix if present)
-  for (const std::string &file : files) {
+  for (const std::string& file : files) {
     std::string charName = file;
     if (charName.starts_with("char_")) {
       charName = charName.substr(5); // Remove "char_" prefix
@@ -213,17 +209,15 @@ ScriptProjectContext::getAvailableCharacters() const {
   // Also check for subdirectories (each directory represents a character)
   QDir dir(spritePath);
   if (dir.exists()) {
-    QFileInfoList subdirs =
-        dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
-    for (const QFileInfo &subdir : subdirs) {
+    QFileInfoList subdirs = dir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot, QDir::Name);
+    for (const QFileInfo& subdir : subdirs) {
       characters.push_back(subdir.fileName().toStdString());
     }
   }
 
   // Remove duplicates and sort
   std::sort(characters.begin(), characters.end());
-  characters.erase(std::unique(characters.begin(), characters.end()),
-                   characters.end());
+  characters.erase(std::unique(characters.begin(), characters.end()), characters.end());
 
   return characters;
 }

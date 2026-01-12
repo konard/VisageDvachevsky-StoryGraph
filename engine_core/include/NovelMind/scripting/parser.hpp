@@ -25,8 +25,7 @@ struct ParseError {
   SourceLocation location;
 
   ParseError() = default;
-  ParseError(std::string msg, SourceLocation loc)
-      : message(std::move(msg)), location(loc) {}
+  ParseError(std::string msg, SourceLocation loc) : message(std::move(msg)), location(loc) {}
 };
 
 /**
@@ -55,26 +54,26 @@ public:
    * @param tokens Vector of tokens from the lexer
    * @return Result containing the program AST or an error
    */
-  [[nodiscard]] Result<Program> parse(const std::vector<Token> &tokens);
+  [[nodiscard]] Result<Program> parse(const std::vector<Token>& tokens);
 
   /**
    * @brief Get all errors encountered during parsing
    */
-  [[nodiscard]] const std::vector<ParseError> &getErrors() const;
+  [[nodiscard]] const std::vector<ParseError>& getErrors() const;
 
 private:
   // Token navigation
   [[nodiscard]] bool isAtEnd() const;
-  [[nodiscard]] const Token &peek() const;
-  [[nodiscard]] const Token &previous() const;
-  const Token &advance();
+  [[nodiscard]] const Token& peek() const;
+  [[nodiscard]] const Token& previous() const;
+  const Token& advance();
   bool check(TokenType type) const;
   bool match(TokenType type);
   bool match(std::initializer_list<TokenType> types);
-  const Token &consume(TokenType type, const std::string &message);
+  const Token& consume(TokenType type, const std::string& message);
 
   // Error handling
-  void error(const std::string &message);
+  void error(const std::string& message);
   void synchronize();
   void skipNewlines();
 
@@ -117,9 +116,9 @@ private:
   std::vector<StmtPtr> parseStatementList();
 
   // Validation helpers
-  bool isValidConditionExpression(const Expression &expr) const;
+  bool isValidConditionExpression(const Expression& expr) const;
 
-  const std::vector<Token> *m_tokens;
+  const std::vector<Token>* m_tokens;
   size_t m_current;
   std::vector<ParseError> m_errors;
   Program m_program;

@@ -25,7 +25,7 @@ public:
   QtTestFixture() {
     if (!QApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test"), nullptr};
+      static char* argv[] = {const_cast<char*>("test"), nullptr};
       m_app = std::make_unique<QApplication>(argc, argv);
     }
   }
@@ -57,13 +57,12 @@ TEST_CASE("VoiceManagerPanel: Qt Multimedia component availability",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: Panel creation and initialization",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManagerPanel: Panel creation and initialization", "[integration][editor][voice]") {
   QtTestFixture fixture;
 
   SECTION("Panel can be constructed") {
     NMVoiceManagerPanel panel;
-    REQUIRE(panel.panelId().isEmpty());  // Default empty ID
+    REQUIRE(panel.panelId().isEmpty()); // Default empty ID
   }
 
   SECTION("Panel initializes without crash") {
@@ -81,8 +80,7 @@ TEST_CASE("VoiceManagerPanel: Panel creation and initialization",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: VoiceLineEntry structure",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManagerPanel: VoiceLineEntry structure", "[integration][editor][voice]") {
   SECTION("Default values are correct") {
     VoiceLineEntry entry;
     REQUIRE(entry.dialogueId.isEmpty());
@@ -98,8 +96,7 @@ TEST_CASE("VoiceManagerPanel: VoiceLineEntry structure",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: DurationCacheEntry structure",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManagerPanel: DurationCacheEntry structure", "[integration][editor][voice]") {
   SECTION("Default values are correct") {
     DurationCacheEntry entry;
     REQUIRE(entry.duration == 0.0);
@@ -107,8 +104,7 @@ TEST_CASE("VoiceManagerPanel: DurationCacheEntry structure",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: CSV export format",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManagerPanel: CSV export format", "[integration][editor][voice]") {
   QtTestFixture fixture;
 
   SECTION("Empty panel exports empty CSV") {
@@ -132,8 +128,7 @@ TEST_CASE("VoiceManagerPanel: CSV export format",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: Unmatched lines retrieval",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManagerPanel: Unmatched lines retrieval", "[integration][editor][voice]") {
   QtTestFixture fixture;
 
   SECTION("Empty panel returns empty list") {
@@ -177,8 +172,7 @@ TEST_CASE("VoiceManagerPanel: Audio player initialization",
   }
 }
 
-TEST_CASE("VoiceManagerPanel: Voice preview playback",
-          "[integration][editor][voice][bug-467]") {
+TEST_CASE("VoiceManagerPanel: Voice preview playback", "[integration][editor][voice][bug-467]") {
   QtTestFixture fixture;
 
   SECTION("Panel rejects playback of empty file path") {

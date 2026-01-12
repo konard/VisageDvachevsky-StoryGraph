@@ -9,13 +9,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMAssetIconProvider::NMAssetIconProvider(NMAssetBrowserPanel *panel,
-                                         QSize iconSize)
+NMAssetIconProvider::NMAssetIconProvider(NMAssetBrowserPanel* panel, QSize iconSize)
     : QFileIconProvider(), m_panel(panel), m_iconSize(iconSize) {}
 
-void NMAssetIconProvider::setIconSize(const QSize &size) { m_iconSize = size; }
+void NMAssetIconProvider::setIconSize(const QSize& size) {
+  m_iconSize = size;
+}
 
-QIcon NMAssetIconProvider::icon(const QFileInfo &info) const {
+QIcon NMAssetIconProvider::icon(const QFileInfo& info) const {
   if (!info.isFile()) {
     return QFileIconProvider::icon(info);
   }
@@ -27,7 +28,7 @@ QIcon NMAssetIconProvider::icon(const QFileInfo &info) const {
   if (isImageExtension(ext)) {
     // Try to get from panel's cache
     if (m_panel && m_panel->m_thumbnailCache.contains(path)) {
-      auto *entry = m_panel->m_thumbnailCache.object(path);
+      auto* entry = m_panel->m_thumbnailCache.object(path);
       if (entry && isThumbnailValid(path, *entry)) {
         return QIcon(entry->pixmap);
       }
@@ -58,7 +59,7 @@ QIcon NMAssetIconProvider::icon(const QFileInfo &info) const {
   return QFileIconProvider::icon(info);
 }
 
-QPixmap generateAudioWaveform(const QString &path, const QSize &size) {
+QPixmap generateAudioWaveform(const QString& path, const QSize& size) {
   // Create a deterministic placeholder waveform
   QPixmap pixmap(size);
   pixmap.fill(Qt::transparent);
@@ -98,8 +99,7 @@ QPixmap generateAudioWaveform(const QString &path, const QSize &size) {
     // Generate deterministic height based on position and seed
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     const double normalized = static_cast<double>(seed % 1000) / 1000.0;
-    const int barHeight =
-        static_cast<int>(maxBarHeight * normalized * 0.8 + maxBarHeight * 0.2);
+    const int barHeight = static_cast<int>(maxBarHeight * normalized * 0.8 + maxBarHeight * 0.2);
 
     const int x = 10 + i * barWidth;
     const int y = (size.height() - barHeight) / 2;
@@ -110,8 +110,7 @@ QPixmap generateAudioWaveform(const QString &path, const QSize &size) {
   return pixmap;
 }
 
-bool isThumbnailValid(const QString &path,
-                      const ThumbnailCacheEntry &entry) {
+bool isThumbnailValid(const QString& path, const ThumbnailCacheEntry& entry) {
   QFileInfo info(path);
   if (!info.exists()) {
     return false;

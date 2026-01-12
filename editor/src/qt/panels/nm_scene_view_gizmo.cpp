@@ -32,7 +32,7 @@ class NMGizmoHandle : public QGraphicsEllipseItem {
 public:
   using HandleType = NMTransformGizmo::HandleType;
 
-  NMGizmoHandle(HandleType type, QGraphicsItem *parent = nullptr)
+  NMGizmoHandle(HandleType type, QGraphicsItem* parent = nullptr)
       : QGraphicsEllipseItem(parent), m_handleType(type) {
     setFlag(ItemIsMovable, false);
     setFlag(ItemIsSelectable, false);
@@ -44,20 +44,19 @@ public:
   HandleType handleType() const { return m_handleType; }
 
 protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override {
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override {
     m_isHovered = true;
     update();
     QGraphicsEllipseItem::hoverEnterEvent(event);
   }
 
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override {
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override {
     m_isHovered = false;
     update();
     QGraphicsEllipseItem::hoverLeaveEvent(event);
   }
 
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override {
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override {
     // Make the handle more visible when hovered
     if (m_isHovered) {
       QBrush originalBrush = brush();
@@ -70,9 +69,9 @@ protected:
     }
   }
 
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->beginHandleDrag(m_handleType, event->scenePos());
       }
       event->accept();
@@ -82,16 +81,16 @@ protected:
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-    if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override {
+    if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
       gizmo->updateHandleDrag(event->scenePos());
     }
     event->accept();
   }
 
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->endHandleDrag();
       }
       event->accept();
@@ -110,8 +109,7 @@ class NMGizmoHitArea : public QGraphicsRectItem {
 public:
   using HandleType = NMTransformGizmo::HandleType;
 
-  NMGizmoHitArea(HandleType type, const QRectF &rect,
-                 QGraphicsItem *parent = nullptr)
+  NMGizmoHitArea(HandleType type, const QRectF& rect, QGraphicsItem* parent = nullptr)
       : QGraphicsRectItem(rect, parent), m_handleType(type) {
     setFlag(ItemIsMovable, false);
     setFlag(ItemIsSelectable, false);
@@ -126,9 +124,9 @@ public:
   HandleType handleType() const { return m_handleType; }
 
 protected:
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->beginHandleDrag(m_handleType, event->scenePos());
       }
       event->accept();
@@ -138,16 +136,16 @@ protected:
     QGraphicsRectItem::mousePressEvent(event);
   }
 
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-    if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override {
+    if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
       gizmo->updateHandleDrag(event->scenePos());
     }
     event->accept();
   }
 
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->endHandleDrag();
       }
       event->accept();
@@ -169,9 +167,8 @@ class NMGizmoRotationRing : public QGraphicsEllipseItem {
 public:
   using HandleType = NMTransformGizmo::HandleType;
 
-  NMGizmoRotationRing(qreal radius, QGraphicsItem *parent = nullptr)
-      : QGraphicsEllipseItem(-radius, -radius, radius * 2, radius * 2, parent),
-        m_radius(radius) {
+  NMGizmoRotationRing(qreal radius, QGraphicsItem* parent = nullptr)
+      : QGraphicsEllipseItem(-radius, -radius, radius * 2, radius * 2, parent), m_radius(radius) {
     setFlag(ItemIsMovable, false);
     setFlag(ItemIsSelectable, false);
     setAcceptHoverEvents(true);
@@ -182,9 +179,8 @@ public:
     // Calculate DPI-aware hit tolerance in device pixels
     // Base tolerance: 10 pixels, scaled by device pixel ratio
     qreal devicePixelRatio = 1.0;
-    if (auto *scenePtr = scene()) {
-      if (auto *view = scenePtr->views().isEmpty() ? nullptr
-                                                    : scenePtr->views().first()) {
+    if (auto* scenePtr = scene()) {
+      if (auto* view = scenePtr->views().isEmpty() ? nullptr : scenePtr->views().first()) {
         devicePixelRatio = view->devicePixelRatioF();
       }
     }
@@ -199,9 +195,8 @@ public:
     // COORDINATE SYSTEM: Screen space (device pixels)
     // Update tolerance when view/DPI changes
     qreal devicePixelRatio = 1.0;
-    if (auto *scenePtr = scene()) {
-      if (auto *view = scenePtr->views().isEmpty() ? nullptr
-                                                    : scenePtr->views().first()) {
+    if (auto* scenePtr = scene()) {
+      if (auto* view = scenePtr->views().isEmpty() ? nullptr : scenePtr->views().first()) {
         devicePixelRatio = view->devicePixelRatioF();
       }
     }
@@ -209,7 +204,7 @@ public:
     m_hitToleranceScreenPixels = 10.0 * std::max(1.0, devicePixelRatio);
   }
 
-  bool contains(const QPointF &point) const override {
+  bool contains(const QPointF& point) const override {
     // COORDINATE SYSTEM: Item coordinates (local to this rotation ring)
     // 'point' parameter is in item-local coordinates
     // Calculate distance from center in item coordinates
@@ -254,15 +249,14 @@ private:
   qreal screenPixelsToSceneUnits() const {
     // COORDINATE SYSTEM CONVERSION: Screen pixels -> Scene units
     qreal hitToleranceSceneUnits = m_hitToleranceScreenPixels;
-    if (auto *scenePtr = scene()) {
-      if (auto *view = scenePtr->views().isEmpty() ? nullptr
-                                                    : scenePtr->views().first()) {
+    if (auto* scenePtr = scene()) {
+      if (auto* view = scenePtr->views().isEmpty() ? nullptr : scenePtr->views().first()) {
         // Convert screen pixels to scene coordinates using the view transform
         QPointF screenVector(m_hitToleranceScreenPixels, 0);
-        QPointF sceneVector = view->mapToScene(screenVector.toPoint()) -
-                              view->mapToScene(QPoint(0, 0));
-        hitToleranceSceneUnits = std::sqrt(sceneVector.x() * sceneVector.x() +
-                                           sceneVector.y() * sceneVector.y());
+        QPointF sceneVector =
+            view->mapToScene(screenVector.toPoint()) - view->mapToScene(QPoint(0, 0));
+        hitToleranceSceneUnits =
+            std::sqrt(sceneVector.x() * sceneVector.x() + sceneVector.y() * sceneVector.y());
       }
     }
     return hitToleranceSceneUnits;
@@ -275,20 +269,19 @@ private:
   bool m_isHovered = false;
 
 protected:
-  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override {
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override {
     m_isHovered = true;
     update();
     QGraphicsEllipseItem::hoverEnterEvent(event);
   }
 
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override {
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override {
     m_isHovered = false;
     update();
     QGraphicsEllipseItem::hoverLeaveEvent(event);
   }
 
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override {
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override {
     // Draw the ring with visual feedback on hover
     QPen ringPen = pen();
     if (m_isHovered) {
@@ -303,9 +296,9 @@ protected:
     painter->drawEllipse(rect());
   }
 
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override {
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->beginHandleDrag(HandleType::Rotation, event->scenePos());
       }
       event->accept();
@@ -315,16 +308,16 @@ protected:
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override {
-    if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override {
+    if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
       gizmo->updateHandleDrag(event->scenePos());
     }
     event->accept();
   }
 
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override {
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
-      if (auto *gizmo = qgraphicsitem_cast<NMTransformGizmo *>(parentItem())) {
+      if (auto* gizmo = qgraphicsitem_cast<NMTransformGizmo*>(parentItem())) {
         gizmo->endHandleDrag();
       }
       event->accept();
@@ -339,8 +332,7 @@ protected:
 // NMTransformGizmo
 // ============================================================================
 
-NMTransformGizmo::NMTransformGizmo(QGraphicsItem *parent)
-    : QGraphicsItemGroup(parent) {
+NMTransformGizmo::NMTransformGizmo(QGraphicsItem* parent) : QGraphicsItemGroup(parent) {
   setFlag(ItemIgnoresTransformations, true);
   setFlag(ItemHasNoContents, false);
   setHandlesChildEvents(false); // Allow children to handle their own events
@@ -377,7 +369,7 @@ void NMTransformGizmo::setMode(GizmoMode mode) {
   updatePosition();
 }
 
-void NMTransformGizmo::setTargetObjectId(const QString &objectId) {
+void NMTransformGizmo::setTargetObjectId(const QString& objectId) {
   m_targetObjectId = objectId;
   updatePosition();
   setVisible(!m_targetObjectId.isEmpty());
@@ -390,42 +382,41 @@ void NMTransformGizmo::updatePosition() {
 
   // Resolve the target object from the owning scene at use-time to avoid
   // dangling pointers if the item was deleted.
-  auto *scenePtr = scene();
+  auto* scenePtr = scene();
   if (!scenePtr) {
     return;
   }
 
-  auto *nmScene = qobject_cast<NMSceneGraphicsScene *>(scenePtr);
+  auto* nmScene = qobject_cast<NMSceneGraphicsScene*>(scenePtr);
   if (!nmScene) {
     return;
   }
 
-  if (auto *target = nmScene->findSceneObject(m_targetObjectId)) {
+  if (auto* target = nmScene->findSceneObject(m_targetObjectId)) {
     setPos(target->sceneBoundingRect().center());
   } else {
     setVisible(false);
   }
 }
 
-NMSceneObject *NMTransformGizmo::resolveTarget() const {
-  auto *scenePtr = scene();
+NMSceneObject* NMTransformGizmo::resolveTarget() const {
+  auto* scenePtr = scene();
   if (!scenePtr) {
     return nullptr;
   }
-  auto *nmScene = qobject_cast<NMSceneGraphicsScene *>(scenePtr);
+  auto* nmScene = qobject_cast<NMSceneGraphicsScene*>(scenePtr);
   if (!nmScene) {
     return nullptr;
   }
-  auto *target = nmScene->findSceneObject(m_targetObjectId);
+  auto* target = nmScene->findSceneObject(m_targetObjectId);
   if (target && target->isLocked()) {
     return nullptr;
   }
   return target;
 }
 
-void NMTransformGizmo::beginHandleDrag(HandleType type,
-                                       const QPointF &scenePos) {
-  auto *target = resolveTarget();
+void NMTransformGizmo::beginHandleDrag(HandleType type, const QPointF& scenePos) {
+  auto* target = resolveTarget();
   if (!target) {
     return;
   }
@@ -454,16 +445,15 @@ void NMTransformGizmo::beginHandleDrag(HandleType type,
 
   // Calculate drag start distance in SCENE COORDINATES
   const QPointF center = target->sceneBoundingRect().center();
-  m_dragStartDistance =
-      std::max(kMinGizmoRadiusSceneUnits, QLineF(center, scenePos).length());
+  m_dragStartDistance = std::max(kMinGizmoRadiusSceneUnits, QLineF(center, scenePos).length());
 }
 
-void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
+void NMTransformGizmo::updateHandleDrag(const QPointF& scenePos) {
   if (!m_isDragging) {
     return;
   }
 
-  auto *target = resolveTarget();
+  auto* target = resolveTarget();
   if (!target) {
     return;
   }
@@ -495,7 +485,7 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     const qreal kMinGizmoRadiusSceneUnits = screenPixelsToSceneUnits(kMinGizmoRadiusScreenPixels);
 
     // Clamp radius to minimum in SCENE COORDINATES
-    auto clampRadius = [&](const QPointF &point) {
+    auto clampRadius = [&](const QPointF& point) {
       QLineF line(center, point);
       if (line.length() < kMinGizmoRadiusSceneUnits) {
         line.setLength(kMinGizmoRadiusSceneUnits);
@@ -539,10 +529,8 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
 
     const qreal rawFactor = currentDistance / m_dragStartDistance;
     const qreal scaleFactor = std::pow(rawFactor, 0.6);
-    const qreal newScaleX =
-        std::clamp(m_dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
-    const qreal newScaleY =
-        std::clamp(m_dragStartScaleY * scaleFactor, kMinScale, kMaxScale);
+    const qreal newScaleX = std::clamp(m_dragStartScaleX * scaleFactor, kMinScale, kMaxScale);
+    const qreal newScaleY = std::clamp(m_dragStartScaleY * scaleFactor, kMinScale, kMaxScale);
     target->setScaleXY(newScaleX, newScaleY);
     updatePosition();
   }
@@ -553,13 +541,12 @@ void NMTransformGizmo::endHandleDrag() {
     return;
   }
 
-  auto *target = resolveTarget();
+  auto* target = resolveTarget();
   if (target) {
-    if (auto *nmScene = qobject_cast<NMSceneGraphicsScene *>(scene())) {
-      nmScene->objectTransformFinished(
-          target->id(), m_dragStartTargetPos, target->pos(),
-          m_dragStartRotation, target->rotation(), m_dragStartScaleX,
-          target->scaleX(), m_dragStartScaleY, target->scaleY());
+    if (auto* nmScene = qobject_cast<NMSceneGraphicsScene*>(scene())) {
+      nmScene->objectTransformFinished(target->id(), m_dragStartTargetPos, target->pos(),
+                                       m_dragStartRotation, target->rotation(), m_dragStartScaleX,
+                                       target->scaleX(), m_dragStartScaleY, target->scaleY());
     }
   }
 
@@ -568,7 +555,7 @@ void NMTransformGizmo::endHandleDrag() {
 
 qreal NMTransformGizmo::getDpiScale() const {
   // Get the device pixel ratio from the view's screen to support high DPI displays
-  auto *scenePtr = scene();
+  auto* scenePtr = scene();
   if (!scenePtr) {
     return 1.0; // Default to 1.0 if no scene
   }
@@ -580,13 +567,13 @@ qreal NMTransformGizmo::getDpiScale() const {
   }
 
   // Get the window that contains the view
-  QWidget *view = views.first();
+  QWidget* view = views.first();
   if (!view || !view->window()) {
     return 1.0; // Default to 1.0 if no window
   }
 
   // Get the screen's device pixel ratio
-  QWindow *window = view->window()->windowHandle();
+  QWindow* window = view->window()->windowHandle();
   if (!window || !window->screen()) {
     return 1.0; // Default to 1.0 if no screen
   }
@@ -598,12 +585,12 @@ qreal NMTransformGizmo::screenPixelsToSceneUnits(qreal screenPixels) const {
   // COORDINATE SYSTEM CONVERSION: Screen pixels -> Scene units
   // Converts a measurement in screen pixels to scene coordinate units
   // This accounts for zoom level and view transformations
-  auto *scenePtr = scene();
+  auto* scenePtr = scene();
   if (!scenePtr || scenePtr->views().isEmpty()) {
     return screenPixels; // Fallback: assume 1:1 mapping
   }
 
-  auto *view = scenePtr->views().first();
+  auto* view = scenePtr->views().first();
   if (!view) {
     return screenPixels; // Fallback: assume 1:1 mapping
   }
@@ -611,14 +598,12 @@ qreal NMTransformGizmo::screenPixelsToSceneUnits(qreal screenPixels) const {
   // Map a screen-pixel vector to scene coordinates
   // Use a horizontal vector for simplicity (assumes uniform scaling)
   QPointF screenVector(screenPixels, 0);
-  QPointF sceneVector = view->mapToScene(screenVector.toPoint()) -
-                        view->mapToScene(QPoint(0, 0));
-  return std::sqrt(sceneVector.x() * sceneVector.x() +
-                   sceneVector.y() * sceneVector.y());
+  QPointF sceneVector = view->mapToScene(screenVector.toPoint()) - view->mapToScene(QPoint(0, 0));
+  return std::sqrt(sceneVector.x() * sceneVector.x() + sceneVector.y() * sceneVector.y());
 }
 
 void NMTransformGizmo::createMoveGizmo() {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   // COORDINATE SYSTEM: Item/Scene coordinates
   // Visual sizes are scaled by DPI for consistent screen appearance,
   // but all geometric calculations remain in scene coordinate space
@@ -628,30 +613,28 @@ void NMTransformGizmo::createMoveGizmo() {
   qreal handleSize = 14 * dpiScale;
 
   // X axis (Red) - make it thicker for easier clicking
-  auto *xLine = new QGraphicsLineItem(0, 0, arrowLength, 0, this);
+  auto* xLine = new QGraphicsLineItem(0, 0, arrowLength, 0, this);
   xLine->setPen(QPen(QColor(220, 50, 50), 5 * dpiScale));
   xLine->setAcceptHoverEvents(true);
   xLine->setCursor(Qt::SizeHorCursor);
   addToGroup(xLine);
 
-  auto *xHit = new NMGizmoHitArea(HandleType::XAxis,
+  auto* xHit = new NMGizmoHitArea(HandleType::XAxis,
                                   QRectF(0, -8 * dpiScale, arrowLength, 16 * dpiScale), this);
   xHit->setCursor(Qt::SizeHorCursor);
   addToGroup(xHit);
 
-  auto *xHandle = new NMGizmoHandle(NMTransformGizmo::HandleType::XAxis, this);
-  xHandle->setRect(arrowLength - handleSize / 2, -handleSize / 2, handleSize,
-                   handleSize);
+  auto* xHandle = new NMGizmoHandle(NMTransformGizmo::HandleType::XAxis, this);
+  xHandle->setRect(arrowLength - handleSize / 2, -handleSize / 2, handleSize, handleSize);
   xHandle->setBrush(QColor(220, 50, 50));
   xHandle->setPen(Qt::NoPen);
   xHandle->setCursor(Qt::SizeHorCursor);
   addToGroup(xHandle);
 
   QPolygonF xArrow;
-  xArrow << QPointF(arrowLength, 0)
-         << QPointF(arrowLength - arrowHeadSize, -arrowHeadSize / 2)
+  xArrow << QPointF(arrowLength, 0) << QPointF(arrowLength - arrowHeadSize, -arrowHeadSize / 2)
          << QPointF(arrowLength - arrowHeadSize, arrowHeadSize / 2);
-  auto *xArrowHead = new QGraphicsPolygonItem(xArrow, this);
+  auto* xArrowHead = new QGraphicsPolygonItem(xArrow, this);
   xArrowHead->setBrush(QColor(220, 50, 50));
   xArrowHead->setPen(Qt::NoPen);
   xArrowHead->setAcceptHoverEvents(true);
@@ -659,30 +642,28 @@ void NMTransformGizmo::createMoveGizmo() {
   addToGroup(xArrowHead);
 
   // Y axis (Green) - make it thicker for easier clicking
-  auto *yLine = new QGraphicsLineItem(0, 0, 0, arrowLength, this);
+  auto* yLine = new QGraphicsLineItem(0, 0, 0, arrowLength, this);
   yLine->setPen(QPen(QColor(50, 220, 50), 5 * dpiScale));
   yLine->setAcceptHoverEvents(true);
   yLine->setCursor(Qt::SizeVerCursor);
   addToGroup(yLine);
 
-  auto *yHit = new NMGizmoHitArea(HandleType::YAxis,
+  auto* yHit = new NMGizmoHitArea(HandleType::YAxis,
                                   QRectF(-8 * dpiScale, 0, 16 * dpiScale, arrowLength), this);
   yHit->setCursor(Qt::SizeVerCursor);
   addToGroup(yHit);
 
-  auto *yHandle = new NMGizmoHandle(NMTransformGizmo::HandleType::YAxis, this);
-  yHandle->setRect(-handleSize / 2, arrowLength - handleSize / 2, handleSize,
-                   handleSize);
+  auto* yHandle = new NMGizmoHandle(NMTransformGizmo::HandleType::YAxis, this);
+  yHandle->setRect(-handleSize / 2, arrowLength - handleSize / 2, handleSize, handleSize);
   yHandle->setBrush(QColor(50, 220, 50));
   yHandle->setPen(Qt::NoPen);
   yHandle->setCursor(Qt::SizeVerCursor);
   addToGroup(yHandle);
 
   QPolygonF yArrow;
-  yArrow << QPointF(0, arrowLength)
-         << QPointF(-arrowHeadSize / 2, arrowLength - arrowHeadSize)
+  yArrow << QPointF(0, arrowLength) << QPointF(-arrowHeadSize / 2, arrowLength - arrowHeadSize)
          << QPointF(arrowHeadSize / 2, arrowLength - arrowHeadSize);
-  auto *yArrowHead = new QGraphicsPolygonItem(yArrow, this);
+  auto* yArrowHead = new QGraphicsPolygonItem(yArrow, this);
   yArrowHead->setBrush(QColor(50, 220, 50));
   yArrowHead->setPen(Qt::NoPen);
   yArrowHead->setAcceptHoverEvents(true);
@@ -690,15 +671,15 @@ void NMTransformGizmo::createMoveGizmo() {
   addToGroup(yArrowHead);
 
   // Center circle - for XY plane movement
-  auto *center = new QGraphicsEllipseItem(-8 * dpiScale, -8 * dpiScale, 16 * dpiScale, 16 * dpiScale, this);
+  auto* center =
+      new QGraphicsEllipseItem(-8 * dpiScale, -8 * dpiScale, 16 * dpiScale, 16 * dpiScale, this);
   center->setBrush(palette.accentPrimary);
   center->setPen(QPen(palette.textPrimary, 2 * dpiScale));
   center->setAcceptHoverEvents(true);
   center->setCursor(Qt::SizeAllCursor);
   addToGroup(center);
 
-  auto *centerHandle =
-      new NMGizmoHandle(NMTransformGizmo::HandleType::XYPlane, this);
+  auto* centerHandle = new NMGizmoHandle(NMTransformGizmo::HandleType::XYPlane, this);
   centerHandle->setRect(-10 * dpiScale, -10 * dpiScale, 20 * dpiScale, 20 * dpiScale);
   centerHandle->setBrush(palette.accentPrimary);
   centerHandle->setPen(QPen(palette.textPrimary, 2 * dpiScale));
@@ -707,20 +688,19 @@ void NMTransformGizmo::createMoveGizmo() {
 }
 
 void NMTransformGizmo::createRotateGizmo() {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   // COORDINATE SYSTEM: Item/Scene coordinates
   // Visual sizes are scaled by DPI for consistent screen appearance
   const qreal dpiScale = getDpiScale();
   qreal radius = 60 * dpiScale;
 
   // Custom rotation ring with annular hit testing and hover feedback
-  auto *rotationRing = new NMGizmoRotationRing(radius, this);
+  auto* rotationRing = new NMGizmoRotationRing(radius, this);
   rotationRing->setPen(QPen(palette.accentPrimary, 3));
   rotationRing->setBrush(Qt::NoBrush);
   addToGroup(rotationRing);
 
-  auto *handle =
-      new NMGizmoHandle(NMTransformGizmo::HandleType::Rotation, this);
+  auto* handle = new NMGizmoHandle(NMTransformGizmo::HandleType::Rotation, this);
   handle->setRect(-8 * dpiScale, -radius - 8 * dpiScale, 16 * dpiScale, 16 * dpiScale);
   handle->setBrush(palette.accentPrimary);
   handle->setPen(Qt::NoPen);
@@ -729,7 +709,7 @@ void NMTransformGizmo::createRotateGizmo() {
 }
 
 void NMTransformGizmo::createScaleGizmo() {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   // COORDINATE SYSTEM: Item/Scene coordinates
   // Visual sizes are scaled by DPI for consistent screen appearance
   const qreal uiScale = NMStyleManager::instance().uiScale();
@@ -737,14 +717,14 @@ void NMTransformGizmo::createScaleGizmo() {
   qreal size = 50 * dpiScale;
 
   // Bounding box
-  auto *box = new QGraphicsRectItem(-size, -size, size * 2, size * 2, this);
+  auto* box = new QGraphicsRectItem(-size, -size, size * 2, size * 2, this);
   box->setPen(QPen(palette.accentPrimary, 2 * dpiScale, Qt::DashLine));
   box->setBrush(Qt::NoBrush);
   addToGroup(box);
 
   // Corner handles with DPI-aware sizing
-  QList<QPointF> corners = {QPointF(-size, -size), QPointF(size, -size),
-                            QPointF(-size, size), QPointF(size, size)};
+  QList<QPointF> corners = {QPointF(-size, -size), QPointF(size, -size), QPointF(-size, size),
+                            QPointF(size, size)};
 
   // Visual handle size scaled with DPI
   const qreal handleSize = 16 * uiScale;
@@ -754,21 +734,20 @@ void NMTransformGizmo::createScaleGizmo() {
   const qreal hitAreaSize = 24 * uiScale;
   const qreal hitAreaHalfSize = hitAreaSize / 2;
 
-  for (const auto &corner : corners) {
+  for (const auto& corner : corners) {
     // Create larger hit area for easier selection
-    auto *hitArea = new NMGizmoHitArea(
-        HandleType::Corner,
-        QRectF(corner.x() - hitAreaHalfSize, corner.y() - hitAreaHalfSize,
-               hitAreaSize, hitAreaSize),
-        this);
+    auto* hitArea =
+        new NMGizmoHitArea(HandleType::Corner,
+                           QRectF(corner.x() - hitAreaHalfSize, corner.y() - hitAreaHalfSize,
+                                  hitAreaSize, hitAreaSize),
+                           this);
     hitArea->setCursor(Qt::SizeFDiagCursor);
     addToGroup(hitArea);
 
     // Create visual handle
-    auto *handle =
-        new NMGizmoHandle(NMTransformGizmo::HandleType::Corner, this);
-    handle->setRect(corner.x() - handleHalfSize, corner.y() - handleHalfSize,
-                    handleSize, handleSize);
+    auto* handle = new NMGizmoHandle(NMTransformGizmo::HandleType::Corner, this);
+    handle->setRect(corner.x() - handleHalfSize, corner.y() - handleHalfSize, handleSize,
+                    handleSize);
     handle->setBrush(palette.accentPrimary);
     handle->setPen(Qt::NoPen);
     handle->setCursor(Qt::SizeFDiagCursor);
@@ -785,7 +764,7 @@ void NMTransformGizmo::clearGizmo() {
   // Remove all items from the group and delete them.
   // We must remove from group first to properly unparent the item,
   // then delete it. This ensures Qt's internal bookkeeping is correct.
-  for (auto *item : children) {
+  for (auto* item : children) {
     if (item) {
       removeFromGroup(item);
       // After removeFromGroup, the item's parent is set to this group's parent.

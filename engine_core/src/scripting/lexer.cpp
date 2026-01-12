@@ -580,10 +580,10 @@ void Lexer::skipBlockComment() {
 
       // Check if we've exceeded the maximum nesting depth
       if (depth > MAX_COMMENT_DEPTH) {
-        m_errors.emplace_back(
-          "Comment nesting depth exceeds limit of " + std::to_string(MAX_COMMENT_DEPTH) +
-          " (starting at line " + std::to_string(startLine) + ")",
-          SourceLocation(m_line, m_column));
+        m_errors.emplace_back("Comment nesting depth exceeds limit of " +
+                                  std::to_string(MAX_COMMENT_DEPTH) + " (starting at line " +
+                                  std::to_string(startLine) + ")",
+                              SourceLocation(m_line, m_column));
         return;
       }
     } else if (peek() == '*' && peekNext() == '/') {

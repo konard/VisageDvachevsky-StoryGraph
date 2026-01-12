@@ -64,8 +64,7 @@ public:
    * @param outLocaleCode Output parameter for imported locale code
    * @return true if imported successfully
    */
-  bool importLocale(const QString& localizationRoot, QWidget* parentWidget,
-                    QString& outLocaleCode);
+  bool importLocale(const QString& localizationRoot, QWidget* parentWidget, QString& outLocaleCode);
 
   /**
    * @brief Export missing translations for current locale
@@ -113,8 +112,7 @@ public:
    * @param extension File extension (e.g., "csv", "json")
    * @return Localization format enum
    */
-  static ::NovelMind::localization::LocalizationFormat
-  formatForExtension(const QString& extension);
+  static ::NovelMind::localization::LocalizationFormat formatForExtension(const QString& extension);
 
 private:
   ::NovelMind::localization::LocalizationManager& m_localization;

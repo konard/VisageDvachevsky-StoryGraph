@@ -18,26 +18,25 @@ void SecurePackReader::setDecryptor(std::unique_ptr<PackDecryptor> decryptor) {
   m_decryptor = std::move(decryptor);
 }
 
-void SecurePackReader::setIntegrityChecker(
-    std::unique_ptr<PackIntegrityChecker> checker) {
+void SecurePackReader::setIntegrityChecker(std::unique_ptr<PackIntegrityChecker> checker) {
   m_integrityChecker = std::move(checker);
 }
 
-Result<void> SecurePackReader::setPublicKeyPem(const std::string &pem) {
+Result<void> SecurePackReader::setPublicKeyPem(const std::string& pem) {
   if (!m_integrityChecker) {
     m_integrityChecker = std::make_unique<PackIntegrityChecker>();
   }
   return m_integrityChecker->setPublicKeyPem(pem);
 }
 
-Result<void> SecurePackReader::setPublicKeyFromFile(const std::string &path) {
+Result<void> SecurePackReader::setPublicKeyFromFile(const std::string& path) {
   if (!m_integrityChecker) {
     m_integrityChecker = std::make_unique<PackIntegrityChecker>();
   }
   return m_integrityChecker->setPublicKeyFromFile(path);
 }
 
-Result<void> SecurePackReader::openPack(const std::string &path) {
+Result<void> SecurePackReader::openPack(const std::string& path) {
   closePack();
   m_packPath = path;
 
@@ -65,7 +64,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   }
 
   file.seekg(0, std::ios::beg);
-  file.read(reinterpret_cast<char *>(&m_header), sizeof(m_header));
+  file.read(reinterpret_cast<char*>(&m_header), sizeof(m_header));
   if (!file) {
     m_lastResult = PackVerificationResult::CorruptedHeader;
     return Result<void>::error("Failed to read pack header");
@@ -107,8 +106,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   }
 
   const u64 resourceTableEnd = m_header.resourceTableOffset + resourceTableSize;
-  if (m_header.stringTableOffset < resourceTableEnd ||
-      m_header.stringTableOffset > m_fileSize) {
+  if (m_header.stringTableOffset < resourceTableEnd || m_header.stringTableOffset > m_fileSize) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table offset");
   }
@@ -122,9 +120,8 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   file.seekg(static_cast<std::streamoff>(m_header.resourceTableOffset));
   std::vector<PackResourceEntry> entries(m_header.resourceCount);
   if (!entries.empty()) {
-    file.read(reinterpret_cast<char *>(entries.data()),
-              static_cast<std::streamsize>(entries.size() *
-                                           sizeof(PackResourceEntry)));
+    file.read(reinterpret_cast<char*>(entries.data()),
+              static_cast<std::streamsize>(entries.size() * sizeof(PackResourceEntry)));
     if (!file) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
       return Result<void>::error("Failed to read resource table");
@@ -133,7 +130,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
   file.seekg(static_cast<std::streamoff>(m_header.stringTableOffset));
   u32 stringCount = 0;
-  file.read(reinterpret_cast<char *>(&stringCount), sizeof(stringCount));
+  file.read(reinterpret_cast<char*>(&stringCount), sizeof(stringCount));
   if (!file) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Failed to read string table count");
@@ -147,7 +144,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
   std::vector<u32> offsets(stringCount);
   if (!offsets.empty()) {
-    file.read(reinterpret_cast<char *>(offsets.data()),
+    file.read(reinterpret_cast<char*>(offsets.data()),
               static_cast<std::streamsize>(offsets.size() * sizeof(u32)));
     if (!file) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
@@ -156,8 +153,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   }
 
   const auto stringDataStart = file.tellg();
-  const u64 stringDataStartU64 =
-      stringDataStart >= 0 ? static_cast<u64>(stringDataStart) : 0;
+  const u64 stringDataStartU64 = stringDataStart >= 0 ? static_cast<u64>(stringDataStart) : 0;
   if (stringDataStart < 0 || stringDataStartU64 > m_header.dataOffset) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table data start");
@@ -203,13 +199,13 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
   constexpr u64 MAX_RESOURCE_SIZE = 512ULL * 1024 * 1024;
   m_entries.clear();
-  for (const auto &entry : entries) {
+  for (const auto& entry : entries) {
     if (entry.idStringOffset >= m_stringTable.size()) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
       return Result<void>::error("Resource ID offset out of bounds");
     }
 
-    const std::string &resourceId = m_stringTable[entry.idStringOffset];
+    const std::string& resourceId = m_stringTable[entry.idStringOffset];
     if (resourceId.empty()) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
       return Result<void>::error("Empty resource ID in string table");
@@ -221,8 +217,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     }
 
     // Safe check to prevent overflow when calculating absolute offset
-    if (entry.dataOffset > m_fileSize ||
-        m_header.dataOffset > m_fileSize - entry.dataOffset) {
+    if (entry.dataOffset > m_fileSize || m_header.dataOffset > m_fileSize - entry.dataOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource offset overflow");
     }
@@ -235,8 +230,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       return Result<void>::error("File too small for footer");
     }
     const u64 maxDataEnd = m_fileSize - detail::kFooterSize;
-    if (absoluteOffset > maxDataEnd ||
-        entry.compressedSize > maxDataEnd - absoluteOffset) {
+    if (absoluteOffset > maxDataEnd || entry.compressedSize > maxDataEnd - absoluteOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource data extends beyond pack file");
     }
@@ -249,7 +243,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   }
 
   file.seekg(static_cast<std::streamoff>(m_fileSize - detail::kFooterSize));
-  file.read(reinterpret_cast<char *>(&m_footer), sizeof(m_footer));
+  file.read(reinterpret_cast<char*>(&m_footer), sizeof(m_footer));
   if (!file) {
     m_lastResult = PackVerificationResult::CorruptedHeader;
     return Result<void>::error("Failed to read pack footer");
@@ -315,10 +309,8 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   u64 remaining = m_header.dataOffset;
   std::vector<u8> buffer(64 * 1024);
   while (remaining > 0) {
-    const usize toRead =
-        static_cast<usize>(std::min<u64>(remaining, buffer.size()));
-    file.read(reinterpret_cast<char *>(buffer.data()),
-              static_cast<std::streamsize>(toRead));
+    const usize toRead = static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+    file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(toRead));
     const std::streamsize readCount = file.gcount();
     if (readCount <= 0) {
       m_lastResult = PackVerificationResult::CorruptedHeader;
@@ -359,8 +351,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     if (readCount <= 0) {
       break;  // SHA-256 already verified, CRC is optional
     }
-    crc =
-        detail::updateCrc32(crc, buffer.data(), static_cast<usize>(readCount));
+    crc = detail::updateCrc32(crc, buffer.data(), static_cast<usize>(readCount));
     remaining -= static_cast<u64>(readCount);
   }
   crc = ~crc;
@@ -371,8 +362,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     // In practice, if SHA-256 matches, the data is correct
   }
 
-  const bool requiresSignature =
-      (m_header.flags & detail::kPackFlagSigned) != 0;
+  const bool requiresSignature = (m_header.flags & detail::kPackFlagSigned) != 0;
   if (requiresSignature) {
     std::string signaturePath = path + ".sig";
     std::ifstream sigFile(signaturePath, std::ios::binary);
@@ -394,27 +384,23 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     file.clear();
     file.seekg(0, std::ios::beg);
     auto sigReport = m_integrityChecker->verifyPackSignatureStream(
-        file, static_cast<usize>(m_fileSize), signature.data(),
-        signature.size());
-    if (!sigReport.isOk() ||
-        sigReport.value().result != PackVerificationResult::Valid) {
-      m_lastResult = sigReport.isOk()
-                         ? sigReport.value().result
-                         : PackVerificationResult::SignatureInvalid;
-      return Result<void>::error(sigReport.isOk() ? sigReport.value().message
-                                                  : sigReport.error());
+        file, static_cast<usize>(m_fileSize), signature.data(), signature.size());
+    if (!sigReport.isOk() || sigReport.value().result != PackVerificationResult::Valid) {
+      m_lastResult =
+          sigReport.isOk() ? sigReport.value().result : PackVerificationResult::SignatureInvalid;
+      return Result<void>::error(sigReport.isOk() ? sigReport.value().message : sigReport.error());
     }
   }
 
-  const bool hasContentHash = std::any_of(std::begin(m_header.contentHash),
-                                          std::end(m_header.contentHash),
-                                          [](u8 byte) { return byte != 0; });
+  const bool hasContentHash =
+      std::any_of(std::begin(m_header.contentHash), std::end(m_header.contentHash),
+                  [](u8 byte) { return byte != 0; });
   if (hasContentHash) {
     file.clear();
     file.seekg(0, std::ios::beg);
 
 #ifdef NOVELMIND_HAS_OPENSSL
-    EVP_MD_CTX *sha256 = EVP_MD_CTX_new();
+    EVP_MD_CTX* sha256 = EVP_MD_CTX_new();
     if (!sha256) {
       m_lastResult = PackVerificationResult::ChecksumMismatch;
       return Result<void>::error("Failed to create SHA-256 context");
@@ -431,25 +417,21 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
     remaining = m_fileSize;
     while (remaining > 0) {
-      const usize toRead =
-          static_cast<usize>(std::min<u64>(remaining, buffer.size()));
-      file.read(reinterpret_cast<char *>(buffer.data()),
-                static_cast<std::streamsize>(toRead));
+      const usize toRead = static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+      file.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(toRead));
       const std::streamsize readCount = file.gcount();
       if (readCount <= 0) {
         m_lastResult = PackVerificationResult::ChecksumMismatch;
         return Result<void>::error("Failed to read pack for hash verification");
       }
 #ifdef NOVELMIND_HAS_OPENSSL
-      if (EVP_DigestUpdate(sha256, buffer.data(),
-                           static_cast<size_t>(readCount)) != 1) {
+      if (EVP_DigestUpdate(sha256, buffer.data(), static_cast<size_t>(readCount)) != 1) {
         EVP_MD_CTX_free(sha256);
         m_lastResult = PackVerificationResult::ChecksumMismatch;
         return Result<void>::error("Failed to update SHA-256 hash");
       }
 #else
-      detail::sha256Update(sha256, buffer.data(),
-                           static_cast<usize>(readCount));
+      detail::sha256Update(sha256, buffer.data(), static_cast<usize>(readCount));
 #endif
       remaining -= static_cast<u64>(readCount);
     }
@@ -457,8 +439,7 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     std::array<u8, 32> hash{};
 #ifdef NOVELMIND_HAS_OPENSSL
     unsigned int hashLen = 0;
-    if (EVP_DigestFinal_ex(sha256, hash.data(), &hashLen) != 1 ||
-        hashLen != hash.size()) {
+    if (EVP_DigestFinal_ex(sha256, hash.data(), &hashLen) != 1 || hashLen != hash.size()) {
       EVP_MD_CTX_free(sha256);
       m_lastResult = PackVerificationResult::ChecksumMismatch;
       return Result<void>::error("Failed to finalize SHA-256 hash");
@@ -488,8 +469,7 @@ void SecurePackReader::closePack() {
   m_lastResult = PackVerificationResult::Valid;
 }
 
-Result<std::vector<u8>>
-SecurePackReader::readResource(const std::string &resourceId) {
+Result<std::vector<u8>> SecurePackReader::readResource(const std::string& resourceId) {
   if (!m_isOpen) {
     return Result<std::vector<u8>>::error("Pack not open");
   }
@@ -499,7 +479,7 @@ SecurePackReader::readResource(const std::string &resourceId) {
     return Result<std::vector<u8>>::error("Resource not found: " + resourceId);
   }
 
-  const PackResourceEntry &entry = it->second;
+  const PackResourceEntry& entry = it->second;
   std::ifstream file(m_packPath, std::ios::binary);
   if (!file.is_open()) {
     return Result<std::vector<u8>>::error("Failed to open pack file");
@@ -513,8 +493,7 @@ SecurePackReader::readResource(const std::string &resourceId) {
 
   std::vector<u8> data(static_cast<usize>(entry.compressedSize));
   if (!data.empty()) {
-    file.read(reinterpret_cast<char *>(data.data()),
-              static_cast<std::streamsize>(data.size()));
+    file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(data.size()));
     if (!file) {
       return Result<std::vector<u8>>::error("Failed to read resource data");
     }
@@ -548,9 +527,8 @@ SecurePackReader::readResource(const std::string &resourceId) {
     appendU32(entry.type);
     appendU64(entry.uncompressedSize);
 
-    auto decrypted = m_decryptor->decrypt(
-        data.data(), data.size(), entry.iv, sizeof(entry.iv),
-        aad.empty() ? nullptr : aad.data(), aad.size());
+    auto decrypted = m_decryptor->decrypt(data.data(), data.size(), entry.iv, sizeof(entry.iv),
+                                          aad.empty() ? nullptr : aad.data(), aad.size());
     if (!decrypted.isOk()) {
       return Result<std::vector<u8>>::error(decrypted.error());
     }
@@ -560,32 +538,28 @@ SecurePackReader::readResource(const std::string &resourceId) {
   if (compressed) {
 #ifdef NOVELMIND_HAS_ZLIB
     if (entry.uncompressedSize > std::numeric_limits<uLongf>::max()) {
-      return Result<std::vector<u8>>::error(
-          "Uncompressed size exceeds zlib limits");
+      return Result<std::vector<u8>>::error("Uncompressed size exceeds zlib limits");
     }
 
     std::vector<u8> decompressed(static_cast<usize>(entry.uncompressedSize));
     uLongf destLen = static_cast<uLongf>(decompressed.size());
-    int res = uncompress(decompressed.data(), &destLen, data.data(),
-                         static_cast<uLongf>(data.size()));
+    int res =
+        uncompress(decompressed.data(), &destLen, data.data(), static_cast<uLongf>(data.size()));
     if (res != Z_OK) {
       return Result<std::vector<u8>>::error("zlib decompression failed");
     }
     decompressed.resize(static_cast<usize>(destLen));
     data = std::move(decompressed);
 #else
-    return Result<std::vector<u8>>::error(
-        "Compressed pack requires zlib support");
+    return Result<std::vector<u8>>::error("Compressed pack requires zlib support");
 #endif
   }
 
   if (!data.empty() && data.size() != entry.uncompressedSize) {
-    return Result<std::vector<u8>>::error(
-        "Resource size mismatch after decode");
+    return Result<std::vector<u8>>::error("Resource size mismatch after decode");
   }
 
-  const u32 checksum =
-      PackIntegrityChecker::calculateCrc32(data.data(), data.size());
+  const u32 checksum = PackIntegrityChecker::calculateCrc32(data.data(), data.size());
   if (checksum != entry.checksum) {
     return Result<std::vector<u8>>::error("Resource checksum mismatch");
   }
@@ -593,21 +567,21 @@ SecurePackReader::readResource(const std::string &resourceId) {
   return Result<std::vector<u8>>::ok(std::move(data));
 }
 
-bool SecurePackReader::exists(const std::string &resourceId) const {
+bool SecurePackReader::exists(const std::string& resourceId) const {
   return m_entries.find(resourceId) != m_entries.end();
 }
 
 std::vector<std::string> SecurePackReader::listResources() const {
   std::vector<std::string> result;
   result.reserve(m_entries.size());
-  for (const auto &pair : m_entries) {
+  for (const auto& pair : m_entries) {
     result.push_back(pair.first);
   }
   return result;
 }
 
 std::optional<PackResourceMeta>
-SecurePackReader::getResourceMeta(const std::string &resourceId) const {
+SecurePackReader::getResourceMeta(const std::string& resourceId) const {
   auto it = m_entries.find(resourceId);
   if (it == m_entries.end()) {
     return std::nullopt;

@@ -67,24 +67,24 @@ public:
    * @brief Create a dialogue box
    * @param id Unique identifier
    */
-  explicit DialogueBox(const std::string &id);
+  explicit DialogueBox(const std::string& id);
   ~DialogueBox() override;
 
   /**
    * @brief Set the resource manager for font loading
    * @param resources Pointer to the resource manager
    */
-  void setResourceManager(resource::ResourceManager *resources);
+  void setResourceManager(resource::ResourceManager* resources);
 
   /**
    * @brief Set the dialogue box style
    */
-  void setStyle(const DialogueBoxStyle &style);
+  void setStyle(const DialogueBoxStyle& style);
 
   /**
    * @brief Get the current style
    */
-  [[nodiscard]] const DialogueBoxStyle &getStyle() const;
+  [[nodiscard]] const DialogueBoxStyle& getStyle() const;
 
   /**
    * @brief Set the bounding rectangle for the dialogue box
@@ -99,24 +99,24 @@ public:
   /**
    * @brief Set the speaker's name (empty for narrator)
    */
-  void setSpeakerName(const std::string &name);
+  void setSpeakerName(const std::string& name);
 
   /**
    * @brief Set the speaker's name color
    */
-  void setSpeakerColor(const renderer::Color &color);
+  void setSpeakerColor(const renderer::Color& color);
 
   /**
    * @brief Set the dialogue text
    * @param text The text to display
    * @param immediate If true, show all text immediately
    */
-  void setText(const std::string &text, bool immediate = false);
+  void setText(const std::string& text, bool immediate = false);
 
   /**
    * @brief Get the current text
    */
-  [[nodiscard]] const std::string &getText() const;
+  [[nodiscard]] const std::string& getText() const;
 
   /**
    * @brief Get the visible portion of text (for typewriter effect)
@@ -203,7 +203,7 @@ public:
   /**
    * @brief Render the dialogue box
    */
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
 private:
   void updateTypewriter(f64 deltaTime);
@@ -230,7 +230,7 @@ private:
 
   CompletionCallback m_onComplete;
 
-  resource::ResourceManager *m_resources = nullptr;
+  resource::ResourceManager* m_resources = nullptr;
 };
 
 } // namespace NovelMind::Scene

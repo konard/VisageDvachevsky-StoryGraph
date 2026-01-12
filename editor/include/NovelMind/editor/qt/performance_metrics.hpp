@@ -62,7 +62,7 @@ class ScopedTimer {
 public:
   using Clock = std::chrono::steady_clock;
 
-  explicit ScopedTimer(const QString &name, bool enabled = true);
+  explicit ScopedTimer(const QString& name, bool enabled = true);
   ~ScopedTimer();
 
   /**
@@ -75,8 +75,8 @@ public:
    */
   double stop();
 
-  ScopedTimer(const ScopedTimer &) = delete;
-  ScopedTimer &operator=(const ScopedTimer &) = delete;
+  ScopedTimer(const ScopedTimer&) = delete;
+  ScopedTimer& operator=(const ScopedTimer&) = delete;
 
 private:
   QString m_name;
@@ -95,7 +95,7 @@ class PerformanceMetrics : public QObject {
   Q_OBJECT
 
 public:
-  static PerformanceMetrics &instance();
+  static PerformanceMetrics& instance();
 
   /**
    * @brief Enable/disable metrics collection
@@ -106,17 +106,17 @@ public:
   /**
    * @brief Record a timing measurement
    */
-  void recordTiming(const QString &name, double ms);
+  void recordTiming(const QString& name, double ms);
 
   /**
    * @brief Record a count metric (e.g., scene item count)
    */
-  void recordCount(const QString &name, int count);
+  void recordCount(const QString& name, int count);
 
   /**
    * @brief Get statistics for a metric
    */
-  MetricStats getStats(const QString &name) const;
+  MetricStats getStats(const QString& name) const;
 
   /**
    * @brief Get all metric names
@@ -131,7 +131,7 @@ public:
   /**
    * @brief Reset a specific metric
    */
-  void reset(const QString &name);
+  void reset(const QString& name);
 
   /**
    * @brief Get formatted summary string
@@ -144,30 +144,25 @@ public:
   void logMetrics() const;
 
   // Predefined metric names for consistency
-  static constexpr const char *METRIC_RENDER_TRACKS = "Timeline.renderTracks";
-  static constexpr const char *METRIC_THUMBNAIL_LOAD =
-      "AssetBrowser.thumbnailLoad";
-  static constexpr const char *METRIC_THUMBNAIL_CACHE_HIT =
-      "AssetBrowser.thumbnailCacheHit";
-  static constexpr const char *METRIC_SCENE_ITEMS = "Timeline.sceneItemCount";
-  static constexpr const char *METRIC_CACHE_SIZE_KB =
-      "AssetBrowser.cacheSizeKB";
-  static constexpr const char *METRIC_TIMELINE_CACHE_HIT =
-      "Timeline.cacheHitRate";
+  static constexpr const char* METRIC_RENDER_TRACKS = "Timeline.renderTracks";
+  static constexpr const char* METRIC_THUMBNAIL_LOAD = "AssetBrowser.thumbnailLoad";
+  static constexpr const char* METRIC_THUMBNAIL_CACHE_HIT = "AssetBrowser.thumbnailCacheHit";
+  static constexpr const char* METRIC_SCENE_ITEMS = "Timeline.sceneItemCount";
+  static constexpr const char* METRIC_CACHE_SIZE_KB = "AssetBrowser.cacheSizeKB";
+  static constexpr const char* METRIC_TIMELINE_CACHE_HIT = "Timeline.cacheHitRate";
 
 signals:
   /**
    * @brief Emitted when a metric exceeds a threshold
    */
-  void metricThresholdExceeded(const QString &name, double value,
-                               double threshold);
+  void metricThresholdExceeded(const QString& name, double value, double threshold);
 
 private:
   PerformanceMetrics();
   ~PerformanceMetrics() override = default;
 
-  PerformanceMetrics(const PerformanceMetrics &) = delete;
-  PerformanceMetrics &operator=(const PerformanceMetrics &) = delete;
+  PerformanceMetrics(const PerformanceMetrics&) = delete;
+  PerformanceMetrics& operator=(const PerformanceMetrics&) = delete;
 
   mutable QMutex m_mutex;
   std::unordered_map<QString, MetricStats> m_timingStats;
@@ -179,10 +174,8 @@ private:
  * @brief Macro for easy scoped timing
  */
 #ifdef NOVELMIND_PROFILING_ENABLED
-#define NM_PROFILE_SCOPE(name)                                                 \
-  NovelMind::editor::qt::ScopedTimer _nm_timer##__LINE__(name)
-#define NM_PROFILE_FUNCTION()                                                  \
-  NovelMind::editor::qt::ScopedTimer _nm_timer_func(__func__)
+#define NM_PROFILE_SCOPE(name) NovelMind::editor::qt::ScopedTimer _nm_timer##__LINE__(name)
+#define NM_PROFILE_FUNCTION() NovelMind::editor::qt::ScopedTimer _nm_timer_func(__func__)
 #else
 #define NM_PROFILE_SCOPE(name) (void)0
 #define NM_PROFILE_FUNCTION() (void)0

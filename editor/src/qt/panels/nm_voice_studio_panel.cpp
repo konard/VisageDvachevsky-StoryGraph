@@ -56,16 +56,15 @@ namespace NovelMind::editor::qt {
 
 class EditParamCommand : public QUndoCommand {
 public:
-  EditParamCommand(VoiceClipEdit *edit, VoiceClipEdit oldEdit,
-                   VoiceClipEdit newEdit, const QString &text)
-      : QUndoCommand(text), m_edit(edit), m_oldEdit(oldEdit),
-        m_newEdit(newEdit) {}
+  EditParamCommand(VoiceClipEdit* edit, VoiceClipEdit oldEdit, VoiceClipEdit newEdit,
+                   const QString& text)
+      : QUndoCommand(text), m_edit(edit), m_oldEdit(oldEdit), m_newEdit(newEdit) {}
 
   void undo() override { *m_edit = m_oldEdit; }
   void redo() override { *m_edit = m_newEdit; }
 
 private:
-  VoiceClipEdit *m_edit;
+  VoiceClipEdit* m_edit;
   VoiceClipEdit m_oldEdit;
   VoiceClipEdit m_newEdit;
 };
@@ -74,21 +73,21 @@ private:
 // NMVoiceStudioPanel
 // ============================================================================
 
-NMVoiceStudioPanel::NMVoiceStudioPanel(QWidget *parent)
-    : NMDockPanel("Voice Studio", parent) {
+NMVoiceStudioPanel::NMVoiceStudioPanel(QWidget* parent) : NMDockPanel("Voice Studio", parent) {
   m_undoStack = std::make_unique<QUndoStack>(this);
   setupUI();
 }
 
-NMVoiceStudioPanel::~NMVoiceStudioPanel() { onShutdown(); }
+NMVoiceStudioPanel::~NMVoiceStudioPanel() {
+  onShutdown();
+}
 
 void NMVoiceStudioPanel::onInitialize() {
   NOVELMIND_LOG_INFO("Voice Studio Panel initialized");
 
   // Set up update timer
   m_updateTimer = new QTimer(this);
-  connect(m_updateTimer, &QTimer::timeout, this,
-          &NMVoiceStudioPanel::onUpdateTimer);
+  connect(m_updateTimer, &QTimer::timeout, this, &NMVoiceStudioPanel::onUpdateTimer);
   m_updateTimer->start(50); // 20 Hz update rate
 
   // Load default presets - fields must be in declaration order
@@ -123,7 +122,7 @@ void NMVoiceStudioPanel::onInitialize() {
   // Populate preset combo
   if (m_presetCombo) {
     m_presetCombo->clear();
-    for (const auto &preset : m_presets) {
+    for (const auto& preset : m_presets) {
       m_presetCombo->addItem(preset.name);
     }
   }
@@ -157,14 +156,14 @@ void NMVoiceStudioPanel::onUpdate(double) {
   // Updates happen via timer
 }
 
-void NMVoiceStudioPanel::setManifest(audio::VoiceManifest *manifest) {
+void NMVoiceStudioPanel::setManifest(audio::VoiceManifest* manifest) {
   m_manifest = manifest;
 }
 
-bool NMVoiceStudioPanel::loadFile(const QString &filePath) {
+bool NMVoiceStudioPanel::loadFile(const QString& filePath) {
   if (!VoiceStudioWavIO::loadWavFile(filePath, m_clip)) {
-    NMMessageDialog::showWarning(
-        this, tr("Error"), tr("Could not load audio file: %1").arg(filePath));
+    NMMessageDialog::showWarning(this, tr("Error"),
+                                 tr("Could not load audio file: %1").arg(filePath));
     return false;
   }
 
@@ -183,20 +182,19 @@ bool NMVoiceStudioPanel::loadFile(const QString &filePath) {
   return true;
 }
 
-bool NMVoiceStudioPanel::loadFromLineId(const QString &lineId,
-                                        const QString &locale) {
+bool NMVoiceStudioPanel::loadFromLineId(const QString& lineId, const QString& locale) {
   if (!m_manifest)
     return false;
 
   m_currentLineId = lineId;
   m_currentLocale = locale;
 
-  auto *line = m_manifest->getLine(lineId.toStdString());
+  auto* line = m_manifest->getLine(lineId.toStdString());
   if (!line)
     return false;
 
   // Get the file for this locale
-  auto *localeFile = line->getFile(locale.toStdString());
+  auto* localeFile = line->getFile(locale.toStdString());
   if (!localeFile || localeFile->filePath.empty()) {
     return false;
   }
@@ -232,8 +230,7 @@ void NMVoiceStudioPanel::onInputDeviceChanged(int index) {
   auto result = m_recorder->setInputDevice(deviceId.toStdString());
   if (!result) {
     NOVELMIND_LOG_ERROR("Failed to set input device: {}", result.error());
-    NMMessageDialog::showWarning(this, tr("Device Error"),
-                                 QString::fromStdString(result.error()));
+    NMMessageDialog::showWarning(this, tr("Device Error"), QString::fromStdString(result.error()));
   } else {
     NOVELMIND_LOG_INFO("Input device changed to: {}",
                        m_inputDeviceCombo->currentText().toStdString());
@@ -341,7 +338,7 @@ void NMVoiceStudioPanel::onPlayClicked() {
   if (!m_clip || !m_mediaPlayer)
     return;
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
   if (m_isPlaying) {
     // Pause
     m_mediaPlayer->pause();
@@ -379,7 +376,7 @@ void NMVoiceStudioPanel::onStopClicked() {
   }
   m_isPlaying = false;
   if (m_playBtn) {
-    auto &iconMgr = NMIconManager::instance();
+    auto& iconMgr = NMIconManager::instance();
     m_playBtn->setIcon(iconMgr.getIcon("play", 16));
     m_playBtn->setText(tr("Play"));
   }
@@ -404,8 +401,7 @@ void NMVoiceStudioPanel::onTrimToSelection() {
   double selEnd = m_waveformWidget->getSelectionEnd();
 
   if (selStart >= selEnd) {
-    NMMessageDialog::showInfo(this, tr("Trim"),
-                              tr("Please select a region to keep."));
+    NMMessageDialog::showInfo(this, tr("Trim"), tr("Please select a region to keep."));
     return;
   }
 
@@ -413,14 +409,11 @@ void NMVoiceStudioPanel::onTrimToSelection() {
   VoiceClipEdit newEdit = m_clip->edit;
 
   uint32_t sampleRate = m_clip->format.sampleRate;
-  newEdit.trimStartSamples =
-      static_cast<int64_t>(selStart * static_cast<double>(sampleRate));
-  newEdit.trimEndSamples =
-      static_cast<int64_t>((m_clip->getDurationSeconds() - selEnd) *
-                           static_cast<double>(sampleRate));
+  newEdit.trimStartSamples = static_cast<int64_t>(selStart * static_cast<double>(sampleRate));
+  newEdit.trimEndSamples = static_cast<int64_t>((m_clip->getDurationSeconds() - selEnd) *
+                                                static_cast<double>(sampleRate));
 
-  auto *cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit,
-                                   tr("Trim to Selection"));
+  auto* cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit, tr("Trim to Selection"));
   m_undoStack->push(cmd);
 
   m_waveformWidget->clearSelection();
@@ -437,8 +430,7 @@ void NMVoiceStudioPanel::onResetTrim() {
   newEdit.trimStartSamples = 0;
   newEdit.trimEndSamples = 0;
 
-  auto *cmd =
-      new EditParamCommand(&m_clip->edit, oldEdit, newEdit, tr("Reset Trim"));
+  auto* cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit, tr("Reset Trim"));
   m_undoStack->push(cmd);
 
   if (m_waveformWidget) {
@@ -566,15 +558,14 @@ void NMVoiceStudioPanel::onSavePresetClicked() {
     return;
 
   bool ok;
-  QString name =
-      NMInputDialog::getText(this, tr("Save Preset"), tr("Preset name:"),
-                             QLineEdit::Normal, QString(), &ok);
+  QString name = NMInputDialog::getText(this, tr("Save Preset"), tr("Preset name:"),
+                                        QLineEdit::Normal, QString(), &ok);
   if (!ok || name.isEmpty())
     return;
 
   // Add or update preset
   bool found = false;
-  for (auto &preset : m_presets) {
+  for (auto& preset : m_presets) {
     if (preset.name == name) {
       preset.edit = m_clip->edit;
       found = true;
@@ -604,9 +595,8 @@ void NMVoiceStudioPanel::onSaveClicked() {
 }
 
 void NMVoiceStudioPanel::onSaveAsClicked() {
-  QString filePath =
-      NMFileDialog::getSaveFileName(this, tr("Save Audio File"), QString(),
-                                    tr("WAV Files (*.wav);;All Files (*)"));
+  QString filePath = NMFileDialog::getSaveFileName(this, tr("Save Audio File"), QString(),
+                                                   tr("WAV Files (*.wav);;All Files (*)"));
 
   if (filePath.isEmpty())
     return;
@@ -627,9 +617,8 @@ void NMVoiceStudioPanel::onExportClicked() {
   if (!m_clip)
     return;
 
-  QString filePath = NMFileDialog::getSaveFileName(
-      this, tr("Export Processed Audio"), QString(),
-      tr("WAV Files (*.wav);;All Files (*)"));
+  QString filePath = NMFileDialog::getSaveFileName(this, tr("Export Processed Audio"), QString(),
+                                                   tr("WAV Files (*.wav);;All Files (*)"));
 
   if (filePath.isEmpty())
     return;
@@ -641,8 +630,7 @@ void NMVoiceStudioPanel::onExportClicked() {
   // Render and save
   auto processed = renderProcessedAudio();
   if (processed.empty()) {
-    NMMessageDialog::showWarning(this, tr("Export Error"),
-                                 tr("No audio to export."));
+    NMMessageDialog::showWarning(this, tr("Export Error"), tr("No audio to export."));
     return;
   }
 
@@ -678,9 +666,9 @@ void NMVoiceStudioPanel::onOpenClicked() {
     }
   }
 
-  QString filePath = NMFileDialog::getOpenFileName(
-      this, tr("Open Audio File"), QString(),
-      tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
+  QString filePath =
+      NMFileDialog::getOpenFileName(this, tr("Open Audio File"), QString(),
+                                    tr("Audio Files (*.wav *.ogg *.mp3 *.flac);;All Files (*)"));
 
   if (!filePath.isEmpty()) {
     loadFile(filePath);
@@ -733,7 +721,7 @@ void NMVoiceStudioPanel::onPlaybackStateChanged() {
   m_isPlaying = (state == QMediaPlayer::PlayingState);
 
   if (m_playBtn) {
-    auto &iconMgr = NMIconManager::instance();
+    auto& iconMgr = NMIconManager::instance();
     if (m_isPlaying) {
       m_playBtn->setIcon(iconMgr.getIcon("pause", 16));
       m_playBtn->setText(tr("Pause"));
@@ -750,7 +738,7 @@ void NMVoiceStudioPanel::onPlaybackMediaStatusChanged() {
   // Handle media status changes (loaded, buffering, etc.)
 }
 
-void NMVoiceStudioPanel::onLevelUpdate(const audio::LevelMeter &level) {
+void NMVoiceStudioPanel::onLevelUpdate(const audio::LevelMeter& level) {
   if (m_vuMeter) {
     m_vuMeter->setLevel(level.rmsLevelDb, level.peakLevelDb, level.clipping);
   }
@@ -766,8 +754,7 @@ void NMVoiceStudioPanel::onRecordingStateChanged(int state) {
   // Update recording UI based on state
 }
 
-void NMVoiceStudioPanel::onRecordingComplete(
-    const audio::RecordingResult &result) {
+void NMVoiceStudioPanel::onRecordingComplete(const audio::RecordingResult& result) {
   m_isRecording = false;
   if (m_recordBtn)
     m_recordBtn->setEnabled(true);
@@ -782,7 +769,7 @@ void NMVoiceStudioPanel::onRecordingComplete(
   emit recordingCompleted(QString::fromStdString(result.filePath));
 }
 
-void NMVoiceStudioPanel::onRecordingError(const QString &error) {
+void NMVoiceStudioPanel::onRecordingError(const QString& error) {
   m_isRecording = false;
   if (m_recordBtn)
     m_recordBtn->setEnabled(true);
@@ -812,7 +799,7 @@ void NMVoiceStudioPanel::onUpdateTimer() {
 
 void NMVoiceStudioPanel::setupUI() {
   m_contentWidget = new QWidget(this);
-  auto *mainLayout = new QVBoxLayout(m_contentWidget);
+  auto* mainLayout = new QVBoxLayout(m_contentWidget);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
@@ -824,8 +811,8 @@ void NMVoiceStudioPanel::setupUI() {
   m_mainSplitter = new QSplitter(Qt::Horizontal, m_contentWidget);
 
   // Left column
-  auto *leftWidget = new QWidget(m_mainSplitter);
-  auto *leftLayout = new QVBoxLayout(leftWidget);
+  auto* leftWidget = new QWidget(m_mainSplitter);
+  auto* leftLayout = new QVBoxLayout(leftWidget);
   leftLayout->setContentsMargins(8, 8, 8, 8);
   leftLayout->setSpacing(8);
 
@@ -833,26 +820,24 @@ void NMVoiceStudioPanel::setupUI() {
   leftLayout->addWidget(m_deviceGroup);
 
   // Recording controls
-  auto *recordGroup = new QGroupBox(tr("Recording"), leftWidget);
-  auto *recordLayout = new QVBoxLayout(recordGroup);
+  auto* recordGroup = new QGroupBox(tr("Recording"), leftWidget);
+  auto* recordLayout = new QVBoxLayout(recordGroup);
 
-  auto *recordBtnLayout = new QHBoxLayout();
-  auto &iconMgr = NMIconManager::instance();
+  auto* recordBtnLayout = new QHBoxLayout();
+  auto& iconMgr = NMIconManager::instance();
 
   m_recordBtn = new QPushButton(tr("Record"), recordGroup);
   m_recordBtn->setIcon(iconMgr.getIcon("record", 16));
   m_recordBtn->setStyleSheet("QPushButton { background-color: #c44; color: "
                              "white; font-weight: bold; }");
   m_recordBtn->setToolTip(tr("Start recording (R)"));
-  connect(m_recordBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onRecordClicked);
+  connect(m_recordBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onRecordClicked);
   recordBtnLayout->addWidget(m_recordBtn);
 
   m_stopRecordBtn = new QPushButton(tr("Stop"), recordGroup);
   m_stopRecordBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopRecordBtn->setEnabled(false);
-  connect(m_stopRecordBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onStopRecordClicked);
+  connect(m_stopRecordBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onStopRecordClicked);
   recordBtnLayout->addWidget(m_stopRecordBtn);
 
   m_cancelRecordBtn = new QPushButton(tr("Cancel"), recordGroup);
@@ -865,8 +850,7 @@ void NMVoiceStudioPanel::setupUI() {
   recordLayout->addLayout(recordBtnLayout);
 
   m_recordingTimeLabel = new QLabel("00:00.000", recordGroup);
-  m_recordingTimeLabel->setStyleSheet(
-      "font-family: monospace; font-size: 14px;");
+  m_recordingTimeLabel->setStyleSheet("font-family: monospace; font-size: 14px;");
   m_recordingTimeLabel->setAlignment(Qt::AlignCenter);
   recordLayout->addWidget(m_recordingTimeLabel);
 
@@ -878,8 +862,8 @@ void NMVoiceStudioPanel::setupUI() {
   leftLayout->addStretch();
 
   // Right column
-  auto *rightWidget = new QWidget(m_mainSplitter);
-  auto *rightLayout = new QVBoxLayout(rightWidget);
+  auto* rightWidget = new QWidget(m_mainSplitter);
+  auto* rightLayout = new QVBoxLayout(rightWidget);
   rightLayout->setContentsMargins(8, 8, 8, 8);
   rightLayout->setSpacing(8);
 
@@ -912,54 +896,47 @@ void NMVoiceStudioPanel::setupUI() {
 void NMVoiceStudioPanel::setupToolbar() {
   m_toolbar = new QToolBar(m_contentWidget);
   m_toolbar->setIconSize(QSize(16, 16));
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
-  auto *openAction = m_toolbar->addAction(iconMgr.getIcon("file-open", 16), tr("Open"));
+  auto* openAction = m_toolbar->addAction(iconMgr.getIcon("file-open", 16), tr("Open"));
   openAction->setToolTip(tr("Open audio file (Ctrl+O)"));
-  connect(openAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onOpenClicked);
+  connect(openAction, &QAction::triggered, this, &NMVoiceStudioPanel::onOpenClicked);
 
-  auto *saveAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save"));
+  auto* saveAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save"));
   saveAction->setToolTip(tr("Save (Ctrl+S)"));
-  connect(saveAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onSaveClicked);
+  connect(saveAction, &QAction::triggered, this, &NMVoiceStudioPanel::onSaveClicked);
 
-  auto *saveAsAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save As"));
+  auto* saveAsAction = m_toolbar->addAction(iconMgr.getIcon("file-save", 16), tr("Save As"));
   saveAsAction->setToolTip(tr("Save As"));
-  connect(saveAsAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onSaveAsClicked);
+  connect(saveAsAction, &QAction::triggered, this, &NMVoiceStudioPanel::onSaveAsClicked);
 
-  auto *exportAction = m_toolbar->addAction(iconMgr.getIcon("export", 16), tr("Export"));
+  auto* exportAction = m_toolbar->addAction(iconMgr.getIcon("export", 16), tr("Export"));
   exportAction->setToolTip(tr("Export processed audio (Ctrl+E)"));
-  connect(exportAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onExportClicked);
+  connect(exportAction, &QAction::triggered, this, &NMVoiceStudioPanel::onExportClicked);
 
   m_toolbar->addSeparator();
 
-  auto *undoAction = m_toolbar->addAction(iconMgr.getIcon("edit-undo", 16), tr("Undo"));
+  auto* undoAction = m_toolbar->addAction(iconMgr.getIcon("edit-undo", 16), tr("Undo"));
   undoAction->setToolTip(tr("Undo (Ctrl+Z)"));
-  connect(undoAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onUndoClicked);
+  connect(undoAction, &QAction::triggered, this, &NMVoiceStudioPanel::onUndoClicked);
 
-  auto *redoAction = m_toolbar->addAction(iconMgr.getIcon("edit-redo", 16), tr("Redo"));
+  auto* redoAction = m_toolbar->addAction(iconMgr.getIcon("edit-redo", 16), tr("Redo"));
   redoAction->setToolTip(tr("Redo (Ctrl+Y)"));
-  connect(redoAction, &QAction::triggered, this,
-          &NMVoiceStudioPanel::onRedoClicked);
+  connect(redoAction, &QAction::triggered, this, &NMVoiceStudioPanel::onRedoClicked);
 }
 
 void NMVoiceStudioPanel::setupDeviceSection() {
   m_deviceGroup = new QGroupBox(tr("Input Device"), m_contentWidget);
-  auto *layout = new QVBoxLayout(m_deviceGroup);
+  auto* layout = new QVBoxLayout(m_deviceGroup);
 
   m_inputDeviceCombo = new QComboBox(m_deviceGroup);
   m_inputDeviceCombo->setToolTip(tr("Select microphone"));
-  connect(m_inputDeviceCombo,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_inputDeviceCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMVoiceStudioPanel::onInputDeviceChanged);
   layout->addWidget(m_inputDeviceCombo);
 
   // Input gain
-  auto *gainLayout = new QHBoxLayout();
+  auto* gainLayout = new QHBoxLayout();
   gainLayout->addWidget(new QLabel(tr("Input Gain:"), m_deviceGroup));
 
   m_inputGainSlider = new QSlider(Qt::Horizontal, m_deviceGroup);
@@ -985,29 +962,26 @@ void NMVoiceStudioPanel::setupDeviceSection() {
 
 void NMVoiceStudioPanel::setupTransportSection() {
   m_transportGroup = new QGroupBox(tr("Transport"), m_contentWidget);
-  auto *layout = new QHBoxLayout(m_transportGroup);
-  auto &iconMgr = NMIconManager::instance();
+  auto* layout = new QHBoxLayout(m_transportGroup);
+  auto& iconMgr = NMIconManager::instance();
 
   m_playBtn = new QPushButton(tr("Play"), m_transportGroup);
   m_playBtn->setIcon(iconMgr.getIcon("play", 16));
   m_playBtn->setToolTip(tr("Play/Pause (Space)"));
-  connect(m_playBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onPlayClicked);
+  connect(m_playBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onPlayClicked);
   layout->addWidget(m_playBtn);
 
   m_stopBtn = new QPushButton(tr("Stop"), m_transportGroup);
   m_stopBtn->setIcon(iconMgr.getIcon("stop", 16));
   m_stopBtn->setToolTip(tr("Stop playback"));
-  connect(m_stopBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onStopClicked);
+  connect(m_stopBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onStopClicked);
   layout->addWidget(m_stopBtn);
 
   m_loopBtn = new QPushButton(tr("Loop"), m_transportGroup);
   m_loopBtn->setIcon(iconMgr.getIcon("loop", 16));
   m_loopBtn->setCheckable(true);
   m_loopBtn->setToolTip(tr("Toggle loop (L)"));
-  connect(m_loopBtn, &QPushButton::toggled, this,
-          &NMVoiceStudioPanel::onLoopClicked);
+  connect(m_loopBtn, &QPushButton::toggled, this, &NMVoiceStudioPanel::onLoopClicked);
   layout->addWidget(m_loopBtn);
 
   layout->addStretch();
@@ -1027,7 +1001,7 @@ void NMVoiceStudioPanel::setupTransportSection() {
   // Zoom controls
   layout->addWidget(new QLabel(tr("Zoom:"), m_transportGroup));
 
-  auto *zoomOutBtn = new QPushButton("-", m_transportGroup);
+  auto* zoomOutBtn = new QPushButton("-", m_transportGroup);
   zoomOutBtn->setFixedWidth(30);
   zoomOutBtn->setToolTip(tr("Zoom out (-)"));
   connect(zoomOutBtn, &QPushButton::clicked, this, [this]() {
@@ -1042,7 +1016,7 @@ void NMVoiceStudioPanel::setupTransportSection() {
   m_zoomSlider->setMaximumWidth(80);
   layout->addWidget(m_zoomSlider);
 
-  auto *zoomInBtn = new QPushButton("+", m_transportGroup);
+  auto* zoomInBtn = new QPushButton("+", m_transportGroup);
   zoomInBtn->setFixedWidth(30);
   zoomInBtn->setToolTip(tr("Zoom in (+)"));
   connect(zoomInBtn, &QPushButton::clicked, this, [this]() {
@@ -1051,7 +1025,7 @@ void NMVoiceStudioPanel::setupTransportSection() {
   });
   layout->addWidget(zoomInBtn);
 
-  auto *zoomFitBtn = new QPushButton(tr("Fit"), m_transportGroup);
+  auto* zoomFitBtn = new QPushButton(tr("Fit"), m_transportGroup);
   zoomFitBtn->setToolTip(tr("Zoom to fit (F)"));
   connect(zoomFitBtn, &QPushButton::clicked, this, [this]() {
     if (m_waveformWidget)
@@ -1078,17 +1052,15 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_editGroup = new QGroupBox(tr("Edit"), m_contentWidget);
   m_editGroup->setCheckable(true);
   m_editGroup->setChecked(true);
-  auto *layout = new QGridLayout(m_editGroup);
-  auto &iconMgr = NMIconManager::instance();
+  auto* layout = new QGridLayout(m_editGroup);
+  auto& iconMgr = NMIconManager::instance();
 
   // Trim controls
   layout->addWidget(new QLabel(tr("Trim:"), m_editGroup), 0, 0);
 
-  m_trimToSelectionBtn =
-      new QPushButton(tr("Trim to Selection"), m_editGroup);
+  m_trimToSelectionBtn = new QPushButton(tr("Trim to Selection"), m_editGroup);
   m_trimToSelectionBtn->setIcon(iconMgr.getIcon("edit-cut", 16));
-  m_trimToSelectionBtn->setToolTip(
-      tr("Remove audio outside selection (Ctrl+T)"));
+  m_trimToSelectionBtn->setToolTip(tr("Remove audio outside selection (Ctrl+T)"));
   connect(m_trimToSelectionBtn, &QPushButton::clicked, this,
           &NMVoiceStudioPanel::onTrimToSelection);
   layout->addWidget(m_trimToSelectionBtn, 0, 1);
@@ -1096,8 +1068,7 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_resetTrimBtn = new QPushButton(tr("Reset Trim"), m_editGroup);
   m_resetTrimBtn->setIcon(iconMgr.getIcon("property-reset", 16));
   m_resetTrimBtn->setToolTip(tr("Reset trim markers"));
-  connect(m_resetTrimBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onResetTrim);
+  connect(m_resetTrimBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onResetTrim);
   layout->addWidget(m_resetTrimBtn, 0, 2);
 
   // Fade controls
@@ -1107,8 +1078,8 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_fadeInSpin->setValue(0.0);
   m_fadeInSpin->setSuffix(" ms");
   m_fadeInSpin->setToolTip(tr("Fade in duration in milliseconds"));
-  connect(m_fadeInSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onFadeInChanged);
+  connect(m_fadeInSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onFadeInChanged);
   layout->addWidget(m_fadeInSpin, 1, 1);
 
   layout->addWidget(new QLabel(tr("Fade Out:"), m_editGroup), 1, 2);
@@ -1117,8 +1088,8 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_fadeOutSpin->setValue(0.0);
   m_fadeOutSpin->setSuffix(" ms");
   m_fadeOutSpin->setToolTip(tr("Fade out duration in milliseconds"));
-  connect(m_fadeOutSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onFadeOutChanged);
+  connect(m_fadeOutSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onFadeOutChanged);
   layout->addWidget(m_fadeOutSpin, 1, 3);
 
   // Gain controls
@@ -1128,15 +1099,14 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_preGainSpin->setValue(0.0);
   m_preGainSpin->setSuffix(" dB");
   m_preGainSpin->setToolTip(tr("Apply gain before processing"));
-  connect(m_preGainSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onPreGainChanged);
+  connect(m_preGainSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onPreGainChanged);
   layout->addWidget(m_preGainSpin, 2, 1);
 
   // Normalize
   m_normalizeCheck = new QCheckBox(tr("Normalize to"), m_editGroup);
   m_normalizeCheck->setToolTip(tr("Automatically adjust peak level"));
-  connect(m_normalizeCheck, &QCheckBox::toggled, this,
-          &NMVoiceStudioPanel::onNormalizeToggled);
+  connect(m_normalizeCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onNormalizeToggled);
   layout->addWidget(m_normalizeCheck, 2, 2);
 
   m_normalizeTargetSpin = new QDoubleSpinBox(m_editGroup);
@@ -1145,8 +1115,7 @@ void NMVoiceStudioPanel::setupEditSection() {
   m_normalizeTargetSpin->setSuffix(" dBFS");
   m_normalizeTargetSpin->setEnabled(false);
   m_normalizeTargetSpin->setToolTip(tr("Target peak level for normalization"));
-  connect(m_normalizeTargetSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  connect(m_normalizeTargetSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMVoiceStudioPanel::onNormalizeTargetChanged);
   layout->addWidget(m_normalizeTargetSpin, 2, 3);
 }
@@ -1155,14 +1124,12 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_filterGroup = new QGroupBox(tr("Filters"), m_contentWidget);
   m_filterGroup->setCheckable(true);
   m_filterGroup->setChecked(true);
-  auto *layout = new QGridLayout(m_filterGroup);
+  auto* layout = new QGridLayout(m_filterGroup);
 
   // High-pass
   m_highPassCheck = new QCheckBox(tr("High-Pass Filter"), m_filterGroup);
-  m_highPassCheck->setToolTip(
-      tr("Remove low-frequency rumble below the cutoff"));
-  connect(m_highPassCheck, &QCheckBox::toggled, this,
-          &NMVoiceStudioPanel::onHighPassToggled);
+  m_highPassCheck->setToolTip(tr("Remove low-frequency rumble below the cutoff"));
+  connect(m_highPassCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onHighPassToggled);
   layout->addWidget(m_highPassCheck, 0, 0);
 
   m_highPassFreqSpin = new QDoubleSpinBox(m_filterGroup);
@@ -1170,16 +1137,14 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_highPassFreqSpin->setValue(80.0);
   m_highPassFreqSpin->setSuffix(" Hz");
   m_highPassFreqSpin->setEnabled(false);
-  connect(m_highPassFreqSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  connect(m_highPassFreqSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMVoiceStudioPanel::onHighPassFreqChanged);
   layout->addWidget(m_highPassFreqSpin, 0, 1);
 
   // Low-pass
   m_lowPassCheck = new QCheckBox(tr("Low-Pass Filter"), m_filterGroup);
   m_lowPassCheck->setToolTip(tr("Remove high-frequency hiss above the cutoff"));
-  connect(m_lowPassCheck, &QCheckBox::toggled, this,
-          &NMVoiceStudioPanel::onLowPassToggled);
+  connect(m_lowPassCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onLowPassToggled);
   layout->addWidget(m_lowPassCheck, 0, 2);
 
   m_lowPassFreqSpin = new QDoubleSpinBox(m_filterGroup);
@@ -1187,16 +1152,14 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_lowPassFreqSpin->setValue(12000.0);
   m_lowPassFreqSpin->setSuffix(" Hz");
   m_lowPassFreqSpin->setEnabled(false);
-  connect(m_lowPassFreqSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  connect(m_lowPassFreqSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMVoiceStudioPanel::onLowPassFreqChanged);
   layout->addWidget(m_lowPassFreqSpin, 0, 3);
 
   // 3-Band EQ
   m_eqCheck = new QCheckBox(tr("3-Band EQ"), m_filterGroup);
   m_eqCheck->setToolTip(tr("Enable 3-band equalizer"));
-  connect(m_eqCheck, &QCheckBox::toggled, this,
-          &NMVoiceStudioPanel::onEQToggled);
+  connect(m_eqCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onEQToggled);
   layout->addWidget(m_eqCheck, 1, 0);
 
   layout->addWidget(new QLabel(tr("Low:"), m_filterGroup), 1, 1);
@@ -1205,8 +1168,8 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_eqLowSpin->setValue(0.0);
   m_eqLowSpin->setSuffix(" dB");
   m_eqLowSpin->setEnabled(false);
-  connect(m_eqLowSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onEQLowChanged);
+  connect(m_eqLowSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onEQLowChanged);
   layout->addWidget(m_eqLowSpin, 1, 2);
 
   layout->addWidget(new QLabel(tr("Mid:"), m_filterGroup), 2, 1);
@@ -1215,8 +1178,8 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_eqMidSpin->setValue(0.0);
   m_eqMidSpin->setSuffix(" dB");
   m_eqMidSpin->setEnabled(false);
-  connect(m_eqMidSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onEQMidChanged);
+  connect(m_eqMidSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onEQMidChanged);
   layout->addWidget(m_eqMidSpin, 2, 2);
 
   layout->addWidget(new QLabel(tr("High:"), m_filterGroup), 2, 3);
@@ -1225,15 +1188,14 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_eqHighSpin->setValue(0.0);
   m_eqHighSpin->setSuffix(" dB");
   m_eqHighSpin->setEnabled(false);
-  connect(m_eqHighSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-          this, &NMVoiceStudioPanel::onEQHighChanged);
+  connect(m_eqHighSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+          &NMVoiceStudioPanel::onEQHighChanged);
   layout->addWidget(m_eqHighSpin, 2, 4);
 
   // Noise gate
   m_noiseGateCheck = new QCheckBox(tr("Noise Gate"), m_filterGroup);
   m_noiseGateCheck->setToolTip(tr("Reduce audio below threshold"));
-  connect(m_noiseGateCheck, &QCheckBox::toggled, this,
-          &NMVoiceStudioPanel::onNoiseGateToggled);
+  connect(m_noiseGateCheck, &QCheckBox::toggled, this, &NMVoiceStudioPanel::onNoiseGateToggled);
   layout->addWidget(m_noiseGateCheck, 3, 0);
 
   layout->addWidget(new QLabel(tr("Threshold:"), m_filterGroup), 3, 1);
@@ -1242,34 +1204,32 @@ void NMVoiceStudioPanel::setupFilterSection() {
   m_noiseGateThresholdSpin->setValue(-40.0);
   m_noiseGateThresholdSpin->setSuffix(" dB");
   m_noiseGateThresholdSpin->setEnabled(false);
-  connect(m_noiseGateThresholdSpin,
-          QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
+  connect(m_noiseGateThresholdSpin, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
           &NMVoiceStudioPanel::onNoiseGateThresholdChanged);
   layout->addWidget(m_noiseGateThresholdSpin, 3, 2);
 }
 
 void NMVoiceStudioPanel::setupPresetSection() {
-  auto *presetGroup = new QGroupBox(tr("Presets"), m_contentWidget);
-  auto *layout = new QVBoxLayout(presetGroup);
-  auto &iconMgr = NMIconManager::instance();
+  auto* presetGroup = new QGroupBox(tr("Presets"), m_contentWidget);
+  auto* layout = new QVBoxLayout(presetGroup);
+  auto& iconMgr = NMIconManager::instance();
 
   m_presetCombo = new QComboBox(presetGroup);
   m_presetCombo->setToolTip(tr("Select a processing preset"));
-  connect(m_presetCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMVoiceStudioPanel::onPresetSelected);
+  connect(m_presetCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMVoiceStudioPanel::onPresetSelected);
   layout->addWidget(m_presetCombo);
 
   m_savePresetBtn = new QPushButton(tr("Save Preset"), presetGroup);
   m_savePresetBtn->setIcon(iconMgr.getIcon("file-save", 16));
   m_savePresetBtn->setToolTip(tr("Save current settings as a preset"));
-  connect(m_savePresetBtn, &QPushButton::clicked, this,
-          &NMVoiceStudioPanel::onSavePresetClicked);
+  connect(m_savePresetBtn, &QPushButton::clicked, this, &NMVoiceStudioPanel::onSavePresetClicked);
   layout->addWidget(m_savePresetBtn);
 }
 
 void NMVoiceStudioPanel::setupStatusBar() {
-  auto *statusWidget = new QWidget(m_contentWidget);
-  auto *layout = new QHBoxLayout(statusWidget);
+  auto* statusWidget = new QWidget(m_contentWidget);
+  auto* layout = new QHBoxLayout(statusWidget);
   layout->setContentsMargins(8, 4, 8, 4);
 
   m_statusLabel = new QLabel(tr("Ready"), statusWidget);
@@ -1313,36 +1273,34 @@ void NMVoiceStudioPanel::setupRecorder() {
   // Set up recording format
   audio::RecordingFormat format;
   format.sampleRate = 48000;
-  format.channels = 1;  // Mono
+  format.channels = 1; // Mono
   format.bitsPerSample = 16;
   format.outputFormat = audio::RecordingFormat::FileFormat::WAV;
-  format.autoTrimSilence = false;  // User controls trimming manually
-  format.normalize = false;  // User controls normalization manually
+  format.autoTrimSilence = false; // User controls trimming manually
+  format.normalize = false;       // User controls normalization manually
   m_recorder->setRecordingFormat(format);
 
   // Set up callbacks with Qt::QueuedConnection for thread safety
-  m_recorder->setOnLevelUpdate([this](const audio::LevelMeter &level) {
-    QMetaObject::invokeMethod(this, [this, level]() {
-      onLevelUpdate(level);
-    }, Qt::QueuedConnection);
+  m_recorder->setOnLevelUpdate([this](const audio::LevelMeter& level) {
+    QMetaObject::invokeMethod(
+        this, [this, level]() { onLevelUpdate(level); }, Qt::QueuedConnection);
   });
 
   m_recorder->setOnRecordingStateChanged([this](audio::RecordingState state) {
-    QMetaObject::invokeMethod(this, [this, state]() {
-      onRecordingStateChanged(static_cast<int>(state));
-    }, Qt::QueuedConnection);
+    QMetaObject::invokeMethod(
+        this, [this, state]() { onRecordingStateChanged(static_cast<int>(state)); },
+        Qt::QueuedConnection);
   });
 
-  m_recorder->setOnRecordingComplete([this](const audio::RecordingResult &result) {
-    QMetaObject::invokeMethod(this, [this, result]() {
-      onRecordingComplete(result);
-    }, Qt::QueuedConnection);
+  m_recorder->setOnRecordingComplete([this](const audio::RecordingResult& result) {
+    QMetaObject::invokeMethod(
+        this, [this, result]() { onRecordingComplete(result); }, Qt::QueuedConnection);
   });
 
-  m_recorder->setOnRecordingError([this](const std::string &error) {
-    QMetaObject::invokeMethod(this, [this, error]() {
-      onRecordingError(QString::fromStdString(error));
-    }, Qt::QueuedConnection);
+  m_recorder->setOnRecordingError([this](const std::string& error) {
+    QMetaObject::invokeMethod(
+        this, [this, error]() { onRecordingError(QString::fromStdString(error)); },
+        Qt::QueuedConnection);
   });
 
   // Start level metering for VU meter display
@@ -1364,7 +1322,7 @@ void NMVoiceStudioPanel::refreshDeviceList() {
   // Use AudioRecorder device list if available
   if (m_recorder && m_recorder->isInitialized()) {
     auto devices = m_recorder->getInputDevices();
-    for (const auto &device : devices) {
+    for (const auto& device : devices) {
       QString name = QString::fromStdString(device.name);
       if (device.isDefault) {
         name += tr(" (Default)");
@@ -1373,7 +1331,7 @@ void NMVoiceStudioPanel::refreshDeviceList() {
     }
 
     // Select current device
-    const auto *currentDevice = m_recorder->getCurrentInputDevice();
+    const auto* currentDevice = m_recorder->getCurrentInputDevice();
     if (currentDevice) {
       QString currentId = QString::fromStdString(currentDevice->id);
       for (int i = 0; i < m_inputDeviceCombo->count(); ++i) {
@@ -1388,7 +1346,7 @@ void NMVoiceStudioPanel::refreshDeviceList() {
     m_inputDeviceCombo->addItem(tr("(Default Device)"));
 
     auto devices = QMediaDevices::audioInputs();
-    for (const auto &device : devices) {
+    for (const auto& device : devices) {
       QString name = device.description();
       if (device == QMediaDevices::defaultAudioInput()) {
         name += tr(" (Default)");
@@ -1485,14 +1443,12 @@ void NMVoiceStudioPanel::updateStatusBar() {
   }
 
   if (m_fileInfoLabel) {
-    m_fileInfoLabel->setText(
-        QString("%1 Hz | %2 | %3-bit")
-            .arg(m_clip->format.sampleRate)
-            .arg(m_clip->format.channels == 1 ? "Mono" : "Stereo")
-            .arg(m_clip->format.bitsPerSample));
+    m_fileInfoLabel->setText(QString("%1 Hz | %2 | %3-bit")
+                                 .arg(m_clip->format.sampleRate)
+                                 .arg(m_clip->format.channels == 1 ? "Mono" : "Stereo")
+                                 .arg(m_clip->format.bitsPerSample));
   }
 }
-
 
 std::vector<float> NMVoiceStudioPanel::renderProcessedAudio() {
   if (!m_clip)
@@ -1500,11 +1456,11 @@ std::vector<float> NMVoiceStudioPanel::renderProcessedAudio() {
   return AudioProcessor::process(m_clip->samples, m_clip->edit, m_clip->format);
 }
 
-void NMVoiceStudioPanel::applyPreset(const QString &presetName) {
+void NMVoiceStudioPanel::applyPreset(const QString& presetName) {
   if (!m_clip)
     return;
 
-  for (const auto &preset : m_presets) {
+  for (const auto& preset : m_presets) {
     if (preset.name == presetName) {
       VoiceClipEdit oldEdit = m_clip->edit;
       VoiceClipEdit newEdit = preset.edit;
@@ -1512,7 +1468,7 @@ void NMVoiceStudioPanel::applyPreset(const QString &presetName) {
       newEdit.trimStartSamples = oldEdit.trimStartSamples;
       newEdit.trimEndSamples = oldEdit.trimEndSamples;
 
-      auto *cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit,
+      auto* cmd = new EditParamCommand(&m_clip->edit, oldEdit, newEdit,
                                        tr("Apply Preset: %1").arg(presetName));
       m_undoStack->push(cmd);
 
@@ -1522,7 +1478,7 @@ void NMVoiceStudioPanel::applyPreset(const QString &presetName) {
   }
 }
 
-void NMVoiceStudioPanel::pushUndoCommand(const QString &description) {
+void NMVoiceStudioPanel::pushUndoCommand(const QString& description) {
   Q_UNUSED(description);
   // Handled by EditParamCommand
 }
@@ -1531,9 +1487,7 @@ QString NMVoiceStudioPanel::formatTime(double seconds) const {
   int totalSecs = static_cast<int>(seconds);
   int mins = totalSecs / 60;
   int secs = totalSecs % 60;
-  return QString("%1:%2")
-      .arg(mins, 2, 10, QChar('0'))
-      .arg(secs, 2, 10, QChar('0'));
+  return QString("%1:%2").arg(mins, 2, 10, QChar('0')).arg(secs, 2, 10, QChar('0'));
 }
 
 QString NMVoiceStudioPanel::formatTimeMs(double seconds) const {

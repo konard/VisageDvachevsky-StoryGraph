@@ -25,10 +25,11 @@ namespace NovelMind::editor::qt {
 // CurveData Implementation
 // =============================================================================
 
-CurveData::CurveData() { createDefault(); }
+CurveData::CurveData() {
+  createDefault();
+}
 
-CurvePointId CurveData::addPoint(qreal time, qreal value,
-                                 CurveInterpolation interpolation) {
+CurvePointId CurveData::addPoint(qreal time, qreal value, CurveInterpolation interpolation) {
   CurveDataPoint point;
   point.id = m_nextId++;
   point.time = std::clamp(time, 0.0, 1.0);
@@ -48,7 +49,7 @@ bool CurveData::removePoint(CurvePointId id) {
   }
 
   auto it = std::find_if(m_points.begin(), m_points.end(),
-                         [id](const CurveDataPoint &p) { return p.id == id; });
+                         [id](const CurveDataPoint& p) { return p.id == id; });
   if (it != m_points.end()) {
     m_points.erase(it);
     return true;
@@ -57,7 +58,7 @@ bool CurveData::removePoint(CurvePointId id) {
 }
 
 bool CurveData::updatePoint(CurvePointId id, qreal time, qreal value) {
-  CurveDataPoint *point = getPoint(id);
+  CurveDataPoint* point = getPoint(id);
   if (point) {
     point->time = std::clamp(time, 0.0, 1.0);
     point->value = std::clamp(value, 0.0, 1.0);
@@ -67,9 +68,8 @@ bool CurveData::updatePoint(CurvePointId id, qreal time, qreal value) {
   return false;
 }
 
-bool CurveData::updatePointInterpolation(CurvePointId id,
-                                         CurveInterpolation interpolation) {
-  CurveDataPoint *point = getPoint(id);
+bool CurveData::updatePointInterpolation(CurvePointId id, CurveInterpolation interpolation) {
+  CurveDataPoint* point = getPoint(id);
   if (point) {
     point->interpolation = interpolation;
     return true;
@@ -77,15 +77,15 @@ bool CurveData::updatePointInterpolation(CurvePointId id,
   return false;
 }
 
-CurveDataPoint *CurveData::getPoint(CurvePointId id) {
+CurveDataPoint* CurveData::getPoint(CurvePointId id) {
   auto it = std::find_if(m_points.begin(), m_points.end(),
-                         [id](const CurveDataPoint &p) { return p.id == id; });
+                         [id](const CurveDataPoint& p) { return p.id == id; });
   return (it != m_points.end()) ? &(*it) : nullptr;
 }
 
-const CurveDataPoint *CurveData::getPoint(CurvePointId id) const {
+const CurveDataPoint* CurveData::getPoint(CurvePointId id) const {
   auto it = std::find_if(m_points.begin(), m_points.end(),
-                         [id](const CurveDataPoint &p) { return p.id == id; });
+                         [id](const CurveDataPoint& p) { return p.id == id; });
   return (it != m_points.end()) ? &(*it) : nullptr;
 }
 
@@ -101,8 +101,8 @@ qreal CurveData::evaluate(qreal t) const {
 
   // Find the segment containing t
   for (size_t i = 0; i < m_points.size() - 1; ++i) {
-    const auto &p0 = m_points[i];
-    const auto &p1 = m_points[i + 1];
+    const auto& p0 = m_points[i];
+    const auto& p1 = m_points[i + 1];
 
     if (t >= p0.time && t <= p1.time) {
       qreal segmentLength = p1.time - p0.time;
@@ -128,9 +128,8 @@ qreal CurveData::evaluate(qreal t) const {
       }
 
       case CurveInterpolation::EaseInOut: {
-        qreal easedT = localT < 0.5
-                           ? 2.0 * localT * localT
-                           : 1.0 - std::pow(-2.0 * localT + 2.0, 2.0) / 2.0;
+        qreal easedT =
+            localT < 0.5 ? 2.0 * localT * localT : 1.0 - std::pow(-2.0 * localT + 2.0, 2.0) / 2.0;
         return p0.value + (p1.value - p0.value) * easedT;
       }
 
@@ -141,8 +140,8 @@ qreal CurveData::evaluate(qreal t) const {
         qreal mt = 1.0 - localT;
         qreal mt2 = mt * mt;
         qreal mt3 = mt2 * mt;
-        return mt3 * p0.value + 3.0 * mt2 * localT * p0.value +
-               3.0 * mt * t2 * p1.value + t3 * p1.value;
+        return mt3 * p0.value + 3.0 * mt2 * localT * p0.value + 3.0 * mt * t2 * p1.value +
+               t3 * p1.value;
       }
     }
   }
@@ -176,17 +175,14 @@ void CurveData::createDefault() {
 
 void CurveData::sortByTime() {
   std::sort(m_points.begin(), m_points.end(),
-            [](const CurveDataPoint &a, const CurveDataPoint &b) {
-              return a.time < b.time;
-            });
+            [](const CurveDataPoint& a, const CurveDataPoint& b) { return a.time < b.time; });
 }
 
 // =============================================================================
 // NMCurveView Implementation
 // =============================================================================
 
-NMCurveView::NMCurveView(QGraphicsScene *scene, QWidget *parent)
-    : QGraphicsView(scene, parent) {
+NMCurveView::NMCurveView(QGraphicsScene* scene, QWidget* parent) : QGraphicsView(scene, parent) {
   setRenderHint(QPainter::Antialiasing);
   setViewportUpdateMode(QGraphicsView::FullViewportUpdate);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -195,14 +191,14 @@ NMCurveView::NMCurveView(QGraphicsScene *scene, QWidget *parent)
   setBackgroundBrush(QBrush(QColor("#262626")));
 }
 
-void NMCurveView::resizeEvent(QResizeEvent *event) {
+void NMCurveView::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
   emit viewResized();
 }
 
-void NMCurveView::mousePressEvent(QMouseEvent *event) {
+void NMCurveView::mousePressEvent(QMouseEvent* event) {
   // Check if we clicked on an item
-  QGraphicsItem *item = itemAt(event->pos());
+  QGraphicsItem* item = itemAt(event->pos());
   if (item) {
     // Let the item handle the event
     QGraphicsView::mousePressEvent(event);
@@ -213,7 +209,7 @@ void NMCurveView::mousePressEvent(QMouseEvent *event) {
   QGraphicsView::mousePressEvent(event);
 }
 
-void NMCurveView::wheelEvent(QWheelEvent *event) {
+void NMCurveView::wheelEvent(QWheelEvent* event) {
   // Could implement zoom here if needed
   event->ignore();
 }
@@ -222,17 +218,18 @@ void NMCurveView::wheelEvent(QWheelEvent *event) {
 // NMCurveEditorPanel Implementation
 // =============================================================================
 
-NMCurveEditorPanel::NMCurveEditorPanel(QWidget *parent)
-    : NMDockPanel("Curve Editor", parent) {}
+NMCurveEditorPanel::NMCurveEditorPanel(QWidget* parent) : NMDockPanel("Curve Editor", parent) {}
 
 NMCurveEditorPanel::~NMCurveEditorPanel() = default;
 
-void NMCurveEditorPanel::onInitialize() { setupUI(); }
+void NMCurveEditorPanel::onInitialize() {
+  setupUI();
+}
 
 void NMCurveEditorPanel::onShutdown() {}
 
 void NMCurveEditorPanel::setupUI() {
-  QVBoxLayout *mainLayout = new QVBoxLayout(contentWidget());
+  QVBoxLayout* mainLayout = new QVBoxLayout(contentWidget());
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
@@ -246,8 +243,7 @@ void NMCurveEditorPanel::setupUI() {
   mainLayout->addWidget(m_curveView, 1);
 
   // Connect view signals
-  connect(m_curveView, &NMCurveView::viewResized, this,
-          &NMCurveEditorPanel::onViewResized);
+  connect(m_curveView, &NMCurveView::viewResized, this, &NMCurveEditorPanel::onViewResized);
 
   // Install event filter for keyboard handling
   m_curveView->installEventFilter(this);
@@ -260,15 +256,14 @@ void NMCurveEditorPanel::setupToolbar() {
   m_toolbar = new QToolBar(contentWidget());
   m_toolbar->setObjectName("CurveEditorToolbar");
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Add Point button
   m_addPointBtn = new QPushButton(m_toolbar);
   m_addPointBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addPointBtn->setToolTip(tr("Add Point (double-click on curve area)"));
   m_addPointBtn->setFlat(true);
-  connect(m_addPointBtn, &QPushButton::clicked, this,
-          &NMCurveEditorPanel::onAddPointClicked);
+  connect(m_addPointBtn, &QPushButton::clicked, this, &NMCurveEditorPanel::onAddPointClicked);
   m_toolbar->addWidget(m_addPointBtn);
 
   // Delete Point button
@@ -276,8 +271,7 @@ void NMCurveEditorPanel::setupToolbar() {
   m_deletePointBtn->setIcon(iconMgr.getIcon("delete", 16));
   m_deletePointBtn->setToolTip(tr("Delete Selected Points (Delete key)"));
   m_deletePointBtn->setFlat(true);
-  connect(m_deletePointBtn, &QPushButton::clicked, this,
-          &NMCurveEditorPanel::onDeletePointClicked);
+  connect(m_deletePointBtn, &QPushButton::clicked, this, &NMCurveEditorPanel::onDeletePointClicked);
   m_toolbar->addWidget(m_deletePointBtn);
 
   m_toolbar->addSeparator();
@@ -290,8 +284,8 @@ void NMCurveEditorPanel::setupToolbar() {
   m_interpCombo->addItem(tr("Ease In/Out"));
   m_interpCombo->addItem(tr("Bezier"));
   m_interpCombo->setToolTip(tr("Interpolation Mode"));
-  connect(m_interpCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMCurveEditorPanel::onInterpolationChanged);
+  connect(m_interpCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMCurveEditorPanel::onInterpolationChanged);
   m_toolbar->addWidget(m_interpCombo);
 }
 
@@ -299,20 +293,18 @@ void NMCurveEditorPanel::onUpdate([[maybe_unused]] double deltaTime) {
   // No continuous update needed
 }
 
-void NMCurveEditorPanel::setCurve(const QString &curveId) {
+void NMCurveEditorPanel::setCurve(const QString& curveId) {
   m_curveId = curveId;
   m_selectedPoints.clear();
   rebuildCurveVisuals();
 }
 
 void NMCurveEditorPanel::addPointAt(qreal time, qreal value) {
-  CurveInterpolation interp =
-      static_cast<CurveInterpolation>(m_interpCombo->currentIndex());
+  CurveInterpolation interp = static_cast<CurveInterpolation>(m_interpCombo->currentIndex());
   CurvePointId pointId = m_curveData.addPoint(time, value, interp);
 
   // Create undo command for adding point
-  auto *cmd = new AddCurvePointCommand(this, pointId, time, value,
-                                       static_cast<int>(interp));
+  auto* cmd = new AddCurvePointCommand(this, pointId, time, value, static_cast<int>(interp));
   NMUndoManager::instance().pushCommand(cmd);
 
   rebuildCurveVisuals();
@@ -330,10 +322,9 @@ void NMCurveEditorPanel::deleteSelectedPoints() {
   }
 
   // Remove selected points (in reverse order to maintain valid IDs)
-  for (auto it = m_selectedPoints.rbegin(); it != m_selectedPoints.rend();
-       ++it) {
+  for (auto it = m_selectedPoints.rbegin(); it != m_selectedPoints.rend(); ++it) {
     // Capture point state before deleting
-    if (const CurveDataPoint *pt = m_curveData.getPoint(*it)) {
+    if (const CurveDataPoint* pt = m_curveData.getPoint(*it)) {
       CurvePointSnapshot snapshot;
       snapshot.id = pt->id;
       snapshot.time = pt->time;
@@ -341,7 +332,7 @@ void NMCurveEditorPanel::deleteSelectedPoints() {
       snapshot.interpolation = static_cast<int>(pt->interpolation);
 
       // Create and push delete command
-      auto *cmd = new DeleteCurvePointCommand(this, snapshot);
+      auto* cmd = new DeleteCurvePointCommand(this, snapshot);
       NMUndoManager::instance().pushCommand(cmd);
     }
 
@@ -359,19 +350,19 @@ void NMCurveEditorPanel::deleteSelectedPoints() {
 
 void NMCurveEditorPanel::selectAllPoints() {
   m_selectedPoints.clear();
-  for (const auto &point : m_curveData.points()) {
+  for (const auto& point : m_curveData.points()) {
     m_selectedPoints.push_back(point.id);
   }
 
   // Update visual selection
-  for (auto &[id, item] : m_pointItems) {
+  for (auto& [id, item] : m_pointItems) {
     item->setPointSelected(true);
   }
 }
 
 void NMCurveEditorPanel::clearSelection() {
   m_selectedPoints.clear();
-  for (auto &[id, item] : m_pointItems) {
+  for (auto& [id, item] : m_pointItems) {
     item->setPointSelected(false);
   }
 }
@@ -381,7 +372,9 @@ void NMCurveEditorPanel::onAddPointClicked() {
   addPointAt(0.5, 0.5);
 }
 
-void NMCurveEditorPanel::onDeletePointClicked() { deleteSelectedPoints(); }
+void NMCurveEditorPanel::onDeletePointClicked() {
+  deleteSelectedPoints();
+}
 
 void NMCurveEditorPanel::onInterpolationChanged(int index) {
   CurveInterpolation interp = static_cast<CurveInterpolation>(index);
@@ -397,8 +390,7 @@ void NMCurveEditorPanel::onInterpolationChanged(int index) {
   }
 }
 
-void NMCurveEditorPanel::onPointPositionChanged(CurvePointId id, qreal time,
-                                                qreal value) {
+void NMCurveEditorPanel::onPointPositionChanged(CurvePointId id, qreal time, qreal value) {
   m_curveData.updatePoint(id, time, value);
   drawCurvePath();
   // Note: Don't emit curveChanged during drag, wait for dragFinished
@@ -408,7 +400,7 @@ void NMCurveEditorPanel::onPointClicked(CurvePointId id, bool additive) {
   if (!additive) {
     // Clear previous selection
     m_selectedPoints.clear();
-    for (auto &[pid, item] : m_pointItems) {
+    for (auto& [pid, item] : m_pointItems) {
       item->setPointSelected(false);
     }
   }
@@ -430,14 +422,13 @@ void NMCurveEditorPanel::onPointClicked(CurvePointId id, bool additive) {
   }
 
   // Capture initial position for potential drag (for undo)
-  if (const CurveDataPoint *point = m_curveData.getPoint(id)) {
+  if (const CurveDataPoint* point = m_curveData.getPoint(id)) {
     m_dragStartPositions[id] = {point->time, point->value};
   }
 
   // Update interpolation combo to reflect selected point's interpolation
   if (m_selectedPoints.size() == 1) {
-    if (const CurveDataPoint *point =
-            m_curveData.getPoint(m_selectedPoints[0])) {
+    if (const CurveDataPoint* point = m_curveData.getPoint(m_selectedPoints[0])) {
       m_interpCombo->blockSignals(true);
       m_interpCombo->setCurrentIndex(static_cast<int>(point->interpolation));
       m_interpCombo->blockSignals(false);
@@ -447,9 +438,8 @@ void NMCurveEditorPanel::onPointClicked(CurvePointId id, bool additive) {
 
 void NMCurveEditorPanel::onPointDragFinished(CurvePointId id) {
   // Create undo command for the move
-  if (auto it = m_dragStartPositions.find(id);
-      it != m_dragStartPositions.end()) {
-    const CurveDataPoint *point = m_curveData.getPoint(id);
+  if (auto it = m_dragStartPositions.find(id); it != m_dragStartPositions.end()) {
+    const CurveDataPoint* point = m_curveData.getPoint(id);
     if (point) {
       qreal oldTime = it->second.first;
       qreal oldValue = it->second.second;
@@ -458,8 +448,7 @@ void NMCurveEditorPanel::onPointDragFinished(CurvePointId id) {
 
       // Only create command if position actually changed
       if (oldTime != newTime || oldValue != newValue) {
-        auto *cmd = new MoveCurvePointCommand(this, id, oldTime, oldValue,
-                                              newTime, newValue);
+        auto* cmd = new MoveCurvePointCommand(this, id, oldTime, oldValue, newTime, newValue);
         NMUndoManager::instance().pushCommand(cmd);
       }
     }
@@ -505,7 +494,7 @@ void NMCurveEditorPanel::updateSceneRect() {
 
 void NMCurveEditorPanel::drawGrid() {
   // Remove old grid lines
-  for (auto *line : m_gridLines) {
+  for (auto* line : m_gridLines) {
     m_curveScene->removeItem(line);
     delete line;
   }
@@ -519,7 +508,7 @@ void NMCurveEditorPanel::drawGrid() {
   for (int i = 0; i <= GRID_DIVISIONS; ++i) {
     qreal x = rect.left() + (rect.width() * i / GRID_DIVISIONS);
     QPen pen = (i == 0 || i == GRID_DIVISIONS) ? axisPen : gridPen;
-    auto *line = m_curveScene->addLine(x, rect.top(), x, rect.bottom(), pen);
+    auto* line = m_curveScene->addLine(x, rect.top(), x, rect.bottom(), pen);
     line->setZValue(-1);
     m_gridLines.push_back(line);
   }
@@ -528,7 +517,7 @@ void NMCurveEditorPanel::drawGrid() {
   for (int i = 0; i <= GRID_DIVISIONS; ++i) {
     qreal y = rect.top() + (rect.height() * i / GRID_DIVISIONS);
     QPen pen = (i == 0 || i == GRID_DIVISIONS) ? axisPen : gridPen;
-    auto *line = m_curveScene->addLine(rect.left(), y, rect.right(), y, pen);
+    auto* line = m_curveScene->addLine(rect.left(), y, rect.right(), y, pen);
     line->setZValue(-1);
     m_gridLines.push_back(line);
   }
@@ -542,7 +531,7 @@ void NMCurveEditorPanel::drawCurvePath() {
     m_curvePathItem = nullptr;
   }
 
-  const auto &points = m_curveData.points();
+  const auto& points = m_curveData.points();
   if (points.size() < 2) {
     return;
   }
@@ -563,15 +552,14 @@ void NMCurveEditorPanel::drawCurvePath() {
     }
   }
 
-  m_curvePathItem =
-      m_curveScene->addPath(curvePath, QPen(QColor("#0078d4"), 2));
+  m_curvePathItem = m_curveScene->addPath(curvePath, QPen(QColor("#0078d4"), 2));
   m_curvePathItem->setZValue(0);
 }
 
 void NMCurveEditorPanel::updatePointItems() {
   // Track which IDs exist in the data model
   std::unordered_map<CurvePointId, bool> existingIds;
-  for (const auto &point : m_curveData.points()) {
+  for (const auto& point : m_curveData.points()) {
     existingIds[point.id] = true;
   }
 
@@ -587,20 +575,18 @@ void NMCurveEditorPanel::updatePointItems() {
   }
 
   // Create or update items for all points
-  for (const auto &point : m_curveData.points()) {
+  for (const auto& point : m_curveData.points()) {
     auto it = m_pointItems.find(point.id);
     if (it == m_pointItems.end()) {
       // Create new item
-      auto *item = new NMCurvePointItem(point.id, point.time, point.value);
-      item->setCoordinateConverter(
-          [this](qreal t, qreal v) { return normalizedToScene(t, v); },
-          [this](QPointF pos) { return sceneToNormalized(pos); });
+      auto* item = new NMCurvePointItem(point.id, point.time, point.value);
+      item->setCoordinateConverter([this](qreal t, qreal v) { return normalizedToScene(t, v); },
+                                   [this](QPointF pos) { return sceneToNormalized(pos); });
 
       // Connect signals
       connect(item, &NMCurvePointItem::positionChanged, this,
               &NMCurveEditorPanel::onPointPositionChanged);
-      connect(item, &NMCurvePointItem::clicked, this,
-              &NMCurveEditorPanel::onPointClicked);
+      connect(item, &NMCurvePointItem::clicked, this, &NMCurveEditorPanel::onPointClicked);
       connect(item, &NMCurvePointItem::dragFinished, this,
               &NMCurveEditorPanel::onPointDragFinished);
 
@@ -609,19 +595,17 @@ void NMCurveEditorPanel::updatePointItems() {
       m_pointItems[point.id] = item;
 
       // Restore selection state
-      bool isSelected =
-          std::find(m_selectedPoints.begin(), m_selectedPoints.end(),
-                    point.id) != m_selectedPoints.end();
+      bool isSelected = std::find(m_selectedPoints.begin(), m_selectedPoints.end(), point.id) !=
+                        m_selectedPoints.end();
       item->setPointSelected(isSelected);
     } else {
       // Update existing item
-      NMCurvePointItem *item = it->second;
-      item->setCoordinateConverter(
-          [this](qreal t, qreal v) { return normalizedToScene(t, v); },
-          [this](QPointF pos) { return sceneToNormalized(pos); });
+      NMCurvePointItem* item = it->second;
+      item->setCoordinateConverter([this](qreal t, qreal v) { return normalizedToScene(t, v); },
+                                   [this](QPointF pos) { return sceneToNormalized(pos); });
 
       // Update position (time/value might have changed after sort)
-      if (const CurveDataPoint *p = m_curveData.getPoint(point.id)) {
+      if (const CurveDataPoint* p = m_curveData.getPoint(point.id)) {
         if (item->time() != p->time || item->value() != p->value) {
           // Directly update without triggering signals
           item->setTime(p->time);

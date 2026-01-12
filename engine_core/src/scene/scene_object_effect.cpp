@@ -13,14 +13,14 @@ namespace NovelMind::scene {
 // EffectOverlayObject Implementation
 // ============================================================================
 
-EffectOverlayObject::EffectOverlayObject(const std::string &id)
+EffectOverlayObject::EffectOverlayObject(const std::string& id)
     : SceneObjectBase(id, SceneObjectType::EffectOverlay) {}
 
 void EffectOverlayObject::setEffectType(EffectType type) {
   m_effectType = type;
 }
 
-void EffectOverlayObject::setColor(const renderer::Color &color) {
+void EffectOverlayObject::setColor(const renderer::Color& color) {
   m_color = color;
 }
 
@@ -51,14 +51,13 @@ void EffectOverlayObject::update(f64 deltaTime) {
   }
 }
 
-void EffectOverlayObject::render(renderer::IRenderer &renderer) {
+void EffectOverlayObject::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_alpha <= 0.0f || !m_effectActive) {
     return;
   }
 
   renderer::Color effectColor = m_color;
-  f32 progress =
-      m_effectDuration > 0.0f ? m_effectTimer / m_effectDuration : 0.0f;
+  f32 progress = m_effectDuration > 0.0f ? m_effectTimer / m_effectDuration : 0.0f;
 
   switch (m_effectType) {
   case EffectType::Fade: {
@@ -90,14 +89,13 @@ void EffectOverlayObject::render(renderer::IRenderer &renderer) {
 
 SceneObjectState EffectOverlayObject::saveState() const {
   auto state = SceneObjectBase::saveState();
-  state.properties["effectType"] =
-      std::to_string(static_cast<int>(m_effectType));
+  state.properties["effectType"] = std::to_string(static_cast<int>(m_effectType));
   state.properties["intensity"] = std::to_string(m_intensity);
   state.properties["effectActive"] = m_effectActive ? "true" : "false";
   return state;
 }
 
-void EffectOverlayObject::loadState(const SceneObjectState &state) {
+void EffectOverlayObject::loadState(const SceneObjectState& state) {
   SceneObjectBase::loadState(state);
 
   auto it = state.properties.find("effectType");

@@ -61,7 +61,8 @@ void NMScriptEditorPanel::refreshFileList() {
   m_fileTree->clear();
 
   const QString rootPath = scriptsRootPath();
-  core::Logger::instance().info("applyProjectToPanels: Scripts root path: " + rootPath.toStdString());
+  core::Logger::instance().info("applyProjectToPanels: Scripts root path: " +
+                                rootPath.toStdString());
   if (rootPath.isEmpty()) {
     if (m_issuesPanel) {
       m_issuesPanel->setIssues({});
@@ -70,15 +71,17 @@ void NMScriptEditorPanel::refreshFileList() {
     return;
   }
 
-  QTreeWidgetItem *rootItem = new QTreeWidgetItem(m_fileTree);
+  QTreeWidgetItem* rootItem = new QTreeWidgetItem(m_fileTree);
   rootItem->setText(0, QFileInfo(rootPath).fileName());
   rootItem->setData(0, Qt::UserRole, rootPath);
 
   namespace fs = std::filesystem;
   fs::path base(rootPath.toStdString());
   if (!fs::exists(base)) {
-    core::Logger::instance().warning("applyProjectToPanels: Scripts path does not exist: " + base.string());
-    core::Logger::instance().info("applyProjectToPanels: refreshFileList completed (path not exists)");
+    core::Logger::instance().warning("applyProjectToPanels: Scripts path does not exist: " +
+                                     base.string());
+    core::Logger::instance().info(
+        "applyProjectToPanels: refreshFileList completed (path not exists)");
     return;
   }
 
@@ -87,7 +90,7 @@ void NMScriptEditorPanel::refreshFileList() {
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (!entry.is_regular_file()) {
         continue;
       }
@@ -97,11 +100,11 @@ void NMScriptEditorPanel::refreshFileList() {
 
       fileCount++;
       const fs::path rel = fs::relative(entry.path(), base);
-      QTreeWidgetItem *parentItem = rootItem;
+      QTreeWidgetItem* parentItem = rootItem;
 
-      for (const auto &part : rel.parent_path()) {
+      for (const auto& part : rel.parent_path()) {
         const QString partName = QString::fromStdString(part.string());
-        QTreeWidgetItem *child = nullptr;
+        QTreeWidgetItem* child = nullptr;
         for (int i = 0; i < parentItem->childCount(); ++i) {
           if (parentItem->child(i)->text(0) == partName) {
             child = parentItem->child(i);
@@ -116,16 +119,14 @@ void NMScriptEditorPanel::refreshFileList() {
         parentItem = child;
       }
 
-      QTreeWidgetItem *fileItem = new QTreeWidgetItem(parentItem);
-      fileItem->setText(
-          0, QString::fromStdString(entry.path().filename().string()));
-      fileItem->setData(0, Qt::UserRole,
-                        QString::fromStdString(entry.path().string()));
+      QTreeWidgetItem* fileItem = new QTreeWidgetItem(parentItem);
+      fileItem->setText(0, QString::fromStdString(entry.path().filename().string()));
+      fileItem->setData(0, Qt::UserRole, QString::fromStdString(entry.path().string()));
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration completed, found " + std::to_string(fileCount) + " script files");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to scan scripts folder: ") + e.what());
+    core::Logger::instance().info("applyProjectToPanels: Directory iteration completed, found " +
+                                  std::to_string(fileCount) + " script files");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to scan scripts folder: ") + e.what());
   }
 
   core::Logger::instance().info("applyProjectToPanels: Expanding file tree");
@@ -138,7 +139,7 @@ void NMScriptEditorPanel::refreshFileList() {
   core::Logger::instance().info("applyProjectToPanels: refreshFileList completed");
 }
 
-void NMScriptEditorPanel::onFileActivated(QTreeWidgetItem *item, int column) {
+void NMScriptEditorPanel::onFileActivated(QTreeWidgetItem* item, int column) {
   Q_UNUSED(column);
   if (!item) {
     return;
@@ -154,7 +155,7 @@ void NMScriptEditorPanel::onSaveRequested() {
   if (!m_tabs) {
     return;
   }
-  if (auto *editor = qobject_cast<QPlainTextEdit *>(m_tabs->currentWidget())) {
+  if (auto* editor = qobject_cast<QPlainTextEdit*>(m_tabs->currentWidget())) {
     saveEditor(editor);
   }
   refreshSymbolIndex();
@@ -163,7 +164,7 @@ void NMScriptEditorPanel::onSaveRequested() {
 
 void NMScriptEditorPanel::onSaveAllRequested() {
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<QPlainTextEdit *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<QPlainTextEdit*>(m_tabs->widget(i))) {
       saveEditor(editor);
     }
   }
@@ -171,7 +172,7 @@ void NMScriptEditorPanel::onSaveAllRequested() {
   m_diagnosticsTimer.start();
 }
 
-void NMScriptEditorPanel::addEditorTab(const QString &path) {
+void NMScriptEditorPanel::addEditorTab(const QString& path) {
   QFile file(path);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     return;
@@ -179,24 +180,20 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
 
   const QString content = QString::fromUtf8(file.readAll());
 
-  auto *editor = new NMScriptEditor(m_tabs);
+  auto* editor = new NMScriptEditor(m_tabs);
   editor->setPlainText(content);
   editor->setHoverDocs(detail::buildHoverDocs());
   editor->setDocHtml(detail::buildDocHtml());
   editor->setSymbolLocations(buildSymbolLocations());
 
-  connect(editor, &NMScriptEditor::requestSave, this,
-          &NMScriptEditorPanel::onSaveRequested);
+  connect(editor, &NMScriptEditor::requestSave, this, &NMScriptEditorPanel::onSaveRequested);
   connect(editor, &NMScriptEditor::hoverDocChanged, this,
-          [this](const QString &, const QString &html) {
-            emit docHtmlChanged(html);
-          });
-  connect(editor, &QPlainTextEdit::textChanged, this,
-          [this]() {
-            m_diagnosticsTimer.start();
-            // Trigger preview update on text change (issue #240)
-            onScriptTextChanged();
-          });
+          [this](const QString&, const QString& html) { emit docHtmlChanged(html); });
+  connect(editor, &QPlainTextEdit::textChanged, this, [this]() {
+    m_diagnosticsTimer.start();
+    // Trigger preview update on text change (issue #240)
+    onScriptTextChanged();
+  });
 
   // IDE feature connections
   connect(editor, &NMScriptEditor::goToDefinitionRequested, this,
@@ -207,8 +204,7 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::onNavigateToGraphNode);
 
   // VSCode-like feature connections
-  connect(editor, &NMScriptEditor::showFindRequested, this,
-          &NMScriptEditorPanel::showFindDialog);
+  connect(editor, &NMScriptEditor::showFindRequested, this, &NMScriptEditorPanel::showFindDialog);
   connect(editor, &NMScriptEditor::showReplaceRequested, this,
           &NMScriptEditorPanel::showReplaceDialog);
   connect(editor, &NMScriptEditor::showCommandPaletteRequested, this,
@@ -223,62 +219,58 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
           &NMScriptEditorPanel::showQuickFixMenu);
 
   // Breakpoint connection - wire to NMPlayModeController
-  connect(editor, &NMScriptEditor::breakpointToggled, this,
-          [this, path](int line) {
-            auto &controller = NMPlayModeController::instance();
-            controller.toggleSourceBreakpoint(path, line);
-          });
+  connect(editor, &NMScriptEditor::breakpointToggled, this, [this, path](int line) {
+    auto& controller = NMPlayModeController::instance();
+    controller.toggleSourceBreakpoint(path, line);
+  });
 
   // Sync breakpoints from controller to editor
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
   editor->setBreakpoints(controller.sourceBreakpointsForFile(path));
 
   // Listen for external breakpoint changes
-  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor,
-          [path, editor]() {
-            auto &ctrl = NMPlayModeController::instance();
-            editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
-          });
+  connect(&controller, &NMPlayModeController::sourceBreakpointsChanged, editor, [path, editor]() {
+    auto& ctrl = NMPlayModeController::instance();
+    editor->setBreakpoints(ctrl.sourceBreakpointsForFile(path));
+  });
 
   // Listen for source-level breakpoint hits to show execution line
   connect(&controller, &NMPlayModeController::sourceBreakpointHit, editor,
-          [path, editor](const QString &filePath, int line) {
+          [path, editor](const QString& filePath, int line) {
             if (filePath == path) {
               editor->setCurrentExecutionLine(line);
             }
           });
 
   // Clear execution line when play mode changes
-  connect(&controller, &NMPlayModeController::playModeChanged, editor,
-          [editor](int mode) {
-            if (mode == NMPlayModeController::Stopped) {
-              editor->setCurrentExecutionLine(0);
-            }
-          });
+  connect(&controller, &NMPlayModeController::playModeChanged, editor, [editor](int mode) {
+    if (mode == NMPlayModeController::Stopped) {
+      editor->setCurrentExecutionLine(0);
+    }
+  });
 
   // Update cursor position in status bar
-  connect(editor, &QPlainTextEdit::cursorPositionChanged, this,
-          [this, editor]() {
-            const QTextCursor cursor = editor->textCursor();
-            const int line = cursor.blockNumber() + 1;
-            const int col = cursor.positionInBlock() + 1;
-            if (m_cursorPosLabel) {
-              m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
-            }
+  connect(editor, &QPlainTextEdit::cursorPositionChanged, this, [this, editor]() {
+    const QTextCursor cursor = editor->textCursor();
+    const int line = cursor.blockNumber() + 1;
+    const int col = cursor.positionInBlock() + 1;
+    if (m_cursorPosLabel) {
+      m_cursorPosLabel->setText(tr("Ln %1, Col %2").arg(line).arg(col));
+    }
 
-            // Trigger preview update on cursor position change (issue #240)
-            onCursorPositionChanged();
+    // Trigger preview update on cursor position change (issue #240)
+    onCursorPositionChanged();
 
-            // Update syntax hint
-            const QString hint = editor->getSyntaxHint();
-            if (m_syntaxHintLabel && hint != m_syntaxHintLabel->text()) {
-              m_syntaxHintLabel->setText(hint);
-            }
+    // Update syntax hint
+    const QString hint = editor->getSyntaxHint();
+    if (m_syntaxHintLabel && hint != m_syntaxHintLabel->text()) {
+      m_syntaxHintLabel->setText(hint);
+    }
 
-            // Update breadcrumbs
-            const QStringList breadcrumbs = editor->getBreadcrumbs();
-            onBreadcrumbsChanged(breadcrumbs);
-          });
+    // Update breadcrumbs
+    const QStringList breadcrumbs = editor->getBreadcrumbs();
+    onBreadcrumbsChanged(breadcrumbs);
+  });
 
   connect(editor, &QPlainTextEdit::textChanged, this, [this, editor]() {
     const int index = m_tabs->indexOf(editor);
@@ -305,7 +297,7 @@ void NMScriptEditorPanel::addEditorTab(const QString &path) {
   pushCompletionsToEditors();
 }
 
-bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
+bool NMScriptEditorPanel::saveEditor(QPlainTextEdit* editor) {
   if (!editor) {
     return false;
   }
@@ -337,7 +329,7 @@ bool NMScriptEditorPanel::saveEditor(QPlainTextEdit *editor) {
   return true;
 }
 
-bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
+bool NMScriptEditorPanel::ensureScriptFile(const QString& path) {
   if (path.isEmpty()) {
     return false;
   }
@@ -359,8 +351,7 @@ bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
     return false;
   }
 
-  const QString sceneName =
-      info.completeBaseName().isEmpty() ? "scene" : info.completeBaseName();
+  const QString sceneName = info.completeBaseName().isEmpty() ? "scene" : info.completeBaseName();
   QTextStream out(&file);
   out << "// " << sceneName << "\n";
   out << "scene " << sceneName << " {\n";
@@ -371,8 +362,7 @@ bool NMScriptEditorPanel::ensureScriptFile(const QString &path) {
 }
 
 QString NMScriptEditorPanel::scriptsRootPath() const {
-  const auto path =
-      ProjectManager::instance().getFolderPath(ProjectFolder::Scripts);
+  const auto path = ProjectManager::instance().getFolderPath(ProjectFolder::Scripts);
   return QString::fromStdString(path);
 }
 
@@ -394,7 +384,8 @@ void NMScriptEditorPanel::rebuildWatchList() {
   }
 
   if (root.isEmpty() || !QFileInfo::exists(root)) {
-    core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed (root invalid)");
+    core::Logger::instance().info(
+        "applyProjectToPanels: rebuildWatchList completed (root invalid)");
     return;
   }
 
@@ -404,22 +395,22 @@ void NMScriptEditorPanel::rebuildWatchList() {
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
-  core::Logger::instance().info("applyProjectToPanels: Starting directory iteration for watch list");
+  core::Logger::instance().info(
+      "applyProjectToPanels: Starting directory iteration for watch list");
   try {
     // Use skip_permission_denied to avoid hanging on problematic directories
     auto options = fs::directory_options::skip_permission_denied;
-    for (const auto &entry : fs::recursive_directory_iterator(base, options)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base, options)) {
       if (entry.is_directory()) {
         directories.append(QString::fromStdString(entry.path().string()));
-      } else if (entry.is_regular_file() &&
-                 entry.path().extension() == ".nms") {
+      } else if (entry.is_regular_file() && entry.path().extension() == ".nms") {
         files.append(QString::fromStdString(entry.path().string()));
       }
     }
-    core::Logger::instance().info("applyProjectToPanels: Directory iteration for watch list completed");
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to rebuild script watcher: ") + e.what());
+    core::Logger::instance().info(
+        "applyProjectToPanels: Directory iteration for watch list completed");
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to rebuild script watcher: ") + e.what());
   }
 
   if (!directories.isEmpty()) {
@@ -431,22 +422,21 @@ void NMScriptEditorPanel::rebuildWatchList() {
   core::Logger::instance().info("applyProjectToPanels: rebuildWatchList completed");
 }
 
-NMScriptEditor *
-NMScriptEditorPanel::findEditorForPath(const QString &path) const {
+NMScriptEditor* NMScriptEditorPanel::findEditorForPath(const QString& path) const {
   for (int i = 0; i < m_tabs->count(); ++i) {
-    QWidget *widget = m_tabs->widget(i);
+    QWidget* widget = m_tabs->widget(i);
     if (m_tabPaths.value(widget) == path) {
-      return qobject_cast<NMScriptEditor *>(widget);
+      return qobject_cast<NMScriptEditor*>(widget);
     }
   }
   return nullptr;
 }
 
-bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
+bool NMScriptEditorPanel::isTabModified(const QWidget* editor) const {
   if (!editor || !m_tabs) {
     return false;
   }
-  const int index = m_tabs->indexOf(const_cast<QWidget *>(editor));
+  const int index = m_tabs->indexOf(const_cast<QWidget*>(editor));
   if (index < 0) {
     return false;
   }
@@ -454,13 +444,11 @@ bool NMScriptEditorPanel::isTabModified(const QWidget *editor) const {
   return m_tabs->tabText(index).endsWith("*");
 }
 
-QDateTime
-NMScriptEditorPanel::getEditorSaveTime(const QWidget *editor) const {
-  return m_editorSaveTimes.value(const_cast<QWidget *>(editor));
+QDateTime NMScriptEditorPanel::getEditorSaveTime(const QWidget* editor) const {
+  return m_editorSaveTimes.value(const_cast<QWidget*>(editor));
 }
 
-void NMScriptEditorPanel::setEditorSaveTime(QWidget *editor,
-                                            const QDateTime &time) {
+void NMScriptEditorPanel::setEditorSaveTime(QWidget* editor, const QDateTime& time) {
   if (editor) {
     m_editorSaveTimes.insert(editor, time);
   }

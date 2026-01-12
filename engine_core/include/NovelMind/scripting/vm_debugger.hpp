@@ -52,11 +52,11 @@ enum class BreakpointType : u8 {
  * @brief Represents a single call stack frame
  */
 struct CallStackFrame {
-  std::string sceneName;      ///< Name of the scene/function
-  u32 instructionPointer;     ///< IP where the call was made
-  u32 returnAddress;          ///< IP to return to after call
-  std::string sourceFile;     ///< Source file path (if available)
-  u32 sourceLine;             ///< Source line number (if available)
+  std::string sceneName;                                 ///< Name of the scene/function
+  u32 instructionPointer;                                ///< IP where the call was made
+  u32 returnAddress;                                     ///< IP to return to after call
+  std::string sourceFile;                                ///< Source file path (if available)
+  u32 sourceLine;                                        ///< Source line number (if available)
   std::unordered_map<std::string, Value> localVariables; ///< Local variables in this frame
 };
 
@@ -64,34 +64,34 @@ struct CallStackFrame {
  * @brief Represents a breakpoint with optional conditions
  */
 struct Breakpoint {
-  u32 id;                     ///< Unique breakpoint identifier
-  u32 instructionPointer;     ///< IP where breakpoint is set
-  BreakpointType type;        ///< Type of breakpoint
-  bool enabled;               ///< Whether breakpoint is active
-  std::string condition;      ///< Condition expression (for conditional breakpoints)
-  std::string logMessage;     ///< Log message (for logpoints)
-  std::string sourceFile;     ///< Source file (for display)
-  u32 sourceLine;             ///< Source line number (for display)
-  u32 hitCount;               ///< Number of times this breakpoint was hit
+  u32 id;                 ///< Unique breakpoint identifier
+  u32 instructionPointer; ///< IP where breakpoint is set
+  BreakpointType type;    ///< Type of breakpoint
+  bool enabled;           ///< Whether breakpoint is active
+  std::string condition;  ///< Condition expression (for conditional breakpoints)
+  std::string logMessage; ///< Log message (for logpoints)
+  std::string sourceFile; ///< Source file (for display)
+  u32 sourceLine;         ///< Source line number (for display)
+  u32 hitCount;           ///< Number of times this breakpoint was hit
 
   Breakpoint()
-      : id(0), instructionPointer(0), type(BreakpointType::Normal),
-        enabled(true), sourceLine(0), hitCount(0) {}
+      : id(0), instructionPointer(0), type(BreakpointType::Normal), enabled(true), sourceLine(0),
+        hitCount(0) {}
 
   Breakpoint(u32 bp_id, u32 ip)
-      : id(bp_id), instructionPointer(ip), type(BreakpointType::Normal),
-        enabled(true), sourceLine(0), hitCount(0) {}
+      : id(bp_id), instructionPointer(ip), type(BreakpointType::Normal), enabled(true),
+        sourceLine(0), hitCount(0) {}
 };
 
 /**
  * @brief Variable change event for tracking state modifications
  */
 struct VariableChangeEvent {
-  std::string name;      ///< Variable name
-  Value oldValue;        ///< Previous value
-  Value newValue;        ///< New value
-  u32 instructionPointer;///< IP where change occurred
-  u32 sourceLine;        ///< Source line where change occurred
+  std::string name;       ///< Variable name
+  Value oldValue;         ///< Previous value
+  Value newValue;         ///< New value
+  u32 instructionPointer; ///< IP where change occurred
+  u32 sourceLine;         ///< Source line where change occurred
 };
 
 /**
@@ -103,19 +103,19 @@ struct VariableChangeEvent {
 class VMDebugger {
 public:
   // Callback types for debugging events
-  using BreakpointHitCallback = std::function<void(const Breakpoint &bp, u32 ip)>;
-  using ExecutionPausedCallback = std::function<void(u32 ip, const std::string &reason)>;
-  using VariableChangedCallback = std::function<void(const VariableChangeEvent &event)>;
-  using SceneEnteredCallback = std::function<void(const std::string &sceneName)>;
-  using SceneExitedCallback = std::function<void(const std::string &sceneName)>;
-  using LogpointTriggeredCallback = std::function<void(const std::string &message, u32 ip)>;
+  using BreakpointHitCallback = std::function<void(const Breakpoint& bp, u32 ip)>;
+  using ExecutionPausedCallback = std::function<void(u32 ip, const std::string& reason)>;
+  using VariableChangedCallback = std::function<void(const VariableChangeEvent& event)>;
+  using SceneEnteredCallback = std::function<void(const std::string& sceneName)>;
+  using SceneExitedCallback = std::function<void(const std::string& sceneName)>;
+  using LogpointTriggeredCallback = std::function<void(const std::string& message, u32 ip)>;
 
   /**
    * @brief Construct a debugger for a VM
    * @param vm The virtual machine to debug (must not be null, must outlive the debugger)
    * @pre vm must not be null (enforced by assertion in debug builds)
    */
-  explicit VMDebugger(VirtualMachine *vm);
+  explicit VMDebugger(VirtualMachine* vm);
   ~VMDebugger();
 
   // =========================================================================
@@ -136,7 +136,7 @@ public:
    * @param sourceLine Source line number
    * @return Breakpoint ID
    */
-  u32 addBreakpoint(u32 ip, const std::string &sourceFile, u32 sourceLine);
+  u32 addBreakpoint(u32 ip, const std::string& sourceFile, u32 sourceLine);
 
   /**
    * @brief Add a conditional breakpoint
@@ -144,7 +144,7 @@ public:
    * @param condition Condition expression (e.g., "hero_trust > 50")
    * @return Breakpoint ID
    */
-  u32 addConditionalBreakpoint(u32 ip, const std::string &condition);
+  u32 addConditionalBreakpoint(u32 ip, const std::string& condition);
 
   /**
    * @brief Add a logpoint (logs without stopping)
@@ -152,7 +152,7 @@ public:
    * @param message Message to log (can include {variable} placeholders)
    * @return Breakpoint ID
    */
-  u32 addLogpoint(u32 ip, const std::string &message);
+  u32 addLogpoint(u32 ip, const std::string& message);
 
   /**
    * @brief Remove a breakpoint by ID
@@ -265,8 +265,7 @@ public:
    * @brief Get the current source location
    * @return Source location if mapping exists
    */
-  [[nodiscard]] std::optional<DebugSourceLocation>
-  getCurrentSourceLocation() const;
+  [[nodiscard]] std::optional<DebugSourceLocation> getCurrentSourceLocation() const;
 
   /**
    * @brief Get source location for a given IP
@@ -284,9 +283,7 @@ public:
   /**
    * @brief Get current call stack depth
    */
-  [[nodiscard]] u32 getCallStackDepth() const {
-    return static_cast<u32>(m_callStack.size());
-  }
+  [[nodiscard]] u32 getCallStackDepth() const { return static_cast<u32>(m_callStack.size()); }
 
   /**
    * @brief Get the current scene name
@@ -319,21 +316,19 @@ public:
    * @param ip Instruction pointer
    * @param location Source location
    */
-  void setSourceMapping(u32 ip, const DebugSourceLocation &location);
+  void setSourceMapping(u32 ip, const DebugSourceLocation& location);
 
   /**
    * @brief Load source mappings from compiled script metadata
    * @param mappings Map of IP to source location
    */
-  void loadSourceMappings(
-      const std::unordered_map<u32, DebugSourceLocation> &mappings);
+  void loadSourceMappings(const std::unordered_map<u32, DebugSourceLocation>& mappings);
 
   /**
    * @brief Get all source mappings
    * @return Map of IP to source location
    */
-  [[nodiscard]] const std::unordered_map<u32, DebugSourceLocation> &
-  getAllSourceMappings() const;
+  [[nodiscard]] const std::unordered_map<u32, DebugSourceLocation>& getAllSourceMappings() const;
 
   /**
    * @brief Clear all source mappings
@@ -350,7 +345,7 @@ public:
    * @param value New value
    * @return true if successful
    */
-  bool setVariable(const std::string &name, const Value &value);
+  bool setVariable(const std::string& name, const Value& value);
 
   /**
    * @brief Set a flag value during debugging
@@ -358,7 +353,7 @@ public:
    * @param value New value
    * @return true if successful
    */
-  bool setFlag(const std::string &name, bool value);
+  bool setFlag(const std::string& name, bool value);
 
   // =========================================================================
   // Callbacks
@@ -411,21 +406,20 @@ public:
    * @param oldValue Previous value
    * @param newValue New value
    */
-  void trackVariableChange(const std::string &name, const Value &oldValue,
-                           const Value &newValue);
+  void trackVariableChange(const std::string& name, const Value& oldValue, const Value& newValue);
 
   /**
    * @brief Notify scene entry (called by VM)
    * @param sceneName Scene being entered
    * @param returnAddress IP to return to
    */
-  void notifySceneEntered(const std::string &sceneName, u32 returnAddress);
+  void notifySceneEntered(const std::string& sceneName, u32 returnAddress);
 
   /**
    * @brief Notify scene exit (called by VM)
    * @param sceneName Scene being exited
    */
-  void notifySceneExited(const std::string &sceneName);
+  void notifySceneExited(const std::string& sceneName);
 
 private:
   /**
@@ -433,27 +427,27 @@ private:
    * @param condition The condition string
    * @return true if condition evaluates to true
    */
-  bool evaluateCondition(const std::string &condition) const;
+  bool evaluateCondition(const std::string& condition) const;
 
   /**
    * @brief Format a logpoint message (substitute {variables})
    * @param message The message template
    * @return Formatted message
    */
-  std::string formatLogpointMessage(const std::string &message) const;
+  std::string formatLogpointMessage(const std::string& message) const;
 
-  VirtualMachine *m_vm;                              ///< Associated VM
+  VirtualMachine* m_vm;                              ///< Associated VM
   std::unordered_map<u32, Breakpoint> m_breakpoints; ///< All breakpoints by ID
-  std::set<u32> m_breakpointIPs;                     ///< Set of IPs with breakpoints (for fast lookup)
+  std::set<u32> m_breakpointIPs; ///< Set of IPs with breakpoints (for fast lookup)
   std::unordered_map<u32, DebugSourceLocation> m_sourceMappings; ///< IP to source location mapping
-  std::vector<CallStackFrame> m_callStack;           ///< Current call stack
-  std::vector<VariableChangeEvent> m_variableHistory;///< Recent variable changes
-  u32 m_nextBreakpointId;                            ///< Next breakpoint ID to assign
-  bool m_isPaused;                                   ///< Whether execution is paused
-  DebugStepMode m_stepMode;                          ///< Current step mode
-  u32 m_stepStartDepth;                              ///< Call stack depth when step started
-  std::string m_currentScene;                        ///< Current scene name
-  static constexpr u32 MAX_VARIABLE_HISTORY = 100;   ///< Max variable changes to track
+  std::vector<CallStackFrame> m_callStack;                       ///< Current call stack
+  std::vector<VariableChangeEvent> m_variableHistory;            ///< Recent variable changes
+  u32 m_nextBreakpointId;                                        ///< Next breakpoint ID to assign
+  bool m_isPaused;                                               ///< Whether execution is paused
+  DebugStepMode m_stepMode;                                      ///< Current step mode
+  u32 m_stepStartDepth;                            ///< Call stack depth when step started
+  std::string m_currentScene;                      ///< Current scene name
+  static constexpr u32 MAX_VARIABLE_HISTORY = 100; ///< Max variable changes to track
 
   // Callbacks
   BreakpointHitCallback m_onBreakpointHit;

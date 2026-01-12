@@ -384,9 +384,9 @@ Result<void> BuildSystem::validateSigningToolPath(const std::string& toolPath,
   const std::string dangerousChars = "|&;<>$`\\\"'(){}[]!*?~";
   for (char c : toolPath) {
     if (dangerousChars.find(c) != std::string::npos) {
-      return Result<void>::error(
-          "Signing tool path contains invalid character: '" + std::string(1, c) +
-          "'. Paths with shell metacharacters are not allowed.");
+      return Result<void>::error("Signing tool path contains invalid character: '" +
+                                 std::string(1, c) +
+                                 "'. Paths with shell metacharacters are not allowed.");
     }
   }
 
@@ -710,8 +710,8 @@ Result<void> BuildSystem::signWindowsExecutable(const std::string& executablePat
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed Windows executable", false);
@@ -759,8 +759,7 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
   // Add entitlements if provided
   if (!m_config.signingEntitlements.empty()) {
     if (!fs::exists(m_config.signingEntitlements)) {
-      return Result<void>::error("Entitlements file not found: " +
-                                 m_config.signingEntitlements);
+      return Result<void>::error("Entitlements file not found: " + m_config.signingEntitlements);
     }
     cmd << " --entitlements \"" << m_config.signingEntitlements << "\"";
   }
@@ -789,8 +788,8 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed macOS bundle", false);

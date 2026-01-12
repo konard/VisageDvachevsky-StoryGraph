@@ -11,13 +11,12 @@
 
 namespace NovelMind::scene {
 
-SceneObjectHandle::SceneObjectHandle(SceneGraph *sceneGraph,
-                                     const std::string &objectId)
+SceneObjectHandle::SceneObjectHandle(SceneGraph* sceneGraph, const std::string& objectId)
     : m_sceneGraph(sceneGraph), m_objectId(objectId) {
   // Capture generation at construction time
   if (m_sceneGraph && !m_objectId.empty()) {
     std::lock_guard<std::mutex> lock(m_sceneGraph->getObjectMutex());
-    if (auto *obj = m_sceneGraph->findObject(m_objectId)) {
+    if (auto* obj = m_sceneGraph->findObject(m_objectId)) {
       m_generation = obj->getGeneration();
     }
   }
@@ -29,11 +28,10 @@ bool SceneObjectHandle::isValid() const {
   }
   // Thread-safe validity check with generation counter
   std::lock_guard<std::mutex> lock(m_sceneGraph->getObjectMutex());
-  return m_sceneGraph->findObjectWithGeneration(m_objectId, m_generation) !=
-         nullptr;
+  return m_sceneGraph->findObjectWithGeneration(m_objectId, m_generation) != nullptr;
 }
 
-SceneObjectBase *SceneObjectHandle::get() const {
+SceneObjectBase* SceneObjectHandle::get() const {
   if (!m_sceneGraph || m_objectId.empty()) {
     return nullptr;
   }
@@ -44,16 +42,14 @@ SceneObjectBase *SceneObjectHandle::get() const {
   return m_sceneGraph->findObjectWithGeneration(m_objectId, m_generation);
 }
 
-bool SceneObjectHandle::withObject(
-    std::function<void(SceneObjectBase *)> fn) const {
+bool SceneObjectHandle::withObject(std::function<void(SceneObjectBase*)> fn) const {
   if (!m_sceneGraph || m_objectId.empty() || !fn) {
     return false;
   }
 
   // Thread-safe atomic check-and-use pattern
   std::lock_guard<std::mutex> lock(m_sceneGraph->getObjectMutex());
-  if (auto *obj =
-          m_sceneGraph->findObjectWithGeneration(m_objectId, m_generation)) {
+  if (auto* obj = m_sceneGraph->findObjectWithGeneration(m_objectId, m_generation)) {
     fn(obj);
     return true;
   }

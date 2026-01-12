@@ -11,19 +11,18 @@ namespace fs = std::filesystem;
 static std::string createTempDir() {
   std::string tempPath =
       fs::temp_directory_path().string() + "/nm_analyzer_test_" +
-      std::to_string(
-          std::chrono::steady_clock::now().time_since_epoch().count());
+      std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
   fs::create_directories(tempPath);
   return tempPath;
 }
 
-static void cleanupTempDir(const std::string &path) {
+static void cleanupTempDir(const std::string& path) {
   if (fs::exists(path)) {
     fs::remove_all(path);
   }
 }
 
-static void createTestFile(const std::string &path, const std::string &content) {
+static void createTestFile(const std::string& path, const std::string& content) {
   fs::create_directories(fs::path(path).parent_path());
   std::ofstream file(path, std::ios::binary);
   file.write(content.data(), content.size());
@@ -143,8 +142,7 @@ TEST_CASE("BuildSizeAnalyzer handles files with weak hash collision patterns",
   cleanupTempDir(tempDir);
 }
 
-TEST_CASE("BuildSizeAnalyzer detects multiple duplicate groups",
-          "[build_size_analyzer][hash]") {
+TEST_CASE("BuildSizeAnalyzer detects multiple duplicate groups", "[build_size_analyzer][hash]") {
   std::string tempDir = createTempDir();
   std::string assetsDir = tempDir + "/assets";
   fs::create_directories(assetsDir);
@@ -177,10 +175,10 @@ TEST_CASE("BuildSizeAnalyzer detects multiple duplicate groups",
   REQUIRE(analysis.duplicates.size() == 2);
 
   // Find the groups
-  DuplicateGroup *groupA = nullptr;
-  DuplicateGroup *groupB = nullptr;
+  DuplicateGroup* groupA = nullptr;
+  DuplicateGroup* groupB = nullptr;
 
-  for (auto &group : analysis.duplicates) {
+  for (auto& group : analysis.duplicates) {
     if (group.paths.size() == 3) {
       groupA = &group;
     } else if (group.paths.size() == 2) {
@@ -234,8 +232,7 @@ TEST_CASE("BuildSizeAnalyzer hash is consistent across multiple runs",
   cleanupTempDir(tempDir);
 }
 
-TEST_CASE("BuildSizeAnalyzer handles empty files correctly",
-          "[build_size_analyzer][hash]") {
+TEST_CASE("BuildSizeAnalyzer handles empty files correctly", "[build_size_analyzer][hash]") {
   std::string tempDir = createTempDir();
   std::string assetsDir = tempDir + "/assets";
   fs::create_directories(assetsDir);

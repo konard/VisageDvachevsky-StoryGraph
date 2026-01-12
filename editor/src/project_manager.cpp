@@ -23,7 +23,7 @@ ProjectManager::~ProjectManager() {
   }
 }
 
-ProjectManager &ProjectManager::instance() {
+ProjectManager& ProjectManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<ProjectManager>();
   }
@@ -34,24 +34,28 @@ ProjectManager &ProjectManager::instance() {
 // Project Information
 // ============================================================================
 
-const ProjectMetadata &ProjectManager::getMetadata() const {
+const ProjectMetadata& ProjectManager::getMetadata() const {
   return m_metadata;
 }
 
-void ProjectManager::setMetadata(const ProjectMetadata &metadata) {
+void ProjectManager::setMetadata(const ProjectMetadata& metadata) {
   m_metadata = metadata;
   markModified();
 }
 
-std::string ProjectManager::getProjectPath() const { return m_projectPath; }
+std::string ProjectManager::getProjectPath() const {
+  return m_projectPath;
+}
 
-std::string ProjectManager::getProjectName() const { return m_metadata.name; }
+std::string ProjectManager::getProjectName() const {
+  return m_metadata.name;
+}
 
 std::string ProjectManager::getStartScene() const {
   return m_metadata.startScene;
 }
 
-void ProjectManager::setStartScene(const std::string &sceneId) {
+void ProjectManager::setStartScene(const std::string& sceneId) {
   if (m_metadata.startScene == sceneId) {
     return;
   }
@@ -63,11 +67,11 @@ void ProjectManager::setStartScene(const std::string &sceneId) {
 // Recent Projects
 // ============================================================================
 
-const std::vector<RecentProject> &ProjectManager::getRecentProjects() const {
+const std::vector<RecentProject>& ProjectManager::getRecentProjects() const {
   return m_recentProjects;
 }
 
-void ProjectManager::addToRecentProjects(const std::string &path) {
+void ProjectManager::addToRecentProjects(const std::string& path) {
   namespace fs = std::filesystem;
 
   // Remove existing entry for this path
@@ -96,21 +100,20 @@ void ProjectManager::addToRecentProjects(const std::string &path) {
   }
 }
 
-void ProjectManager::removeFromRecentProjects(const std::string &path) {
-  m_recentProjects.erase(std::remove_if(m_recentProjects.begin(),
-                                        m_recentProjects.end(),
-                                        [&path](const RecentProject &p) {
-                                          return p.path == path;
-                                        }),
+void ProjectManager::removeFromRecentProjects(const std::string& path) {
+  m_recentProjects.erase(std::remove_if(m_recentProjects.begin(), m_recentProjects.end(),
+                                        [&path](const RecentProject& p) { return p.path == path; }),
                          m_recentProjects.end());
 }
 
-void ProjectManager::clearRecentProjects() { m_recentProjects.clear(); }
+void ProjectManager::clearRecentProjects() {
+  m_recentProjects.clear();
+}
 
 void ProjectManager::refreshRecentProjects() {
   namespace fs = std::filesystem;
 
-  for (auto &project : m_recentProjects) {
+  for (auto& project : m_recentProjects) {
     project.exists = fs::exists(project.path);
   }
 }
@@ -130,7 +133,9 @@ void ProjectManager::setAutoSaveEnabled(bool enabled) {
   m_autoSaveEnabled = enabled;
 }
 
-bool ProjectManager::isAutoSaveEnabled() const { return m_autoSaveEnabled; }
+bool ProjectManager::isAutoSaveEnabled() const {
+  return m_autoSaveEnabled;
+}
 
 void ProjectManager::setAutoSaveInterval(u32 seconds) {
   m_autoSaveIntervalSeconds = seconds;
@@ -163,7 +168,7 @@ void ProjectManager::triggerAutoSave() {
   // Save project
   auto result = saveProject();
   if (result.isOk()) {
-    for (auto *listener : m_listeners) {
+    for (auto* listener : m_listeners) {
       listener->onAutoSaveTriggered();
     }
   }
@@ -208,7 +213,7 @@ ProjectValidation ProjectManager::validateProject() const {
   // Convert IntegrityReport to ProjectValidation
   validation.valid = report.passed;
 
-  for (const auto &issue : report.issues) {
+  for (const auto& issue : report.issues) {
     std::string location;
     if (!issue.filePath.empty()) {
       location = issue.filePath;
@@ -255,7 +260,7 @@ ProjectValidation ProjectManager::validateProject() const {
   return validation;
 }
 
-bool ProjectManager::isValidProjectPath(const std::string &path) {
+bool ProjectManager::isValidProjectPath(const std::string& path) {
   namespace fs = std::filesystem;
 
   fs::path projectFile = fs::path(path);
@@ -284,8 +289,7 @@ Result<std::string> ProjectManager::createBackup() {
     std::error_code ec;
     fs::create_directories(backupDir, ec);
     if (ec) {
-      return Result<std::string>::error("Failed to create backup directory: " +
-                                        ec.message());
+      return Result<std::string>::error("Failed to create backup directory: " + ec.message());
     }
   }
 
@@ -301,20 +305,17 @@ Result<std::string> ProjectManager::createBackup() {
   std::error_code ec;
   fs::create_directory(backupPath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to create backup: " +
-                                      ec.message());
+    return Result<std::string>::error("Failed to create backup: " + ec.message());
   }
 
   // Copy project files (excluding backup and build directories)
-  for (const auto &entry : fs::directory_iterator(m_projectPath)) {
-    if (entry.path().filename() == ".backup" ||
-        entry.path().filename() == ".temp" ||
+  for (const auto& entry : fs::directory_iterator(m_projectPath)) {
+    if (entry.path().filename() == ".backup" || entry.path().filename() == ".temp" ||
         entry.path().filename() == "Build") {
       continue;
     }
 
-    fs::copy(entry.path(), backupPath / entry.path().filename(),
-             fs::copy_options::recursive, ec);
+    fs::copy(entry.path(), backupPath / entry.path().filename(), fs::copy_options::recursive, ec);
     if (ec) {
       // Log warning but continue
       ec.clear();
@@ -332,7 +333,7 @@ Result<std::string> ProjectManager::createBackup() {
   return Result<std::string>::ok(backupPath.string());
 }
 
-Result<void> ProjectManager::restoreFromBackup(const std::string &backupPath) {
+Result<void> ProjectManager::restoreFromBackup(const std::string& backupPath) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(backupPath)) {
@@ -347,11 +348,10 @@ Result<void> ProjectManager::restoreFromBackup(const std::string &backupPath) {
   fs::path backupRoot(backupPath);
   fs::path projectRoot(m_projectPath);
 
-  for (const auto &entry : fs::directory_iterator(backupRoot)) {
+  for (const auto& entry : fs::directory_iterator(backupRoot)) {
     fs::path target = projectRoot / entry.path().filename();
     fs::copy(entry.path(), target,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing,
-             ec);
+             fs::copy_options::recursive | fs::copy_options::overwrite_existing, ec);
     if (ec) {
       return Result<void>::error("Failed to restore backup: " + ec.message());
     }
@@ -375,7 +375,7 @@ std::vector<std::string> ProjectManager::getAvailableBackups() const {
     return backups;
   }
 
-  for (const auto &entry : fs::directory_iterator(backupDir)) {
+  for (const auto& entry : fs::directory_iterator(backupDir)) {
     if (entry.is_directory()) {
       backups.push_back(entry.path().string());
     }
@@ -387,27 +387,27 @@ std::vector<std::string> ProjectManager::getAvailableBackups() const {
   return backups;
 }
 
-void ProjectManager::setMaxBackups(size_t count) { m_maxBackups = count; }
+void ProjectManager::setMaxBackups(size_t count) {
+  m_maxBackups = count;
+}
 
 // ============================================================================
 // Listeners
 // ============================================================================
 
-void ProjectManager::addListener(IProjectListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void ProjectManager::addListener(IProjectListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void ProjectManager::removeListener(IProjectListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void ProjectManager::removeListener(IProjectListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
-void ProjectManager::setOnUnsavedChangesPrompt(
-    std::function<std::optional<bool>()> callback) {
+void ProjectManager::setOnUnsavedChangesPrompt(std::function<std::optional<bool>()> callback) {
   m_onUnsavedChangesPrompt = std::move(callback);
 }
 
@@ -416,31 +416,31 @@ void ProjectManager::setOnUnsavedChangesPrompt(
 // ============================================================================
 
 void ProjectManager::notifyProjectCreated() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectCreated(m_projectPath);
   }
 }
 
 void ProjectManager::notifyProjectOpened() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectOpened(m_projectPath);
   }
 }
 
 void ProjectManager::notifyProjectClosed() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectClosed();
   }
 }
 
 void ProjectManager::notifyProjectSaved() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectSaved();
   }
 }
 
 void ProjectManager::notifyProjectModified() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onProjectModified();
   }
 }
@@ -449,7 +449,7 @@ void ProjectManager::notifyProjectModified() {
 // ProjectScope Implementation
 // ============================================================================
 
-ProjectScope::ProjectScope(const std::string &projectPath) {
+ProjectScope::ProjectScope(const std::string& projectPath) {
   auto result = ProjectManager::instance().openProject(projectPath);
   m_valid = result.isOk();
 }

@@ -28,9 +28,9 @@ namespace NovelMind::editor::qt {
  * @brief Type of command palette item
  */
 enum class CommandItemType {
-  Panel,     ///< Panel toggle action
-  Command,   ///< Menu command/action
-  Workspace, ///< Workspace preset
+  Panel,       ///< Panel toggle action
+  Command,     ///< Menu command/action
+  Workspace,   ///< Workspace preset
   RecentScene, ///< Recently opened scene
   RecentScript ///< Recently edited script
 };
@@ -39,14 +39,14 @@ enum class CommandItemType {
  * @brief Item in the command palette
  */
 struct CommandItem {
-  QString name;                ///< Display name
-  QString searchableText;      ///< Text used for searching (includes metadata)
-  QString tooltip;             ///< Tooltip/description
-  QString shortcut;            ///< Keyboard shortcut (if any)
-  QString iconName;            ///< Icon identifier
-  CommandItemType type;        ///< Type of item
-  QAction *action = nullptr;   ///< Associated action (for panel/command items)
-  int score = 0;               ///< Match score (for sorting)
+  QString name;              ///< Display name
+  QString searchableText;    ///< Text used for searching (includes metadata)
+  QString tooltip;           ///< Tooltip/description
+  QString shortcut;          ///< Keyboard shortcut (if any)
+  QString iconName;          ///< Icon identifier
+  CommandItemType type;      ///< Type of item
+  QAction* action = nullptr; ///< Associated action (for panel/command items)
+  int score = 0;             ///< Match score (for sorting)
 
   /**
    * @brief Get category label for this item type
@@ -80,8 +80,8 @@ public:
    * @brief Search mode for the palette
    */
   enum class Mode {
-    Panels,   ///< Show only panels (Ctrl+P)
-    All       ///< Show all commands (Ctrl+Shift+P)
+    Panels, ///< Show only panels (Ctrl+P)
+    All     ///< Show all commands (Ctrl+Shift+P)
   };
 
   /**
@@ -90,26 +90,25 @@ public:
    * @param actions List of all available actions
    * @param mode Search mode (panels only or all commands)
    */
-  explicit NMCommandPalette(QWidget *parent, const QList<QAction *> &actions,
-                            Mode mode = Mode::All);
+  explicit NMCommandPalette(QWidget* parent, const QList<QAction*>& actions, Mode mode = Mode::All);
 
   /**
    * @brief Open the palette centered over an anchor widget
    * @param anchor Widget to center over (usually main window)
    */
-  void openCentered(QWidget *anchor);
+  void openCentered(QWidget* anchor);
 
   /**
    * @brief Add a recent scene to the palette
    * @param sceneName Scene name/path
    */
-  void addRecentScene(const QString &sceneName);
+  void addRecentScene(const QString& sceneName);
 
   /**
    * @brief Add a recent script to the palette
    * @param scriptPath Script file path
    */
-  void addRecentScript(const QString &scriptPath);
+  void addRecentScript(const QString& scriptPath);
 
   /**
    * @brief Clear all recent items
@@ -120,18 +119,18 @@ protected:
   /**
    * @brief Handle key presses for navigation
    */
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
   /**
    * @brief Handle search text changes
    */
-  void onFilterChanged(const QString &text);
+  void onFilterChanged(const QString& text);
 
   /**
    * @brief Handle item activation (Enter key or double-click)
    */
-  void onItemActivated(QListWidgetItem *item);
+  void onItemActivated(QListWidgetItem* item);
 
 private:
   /**
@@ -147,28 +146,28 @@ private:
   /**
    * @brief Update list widget based on search filter
    */
-  void updateFilteredList(const QString &filter);
+  void updateFilteredList(const QString& filter);
 
   /**
    * @brief Determine item type from action
    */
-  CommandItemType determineItemType(QAction *action) const;
+  CommandItemType determineItemType(QAction* action) const;
 
   /**
    * @brief Get icon name for action
    */
-  QString getIconNameForAction(QAction *action) const;
+  QString getIconNameForAction(QAction* action) const;
 
   /**
    * @brief Add list widget item for a command
    */
-  void addListItem(const CommandItem &item);
+  void addListItem(const CommandItem& item);
 
-  Mode m_mode;                    ///< Current mode (panels/all)
-  QList<CommandItem> m_commands;  ///< All command items
-  QList<QAction *> m_actions;     ///< All available actions
-  QLineEdit *m_input = nullptr;   ///< Search input field
-  QListWidget *m_list = nullptr;  ///< Results list
+  Mode m_mode;                   ///< Current mode (panels/all)
+  QList<CommandItem> m_commands; ///< All command items
+  QList<QAction*> m_actions;     ///< All available actions
+  QLineEdit* m_input = nullptr;  ///< Search input field
+  QListWidget* m_list = nullptr; ///< Results list
 };
 
 /**
@@ -179,22 +178,22 @@ private:
  */
 class NMRecentItemsTracker {
 public:
-  static NMRecentItemsTracker &instance();
+  static NMRecentItemsTracker& instance();
 
   /**
    * @brief Record that a panel was accessed
    */
-  void recordPanelAccess(const QString &panelName);
+  void recordPanelAccess(const QString& panelName);
 
   /**
    * @brief Record that a scene was opened
    */
-  void recordSceneAccess(const QString &sceneName);
+  void recordSceneAccess(const QString& sceneName);
 
   /**
    * @brief Record that a script was edited
    */
-  void recordScriptAccess(const QString &scriptPath);
+  void recordScriptAccess(const QString& scriptPath);
 
   /**
    * @brief Get recently accessed panels (most recent first)
@@ -220,13 +219,13 @@ private:
   NMRecentItemsTracker();
   ~NMRecentItemsTracker() = default;
 
-  NMRecentItemsTracker(const NMRecentItemsTracker &) = delete;
-  NMRecentItemsTracker &operator=(const NMRecentItemsTracker &) = delete;
+  NMRecentItemsTracker(const NMRecentItemsTracker&) = delete;
+  NMRecentItemsTracker& operator=(const NMRecentItemsTracker&) = delete;
 
   /**
    * @brief Add item to MRU list (removes duplicates, keeps max size)
    */
-  void addToMruList(QStringList &list, const QString &item, int maxSize = 10);
+  void addToMruList(QStringList& list, const QString& item, int maxSize = 10);
 
   QStringList m_recentPanels;
   QStringList m_recentScenes;

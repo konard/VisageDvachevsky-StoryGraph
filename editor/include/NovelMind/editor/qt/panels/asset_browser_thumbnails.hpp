@@ -38,17 +38,17 @@ struct ThumbnailCacheEntry {
  */
 class NMAssetIconProvider : public QFileIconProvider {
 public:
-  explicit NMAssetIconProvider(NMAssetBrowserPanel *panel, QSize iconSize);
+  explicit NMAssetIconProvider(NMAssetBrowserPanel* panel, QSize iconSize);
 
   /**
    * @brief Set the icon size for thumbnails
    */
-  void setIconSize(const QSize &size);
+  void setIconSize(const QSize& size);
 
   /**
    * @brief Get icon for a file (with thumbnail support)
    */
-  QIcon icon(const QFileInfo &info) const override;
+  QIcon icon(const QFileInfo& info) const override;
 
 private:
   QPointer<NMAssetBrowserPanel> m_panel;
@@ -61,7 +61,7 @@ private:
  * @param size Desired thumbnail size
  * @return Generated waveform pixmap
  */
-QPixmap generateAudioWaveform(const QString &path, const QSize &size);
+QPixmap generateAudioWaveform(const QString& path, const QSize& size);
 
 /**
  * @brief Check if a cached thumbnail is still valid
@@ -69,6 +69,6 @@ QPixmap generateAudioWaveform(const QString &path, const QSize &size);
  * @param entry Cached entry to validate
  * @return true if the cached entry is still valid
  */
-bool isThumbnailValid(const QString &path, const ThumbnailCacheEntry &entry);
+bool isThumbnailValid(const QString& path, const ThumbnailCacheEntry& entry);
 
 } // namespace NovelMind::editor::qt

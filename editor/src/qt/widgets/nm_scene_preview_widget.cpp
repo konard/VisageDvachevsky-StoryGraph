@@ -17,16 +17,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMScenePreviewWidget::NMScenePreviewWidget(QWidget *parent)
-    : QWidget(parent) {
+NMScenePreviewWidget::NMScenePreviewWidget(QWidget* parent) : QWidget(parent) {
   setupUI();
   setupConnections();
 
   // Initialize debounce timer
   m_updateTimer = new QTimer(this);
   m_updateTimer->setSingleShot(true);
-  connect(m_updateTimer, &QTimer::timeout, this,
-          &NMScenePreviewWidget::onUpdateTimerTimeout);
+  connect(m_updateTimer, &QTimer::timeout, this, &NMScenePreviewWidget::onUpdateTimerTimeout);
 
   setStatus(PreviewStatus::Idle);
 }
@@ -42,7 +40,7 @@ void NMScenePreviewWidget::setupUI() {
   m_toolbarFrame = new QFrame(this);
   m_toolbarFrame->setObjectName("PreviewToolbar");
   m_toolbarFrame->setFixedHeight(36);
-  auto *toolbarLayout = new QHBoxLayout(m_toolbarFrame);
+  auto* toolbarLayout = new QHBoxLayout(m_toolbarFrame);
   toolbarLayout->setContentsMargins(8, 4, 8, 4);
   toolbarLayout->setSpacing(6);
 
@@ -99,10 +97,10 @@ void NMScenePreviewWidget::setupUI() {
   // Placeholder when preview is disabled
   m_placeholderFrame = new QFrame(this);
   m_placeholderFrame->setObjectName("PreviewPlaceholder");
-  auto *placeholderLayout = new QVBoxLayout(m_placeholderFrame);
-  m_placeholderLabel = new QLabel(
-      tr("👁️ Live Preview\n\nEnable preview to see your scene as you type"),
-      m_placeholderFrame);
+  auto* placeholderLayout = new QVBoxLayout(m_placeholderFrame);
+  m_placeholderLabel =
+      new QLabel(tr("👁️ Live Preview\n\nEnable preview to see your scene as you type"),
+                 m_placeholderFrame);
   m_placeholderLabel->setAlignment(Qt::AlignCenter);
   QFont placeholderFont = m_placeholderLabel->font();
   placeholderFont.setPointSize(14);
@@ -112,7 +110,7 @@ void NMScenePreviewWidget::setupUI() {
   m_placeholderFrame->hide();
 
   // Apply styling
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   setStyleSheet(QString(R"(
     #PreviewToolbar {
       background: %1;
@@ -141,14 +139,12 @@ void NMScenePreviewWidget::setupUI() {
 void NMScenePreviewWidget::setupConnections() {
   connect(m_togglePreviewBtn, &QPushButton::clicked, this,
           &NMScenePreviewWidget::onTogglePreviewClicked);
-  connect(m_resetViewBtn, &QPushButton::clicked, this,
-          &NMScenePreviewWidget::onResetViewClicked);
-  connect(m_toggleGridBtn, &QPushButton::clicked, this,
-          &NMScenePreviewWidget::onToggleGridClicked);
+  connect(m_resetViewBtn, &QPushButton::clicked, this, &NMScenePreviewWidget::onResetViewClicked);
+  connect(m_toggleGridBtn, &QPushButton::clicked, this, &NMScenePreviewWidget::onToggleGridClicked);
 }
 
-void NMScenePreviewWidget::setScriptContent(const QString &scriptContent,
-                                             int cursorLine, int cursorColumn) {
+void NMScenePreviewWidget::setScriptContent(const QString& scriptContent, int cursorLine,
+                                            int cursorColumn) {
   m_scriptContent = scriptContent;
   m_cursorLine = cursorLine;
   m_cursorColumn = cursorColumn;
@@ -184,7 +180,7 @@ void NMScenePreviewWidget::clearPreview() {
   m_currentState = ScenePreviewState();
 }
 
-void NMScenePreviewWidget::setAssetsRoot(const QString &path) {
+void NMScenePreviewWidget::setAssetsRoot(const QString& path) {
   m_assetsRoot = path;
 }
 
@@ -279,7 +275,7 @@ void NMScenePreviewWidget::setStatus(PreviewStatus status) {
   emit statusChanged(status);
 }
 
-void NMScenePreviewWidget::showStatusMessage(const QString &message) {
+void NMScenePreviewWidget::showStatusMessage(const QString& message) {
   m_statusLabel->setText(message);
 }
 
@@ -295,7 +291,7 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
   auto tokensResult = lexer.tokenize(scriptText);
 
   if (tokensResult.isError()) {
-    const auto &errors = lexer.getErrors();
+    const auto& errors = lexer.getErrors();
     if (!errors.empty()) {
       state.errorMessage = errors[0].message;
     } else {
@@ -305,12 +301,12 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
   }
 
   // Parse the script
-  const auto &tokens = tokensResult.value();
+  const auto& tokens = tokensResult.value();
   scripting::Parser parser;
   auto programResult = parser.parse(tokens);
 
   if (programResult.isError()) {
-    const auto &errors = parser.getErrors();
+    const auto& errors = parser.getErrors();
     if (!errors.empty()) {
       state.errorMessage = errors[0].message;
     } else {
@@ -319,16 +315,15 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
     return state;
   }
 
-  const auto &program = programResult.value();
+  const auto& program = programResult.value();
 
   // Find the scene definition containing the cursor line
   std::string currentSceneName;
-  const scripting::SceneDecl *currentSceneDef = nullptr;
+  const scripting::SceneDecl* currentSceneDef = nullptr;
   const u32 cursorLine = static_cast<u32>(m_cursorLine);
 
-  for (const auto &scene : program.scenes) {
-    if (!scene.body.empty() &&
-        scene.body.front()->location.line <= cursorLine) {
+  for (const auto& scene : program.scenes) {
+    if (!scene.body.empty() && scene.body.front()->location.line <= cursorLine) {
       currentSceneName = scene.name;
       currentSceneDef = &scene;
     }
@@ -358,7 +353,7 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
 
   // Extract scene state by simulating execution up to cursor line
   // This is a simplified version - Phase 1 implementation
-  for (const auto &stmt : currentSceneDef->body) {
+  for (const auto& stmt : currentSceneDef->body) {
     // Only process statements before cursor line
     if (stmt->location.line > cursorLine) {
       break;
@@ -366,7 +361,7 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
 
     // Handle different statement types
     std::visit(
-        [&](const auto &stmtData) {
+        [&](const auto& stmtData) {
           using T = std::decay_t<decltype(stmtData)>;
           if constexpr (std::is_same_v<T, scripting::ShowStmt>) {
             if (stmtData.target == scripting::ShowStmt::Target::Background) {
@@ -387,7 +382,7 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
             state.hasDialogue = true;
           } else if constexpr (std::is_same_v<T, scripting::ChoiceStmt>) {
             state.hasChoices = true;
-            for (const auto &option : stmtData.options) {
+            for (const auto& option : stmtData.options) {
               state.choices.push_back(option.text);
             }
           }
@@ -399,7 +394,7 @@ ScenePreviewState NMScenePreviewWidget::compileScriptAtCursor() {
   return state;
 }
 
-void NMScenePreviewWidget::applySceneState(const ScenePreviewState &state) {
+void NMScenePreviewWidget::applySceneState(const ScenePreviewState& state) {
   // Clear previous scene
   clearScene();
 
@@ -409,9 +404,8 @@ void NMScenePreviewWidget::applySceneState(const ScenePreviewState &state) {
   }
 
   // Load characters
-  for (const auto &[characterId, position] : state.characters) {
-    loadCharacter(QString::fromStdString(characterId),
-                  QString::fromStdString(position));
+  for (const auto& [characterId, position] : state.characters) {
+    loadCharacter(QString::fromStdString(characterId), QString::fromStdString(position));
   }
 
   // Update dialogue overlay
@@ -426,7 +420,7 @@ void NMScenePreviewWidget::applySceneState(const ScenePreviewState &state) {
   // Update choices overlay
   if (state.hasChoices) {
     QStringList choicesList;
-    for (const auto &choice : state.choices) {
+    for (const auto& choice : state.choices) {
       choicesList << QString::fromStdString(choice);
     }
     updateChoicesOverlay(choicesList);
@@ -436,7 +430,7 @@ void NMScenePreviewWidget::applySceneState(const ScenePreviewState &state) {
   m_view->centerOnScene();
 }
 
-bool NMScenePreviewWidget::loadBackground(const QString &assetPath) {
+bool NMScenePreviewWidget::loadBackground(const QString& assetPath) {
   // Construct full asset path
   QString fullPath = m_assetsRoot + "/backgrounds/" + assetPath;
 
@@ -444,7 +438,7 @@ bool NMScenePreviewWidget::loadBackground(const QString &assetPath) {
   QStringList extensions = {".png", ".jpg", ".jpeg", ".bmp"};
   QString foundPath;
 
-  for (const QString &ext : extensions) {
+  for (const QString& ext : extensions) {
     QString testPath = fullPath + ext;
     if (QFile::exists(testPath)) {
       foundPath = testPath;
@@ -452,8 +446,8 @@ bool NMScenePreviewWidget::loadBackground(const QString &assetPath) {
     }
   }
 
-  if (foundPath.isEmpty() && !fullPath.endsWith(".png") &&
-      !fullPath.endsWith(".jpg") && !fullPath.endsWith(".jpeg")) {
+  if (foundPath.isEmpty() && !fullPath.endsWith(".png") && !fullPath.endsWith(".jpg") &&
+      !fullPath.endsWith(".jpeg")) {
     foundPath = fullPath + ".png"; // Default to PNG
   }
 
@@ -464,10 +458,9 @@ bool NMScenePreviewWidget::loadBackground(const QString &assetPath) {
   }
 
   // Scale to scene size (1280x720 is standard VN resolution)
-  pixmap = pixmap.scaled(1280, 720, Qt::IgnoreAspectRatio,
-                         Qt::SmoothTransformation);
+  pixmap = pixmap.scaled(1280, 720, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
-  auto *bgItem = new QGraphicsPixmapItem(pixmap);
+  auto* bgItem = new QGraphicsPixmapItem(pixmap);
   bgItem->setPos(0, 0);
   bgItem->setZValue(-100); // Behind all other objects
   m_scene->addItem(bgItem);
@@ -476,11 +469,9 @@ bool NMScenePreviewWidget::loadBackground(const QString &assetPath) {
   return true;
 }
 
-bool NMScenePreviewWidget::loadCharacter(const QString &characterId,
-                                          const QString &position) {
+bool NMScenePreviewWidget::loadCharacter(const QString& characterId, const QString& position) {
   // Construct full asset path
-  QString fullPath =
-      m_assetsRoot + "/characters/" + characterId + "/default.png";
+  QString fullPath = m_assetsRoot + "/characters/" + characterId + "/default.png";
 
   // Try alternative paths
   if (!QFile::exists(fullPath)) {
@@ -500,7 +491,7 @@ bool NMScenePreviewWidget::loadCharacter(const QString &characterId,
     pixmap = pixmap.scaledToHeight(500, Qt::SmoothTransformation);
   }
 
-  auto *charItem = new QGraphicsPixmapItem(pixmap);
+  auto* charItem = new QGraphicsPixmapItem(pixmap);
   QPointF pos = getPositionCoordinates(position);
   charItem->setPos(pos);
   charItem->setZValue(0); // Above background
@@ -510,15 +501,14 @@ bool NMScenePreviewWidget::loadCharacter(const QString &characterId,
   return true;
 }
 
-void NMScenePreviewWidget::updateDialogueOverlay(const QString &speaker,
-                                                  const QString &text) {
+void NMScenePreviewWidget::updateDialogueOverlay(const QString& speaker, const QString& text) {
   if (m_overlay) {
     m_overlay->setDialogue(speaker, text);
     m_overlay->show();
   }
 }
 
-void NMScenePreviewWidget::updateChoicesOverlay(const QStringList &choices) {
+void NMScenePreviewWidget::updateChoicesOverlay(const QStringList& choices) {
   if (m_overlay) {
     m_overlay->setChoices(choices);
   }
@@ -526,7 +516,7 @@ void NMScenePreviewWidget::updateChoicesOverlay(const QStringList &choices) {
 
 void NMScenePreviewWidget::clearScene() {
   // Remove all scene objects
-  for (auto *item : m_sceneObjects.values()) {
+  for (auto* item : m_sceneObjects.values()) {
     if (item) {
       m_scene->removeItem(item);
       delete item;
@@ -535,8 +525,7 @@ void NMScenePreviewWidget::clearScene() {
   m_sceneObjects.clear();
 }
 
-QPointF
-NMScenePreviewWidget::getPositionCoordinates(const QString &position) const {
+QPointF NMScenePreviewWidget::getPositionCoordinates(const QString& position) const {
   // Standard VN positions (1280x720 scene)
   if (position == "left") {
     return QPointF(200, 100);

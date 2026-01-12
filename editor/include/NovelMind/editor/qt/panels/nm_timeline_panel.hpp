@@ -116,13 +116,12 @@ public:
   QVector<Keyframe> keyframes;
   QString parentTrackId; // For grouping
 
-  void addKeyframe(int frame, const QVariant &value,
-                   EasingType easing = EasingType::Linear);
+  void addKeyframe(int frame, const QVariant& value, EasingType easing = EasingType::Linear);
   void removeKeyframe(int frame);
   void moveKeyframe(int fromFrame, int toFrame);
-  Keyframe *getKeyframe(int frame);
+  Keyframe* getKeyframe(int frame);
   [[nodiscard]] Keyframe interpolate(int frame) const;
-  [[nodiscard]] QList<Keyframe *> selectedKeyframes();
+  [[nodiscard]] QList<Keyframe*> selectedKeyframes();
   void selectKeyframesInRange(int startFrame, int endFrame);
   void clearSelection();
 };
@@ -142,7 +141,7 @@ public:
    * @brief Construct timeline panel
    * @param parent Parent widget
    */
-  explicit NMTimelinePanel(QWidget *parent = nullptr);
+  explicit NMTimelinePanel(QWidget* parent = nullptr);
 
   /**
    * @brief Destructor
@@ -168,7 +167,7 @@ protected:
   /**
    * @brief Handle keyboard events for timeline
    */
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
 signals:
   /**
@@ -179,7 +178,7 @@ signals:
   /**
    * @brief Emitted when a keyframe is added/modified
    */
-  void keyframeModified(const QString &trackName, int frame);
+  void keyframeModified(const QString& trackName, int frame);
 
   /**
    * @brief Emitted when playback state changes
@@ -191,11 +190,10 @@ signals:
    * @brief Synchronize with play-in-editor mode
    */
   void syncWithPlayMode(bool enabled);
-  void keyframeAdded(const QString &trackName, int frame);
-  void keyframeDeleted(const QString &trackName, int frame);
-  void keyframeMoved(const QString &trackName, int fromFrame, int toFrame);
-  void keyframeEasingChanged(const QString &trackName, int frame,
-                             EasingType easing);
+  void keyframeAdded(const QString& trackName, int frame);
+  void keyframeDeleted(const QString& trackName, int frame);
+  void keyframeMoved(const QString& trackName, int fromFrame, int toFrame);
+  void keyframeEasingChanged(const QString& trackName, int frame, EasingType easing);
   void syncFrameRequested(int frame);
 
 public slots:
@@ -233,17 +231,17 @@ public slots:
   /**
    * @brief Add a new track
    */
-  void addTrack(TimelineTrackType type, const QString &name);
+  void addTrack(TimelineTrackType type, const QString& name);
 
   /**
    * @brief Remove a track
    */
-  void removeTrack(const QString &name);
+  void removeTrack(const QString& name);
 
   /**
    * @brief Add keyframe at current frame
    */
-  void addKeyframeAtCurrent(const QString &trackName, const QVariant &value);
+  void addKeyframeAtCurrent(const QString& trackName, const QVariant& value);
 
   /**
    * @brief Delete selected keyframes
@@ -298,12 +296,12 @@ public slots:
   /**
    * @brief Get track by name
    */
-  [[nodiscard]] TimelineTrack *getTrack(const QString &name) const;
+  [[nodiscard]] TimelineTrack* getTrack(const QString& name) const;
 
   /**
    * @brief Get all tracks
    */
-  const QMap<QString, TimelineTrack *> &getTracks() const { return m_tracks; }
+  const QMap<QString, TimelineTrack*>& getTracks() const { return m_tracks; }
 
   /**
    * @brief Get current FPS
@@ -324,47 +322,46 @@ private:
   int xToFrame(int x) const;
 
   // Selection management
-  void selectKeyframe(const KeyframeId &id, bool additive);
-  void selectKeyframeRange(const KeyframeId &fromId, const KeyframeId &toId);
+  void selectKeyframe(const KeyframeId& id, bool additive);
+  void selectKeyframeRange(const KeyframeId& fromId, const KeyframeId& toId);
   void clearSelection();
   void updateSelectionVisuals();
-  void selectKeyframesInRect(const QRectF &rect);
+  void selectKeyframesInRect(const QRectF& rect);
 
   // Keyframe item event handlers
-  void onKeyframeClicked(bool additiveSelection, bool rangeSelection,
-                         const KeyframeId &id);
+  void onKeyframeClicked(bool additiveSelection, bool rangeSelection, const KeyframeId& id);
   void onKeyframeMoved(int oldFrame, int newFrame, int trackIndex);
   void onKeyframeDoubleClicked(int trackIndex, int frame);
-  void onKeyframeDragStarted(const KeyframeId &id);
+  void onKeyframeDragStarted(const KeyframeId& id);
   void onKeyframeDragEnded();
 
   // Box selection
-  void startBoxSelection(const QPointF &pos);
-  void updateBoxSelection(const QPointF &pos);
+  void startBoxSelection(const QPointF& pos);
+  void updateBoxSelection(const QPointF& pos);
   void endBoxSelection();
 
   // Easing dialog
   void showEasingDialog(int trackIndex, int frame);
 
   // UI Components
-  QToolBar *m_toolbar = nullptr;
-  QPushButton *m_btnPlay = nullptr;
-  QPushButton *m_btnStop = nullptr;
-  QPushButton *m_btnStepBack = nullptr;
-  QPushButton *m_btnStepForward = nullptr;
-  QSpinBox *m_frameSpinBox = nullptr;
-  QLabel *m_timeLabel = nullptr;
-  QPushButton *m_btnZoomIn = nullptr;
-  QPushButton *m_btnZoomOut = nullptr;
-  QPushButton *m_btnZoomFit = nullptr;
+  QToolBar* m_toolbar = nullptr;
+  QPushButton* m_btnPlay = nullptr;
+  QPushButton* m_btnStop = nullptr;
+  QPushButton* m_btnStepBack = nullptr;
+  QPushButton* m_btnStepForward = nullptr;
+  QSpinBox* m_frameSpinBox = nullptr;
+  QLabel* m_timeLabel = nullptr;
+  QPushButton* m_btnZoomIn = nullptr;
+  QPushButton* m_btnZoomOut = nullptr;
+  QPushButton* m_btnZoomFit = nullptr;
 
   // Timeline view
-  QGraphicsView *m_timelineView = nullptr;
-  QGraphicsScene *m_timelineScene = nullptr;
-  QGraphicsLineItem *m_playheadItem = nullptr;
+  QGraphicsView* m_timelineView = nullptr;
+  QGraphicsScene* m_timelineScene = nullptr;
+  QGraphicsLineItem* m_playheadItem = nullptr;
 
   // State
-  QMap<QString, TimelineTrack *> m_tracks;
+  QMap<QString, TimelineTrack*> m_tracks;
   mutable QMutex m_tracksMutex; // Protects m_tracks from concurrent access
   int m_currentFrame = 0;
   int m_totalFrames = 300; // 10 seconds at 30fps
@@ -384,11 +381,11 @@ private:
   int m_gridSize = 5; // frames
 
   // Curve editor
-  QWidget *m_curveEditor = nullptr;
+  QWidget* m_curveEditor = nullptr;
   bool m_curveEditorVisible = false;
 
   // Easing selector
-  QComboBox *m_easingCombo = nullptr;
+  QComboBox* m_easingCombo = nullptr;
 
   // Play mode sync
   bool m_syncWithPlayMode = false;
@@ -402,26 +399,26 @@ private:
   QVector<KeyframeCopy> m_keyframeClipboard;
 
   // Undo stack
-  QUndoStack *m_undoStack = nullptr;
+  QUndoStack* m_undoStack = nullptr;
 
   // Selection state
   QSet<KeyframeId> m_selectedKeyframes;
-  QMap<KeyframeId, NMKeyframeItem *> m_keyframeItems;
+  QMap<KeyframeId, NMKeyframeItem*> m_keyframeItems;
   KeyframeId m_lastClickedKeyframe;
 
   // Box selection state
   bool m_isBoxSelecting = false;
   QPointF m_boxSelectStart;
   QPointF m_boxSelectEnd;
-  QGraphicsRectItem *m_boxSelectRect = nullptr;
+  QGraphicsRectItem* m_boxSelectRect = nullptr;
 
   // Multi-select dragging state
   bool m_isDraggingSelection = false;
   QMap<KeyframeId, int> m_dragStartFrames;
 
   // Snap to grid toolbar controls
-  QAction *m_snapToGridAction = nullptr;
-  QComboBox *m_gridIntervalCombo = nullptr;
+  QAction* m_snapToGridAction = nullptr;
+  QComboBox* m_gridIntervalCombo = nullptr;
 
   // Thread-safe helper to get track names snapshot
   [[nodiscard]] QStringList getTrackNamesSafe() const;
@@ -449,7 +446,7 @@ private:
   void recordRenderMetrics(double renderTimeMs, int itemCount);
 
   // PERF-3: Get or create cached frame label
-  const QString &getCachedFrameLabel(int frame) const;
+  const QString& getCachedFrameLabel(int frame) const;
 };
 
 } // namespace NovelMind::editor::qt

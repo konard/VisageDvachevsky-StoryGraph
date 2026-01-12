@@ -866,8 +866,7 @@ void NMMainWindow::updateMenuActionsForWorkflowMode(PlaybackSourceMode mode) {
     if (m_actionToggleStoryGraph) {
       m_actionToggleStoryGraph->setEnabled(false);
       m_actionToggleStoryGraph->setChecked(false);
-      m_actionToggleStoryGraph->setToolTip(
-          tr("Story Graph is unavailable in Script-only mode"));
+      m_actionToggleStoryGraph->setToolTip(tr("Story Graph is unavailable in Script-only mode"));
     }
     if (m_actionToggleScriptEditor) {
       m_actionToggleScriptEditor->setEnabled(true);
@@ -880,8 +879,7 @@ void NMMainWindow::updateMenuActionsForWorkflowMode(PlaybackSourceMode mode) {
     if (m_actionToggleScriptEditor) {
       m_actionToggleScriptEditor->setEnabled(false);
       m_actionToggleScriptEditor->setChecked(false);
-      m_actionToggleScriptEditor->setToolTip(
-          tr("Script Editor is unavailable in Graph-only mode"));
+      m_actionToggleScriptEditor->setToolTip(tr("Script Editor is unavailable in Graph-only mode"));
     }
     if (m_actionToggleStoryGraph) {
       m_actionToggleStoryGraph->setEnabled(true);

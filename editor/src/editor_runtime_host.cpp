@@ -14,7 +14,7 @@ EditorRuntimeHost::~EditorRuntimeHost() {
   }
 }
 
-Result<void> EditorRuntimeHost::loadProject(const ProjectDescriptor &project) {
+Result<void> EditorRuntimeHost::loadProject(const ProjectDescriptor& project) {
   if (m_projectLoaded) {
     unloadProject();
   }
@@ -61,8 +61,7 @@ Result<void> EditorRuntimeHost::loadProject(const ProjectDescriptor &project) {
 }
 
 void EditorRuntimeHost::unloadProject() {
-  if (m_state == EditorRuntimeState::Running ||
-      m_state == EditorRuntimeState::Paused) {
+  if (m_state == EditorRuntimeState::Running || m_state == EditorRuntimeState::Paused) {
     stop();
   }
 
@@ -83,9 +82,11 @@ void EditorRuntimeHost::unloadProject() {
   fireStateChanged(m_state);
 }
 
-bool EditorRuntimeHost::isProjectLoaded() const { return m_projectLoaded; }
+bool EditorRuntimeHost::isProjectLoaded() const {
+  return m_projectLoaded;
+}
 
-const ProjectDescriptor &EditorRuntimeHost::getProject() const {
+const ProjectDescriptor& EditorRuntimeHost::getProject() const {
   return m_project;
 }
 
@@ -110,7 +111,7 @@ Result<void> EditorRuntimeHost::play() {
   return Result<void>::error("No scenes found in project");
 }
 
-Result<void> EditorRuntimeHost::playFromScene(const std::string &sceneId) {
+Result<void> EditorRuntimeHost::playFromScene(const std::string& sceneId) {
   if (!m_projectLoaded) {
     return Result<void>::error("No project loaded");
   }
@@ -180,8 +181,7 @@ void EditorRuntimeHost::resume() {
 }
 
 void EditorRuntimeHost::stop() {
-  if (m_state == EditorRuntimeState::Running ||
-      m_state == EditorRuntimeState::Paused ||
+  if (m_state == EditorRuntimeState::Running || m_state == EditorRuntimeState::Paused ||
       m_state == EditorRuntimeState::Stepping) {
     if (m_scriptRuntime) {
       m_scriptRuntime->stop();
@@ -208,8 +208,7 @@ void EditorRuntimeHost::stepFrame() {
     m_state = EditorRuntimeState::Stepping;
   }
 
-  if (m_state == EditorRuntimeState::Paused ||
-      m_state == EditorRuntimeState::Stepping) {
+  if (m_state == EditorRuntimeState::Paused || m_state == EditorRuntimeState::Stepping) {
     // Execute one frame worth of time
     f64 frameTime = 1.0 / 60.0;
     if (m_scriptRuntime) {
@@ -300,8 +299,7 @@ void EditorRuntimeHost::stepOut() {
 }
 
 void EditorRuntimeHost::continueExecution() {
-  if (m_state == EditorRuntimeState::Paused ||
-      m_state == EditorRuntimeState::Stepping) {
+  if (m_state == EditorRuntimeState::Paused || m_state == EditorRuntimeState::Stepping) {
     m_singleStepping = false;
     m_state = EditorRuntimeState::Running;
     fireStateChanged(m_state);
@@ -312,7 +310,9 @@ void EditorRuntimeHost::continueExecution() {
   }
 }
 
-EditorRuntimeState EditorRuntimeHost::getState() const { return m_state; }
+EditorRuntimeState EditorRuntimeHost::getState() const {
+  return m_state;
+}
 
 void EditorRuntimeHost::update(f64 deltaTime) {
   if (m_state != EditorRuntimeState::Running && m_state != EditorRuntimeState::Stepping) {

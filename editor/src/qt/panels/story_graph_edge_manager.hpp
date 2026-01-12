@@ -25,8 +25,8 @@ namespace edge_manager {
  * @param fromNodeId Source node ID
  * @param toNodeId Target node ID
  */
-void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
-                           uint64_t fromNodeId, uint64_t toNodeId);
+void handleConnectionAdded(NMStoryGraphPanel* panel, NMStoryGraphScene* scene, uint64_t fromNodeId,
+                           uint64_t toNodeId);
 
 /**
  * @brief Handle connection deleted event
@@ -35,9 +35,8 @@ void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
  * @param fromNodeId Source node ID
  * @param toNodeId Target node ID (deleted connection)
  */
-void handleConnectionDeleted(NMStoryGraphPanel *panel,
-                             NMStoryGraphScene *scene, uint64_t fromNodeId,
-                             uint64_t toNodeId);
+void handleConnectionDeleted(NMStoryGraphPanel* panel, NMStoryGraphScene* scene,
+                             uint64_t fromNodeId, uint64_t toNodeId);
 
 } // namespace edge_manager
 } // namespace NovelMind::editor::qt

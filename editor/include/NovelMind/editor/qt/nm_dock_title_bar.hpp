@@ -46,7 +46,7 @@ public:
    * @brief Construct a custom title bar
    * @param parent The dock panel this title bar belongs to
    */
-  explicit NMDockTitleBar(QWidget *parent = nullptr);
+  explicit NMDockTitleBar(QWidget* parent = nullptr);
 
   /**
    * @brief Destructor
@@ -56,7 +56,7 @@ public:
   /**
    * @brief Set the title text
    */
-  void setTitle(const QString &title);
+  void setTitle(const QString& title);
 
   /**
    * @brief Get the title text
@@ -66,7 +66,7 @@ public:
   /**
    * @brief Set the panel icon
    */
-  void setIcon(const QIcon &icon);
+  void setIcon(const QIcon& icon);
 
   /**
    * @brief Set whether panel is pinned (locked in place)
@@ -147,28 +147,27 @@ signals:
 
 protected:
   // Qt event overrides for drag support
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void mouseDoubleClickEvent(QMouseEvent *event) override;
-  void paintEvent(QPaintEvent *event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void mouseDoubleClickEvent(QMouseEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
 
 private:
   void setupUi();
   void updateStyle();
   void updateButtonVisibility();
-  void createButton(QPushButton *&button, const QString &iconName,
-                    const QString &tooltip);
+  void createButton(QPushButton*& button, const QString& iconName, const QString& tooltip);
 
   // UI Components
-  QHBoxLayout *m_layout = nullptr;
-  QLabel *m_iconLabel = nullptr;
-  QLabel *m_titleLabel = nullptr;
-  QPushButton *m_pinButton = nullptr;
-  QPushButton *m_settingsButton = nullptr;
-  QPushButton *m_minimizeButton = nullptr;
-  QPushButton *m_floatButton = nullptr;
-  QPushButton *m_closeButton = nullptr;
+  QHBoxLayout* m_layout = nullptr;
+  QLabel* m_iconLabel = nullptr;
+  QLabel* m_titleLabel = nullptr;
+  QPushButton* m_pinButton = nullptr;
+  QPushButton* m_settingsButton = nullptr;
+  QPushButton* m_minimizeButton = nullptr;
+  QPushButton* m_floatButton = nullptr;
+  QPushButton* m_closeButton = nullptr;
 
   // State
   QString m_title;

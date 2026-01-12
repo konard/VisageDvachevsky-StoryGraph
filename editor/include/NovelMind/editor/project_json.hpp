@@ -65,13 +65,13 @@ enum class ProjectJsonError : u32 {
 /**
  * @brief Convert error code to string
  */
-[[nodiscard]] const char *projectJsonErrorToString(ProjectJsonError error);
+[[nodiscard]] const char* projectJsonErrorToString(ProjectJsonError error);
 
 /**
  * @brief JSON value type for simple parsing
  */
-using JsonValue = std::variant<std::nullptr_t, bool, i64, f64, std::string,
-                               std::vector<std::string>>;
+using JsonValue =
+    std::variant<std::nullptr_t, bool, i64, f64, std::string, std::vector<std::string>>;
 
 /**
  * @brief Simple JSON object representation
@@ -92,8 +92,8 @@ public:
    * @param outMetadata Parsed metadata
    * @return Success or specific error code
    */
-  [[nodiscard]] static Result<void>
-  parseFromString(const std::string &json, ProjectMetadata &outMetadata);
+  [[nodiscard]] static Result<void> parseFromString(const std::string& json,
+                                                    ProjectMetadata& outMetadata);
 
   /**
    * @brief Serialize project metadata to JSON string
@@ -101,8 +101,8 @@ public:
    * @param outJson Resulting JSON string
    * @return Success or specific error code
    */
-  [[nodiscard]] static Result<void>
-  serializeToString(const ProjectMetadata &metadata, std::string &outJson);
+  [[nodiscard]] static Result<void> serializeToString(const ProjectMetadata& metadata,
+                                                      std::string& outJson);
 
   /**
    * @brief Load project metadata from file
@@ -110,8 +110,8 @@ public:
    * @param outMetadata Parsed metadata
    * @return Success or specific error code
    */
-  [[nodiscard]] static Result<void> loadFromFile(const std::string &path,
-                                                 ProjectMetadata &outMetadata);
+  [[nodiscard]] static Result<void> loadFromFile(const std::string& path,
+                                                 ProjectMetadata& outMetadata);
 
   /**
    * @brief Save project metadata to file atomically
@@ -125,15 +125,15 @@ public:
    * 3. Rename to final location
    * This ensures no corruption on write failures
    */
-  [[nodiscard]] static Result<void> saveToFile(const std::string &path,
-                                               const ProjectMetadata &metadata);
+  [[nodiscard]] static Result<void> saveToFile(const std::string& path,
+                                               const ProjectMetadata& metadata);
 
   /**
    * @brief Validate project metadata
    * @param metadata Metadata to validate
    * @return Success or specific validation error
    */
-  [[nodiscard]] static Result<void> validate(const ProjectMetadata &metadata);
+  [[nodiscard]] static Result<void> validate(const ProjectMetadata& metadata);
 
   /**
    * @brief Get supported project file version
@@ -147,23 +147,20 @@ public:
 
 private:
   // JSON parsing helpers
-  [[nodiscard]] static Result<JsonObject> parseJson(const std::string &json);
-  [[nodiscard]] static std::string escapeJsonString(const std::string &str);
-  [[nodiscard]] static std::string unescapeJsonString(const std::string &str);
+  [[nodiscard]] static Result<JsonObject> parseJson(const std::string& json);
+  [[nodiscard]] static std::string escapeJsonString(const std::string& str);
+  [[nodiscard]] static std::string unescapeJsonString(const std::string& str);
 
   // Field extraction helpers
   template <typename T>
-  [[nodiscard]] static Result<T> getField(const JsonObject &obj,
-                                          const std::string &key);
+  [[nodiscard]] static Result<T> getField(const JsonObject& obj, const std::string& key);
 
   template <typename T>
-  [[nodiscard]] static Result<T> getOptionalField(const JsonObject &obj,
-                                                  const std::string &key,
-                                                  const T &defaultValue);
+  [[nodiscard]] static Result<T> getOptionalField(const JsonObject& obj, const std::string& key,
+                                                  const T& defaultValue);
 
   // Migration support
-  [[nodiscard]] static Result<void> migrateFromVersion(u32 version,
-                                                       JsonObject &obj);
+  [[nodiscard]] static Result<void> migrateFromVersion(u32 version, JsonObject& obj);
 };
 
 } // namespace NovelMind::editor

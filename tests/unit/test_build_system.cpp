@@ -12,8 +12,7 @@ namespace fs = std::filesystem;
 // (declared as friend in build_system.hpp)
 class BuildSystemTestHelper {
 public:
-  static Result<void> validateSigningToolPath(BuildSystem& bs,
-                                              const std::string& toolPath,
+  static Result<void> validateSigningToolPath(BuildSystem& bs, const std::string& toolPath,
                                               const std::vector<std::string>& allowedNames) {
     return bs.validateSigningToolPath(toolPath, allowedNames);
   }
@@ -23,13 +22,11 @@ public:
     return bs.signExecutableForPlatform(executablePath);
   }
 
-  static Result<void> signWindowsExecutable(BuildSystem& bs,
-                                            const std::string& executablePath) {
+  static Result<void> signWindowsExecutable(BuildSystem& bs, const std::string& executablePath) {
     return bs.signWindowsExecutable(executablePath);
   }
 
-  static Result<void> signMacOSBundle(BuildSystem& bs,
-                                      const std::string& bundlePath) {
+  static Result<void> signMacOSBundle(BuildSystem& bs, const std::string& bundlePath) {
     return bs.signMacOSBundle(bundlePath);
   }
 };
@@ -38,13 +35,12 @@ public:
 static std::string createTempDir() {
   std::string tempPath =
       fs::temp_directory_path().string() + "/nm_build_test_" +
-      std::to_string(
-          std::chrono::steady_clock::now().time_since_epoch().count());
+      std::to_string(std::chrono::steady_clock::now().time_since_epoch().count());
   fs::create_directories(tempPath);
   return tempPath;
 }
 
-static void cleanupTempDir(const std::string &path) {
+static void cleanupTempDir(const std::string& path) {
   if (fs::exists(path)) {
     fs::remove_all(path);
   }
@@ -54,8 +50,7 @@ static void cleanupTempDir(const std::string &path) {
 // CRC32 Tests
 // =============================================================================
 
-TEST_CASE("CRC32 calculation produces expected values",
-          "[build_system][crc32]") {
+TEST_CASE("CRC32 calculation produces expected values", "[build_system][crc32]") {
   SECTION("Empty data") {
     // CRC32 of empty data is 0 (initial XOR with final)
     u32 crc = BuildSystem::calculateCrc32(nullptr, 0);
@@ -88,8 +83,7 @@ TEST_CASE("CRC32 calculation produces expected values",
 // SHA256 Tests
 // =============================================================================
 
-TEST_CASE("SHA256 calculation produces consistent hashes",
-          "[build_system][sha256]") {
+TEST_CASE("SHA256 calculation produces consistent hashes", "[build_system][sha256]") {
   SECTION("Same input produces same hash") {
     u8 data[] = "NovelMind Test Data";
     auto hash1 = BuildSystem::calculateSha256(data, sizeof(data) - 1);
@@ -155,61 +149,43 @@ TEST_CASE("VFS path normalization", "[build_system][vfs]") {
 // Resource Type Detection Tests
 // =============================================================================
 
-TEST_CASE("Resource type detection from extension",
-          "[build_system][resource_type]") {
+TEST_CASE("Resource type detection from extension", "[build_system][resource_type]") {
   SECTION("Texture types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.png") ==
-            ResourceType::Texture);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.jpg") ==
-            ResourceType::Texture);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.jpeg") ==
-            ResourceType::Texture);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.bmp") ==
-            ResourceType::Texture);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.webp") ==
-            ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.png") == ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.jpg") == ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.jpeg") == ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.bmp") == ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.webp") == ResourceType::Texture);
   }
 
   SECTION("Audio types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.wav") ==
-            ResourceType::Audio);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.flac") ==
-            ResourceType::Audio);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.wav") == ResourceType::Audio);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.flac") == ResourceType::Audio);
   }
 
   SECTION("Music types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.ogg") ==
-            ResourceType::Music);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.mp3") ==
-            ResourceType::Music);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.ogg") == ResourceType::Music);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.mp3") == ResourceType::Music);
   }
 
   SECTION("Font types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.ttf") ==
-            ResourceType::Font);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.otf") ==
-            ResourceType::Font);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.ttf") == ResourceType::Font);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.otf") == ResourceType::Font);
   }
 
   SECTION("Script types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.nms") ==
-            ResourceType::Script);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.nmscript") ==
-            ResourceType::Script);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.nms") == ResourceType::Script);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.nmscript") == ResourceType::Script);
   }
 
   SECTION("Data types") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.json") ==
-            ResourceType::Data);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.xml") ==
-            ResourceType::Data);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.json") == ResourceType::Data);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.xml") == ResourceType::Data);
   }
 
   SECTION("Case insensitive") {
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.PNG") ==
-            ResourceType::Texture);
-    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.OGG") ==
-            ResourceType::Music);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.PNG") == ResourceType::Texture);
+    REQUIRE(BuildSystem::getResourceTypeFromExtension("test.OGG") == ResourceType::Music);
   }
 }
 
@@ -267,14 +243,14 @@ TEST_CASE("Pack file format validation", "[build_system][pack]") {
 
     // Check version (4 bytes total: 2 major + 2 minor)
     u16 versionMajor, versionMinor;
-    packFile.read(reinterpret_cast<char *>(&versionMajor), 2);
-    packFile.read(reinterpret_cast<char *>(&versionMinor), 2);
+    packFile.read(reinterpret_cast<char*>(&versionMajor), 2);
+    packFile.read(reinterpret_cast<char*>(&versionMinor), 2);
     REQUIRE(versionMajor == 1);
     REQUIRE(versionMinor == 0);
 
     // Check resource count (4 bytes)
     u32 resourceCount;
-    packFile.read(reinterpret_cast<char *>(&resourceCount), 4);
+    packFile.read(reinterpret_cast<char*>(&resourceCount), 4);
     REQUIRE(resourceCount == 0);
 
     // Verify footer magic at end
@@ -323,10 +299,9 @@ TEST_CASE("Deterministic build uses current time when no fixed timestamp",
   buildSystem.configure(config);
 
   u64 ts = buildSystem.getBuildTimestamp();
-  u64 now =
-      static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
-                           std::chrono::system_clock::now().time_since_epoch())
-                           .count());
+  u64 now = static_cast<u64>(std::chrono::duration_cast<std::chrono::seconds>(
+                                 std::chrono::system_clock::now().time_since_epoch())
+                                 .count());
 
   // Timestamp should be close to current time (within 5 seconds)
   REQUIRE(ts >= now - 5);
@@ -346,7 +321,7 @@ TEST_CASE("Encryption key loading from file", "[build_system][encryption]") {
     // Create a 32-byte key file
     std::vector<u8> testKey(32, 0xAB);
     std::ofstream keyFile(keyPath, std::ios::binary);
-    keyFile.write(reinterpret_cast<const char *>(testKey.data()), 32);
+    keyFile.write(reinterpret_cast<const char*>(testKey.data()), 32);
     keyFile.close();
 
     auto result = BuildSystem::loadEncryptionKeyFromFile(keyPath);
@@ -361,7 +336,7 @@ TEST_CASE("Encryption key loading from file", "[build_system][encryption]") {
     // Create a too-short key file
     std::vector<u8> shortKey(16, 0x00);
     std::ofstream keyFile(keyPath, std::ios::binary);
-    keyFile.write(reinterpret_cast<const char *>(shortKey.data()), 16);
+    keyFile.write(reinterpret_cast<const char*>(shortKey.data()), 16);
     keyFile.close();
 
     auto result = BuildSystem::loadEncryptionKeyFromFile(keyPath);
@@ -369,8 +344,7 @@ TEST_CASE("Encryption key loading from file", "[build_system][encryption]") {
   }
 
   SECTION("Returns error for non-existent file") {
-    auto result =
-        BuildSystem::loadEncryptionKeyFromFile("/nonexistent/key.bin");
+    auto result = BuildSystem::loadEncryptionKeyFromFile("/nonexistent/key.bin");
     REQUIRE(result.isError());
   }
 
@@ -408,8 +382,7 @@ TEST_CASE("BuildUtils helper functions", "[build_system][utils]") {
   }
 
   SECTION("Executable extension") {
-    REQUIRE(BuildUtils::getExecutableExtension(BuildPlatform::Windows) ==
-            ".exe");
+    REQUIRE(BuildUtils::getExecutableExtension(BuildPlatform::Windows) == ".exe");
     REQUIRE(BuildUtils::getExecutableExtension(BuildPlatform::Linux) == "");
     REQUIRE(BuildUtils::getExecutableExtension(BuildPlatform::MacOS) == "");
   }
@@ -427,8 +400,7 @@ TEST_CASE("BuildUtils helper functions", "[build_system][utils]") {
 // Configure Method Tests (Issue #112 fix)
 // =============================================================================
 
-TEST_CASE("BuildSystem::configure stores configuration",
-          "[build_system][configure]") {
+TEST_CASE("BuildSystem::configure stores configuration", "[build_system][configure]") {
   BuildConfig config;
   config.projectPath = "/test/project";
   config.outputPath = "/test/output";
@@ -472,7 +444,7 @@ TEST_CASE("BuildSystem::validateProject reports missing directories",
     auto errors = result.value();
 
     bool foundProjectJson = false;
-    for (const auto &err : errors) {
+    for (const auto& err : errors) {
       if (err.find("project.json") != std::string::npos) {
         foundProjectJson = true;
         break;
@@ -495,7 +467,7 @@ TEST_CASE("BuildSystem::validateProject reports missing directories",
 
     bool foundScripts = false;
     bool foundAssets = false;
-    for (const auto &err : errors) {
+    for (const auto& err : errors) {
       if (err.find("scripts") != std::string::npos) {
         foundScripts = true;
       }
@@ -607,13 +579,11 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
 
   SECTION("Rejects key with wrong length (too long)") {
 #ifdef _WIN32
-    _putenv_s(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567");
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567");
 #else
-    setenv(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567", 1);
+    setenv("NOVELMIND_PACK_AES_KEY_HEX",
+           "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF01234567", 1);
 #endif
 
     auto result = BuildSystem::loadEncryptionKeyFromEnv();
@@ -623,9 +593,8 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
 
   SECTION("Accepts valid lowercase hex key") {
 #ifdef _WIN32
-    _putenv_s(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
            "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", 1);
@@ -638,9 +607,8 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
 
   SECTION("Accepts valid uppercase hex key") {
 #ifdef _WIN32
-    _putenv_s(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF");
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
            "0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF", 1);
@@ -653,9 +621,8 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
 
   SECTION("Accepts valid mixed-case hex key") {
 #ifdef _WIN32
-    _putenv_s(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF");
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
            "0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF0123456789aBcDeF", 1);
@@ -668,9 +635,8 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
 
   SECTION("Parses hex values correctly") {
 #ifdef _WIN32
-    _putenv_s(
-        "NOVELMIND_PACK_AES_KEY_HEX",
-        "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff");
+    _putenv_s("NOVELMIND_PACK_AES_KEY_HEX",
+              "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff");
 #else
     setenv("NOVELMIND_PACK_AES_KEY_HEX",
            "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 1);
@@ -796,8 +762,8 @@ TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
 
   SECTION("Rejects pipe character") {
     std::vector<std::string> allowed = {"signtool.exe"};
-    auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe|malicious", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,
+                                                                 "signtool.exe|malicious", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
@@ -805,7 +771,7 @@ TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
   SECTION("Rejects semicolon") {
     std::vector<std::string> allowed = {"signtool.exe"};
     auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe;rm -rf", allowed);
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, "signtool.exe;rm -rf", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
@@ -813,31 +779,31 @@ TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
   SECTION("Rejects ampersand") {
     std::vector<std::string> allowed = {"codesign"};
     auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"codesign&&malicious", allowed);
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, "codesign&&malicious", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
 
   SECTION("Rejects backticks") {
     std::vector<std::string> allowed = {"signtool.exe"};
-    auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe`malicious`", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(
+        buildSystem, "signtool.exe`malicious`", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
 
   SECTION("Rejects dollar sign") {
     std::vector<std::string> allowed = {"codesign"};
-    auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"codesign$(malicious)", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,
+                                                                 "codesign$(malicious)", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
 
   SECTION("Rejects parentheses") {
     std::vector<std::string> allowed = {"signtool.exe"};
-    auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe(malicious)", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(
+        buildSystem, "signtool.exe(malicious)", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
@@ -845,12 +811,12 @@ TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
   SECTION("Rejects redirection operators") {
     std::vector<std::string> allowed = {"signtool.exe"};
     auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe>output", allowed);
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, "signtool.exe>output", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
 
     result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe<input", allowed);
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, "signtool.exe<input", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
@@ -858,11 +824,11 @@ TEST_CASE("validateSigningToolPath rejects paths with shell metacharacters",
   SECTION("Rejects wildcards") {
     std::vector<std::string> allowed = {"signtool.exe"};
     auto result =
-        BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe*", allowed);
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, "signtool.exe*", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
 
-    result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,"signtool.exe?", allowed);
+    result = BuildSystemTestHelper::validateSigningToolPath(buildSystem, "signtool.exe?", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid character") != std::string::npos);
   }
@@ -881,7 +847,8 @@ TEST_CASE("validateSigningToolPath validates against allowlist",
     fakeExe.close();
 
     std::vector<std::string> allowed = {"signtool.exe", "codesign"};
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,maliciousPath, allowed);
+    auto result =
+        BuildSystemTestHelper::validateSigningToolPath(buildSystem, maliciousPath, allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("not in the allowlist") != std::string::npos);
   }
@@ -894,7 +861,7 @@ TEST_CASE("validateSigningToolPath validates against allowlist",
     fakeExe.close();
 
     std::vector<std::string> allowed = {"signtool.exe", "signtool"};
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,toolPath, allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem, toolPath, allowed);
     REQUIRE(result.isOk());
   }
 
@@ -906,7 +873,7 @@ TEST_CASE("validateSigningToolPath validates against allowlist",
     fakeExe.close();
 
     std::vector<std::string> allowed = {"codesign"};
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,toolPath, allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem, toolPath, allowed);
     REQUIRE(result.isOk());
   }
 
@@ -963,32 +930,31 @@ TEST_CASE("validateSigningToolPath rejects non-existent paths",
   std::vector<std::string> allowed = {"signtool.exe"};
 
   SECTION("Returns error for non-existent path") {
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,"/nonexistent/signtool.exe", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(
+        buildSystem, "/nonexistent/signtool.exe", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("not found") != std::string::npos);
   }
 }
 
-TEST_CASE("validateSigningToolPath rejects empty paths",
-          "[build_system][security][signing]") {
+TEST_CASE("validateSigningToolPath rejects empty paths", "[build_system][security][signing]") {
   BuildSystem buildSystem;
   std::vector<std::string> allowed = {"signtool.exe"};
 
   SECTION("Returns error for empty path") {
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,"", allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem, "", allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("cannot be empty") != std::string::npos);
   }
 }
 
-TEST_CASE("validateSigningToolPath rejects directories",
-          "[build_system][security][signing]") {
+TEST_CASE("validateSigningToolPath rejects directories", "[build_system][security][signing]") {
   std::string tempDir = createTempDir();
   BuildSystem buildSystem;
 
   SECTION("Returns error for directory instead of file") {
     std::vector<std::string> allowed = {"signtool.exe"};
-    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem,tempDir, allowed);
+    auto result = BuildSystemTestHelper::validateSigningToolPath(buildSystem, tempDir, allowed);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("not a regular file") != std::string::npos);
   }
@@ -1015,12 +981,12 @@ TEST_CASE("signExecutableForPlatform validates certificate path",
     fakeExe << "fake";
     fakeExe.close();
 
-    auto result = BuildSystemTestHelper::signExecutableForPlatform(buildSystem,exePath);
+    auto result = BuildSystemTestHelper::signExecutableForPlatform(buildSystem, exePath);
     REQUIRE(result.isError());
     // Error should mention certificate not found
     REQUIRE((result.error().find("certificate") != std::string::npos ||
-            result.error().find("Certificate") != std::string::npos ||
-            result.error().find("not found") != std::string::npos));
+             result.error().find("Certificate") != std::string::npos ||
+             result.error().find("not found") != std::string::npos));
   }
 
   SECTION("Returns error when executable doesn't exist") {
@@ -1036,7 +1002,8 @@ TEST_CASE("signExecutableForPlatform validates certificate path",
 
     buildSystem.configure(config);
 
-    auto result = BuildSystemTestHelper::signExecutableForPlatform(buildSystem,"/nonexistent/app.exe");
+    auto result =
+        BuildSystemTestHelper::signExecutableForPlatform(buildSystem, "/nonexistent/app.exe");
     REQUIRE(result.isError());
     REQUIRE(result.error().find("not found") != std::string::npos);
   }
@@ -1074,7 +1041,7 @@ TEST_CASE("signWindowsExecutable rejects invalid password characters",
 
     buildSystem.configure(config);
 
-    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem,exePath);
+    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem, exePath);
     REQUIRE(result.isError());
     REQUIRE(result.error().find("invalid characters") != std::string::npos);
   }
@@ -1108,12 +1075,12 @@ TEST_CASE("signWindowsExecutable validates timestamp URL format",
 
     buildSystem.configure(config);
 
-    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem,exePath);
+    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem, exePath);
     REQUIRE(result.isError());
     // On Linux, signing tool validation fails first; on Windows, timestamp URL check fails
     REQUIRE((result.error().find("timestamp") != std::string::npos ||
-            result.error().find("URL") != std::string::npos ||
-            result.error().find("Signing tool") != std::string::npos));
+             result.error().find("URL") != std::string::npos ||
+             result.error().find("Signing tool") != std::string::npos));
   }
 
   SECTION("Accepts valid HTTP timestamp URL") {
@@ -1137,19 +1104,18 @@ TEST_CASE("signWindowsExecutable validates timestamp URL format",
     buildSystem.configure(config);
 
     // This will fail because signtool doesn't exist, but URL validation should pass
-    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem,exePath);
+    auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem, exePath);
     // Should fail on tool validation, not URL validation
     if (result.isError()) {
       REQUIRE((result.error().find("tool") != std::string::npos ||
-              result.error().find("command") != std::string::npos));
+               result.error().find("command") != std::string::npos));
     }
   }
 
   cleanupTempDir(tempDir);
 }
 
-TEST_CASE("signMacOSBundle validates team ID format",
-          "[build_system][security][signing]") {
+TEST_CASE("signMacOSBundle validates team ID format", "[build_system][security][signing]") {
   std::string tempDir = createTempDir();
   BuildSystem buildSystem;
 
@@ -1166,11 +1132,11 @@ TEST_CASE("signMacOSBundle validates team ID format",
 
     buildSystem.configure(config);
 
-    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem,bundlePath);
+    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem, bundlePath);
     REQUIRE(result.isError());
     // On Linux/Windows, codesign tool validation fails first; on macOS, team ID check fails
     REQUIRE((result.error().find("team ID") != std::string::npos ||
-            result.error().find("Signing tool") != std::string::npos));
+             result.error().find("Signing tool") != std::string::npos));
   }
 
   SECTION("Accepts valid alphanumeric team ID") {
@@ -1188,7 +1154,7 @@ TEST_CASE("signMacOSBundle validates team ID format",
 
     // This will fail because codesign doesn't exist or cert is invalid,
     // but team ID validation should pass
-    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem,bundlePath);
+    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem, bundlePath);
     if (result.isError()) {
       // Should fail on tool/signing, not team ID validation
       REQUIRE(result.error().find("team ID") == std::string::npos);
@@ -1198,8 +1164,7 @@ TEST_CASE("signMacOSBundle validates team ID format",
   cleanupTempDir(tempDir);
 }
 
-TEST_CASE("signMacOSBundle validates entitlements file",
-          "[build_system][security][signing]") {
+TEST_CASE("signMacOSBundle validates entitlements file", "[build_system][security][signing]") {
   std::string tempDir = createTempDir();
   BuildSystem buildSystem;
 
@@ -1216,10 +1181,10 @@ TEST_CASE("signMacOSBundle validates entitlements file",
 
     buildSystem.configure(config);
 
-    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem,bundlePath);
+    auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem, bundlePath);
     REQUIRE(result.isError());
     REQUIRE((result.error().find("Entitlements") != std::string::npos ||
-            result.error().find("not found") != std::string::npos));
+             result.error().find("not found") != std::string::npos));
   }
 
   cleanupTempDir(tempDir);

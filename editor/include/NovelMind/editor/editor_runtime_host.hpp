@@ -119,15 +119,12 @@ struct Breakpoint {
  * @brief Callback types for runtime events
  */
 using OnStateChanged = std::function<void(EditorRuntimeState)>;
-using OnBreakpointHit =
-    std::function<void(const Breakpoint &, const ScriptCallStack &)>;
-using OnSceneChanged = std::function<void(const std::string &)>;
-using OnVariableChanged =
-    std::function<void(const std::string &, const scripting::Value &)>;
-using OnRuntimeError = std::function<void(const std::string &)>;
-using OnDialogueChanged =
-    std::function<void(const std::string &speaker, const std::string &text)>;
-using OnChoicesChanged = std::function<void(const std::vector<std::string> &)>;
+using OnBreakpointHit = std::function<void(const Breakpoint&, const ScriptCallStack&)>;
+using OnSceneChanged = std::function<void(const std::string&)>;
+using OnVariableChanged = std::function<void(const std::string&, const scripting::Value&)>;
+using OnRuntimeError = std::function<void(const std::string&)>;
+using OnDialogueChanged = std::function<void(const std::string& speaker, const std::string& text)>;
+using OnChoicesChanged = std::function<void(const std::vector<std::string>&)>;
 
 /**
  * @brief EditorRuntimeHost - Manages game runtime within the editor
@@ -165,15 +162,15 @@ public:
   ~EditorRuntimeHost();
 
   // Non-copyable
-  EditorRuntimeHost(const EditorRuntimeHost &) = delete;
-  EditorRuntimeHost &operator=(const EditorRuntimeHost &) = delete;
+  EditorRuntimeHost(const EditorRuntimeHost&) = delete;
+  EditorRuntimeHost& operator=(const EditorRuntimeHost&) = delete;
 
   /**
    * @brief Load a project for playback
    * @param project Project descriptor with paths
    * @return Success or error
    */
-  Result<void> loadProject(const ProjectDescriptor &project);
+  Result<void> loadProject(const ProjectDescriptor& project);
 
   /**
    * @brief Unload the current project
@@ -188,7 +185,7 @@ public:
   /**
    * @brief Get the loaded project info
    */
-  [[nodiscard]] const ProjectDescriptor &getProject() const;
+  [[nodiscard]] const ProjectDescriptor& getProject() const;
 
   // =========================================================================
   // Playback Control
@@ -203,7 +200,7 @@ public:
    * @brief Start playing from a specific scene
    * @param sceneId The scene to start from
    */
-  Result<void> playFromScene(const std::string &sceneId);
+  Result<void> playFromScene(const std::string& sceneId);
 
   /**
    * @brief Pause execution
@@ -307,18 +304,17 @@ public:
   /**
    * @brief Get all script variables
    */
-  [[nodiscard]] std::unordered_map<std::string, scripting::Value>
-  getVariables() const;
+  [[nodiscard]] std::unordered_map<std::string, scripting::Value> getVariables() const;
 
   /**
    * @brief Get a specific variable value
    */
-  [[nodiscard]] scripting::Value getVariable(const std::string &name) const;
+  [[nodiscard]] scripting::Value getVariable(const std::string& name) const;
 
   /**
    * @brief Set a variable value (for debugging)
    */
-  void setVariable(const std::string &name, const scripting::Value &value);
+  void setVariable(const std::string& name, const scripting::Value& value);
 
   /**
    * @brief Get all flags
@@ -328,12 +324,12 @@ public:
   /**
    * @brief Get a specific flag value
    */
-  [[nodiscard]] bool getFlag(const std::string &name) const;
+  [[nodiscard]] bool getFlag(const std::string& name) const;
 
   /**
    * @brief Set a flag value (for debugging)
    */
-  void setFlag(const std::string &name, bool value);
+  void setFlag(const std::string& name, bool value);
 
   /**
    * @brief Get list of available scenes
@@ -352,23 +348,22 @@ public:
   /**
    * @brief Add a breakpoint
    */
-  void addBreakpoint(const Breakpoint &breakpoint);
+  void addBreakpoint(const Breakpoint& breakpoint);
 
   /**
    * @brief Remove a breakpoint
    */
-  void removeBreakpoint(const std::string &scriptPath, u32 line);
+  void removeBreakpoint(const std::string& scriptPath, u32 line);
 
   /**
    * @brief Enable/disable a breakpoint
    */
-  void setBreakpointEnabled(const std::string &scriptPath, u32 line,
-                            bool enabled);
+  void setBreakpointEnabled(const std::string& scriptPath, u32 line, bool enabled);
 
   /**
    * @brief Get all breakpoints
    */
-  [[nodiscard]] const std::vector<Breakpoint> &getBreakpoints() const;
+  [[nodiscard]] const std::vector<Breakpoint>& getBreakpoints() const;
 
   /**
    * @brief Clear all breakpoints
@@ -394,12 +389,12 @@ public:
   /**
    * @brief Get the internal scene graph for rendering
    */
-  [[nodiscard]] scene::SceneGraph *getSceneGraph();
+  [[nodiscard]] scene::SceneGraph* getSceneGraph();
 
   /**
    * @brief Get the script runtime for advanced inspection
    */
-  [[nodiscard]] scripting::ScriptRuntime *getScriptRuntime();
+  [[nodiscard]] scripting::ScriptRuntime* getScriptRuntime();
 
   // === Save / Load ===
   Result<void> saveGame(i32 slot);
@@ -407,8 +402,7 @@ public:
   Result<void> saveAuto();
   Result<void> loadAuto();
   [[nodiscard]] bool autoSaveExists() const;
-  [[nodiscard]] std::optional<save::SaveMetadata>
-  getSaveMetadata(i32 slot) const;
+  [[nodiscard]] std::optional<save::SaveMetadata> getSaveMetadata(i32 slot) const;
 
   // =========================================================================
   // Hot Reload
@@ -424,7 +418,7 @@ public:
    * @brief Reload a specific asset
    * @param assetPath Path to the asset to reload
    */
-  Result<void> reloadAsset(const std::string &assetPath);
+  Result<void> reloadAsset(const std::string& assetPath);
 
   /**
    * @brief Check for file changes and auto-reload if enabled
@@ -442,12 +436,12 @@ private:
   Result<void> compileProject();
   Result<void> initializeRuntime();
   void resetRuntime();
-  bool checkBreakpoint(const scripting::SourceLocation &location);
+  bool checkBreakpoint(const scripting::SourceLocation& location);
   void fireStateChanged(EditorRuntimeState newState);
-  void fireBreakpointHit(const Breakpoint &bp);
-  void onRuntimeEvent(const scripting::ScriptEvent &event);
-  void applySceneDocument(const std::string &sceneId);
-  Result<void> applySaveDataToRuntime(const save::SaveData &data);
+  void fireBreakpointHit(const Breakpoint& bp);
+  void onRuntimeEvent(const scripting::ScriptEvent& event);
+  void applySceneDocument(const std::string& sceneId);
+  Result<void> applySaveDataToRuntime(const save::SaveData& data);
 
   // Project info
   ProjectDescriptor m_project;

@@ -19,9 +19,8 @@ constexpr float MIN_DB = -60.0f;
 // AudioProcessor
 // ============================================================================
 
-std::vector<float> AudioProcessor::process(const std::vector<float> &source,
-                                           const VoiceClipEdit &edit,
-                                           const AudioFormat &format) {
+std::vector<float> AudioProcessor::process(const std::vector<float>& source,
+                                           const VoiceClipEdit& edit, const AudioFormat& format) {
   if (source.empty())
     return {};
 
@@ -45,15 +44,14 @@ std::vector<float> AudioProcessor::process(const std::vector<float> &source,
 
   // Apply EQ
   if (edit.eqEnabled) {
-    applyEQ(result, edit.eqLowGainDb, edit.eqMidGainDb, edit.eqHighGainDb,
-            edit.eqLowFreqHz, edit.eqHighFreqHz, format.sampleRate);
+    applyEQ(result, edit.eqLowGainDb, edit.eqMidGainDb, edit.eqHighGainDb, edit.eqLowFreqHz,
+            edit.eqHighFreqHz, format.sampleRate);
   }
 
   // Apply noise gate
   if (edit.noiseGateEnabled) {
     applyNoiseGate(result, edit.noiseGateThresholdDb, edit.noiseGateReductionDb,
-                   edit.noiseGateAttackMs, edit.noiseGateReleaseMs,
-                   format.sampleRate);
+                   edit.noiseGateAttackMs, edit.noiseGateReleaseMs, format.sampleRate);
   }
 
   // Apply fades
@@ -69,8 +67,7 @@ std::vector<float> AudioProcessor::process(const std::vector<float> &source,
   return result;
 }
 
-std::vector<float> AudioProcessor::applyTrim(const std::vector<float> &samples,
-                                             int64_t trimStart,
+std::vector<float> AudioProcessor::applyTrim(const std::vector<float>& samples, int64_t trimStart,
                                              int64_t trimEnd) {
   if (samples.empty())
     return {};
@@ -85,15 +82,14 @@ std::vector<float> AudioProcessor::applyTrim(const std::vector<float> &samples,
   return std::vector<float>(samples.begin() + start, samples.begin() + end);
 }
 
-void AudioProcessor::applyFades(std::vector<float> &samples, float fadeInMs,
-                                float fadeOutMs, uint32_t sampleRate) {
+void AudioProcessor::applyFades(std::vector<float>& samples, float fadeInMs, float fadeOutMs,
+                                uint32_t sampleRate) {
   if (samples.empty())
     return;
 
   // Fade in
   if (fadeInMs > 0) {
-    int fadeInSamples =
-        static_cast<int>(fadeInMs * static_cast<float>(sampleRate) / 1000.0f);
+    int fadeInSamples = static_cast<int>(fadeInMs * static_cast<float>(sampleRate) / 1000.0f);
     fadeInSamples = std::min(fadeInSamples, static_cast<int>(samples.size()));
 
     for (int i = 0; i < fadeInSamples; ++i) {
@@ -105,40 +101,37 @@ void AudioProcessor::applyFades(std::vector<float> &samples, float fadeInMs,
 
   // Fade out
   if (fadeOutMs > 0) {
-    int fadeOutSamples =
-        static_cast<int>(fadeOutMs * static_cast<float>(sampleRate) / 1000.0f);
+    int fadeOutSamples = static_cast<int>(fadeOutMs * static_cast<float>(sampleRate) / 1000.0f);
     fadeOutSamples = std::min(fadeOutSamples, static_cast<int>(samples.size()));
 
     int startIdx = static_cast<int>(samples.size()) - fadeOutSamples;
     for (int i = 0; i < fadeOutSamples; ++i) {
       float t = static_cast<float>(i) / static_cast<float>(fadeOutSamples);
-      samples[static_cast<size_t>(startIdx + i)] *=
-          std::cos(t * 3.14159f / 2.0f);
+      samples[static_cast<size_t>(startIdx + i)] *= std::cos(t * 3.14159f / 2.0f);
     }
   }
 }
 
-void AudioProcessor::applyGain(std::vector<float> &samples, float gainDb) {
+void AudioProcessor::applyGain(std::vector<float>& samples, float gainDb) {
   if (samples.empty() || gainDb == 0.0f)
     return;
 
   float gainLinear = std::pow(10.0f, gainDb / 20.0f);
 
-  for (auto &sample : samples) {
+  for (auto& sample : samples) {
     sample *= gainLinear;
     // Soft clip to prevent harsh distortion
     sample = std::tanh(sample);
   }
 }
 
-void AudioProcessor::applyNormalize(std::vector<float> &samples,
-                                    float targetDbFS) {
+void AudioProcessor::applyNormalize(std::vector<float>& samples, float targetDbFS) {
   if (samples.empty())
     return;
 
   // Find current peak
   float currentPeak = 0.0f;
-  for (const auto &sample : samples) {
+  for (const auto& sample : samples) {
     float absVal = std::abs(sample);
     if (absVal > currentPeak)
       currentPeak = absVal;
@@ -151,12 +144,12 @@ void AudioProcessor::applyNormalize(std::vector<float> &samples,
   float targetLinear = std::pow(10.0f, targetDbFS / 20.0f);
   float gain = targetLinear / currentPeak;
 
-  for (auto &sample : samples) {
+  for (auto& sample : samples) {
     sample *= gain;
   }
 }
 
-void AudioProcessor::applyHighPass(std::vector<float> &samples, float cutoffHz,
+void AudioProcessor::applyHighPass(std::vector<float>& samples, float cutoffHz,
                                    uint32_t sampleRate) {
   if (samples.empty() || cutoffHz <= 0 || sampleRate == 0)
     return;
@@ -177,7 +170,7 @@ void AudioProcessor::applyHighPass(std::vector<float> &samples, float cutoffHz,
   }
 }
 
-void AudioProcessor::applyLowPass(std::vector<float> &samples, float cutoffHz,
+void AudioProcessor::applyLowPass(std::vector<float>& samples, float cutoffHz,
                                   uint32_t sampleRate) {
   if (samples.empty() || cutoffHz <= 0 || sampleRate == 0)
     return;
@@ -196,9 +189,8 @@ void AudioProcessor::applyLowPass(std::vector<float> &samples, float cutoffHz,
   }
 }
 
-void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
-                             float midGainDb, float highGainDb, float lowFreq,
-                             float highFreq, uint32_t sampleRate) {
+void AudioProcessor::applyEQ(std::vector<float>& samples, float lowGainDb, float midGainDb,
+                             float highGainDb, float lowFreq, float highFreq, uint32_t sampleRate) {
   if (samples.empty() || sampleRate == 0)
     return;
 
@@ -263,9 +255,8 @@ void AudioProcessor::applyEQ(std::vector<float> &samples, float lowGainDb,
   }
 }
 
-void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
-                                    float thresholdDb, float reductionDb,
-                                    float attackMs, float releaseMs,
+void AudioProcessor::applyNoiseGate(std::vector<float>& samples, float thresholdDb,
+                                    float reductionDb, float attackMs, float releaseMs,
                                     uint32_t sampleRate) {
   if (samples.empty() || sampleRate == 0)
     return;
@@ -273,10 +264,8 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
   float threshold = std::pow(10.0f, thresholdDb / 20.0f);
   float reduction = std::pow(10.0f, reductionDb / 20.0f);
 
-  int attackSamples =
-      static_cast<int>(attackMs * static_cast<float>(sampleRate) / 1000.0f);
-  int releaseSamples =
-      static_cast<int>(releaseMs * static_cast<float>(sampleRate) / 1000.0f);
+  int attackSamples = static_cast<int>(attackMs * static_cast<float>(sampleRate) / 1000.0f);
+  int releaseSamples = static_cast<int>(releaseMs * static_cast<float>(sampleRate) / 1000.0f);
 
   float envelope = 0.0f;
   float gateGain = reduction;
@@ -286,25 +275,21 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
 
     // Update envelope
     if (absVal > envelope) {
-      envelope +=
-          (absVal - envelope) / static_cast<float>(std::max(1, attackSamples));
+      envelope += (absVal - envelope) / static_cast<float>(std::max(1, attackSamples));
     } else {
-      envelope -=
-          (envelope - absVal) / static_cast<float>(std::max(1, releaseSamples));
+      envelope -= (envelope - absVal) / static_cast<float>(std::max(1, releaseSamples));
     }
 
     // Gate logic
     if (envelope > threshold) {
       // Open gate
       if (gateGain < 1.0f) {
-        gateGain +=
-            (1.0f - gateGain) / static_cast<float>(std::max(1, attackSamples));
+        gateGain += (1.0f - gateGain) / static_cast<float>(std::max(1, attackSamples));
       }
     } else {
       // Close gate
       if (gateGain > reduction) {
-        gateGain -= (gateGain - reduction) /
-                    static_cast<float>(std::max(1, releaseSamples));
+        gateGain -= (gateGain - reduction) / static_cast<float>(std::max(1, releaseSamples));
       }
     }
 
@@ -312,12 +297,12 @@ void AudioProcessor::applyNoiseGate(std::vector<float> &samples,
   }
 }
 
-float AudioProcessor::calculatePeakDb(const std::vector<float> &samples) {
+float AudioProcessor::calculatePeakDb(const std::vector<float>& samples) {
   if (samples.empty())
     return MIN_DB;
 
   float peak = 0.0f;
-  for (const auto &sample : samples) {
+  for (const auto& sample : samples) {
     float absVal = std::abs(sample);
     if (absVal > peak)
       peak = absVal;
@@ -328,12 +313,12 @@ float AudioProcessor::calculatePeakDb(const std::vector<float> &samples) {
   return 20.0f * std::log10(peak);
 }
 
-float AudioProcessor::calculateRmsDb(const std::vector<float> &samples) {
+float AudioProcessor::calculateRmsDb(const std::vector<float>& samples) {
   if (samples.empty())
     return MIN_DB;
 
   float sum = 0.0f;
-  for (const auto &sample : samples) {
+  for (const auto& sample : samples) {
     sum += sample * sample;
   }
   float rms = std::sqrt(sum / static_cast<float>(samples.size()));

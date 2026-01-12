@@ -17,10 +17,10 @@ inline constexpr u32 kPackFlagEncrypted = 1u << 0;
 inline constexpr u32 kPackFlagCompressed = 1u << 1;
 inline constexpr u32 kPackFlagSigned = 1u << 2;
 
-bool readFileToString(std::ifstream &file, std::string &out);
-bool readFileToBytes(std::ifstream &file, std::vector<u8> &out);
+bool readFileToString(std::ifstream& file, std::string& out);
+bool readFileToBytes(std::ifstream& file, std::vector<u8>& out);
 
-u32 updateCrc32(u32 crc, const u8 *data, usize size);
+u32 updateCrc32(u32 crc, const u8* data, usize size);
 
 #ifndef NOVELMIND_HAS_OPENSSL
 struct Sha256Context {
@@ -30,9 +30,9 @@ struct Sha256Context {
   u32 state[8] = {0};
 };
 
-void sha256Init(Sha256Context &ctx);
-void sha256Update(Sha256Context &ctx, const u8 *data, usize len);
-void sha256Final(Sha256Context &ctx, u8 hash[32]);
+void sha256Init(Sha256Context& ctx);
+void sha256Update(Sha256Context& ctx, const u8* data, usize len);
+void sha256Final(Sha256Context& ctx, u8 hash[32]);
 #endif
 
 } // namespace NovelMind::VFS::detail

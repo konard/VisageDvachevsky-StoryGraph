@@ -42,7 +42,7 @@ public:
 
   // Process queued callbacks (what Qt event loop does)
   void processQueue() {
-    for (auto &cb : m_queuedCallbacks) {
+    for (auto& cb : m_queuedCallbacks) {
       cb();
     }
     m_queuedCallbacks.clear();
@@ -116,8 +116,7 @@ TEST_CASE("Multiple callbacks are serialized", "[recording][threading][marshalin
 // Race Condition Prevention Tests
 // ============================================================================
 
-TEST_CASE("Queued callbacks prevent race conditions",
-          "[recording][threading][races]") {
+TEST_CASE("Queued callbacks prevent race conditions", "[recording][threading][races]") {
   SECTION("queued callbacks don't overlap") {
     CallbackPattern pattern;
 

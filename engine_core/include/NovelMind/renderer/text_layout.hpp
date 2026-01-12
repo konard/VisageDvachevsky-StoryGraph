@@ -42,10 +42,9 @@ struct TextStyle {
   f32 outlineWidth = 0.0f;
   Color outlineColor = Color::black();
 
-  bool operator==(const TextStyle &other) const {
-    return color == other.color && bold == other.bold &&
-           italic == other.italic && size == other.size &&
-           outlineWidth == other.outlineWidth &&
+  bool operator==(const TextStyle& other) const {
+    return color == other.color && bold == other.bold && italic == other.italic &&
+           size == other.size && outlineWidth == other.outlineWidth &&
            outlineColor == other.outlineColor;
   }
 };
@@ -86,9 +85,8 @@ struct WaveCommand {
 /**
  * @brief Inline command variant
  */
-using InlineCommand =
-    std::variant<WaitCommand, SpeedCommand, PauseCommand, ColorCommand,
-                 ResetStyleCommand, ShakeCommand, WaveCommand>;
+using InlineCommand = std::variant<WaitCommand, SpeedCommand, PauseCommand, ColorCommand,
+                                   ResetStyleCommand, ShakeCommand, WaveCommand>;
 
 /**
  * @brief Text segment - either text or an inline command
@@ -119,8 +117,7 @@ struct TextLayout {
   f32 totalHeight = 0.0f;
   i32 totalCharacters = 0;
   bool rightToLeft = false;
-  std::vector<size_t>
-      commandIndices; // Indices where commands occur in character stream
+  std::vector<size_t> commandIndices; // Indices where commands occur in character stream
 };
 
 /**
@@ -153,20 +150,19 @@ public:
    * @param defaultStyle The default text style
    * @return Vector of text segments
    */
-  [[nodiscard]] std::vector<TextSegment>
-  parse(const std::string &text, const TextStyle &defaultStyle) const;
+  [[nodiscard]] std::vector<TextSegment> parse(const std::string& text,
+                                               const TextStyle& defaultStyle) const;
 
 private:
   /**
    * @brief Parse a single inline command
    */
-  [[nodiscard]] std::optional<InlineCommand>
-  parseCommand(const std::string &commandStr) const;
+  [[nodiscard]] std::optional<InlineCommand> parseCommand(const std::string& commandStr) const;
 
   /**
    * @brief Parse color from hex string
    */
-  [[nodiscard]] Color parseColor(const std::string &colorStr) const;
+  [[nodiscard]] Color parseColor(const std::string& colorStr) const;
 };
 
 /**
@@ -225,19 +221,19 @@ public:
   /**
    * @brief Set default text style
    */
-  void setDefaultStyle(const TextStyle &style);
+  void setDefaultStyle(const TextStyle& style);
 
   /**
    * @brief Layout text with automatic wrapping and rich text parsing
    * @param text The text to layout (may contain inline commands)
    * @return The laid-out text structure
    */
-  [[nodiscard]] TextLayout layout(const std::string &text) const;
+  [[nodiscard]] TextLayout layout(const std::string& text) const;
 
   /**
    * @brief Measure text bounds without full layout
    */
-  [[nodiscard]] std::pair<f32, f32> measureText(const std::string &text) const;
+  [[nodiscard]] std::pair<f32, f32> measureText(const std::string& text) const;
 
   /**
    * @brief Get character index at position
@@ -246,8 +242,7 @@ public:
    * @param y Y position relative to layout origin
    * @return Character index, or -1 if not found
    */
-  [[nodiscard]] i32 getCharacterAtPosition(const TextLayout &layout, f32 x,
-                                           f32 y) const;
+  [[nodiscard]] i32 getCharacterAtPosition(const TextLayout& layout, f32 x, f32 y) const;
 
   /**
    * @brief Get position of character
@@ -255,26 +250,24 @@ public:
    * @param charIndex Character index
    * @return Position (x, y) of the character
    */
-  [[nodiscard]] std::pair<f32, f32>
-  getCharacterPosition(const TextLayout &layout, i32 charIndex) const;
+  [[nodiscard]] std::pair<f32, f32> getCharacterPosition(const TextLayout& layout,
+                                                         i32 charIndex) const;
 
 private:
   /**
    * @brief Break text into words for wrapping
    */
-  [[nodiscard]] std::vector<std::string>
-  breakIntoWords(const std::string &text) const;
+  [[nodiscard]] std::vector<std::string> breakIntoWords(const std::string& text) const;
 
   /**
    * @brief Measure a single character
    */
-  [[nodiscard]] f32 measureChar(char c, const TextStyle &style) const;
+  [[nodiscard]] f32 measureChar(char c, const TextStyle& style) const;
 
   /**
    * @brief Measure a word
    */
-  [[nodiscard]] f32 measureWord(const std::string &word,
-                                const TextStyle &style) const;
+  [[nodiscard]] f32 measureWord(const std::string& word, const TextStyle& style) const;
 
   std::shared_ptr<FontAtlas> m_fontAtlas;
   std::shared_ptr<Font> m_font;
@@ -311,7 +304,7 @@ public:
   /**
    * @brief Set the text layout to animate
    */
-  void setLayout(const TextLayout &layout);
+  void setLayout(const TextLayout& layout);
 
   /**
    * @brief Set typing speed (characters per second)
@@ -362,17 +355,17 @@ public:
   /**
    * @brief Get current typewriter state
    */
-  [[nodiscard]] const TypewriterState &getState() const;
+  [[nodiscard]] const TypewriterState& getState() const;
 
   /**
    * @brief Get current text style (after applying commands)
    */
-  [[nodiscard]] const TextStyle &getCurrentStyle() const;
+  [[nodiscard]] const TextStyle& getCurrentStyle() const;
 
   /**
    * @brief Set callback for when a command is reached
    */
-  void setCommandCallback(std::function<void(const InlineCommand &)> callback);
+  void setCommandCallback(std::function<void(const InlineCommand&)> callback);
 
 private:
   /**
@@ -385,11 +378,11 @@ private:
    */
   [[nodiscard]] f32 getPunctuationPause(char c) const;
 
-  const TextLayout *m_layout = nullptr;
+  const TextLayout* m_layout = nullptr;
   TypewriterState m_state;
   TextStyle m_currentStyle;
   f32 m_punctuationPause = 3.0f; // Multiplier for pause at punctuation
-  std::function<void(const InlineCommand &)> m_commandCallback;
+  std::function<void(const InlineCommand&)> m_commandCallback;
 
   // Command tracking
   size_t m_nextCommandIndex = 0;

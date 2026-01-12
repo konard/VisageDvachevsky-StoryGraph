@@ -13,14 +13,14 @@ namespace {
 constexpr int kPreviewHeight = 140;
 }
 
-NMAssetPreviewFrame::NMAssetPreviewFrame(QWidget *parent) : QFrame(parent) {
+NMAssetPreviewFrame::NMAssetPreviewFrame(QWidget* parent) : QFrame(parent) {
   setObjectName("AssetPreviewFrame");
   setFrameShape(QFrame::StyledPanel);
   setupUi();
 }
 
 void NMAssetPreviewFrame::setupUi() {
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(6, 6, 6, 6);
   layout->setSpacing(3);
 
@@ -40,7 +40,7 @@ void NMAssetPreviewFrame::setupUi() {
   layout->addWidget(m_previewMeta);
 }
 
-void NMAssetPreviewFrame::updatePreview(const QString &path) {
+void NMAssetPreviewFrame::updatePreview(const QString& path) {
   m_previewPath = path;
 
   if (path.isEmpty()) {
@@ -55,8 +55,7 @@ void NMAssetPreviewFrame::updatePreview(const QString &path) {
   }
 
   m_previewName->setText(info.fileName());
-  const QString sizeText =
-      QObject::tr("%1 KB").arg(QString::number((info.size() + 1023) / 1024));
+  const QString sizeText = QObject::tr("%1 KB").arg(QString::number((info.size() + 1023) / 1024));
 
   if (isImageExtension(info.suffix())) {
     QImageReader reader(info.absoluteFilePath());
@@ -66,14 +65,11 @@ void NMAssetPreviewFrame::updatePreview(const QString &path) {
     if (!image.isNull()) {
       QPixmap pix = QPixmap::fromImage(image);
       QSize target = m_previewImage->size();
-      QPixmap scaled =
-          pix.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      QPixmap scaled = pix.scaled(target, Qt::KeepAspectRatio, Qt::SmoothTransformation);
       m_previewImage->setPixmap(scaled);
       m_previewImage->setText(QString());
-      m_previewMeta->setText(QObject::tr("%1 x %2 | %3")
-                                 .arg(imgSize.width())
-                                 .arg(imgSize.height())
-                                 .arg(sizeText));
+      m_previewMeta->setText(
+          QObject::tr("%1 x %2 | %3").arg(imgSize.width()).arg(imgSize.height()).arg(sizeText));
       return;
     }
   }

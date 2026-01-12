@@ -25,10 +25,9 @@ using namespace NovelMind::scene;
  */
 class TestSceneObject : public SceneObjectBase {
 public:
-  explicit TestSceneObject(const std::string &id)
-      : SceneObjectBase(id, SceneObjectType::Custom) {}
+  explicit TestSceneObject(const std::string& id) : SceneObjectBase(id, SceneObjectType::Custom) {}
 
-  void render(NovelMind::renderer::IRenderer &) override {}
+  void render(NovelMind::renderer::IRenderer&) override {}
 
   std::atomic<int> accessCount{0};
 };
@@ -73,13 +72,13 @@ TEST_CASE("SceneObjectHandle withObject safety", "[scene][handle]") {
 
   SECTION("withObject executes function when valid") {
     auto obj = std::make_unique<TestSceneObject>("test_obj");
-    TestSceneObject *rawPtr = obj.get();
+    TestSceneObject* rawPtr = obj.get();
     graph.addToLayer(LayerType::UI, std::move(obj));
 
     SceneObjectHandle handle(&graph, "test_obj");
 
     bool executed = false;
-    bool result = handle.withObject([&](SceneObjectBase *objPtr) {
+    bool result = handle.withObject([&](SceneObjectBase* objPtr) {
       REQUIRE(objPtr != nullptr);
       REQUIRE(objPtr == rawPtr);
       executed = true;
@@ -93,9 +92,7 @@ TEST_CASE("SceneObjectHandle withObject safety", "[scene][handle]") {
     SceneObjectHandle handle;
 
     bool executed = false;
-    bool result = handle.withObject([&](SceneObjectBase *) {
-      executed = true;
-    });
+    bool result = handle.withObject([&](SceneObjectBase*) { executed = true; });
 
     REQUIRE_FALSE(result);
     REQUIRE_FALSE(executed);
@@ -108,7 +105,7 @@ TEST_CASE("SceneObjectHandle withObject safety", "[scene][handle]") {
     SceneObjectHandle handle(&graph, "test_obj");
 
     bool executed = false;
-    bool result = handle.withObjectAs<TestSceneObject>([&](TestSceneObject *objPtr) {
+    bool result = handle.withObjectAs<TestSceneObject>([&](TestSceneObject* objPtr) {
       REQUIRE(objPtr != nullptr);
       executed = true;
     });
@@ -118,8 +115,7 @@ TEST_CASE("SceneObjectHandle withObject safety", "[scene][handle]") {
   }
 }
 
-TEST_CASE("SceneObjectHandle concurrent access safety",
-          "[scene][handle][threading]") {
+TEST_CASE("SceneObjectHandle concurrent access safety", "[scene][handle][threading]") {
   SceneGraph graph;
 
   SECTION("Concurrent validity checks are safe") {
@@ -143,7 +139,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
       });
     }
 
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       t.join();
     }
 
@@ -153,7 +149,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
 
   SECTION("Concurrent access via withObject is safe") {
     auto obj = std::make_unique<TestSceneObject>("test_obj");
-    TestSceneObject *rawPtr = obj.get();
+    TestSceneObject* rawPtr = obj.get();
     graph.addToLayer(LayerType::UI, std::move(obj));
 
     SceneObjectHandle handle(&graph, "test_obj");
@@ -164,11 +160,11 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
     for (int i = 0; i < 10; ++i) {
       threads.emplace_back([&]() {
         for (int j = 0; j < 100; ++j) {
-          bool success = handle.withObject([&](SceneObjectBase *objPtr) {
+          bool success = handle.withObject([&](SceneObjectBase* objPtr) {
             // Safely access the object
             REQUIRE(objPtr != nullptr);
             REQUIRE(objPtr == rawPtr);
-            static_cast<TestSceneObject *>(objPtr)->accessCount++;
+            static_cast<TestSceneObject*>(objPtr)->accessCount++;
           });
           if (success) {
             ++successCount;
@@ -178,7 +174,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
       });
     }
 
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       t.join();
     }
 
@@ -200,7 +196,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
     // Thread 1: Continuously try to access the object
     std::thread accessThread([&]() {
       for (int i = 0; i < 1000; ++i) {
-        (void)handle.withObject([&](SceneObjectBase *objPtr) {
+        (void)handle.withObject([&](SceneObjectBase* objPtr) {
           REQUIRE(objPtr != nullptr);
           ++totalAccesses;
           if (deletionComplete.load()) {
@@ -229,7 +225,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
 
   SECTION("Multiple handles to same object work correctly") {
     auto obj = std::make_unique<TestSceneObject>("test_obj");
-    TestSceneObject *rawPtr = obj.get();
+    TestSceneObject* rawPtr = obj.get();
     graph.addToLayer(LayerType::UI, std::move(obj));
 
     SceneObjectHandle handle1(&graph, "test_obj");
@@ -240,12 +236,11 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
     std::atomic<int> successCount{0};
 
     // Each handle used by different threads
-    for (auto *handle : {&handle1, &handle2, &handle3}) {
+    for (auto* handle : {&handle1, &handle2, &handle3}) {
       threads.emplace_back([handle, &successCount, rawPtr]() {
         for (int i = 0; i < 100; ++i) {
-          bool success = handle->withObject([&](SceneObjectBase *objPtr) {
-            REQUIRE(objPtr == rawPtr);
-          });
+          bool success =
+              handle->withObject([&](SceneObjectBase* objPtr) { REQUIRE(objPtr == rawPtr); });
           if (success) {
             ++successCount;
           }
@@ -253,7 +248,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
       });
     }
 
-    for (auto &t : threads) {
+    for (auto& t : threads) {
       t.join();
     }
 
@@ -261,8 +256,7 @@ TEST_CASE("SceneObjectHandle concurrent access safety",
   }
 }
 
-TEST_CASE("SceneObjectHandle generation counter prevents TOCTOU",
-          "[scene][handle][threading]") {
+TEST_CASE("SceneObjectHandle generation counter prevents TOCTOU", "[scene][handle][threading]") {
   SceneGraph graph;
 
   SECTION("Old handle with stale generation cannot access new object") {
@@ -290,7 +284,7 @@ TEST_CASE("SceneObjectHandle generation counter prevents TOCTOU",
 
     // withObject should fail
     bool executed = false;
-    handle.withObject([&](SceneObjectBase *) { executed = true; });
+    handle.withObject([&](SceneObjectBase*) { executed = true; });
     REQUIRE_FALSE(executed);
   }
 }
@@ -319,7 +313,7 @@ TEST_CASE("SceneObjectHandle stress test", "[scene][handle][threading]") {
     std::thread accessThread([&]() {
       while (!stopFlag.load()) {
         SceneObjectHandle handle(&graph, "test_obj");
-        handle.withObject([&](SceneObjectBase *objPtr) {
+        handle.withObject([&](SceneObjectBase* objPtr) {
           REQUIRE(objPtr != nullptr);
           ++totalAccesses;
         });

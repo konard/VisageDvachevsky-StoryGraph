@@ -6,654 +6,609 @@
 
 using namespace NovelMind::scripting;
 
-TEST_CASE("Parser parses character declarations", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses character declarations", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses simple character declaration")
-    {
-        auto tokens = lexer.tokenize("character Hero");
-        REQUIRE(tokens.isOk());
+  SECTION("parses simple character declaration") {
+    auto tokens = lexer.tokenize("character Hero");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.characters.size() == 1);
-        REQUIRE(program.characters[0].id == "Hero");
-    }
+    const auto& program = result.value();
+    REQUIRE(program.characters.size() == 1);
+    REQUIRE(program.characters[0].id == "Hero");
+  }
 
-    SECTION("parses character with properties")
-    {
-        auto tokens = lexer.tokenize(R"(character Hero(name="Alex", color="#FFCC00"))");
-        REQUIRE(tokens.isOk());
+  SECTION("parses character with properties") {
+    auto tokens = lexer.tokenize(R"(character Hero(name="Alex", color="#FFCC00"))");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.characters.size() == 1);
-        REQUIRE(program.characters[0].id == "Hero");
-        REQUIRE(program.characters[0].displayName == "Alex");
-        REQUIRE(program.characters[0].color == "#FFCC00");
-    }
+    const auto& program = result.value();
+    REQUIRE(program.characters.size() == 1);
+    REQUIRE(program.characters[0].id == "Hero");
+    REQUIRE(program.characters[0].displayName == "Alex");
+    REQUIRE(program.characters[0].color == "#FFCC00");
+  }
 }
 
-TEST_CASE("Parser parses scene declarations", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses scene declarations", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses empty scene")
-    {
-        auto tokens = lexer.tokenize("scene intro { }");
-        REQUIRE(tokens.isOk());
+  SECTION("parses empty scene") {
+    auto tokens = lexer.tokenize("scene intro { }");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.scenes.size() == 1);
-        REQUIRE(program.scenes[0].name == "intro");
-        REQUIRE(program.scenes[0].body.empty());
-    }
+    const auto& program = result.value();
+    REQUIRE(program.scenes.size() == 1);
+    REQUIRE(program.scenes[0].name == "intro");
+    REQUIRE(program.scenes[0].body.empty());
+  }
 
-    SECTION("parses scene with statements")
-    {
-        auto tokens = lexer.tokenize(R"(
+  SECTION("parses scene with statements") {
+    auto tokens = lexer.tokenize(R"(
             scene intro {
                 show background "bg_city"
                 say Hero "Hello!"
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.scenes.size() == 1);
-        REQUIRE(program.scenes[0].body.size() == 2);
-    }
+    const auto& program = result.value();
+    REQUIRE(program.scenes.size() == 1);
+    REQUIRE(program.scenes[0].body.size() == 2);
+  }
 }
 
-TEST_CASE("Parser parses show statements", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses show statements", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses show background")
-    {
-        auto tokens = lexer.tokenize(R"(show background "bg_city")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses show background") {
+    auto tokens = lexer.tokenize(R"(show background "bg_city")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<ShowStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<ShowStmt>(stmt->data));
 
-        const auto& show = std::get<ShowStmt>(stmt->data);
-        REQUIRE(show.target == ShowStmt::Target::Background);
-        REQUIRE(show.resource.value() == "bg_city");
-    }
+    const auto& show = std::get<ShowStmt>(stmt->data);
+    REQUIRE(show.target == ShowStmt::Target::Background);
+    REQUIRE(show.resource.value() == "bg_city");
+  }
 
-    SECTION("parses show character at position")
-    {
-        auto tokens = lexer.tokenize("show Hero at center");
-        REQUIRE(tokens.isOk());
+  SECTION("parses show character at position") {
+    auto tokens = lexer.tokenize("show Hero at center");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<ShowStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<ShowStmt>(stmt->data));
 
-        const auto& show = std::get<ShowStmt>(stmt->data);
-        REQUIRE(show.target == ShowStmt::Target::Character);
-        REQUIRE(show.identifier == "Hero");
-        REQUIRE(show.position.value() == Position::Center);
-    }
+    const auto& show = std::get<ShowStmt>(stmt->data);
+    REQUIRE(show.target == ShowStmt::Target::Character);
+    REQUIRE(show.identifier == "Hero");
+    REQUIRE(show.position.value() == Position::Center);
+  }
 }
 
-TEST_CASE("Parser parses say statements", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses say statements", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses say with speaker")
-    {
-        auto tokens = lexer.tokenize(R"(say Hero "Hello, world!")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses say with speaker") {
+    auto tokens = lexer.tokenize(R"(say Hero "Hello, world!")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
 
-        const auto& say = std::get<SayStmt>(stmt->data);
-        REQUIRE(say.speaker.value() == "Hero");
-        REQUIRE(say.text == "Hello, world!");
-    }
+    const auto& say = std::get<SayStmt>(stmt->data);
+    REQUIRE(say.speaker.value() == "Hero");
+    REQUIRE(say.text == "Hello, world!");
+  }
 
-    SECTION("parses narrator say (no speaker)")
-    {
-        auto tokens = lexer.tokenize(R"(say "This is narration.")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses narrator say (no speaker)") {
+    auto tokens = lexer.tokenize(R"(say "This is narration.")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
 
-        const auto& say = std::get<SayStmt>(stmt->data);
-        REQUIRE(!say.speaker.has_value());
-        REQUIRE(say.text == "This is narration.");
-    }
+    const auto& say = std::get<SayStmt>(stmt->data);
+    REQUIRE(!say.speaker.has_value());
+    REQUIRE(say.text == "This is narration.");
+  }
 
-    SECTION("parses shorthand say syntax")
-    {
-        auto tokens = lexer.tokenize(R"(Hero "Quick dialogue")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses shorthand say syntax") {
+    auto tokens = lexer.tokenize(R"(Hero "Quick dialogue")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<SayStmt>(stmt->data));
 
-        const auto& say = std::get<SayStmt>(stmt->data);
-        REQUIRE(say.speaker.value() == "Hero");
-        REQUIRE(say.text == "Quick dialogue");
-    }
+    const auto& say = std::get<SayStmt>(stmt->data);
+    REQUIRE(say.speaker.value() == "Hero");
+    REQUIRE(say.text == "Quick dialogue");
+  }
 }
 
-TEST_CASE("Parser parses control flow", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses control flow", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses if statement")
-    {
-        auto tokens = lexer.tokenize(R"(
+  SECTION("parses if statement") {
+    auto tokens = lexer.tokenize(R"(
             if flag_met_hero {
                 show Hero at center
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<IfStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<IfStmt>(stmt->data));
 
-        const auto& ifStmt = std::get<IfStmt>(stmt->data);
-        REQUIRE(ifStmt.thenBranch.size() == 1);
-        REQUIRE(ifStmt.elseBranch.empty());
-    }
+    const auto& ifStmt = std::get<IfStmt>(stmt->data);
+    REQUIRE(ifStmt.thenBranch.size() == 1);
+    REQUIRE(ifStmt.elseBranch.empty());
+  }
 
-    SECTION("parses if-else statement")
-    {
-        auto tokens = lexer.tokenize(R"(
+  SECTION("parses if-else statement") {
+    auto tokens = lexer.tokenize(R"(
             if flag_met_hero {
                 show Hero at center
             } else {
                 show Stranger at center
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<IfStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<IfStmt>(stmt->data));
 
-        const auto& ifStmt = std::get<IfStmt>(stmt->data);
-        REQUIRE(ifStmt.thenBranch.size() == 1);
-        REQUIRE(ifStmt.elseBranch.size() == 1);
-    }
+    const auto& ifStmt = std::get<IfStmt>(stmt->data);
+    REQUIRE(ifStmt.thenBranch.size() == 1);
+    REQUIRE(ifStmt.elseBranch.size() == 1);
+  }
 
-    SECTION("parses goto statement")
-    {
-        auto tokens = lexer.tokenize("goto next_scene");
-        REQUIRE(tokens.isOk());
+  SECTION("parses goto statement") {
+    auto tokens = lexer.tokenize("goto next_scene");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<GotoStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<GotoStmt>(stmt->data));
 
-        const auto& gotoStmt = std::get<GotoStmt>(stmt->data);
-        REQUIRE(gotoStmt.target == "next_scene");
-    }
+    const auto& gotoStmt = std::get<GotoStmt>(stmt->data);
+    REQUIRE(gotoStmt.target == "next_scene");
+  }
 }
 
-TEST_CASE("Parser parses expressions", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses expressions", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses set statement with expression")
-    {
-        auto tokens = lexer.tokenize("set counter = 10");
-        REQUIRE(tokens.isOk());
+  SECTION("parses set statement with expression") {
+    auto tokens = lexer.tokenize("set counter = 10");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<SetStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<SetStmt>(stmt->data));
 
-        const auto& setStmt = std::get<SetStmt>(stmt->data);
-        REQUIRE(setStmt.variable == "counter");
-    }
+    const auto& setStmt = std::get<SetStmt>(stmt->data);
+    REQUIRE(setStmt.variable == "counter");
+  }
 
-    SECTION("parses comparison expressions")
-    {
-        auto tokens = lexer.tokenize("if counter > 5 { }");
-        REQUIRE(tokens.isOk());
+  SECTION("parses comparison expressions") {
+    auto tokens = lexer.tokenize("if counter > 5 { }");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
-    }
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
+  }
 
-    SECTION("parses boolean expressions")
-    {
-        auto tokens = lexer.tokenize("if flag1 and flag2 { }");
-        REQUIRE(tokens.isOk());
+  SECTION("parses boolean expressions") {
+    auto tokens = lexer.tokenize("if flag1 and flag2 { }");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
-    }
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
+  }
 }
 
-TEST_CASE("Parser parses choice blocks", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses choice blocks", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses choice with goto")
-    {
-        auto tokens = lexer.tokenize(R"(
+  SECTION("parses choice with goto") {
+    auto tokens = lexer.tokenize(R"(
             choice {
                 "Go left" -> goto left_path
                 "Go right" -> goto right_path
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<ChoiceStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<ChoiceStmt>(stmt->data));
 
-        const auto& choice = std::get<ChoiceStmt>(stmt->data);
-        REQUIRE(choice.options.size() == 2);
-        REQUIRE(choice.options[0].text == "Go left");
-        REQUIRE(choice.options[0].gotoTarget.value() == "left_path");
-        REQUIRE(choice.options[1].text == "Go right");
-        REQUIRE(choice.options[1].gotoTarget.value() == "right_path");
-    }
+    const auto& choice = std::get<ChoiceStmt>(stmt->data);
+    REQUIRE(choice.options.size() == 2);
+    REQUIRE(choice.options[0].text == "Go left");
+    REQUIRE(choice.options[0].gotoTarget.value() == "left_path");
+    REQUIRE(choice.options[1].text == "Go right");
+    REQUIRE(choice.options[1].gotoTarget.value() == "right_path");
+  }
 }
 
-TEST_CASE("Parser parses audio commands", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses audio commands", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses play sound")
-    {
-        auto tokens = lexer.tokenize(R"(play sound "click.ogg")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses play sound") {
+    auto tokens = lexer.tokenize(R"(play sound "click.ogg")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<PlayStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<PlayStmt>(stmt->data));
 
-        const auto& play = std::get<PlayStmt>(stmt->data);
-        REQUIRE(play.type == PlayStmt::MediaType::Sound);
-        REQUIRE(play.resource == "click.ogg");
-    }
+    const auto& play = std::get<PlayStmt>(stmt->data);
+    REQUIRE(play.type == PlayStmt::MediaType::Sound);
+    REQUIRE(play.resource == "click.ogg");
+  }
 
-    SECTION("parses play music")
-    {
-        auto tokens = lexer.tokenize(R"(play music "bgm.ogg")");
-        REQUIRE(tokens.isOk());
+  SECTION("parses play music") {
+    auto tokens = lexer.tokenize(R"(play music "bgm.ogg")");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<PlayStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<PlayStmt>(stmt->data));
 
-        const auto& play = std::get<PlayStmt>(stmt->data);
-        REQUIRE(play.type == PlayStmt::MediaType::Music);
-    }
+    const auto& play = std::get<PlayStmt>(stmt->data);
+    REQUIRE(play.type == PlayStmt::MediaType::Music);
+  }
 
-    SECTION("parses stop music")
-    {
-        auto tokens = lexer.tokenize("stop music");
-        REQUIRE(tokens.isOk());
+  SECTION("parses stop music") {
+    auto tokens = lexer.tokenize("stop music");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<StopStmt>(stmt->data));
-    }
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<StopStmt>(stmt->data));
+  }
 }
 
-TEST_CASE("Parser parses wait and transition", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses wait and transition", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses wait statement")
-    {
-        auto tokens = lexer.tokenize("wait 2.5");
-        REQUIRE(tokens.isOk());
+  SECTION("parses wait statement") {
+    auto tokens = lexer.tokenize("wait 2.5");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<WaitStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<WaitStmt>(stmt->data));
 
-        const auto& wait = std::get<WaitStmt>(stmt->data);
-        REQUIRE(wait.duration == Catch::Approx(2.5f));
-    }
+    const auto& wait = std::get<WaitStmt>(stmt->data);
+    REQUIRE(wait.duration == Catch::Approx(2.5f));
+  }
 
-    SECTION("parses transition statement")
-    {
-        auto tokens = lexer.tokenize("transition fade 1.0");
-        REQUIRE(tokens.isOk());
+  SECTION("parses transition statement") {
+    auto tokens = lexer.tokenize("transition fade 1.0");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<TransitionStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<TransitionStmt>(stmt->data));
 
-        const auto& trans = std::get<TransitionStmt>(stmt->data);
-        REQUIRE(trans.type == "fade");
-        REQUIRE(trans.duration == Catch::Approx(1.0f));
-    }
+    const auto& trans = std::get<TransitionStmt>(stmt->data);
+    REQUIRE(trans.type == "fade");
+    REQUIRE(trans.duration == Catch::Approx(1.0f));
+  }
 }
 
-TEST_CASE("Parser parses move statements", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser parses move statements", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("parses move to left")
-    {
-        auto tokens = lexer.tokenize("move Hero to left");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move to left") {
+    auto tokens = lexer.tokenize("move Hero to left");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.characterId == "Hero");
-        REQUIRE(move.position == Position::Left);
-        REQUIRE(move.duration == Catch::Approx(0.5f)); // Default duration
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.characterId == "Hero");
+    REQUIRE(move.position == Position::Left);
+    REQUIRE(move.duration == Catch::Approx(0.5f)); // Default duration
+  }
 
-    SECTION("parses move to center")
-    {
-        auto tokens = lexer.tokenize("move Alice to center");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move to center") {
+    auto tokens = lexer.tokenize("move Alice to center");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.characterId == "Alice");
-        REQUIRE(move.position == Position::Center);
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.characterId == "Alice");
+    REQUIRE(move.position == Position::Center);
+  }
 
-    SECTION("parses move to right")
-    {
-        auto tokens = lexer.tokenize("move Bob to right");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move to right") {
+    auto tokens = lexer.tokenize("move Bob to right");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.characterId == "Bob");
-        REQUIRE(move.position == Position::Right);
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.characterId == "Bob");
+    REQUIRE(move.position == Position::Right);
+  }
 
-    SECTION("parses move with duration")
-    {
-        auto tokens = lexer.tokenize("move Hero to left duration=0.5");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move with duration") {
+    auto tokens = lexer.tokenize("move Hero to left duration=0.5");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.characterId == "Hero");
-        REQUIRE(move.position == Position::Left);
-        REQUIRE(move.duration == Catch::Approx(0.5f));
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.characterId == "Hero");
+    REQUIRE(move.position == Position::Left);
+    REQUIRE(move.duration == Catch::Approx(0.5f));
+  }
 
-    SECTION("parses move with different duration")
-    {
-        auto tokens = lexer.tokenize("move Alice to center duration=1.5");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move with different duration") {
+    auto tokens = lexer.tokenize("move Alice to center duration=1.5");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.characterId == "Alice");
-        REQUIRE(move.position == Position::Center);
-        REQUIRE(move.duration == Catch::Approx(1.5f));
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.characterId == "Alice");
+    REQUIRE(move.position == Position::Center);
+    REQUIRE(move.duration == Catch::Approx(1.5f));
+  }
 
-    SECTION("parses move with integer duration")
-    {
-        auto tokens = lexer.tokenize("move Hero to right duration=2");
-        REQUIRE(tokens.isOk());
+  SECTION("parses move with integer duration") {
+    auto tokens = lexer.tokenize("move Hero to right duration=2");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
 
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
 
-        const auto& stmt = program.globalStatements[0];
-        REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
+    const auto& stmt = program.globalStatements[0];
+    REQUIRE(std::holds_alternative<MoveStmt>(stmt->data));
 
-        const auto& move = std::get<MoveStmt>(stmt->data);
-        REQUIRE(move.duration == Catch::Approx(2.0f));
-    }
+    const auto& move = std::get<MoveStmt>(stmt->data);
+    REQUIRE(move.duration == Catch::Approx(2.0f));
+  }
 }
 
-TEST_CASE("Parser previous() token bounds checking", "[parser]")
-{
-    Lexer lexer;
-    Parser parser;
+TEST_CASE("Parser previous() token bounds checking", "[parser]") {
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("test_parser_previous_at_start")
-    {
-        // Test that parsing empty input doesn't crash
-        auto tokens = lexer.tokenize("");
-        REQUIRE(tokens.isOk());
+  SECTION("test_parser_previous_at_start") {
+    // Test that parsing empty input doesn't crash
+    auto tokens = lexer.tokenize("");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        // Should succeed with empty program
-        REQUIRE(result.isOk());
-        const auto& program = result.value();
-        REQUIRE(program.characters.empty());
-        REQUIRE(program.scenes.empty());
-        REQUIRE(program.globalStatements.empty());
-    }
+    auto result = parser.parse(tokens.value());
+    // Should succeed with empty program
+    REQUIRE(result.isOk());
+    const auto& program = result.value();
+    REQUIRE(program.characters.empty());
+    REQUIRE(program.scenes.empty());
+    REQUIRE(program.globalStatements.empty());
+  }
 
-    SECTION("test_parser_previous_after_advance")
-    {
-        // Test normal case: previous() after advance()
-        auto tokens = lexer.tokenize("say \"Hello\"");
-        REQUIRE(tokens.isOk());
+  SECTION("test_parser_previous_after_advance") {
+    // Test normal case: previous() after advance()
+    auto tokens = lexer.tokenize("say \"Hello\"");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
-    }
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
+  }
 
-    SECTION("test_parser_previous_multiple_calls")
-    {
-        // Test multiple statements to ensure previous() works correctly throughout parsing
-        auto tokens = lexer.tokenize(R"(
+  SECTION("test_parser_previous_multiple_calls") {
+    // Test multiple statements to ensure previous() works correctly throughout parsing
+    auto tokens = lexer.tokenize(R"(
             show Hero at center
             say Hero "Hello"
             hide Hero
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 3);
-    }
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 3);
+  }
 
-    SECTION("test_parser_empty_input")
-    {
-        // Test parsing truly empty token list (just EOF)
-        std::vector<Token> emptyTokens;
-        Token eof;
-        eof.type = TokenType::EndOfFile;
-        eof.lexeme = "";
-        eof.location = SourceLocation{1, 1};
-        emptyTokens.push_back(eof);
+  SECTION("test_parser_empty_input") {
+    // Test parsing truly empty token list (just EOF)
+    std::vector<Token> emptyTokens;
+    Token eof;
+    eof.type = TokenType::EndOfFile;
+    eof.lexeme = "";
+    eof.location = SourceLocation{1, 1};
+    emptyTokens.push_back(eof);
 
-        auto result = parser.parse(emptyTokens);
-        REQUIRE(result.isOk());
-        const auto& program = result.value();
-        REQUIRE(program.characters.empty());
-        REQUIRE(program.scenes.empty());
-        REQUIRE(program.globalStatements.empty());
-    }
+    auto result = parser.parse(emptyTokens);
+    REQUIRE(result.isOk());
+    const auto& program = result.value();
+    REQUIRE(program.characters.empty());
+    REQUIRE(program.scenes.empty());
+    REQUIRE(program.globalStatements.empty());
+  }
 
-    SECTION("test_parser_single_token_input")
-    {
-        // Test with single valid token (should still work)
-        auto tokens = lexer.tokenize("goto scene1");
-        REQUIRE(tokens.isOk());
+  SECTION("test_parser_single_token_input") {
+    // Test with single valid token (should still work)
+    auto tokens = lexer.tokenize("goto scene1");
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        REQUIRE(result.isOk());
-        const auto& program = result.value();
-        REQUIRE(program.globalStatements.size() == 1);
-    }
+    auto result = parser.parse(tokens.value());
+    REQUIRE(result.isOk());
+    const auto& program = result.value();
+    REQUIRE(program.globalStatements.size() == 1);
+  }
 }
 
-TEST_CASE("Parser error recovery", "[parser]")
-{
-    // Issue #494: Skip this test in CI environments due to timeout issues.
-    // The parser error recovery involves complex synchronization logic that
-    // runs slowly in Debug builds, causing 60+ second timeouts in CI.
-    // TODO: Optimize parser error recovery performance or split into smaller tests.
-    const char* ciEnv = std::getenv("CI");
-    if (ciEnv && std::string(ciEnv) == "true") {
-        SKIP("Skipping slow error recovery test in CI environment");
-    }
+TEST_CASE("Parser error recovery", "[parser]") {
+  // Issue #494: Skip this test in CI environments due to timeout issues.
+  // The parser error recovery involves complex synchronization logic that
+  // runs slowly in Debug builds, causing 60+ second timeouts in CI.
+  // TODO: Optimize parser error recovery performance or split into smaller tests.
+  const char* ciEnv = std::getenv("CI");
+  if (ciEnv && std::string(ciEnv) == "true") {
+    SKIP("Skipping slow error recovery test in CI environment");
+  }
 
-    Lexer lexer;
-    Parser parser;
+  Lexer lexer;
+  Parser parser;
 
-    SECTION("test_parser_error_recovery_scene")
-    {
-        // Test that parser recovers from error and continues parsing next scene
-        // Missing close brace in first scene
-        auto tokens = lexer.tokenize(R"(
+  SECTION("test_parser_error_recovery_scene") {
+    // Test that parser recovers from error and continues parsing next scene
+    // Missing close brace in first scene
+    auto tokens = lexer.tokenize(R"(
             scene broken {
                 show Hero at center
                 say "Missing close brace"
@@ -662,26 +617,25 @@ TEST_CASE("Parser error recovery", "[parser]")
                 say Hero "Hello!"
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        // Parser should report error but continue
-        const auto& errors = parser.getErrors();
-        REQUIRE(errors.size() > 0);
+    auto result = parser.parse(tokens.value());
+    // Parser should report error but continue
+    const auto& errors = parser.getErrors();
+    REQUIRE(errors.size() > 0);
 
-        // Parser should still find the second scene despite error in first
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have parsed at least one scene
-            REQUIRE(program.scenes.size() >= 1);
-        }
+    // Parser should still find the second scene despite error in first
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed at least one scene
+      REQUIRE(program.scenes.size() >= 1);
     }
+  }
 
-    SECTION("test_parser_error_recovery_choice")
-    {
-        // Test that parser recovers from error in choice and continues
-        // Missing arrow in choice option
-        auto tokens = lexer.tokenize(R"(
+  SECTION("test_parser_error_recovery_choice") {
+    // Test that parser recovers from error in choice and continues
+    // Missing arrow in choice option
+    auto tokens = lexer.tokenize(R"(
             choice {
                 "Option 1" -> goto scene1
                 "Broken option" goto badscene
@@ -689,26 +643,25 @@ TEST_CASE("Parser error recovery", "[parser]")
             }
             say "After choice"
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        // Parser should report error
-        const auto& errors = parser.getErrors();
-        REQUIRE(errors.size() > 0);
+    auto result = parser.parse(tokens.value());
+    // Parser should report error
+    const auto& errors = parser.getErrors();
+    REQUIRE(errors.size() > 0);
 
-        // Parser should continue and parse the say statement after choice
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have parsed some statements
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Parser should continue and parse the say statement after choice
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed some statements
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("recovers from error and finds multiple statements")
-    {
-        // Test that synchronize finds all statement types
-        // Mix valid statements with invalid ones (missing required tokens)
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from error and finds multiple statements") {
+    // Test that synchronize finds all statement types
+    // Mix valid statements with invalid ones (missing required tokens)
+    auto tokens = lexer.tokenize(R"(
             show
             show Hero at center
             hide
@@ -732,139 +685,133 @@ TEST_CASE("Parser error recovery", "[parser]")
             move
             move Hero to left
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have multiple errors
-        REQUIRE(errors.size() > 0);
+    // Should have multiple errors
+    REQUIRE(errors.size() > 0);
 
-        // Parser should continue after each error and parse valid statements
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have parsed multiple valid statements despite errors
-            REQUIRE(program.globalStatements.size() > 5);
-        }
+    // Parser should continue after each error and parse valid statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed multiple valid statements despite errors
+      REQUIRE(program.globalStatements.size() > 5);
     }
+  }
 
-    SECTION("recovers at else keyword")
-    {
-        // Test that parser synchronizes at else keyword
-        // Missing closing brace before else
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers at else keyword") {
+    // Test that parser synchronizes at else keyword
+    // Missing closing brace before else
+    auto tokens = lexer.tokenize(R"(
             if true {
                 say "Missing brace"
             else {
                 say "In else branch"
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have at least one error from broken syntax
-        REQUIRE(errors.size() > 0);
-    }
+    // Should have at least one error from broken syntax
+    REQUIRE(errors.size() > 0);
+  }
 
-    SECTION("recovers at left brace for blocks")
-    {
-        // Test that parser synchronizes at block statements
-        // Invalid expression statement followed by block
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers at left brace for blocks") {
+    // Test that parser synchronizes at block statements
+    // Invalid expression statement followed by block
+    auto tokens = lexer.tokenize(R"(
             5 +
             {
                 say "In block"
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have errors from invalid expression
-        REQUIRE(errors.size() > 0);
+    // Should have errors from invalid expression
+    REQUIRE(errors.size() > 0);
 
-        // Should still parse the block
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Should still parse the block
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("recovers from malformed binary expression")
-    {
-        // Test that parser recovers from incomplete binary expression
-        // Missing right operand in binary expression
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from malformed binary expression") {
+    // Test that parser recovers from incomplete binary expression
+    // Missing right operand in binary expression
+    auto tokens = lexer.tokenize(R"(
             set x = 5 +
             say "After error"
             set y = 10
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should report error for incomplete expression
-        REQUIRE(errors.size() > 0);
+    // Should report error for incomplete expression
+    REQUIRE(errors.size() > 0);
 
-        // Should continue parsing and find subsequent statements
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have parsed at least one valid statement after the error
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Should continue parsing and find subsequent statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed at least one valid statement after the error
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("recovers from malformed comparison expression")
-    {
-        // Test recovery from incomplete comparison
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from malformed comparison expression") {
+    // Test recovery from incomplete comparison
+    auto tokens = lexer.tokenize(R"(
             if x > {
                 say "This should not be reached"
             }
             say "After error"
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should report error for malformed condition
-        REQUIRE(errors.size() > 0);
+    // Should report error for malformed condition
+    REQUIRE(errors.size() > 0);
 
-        // Parser should continue after error (test passes if no crash)
-    }
+    // Parser should continue after error (test passes if no crash)
+  }
 
-    SECTION("recovers from malformed unary expression")
-    {
-        // Test recovery from incomplete unary expression
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from malformed unary expression") {
+    // Test recovery from incomplete unary expression
+    auto tokens = lexer.tokenize(R"(
             set x = !
             show Hero at center
             say "Recovery test"
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should report error for incomplete unary
-        REQUIRE(errors.size() > 0);
+    // Should report error for incomplete unary
+    REQUIRE(errors.size() > 0);
 
-        // Should continue and parse subsequent statements
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Should continue and parse subsequent statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("multiple errors in single file preserves subsequent statements")
-    {
-        // Test that multiple errors don't prevent parsing later valid code
-        auto tokens = lexer.tokenize(R"(
+  SECTION("multiple errors in single file preserves subsequent statements") {
+    // Test that multiple errors don't prevent parsing later valid code
+    auto tokens = lexer.tokenize(R"(
             character Hero
 
             scene first {
@@ -889,92 +836,88 @@ TEST_CASE("Parser error recovery", "[parser]")
                 say Hero "Fourth scene still parses"
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have multiple errors (at least 3 from malformed expressions)
-        REQUIRE(errors.size() >= 3);
+    // Should have multiple errors (at least 3 from malformed expressions)
+    REQUIRE(errors.size() >= 3);
 
-        // Should still parse all valid scenes and statements
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have parsed the character
-            REQUIRE(program.characters.size() == 1);
-            // Should have parsed all 4 scenes despite errors
-            REQUIRE(program.scenes.size() == 4);
-        }
+    // Should still parse all valid scenes and statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have parsed the character
+      REQUIRE(program.characters.size() == 1);
+      // Should have parsed all 4 scenes despite errors
+      REQUIRE(program.scenes.size() == 4);
     }
+  }
 
-    SECTION("recovers from missing closing parenthesis")
-    {
-        // Test recovery from unmatched parenthesis
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from missing closing parenthesis") {
+    // Test recovery from unmatched parenthesis
+    auto tokens = lexer.tokenize(R"(
             set x = (5 + 3
             say "After error"
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should report error
-        REQUIRE(errors.size() > 0);
+    // Should report error
+    REQUIRE(errors.size() > 0);
 
-        // Parser should continue (test passes if no crash)
-    }
+    // Parser should continue (test passes if no crash)
+  }
 
-    SECTION("recovers from malformed call expression")
-    {
-        // Test recovery from incomplete function call
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers from malformed call expression") {
+    // Test recovery from incomplete function call
+    auto tokens = lexer.tokenize(R"(
             set x = someFunc(
             show Hero at center
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should report error
-        REQUIRE(errors.size() > 0);
+    // Should report error
+    REQUIRE(errors.size() > 0);
 
-        // Should parse subsequent statement
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Should parse subsequent statement
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("recovers preserving character declarations after error")
-    {
-        // Test that valid declarations after errors are preserved
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers preserving character declarations after error") {
+    // Test that valid declarations after errors are preserved
+    auto tokens = lexer.tokenize(R"(
             character Hero(name="Alex")
             character Villain(name=)
             character Friend(name="Bob")
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have error from malformed Villain declaration
-        REQUIRE(errors.size() > 0);
+    // Should have error from malformed Villain declaration
+    REQUIRE(errors.size() > 0);
 
-        // Should have parsed valid character declarations
-        if (result.isOk()) {
-            const auto& program = result.value();
-            // Should have at least Hero (Friend might also be parsed)
-            REQUIRE(program.characters.size() >= 1);
-        }
+    // Should have parsed valid character declarations
+    if (result.isOk()) {
+      const auto& program = result.value();
+      // Should have at least Hero (Friend might also be parsed)
+      REQUIRE(program.characters.size() >= 1);
     }
+  }
 
-    SECTION("recovers preserving scene structure after statement error")
-    {
-        // Test that scene structure is preserved despite statement errors
-        auto tokens = lexer.tokenize(R"(
+  SECTION("recovers preserving scene structure after statement error") {
+    // Test that scene structure is preserved despite statement errors
+    auto tokens = lexer.tokenize(R"(
             scene test {
                 say Hero "First line"
                 set x =
@@ -986,28 +929,27 @@ TEST_CASE("Parser error recovery", "[parser]")
                 show Hero at center
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have multiple errors
-        REQUIRE(errors.size() >= 2);
+    // Should have multiple errors
+    REQUIRE(errors.size() >= 2);
 
-        // Scene should still be parsed with valid statements
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.scenes.size() == 1);
-            // Should have preserved at least some valid statements
-            const auto& scene = program.scenes[0];
-            REQUIRE(scene.body.size() >= 2);
-        }
+    // Scene should still be parsed with valid statements
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.scenes.size() == 1);
+      // Should have preserved at least some valid statements
+      const auto& scene = program.scenes[0];
+      REQUIRE(scene.body.size() >= 2);
     }
+  }
 
-    SECTION("error does not corrupt subsequent choice block")
-    {
-        // Test that choice blocks after errors are parsed correctly
-        auto tokens = lexer.tokenize(R"(
+  SECTION("error does not corrupt subsequent choice block") {
+    // Test that choice blocks after errors are parsed correctly
+    auto tokens = lexer.tokenize(R"(
             set x = 5 +
 
             choice {
@@ -1015,25 +957,24 @@ TEST_CASE("Parser error recovery", "[parser]")
                 "Option B" -> goto sceneB
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have error from malformed set
-        REQUIRE(errors.size() > 0);
+    // Should have error from malformed set
+    REQUIRE(errors.size() > 0);
 
-        // Choice block should still parse correctly
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.globalStatements.size() >= 1);
-        }
+    // Choice block should still parse correctly
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.globalStatements.size() >= 1);
     }
+  }
 
-    SECTION("cascading errors with complex nesting")
-    {
-        // Test multiple errors with nested structures
-        auto tokens = lexer.tokenize(R"(
+  SECTION("cascading errors with complex nesting") {
+    // Test multiple errors with nested structures
+    auto tokens = lexer.tokenize(R"(
             scene complex {
                 if true {
                     set x = 5 +
@@ -1052,18 +993,18 @@ TEST_CASE("Parser error recovery", "[parser]")
                 show Hero at center
             }
         )");
-        REQUIRE(tokens.isOk());
+    REQUIRE(tokens.isOk());
 
-        auto result = parser.parse(tokens.value());
-        const auto& errors = parser.getErrors();
+    auto result = parser.parse(tokens.value());
+    const auto& errors = parser.getErrors();
 
-        // Should have multiple errors
-        REQUIRE(errors.size() >= 2);
+    // Should have multiple errors
+    REQUIRE(errors.size() >= 2);
 
-        // Scene should still be recognized
-        if (result.isOk()) {
-            const auto& program = result.value();
-            REQUIRE(program.scenes.size() == 1);
-        }
+    // Scene should still be recognized
+    if (result.isOk()) {
+      const auto& program = result.value();
+      REQUIRE(program.scenes.size() == 1);
     }
+  }
 }

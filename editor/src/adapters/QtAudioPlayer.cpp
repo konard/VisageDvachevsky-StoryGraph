@@ -13,7 +13,7 @@
 
 namespace NovelMind::editor {
 
-QtAudioPlayer::QtAudioPlayer(QObject *parent) : QObject(parent) {
+QtAudioPlayer::QtAudioPlayer(QObject* parent) : QObject(parent) {
   // Create audio output with parent ownership
   m_audioOutput = new QAudioOutput(this);
   m_audioOutput->setVolume(1.0f);
@@ -27,12 +27,9 @@ QtAudioPlayer::QtAudioPlayer(QObject *parent) : QObject(parent) {
           &QtAudioPlayer::onQtPlaybackStateChanged);
   connect(m_player, &QMediaPlayer::mediaStatusChanged, this,
           &QtAudioPlayer::onQtMediaStatusChanged);
-  connect(m_player, &QMediaPlayer::durationChanged, this,
-          &QtAudioPlayer::onQtDurationChanged);
-  connect(m_player, &QMediaPlayer::positionChanged, this,
-          &QtAudioPlayer::onQtPositionChanged);
-  connect(m_player, &QMediaPlayer::errorOccurred, this,
-          &QtAudioPlayer::onQtErrorOccurred);
+  connect(m_player, &QMediaPlayer::durationChanged, this, &QtAudioPlayer::onQtDurationChanged);
+  connect(m_player, &QMediaPlayer::positionChanged, this, &QtAudioPlayer::onQtPositionChanged);
+  connect(m_player, &QMediaPlayer::errorOccurred, this, &QtAudioPlayer::onQtErrorOccurred);
 }
 
 QtAudioPlayer::~QtAudioPlayer() {
@@ -43,7 +40,7 @@ QtAudioPlayer::~QtAudioPlayer() {
   }
 }
 
-bool QtAudioPlayer::load(const std::string &filePath) {
+bool QtAudioPlayer::load(const std::string& filePath) {
   if (!m_player) {
     return false;
   }
@@ -228,18 +225,15 @@ void QtAudioPlayer::setOnPlaybackFinished(std::function<void()> callback) {
   m_onPlaybackFinished = std::move(callback);
 }
 
-void QtAudioPlayer::setOnError(
-    std::function<void(const std::string &)> callback) {
+void QtAudioPlayer::setOnError(std::function<void(const std::string&)> callback) {
   m_onError = std::move(callback);
 }
 
-void QtAudioPlayer::setOnPlaybackStateChanged(
-    std::function<void(AudioPlaybackState)> callback) {
+void QtAudioPlayer::setOnPlaybackStateChanged(std::function<void(AudioPlaybackState)> callback) {
   m_onPlaybackStateChanged = std::move(callback);
 }
 
-void QtAudioPlayer::setOnMediaStatusChanged(
-    std::function<void(AudioMediaStatus)> callback) {
+void QtAudioPlayer::setOnMediaStatusChanged(std::function<void(AudioMediaStatus)> callback) {
   m_onMediaStatusChanged = std::move(callback);
 }
 

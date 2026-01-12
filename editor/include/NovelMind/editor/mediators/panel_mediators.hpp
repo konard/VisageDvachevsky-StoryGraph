@@ -74,7 +74,7 @@ class PanelMediatorManager : public QObject {
   Q_OBJECT
 
 public:
-  explicit PanelMediatorManager(QObject *parent = nullptr);
+  explicit PanelMediatorManager(QObject* parent = nullptr);
   ~PanelMediatorManager() override;
 
   /**
@@ -85,20 +85,13 @@ public:
    *
    * @param sceneRegistry Optional SceneRegistry for auto-sync events (issue #213)
    */
-  void initialize(qt::NMSceneViewPanel *sceneView,
-                  qt::NMStoryGraphPanel *storyGraph,
-                  qt::NMSceneDialogueGraphPanel *dialogueGraph,
-                  qt::NMInspectorPanel *inspector,
-                  qt::NMHierarchyPanel *hierarchy,
-                  qt::NMScriptEditorPanel *scriptEditor,
-                  qt::NMScriptDocPanel *scriptDoc,
-                  qt::NMTimelinePanel *timeline,
-                  qt::NMCurveEditorPanel *curveEditor,
-                  qt::NMVoiceStudioPanel *voiceStudio,
-                  qt::NMVoiceManagerPanel *voiceManager,
-                  qt::NMDiagnosticsPanel *diagnostics,
-                  qt::NMIssuesPanel *issues,
-                  SceneRegistry *sceneRegistry = nullptr);
+  void initialize(qt::NMSceneViewPanel* sceneView, qt::NMStoryGraphPanel* storyGraph,
+                  qt::NMSceneDialogueGraphPanel* dialogueGraph, qt::NMInspectorPanel* inspector,
+                  qt::NMHierarchyPanel* hierarchy, qt::NMScriptEditorPanel* scriptEditor,
+                  qt::NMScriptDocPanel* scriptDoc, qt::NMTimelinePanel* timeline,
+                  qt::NMCurveEditorPanel* curveEditor, qt::NMVoiceStudioPanel* voiceStudio,
+                  qt::NMVoiceManagerPanel* voiceManager, qt::NMDiagnosticsPanel* diagnostics,
+                  qt::NMIssuesPanel* issues, SceneRegistry* sceneRegistry = nullptr);
 
   /**
    * @brief Initialize the Scene Mediator with a SceneRegistry
@@ -110,9 +103,8 @@ public:
    * @param sceneView The scene view panel
    * @param storyGraph The story graph panel
    */
-  void initializeSceneMediator(SceneRegistry *sceneRegistry,
-                               qt::NMSceneViewPanel *sceneView,
-                               qt::NMStoryGraphPanel *storyGraph);
+  void initializeSceneMediator(SceneRegistry* sceneRegistry, qt::NMSceneViewPanel* sceneView,
+                               qt::NMStoryGraphPanel* storyGraph);
 
   /**
    * @brief Shutdown all mediators
@@ -125,24 +117,14 @@ public:
   [[nodiscard]] bool isInitialized() const { return m_initialized; }
 
   // Accessor methods for individual mediators if needed
-  [[nodiscard]] SelectionMediator *selectionMediator() const {
-    return m_selectionMediator.get();
-  }
-  [[nodiscard]] WorkflowMediator *workflowMediator() const {
-    return m_workflowMediator.get();
-  }
-  [[nodiscard]] PropertyMediator *propertyMediator() const {
-    return m_propertyMediator.get();
-  }
-  [[nodiscard]] PlaybackMediator *playbackMediator() const {
-    return m_playbackMediator.get();
-  }
-  [[nodiscard]] SceneRegistryMediator *sceneRegistryMediator() const {
+  [[nodiscard]] SelectionMediator* selectionMediator() const { return m_selectionMediator.get(); }
+  [[nodiscard]] WorkflowMediator* workflowMediator() const { return m_workflowMediator.get(); }
+  [[nodiscard]] PropertyMediator* propertyMediator() const { return m_propertyMediator.get(); }
+  [[nodiscard]] PlaybackMediator* playbackMediator() const { return m_playbackMediator.get(); }
+  [[nodiscard]] SceneRegistryMediator* sceneRegistryMediator() const {
     return m_sceneRegistryMediator.get();
   }
-  [[nodiscard]] SceneMediator *sceneMediator() const {
-    return m_sceneMediator.get();
-  }
+  [[nodiscard]] SceneMediator* sceneMediator() const { return m_sceneMediator.get(); }
 
 private:
   std::unique_ptr<SelectionMediator> m_selectionMediator;

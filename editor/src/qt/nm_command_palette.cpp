@@ -36,8 +36,7 @@ QString CommandItem::categoryLabel() const {
 // NMCommandPalette
 // ============================================================================
 
-NMCommandPalette::NMCommandPalette(QWidget *parent,
-                                   const QList<QAction *> &actions, Mode mode)
+NMCommandPalette::NMCommandPalette(QWidget* parent, const QList<QAction*>& actions, Mode mode)
     : QDialog(parent), m_mode(mode), m_actions(actions) {
   setWindowFlag(Qt::FramelessWindowHint);
   setWindowModality(Qt::ApplicationModal);
@@ -46,7 +45,7 @@ NMCommandPalette::NMCommandPalette(QWidget *parent,
   setMaximumWidth(700);
   setObjectName("CommandPalette");
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(12, 12, 12, 12);
   layout->setSpacing(8);
 
@@ -72,10 +71,8 @@ NMCommandPalette::NMCommandPalette(QWidget *parent,
   layout->addWidget(m_list, 1);
 
   // Connections
-  connect(m_input, &QLineEdit::textChanged, this,
-          &NMCommandPalette::onFilterChanged);
-  connect(m_list, &QListWidget::itemActivated, this,
-          &NMCommandPalette::onItemActivated);
+  connect(m_input, &QLineEdit::textChanged, this, &NMCommandPalette::onFilterChanged);
+  connect(m_list, &QListWidget::itemActivated, this, &NMCommandPalette::onItemActivated);
 
   // Build and populate
   buildCommandList();
@@ -83,7 +80,7 @@ NMCommandPalette::NMCommandPalette(QWidget *parent,
   m_input->setFocus();
 }
 
-void NMCommandPalette::openCentered(QWidget *anchor) {
+void NMCommandPalette::openCentered(QWidget* anchor) {
   if (!anchor) {
     show();
     return;
@@ -101,7 +98,7 @@ void NMCommandPalette::openCentered(QWidget *anchor) {
   m_input->setFocus();
 }
 
-void NMCommandPalette::addRecentScene(const QString &sceneName) {
+void NMCommandPalette::addRecentScene(const QString& sceneName) {
   CommandItem item;
   item.name = sceneName;
   item.searchableText = sceneName;
@@ -113,7 +110,7 @@ void NMCommandPalette::addRecentScene(const QString &sceneName) {
   m_commands.prepend(item);
 }
 
-void NMCommandPalette::addRecentScript(const QString &scriptPath) {
+void NMCommandPalette::addRecentScript(const QString& scriptPath) {
   CommandItem item;
   item.name = scriptPath;
   item.searchableText = scriptPath;
@@ -127,18 +124,17 @@ void NMCommandPalette::addRecentScript(const QString &scriptPath) {
 
 void NMCommandPalette::clearRecentItems() {
   // Remove all recent items
-  m_commands.erase(
-      std::remove_if(m_commands.begin(), m_commands.end(),
-                     [](const CommandItem &item) {
-                       return item.type == CommandItemType::RecentScene ||
-                              item.type == CommandItemType::RecentScript;
-                     }),
-      m_commands.end());
+  m_commands.erase(std::remove_if(m_commands.begin(), m_commands.end(),
+                                  [](const CommandItem& item) {
+                                    return item.type == CommandItemType::RecentScene ||
+                                           item.type == CommandItemType::RecentScript;
+                                  }),
+                   m_commands.end());
 }
 
-bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
+bool NMCommandPalette::eventFilter(QObject* obj, QEvent* event) {
   if (obj == m_input && event->type() == QEvent::KeyPress) {
-    auto *keyEvent = static_cast<QKeyEvent *>(event);
+    auto* keyEvent = static_cast<QKeyEvent*>(event);
 
     // Escape closes dialog
     if (keyEvent->key() == Qt::Key_Escape) {
@@ -168,7 +164,7 @@ bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
 
     // Enter/Return activates selected item
     if (keyEvent->key() == Qt::Key_Return || keyEvent->key() == Qt::Key_Enter) {
-      QListWidgetItem *item = m_list->currentItem();
+      QListWidgetItem* item = m_list->currentItem();
       if (item) {
         onItemActivated(item);
       }
@@ -179,11 +175,11 @@ bool NMCommandPalette::eventFilter(QObject *obj, QEvent *event) {
   return QDialog::eventFilter(obj, event);
 }
 
-void NMCommandPalette::onFilterChanged(const QString &text) {
+void NMCommandPalette::onFilterChanged(const QString& text) {
   updateFilteredList(text);
 }
 
-void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
+void NMCommandPalette::onItemActivated(QListWidgetItem* item) {
   if (!item) {
     return;
   }
@@ -194,7 +190,7 @@ void NMCommandPalette::onItemActivated(QListWidgetItem *item) {
     return;
   }
 
-  const CommandItem &cmd = m_commands[index];
+  const CommandItem& cmd = m_commands[index];
 
   // Execute action if available
   if (cmd.action && cmd.action->isEnabled()) {
@@ -213,7 +209,7 @@ void NMCommandPalette::buildCommandList() {
   m_commands.clear();
 
   // Build from actions
-  for (QAction *action : m_actions) {
+  for (QAction* action : m_actions) {
     if (!action || action->text().isEmpty()) {
       continue;
     }
@@ -224,8 +220,7 @@ void NMCommandPalette::buildCommandList() {
     item.type = determineItemType(action);
 
     // Skip non-panel items if in Panels mode
-    if (m_mode == Mode::Panels &&
-        item.type != CommandItemType::Panel) {
+    if (m_mode == Mode::Panels && item.type != CommandItemType::Panel) {
       continue;
     }
 
@@ -250,15 +245,15 @@ void NMCommandPalette::buildCommandList() {
 
   // Add recent items from tracker (only in All mode)
   if (m_mode == Mode::All) {
-    auto &tracker = NMRecentItemsTracker::instance();
+    auto& tracker = NMRecentItemsTracker::instance();
 
     // Recent scenes
-    for (const QString &scene : tracker.getRecentScenes(5)) {
+    for (const QString& scene : tracker.getRecentScenes(5)) {
       addRecentScene(scene);
     }
 
     // Recent scripts
-    for (const QString &script : tracker.getRecentScripts(5)) {
+    for (const QString& script : tracker.getRecentScripts(5)) {
       addRecentScript(script);
     }
   }
@@ -269,11 +264,11 @@ void NMCommandPalette::populateList() {
 
   // Show all items initially
   for (int i = 0; i < m_commands.size(); ++i) {
-    const CommandItem &item = m_commands[i];
+    const CommandItem& item = m_commands[i];
     addListItem(item);
 
     // Store command index in item data
-    QListWidgetItem *listItem = m_list->item(m_list->count() - 1);
+    QListWidgetItem* listItem = m_list->item(m_list->count() - 1);
     listItem->setData(Qt::UserRole, i);
   }
 
@@ -283,7 +278,7 @@ void NMCommandPalette::populateList() {
   }
 }
 
-void NMCommandPalette::updateFilteredList(const QString &filter) {
+void NMCommandPalette::updateFilteredList(const QString& filter) {
   m_list->clear();
 
   // If filter is empty, show all items
@@ -296,7 +291,7 @@ void NMCommandPalette::updateFilteredList(const QString &filter) {
   QList<QPair<int, int>> matches; // <score, index>
 
   for (int i = 0; i < m_commands.size(); ++i) {
-    const CommandItem &item = m_commands[i];
+    const CommandItem& item = m_commands[i];
 
     // Perform fuzzy match
     auto result = NMFuzzyMatcher::match(filter, item.searchableText);
@@ -307,18 +302,16 @@ void NMCommandPalette::updateFilteredList(const QString &filter) {
 
   // Sort by score (highest first)
   std::sort(matches.begin(), matches.end(),
-            [](const QPair<int, int> &a, const QPair<int, int> &b) {
-              return a.first > b.first;
-            });
+            [](const QPair<int, int>& a, const QPair<int, int>& b) { return a.first > b.first; });
 
   // Add matched items to list
-  for (const auto &match : matches) {
+  for (const auto& match : matches) {
     int index = match.second;
-    const CommandItem &item = m_commands[index];
+    const CommandItem& item = m_commands[index];
     addListItem(item);
 
     // Store command index in item data
-    QListWidgetItem *listItem = m_list->item(m_list->count() - 1);
+    QListWidgetItem* listItem = m_list->item(m_list->count() - 1);
     listItem->setData(Qt::UserRole, index);
   }
 
@@ -328,8 +321,7 @@ void NMCommandPalette::updateFilteredList(const QString &filter) {
   }
 }
 
-CommandItemType
-NMCommandPalette::determineItemType(QAction *action) const {
+CommandItemType NMCommandPalette::determineItemType(QAction* action) const {
   if (!action) {
     return CommandItemType::Command;
   }
@@ -373,7 +365,7 @@ NMCommandPalette::determineItemType(QAction *action) const {
   return CommandItemType::Command;
 }
 
-QString NMCommandPalette::getIconNameForAction(QAction *action) const {
+QString NMCommandPalette::getIconNameForAction(QAction* action) const {
   if (!action) {
     return QString();
   }
@@ -416,8 +408,7 @@ QString NMCommandPalette::getIconNameForAction(QAction *action) const {
     return "save";
   if (text.contains("Close", Qt::CaseInsensitive))
     return "x";
-  if (text.contains("Exit", Qt::CaseInsensitive) ||
-      text.contains("Quit", Qt::CaseInsensitive))
+  if (text.contains("Exit", Qt::CaseInsensitive) || text.contains("Quit", Qt::CaseInsensitive))
     return "log-out";
   if (text.contains("Undo", Qt::CaseInsensitive))
     return "undo";
@@ -449,7 +440,7 @@ QString NMCommandPalette::getIconNameForAction(QAction *action) const {
   return "command";
 }
 
-void NMCommandPalette::addListItem(const CommandItem &item) {
+void NMCommandPalette::addListItem(const CommandItem& item) {
   QString displayText = item.name;
 
   // Add shortcut if available
@@ -457,7 +448,7 @@ void NMCommandPalette::addListItem(const CommandItem &item) {
     displayText += QString("  [%1]").arg(item.shortcut);
   }
 
-  auto *listItem = new QListWidgetItem(displayText, m_list);
+  auto* listItem = new QListWidgetItem(displayText, m_list);
 
   // Set tooltip
   if (!item.tooltip.isEmpty()) {
@@ -466,7 +457,7 @@ void NMCommandPalette::addListItem(const CommandItem &item) {
 
   // Set icon
   if (!item.iconName.isEmpty()) {
-    auto &iconMgr = NMIconManager::instance();
+    auto& iconMgr = NMIconManager::instance();
     listItem->setIcon(iconMgr.getIcon(item.iconName, 16));
   }
 
@@ -477,22 +468,22 @@ void NMCommandPalette::addListItem(const CommandItem &item) {
 // NMRecentItemsTracker
 // ============================================================================
 
-NMRecentItemsTracker &NMRecentItemsTracker::instance() {
+NMRecentItemsTracker& NMRecentItemsTracker::instance() {
   static NMRecentItemsTracker instance;
   return instance;
 }
 
 NMRecentItemsTracker::NMRecentItemsTracker() = default;
 
-void NMRecentItemsTracker::recordPanelAccess(const QString &panelName) {
+void NMRecentItemsTracker::recordPanelAccess(const QString& panelName) {
   addToMruList(m_recentPanels, panelName, 10);
 }
 
-void NMRecentItemsTracker::recordSceneAccess(const QString &sceneName) {
+void NMRecentItemsTracker::recordSceneAccess(const QString& sceneName) {
   addToMruList(m_recentScenes, sceneName, 10);
 }
 
-void NMRecentItemsTracker::recordScriptAccess(const QString &scriptPath) {
+void NMRecentItemsTracker::recordScriptAccess(const QString& scriptPath) {
   addToMruList(m_recentScripts, scriptPath, 10);
 }
 
@@ -514,8 +505,7 @@ void NMRecentItemsTracker::clear() {
   m_recentScripts.clear();
 }
 
-void NMRecentItemsTracker::addToMruList(QStringList &list, const QString &item,
-                                        int maxSize) {
+void NMRecentItemsTracker::addToMruList(QStringList& list, const QString& item, int maxSize) {
   // Remove existing instance (to move to front)
   list.removeAll(item);
 

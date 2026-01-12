@@ -175,7 +175,8 @@ void ProjectGraphAnalyzer::analyzeReachability(std::vector<IntegrityIssue>& issu
 
   // Build scene graph
   std::unordered_set<std::string> definedScenes;
-  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions; // scene -> [target scenes]
+  std::unordered_map<std::string, std::vector<std::string>>
+      sceneTransitions; // scene -> [target scenes]
   std::unordered_map<std::string, std::string> sceneFiles;
 
   std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
@@ -220,8 +221,8 @@ void ProjectGraphAnalyzer::analyzeReachability(std::vector<IntegrityIssue>& issu
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         // Find scene end (matching closing brace)
         size_t braceStart = content.find('{', sceneStart);
@@ -376,7 +377,5 @@ void ProjectGraphAnalyzer::checkDeadEnds(std::vector<IntegrityIssue>& issues) {
     }
   }
 }
-
-
 
 } // namespace NovelMind::editor

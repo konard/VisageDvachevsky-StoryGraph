@@ -32,7 +32,7 @@ public:
    * @param analysis Analysis results
    * @return JSON string on success, error message on failure
    */
-  Result<std::string> exportAsJson(const BuildSizeAnalysis &analysis) const;
+  Result<std::string> exportAsJson(const BuildSizeAnalysis& analysis) const;
 
   /**
    * @brief Export analysis as HTML report
@@ -40,8 +40,7 @@ public:
    * @param outputPath Output file path
    * @return Success or error result
    */
-  Result<void> exportAsHtml(const BuildSizeAnalysis &analysis,
-                            const std::string &outputPath) const;
+  Result<void> exportAsHtml(const BuildSizeAnalysis& analysis, const std::string& outputPath) const;
 
   /**
    * @brief Export analysis as CSV
@@ -49,8 +48,7 @@ public:
    * @param outputPath Output file path
    * @return Success or error result
    */
-  Result<void> exportAsCsv(const BuildSizeAnalysis &analysis,
-                           const std::string &outputPath) const;
+  Result<void> exportAsCsv(const BuildSizeAnalysis& analysis, const std::string& outputPath) const;
 };
 
 } // namespace NovelMind::editor

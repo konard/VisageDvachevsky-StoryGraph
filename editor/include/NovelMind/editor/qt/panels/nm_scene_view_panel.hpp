@@ -539,7 +539,7 @@ private:
   bool m_animationPreviewMode = false;
 
   // Issue #521: Debouncer for document save/event publishing to prevent spam
-  Debouncer m_saveDebouncer{300}; // 300ms delay for batching document saves
+  Debouncer m_saveDebouncer{300};           // 300ms delay for batching document saves
   std::atomic<bool> m_documentDirty{false}; // Track if there are unsaved changes
 };
 

@@ -9,7 +9,7 @@
 
 namespace NovelMind::editor::guided_learning {
 
-const char *tutorialLevelToString(TutorialLevel level) {
+const char* tutorialLevelToString(TutorialLevel level) {
   switch (level) {
   case TutorialLevel::Beginner:
     return "Beginner";
@@ -21,7 +21,7 @@ const char *tutorialLevelToString(TutorialLevel level) {
   return "Unknown";
 }
 
-const char *tutorialTriggerToString(TutorialTrigger trigger) {
+const char* tutorialTriggerToString(TutorialTrigger trigger) {
   switch (trigger) {
   case TutorialTrigger::Manual:
     return "Manual";
@@ -35,7 +35,7 @@ const char *tutorialTriggerToString(TutorialTrigger trigger) {
   return "Unknown";
 }
 
-const char *hintTypeToString(HintType type) {
+const char* hintTypeToString(HintType type) {
   switch (type) {
   case HintType::Tooltip:
     return "Tooltip";
@@ -53,7 +53,7 @@ const char *hintTypeToString(HintType type) {
   return "Unknown";
 }
 
-const char *calloutPositionToString(CalloutPosition pos) {
+const char* calloutPositionToString(CalloutPosition pos) {
   switch (pos) {
   case CalloutPosition::Auto:
     return "Auto";
@@ -77,7 +77,7 @@ const char *calloutPositionToString(CalloutPosition pos) {
   return "Unknown";
 }
 
-const char *stepStateToString(StepState state) {
+const char* stepStateToString(StepState state) {
   switch (state) {
   case StepState::Pending:
     return "Pending";
@@ -91,7 +91,7 @@ const char *stepStateToString(StepState state) {
   return "Unknown";
 }
 
-const char *tutorialStateToString(TutorialState state) {
+const char* tutorialStateToString(TutorialState state) {
   switch (state) {
   case TutorialState::NotStarted:
     return "NotStarted";
@@ -107,7 +107,7 @@ const char *tutorialStateToString(TutorialState state) {
 
 namespace {
 
-std::string toLower(const std::string &str) {
+std::string toLower(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::tolower(c); });
@@ -116,7 +116,7 @@ std::string toLower(const std::string &str) {
 
 } // anonymous namespace
 
-std::optional<TutorialLevel> parseTutorialLevel(const std::string &str) {
+std::optional<TutorialLevel> parseTutorialLevel(const std::string& str) {
   std::string lower = toLower(str);
   if (lower == "beginner")
     return TutorialLevel::Beginner;
@@ -127,7 +127,7 @@ std::optional<TutorialLevel> parseTutorialLevel(const std::string &str) {
   return std::nullopt;
 }
 
-std::optional<TutorialTrigger> parseTutorialTrigger(const std::string &str) {
+std::optional<TutorialTrigger> parseTutorialTrigger(const std::string& str) {
   std::string lower = toLower(str);
   if (lower == "manual")
     return TutorialTrigger::Manual;
@@ -140,7 +140,7 @@ std::optional<TutorialTrigger> parseTutorialTrigger(const std::string &str) {
   return std::nullopt;
 }
 
-std::optional<HintType> parseHintType(const std::string &str) {
+std::optional<HintType> parseHintType(const std::string& str) {
   std::string lower = toLower(str);
   if (lower == "tooltip")
     return HintType::Tooltip;
@@ -157,7 +157,7 @@ std::optional<HintType> parseHintType(const std::string &str) {
   return std::nullopt;
 }
 
-std::optional<CalloutPosition> parseCalloutPosition(const std::string &str) {
+std::optional<CalloutPosition> parseCalloutPosition(const std::string& str) {
   std::string lower = toLower(str);
   if (lower == "auto")
     return CalloutPosition::Auto;

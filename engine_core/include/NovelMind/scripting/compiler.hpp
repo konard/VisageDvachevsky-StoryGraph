@@ -30,7 +30,7 @@ struct DebugSourceLocation {
   std::string sceneName; ///< Scene name at this location
 
   DebugSourceLocation() : line(0), column(0) {}
-  DebugSourceLocation(const std::string &path, u32 l, u32 c = 1)
+  DebugSourceLocation(const std::string& path, u32 l, u32 c = 1)
       : filePath(path), line(l), column(c) {}
 
   bool isValid() const { return line > 0; }
@@ -65,8 +65,7 @@ struct CompileError {
   SourceLocation location;
 
   CompileError() = default;
-  CompileError(std::string msg, SourceLocation loc)
-      : message(std::move(msg)), location(loc) {}
+  CompileError(std::string msg, SourceLocation loc) : message(std::move(msg)), location(loc) {}
 };
 
 /**
@@ -96,31 +95,32 @@ public:
    * @param sourceFilePath Optional source file path for debug source mappings
    * @return Result containing compiled script or error
    */
-  [[nodiscard]] Result<CompiledScript> compile(const Program &program, const std::string &sourceFilePath = "");
+  [[nodiscard]] Result<CompiledScript> compile(const Program& program,
+                                               const std::string& sourceFilePath = "");
 
   /**
    * @brief Get all errors encountered during compilation
    * @deprecated Use getScriptErrors() instead for rich error reporting
    */
-  [[nodiscard]] const std::vector<CompileError> &getErrors() const;
+  [[nodiscard]] const std::vector<CompileError>& getErrors() const;
 
   /**
    * @brief Get all errors as ScriptError objects with rich formatting
    */
-  [[nodiscard]] const ScriptErrorList &getScriptErrors() const;
+  [[nodiscard]] const ScriptErrorList& getScriptErrors() const;
 
   /**
    * @brief Set the source code for context extraction in error messages
    */
-  void setSource(const std::string &source);
+  void setSource(const std::string& source);
 
 private:
   // Compilation helpers
   void reset();
   void emitOp(OpCode op, u32 operand = 0);
-  void emitOp(OpCode op, u32 operand, const SourceLocation &loc);
+  void emitOp(OpCode op, u32 operand, const SourceLocation& loc);
   u32 emitJump(OpCode op);
-  u32 emitJump(OpCode op, const SourceLocation &loc);
+  u32 emitJump(OpCode op, const SourceLocation& loc);
   /**
    * @brief Patch a jump instruction with the current program counter
    * @param jumpIndex Index of the jump instruction to patch
@@ -128,46 +128,46 @@ private:
    * @note This function validates bounds to prevent buffer overflow
    */
   bool patchJump(u32 jumpIndex);
-  u32 addString(const std::string &str);
+  u32 addString(const std::string& str);
 
   // Error handling
-  void error(const std::string &message, SourceLocation loc = {});
-  void error(ErrorCode code, const std::string &message, SourceLocation loc = {});
+  void error(const std::string& message, SourceLocation loc = {});
+  void error(ErrorCode code, const std::string& message, SourceLocation loc = {});
   void addError(ScriptError err);
 
   // Source mapping
-  void recordSourceMapping(u32 ip, const SourceLocation &loc);
+  void recordSourceMapping(u32 ip, const SourceLocation& loc);
 
   // Visitors
-  void compileProgram(const Program &program);
-  void compileCharacter(const CharacterDecl &decl);
-  void compileScene(const SceneDecl &decl);
-  void compileStatement(const Statement &stmt);
-  void compileExpression(const Expression &expr);
+  void compileProgram(const Program& program);
+  void compileCharacter(const CharacterDecl& decl);
+  void compileScene(const SceneDecl& decl);
+  void compileStatement(const Statement& stmt);
+  void compileExpression(const Expression& expr);
 
   // Statement compilers
-  void compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc);
-  void compileHideStmt(const HideStmt &stmt, const SourceLocation &loc);
-  void compileSayStmt(const SayStmt &stmt, const SourceLocation &loc);
-  void compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc);
-  void compileIfStmt(const IfStmt &stmt, const SourceLocation &loc);
-  void compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc);
-  void compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc);
-  void compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc);
-  void compileStopStmt(const StopStmt &stmt, const SourceLocation &loc);
-  void compileSetStmt(const SetStmt &stmt, const SourceLocation &loc);
-  void compileTransitionStmt(const TransitionStmt &stmt, const SourceLocation &loc);
-  void compileMoveStmt(const MoveStmt &stmt, const SourceLocation &loc);
-  void compileBlockStmt(const BlockStmt &stmt, const SourceLocation &loc);
-  void compileExpressionStmt(const ExpressionStmt &stmt, const SourceLocation &loc);
+  void compileShowStmt(const ShowStmt& stmt, const SourceLocation& loc);
+  void compileHideStmt(const HideStmt& stmt, const SourceLocation& loc);
+  void compileSayStmt(const SayStmt& stmt, const SourceLocation& loc);
+  void compileChoiceStmt(const ChoiceStmt& stmt, const SourceLocation& loc);
+  void compileIfStmt(const IfStmt& stmt, const SourceLocation& loc);
+  void compileGotoStmt(const GotoStmt& stmt, const SourceLocation& loc);
+  void compileWaitStmt(const WaitStmt& stmt, const SourceLocation& loc);
+  void compilePlayStmt(const PlayStmt& stmt, const SourceLocation& loc);
+  void compileStopStmt(const StopStmt& stmt, const SourceLocation& loc);
+  void compileSetStmt(const SetStmt& stmt, const SourceLocation& loc);
+  void compileTransitionStmt(const TransitionStmt& stmt, const SourceLocation& loc);
+  void compileMoveStmt(const MoveStmt& stmt, const SourceLocation& loc);
+  void compileBlockStmt(const BlockStmt& stmt, const SourceLocation& loc);
+  void compileExpressionStmt(const ExpressionStmt& stmt, const SourceLocation& loc);
 
   // Expression compilers
-  void compileLiteral(const LiteralExpr &expr);
-  void compileIdentifier(const IdentifierExpr &expr);
-  void compileBinary(const BinaryExpr &expr);
-  void compileUnary(const UnaryExpr &expr);
-  void compileCall(const CallExpr &expr);
-  void compileProperty(const PropertyExpr &expr);
+  void compileLiteral(const LiteralExpr& expr);
+  void compileIdentifier(const IdentifierExpr& expr);
+  void compileBinary(const BinaryExpr& expr);
+  void compileUnary(const UnaryExpr& expr);
+  void compileCall(const CallExpr& expr);
+  void compileProperty(const PropertyExpr& expr);
 
   CompiledScript m_output;
   std::vector<CompileError> m_errors;
@@ -185,7 +185,7 @@ private:
   // Current compilation context
   std::string m_currentScene;
   std::string m_sourceFilePath; // Source file path for debug mappings
-  std::string m_source;          // Source code for error context
+  std::string m_source;         // Source code for error context
 };
 
 } // namespace NovelMind::scripting

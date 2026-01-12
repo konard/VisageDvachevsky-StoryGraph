@@ -10,14 +10,13 @@ using qt::NMUndoManager;
 using qt::PropertyChangeCommand;
 
 // Static instance
-std::unique_ptr<InspectorBindingManager> InspectorBindingManager::s_instance =
-    nullptr;
+std::unique_ptr<InspectorBindingManager> InspectorBindingManager::s_instance = nullptr;
 
 InspectorBindingManager::InspectorBindingManager() = default;
 
 InspectorBindingManager::~InspectorBindingManager() = default;
 
-InspectorBindingManager &InspectorBindingManager::instance() {
+InspectorBindingManager& InspectorBindingManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<InspectorBindingManager>();
   }
@@ -28,7 +27,7 @@ InspectorBindingManager &InspectorBindingManager::instance() {
 // Target Management
 // ============================================================================
 
-void InspectorBindingManager::setTarget(const InspectorTarget &target) {
+void InspectorBindingManager::setTarget(const InspectorTarget& target) {
   if (m_inBatch) {
     endPropertyBatch();
   }
@@ -47,7 +46,7 @@ void InspectorBindingManager::setTarget(const InspectorTarget &target) {
   if (m_target.isValid()) {
     // Cache current property values
     auto properties = getProperties();
-    for (const auto *prop : properties) {
+    for (const auto* prop : properties) {
       if (prop) {
         m_cachedValues[prop->getMeta().name] = prop->getValue(m_target.object);
       }
@@ -57,8 +56,7 @@ void InspectorBindingManager::setTarget(const InspectorTarget &target) {
   notifyTargetChanged();
 }
 
-void InspectorBindingManager::setTargets(
-    const std::vector<InspectorTarget> &targets) {
+void InspectorBindingManager::setTargets(const std::vector<InspectorTarget>& targets) {
   if (m_inBatch) {
     endPropertyBatch();
   }
@@ -75,7 +73,7 @@ void InspectorBindingManager::setTargets(
   if (!m_targets.empty()) {
     // Cache property values (for multi-edit, cache from primary target)
     auto properties = getProperties();
-    for (const auto *prop : properties) {
+    for (const auto* prop : properties) {
       if (prop) {
         m_cachedValues[prop->getMeta().name] = prop->getValue(m_target.object);
       }
@@ -85,15 +83,12 @@ void InspectorBindingManager::setTargets(
   notifyTargetChanged();
 }
 
-void InspectorBindingManager::inspectSceneObject(const std::string &objectId,
-                                                 void *object) {
-  setTarget(
-      InspectorTarget(InspectorTargetType::SceneObject, objectId, object));
+void InspectorBindingManager::inspectSceneObject(const std::string& objectId, void* object) {
+  setTarget(InspectorTarget(InspectorTargetType::SceneObject, objectId, object));
 }
 
-void InspectorBindingManager::inspectSceneObjects(
-    const std::vector<std::string> &objectIds,
-    const std::vector<void *> &objects) {
+void InspectorBindingManager::inspectSceneObjects(const std::vector<std::string>& objectIds,
+                                                  const std::vector<void*>& objects) {
   if (objectIds.size() != objects.size()) {
     return; // Invalid input
   }
@@ -102,30 +97,25 @@ void InspectorBindingManager::inspectSceneObjects(
   targets.reserve(objectIds.size());
 
   for (size_t i = 0; i < objectIds.size(); ++i) {
-    targets.emplace_back(InspectorTargetType::SceneObject, objectIds[i],
-                         objects[i]);
+    targets.emplace_back(InspectorTargetType::SceneObject, objectIds[i], objects[i]);
   }
 
   setTargets(targets);
 }
 
-void InspectorBindingManager::inspectStoryGraphNode(
-    scripting::NodeId nodeId, scripting::VisualGraphNode *node) {
-  setTarget(InspectorTarget(InspectorTargetType::StoryGraphNode,
-                            std::to_string(nodeId), node));
+void InspectorBindingManager::inspectStoryGraphNode(scripting::NodeId nodeId,
+                                                    scripting::VisualGraphNode* node) {
+  setTarget(InspectorTarget(InspectorTargetType::StoryGraphNode, std::to_string(nodeId), node));
 }
 
-void InspectorBindingManager::inspectTimelineTrack(const std::string &trackId,
-                                                   void *track) {
-  setTarget(
-      InspectorTarget(InspectorTargetType::TimelineTrack, trackId, track));
+void InspectorBindingManager::inspectTimelineTrack(const std::string& trackId, void* track) {
+  setTarget(InspectorTarget(InspectorTargetType::TimelineTrack, trackId, track));
 }
 
-void InspectorBindingManager::inspectTimelineKeyframe(
-    const std::string &trackId, u64 keyframeIndex, void *keyframe) {
+void InspectorBindingManager::inspectTimelineKeyframe(const std::string& trackId, u64 keyframeIndex,
+                                                      void* keyframe) {
   std::string id = trackId + "_" + std::to_string(keyframeIndex);
-  setTarget(
-      InspectorTarget(InspectorTargetType::TimelineKeyframe, id, keyframe));
+  setTarget(InspectorTarget(InspectorTargetType::TimelineKeyframe, id, keyframe));
 }
 
 void InspectorBindingManager::clearTarget() {
@@ -139,14 +129,15 @@ void InspectorBindingManager::clearTarget() {
   notifyTargetChanged();
 }
 
-const InspectorTarget &InspectorBindingManager::getTarget() const {
+const InspectorTarget& InspectorBindingManager::getTarget() const {
   return m_target;
 }
 
-bool InspectorBindingManager::hasTarget() const { return m_target.isValid(); }
+bool InspectorBindingManager::hasTarget() const {
+  return m_target.isValid();
+}
 
-const std::vector<InspectorTarget> &
-InspectorBindingManager::getTargets() const {
+const std::vector<InspectorTarget>& InspectorBindingManager::getTargets() const {
   return m_targets;
 }
 
@@ -162,23 +153,22 @@ size_t InspectorBindingManager::getTargetCount() const {
 // Property Access
 // ============================================================================
 
-std::vector<const IPropertyAccessor *>
-InspectorBindingManager::getProperties() const {
-  std::vector<const IPropertyAccessor *> result;
+std::vector<const IPropertyAccessor*> InspectorBindingManager::getProperties() const {
+  std::vector<const IPropertyAccessor*> result;
 
   if (!m_target.isValid()) {
     return result;
   }
 
-  const TypeInfo *typeInfo = getTypeInfoForTarget();
+  const TypeInfo* typeInfo = getTypeInfoForTarget();
   if (!typeInfo) {
     return result;
   }
 
-  const auto &properties = typeInfo->getProperties();
+  const auto& properties = typeInfo->getProperties();
   result.reserve(properties.size());
 
-  for (const auto &prop : properties) {
+  for (const auto& prop : properties) {
     result.push_back(prop.get());
   }
 
@@ -192,7 +182,7 @@ std::vector<PropertyGroup> InspectorBindingManager::getPropertyGroups() const {
     return groups;
   }
 
-  const TypeInfo *typeInfo = getTypeInfoForTarget();
+  const TypeInfo* typeInfo = getTypeInfoForTarget();
   if (!typeInfo) {
     return groups;
   }
@@ -200,9 +190,9 @@ std::vector<PropertyGroup> InspectorBindingManager::getPropertyGroups() const {
   // Group properties by category
   std::unordered_map<std::string, PropertyGroup> groupMap;
 
-  const auto &properties = typeInfo->getProperties();
-  for (const auto &prop : properties) {
-    const auto &meta = prop->getMeta();
+  const auto& properties = typeInfo->getProperties();
+  for (const auto& prop : properties) {
+    const auto& meta = prop->getMeta();
 
     // Skip hidden properties
     if (hasFlag(meta.flags, PropertyFlags::Hidden)) {
@@ -211,7 +201,7 @@ std::vector<PropertyGroup> InspectorBindingManager::getPropertyGroups() const {
 
     std::string category = meta.category.empty() ? "General" : meta.category;
 
-    auto &group = groupMap[category];
+    auto& group = groupMap[category];
     if (group.name.empty()) {
       group.name = category;
       group.category = category;
@@ -221,35 +211,33 @@ std::vector<PropertyGroup> InspectorBindingManager::getPropertyGroups() const {
 
   // Convert to vector and sort
   groups.reserve(groupMap.size());
-  for (auto &pair : groupMap) {
+  for (auto& pair : groupMap) {
     // Sort properties within group by order
     std::sort(pair.second.properties.begin(), pair.second.properties.end(),
-              [](const IPropertyAccessor *a, const IPropertyAccessor *b) {
+              [](const IPropertyAccessor* a, const IPropertyAccessor* b) {
                 return a->getMeta().order < b->getMeta().order;
               });
     groups.push_back(std::move(pair.second));
   }
 
   // Sort groups (General first, then alphabetically)
-  std::sort(groups.begin(), groups.end(),
-            [](const PropertyGroup &a, const PropertyGroup &b) {
-              if (a.name == "General")
-                return true;
-              if (b.name == "General")
-                return false;
-              return a.name < b.name;
-            });
+  std::sort(groups.begin(), groups.end(), [](const PropertyGroup& a, const PropertyGroup& b) {
+    if (a.name == "General")
+      return true;
+    if (b.name == "General")
+      return false;
+    return a.name < b.name;
+  });
 
   return groups;
 }
 
-const IPropertyAccessor *
-InspectorBindingManager::getProperty(const std::string &name) const {
+const IPropertyAccessor* InspectorBindingManager::getProperty(const std::string& name) const {
   if (!m_target.isValid()) {
     return nullptr;
   }
 
-  const TypeInfo *typeInfo = getTypeInfoForTarget();
+  const TypeInfo* typeInfo = getTypeInfoForTarget();
   if (!typeInfo) {
     return nullptr;
   }
@@ -257,13 +245,12 @@ InspectorBindingManager::getProperty(const std::string &name) const {
   return typeInfo->findProperty(name);
 }
 
-PropertyValue
-InspectorBindingManager::getPropertyValue(const std::string &name) const {
+PropertyValue InspectorBindingManager::getPropertyValue(const std::string& name) const {
   if (!m_target.isValid()) {
     return nullptr;
   }
 
-  const auto *prop = getProperty(name);
+  const auto* prop = getProperty(name);
   if (!prop) {
     return nullptr;
   }
@@ -288,14 +275,12 @@ InspectorBindingManager::getPropertyValue(const std::string &name) const {
   return firstValue;
 }
 
-std::string InspectorBindingManager::getPropertyValueAsString(
-    const std::string &name) const {
+std::string InspectorBindingManager::getPropertyValueAsString(const std::string& name) const {
   return PropertyUtils::toString(getPropertyValue(name));
 }
 
-std::optional<std::string>
-InspectorBindingManager::setPropertyValue(const std::string &name,
-                                          const PropertyValue &value) {
+std::optional<std::string> InspectorBindingManager::setPropertyValue(const std::string& name,
+                                                                     const PropertyValue& value) {
   if (!m_target.isValid()) {
     return "No target selected";
   }
@@ -305,12 +290,12 @@ InspectorBindingManager::setPropertyValue(const std::string &name,
     return std::nullopt;
   }
 
-  const auto *prop = getProperty(name);
+  const auto* prop = getProperty(name);
   if (!prop) {
     return "Property not found: " + name;
   }
 
-  const auto &meta = prop->getMeta();
+  const auto& meta = prop->getMeta();
 
   // Check read-only
   if (hasFlag(meta.flags, PropertyFlags::ReadOnly)) {
@@ -322,12 +307,11 @@ InspectorBindingManager::setPropertyValue(const std::string &name,
     // Use batch to ensure atomic undo/redo for all changes
     bool wasInBatch = m_inBatch;
     if (!wasInBatch) {
-      beginPropertyBatch("Edit " + std::to_string(m_targets.size()) +
-                         " objects");
+      beginPropertyBatch("Edit " + std::to_string(m_targets.size()) + " objects");
     }
 
     // Apply to all targets
-    for (auto &target : m_targets) {
+    for (auto& target : m_targets) {
       PropertyValue oldValue = prop->getValue(target.object);
 
       PropertyChangeContext context;
@@ -448,25 +432,23 @@ InspectorBindingManager::setPropertyValue(const std::string &name,
 }
 
 std::optional<std::string>
-InspectorBindingManager::setPropertyValueFromString(const std::string &name,
-                                                    const std::string &value) {
+InspectorBindingManager::setPropertyValueFromString(const std::string& name,
+                                                    const std::string& value) {
   if (!m_target.isValid()) {
     return "No target selected";
   }
 
-  const auto *prop = getProperty(name);
+  const auto* prop = getProperty(name);
   if (!prop) {
     return "Property not found: " + name;
   }
 
-  PropertyValue parsedValue =
-      PropertyUtils::fromString(prop->getMeta().type, value);
+  PropertyValue parsedValue = PropertyUtils::fromString(prop->getMeta().type, value);
 
   return setPropertyValue(name, parsedValue);
 }
 
-void InspectorBindingManager::beginPropertyBatch(
-    const std::string &description) {
+void InspectorBindingManager::beginPropertyBatch(const std::string& description) {
   if (m_inBatch) {
     endPropertyBatch();
   }
@@ -486,9 +468,8 @@ void InspectorBindingManager::endPropertyBatch() {
   // Record all batch changes as a single undo entry
   if (!m_batchChanges.empty()) {
     NMUndoManager::instance().beginMacro(QString::fromStdString(
-        m_batchDescription.empty() ? "Batch Property Change"
-                                   : m_batchDescription));
-    for (const auto &ctx : m_batchChanges) {
+        m_batchDescription.empty() ? "Batch Property Change" : m_batchDescription));
+    for (const auto& ctx : m_batchChanges) {
       recordPropertyChange(ctx);
     }
     NMUndoManager::instance().endMacro();
@@ -498,35 +479,36 @@ void InspectorBindingManager::endPropertyBatch() {
   m_batchDescription.clear();
 }
 
-bool InspectorBindingManager::isInBatch() const { return m_inBatch; }
+bool InspectorBindingManager::isInBatch() const {
+  return m_inBatch;
+}
 
 // ============================================================================
 // Property Binding Configuration
 // ============================================================================
 
-void InspectorBindingManager::registerBinding(const std::string &propertyName,
-                                              const PropertyBinding &binding) {
+void InspectorBindingManager::registerBinding(const std::string& propertyName,
+                                              const PropertyBinding& binding) {
   m_bindings[propertyName] = binding;
 }
 
-void InspectorBindingManager::onBeforePropertyChange(
-    const std::string &propertyName, BeforePropertyChangeHandler handler) {
+void InspectorBindingManager::onBeforePropertyChange(const std::string& propertyName,
+                                                     BeforePropertyChangeHandler handler) {
   m_bindings[propertyName].beforeChange = std::move(handler);
 }
 
-void InspectorBindingManager::onAfterPropertyChange(
-    const std::string &propertyName, AfterPropertyChangeHandler handler) {
+void InspectorBindingManager::onAfterPropertyChange(const std::string& propertyName,
+                                                    AfterPropertyChangeHandler handler) {
   m_bindings[propertyName].afterChange = std::move(handler);
 }
 
-void InspectorBindingManager::addPropertyValidator(
-    const std::string &propertyName, PropertyValidatorHandler validator) {
+void InspectorBindingManager::addPropertyValidator(const std::string& propertyName,
+                                                   PropertyValidatorHandler validator) {
   m_bindings[propertyName].validator = std::move(validator);
 }
 
 void InspectorBindingManager::setPropertyDependencies(
-    const std::string &propertyName,
-    const std::vector<std::string> &dependencies) {
+    const std::string& propertyName, const std::vector<std::string>& dependencies) {
   m_bindings[propertyName].dependentProperties = dependencies;
 }
 
@@ -534,28 +516,28 @@ void InspectorBindingManager::setPropertyDependencies(
 // Integration
 // ============================================================================
 
-void InspectorBindingManager::setUndoManager(UndoManager *manager) {
+void InspectorBindingManager::setUndoManager(UndoManager* manager) {
   m_undoManager = manager;
 }
 
-void InspectorBindingManager::setEventBus(EventBus *bus) { m_eventBus = bus; }
+void InspectorBindingManager::setEventBus(EventBus* bus) {
+  m_eventBus = bus;
+}
 
 // ============================================================================
 // Listeners
 // ============================================================================
 
-void InspectorBindingManager::addListener(IInspectorBindingListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void InspectorBindingManager::addListener(IInspectorBindingListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void InspectorBindingManager::removeListener(
-    IInspectorBindingListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void InspectorBindingManager::removeListener(IInspectorBindingListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
 // ============================================================================
@@ -568,24 +550,23 @@ void InspectorBindingManager::refreshProperties() {
   }
 
   auto properties = getProperties();
-  for (const auto *prop : properties) {
+  for (const auto* prop : properties) {
     if (prop) {
       m_cachedValues[prop->getMeta().name] = prop->getValue(m_target.object);
     }
   }
 
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onPropertiesRefreshed();
   }
 }
 
-bool InspectorBindingManager::hasPropertyChanged(
-    const std::string &name) const {
+bool InspectorBindingManager::hasPropertyChanged(const std::string& name) const {
   if (!m_target.isValid()) {
     return false;
   }
 
-  const auto *prop = getProperty(name);
+  const auto* prop = getProperty(name);
   if (!prop) {
     return false;
   }
@@ -603,7 +584,7 @@ bool InspectorBindingManager::hasPropertyChanged(
 // Private Methods
 // ============================================================================
 
-const TypeInfo *InspectorBindingManager::getTypeInfoForTarget() const {
+const TypeInfo* InspectorBindingManager::getTypeInfoForTarget() const {
   if (!m_target.isValid()) {
     return nullptr;
   }
@@ -618,10 +599,10 @@ const TypeInfo *InspectorBindingManager::getTypeInfoForTarget() const {
   return PropertyRegistry::instance().getTypeInfo(m_target.typeIndex);
 }
 
-bool InspectorBindingManager::validatePropertyChange(
-    const PropertyChangeContext &context, std::string &error) const {
+bool InspectorBindingManager::validatePropertyChange(const PropertyChangeContext& context,
+                                                     std::string& error) const {
   // Check property meta validation
-  const auto *prop = getProperty(context.propertyName);
+  const auto* prop = getProperty(context.propertyName);
   if (!prop) {
     error = "Property not found";
     return false;
@@ -645,27 +626,24 @@ bool InspectorBindingManager::validatePropertyChange(
 }
 
 void InspectorBindingManager::notifyTargetChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onTargetChanged(m_target);
   }
 }
 
-void InspectorBindingManager::notifyPropertyWillChange(
-    const PropertyChangeContext &context) {
-  for (auto *listener : m_listeners) {
+void InspectorBindingManager::notifyPropertyWillChange(const PropertyChangeContext& context) {
+  for (auto* listener : m_listeners) {
     listener->onPropertyWillChange(context);
   }
 }
 
-void InspectorBindingManager::notifyPropertyDidChange(
-    const PropertyChangeContext &context) {
-  for (auto *listener : m_listeners) {
+void InspectorBindingManager::notifyPropertyDidChange(const PropertyChangeContext& context) {
+  for (auto* listener : m_listeners) {
     listener->onPropertyDidChange(context);
   }
 }
 
-void InspectorBindingManager::recordPropertyChange(
-    const PropertyChangeContext &context) {
+void InspectorBindingManager::recordPropertyChange(const PropertyChangeContext& context) {
   auto bindingIt = m_bindings.find(context.propertyName);
   if (bindingIt != m_bindings.end() && !bindingIt->second.recordUndo) {
     return;
@@ -675,32 +653,30 @@ void InspectorBindingManager::recordPropertyChange(
     return;
   }
 
-  const auto *prop = getProperty(context.propertyName);
+  const auto* prop = getProperty(context.propertyName);
   if (!prop) {
     return;
   }
 
   PropertyChangeContext captured = context;
 
-  auto apply = [this, captured](const PropertyValue &value, bool isUndo) {
+  auto apply = [this, captured](const PropertyValue& value, bool isUndo) {
     applyPropertyChangeFromUndo(captured, value, isUndo);
   };
 
-  NMUndoManager::instance().pushCommand(
-      new PropertyChangeCommand(QString::fromStdString(context.target.id),
-                                QString::fromStdString(context.propertyName),
-                                context.oldValue, context.newValue, apply));
+  NMUndoManager::instance().pushCommand(new PropertyChangeCommand(
+      QString::fromStdString(context.target.id), QString::fromStdString(context.propertyName),
+      context.oldValue, context.newValue, apply));
 }
 
-void InspectorBindingManager::applyPropertyChangeFromUndo(
-    const PropertyChangeContext &context, const PropertyValue &value,
-    bool isUndo) {
+void InspectorBindingManager::applyPropertyChangeFromUndo(const PropertyChangeContext& context,
+                                                          const PropertyValue& value, bool isUndo) {
   if (!m_target.isValid() || context.target.id != m_target.id ||
       context.target.type != m_target.type) {
     return; // Target changed; cannot safely apply.
   }
 
-  const auto *prop = getProperty(context.propertyName);
+  const auto* prop = getProperty(context.propertyName);
   if (!prop) {
     return;
   }
@@ -729,23 +705,21 @@ void InspectorBindingManager::applyPropertyChangeFromUndo(
   m_applyingUndoRedo = false;
 }
 
-void InspectorBindingManager::refreshDependentProperties(
-    const std::string &propertyName) {
+void InspectorBindingManager::refreshDependentProperties(const std::string& propertyName) {
   auto bindingIt = m_bindings.find(propertyName);
   if (bindingIt == m_bindings.end()) {
     return;
   }
 
-  for (const auto &depName : bindingIt->second.dependentProperties) {
-    const auto *prop = getProperty(depName);
+  for (const auto& depName : bindingIt->second.dependentProperties) {
+    const auto* prop = getProperty(depName);
     if (prop) {
       m_cachedValues[depName] = prop->getValue(m_target.object);
     }
   }
 }
 
-void InspectorBindingManager::publishPropertyChangedEvent(
-    const PropertyChangeContext &context) {
+void InspectorBindingManager::publishPropertyChangedEvent(const PropertyChangeContext& context) {
   if (!m_eventBus) {
     return;
   }

@@ -24,9 +24,12 @@ constexpr bool isLittleEndian() {
 #elif defined(_WIN32) || defined(_WIN64)
   // Windows is always little-endian
   return true;
-#elif defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) || defined(__amd64__) || defined(_M_IX86) || defined(_M_X64) || defined(__aarch64__) || defined(__arm__)
+#elif defined(__LITTLE_ENDIAN__) || defined(__i386__) || defined(__x86_64__) ||                    \
+    defined(__amd64__) || defined(_M_IX86) || defined(_M_X64) || defined(__aarch64__) ||           \
+    defined(__arm__)
   return true;
-#elif defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__)
+#elif defined(__BIG_ENDIAN__) || defined(__ARMEB__) || defined(__THUMBEB__) ||                     \
+    defined(__AARCH64EB__) || defined(_MIPSEB) || defined(__MIPSEB) || defined(__MIPSEB__)
   return false;
 #else
   // Conservative fallback: assume little-endian (most common)
@@ -44,10 +47,8 @@ inline constexpr u32 byteSwap32(u32 value) {
 #elif defined(_MSC_VER)
   return _byteswap_ulong(value);
 #else
-  return ((value & 0xFF000000u) >> 24) |
-         ((value & 0x00FF0000u) >> 8)  |
-         ((value & 0x0000FF00u) << 8)  |
-         ((value & 0x000000FFu) << 24);
+  return ((value & 0xFF000000u) >> 24) | ((value & 0x00FF0000u) >> 8) |
+         ((value & 0x0000FF00u) << 8) | ((value & 0x000000FFu) << 24);
 #endif
 }
 

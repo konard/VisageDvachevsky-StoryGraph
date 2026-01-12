@@ -23,7 +23,7 @@ namespace NovelMind::editor {
 namespace SizeVisualization {
 
 std::string formatBytes(u64 bytes) {
-  const char *units[] = {"B", "KB", "MB", "GB", "TB"};
+  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
   i32 unitIndex = 0;
   f64 size = static_cast<f64>(bytes);
 
@@ -36,8 +36,7 @@ std::string formatBytes(u64 bytes) {
   if (unitIndex == 0) {
     oss << bytes << " " << units[unitIndex];
   } else {
-    oss << std::fixed << std::setprecision(2) << size << " "
-        << units[unitIndex];
+    oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
   }
   return oss.str();
 }
@@ -96,7 +95,7 @@ renderer::Color getPriorityColor(OptimizationSuggestion::Priority priority) {
   }
 }
 
-TreemapNode buildTreemap(const BuildSizeAnalysis &analysis) {
+TreemapNode buildTreemap(const BuildSizeAnalysis& analysis) {
   TreemapNode root;
   root.label = "Build";
   root.size = analysis.totalOriginalSize;
@@ -105,7 +104,7 @@ TreemapNode buildTreemap(const BuildSizeAnalysis &analysis) {
   // Group assets by category
   std::unordered_map<AssetCategory, TreemapNode> categoryNodes;
 
-  for (const auto &asset : analysis.assets) {
+  for (const auto& asset : analysis.assets) {
     if (categoryNodes.find(asset.category) == categoryNodes.end()) {
       TreemapNode categoryNode;
       switch (asset.category) {
@@ -147,14 +146,14 @@ TreemapNode buildTreemap(const BuildSizeAnalysis &analysis) {
   }
 
   // Add category nodes to root
-  for (auto &[category, node] : categoryNodes) {
+  for (auto& [category, node] : categoryNodes) {
     root.children.push_back(std::move(node));
   }
 
   return root;
 }
 
-void layoutTreemap(TreemapNode &root, f32 x, f32 y, f32 width, f32 height) {
+void layoutTreemap(TreemapNode& root, f32 x, f32 y, f32 width, f32 height) {
   root.x = x;
   root.y = y;
   root.width = width;
@@ -168,7 +167,7 @@ void layoutTreemap(TreemapNode &root, f32 x, f32 y, f32 width, f32 height) {
   bool horizontal = width >= height;
   f32 offset = 0.0f;
 
-  for (auto &child : root.children) {
+  for (auto& child : root.children) {
     f32 ratio = static_cast<f32>(child.size) / static_cast<f32>(root.size);
 
     if (horizontal) {
@@ -204,12 +203,11 @@ void BuildSizeAnalyzerPanel::render() {
   // For now, use BuildSizeAnalyzer methods to access analysis data.
 }
 
-void BuildSizeAnalyzerPanel::onResize([[maybe_unused]] i32 width,
-                                      [[maybe_unused]] i32 height) {
+void BuildSizeAnalyzerPanel::onResize([[maybe_unused]] i32 width, [[maybe_unused]] i32 height) {
   // Handle resize
 }
 
-void BuildSizeAnalyzerPanel::setAnalyzer(BuildSizeAnalyzer *analyzer) {
+void BuildSizeAnalyzerPanel::setAnalyzer(BuildSizeAnalyzer* analyzer) {
   m_analyzer = analyzer;
 }
 
@@ -219,7 +217,7 @@ void BuildSizeAnalyzerPanel::refreshAnalysis() {
   }
 }
 
-void BuildSizeAnalyzerPanel::exportReport(const std::string &path) {
+void BuildSizeAnalyzerPanel::exportReport(const std::string& path) {
   if (m_analyzer) {
     std::string ext = fs::path(path).extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
@@ -239,7 +237,7 @@ void BuildSizeAnalyzerPanel::exportReport(const std::string &path) {
   }
 }
 
-void BuildSizeAnalyzerPanel::setFilter(const std::string &filter) {
+void BuildSizeAnalyzerPanel::setFilter(const std::string& filter) {
   m_filter = filter;
 }
 
@@ -247,13 +245,11 @@ void BuildSizeAnalyzerPanel::setCategoryFilter(AssetCategory category) {
   m_categoryFilter = category;
 }
 
-void BuildSizeAnalyzerPanel::setOnAssetSelected(
-    std::function<void(const std::string &)> callback) {
+void BuildSizeAnalyzerPanel::setOnAssetSelected(std::function<void(const std::string&)> callback) {
   m_onAssetSelected = std::move(callback);
 }
 
-void BuildSizeAnalyzerPanel::setOnOptimizationApplied(
-    std::function<void()> callback) {
+void BuildSizeAnalyzerPanel::setOnOptimizationApplied(std::function<void()> callback) {
   m_onOptimizationApplied = std::move(callback);
 }
 
@@ -291,19 +287,15 @@ void BuildSizeAnalyzerPanel::renderToolbar() {
   // TODO: Migrate to Qt6 - render toolbar with refresh, export, filter buttons
 }
 
-void BuildSizeAnalyzerPanel::renderPieChart([[maybe_unused]] f32 x,
-                                            [[maybe_unused]] f32 y,
+void BuildSizeAnalyzerPanel::renderPieChart([[maybe_unused]] f32 x, [[maybe_unused]] f32 y,
                                             [[maybe_unused]] f32 radius) {
   // TODO: Migrate to Qt6 - use QPainter to draw pie chart
   // or use QtCharts module
 }
 
-void BuildSizeAnalyzerPanel::renderSizeBar([[maybe_unused]] f32 x,
-                                           [[maybe_unused]] f32 y,
-                                           [[maybe_unused]] f32 width,
-                                           [[maybe_unused]] f32 height,
-                                           [[maybe_unused]] u64 size,
-                                           [[maybe_unused]] u64 total) {
+void BuildSizeAnalyzerPanel::renderSizeBar([[maybe_unused]] f32 x, [[maybe_unused]] f32 y,
+                                           [[maybe_unused]] f32 width, [[maybe_unused]] f32 height,
+                                           [[maybe_unused]] u64 size, [[maybe_unused]] u64 total) {
   // TODO: Migrate to Qt6 - use QPainter to draw progress bar
   // showing size/total ratio
 }

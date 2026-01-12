@@ -59,21 +59,20 @@ namespace NovelMind::editor::qt {
 // NMScriptEditorPanel
 // ============================================================================
 
-NMScriptEditorPanel::NMScriptEditorPanel(QWidget *parent)
+NMScriptEditorPanel::NMScriptEditorPanel(QWidget* parent)
     : NMDockPanel(tr("Script Editor"), parent) {
   setPanelId("ScriptEditor");
   setWindowIcon(NMIconManager::instance().getIcon("panel-console", 16));
   m_diagnosticsTimer.setSingleShot(true);
   m_diagnosticsTimer.setInterval(600);
-  connect(&m_diagnosticsTimer, &QTimer::timeout, this,
-          &NMScriptEditorPanel::runDiagnostics);
+  connect(&m_diagnosticsTimer, &QTimer::timeout, this, &NMScriptEditorPanel::runDiagnostics);
   m_scriptWatcher = new QFileSystemWatcher(this);
   connect(m_scriptWatcher, &QFileSystemWatcher::directoryChanged, this,
           &NMScriptEditorPanel::onDirectoryChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
           &NMScriptEditorPanel::onFileChanged);
   connect(m_scriptWatcher, &QFileSystemWatcher::fileChanged, this,
-          [this](const QString &) { refreshSymbolIndex(); });
+          [this](const QString&) { refreshSymbolIndex(); });
 
   // Initialize project context for asset validation
   m_projectContext = new ScriptProjectContext(QString());
@@ -88,8 +87,7 @@ NMScriptEditorPanel::~NMScriptEditorPanel() {
 
 void NMScriptEditorPanel::onInitialize() {
   // Set project path for asset validation
-  const std::string projectPath =
-      ProjectManager::instance().getProjectPath();
+  const std::string projectPath = ProjectManager::instance().getProjectPath();
   if (!projectPath.empty() && m_projectContext) {
     m_projectContext->setProjectPath(QString::fromStdString(projectPath));
   }
@@ -97,8 +95,7 @@ void NMScriptEditorPanel::onInitialize() {
 
   // Show welcome dialog on first launch
   QSettings settings("NovelMind", "Editor");
-  bool showScriptWelcome =
-      settings.value("scriptEditor/showWelcome", true).toBool();
+  bool showScriptWelcome = settings.value("scriptEditor/showWelcome", true).toBool();
 
   if (showScriptWelcome) {
     // Use QTimer to show dialog after the panel is fully initialized
@@ -107,7 +104,7 @@ void NMScriptEditorPanel::onInitialize() {
 
       // Connect signals
       connect(&welcomeDialog, &NMScriptWelcomeDialog::openSampleRequested, this,
-              [this](const QString &sampleId) { loadSampleScript(sampleId); });
+              [this](const QString& sampleId) { loadSampleScript(sampleId); });
 
       if (welcomeDialog.exec() == QDialog::Accepted) {
         if (welcomeDialog.shouldSkipInFuture()) {
@@ -123,15 +120,15 @@ void NMScriptEditorPanel::onInitialize() {
 
 void NMScriptEditorPanel::onUpdate(double /*deltaTime*/) {}
 
-void NMScriptEditorPanel::openScript(const QString &path) {
+void NMScriptEditorPanel::openScript(const QString& path) {
   if (path.isEmpty()) {
     return;
   }
 
   QString resolvedPath = path;
   if (QFileInfo(path).isRelative()) {
-    resolvedPath = QString::fromStdString(
-        ProjectManager::instance().toAbsolutePath(path.toStdString()));
+    resolvedPath =
+        QString::fromStdString(ProjectManager::instance().toAbsolutePath(path.toStdString()));
   }
 
   if (!ensureScriptFile(resolvedPath)) {
@@ -154,7 +151,7 @@ void NMScriptEditorPanel::onFormatRequested() {
   if (!m_tabs) {
     return;
   }
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
@@ -166,12 +163,11 @@ void NMScriptEditorPanel::onFormatRequested() {
   int indentLevel = 0;
   const int indentSize = editor->indentSize();
 
-  for (const auto &line : lines) {
+  for (const auto& line : lines) {
     const QString trimmed = line.trimmed();
 
     int leadingClosers = 0;
-    while (leadingClosers < trimmed.size() &&
-           trimmed.at(leadingClosers) == '}') {
+    while (leadingClosers < trimmed.size() && trimmed.at(leadingClosers) == '}') {
       ++leadingClosers;
     }
     indentLevel = std::max(0, indentLevel - leadingClosers);
@@ -183,16 +179,14 @@ void NMScriptEditorPanel::onFormatRequested() {
       formatted.append(indent + trimmed);
     }
 
-    const int netBraces =
-        static_cast<int>(trimmed.count('{') - trimmed.count('}'));
+    const int netBraces = static_cast<int>(trimmed.count('{') - trimmed.count('}'));
     indentLevel = std::max(0, indentLevel + netBraces);
   }
 
   const int originalPos = editor->textCursor().position();
   editor->setPlainText(formatted.join("\n"));
   QTextCursor cursor = editor->textCursor();
-  cursor.setPosition(
-      std::min(originalPos, editor->document()->characterCount() - 1));
+  cursor.setPosition(std::min(originalPos, editor->document()->characterCount() - 1));
   editor->setTextCursor(cursor);
 }
 
@@ -202,24 +196,24 @@ void NMScriptEditorPanel::onCurrentTabChanged(int index) {
   m_diagnosticsTimer.start();
 }
 
-QList<NMScriptEditor *> NMScriptEditorPanel::editors() const {
-  QList<NMScriptEditor *> list;
+QList<NMScriptEditor*> NMScriptEditorPanel::editors() const {
+  QList<NMScriptEditor*> list;
   if (!m_tabs) {
     return list;
   }
   for (int i = 0; i < m_tabs->count(); ++i) {
-    if (auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->widget(i))) {
+    if (auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->widget(i))) {
       list.push_back(editor);
     }
   }
   return list;
 }
 
-NMScriptEditor *NMScriptEditorPanel::currentEditor() const {
+NMScriptEditor* NMScriptEditorPanel::currentEditor() const {
   if (!m_tabs) {
     return nullptr;
   }
-  return qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  return qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
 }
 
 } // namespace NovelMind::editor::qt

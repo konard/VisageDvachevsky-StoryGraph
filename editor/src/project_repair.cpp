@@ -200,5 +200,4 @@ Result<void> ProjectIntegrityChecker::applyQuickFix(const IntegrityIssue& issue)
   return Result<void>::error("Quick fix not implemented for issue: " + issue.code);
 }
 
-
 } // namespace NovelMind::editor

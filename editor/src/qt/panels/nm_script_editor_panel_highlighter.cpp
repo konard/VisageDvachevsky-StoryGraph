@@ -12,10 +12,8 @@ namespace NovelMind::editor::qt {
 namespace {
 
 int clampToInt(qsizetype value) {
-  const qsizetype minInt =
-      static_cast<qsizetype>(std::numeric_limits<int>::min());
-  const qsizetype maxInt =
-      static_cast<qsizetype>(std::numeric_limits<int>::max());
+  const qsizetype minInt = static_cast<qsizetype>(std::numeric_limits<int>::min());
+  const qsizetype maxInt = static_cast<qsizetype>(std::numeric_limits<int>::max());
   if (value < minInt) {
     return std::numeric_limits<int>::min();
   }
@@ -31,9 +29,8 @@ int clampToInt(qsizetype value) {
 // NMScriptHighlighter
 // ============================================================================
 
-NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
-    : QSyntaxHighlighter(parent) {
-  const auto &palette = NMStyleManager::instance().palette();
+NMScriptHighlighter::NMScriptHighlighter(QTextDocument* parent) : QSyntaxHighlighter(parent) {
+  const auto& palette = NMStyleManager::instance().palette();
 
   QTextCharFormat keywordFormat;
   keywordFormat.setForeground(palette.accentPrimary);
@@ -43,14 +40,13 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   // This enables proper highlighting in presence of Cyrillic/Unicode
   // identifiers
   const QStringList keywords = detail::buildCompletionWords();
-  for (const auto &word : keywords) {
+  for (const auto& word : keywords) {
     Rule rule;
     // Use explicit word boundary pattern that works with Unicode
     // (?<![\\w\\p{L}]) - not preceded by word char or Unicode letter
     // (?![\\w\\p{L}]) - not followed by word char or Unicode letter
-    rule.pattern = QRegularExpression(
-        QString("(?<![\\w\\p{L}])%1(?![\\w\\p{L}])").arg(word),
-        QRegularExpression::UseUnicodePropertiesOption);
+    rule.pattern = QRegularExpression(QString("(?<![\\w\\p{L}])%1(?![\\w\\p{L}])").arg(word),
+                                      QRegularExpression::UseUnicodePropertiesOption);
     rule.format = keywordFormat;
     m_rules.push_back(rule);
   }
@@ -76,9 +72,9 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   Rule unicodeIdentifierRule;
   // Match identifiers starting with Unicode letters (including Cyrillic)
   // Pattern: Unicode letter followed by any word chars or Unicode letters
-  unicodeIdentifierRule.pattern = QRegularExpression(
-      "(?<![\\w\\p{L}])[\\p{L}_][\\p{L}\\p{N}_]*(?![\\w\\p{L}])",
-      QRegularExpression::UseUnicodePropertiesOption);
+  unicodeIdentifierRule.pattern =
+      QRegularExpression("(?<![\\w\\p{L}])[\\p{L}_][\\p{L}\\p{N}_]*(?![\\w\\p{L}])",
+                         QRegularExpression::UseUnicodePropertiesOption);
   unicodeIdentifierRule.format = identifierFormat;
   m_rules.push_back(unicodeIdentifierRule);
 
@@ -100,8 +96,7 @@ NMScriptHighlighter::NMScriptHighlighter(QTextDocument *parent)
   m_warningFormat.setUnderlineColor(QColor(230, 180, 60));
 }
 
-void NMScriptHighlighter::setDiagnostics(
-    const QHash<int, QList<NMScriptIssue>> &diagnostics) {
+void NMScriptHighlighter::setDiagnostics(const QHash<int, QList<NMScriptIssue>>& diagnostics) {
   m_diagnostics = diagnostics;
   rehighlight();
 }
@@ -111,8 +106,8 @@ void NMScriptHighlighter::clearDiagnostics() {
   rehighlight();
 }
 
-void NMScriptHighlighter::highlightBlock(const QString &text) {
-  for (const auto &rule : m_rules) {
+void NMScriptHighlighter::highlightBlock(const QString& text) {
+  for (const auto& rule : m_rules) {
     QRegularExpressionMatchIterator it = rule.pattern.globalMatch(text);
     while (it.hasNext()) {
       QRegularExpressionMatch match = it.next();
@@ -144,22 +139,19 @@ void NMScriptHighlighter::highlightBlock(const QString &text) {
     }
 
     setFormat(startIndex, commentLength, m_commentFormat);
-    startIndex =
-        clampToInt(text.indexOf(m_commentStart, startIndex + commentLength));
+    startIndex = clampToInt(text.indexOf(m_commentStart, startIndex + commentLength));
   }
 
   // Apply diagnostic underlines for errors and warnings
   const int lineNumber = currentBlock().blockNumber() + 1;
   if (m_diagnostics.contains(lineNumber)) {
-    const auto &issues = m_diagnostics.value(lineNumber);
-    for (const auto &issue : issues) {
+    const auto& issues = m_diagnostics.value(lineNumber);
+    for (const auto& issue : issues) {
       // Underline the whole line for the diagnostic
-      const QTextCharFormat &format =
-          (issue.severity == "error") ? m_errorFormat : m_warningFormat;
+      const QTextCharFormat& format = (issue.severity == "error") ? m_errorFormat : m_warningFormat;
       // Apply to non-whitespace portion of line
       int startPos = 0;
-      while (startPos < static_cast<int>(text.size()) &&
-             text.at(startPos).isSpace()) {
+      while (startPos < static_cast<int>(text.size()) && text.at(startPos).isSpace()) {
         ++startPos;
       }
       if (startPos < static_cast<int>(text.size())) {

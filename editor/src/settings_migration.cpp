@@ -9,25 +9,22 @@
 
 namespace NovelMind::editor {
 
-Result<void> SettingsMigration::migrate(
-    std::unordered_map<std::string, SettingValue> &values,
-    const std::unordered_map<std::string, SettingDefinition> &definitions,
-    i32 fromVersion, i32 toVersion) {
-
+Result<void>
+SettingsMigration::migrate(std::unordered_map<std::string, SettingValue>& values,
+                           const std::unordered_map<std::string, SettingDefinition>& definitions,
+                           i32 fromVersion, i32 toVersion) {
   if (fromVersion == toVersion) {
     // No migration needed
     return Result<void>::ok();
   }
 
   if (fromVersion > toVersion) {
-    return Result<void>::error(
-        "Cannot migrate backwards from version " +
-        std::to_string(fromVersion) + " to " + std::to_string(toVersion));
+    return Result<void>::error("Cannot migrate backwards from version " +
+                               std::to_string(fromVersion) + " to " + std::to_string(toVersion));
   }
 
-  NOVELMIND_LOG_INFO("Migrating settings from version " +
-                     std::to_string(fromVersion) + " to version " +
-                     std::to_string(toVersion));
+  NOVELMIND_LOG_INFO("Migrating settings from version " + std::to_string(fromVersion) +
+                     " to version " + std::to_string(toVersion));
 
   // Apply migrations sequentially
   i32 currentVersion = fromVersion;
@@ -41,9 +38,9 @@ Result<void> SettingsMigration::migrate(
       currentVersion = 2;
     } else {
       // No migration path found
-      return Result<void>::error(
-          "No migration path from version " + std::to_string(currentVersion) +
-          " to version " + std::to_string(toVersion));
+      return Result<void>::error("No migration path from version " +
+                                 std::to_string(currentVersion) + " to version " +
+                                 std::to_string(toVersion));
     }
   }
 
@@ -52,9 +49,8 @@ Result<void> SettingsMigration::migrate(
 }
 
 Result<void> SettingsMigration::migrateV1ToV2(
-    std::unordered_map<std::string, SettingValue> &values,
-    const std::unordered_map<std::string, SettingDefinition> &definitions) {
-
+    std::unordered_map<std::string, SettingValue>& values,
+    const std::unordered_map<std::string, SettingDefinition>& definitions) {
   // Example migration: If we need to migrate from V1 to V2
   // Currently no migration is needed as we're at version 1
   // This is a placeholder for future migrations

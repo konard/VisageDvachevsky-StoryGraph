@@ -14,15 +14,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMDebugOverlayPanel::NMDebugOverlayPanel(QWidget *parent)
-    : NMDockPanel("Debug Overlay", parent) {
+NMDebugOverlayPanel::NMDebugOverlayPanel(QWidget* parent) : NMDockPanel("Debug Overlay", parent) {
   setupUI();
 }
 
 void NMDebugOverlayPanel::onInitialize() {
   NMDockPanel::onInitialize();
 
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   // Connect to controller signals
   connect(&controller, &NMPlayModeController::variablesChanged, this,
@@ -49,7 +48,9 @@ void NMDebugOverlayPanel::onInitialize() {
                          controller.currentInstructionText());
 }
 
-void NMDebugOverlayPanel::onShutdown() { NMDockPanel::onShutdown(); }
+void NMDebugOverlayPanel::onShutdown() {
+  NMDockPanel::onShutdown();
+}
 
 void NMDebugOverlayPanel::onUpdate(double deltaTime) {
   NMDockPanel::onUpdate(deltaTime);
@@ -58,8 +59,8 @@ void NMDebugOverlayPanel::onUpdate(double deltaTime) {
 
 void NMDebugOverlayPanel::setupUI() {
   // Create content widget
-  auto *contentWidget = new QWidget;
-  auto *layout = new QVBoxLayout(contentWidget);
+  auto* contentWidget = new QWidget;
+  auto* layout = new QVBoxLayout(contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -69,12 +70,12 @@ void NMDebugOverlayPanel::setupUI() {
 
   m_tabWidget = new QTabWidget;
 
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // === Variables Tab ===
   {
-    auto *varWidget = new QWidget;
-    auto *varLayout = new QVBoxLayout(varWidget);
+    auto* varWidget = new QWidget;
+    auto* varLayout = new QVBoxLayout(varWidget);
     varLayout->setContentsMargins(4, 4, 4, 4);
 
     m_variablesTree = new QTreeWidget;
@@ -84,16 +85,13 @@ void NMDebugOverlayPanel::setupUI() {
     m_variablesTree->header()->setStretchLastSection(false);
     m_variablesTree->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     m_variablesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-    m_variablesTree->header()->setSectionResizeMode(
-        2, QHeaderView::ResizeToContents);
+    m_variablesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 
     connect(m_variablesTree, &QTreeWidget::itemDoubleClicked, this,
             &NMDebugOverlayPanel::onVariableItemDoubleClicked);
 
-    auto *helpLabel =
-        new QLabel("💡 Double-click a variable to edit (only when paused)");
-    helpLabel->setStyleSheet(
-        "QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
+    auto* helpLabel = new QLabel("💡 Double-click a variable to edit (only when paused)");
+    helpLabel->setStyleSheet("QLabel { color: #a0a0a0; font-size: 9pt; padding: 4px; }");
 
     varLayout->addWidget(m_variablesTree);
     varLayout->addWidget(helpLabel);
@@ -103,8 +101,8 @@ void NMDebugOverlayPanel::setupUI() {
 
   // === Call Stack Tab ===
   {
-    auto *stackWidget = new QWidget;
-    auto *stackLayout = new QVBoxLayout(stackWidget);
+    auto* stackWidget = new QWidget;
+    auto* stackLayout = new QVBoxLayout(stackWidget);
     stackLayout->setContentsMargins(4, 4, 4, 4);
 
     m_callStackList = new QListWidget;
@@ -118,36 +116,34 @@ void NMDebugOverlayPanel::setupUI() {
   // === Current Instruction Tab ===
   {
     m_instructionWidget = new QWidget;
-    auto *instrLayout = new QGridLayout(m_instructionWidget);
+    auto* instrLayout = new QGridLayout(m_instructionWidget);
     instrLayout->setContentsMargins(8, 8, 8, 8);
     instrLayout->setSpacing(8);
 
     // Current Node
-    auto *nodeHeaderLabel = new QLabel("<b>Current Node:</b>");
+    auto* nodeHeaderLabel = new QLabel("<b>Current Node:</b>");
     instrLayout->addWidget(nodeHeaderLabel, 0, 0, Qt::AlignTop);
 
     m_currentNodeLabel = new QLabel("DialogueNode_003");
-    m_currentNodeLabel->setStyleSheet(
-        "QLabel { color: #0078d4; font-family: monospace; }");
+    m_currentNodeLabel->setStyleSheet("QLabel { color: #0078d4; font-family: monospace; }");
     instrLayout->addWidget(m_currentNodeLabel, 0, 1);
 
     // Instruction Index
-    auto *indexHeaderLabel = new QLabel("<b>Instruction Index:</b>");
+    auto* indexHeaderLabel = new QLabel("<b>Instruction Index:</b>");
     instrLayout->addWidget(indexHeaderLabel, 1, 0, Qt::AlignTop);
 
     m_instructionIndexLabel = new QLabel("5 / 12");
-    m_instructionIndexLabel->setStyleSheet(
-        "QLabel { color: #4caf50; font-family: monospace; }");
+    m_instructionIndexLabel->setStyleSheet("QLabel { color: #4caf50; font-family: monospace; }");
     instrLayout->addWidget(m_instructionIndexLabel, 1, 1);
 
     // Separator
-    auto *separator = new QFrame;
+    auto* separator = new QFrame;
     separator->setFrameShape(QFrame::HLine);
     separator->setFrameShadow(QFrame::Sunken);
     instrLayout->addWidget(separator, 2, 0, 1, 2);
 
     // Current Instruction Code
-    auto *codeHeaderLabel = new QLabel("<b>Current Instruction:</b>");
+    auto* codeHeaderLabel = new QLabel("<b>Current Instruction:</b>");
     instrLayout->addWidget(codeHeaderLabel, 3, 0, Qt::AlignTop);
 
     m_instructionCodeLabel = new QLabel("SHOW_TEXT \"Hello, world!\"");
@@ -163,20 +159,16 @@ void NMDebugOverlayPanel::setupUI() {
     instrLayout->addWidget(m_instructionCodeLabel, 3, 1);
 
     // Stack frames
-    auto *stackHeader = new QLabel("<b>Call Stack Frames:</b>");
+    auto* stackHeader = new QLabel("<b>Call Stack Frames:</b>");
     instrLayout->addWidget(stackHeader, 4, 0, Qt::AlignTop);
 
     m_stackFramesTree = new QTreeWidget;
-    m_stackFramesTree->setHeaderLabels(
-        {"#", "Scene", "Func", "IP", "File:Line"});
+    m_stackFramesTree->setHeaderLabels({"#", "Scene", "Func", "IP", "File:Line"});
     m_stackFramesTree->setAlternatingRowColors(true);
     m_stackFramesTree->setMinimumHeight(120);
-    m_stackFramesTree->header()->setSectionResizeMode(
-        1, QHeaderView::ResizeToContents);
-    m_stackFramesTree->header()->setSectionResizeMode(
-        2, QHeaderView::ResizeToContents);
-    m_stackFramesTree->header()->setSectionResizeMode(
-        3, QHeaderView::ResizeToContents);
+    m_stackFramesTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    m_stackFramesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    m_stackFramesTree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
     m_stackFramesTree->header()->setStretchLastSection(true);
     instrLayout->addWidget(m_stackFramesTree, 4, 1);
 
@@ -187,8 +179,8 @@ void NMDebugOverlayPanel::setupUI() {
 
   // === Animations Tab ===
   {
-    auto *animWidget = new QWidget;
-    auto *animLayout = new QVBoxLayout(animWidget);
+    auto* animWidget = new QWidget;
+    auto* animLayout = new QVBoxLayout(animWidget);
     animLayout->setContentsMargins(4, 4, 4, 4);
 
     m_animationsTree = new QTreeWidget;
@@ -203,8 +195,8 @@ void NMDebugOverlayPanel::setupUI() {
 
   // === Audio Tab ===
   {
-    auto *audioWidget = new QWidget;
-    auto *audioLayout = new QVBoxLayout(audioWidget);
+    auto* audioWidget = new QWidget;
+    auto* audioLayout = new QVBoxLayout(audioWidget);
     audioLayout->setContentsMargins(4, 4, 4, 4);
 
     m_audioTree = new QTreeWidget;
@@ -219,8 +211,8 @@ void NMDebugOverlayPanel::setupUI() {
 
   // === Performance Tab ===
   {
-    auto *perfWidget = new QWidget;
-    auto *perfLayout = new QVBoxLayout(perfWidget);
+    auto* perfWidget = new QWidget;
+    auto* perfLayout = new QVBoxLayout(perfWidget);
     perfLayout->setContentsMargins(4, 4, 4, 4);
 
     m_performanceTree = new QTreeWidget;
@@ -228,15 +220,12 @@ void NMDebugOverlayPanel::setupUI() {
     m_performanceTree->setAlternatingRowColors(true);
     m_performanceTree->header()->setStretchLastSection(true);
 
-    m_frameTimeItem =
-        new QTreeWidgetItem(m_performanceTree, {"Frame Time", "-"});
+    m_frameTimeItem = new QTreeWidgetItem(m_performanceTree, {"Frame Time", "-"});
     m_fpsItem = new QTreeWidgetItem(m_performanceTree, {"FPS", "-"});
-    m_memoryItem =
-        new QTreeWidgetItem(m_performanceTree, {"Memory Usage", "-"});
-    m_objectCountItem =
-        new QTreeWidgetItem(m_performanceTree, {"Active Objects", "-"});
-    m_instructionRateItem = new QTreeWidgetItem(
-        m_performanceTree, {"Script Instructions/sec", "-"});
+    m_memoryItem = new QTreeWidgetItem(m_performanceTree, {"Memory Usage", "-"});
+    m_objectCountItem = new QTreeWidgetItem(m_performanceTree, {"Active Objects", "-"});
+    m_instructionRateItem =
+        new QTreeWidgetItem(m_performanceTree, {"Script Instructions/sec", "-"});
 
     perfLayout->addWidget(m_performanceTree);
 
@@ -249,32 +238,30 @@ void NMDebugOverlayPanel::setupUI() {
   setContentWidget(contentWidget);
 }
 
-void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
-                                             const QVariantMap &flags) {
+void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap& variables,
+                                             const QVariantMap& flags) {
   m_currentVariables = variables;
   m_currentFlags = flags;
 
   m_variablesTree->clear();
 
   // Create top-level groups
-  auto *globalGroup =
-      new QTreeWidgetItem(m_variablesTree, {"📁 Global Variables", "", ""});
+  auto* globalGroup = new QTreeWidgetItem(m_variablesTree, {"📁 Global Variables", "", ""});
   globalGroup->setExpanded(true);
   globalGroup->setForeground(0, QBrush(QColor("#0078d4")));
 
-  auto *localGroup =
-      new QTreeWidgetItem(m_variablesTree, {"📁 Local Variables", "", ""});
+  auto* localGroup = new QTreeWidgetItem(m_variablesTree, {"📁 Local Variables", "", ""});
   localGroup->setExpanded(true);
   localGroup->setForeground(0, QBrush(QColor("#0078d4")));
 
-  auto *flagsGroup = new QTreeWidgetItem(m_variablesTree, {"📁 Flags", "", ""});
+  auto* flagsGroup = new QTreeWidgetItem(m_variablesTree, {"📁 Flags", "", ""});
   flagsGroup->setExpanded(true);
   flagsGroup->setForeground(0, QBrush(QColor("#d48c00")));
 
   // Populate variables (all go to global for now)
   for (auto it = variables.constBegin(); it != variables.constEnd(); ++it) {
-    const QString &name = it.key();
-    const QVariant &value = it.value();
+    const QString& name = it.key();
+    const QVariant& value = it.value();
 
     QString valueStr = value.toString();
     QString typeStr = value.typeName();
@@ -284,7 +271,7 @@ void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
       valueStr = QString("\"%1\"").arg(valueStr);
     }
 
-    auto *item = new QTreeWidgetItem(globalGroup, {name, valueStr, typeStr});
+    auto* item = new QTreeWidgetItem(globalGroup, {name, valueStr, typeStr});
 
     // Color-code by type
     QColor valueColor;
@@ -309,12 +296,10 @@ void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
 
   // Populate flags
   for (auto it = flags.constBegin(); it != flags.constEnd(); ++it) {
-    const QString &name = it.key();
+    const QString& name = it.key();
     const bool value = it.value().toBool();
-    auto *item = new QTreeWidgetItem(flagsGroup,
-                                     {name, value ? "true" : "false", "Flag"});
-    item->setForeground(1,
-                        QBrush(value ? QColor("#4caf50") : QColor("#f44336")));
+    auto* item = new QTreeWidgetItem(flagsGroup, {name, value ? "true" : "false", "Flag"});
+    item->setForeground(1, QBrush(value ? QColor("#4caf50") : QColor("#f44336")));
     item->setData(0, Qt::UserRole, QString()); // not editable
   }
   if (flags.isEmpty()) {
@@ -322,16 +307,15 @@ void NMDebugOverlayPanel::updateVariablesTab(const QVariantMap &variables,
   }
 }
 
-void NMDebugOverlayPanel::updateCallStackTab(const QStringList &stack) {
+void NMDebugOverlayPanel::updateCallStackTab(const QStringList& stack) {
   m_currentCallStack = stack;
 
   m_callStackList->clear();
 
   for (int i = static_cast<int>(stack.size()) - 1; i >= 0;
        --i) { // Reverse order (top of stack first)
-    const QString &frame = stack[i];
-    auto *item =
-        new QListWidgetItem(QString("%1. %2").arg(stack.size() - i).arg(frame));
+    const QString& frame = stack[i];
+    auto* item = new QListWidgetItem(QString("%1. %2").arg(stack.size() - i).arg(frame));
 
     if (i == stack.size() - 1) {
       // Highlight current frame
@@ -343,31 +327,31 @@ void NMDebugOverlayPanel::updateCallStackTab(const QStringList &stack) {
   }
 }
 
-void NMDebugOverlayPanel::onVariablesChanged(const QVariantMap &variables) {
+void NMDebugOverlayPanel::onVariablesChanged(const QVariantMap& variables) {
   updateVariablesTab(variables, m_currentFlags);
 }
 
-void NMDebugOverlayPanel::onFlagsChanged(const QVariantMap &flags) {
+void NMDebugOverlayPanel::onFlagsChanged(const QVariantMap& flags) {
   m_currentFlags = flags;
   updateVariablesTab(m_currentVariables, m_currentFlags);
 }
 
-void NMDebugOverlayPanel::onStackFramesChanged(const QVariantList &frames) {
+void NMDebugOverlayPanel::onStackFramesChanged(const QVariantList& frames) {
   m_currentStackFrames = frames;
   updateStackFrames(frames);
 }
 
-void NMDebugOverlayPanel::onCallStackChanged(const QStringList &stack) {
+void NMDebugOverlayPanel::onCallStackChanged(const QStringList& stack) {
   updateCallStackTab(stack);
 }
 
-void NMDebugOverlayPanel::onCurrentNodeChanged(const QString &nodeId) {
+void NMDebugOverlayPanel::onCurrentNodeChanged(const QString& nodeId) {
   m_currentNodeId = nodeId;
   updateCurrentInstructionTab();
 }
 
 void NMDebugOverlayPanel::onExecutionStepChanged(int stepIndex, int totalSteps,
-                                                 const QString &instruction) {
+                                                 const QString& instruction) {
   m_currentStepIndex = stepIndex;
   m_totalSteps = totalSteps;
   m_currentInstruction = instruction;
@@ -379,19 +363,18 @@ void NMDebugOverlayPanel::onPlayModeChanged([[maybe_unused]] int mode) {
   updateCurrentInstructionTab();
 }
 
-void NMDebugOverlayPanel::onVariableItemDoubleClicked(
-    QTreeWidgetItem *item, [[maybe_unused]] int column) {
+void NMDebugOverlayPanel::onVariableItemDoubleClicked(QTreeWidgetItem* item,
+                                                      [[maybe_unused]] int column) {
   if (!item->parent()) {
     // Clicked on a group, not a variable
     return;
   }
 
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   if (!controller.isPaused()) {
     // Only allow editing when paused
-    m_variablesTree->setToolTip(
-        "Variables can only be edited when playback is paused");
+    m_variablesTree->setToolTip("Variables can only be edited when playback is paused");
     return;
   }
 
@@ -404,19 +387,18 @@ void NMDebugOverlayPanel::onVariableItemDoubleClicked(
   editVariable(varName, currentValue);
 }
 
-void NMDebugOverlayPanel::editVariable(const QString &name,
-                                       const QVariant &currentValue) {
+void NMDebugOverlayPanel::editVariable(const QString& name, const QVariant& currentValue) {
   bool ok = false;
   QVariant newValue;
 
   if (currentValue.metaType().id() == QMetaType::QString) {
-    newValue = NMInputDialog::getText(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        QLineEdit::Normal, currentValue.toString(), &ok);
+    newValue = NMInputDialog::getText(this, "Edit Variable",
+                                      QString("Enter new value for '%1':").arg(name),
+                                      QLineEdit::Normal, currentValue.toString(), &ok);
   } else if (currentValue.metaType().id() == QMetaType::Int) {
-    newValue = NMInputDialog::getInt(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        currentValue.toInt(), -2147483647, 2147483647, 1, &ok);
+    newValue =
+        NMInputDialog::getInt(this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
+                              currentValue.toInt(), -2147483647, 2147483647, 1, &ok);
   } else if (currentValue.metaType().id() == QMetaType::Double) {
     newValue = NMInputDialog::getDouble(
         this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
@@ -424,9 +406,9 @@ void NMDebugOverlayPanel::editVariable(const QString &name,
         std::numeric_limits<double>::max(), 2, &ok);
   } else {
     // Unsupported type, edit as string
-    newValue = NMInputDialog::getText(
-        this, "Edit Variable", QString("Enter new value for '%1':").arg(name),
-        QLineEdit::Normal, currentValue.toString(), &ok);
+    newValue = NMInputDialog::getText(this, "Edit Variable",
+                                      QString("Enter new value for '%1':").arg(name),
+                                      QLineEdit::Normal, currentValue.toString(), &ok);
   }
 
   if (ok) {
@@ -439,24 +421,23 @@ void NMDebugOverlayPanel::setupToolBar() {
   m_toolBar->setObjectName("DebugOverlayToolBar");
   m_toolBar->setIconSize(QSize(16, 16));
 
-  [[maybe_unused]] auto &iconMgr = NMIconManager::instance();
+  [[maybe_unused]] auto& iconMgr = NMIconManager::instance();
 
   // Display mode toggle
-  auto *minimalBtn = new QToolButton;
+  auto* minimalBtn = new QToolButton;
   minimalBtn->setText("Minimal");
   minimalBtn->setCheckable(true);
   minimalBtn->setToolTip("Show only essential debugging info");
 
-  auto *extendedBtn = new QToolButton;
+  auto* extendedBtn = new QToolButton;
   extendedBtn->setText("Extended");
   extendedBtn->setCheckable(true);
   extendedBtn->setChecked(true);
   extendedBtn->setToolTip("Show all debugging information");
 
-  auto *modeGroup = new QButtonGroup(this);
+  auto* modeGroup = new QButtonGroup(this);
   modeGroup->addButton(minimalBtn, static_cast<int>(DebugDisplayMode::Minimal));
-  modeGroup->addButton(extendedBtn,
-                       static_cast<int>(DebugDisplayMode::Extended));
+  modeGroup->addButton(extendedBtn, static_cast<int>(DebugDisplayMode::Extended));
 
   connect(modeGroup, QOverload<int>::of(&QButtonGroup::idClicked), this,
           &NMDebugOverlayPanel::onDisplayModeChanged);
@@ -499,7 +480,7 @@ void NMDebugOverlayPanel::updateTabsVisibility() {
 }
 
 void NMDebugOverlayPanel::onDisplayModeChanged() {
-  auto *sender = qobject_cast<QButtonGroup *>(this->sender());
+  auto* sender = qobject_cast<QButtonGroup*>(this->sender());
   if (!sender)
     return;
 
@@ -534,20 +515,17 @@ void NMDebugOverlayPanel::updatePerformanceMetrics(double deltaTime) {
 }
 
 void NMDebugOverlayPanel::updateCurrentInstructionTab() {
-  auto &controller = NMPlayModeController::instance();
+  auto& controller = NMPlayModeController::instance();
 
   if (controller.isPlaying() || controller.isPaused()) {
-    const QString nodeLabel =
-        m_currentNodeId.isEmpty() ? "(Unknown)" : m_currentNodeId;
+    const QString nodeLabel = m_currentNodeId.isEmpty() ? "(Unknown)" : m_currentNodeId;
     m_currentNodeLabel->setText(nodeLabel);
-    const QString indexText =
-        (m_totalSteps > 0 && m_currentStepIndex >= 0)
-            ? QString("%1 / %2").arg(m_currentStepIndex + 1).arg(m_totalSteps)
-            : "- / -";
+    const QString indexText = (m_totalSteps > 0 && m_currentStepIndex >= 0)
+                                  ? QString("%1 / %2").arg(m_currentStepIndex + 1).arg(m_totalSteps)
+                                  : "- / -";
     m_instructionIndexLabel->setText(indexText);
-    m_instructionCodeLabel->setText(m_currentInstruction.isEmpty()
-                                        ? "(No active instruction)"
-                                        : m_currentInstruction);
+    m_instructionCodeLabel->setText(m_currentInstruction.isEmpty() ? "(No active instruction)"
+                                                                   : m_currentInstruction);
     updateStackFrames(m_currentStackFrames);
   } else {
     m_currentNodeLabel->setText("(Not running)");
@@ -560,7 +538,7 @@ void NMDebugOverlayPanel::updateCurrentInstructionTab() {
   }
 }
 
-void NMDebugOverlayPanel::updateStackFrames(const QVariantList &frames) {
+void NMDebugOverlayPanel::updateStackFrames(const QVariantList& frames) {
   if (!m_stackFramesTree) {
     return;
   }
@@ -568,7 +546,7 @@ void NMDebugOverlayPanel::updateStackFrames(const QVariantList &frames) {
   m_stackFramesTree->clear();
 
   int idx = 0;
-  for (const auto &variantFrame : frames) {
+  for (const auto& variantFrame : frames) {
     const QVariantMap frame = variantFrame.toMap();
     const QString scene = frame.value("scene").toString();
     const QString func = frame.value("function").toString();
@@ -578,15 +556,11 @@ void NMDebugOverlayPanel::updateStackFrames(const QVariantList &frames) {
     const QString file = frame.value("file").toString();
     QString fileLine;
     if (!file.isEmpty() || line > 0) {
-      fileLine = QString("%1:%2:%3")
-                     .arg(file.isEmpty() ? "?" : file)
-                     .arg(line)
-                     .arg(col);
+      fileLine = QString("%1:%2:%3").arg(file.isEmpty() ? "?" : file).arg(line).arg(col);
     }
-    auto *item = new QTreeWidgetItem(m_stackFramesTree,
-                                     {QString::number(++idx), scene,
-                                      func.isEmpty() ? "(scene)" : func,
-                                      QString::number(ip), fileLine});
+    auto* item = new QTreeWidgetItem(m_stackFramesTree, {QString::number(++idx), scene,
+                                                         func.isEmpty() ? "(scene)" : func,
+                                                         QString::number(ip), fileLine});
     item->setForeground(1, QBrush(QColor("#4caf50")));
     item->setForeground(3, QBrush(QColor("#b5cea8")));
   }

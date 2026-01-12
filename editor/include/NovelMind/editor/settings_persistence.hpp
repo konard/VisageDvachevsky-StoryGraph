@@ -29,10 +29,10 @@ public:
    * @param schemaVersion Output parameter for detected schema version
    * @return Result indicating success or error
    */
-  static Result<void> loadFromJson(const std::string &path, SettingScope scope,
-                                    const std::unordered_map<std::string, SettingDefinition> &definitions,
-                                    std::unordered_map<std::string, SettingValue> &values,
-                                    i32 &schemaVersion);
+  static Result<void>
+  loadFromJson(const std::string& path, SettingScope scope,
+               const std::unordered_map<std::string, SettingDefinition>& definitions,
+               std::unordered_map<std::string, SettingValue>& values, i32& schemaVersion);
 
   /**
    * @brief Save settings to JSON file
@@ -43,10 +43,10 @@ public:
    * @param schemaVersion Schema version to write
    * @return Result indicating success or error
    */
-  static Result<void> saveToJson(const std::string &path, SettingScope scope,
-                                  const std::unordered_map<std::string, SettingDefinition> &definitions,
-                                  const std::unordered_map<std::string, SettingValue> &values,
-                                  i32 schemaVersion);
+  static Result<void>
+  saveToJson(const std::string& path, SettingScope scope,
+             const std::unordered_map<std::string, SettingDefinition>& definitions,
+             const std::unordered_map<std::string, SettingValue>& values, i32 schemaVersion);
 };
 
 } // namespace NovelMind::editor

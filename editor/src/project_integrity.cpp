@@ -30,27 +30,28 @@ bool readFileToString(const fs::path& path, std::string& out) {
 // This improves performance significantly for validation operations
 
 namespace CachedRegexPatterns {
-  // Scene-related patterns
-  static const std::regex sceneRefPattern(R"(goto\s+(\w+)|scene\s+(\w+))");
-  static const std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
-  static const std::regex gotoPattern(R"(\bgoto\s+(\w+))");
-  static const std::regex endPattern(R"(\b(end|goto|choice)\b)");
-  static const std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
+// Scene-related patterns
+static const std::regex sceneRefPattern(R"(goto\s+(\w+)|scene\s+(\w+))");
+static const std::regex scenePattern(R"(scene\s+(\w+)\s*\{)");
+static const std::regex gotoPattern(R"(\bgoto\s+(\w+))");
+static const std::regex endPattern(R"(\b(end|goto|choice)\b)");
+static const std::regex startScenePattern(R"("startScene"\s*:\s*"[^"]*")");
 
-  // Asset-related patterns
-  static const std::regex assetRefPatternJson(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
-  static const std::regex assetRefPatternScript(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
+// Asset-related patterns
+static const std::regex
+    assetRefPatternJson(R"(\"(?:textureId|imageId|audioId|fontId)\":\s*\"([^\"]+)\")");
+static const std::regex assetRefPatternScript(R"(show\s+(?:background|character)\s+\"([^\"]+)\")");
 
-  // Localization patterns
-  static const std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
-  static const std::regex keyPattern(R"(\"([^\"]+)\":\s*\"[^\"]*\")");
+// Localization patterns
+static const std::regex locPattern(R"(loc\s*\(\s*[\"']([^\"']+)[\"']\s*\))");
+static const std::regex keyPattern(R"(\"([^\"]+)\":\s*\"[^\"]*\")");
 
-  // Voice-related patterns
-  static const std::regex voiceRefPattern(R"(voice\s+\"([^\"]+)\")");
+// Voice-related patterns
+static const std::regex voiceRefPattern(R"(voice\s+\"([^\"]+)\")");
 
-  // Cleanup patterns (for removing keys)
-  static const std::regex doubleCommaPattern(R"(,\s*,)");
-  static const std::regex trailingCommaPattern(R"(,\s*})");
+// Cleanup patterns (for removing keys)
+static const std::regex doubleCommaPattern(R"(,\s*,)");
+static const std::regex trailingCommaPattern(R"(,\s*})");
 } // namespace CachedRegexPatterns
 
 } // namespace
@@ -339,7 +340,6 @@ std::vector<IntegrityIssue> ProjectIntegrityChecker::checkFile(const std::string
 void ProjectIntegrityChecker::cancelCheck() {
   m_cancelRequested = true;
 }
-
 
 // ============================================================================
 // Delegating Methods to Specialized Modules
@@ -839,7 +839,8 @@ void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& i
 
   // Build scene graph
   std::unordered_set<std::string> definedScenes;
-  std::unordered_map<std::string, std::vector<std::string>> sceneTransitions; // scene -> [target scenes]
+  std::unordered_map<std::string, std::vector<std::string>>
+      sceneTransitions; // scene -> [target scenes]
   std::unordered_map<std::string, std::string> sceneFiles;
 
   const auto& scenePattern = CachedRegexPatterns::scenePattern;
@@ -884,8 +885,8 @@ void ProjectIntegrityChecker::analyzeReachability(std::vector<IntegrityIssue>& i
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         // Find scene end (matching closing brace)
         size_t braceStart = content.find('{', sceneStart);
@@ -1034,8 +1035,8 @@ void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) 
 
       while (std::regex_search(sceneSearchStart, content.cend(), sceneMatch, scenePattern)) {
         std::string currentScene = sceneMatch[1].str();
-        size_t sceneStart = static_cast<size_t>(
-            std::distance(content.cbegin(), sceneSearchStart) + sceneMatch.position(0));
+        size_t sceneStart = static_cast<size_t>(std::distance(content.cbegin(), sceneSearchStart) +
+                                                sceneMatch.position(0));
 
         size_t braceStart = content.find('{', sceneStart);
         if (braceStart == std::string::npos) {
@@ -1135,7 +1136,8 @@ void ProjectIntegrityChecker::detectCycles(std::vector<IntegrityIssue>& issues) 
             issue.message = "Cycle detected in story graph";
             issue.context = cyclePath;
             issue.filePath = sceneFiles[node];
-            issue.suggestions.push_back("Verify if this cycle is intentional (e.g., gameplay loop)");
+            issue.suggestions.push_back(
+                "Verify if this cycle is intentional (e.g., gameplay loop)");
             issue.suggestions.push_back("Add an 'end' statement to break unintended loops");
             issue.suggestions.push_back("Ensure player has a way to exit the cycle");
             issue.hasQuickFix = false;
@@ -1881,8 +1883,10 @@ Result<void> removeUnusedLocalizationKey(const std::string& projectPath, const s
       std::string modifiedContent = std::regex_replace(content, keyPattern, "");
 
       // Clean up any double commas or trailing commas using cached patterns
-      modifiedContent = std::regex_replace(modifiedContent, CachedRegexPatterns::doubleCommaPattern, ",");
-      modifiedContent = std::regex_replace(modifiedContent, CachedRegexPatterns::trailingCommaPattern, "\n}");
+      modifiedContent =
+          std::regex_replace(modifiedContent, CachedRegexPatterns::doubleCommaPattern, ",");
+      modifiedContent =
+          std::regex_replace(modifiedContent, CachedRegexPatterns::trailingCommaPattern, "\n}");
 
       if (modifiedContent != content) {
         std::ofstream outFile(entry.path());

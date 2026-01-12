@@ -28,11 +28,11 @@ namespace NovelMind::editor {
 
 BuildSizeAnalyzer::BuildSizeAnalyzer() = default;
 
-void BuildSizeAnalyzer::setProjectPath(const std::string &projectPath) {
+void BuildSizeAnalyzer::setProjectPath(const std::string& projectPath) {
   m_projectPath = projectPath;
 }
 
-void BuildSizeAnalyzer::setConfig(const BuildSizeAnalysisConfig &config) {
+void BuildSizeAnalyzer::setConfig(const BuildSizeAnalysisConfig& config) {
   m_config = config;
 }
 
@@ -40,7 +40,7 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
   auto startTime = std::chrono::steady_clock::now();
 
   // Notify listeners
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onAnalysisStarted();
   }
 
@@ -74,31 +74,30 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
       m_analysis.totalOriginalSize += m_analysis.assets[i].originalSize;
       m_analysis.totalCompressedSize += m_analysis.assets[i].compressedSize;
 
-      f32 progress = 0.2f + 0.3f * static_cast<f32>(i) /
-                                static_cast<f32>(m_analysis.assets.size());
+      f32 progress = 0.2f + 0.3f * static_cast<f32>(i) / static_cast<f32>(m_analysis.assets.size());
       reportProgress("Analyzing: " + m_analysis.assets[i].name, progress);
     }
 
     // Detect duplicates
     if (m_config.detectDuplicates) {
       reportProgress("Detecting duplicates...", 0.5f);
-      m_analysis.totalWastedSpace = scanner.detectDuplicates(
-          m_hashToFiles, m_analysis.assets, m_analysis.duplicates);
+      m_analysis.totalWastedSpace =
+          scanner.detectDuplicates(m_hashToFiles, m_analysis.assets, m_analysis.duplicates);
     }
 
     // Detect unused assets
     if (m_config.detectUnused) {
       reportProgress("Detecting unused assets...", 0.6f);
-      m_analysis.unusedSpace = scanner.detectUnused(
-          m_projectPath, m_analysis.assets, m_analysis.unusedAssets);
+      m_analysis.unusedSpace =
+          scanner.detectUnused(m_projectPath, m_analysis.assets, m_analysis.unusedAssets);
     }
 
     // Generate suggestions
     if (m_config.generateSuggestions) {
       reportProgress("Generating suggestions...", 0.8f);
-      m_analysis.potentialSavings = scanner.generateSuggestions(
-          m_analysis.assets, m_analysis.duplicates, m_analysis.unusedAssets,
-          m_analysis.suggestions);
+      m_analysis.potentialSavings =
+          scanner.generateSuggestions(m_analysis.assets, m_analysis.duplicates,
+                                      m_analysis.unusedAssets, m_analysis.suggestions);
     }
 
     // Calculate summaries
@@ -108,47 +107,42 @@ Result<BuildSizeAnalysis> BuildSizeAnalyzer::analyze() {
 
     // Calculate overall compression ratio
     if (m_analysis.totalOriginalSize > 0) {
-      m_analysis.overallCompressionRatio =
-          static_cast<f32>(m_analysis.totalCompressedSize) /
-          static_cast<f32>(m_analysis.totalOriginalSize);
+      m_analysis.overallCompressionRatio = static_cast<f32>(m_analysis.totalCompressedSize) /
+                                           static_cast<f32>(m_analysis.totalOriginalSize);
     }
 
     // Finalize
     auto endTime = std::chrono::steady_clock::now();
-    m_analysis.analysisTimeMs =
-        std::chrono::duration<f64, std::milli>(endTime - startTime).count();
-    m_analysis.analysisTimestamp = static_cast<u64>(
-        std::chrono::system_clock::now().time_since_epoch().count());
+    m_analysis.analysisTimeMs = std::chrono::duration<f64, std::milli>(endTime - startTime).count();
+    m_analysis.analysisTimestamp =
+        static_cast<u64>(std::chrono::system_clock::now().time_since_epoch().count());
 
     reportProgress("Analysis complete", 1.0f);
 
     // Notify listeners
-    for (auto *listener : m_listeners) {
+    for (auto* listener : m_listeners) {
       listener->onAnalysisCompleted(m_analysis);
     }
 
     return Result<BuildSizeAnalysis>::ok(m_analysis);
 
-  } catch (const std::exception &e) {
-    return Result<BuildSizeAnalysis>::error(std::string("Analysis failed: ") +
-                                            e.what());
+  } catch (const std::exception& e) {
+    return Result<BuildSizeAnalysis>::error(std::string("Analysis failed: ") + e.what());
   }
 }
 
-void BuildSizeAnalyzer::addListener(IBuildSizeListener *listener) {
+void BuildSizeAnalyzer::addListener(IBuildSizeListener* listener) {
   if (listener) {
     m_listeners.push_back(listener);
   }
 }
 
-void BuildSizeAnalyzer::removeListener(IBuildSizeListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void BuildSizeAnalyzer::removeListener(IBuildSizeListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
-Result<void>
-BuildSizeAnalyzer::applyOptimization(const OptimizationSuggestion &suggestion) {
+Result<void> BuildSizeAnalyzer::applyOptimization(const OptimizationSuggestion& suggestion) {
   try {
     switch (suggestion.type) {
     case OptimizationSuggestion::Type::RemoveDuplicate: {
@@ -178,21 +172,19 @@ BuildSizeAnalyzer::applyOptimization(const OptimizationSuggestion &suggestion) {
     case OptimizationSuggestion::Type::SplitAsset:
     case OptimizationSuggestion::Type::MergeAssets:
       // These require manual intervention or external tools
-      return Result<void>::error(
-          "This optimization type requires manual intervention");
+      return Result<void>::error("This optimization type requires manual intervention");
 
     default:
       return Result<void>::error("Unknown optimization type");
     }
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to apply optimization: ") +
-                                e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to apply optimization: ") + e.what());
   }
 }
 
 Result<void> BuildSizeAnalyzer::applyAllAutoOptimizations() {
   i32 applied = 0;
-  for (const auto &suggestion : m_analysis.suggestions) {
+  for (const auto& suggestion : m_analysis.suggestions) {
     if (suggestion.canAutoFix) {
       auto result = applyOptimization(suggestion);
       if (result.isOk()) {
@@ -203,8 +195,7 @@ Result<void> BuildSizeAnalyzer::applyAllAutoOptimizations() {
 
   if (applied > 0) {
     // Re-analyze after optimizations
-    return analyze().isOk() ? Result<void>::ok()
-                            : Result<void>::error("Re-analysis failed");
+    return analyze().isOk() ? Result<void>::ok() : Result<void>::error("Re-analysis failed");
   }
 
   return Result<void>::ok();
@@ -215,15 +206,15 @@ Result<void> BuildSizeAnalyzer::removeDuplicates() {
     i32 removedCount = 0;
     std::vector<std::string> errors;
 
-    for (const auto &dupGroup : m_analysis.duplicates) {
+    for (const auto& dupGroup : m_analysis.duplicates) {
       // Keep the first file, remove all duplicates
       for (size_t i = 1; i < dupGroup.paths.size(); i++) {
-        const auto &path = dupGroup.paths[i];
+        const auto& path = dupGroup.paths[i];
         if (fs::exists(path)) {
           try {
             fs::remove(path);
             removedCount++;
-          } catch (const std::exception &e) {
+          } catch (const std::exception& e) {
             errors.push_back("Failed to remove " + path + ": " + e.what());
           }
         }
@@ -232,18 +223,17 @@ Result<void> BuildSizeAnalyzer::removeDuplicates() {
 
     if (!errors.empty()) {
       std::ostringstream oss;
-      oss << "Removed " << removedCount << " duplicates, but encountered "
-          << errors.size() << " errors:\n";
-      for (const auto &error : errors) {
+      oss << "Removed " << removedCount << " duplicates, but encountered " << errors.size()
+          << " errors:\n";
+      for (const auto& error : errors) {
         oss << "  - " << error << "\n";
       }
       return Result<void>::error(oss.str());
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to remove duplicates: ") +
-                                e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to remove duplicates: ") + e.what());
   }
 }
 
@@ -252,12 +242,12 @@ Result<void> BuildSizeAnalyzer::removeUnusedAssets() {
     i32 removedCount = 0;
     std::vector<std::string> errors;
 
-    for (const auto &assetPath : m_analysis.unusedAssets) {
+    for (const auto& assetPath : m_analysis.unusedAssets) {
       if (fs::exists(assetPath)) {
         try {
           fs::remove(assetPath);
           removedCount++;
-        } catch (const std::exception &e) {
+        } catch (const std::exception& e) {
           errors.push_back("Failed to remove " + assetPath + ": " + e.what());
         }
       }
@@ -265,18 +255,17 @@ Result<void> BuildSizeAnalyzer::removeUnusedAssets() {
 
     if (!errors.empty()) {
       std::ostringstream oss;
-      oss << "Removed " << removedCount << " unused assets, but encountered "
-          << errors.size() << " errors:\n";
-      for (const auto &error : errors) {
+      oss << "Removed " << removedCount << " unused assets, but encountered " << errors.size()
+          << " errors:\n";
+      for (const auto& error : errors) {
         oss << "  - " << error << "\n";
       }
       return Result<void>::error(oss.str());
     }
 
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to remove unused assets: ") +
-                                e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to remove unused assets: ") + e.what());
   }
 }
 
@@ -285,14 +274,12 @@ Result<std::string> BuildSizeAnalyzer::exportAsJson() const {
   return report.exportAsJson(m_analysis);
 }
 
-Result<void>
-BuildSizeAnalyzer::exportAsHtml(const std::string &outputPath) const {
+Result<void> BuildSizeAnalyzer::exportAsHtml(const std::string& outputPath) const {
   BuildSizeReport report;
   return report.exportAsHtml(m_analysis, outputPath);
 }
 
-Result<void>
-BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const {
+Result<void> BuildSizeAnalyzer::exportAsCsv(const std::string& outputPath) const {
   std::ofstream file(outputPath);
   if (!file.is_open()) {
     return Result<void>::error("Cannot create CSV file: " + outputPath);
@@ -303,7 +290,7 @@ BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const {
           "Ratio,Is Duplicate,Is Unused\n";
 
   // Assets
-  for (const auto &asset : m_analysis.assets) {
+  for (const auto& asset : m_analysis.assets) {
     std::string catName;
     switch (asset.category) {
     case AssetCategory::Images:
@@ -330,10 +317,9 @@ BuildSizeAnalyzer::exportAsCsv(const std::string &outputPath) const {
     }
 
     file << "\"" << asset.path << "\","
-         << "\"" << asset.name << "\"," << catName << "," << asset.originalSize
-         << "," << asset.compressedSize << "," << asset.compressionRatio << ","
-         << (asset.isDuplicate ? "Yes" : "No") << ","
-         << (asset.isUnused ? "Yes" : "No") << "\n";
+         << "\"" << asset.name << "\"," << catName << "," << asset.originalSize << ","
+         << asset.compressedSize << "," << asset.compressionRatio << ","
+         << (asset.isDuplicate ? "Yes" : "No") << "," << (asset.isUnused ? "Yes" : "No") << "\n";
   }
 
   file.close();
@@ -357,7 +343,7 @@ void BuildSizeAnalyzer::scanAssets() {
   // Scan assets directory
   fs::path assetsDir = projectDir / "assets";
   if (fs::exists(assetsDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(assetsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(assetsDir)) {
       if (!entry.is_regular_file()) {
         continue;
       }
@@ -393,7 +379,7 @@ void BuildSizeAnalyzer::scanAssets() {
 
       // Check exclude patterns
       bool excluded = false;
-      for (const auto &pattern : m_config.excludePatterns) {
+      for (const auto& pattern : m_config.excludePatterns) {
         if (entry.path().string().find(pattern) != std::string::npos) {
           excluded = true;
           break;
@@ -409,8 +395,7 @@ void BuildSizeAnalyzer::scanAssets() {
       info.name = entry.path().filename().string();
       info.category = category;
       info.originalSize = static_cast<u64>(entry.file_size());
-      info.compressedSize =
-          info.originalSize; // Will be updated during analysis
+      info.compressedSize = info.originalSize; // Will be updated during analysis
 
       m_analysis.assets.push_back(info);
       m_analysis.totalFileCount++;
@@ -420,7 +405,7 @@ void BuildSizeAnalyzer::scanAssets() {
   // Scan scripts directory
   fs::path scriptsDir = projectDir / "scripts";
   if (fs::exists(scriptsDir) && m_config.analyzeScripts) {
-    for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".nms" || ext == ".nmscript") {
@@ -439,7 +424,7 @@ void BuildSizeAnalyzer::scanAssets() {
   }
 }
 
-void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
+void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo& info) {
   // Compute file hash for duplicate detection
   std::string hash = computeFileHash(info.path);
 
@@ -466,10 +451,9 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
       if (info.imageWidth > m_config.maxImageDimension ||
           info.imageHeight > m_config.maxImageDimension) {
         info.isOversized = true;
-        info.optimizationSuggestions.push_back(
-            "Image dimensions exceed " +
-            std::to_string(m_config.maxImageDimension) +
-            "px. Consider resizing.");
+        info.optimizationSuggestions.push_back("Image dimensions exceed " +
+                                               std::to_string(m_config.maxImageDimension) +
+                                               "px. Consider resizing.");
       }
     }
 #endif
@@ -503,9 +487,7 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
     QObject::connect(&decoder, &QAudioDecoder::finished, [&]() { loop.quit(); });
 
     QObject::connect(
-        &decoder,
-        static_cast<void (QAudioDecoder::*)(QAudioDecoder::Error)>(
-            &QAudioDecoder::error),
+        &decoder, static_cast<void (QAudioDecoder::*)(QAudioDecoder::Error)>(&QAudioDecoder::error),
         [&](QAudioDecoder::Error) { loop.quit(); });
 
     // Timeout to prevent hanging
@@ -527,8 +509,8 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
           f64 totalSamples = static_cast<f64>(info.originalSize) /
                              static_cast<f64>(bytesPerSample) /
                              static_cast<f64>(info.audioChannels);
-          info.audioDuration = static_cast<f32>(totalSamples) /
-                               static_cast<f32>(info.audioSampleRate);
+          info.audioDuration =
+              static_cast<f32>(totalSamples) / static_cast<f32>(info.audioSampleRate);
         }
       }
     }
@@ -549,7 +531,7 @@ void BuildSizeAnalyzer::analyzeAsset(AssetSizeInfo &info) {
 }
 
 void BuildSizeAnalyzer::detectDuplicates() {
-  for (const auto &[hash, files] : m_hashToFiles) {
+  for (const auto& [hash, files] : m_hashToFiles) {
     if (files.size() > 1) {
       // Additional safety: verify all files have the same size
       // This provides defense-in-depth against hash collisions
@@ -558,10 +540,10 @@ void BuildSizeAnalyzer::detectDuplicates() {
       u64 firstFileSize = 0;
       bool sizeMismatch = false;
 
-      for (const auto &path : files) {
+      for (const auto& path : files) {
         auto it = m_pathToAssetIndex.find(path);
         if (it != m_pathToAssetIndex.end()) {
-          const auto &asset = m_analysis.assets[it->second];
+          const auto& asset = m_analysis.assets[it->second];
           if (firstFileSize == 0) {
             firstFileSize = asset.originalSize;
           } else if (asset.originalSize != firstFileSize) {
@@ -587,7 +569,7 @@ void BuildSizeAnalyzer::detectDuplicates() {
       // Mark duplicates in assets
       // OPTIMIZED: Use O(1) index lookup instead of O(n) linear search
       bool first = true;
-      for (const auto &path : files) {
+      for (const auto& path : files) {
         if (first) {
           first = false;
           continue;
@@ -595,7 +577,7 @@ void BuildSizeAnalyzer::detectDuplicates() {
 
         auto it = m_pathToAssetIndex.find(path);
         if (it != m_pathToAssetIndex.end()) {
-          auto &asset = m_analysis.assets[it->second];
+          auto& asset = m_analysis.assets[it->second];
           asset.isDuplicate = true;
           asset.duplicateOf = files[0];
         }
@@ -619,7 +601,7 @@ void BuildSizeAnalyzer::detectUnused() {
   // Parse script files for asset references
   fs::path scriptsDir = projectDir / "scripts";
   if (fs::exists(scriptsDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(scriptsDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scriptsDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".nms" || ext == ".nmscript") {
@@ -632,7 +614,7 @@ void BuildSizeAnalyzer::detectUnused() {
   // Parse scene files for asset references
   fs::path scenesDir = projectDir / "scenes";
   if (fs::exists(scenesDir)) {
-    for (const auto &entry : fs::recursive_directory_iterator(scenesDir)) {
+    for (const auto& entry : fs::recursive_directory_iterator(scenesDir)) {
       if (entry.is_regular_file()) {
         std::string ext = entry.path().extension().string();
         if (ext == ".json" || ext == ".scene") {
@@ -643,7 +625,7 @@ void BuildSizeAnalyzer::detectUnused() {
   }
 
   // Mark assets as unused if they're not referenced
-  for (auto &asset : m_analysis.assets) {
+  for (auto& asset : m_analysis.assets) {
     // Check if the asset path or filename is referenced
     bool isReferenced = false;
 
@@ -660,8 +642,7 @@ void BuildSizeAnalyzer::detectUnused() {
     // Check relative path from project
     fs::path assetPath(asset.path);
     fs::path relativePath = fs::relative(assetPath, projectDir);
-    if (m_referencedAssets.find(relativePath.string()) !=
-        m_referencedAssets.end()) {
+    if (m_referencedAssets.find(relativePath.string()) != m_referencedAssets.end()) {
       isReferenced = true;
     }
 
@@ -673,7 +654,7 @@ void BuildSizeAnalyzer::detectUnused() {
   }
 }
 
-void BuildSizeAnalyzer::parseFileForAssetReferences(const std::string &filePath) {
+void BuildSizeAnalyzer::parseFileForAssetReferences(const std::string& filePath) {
   std::ifstream file(filePath);
   if (!file.is_open()) {
     return;
@@ -696,9 +677,8 @@ void BuildSizeAnalyzer::parseFileForAssetReferences(const std::string &filePath)
           if (extPos != std::string::npos) {
             std::string ext = reference.substr(extPos);
             // Check if it's a known asset extension
-            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" ||
-                ext == ".ogg" || ext == ".wav" || ext == ".mp3" ||
-                ext == ".ttf" || ext == ".otf" || ext == ".mp4" ||
+            if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".ogg" ||
+                ext == ".wav" || ext == ".mp3" || ext == ".ttf" || ext == ".otf" || ext == ".mp4" ||
                 ext == ".webm") {
               m_referencedAssets.insert(reference);
 
@@ -721,13 +701,12 @@ void BuildSizeAnalyzer::parseFileForAssetReferences(const std::string &filePath)
 
 void BuildSizeAnalyzer::generateSuggestions() {
   // Suggest removing duplicates
-  for (const auto &dup : m_analysis.duplicates) {
+  for (const auto& dup : m_analysis.duplicates) {
     OptimizationSuggestion suggestion;
     suggestion.priority = OptimizationSuggestion::Priority::High;
     suggestion.type = OptimizationSuggestion::Type::RemoveDuplicate;
     suggestion.assetPath = dup.paths[1]; // First duplicate
-    suggestion.description =
-        "Remove duplicate file (same content as " + dup.paths[0] + ")";
+    suggestion.description = "Remove duplicate file (same content as " + dup.paths[0] + ")";
     suggestion.estimatedSavings = dup.singleFileSize;
     suggestion.canAutoFix = true;
 
@@ -736,16 +715,15 @@ void BuildSizeAnalyzer::generateSuggestions() {
   }
 
   // Suggest optimizing large images
-  for (const auto &asset : m_analysis.assets) {
+  for (const auto& asset : m_analysis.assets) {
     if (asset.category == AssetCategory::Images && asset.isOversized) {
       OptimizationSuggestion suggestion;
       suggestion.priority = OptimizationSuggestion::Priority::Medium;
       suggestion.type = OptimizationSuggestion::Type::CompressImage;
       suggestion.assetPath = asset.path;
-      suggestion.description =
-          "Large image detected (" +
-          SizeVisualization::formatBytes(asset.originalSize) +
-          "). Consider resizing or compressing.";
+      suggestion.description = "Large image detected (" +
+                               SizeVisualization::formatBytes(asset.originalSize) +
+                               "). Consider resizing or compressing.";
       suggestion.estimatedSavings = asset.originalSize / 2; // Rough estimate
       suggestion.canAutoFix = false;
 
@@ -758,10 +736,9 @@ void BuildSizeAnalyzer::generateSuggestions() {
       suggestion.priority = OptimizationSuggestion::Priority::Medium;
       suggestion.type = OptimizationSuggestion::Type::CompressAudio;
       suggestion.assetPath = asset.path;
-      suggestion.description =
-          "Large audio file detected (" +
-          SizeVisualization::formatBytes(asset.originalSize) +
-          "). Consider using OGG Vorbis.";
+      suggestion.description = "Large audio file detected (" +
+                               SizeVisualization::formatBytes(asset.originalSize) +
+                               "). Consider using OGG Vorbis.";
       suggestion.estimatedSavings = asset.originalSize / 3; // Rough estimate
       suggestion.canAutoFix = false;
 
@@ -773,10 +750,10 @@ void BuildSizeAnalyzer::generateSuggestions() {
   // Suggest removing unused assets
   // OPTIMIZED: Use O(1) path-to-asset index lookup instead of O(n) linear
   // search
-  for (const auto &unusedPath : m_analysis.unusedAssets) {
+  for (const auto& unusedPath : m_analysis.unusedAssets) {
     auto it = m_pathToAssetIndex.find(unusedPath);
     if (it != m_pathToAssetIndex.end()) {
-      const auto &asset = m_analysis.assets[it->second];
+      const auto& asset = m_analysis.assets[it->second];
       OptimizationSuggestion suggestion;
       suggestion.priority = OptimizationSuggestion::Priority::High;
       suggestion.type = OptimizationSuggestion::Type::RemoveUnused;
@@ -791,19 +768,18 @@ void BuildSizeAnalyzer::generateSuggestions() {
   }
 
   // Sort suggestions by estimated savings (descending)
-  std::sort(
-      m_analysis.suggestions.begin(), m_analysis.suggestions.end(),
-      [](const OptimizationSuggestion &a, const OptimizationSuggestion &b) {
-        return a.estimatedSavings > b.estimatedSavings;
-      });
+  std::sort(m_analysis.suggestions.begin(), m_analysis.suggestions.end(),
+            [](const OptimizationSuggestion& a, const OptimizationSuggestion& b) {
+              return a.estimatedSavings > b.estimatedSavings;
+            });
 }
 
 void BuildSizeAnalyzer::calculateSummaries() {
   // Group by category
   std::unordered_map<AssetCategory, CategorySummary> categoryMap;
 
-  for (const auto &asset : m_analysis.assets) {
-    auto &summary = categoryMap[asset.category];
+  for (const auto& asset : m_analysis.assets) {
+    auto& summary = categoryMap[asset.category];
     summary.category = asset.category;
     summary.fileCount++;
     summary.totalOriginalSize += asset.originalSize;
@@ -811,39 +787,35 @@ void BuildSizeAnalyzer::calculateSummaries() {
   }
 
   // Calculate percentages and averages
-  for (auto &[category, summary] : categoryMap) {
+  for (auto& [category, summary] : categoryMap) {
     if (m_analysis.totalOriginalSize > 0) {
-      summary.percentageOfTotal =
-          static_cast<f32>(summary.totalOriginalSize) /
-          static_cast<f32>(m_analysis.totalOriginalSize) * 100.0f;
+      summary.percentageOfTotal = static_cast<f32>(summary.totalOriginalSize) /
+                                  static_cast<f32>(m_analysis.totalOriginalSize) * 100.0f;
     }
 
     if (summary.totalOriginalSize > 0) {
-      summary.averageCompressionRatio =
-          static_cast<f32>(summary.totalCompressedSize) /
-          static_cast<f32>(summary.totalOriginalSize);
+      summary.averageCompressionRatio = static_cast<f32>(summary.totalCompressedSize) /
+                                        static_cast<f32>(summary.totalOriginalSize);
     }
 
     m_analysis.categorySummaries.push_back(summary);
   }
 
   // Sort by size (descending)
-  std::sort(m_analysis.categorySummaries.begin(),
-            m_analysis.categorySummaries.end(),
-            [](const CategorySummary &a, const CategorySummary &b) {
+  std::sort(m_analysis.categorySummaries.begin(), m_analysis.categorySummaries.end(),
+            [](const CategorySummary& a, const CategorySummary& b) {
               return a.totalOriginalSize > b.totalOriginalSize;
             });
 
   // Calculate overall compression ratio
   if (m_analysis.totalOriginalSize > 0) {
-    m_analysis.overallCompressionRatio =
-        static_cast<f32>(m_analysis.totalCompressedSize) /
-        static_cast<f32>(m_analysis.totalOriginalSize);
+    m_analysis.overallCompressionRatio = static_cast<f32>(m_analysis.totalCompressedSize) /
+                                         static_cast<f32>(m_analysis.totalOriginalSize);
   }
 }
 
-void BuildSizeAnalyzer::reportProgress(const std::string &task, f32 progress) {
-  for (auto *listener : m_listeners) {
+void BuildSizeAnalyzer::reportProgress(const std::string& task, f32 progress) {
+  for (auto* listener : m_listeners) {
     listener->onAnalysisProgress(task, progress);
   }
 }

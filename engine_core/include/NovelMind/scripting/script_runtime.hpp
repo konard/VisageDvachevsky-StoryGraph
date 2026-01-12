@@ -149,7 +149,7 @@ struct RuntimeSaveState {
  */
 class ScriptRuntime {
 public:
-  using EventCallback = std::function<void(const ScriptEvent &)>;
+  using EventCallback = std::function<void(const ScriptEvent&)>;
 
   ScriptRuntime();
   ~ScriptRuntime();
@@ -157,47 +157,47 @@ public:
   /**
    * @brief Load a compiled script
    */
-  Result<void> load(const CompiledScript &script);
+  Result<void> load(const CompiledScript& script);
 
   /**
    * @brief Set the scene manager for character/background commands
    */
-  void setSceneManager(scene::SceneManager *manager);
+  void setSceneManager(scene::SceneManager* manager);
 
   /**
    * @brief Set the dialogue box for text display
    */
-  void setDialogueBox(Scene::DialogueBox *dialogueBox);
+  void setDialogueBox(Scene::DialogueBox* dialogueBox);
 
   /**
    * @brief Set the resource manager for font loading in dialogue box
    */
-  void setResourceManager(resource::ResourceManager *resources);
+  void setResourceManager(resource::ResourceManager* resources);
 
   /**
    * @brief Set the choice menu for player choices
    */
-  void setChoiceMenu(Scene::ChoiceMenu *choiceMenu);
+  void setChoiceMenu(Scene::ChoiceMenu* choiceMenu);
 
   /**
    * @brief Set the audio manager for sound/music
    */
-  void setAudioManager(audio::AudioManager *manager);
+  void setAudioManager(audio::AudioManager* manager);
 
   /**
    * @brief Set the animation manager for async animations
    */
-  void setAnimationManager(scene::AnimationManager *manager);
+  void setAnimationManager(scene::AnimationManager* manager);
 
   /**
    * @brief Set runtime configuration
    */
-  void setConfig(const RuntimeConfig &config);
+  void setConfig(const RuntimeConfig& config);
 
   /**
    * @brief Get current configuration
    */
-  [[nodiscard]] const RuntimeConfig &getConfig() const;
+  [[nodiscard]] const RuntimeConfig& getConfig() const;
 
   /**
    * @brief Start execution from the first scene
@@ -207,7 +207,7 @@ public:
   /**
    * @brief Go to a specific scene
    */
-  Result<void> gotoScene(const std::string &sceneName);
+  Result<void> gotoScene(const std::string& sceneName);
 
   /**
    * @brief Update the runtime (call each frame)
@@ -262,22 +262,22 @@ public:
   /**
    * @brief Set a script variable
    */
-  void setVariable(const std::string &name, Value value);
+  void setVariable(const std::string& name, Value value);
 
   /**
    * @brief Get a script variable
    */
-  [[nodiscard]] Value getVariable(const std::string &name) const;
+  [[nodiscard]] Value getVariable(const std::string& name) const;
 
   /**
    * @brief Set a flag
    */
-  void setFlag(const std::string &name, bool value);
+  void setFlag(const std::string& name, bool value);
 
   /**
    * @brief Get a flag
    */
-  [[nodiscard]] bool getFlag(const std::string &name) const;
+  [[nodiscard]] bool getFlag(const std::string& name) const;
   [[nodiscard]] std::unordered_map<std::string, Value> getAllVariables() const;
   [[nodiscard]] std::unordered_map<std::string, bool> getAllFlags() const;
 
@@ -292,12 +292,12 @@ public:
   [[nodiscard]] bool isSkipMode() const;
 
   // Introspection for editor/runtime UI
-  [[nodiscard]] const std::string &getCurrentScene() const;
-  [[nodiscard]] const std::string &getCurrentBackground() const;
-  [[nodiscard]] const std::vector<std::string> &getVisibleCharacters() const;
-  [[nodiscard]] const std::vector<std::string> &getCurrentChoices() const;
-  [[nodiscard]] const std::string &getCurrentSpeaker() const;
-  [[nodiscard]] const std::string &getCurrentDialogue() const;
+  [[nodiscard]] const std::string& getCurrentScene() const;
+  [[nodiscard]] const std::string& getCurrentBackground() const;
+  [[nodiscard]] const std::vector<std::string>& getVisibleCharacters() const;
+  [[nodiscard]] const std::vector<std::string>& getCurrentChoices() const;
+  [[nodiscard]] const std::string& getCurrentSpeaker() const;
+  [[nodiscard]] const std::string& getCurrentDialogue() const;
 
   /**
    * @brief Save current state
@@ -307,7 +307,7 @@ public:
   /**
    * @brief Load state
    */
-  Result<void> loadState(const RuntimeSaveState &state);
+  Result<void> loadState(const RuntimeSaveState& state);
 
   /**
    * @brief Register event callback
@@ -317,27 +317,26 @@ public:
   /**
    * @brief Get the underlying VM (for debugging)
    */
-  [[nodiscard]] VirtualMachine &getVM();
+  [[nodiscard]] VirtualMachine& getVM();
 
 private:
   // VM callback handlers
-  void onShowBackground(const std::vector<Value> &args);
-  void onShowCharacter(const std::vector<Value> &args);
-  void onHideCharacter(const std::vector<Value> &args);
-  void onSay(const std::vector<Value> &args);
-  void onChoice(const std::vector<Value> &args);
-  void onGotoScene(const std::vector<Value> &args);
-  void onWait(const std::vector<Value> &args);
-  void onPlaySound(const std::vector<Value> &args);
-  void onPlayMusic(const std::vector<Value> &args);
-  void onStopMusic(const std::vector<Value> &args);
-  void onTransition(const std::vector<Value> &args);
-  void onMoveCharacter(const std::vector<Value> &args);
+  void onShowBackground(const std::vector<Value>& args);
+  void onShowCharacter(const std::vector<Value>& args);
+  void onHideCharacter(const std::vector<Value>& args);
+  void onSay(const std::vector<Value>& args);
+  void onChoice(const std::vector<Value>& args);
+  void onGotoScene(const std::vector<Value>& args);
+  void onWait(const std::vector<Value>& args);
+  void onPlaySound(const std::vector<Value>& args);
+  void onPlayMusic(const std::vector<Value>& args);
+  void onStopMusic(const std::vector<Value>& args);
+  void onTransition(const std::vector<Value>& args);
+  void onMoveCharacter(const std::vector<Value>& args);
 
   // Internal helpers
   void registerCallbacks();
-  void fireEvent(ScriptEventType type, const std::string &name = "",
-                 const Value &value = Value{});
+  void fireEvent(ScriptEventType type, const std::string& name = "", const Value& value = Value{});
 
   void updateWaitTimer(f64 deltaTime);
   void updateTransition(f64 deltaTime);
@@ -345,20 +344,19 @@ private:
   void updateDialogue(f64 deltaTime);
 
   Scene::CharacterPosition parsePosition(i32 posCode);
-  std::unique_ptr<Scene::ITransition> createTransition(const std::string &type,
-                                                       f32 duration);
+  std::unique_ptr<Scene::ITransition> createTransition(const std::string& type, f32 duration);
 
   // VM and compiled script
   VirtualMachine m_vm;
   CompiledScript m_script;
 
   // Connected systems
-  scene::SceneManager *m_sceneManager = nullptr;
-  Scene::DialogueBox *m_dialogueBox = nullptr;
-  Scene::ChoiceMenu *m_choiceMenu = nullptr;
-  audio::AudioManager *m_audioManager = nullptr;
-  scene::AnimationManager *m_animationManager = nullptr;
-  resource::ResourceManager *m_resources = nullptr;
+  scene::SceneManager* m_sceneManager = nullptr;
+  Scene::DialogueBox* m_dialogueBox = nullptr;
+  Scene::ChoiceMenu* m_choiceMenu = nullptr;
+  audio::AudioManager* m_audioManager = nullptr;
+  scene::AnimationManager* m_animationManager = nullptr;
+  resource::ResourceManager* m_resources = nullptr;
 
   // State
   RuntimeState m_state = RuntimeState::Idle;
@@ -391,7 +389,7 @@ private:
  * @brief Helper to create a character sprite from script data
  */
 [[nodiscard]] inline std::unique_ptr<Scene::CharacterSprite>
-createCharacterFromDecl(const CharacterDecl &decl) {
+createCharacterFromDecl(const CharacterDecl& decl) {
   auto sprite = std::make_unique<Scene::CharacterSprite>(decl.id, decl.id);
   sprite->setDisplayName(decl.displayName);
 
@@ -405,8 +403,7 @@ createCharacterFromDecl(const CharacterDecl &decl) {
 
     if (colorStr.length() >= 6) {
       try {
-        u32 hex =
-            static_cast<u32>(std::stoul(colorStr.substr(0, 6), nullptr, 16));
+        u32 hex = static_cast<u32>(std::stoul(colorStr.substr(0, 6), nullptr, 16));
         u8 r = (hex >> 16) & 0xFF;
         u8 g = (hex >> 8) & 0xFF;
         u8 b = hex & 0xFF;

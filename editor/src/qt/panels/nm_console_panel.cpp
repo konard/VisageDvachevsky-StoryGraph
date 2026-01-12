@@ -16,14 +16,14 @@ namespace NovelMind::editor::qt {
 // NMConsoleOutput
 // ============================================================================
 
-NMConsoleOutput::NMConsoleOutput(QWidget *parent) : QPlainTextEdit(parent) {
+NMConsoleOutput::NMConsoleOutput(QWidget* parent) : QPlainTextEdit(parent) {
   setReadOnly(true);
   setMaximumBlockCount(10000); // Limit history
   setFont(NMStyleManager::instance().monospaceFont());
   setLineWrapMode(QPlainTextEdit::NoWrap);
 }
 
-void NMConsoleOutput::appendLog(const LogEntry &entry) {
+void NMConsoleOutput::appendLog(const LogEntry& entry) {
   m_entries.append(entry);
 
   // Enforce maximum entry limit to prevent unbounded memory growth
@@ -52,7 +52,7 @@ void NMConsoleOutput::appendLog(const LogEntry &entry) {
     return;
 
   // Format the log entry
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   QString color;
   QString levelStr;
@@ -76,8 +76,7 @@ void NMConsoleOutput::appendLog(const LogEntry &entry) {
   }
 
   QString timestamp = entry.timestamp.toString("hh:mm:ss.zzz");
-  QString source =
-      entry.source.isEmpty() ? "" : QString(" [%1]").arg(entry.source);
+  QString source = entry.source.isEmpty() ? "" : QString(" [%1]").arg(entry.source);
 
   QString html = QString("<span style='color: %1'>[%2] %3%4: %5</span><br>")
                      .arg(color)
@@ -134,9 +133,9 @@ void NMConsoleOutput::setAutoScroll(bool autoScroll) {
 void NMConsoleOutput::refreshDisplay() {
   QPlainTextEdit::clear();
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
-  for (const auto &entry : m_entries) {
+  for (const auto& entry : m_entries) {
     bool visible = false;
     switch (entry.level) {
     case LogLevel::Debug:
@@ -178,8 +177,7 @@ void NMConsoleOutput::refreshDisplay() {
       }
 
       QString timestamp = entry.timestamp.toString("hh:mm:ss.zzz");
-      QString source =
-          entry.source.isEmpty() ? "" : QString(" [%1]").arg(entry.source);
+      QString source = entry.source.isEmpty() ? "" : QString(" [%1]").arg(entry.source);
 
       QString html = QString("<span style='color: %1'>[%2] %3%4: %5</span><br>")
                          .arg(color)
@@ -202,8 +200,7 @@ void NMConsoleOutput::refreshDisplay() {
 // NMConsolePanel
 // ============================================================================
 
-NMConsolePanel::NMConsolePanel(QWidget *parent)
-    : NMDockPanel(tr("Console"), parent) {
+NMConsolePanel::NMConsolePanel(QWidget* parent) : NMDockPanel(tr("Console"), parent) {
   setPanelId("Console");
 
   // Console needs width for log messages and height to show several log entries
@@ -227,8 +224,7 @@ void NMConsolePanel::onUpdate(double /*deltaTime*/) {
   // No continuous update needed
 }
 
-void NMConsolePanel::log(LogLevel level, const QString &message,
-                         const QString &source) {
+void NMConsolePanel::log(LogLevel level, const QString& message, const QString& source) {
   LogEntry entry;
   entry.timestamp = QDateTime::currentDateTime();
   entry.level = level;
@@ -242,19 +238,19 @@ void NMConsolePanel::log(LogLevel level, const QString &message,
   emit logAdded(entry);
 }
 
-void NMConsolePanel::logDebug(const QString &message, const QString &source) {
+void NMConsolePanel::logDebug(const QString& message, const QString& source) {
   log(LogLevel::Debug, message, source);
 }
 
-void NMConsolePanel::logInfo(const QString &message, const QString &source) {
+void NMConsolePanel::logInfo(const QString& message, const QString& source) {
   log(LogLevel::Info, message, source);
 }
 
-void NMConsolePanel::logWarning(const QString &message, const QString &source) {
+void NMConsolePanel::logWarning(const QString& message, const QString& source) {
   log(LogLevel::Warning, message, source);
 }
 
-void NMConsolePanel::logError(const QString &message, const QString &source) {
+void NMConsolePanel::logError(const QString& message, const QString& source) {
   log(LogLevel::Error, message, source);
 }
 
@@ -276,44 +272,41 @@ void NMConsolePanel::setupToolBar() {
   m_toolBar->setIconSize(QSize(16, 16));
 
   // Get icon manager
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Copy action
-  QAction *actionCopy =
-      m_toolBar->addAction(iconMgr.getIcon("copy"), tr("Copy"));
+  QAction* actionCopy = m_toolBar->addAction(iconMgr.getIcon("copy"), tr("Copy"));
   actionCopy->setToolTip(tr("Copy Selected Text (Ctrl+C)"));
   actionCopy->setShortcut(QKeySequence::Copy);
   connect(actionCopy, &QAction::triggered, this, &NMConsolePanel::onCopy);
 
   // Clear action
-  QAction *actionClear =
-      m_toolBar->addAction(iconMgr.getIcon("delete"), tr("Clear"));
+  QAction* actionClear = m_toolBar->addAction(iconMgr.getIcon("delete"), tr("Clear"));
   actionClear->setToolTip(tr("Clear Console"));
   connect(actionClear, &QAction::triggered, this, &NMConsolePanel::onClear);
 
   m_toolBar->addSeparator();
 
   // Filter toggles
-  QAction *actionDebug = m_toolBar->addAction(tr("Debug"));
+  QAction* actionDebug = m_toolBar->addAction(tr("Debug"));
   actionDebug->setToolTip(tr("Show Debug Messages"));
   actionDebug->setCheckable(true);
   actionDebug->setChecked(true);
   connect(actionDebug, &QAction::toggled, this, &NMConsolePanel::onToggleDebug);
 
-  QAction *actionInfo = m_toolBar->addAction(tr("Info"));
+  QAction* actionInfo = m_toolBar->addAction(tr("Info"));
   actionInfo->setToolTip(tr("Show Info Messages"));
   actionInfo->setCheckable(true);
   actionInfo->setChecked(true);
   connect(actionInfo, &QAction::toggled, this, &NMConsolePanel::onToggleInfo);
 
-  QAction *actionWarning = m_toolBar->addAction(tr("Warning"));
+  QAction* actionWarning = m_toolBar->addAction(tr("Warning"));
   actionWarning->setToolTip(tr("Show Warning Messages"));
   actionWarning->setCheckable(true);
   actionWarning->setChecked(true);
-  connect(actionWarning, &QAction::toggled, this,
-          &NMConsolePanel::onToggleWarning);
+  connect(actionWarning, &QAction::toggled, this, &NMConsolePanel::onToggleWarning);
 
-  QAction *actionError = m_toolBar->addAction(tr("Error"));
+  QAction* actionError = m_toolBar->addAction(tr("Error"));
   actionError->setToolTip(tr("Show Error Messages"));
   actionError->setCheckable(true);
   actionError->setChecked(true);
@@ -321,21 +314,20 @@ void NMConsolePanel::setupToolBar() {
 
   m_toolBar->addSeparator();
 
-  QAction *actionAutoScroll = m_toolBar->addAction(tr("Auto-Scroll"));
+  QAction* actionAutoScroll = m_toolBar->addAction(tr("Auto-Scroll"));
   actionAutoScroll->setToolTip(tr("Auto-scroll to latest message"));
   actionAutoScroll->setCheckable(true);
   actionAutoScroll->setChecked(true);
-  connect(actionAutoScroll, &QAction::toggled, this,
-          &NMConsolePanel::onToggleAutoScroll);
+  connect(actionAutoScroll, &QAction::toggled, this, &NMConsolePanel::onToggleAutoScroll);
 
-  if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_toolBar);
   }
 }
 
 void NMConsolePanel::setupContent() {
   m_contentWidget = new QWidget(this);
-  auto *layout = new QVBoxLayout(m_contentWidget);
+  auto* layout = new QVBoxLayout(m_contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -345,9 +337,13 @@ void NMConsolePanel::setupContent() {
   setContentWidget(m_contentWidget);
 }
 
-void NMConsolePanel::onClear() { clear(); }
+void NMConsolePanel::onClear() {
+  clear();
+}
 
-void NMConsolePanel::onCopy() { copySelection(); }
+void NMConsolePanel::onCopy() {
+  copySelection();
+}
 
 void NMConsolePanel::onToggleDebug(bool checked) {
   if (m_output)

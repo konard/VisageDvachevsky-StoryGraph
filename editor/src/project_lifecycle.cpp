@@ -9,9 +9,8 @@ namespace NovelMind::editor {
 // Project Lifecycle
 // ============================================================================
 
-Result<void> ProjectManager::createProject(const std::string &path,
-                                           const std::string &name,
-                                           const std::string &templateName) {
+Result<void> ProjectManager::createProject(const std::string& path, const std::string& name,
+                                           const std::string& templateName) {
   if (m_state != ProjectState::Closed) {
     return Result<void>::error("A project is already open. Close it first.");
   }
@@ -73,7 +72,7 @@ Result<void> ProjectManager::createProject(const std::string &path,
   return Result<void>::ok();
 }
 
-Result<void> ProjectManager::openProject(const std::string &path) {
+Result<void> ProjectManager::openProject(const std::string& path) {
   if (m_state != ProjectState::Closed) {
     auto closeResult = closeProject();
     if (closeResult.isError()) {
@@ -112,9 +111,8 @@ Result<void> ProjectManager::openProject(const std::string &path) {
     auto repairResult = createFolderStructure();
     if (repairResult.isError()) {
       m_state = ProjectState::Closed;
-      return Result<void>::error(
-          "Project folder structure is invalid and could not be "
-          "repaired");
+      return Result<void>::error("Project folder structure is invalid and could not be "
+                                 "repaired");
     }
   }
 
@@ -154,7 +152,7 @@ Result<void> ProjectManager::saveProject() {
   return Result<void>::ok();
 }
 
-Result<void> ProjectManager::saveProjectAs(const std::string &path) {
+Result<void> ProjectManager::saveProjectAs(const std::string& path) {
   if (m_state != ProjectState::Open) {
     return Result<void>::error("No project is open");
   }
@@ -163,8 +161,7 @@ Result<void> ProjectManager::saveProjectAs(const std::string &path) {
 
   // Copy current project to new location
   std::error_code ec;
-  fs::copy(m_projectPath, path,
-           fs::copy_options::recursive | fs::copy_options::overwrite_existing,
+  fs::copy(m_projectPath, path, fs::copy_options::recursive | fs::copy_options::overwrite_existing,
            ec);
   if (ec) {
     return Result<void>::error("Failed to copy project: " + ec.message());
@@ -217,9 +214,13 @@ bool ProjectManager::hasOpenProject() const {
   return m_state == ProjectState::Open;
 }
 
-ProjectState ProjectManager::getState() const { return m_state; }
+ProjectState ProjectManager::getState() const {
+  return m_state;
+}
 
-bool ProjectManager::hasUnsavedChanges() const { return m_modified; }
+bool ProjectManager::hasUnsavedChanges() const {
+  return m_modified;
+}
 
 void ProjectManager::markModified() {
   if (!m_modified) {
@@ -228,18 +229,19 @@ void ProjectManager::markModified() {
   }
 }
 
-void ProjectManager::markSaved() { m_modified = false; }
+void ProjectManager::markSaved() {
+  m_modified = false;
+}
 
 // ============================================================================
 // Private Helper Methods
 // ============================================================================
 
-Result<void> ProjectManager::loadProjectFile(const std::string &path) {
+Result<void> ProjectManager::loadProjectFile(const std::string& path) {
   // Use robust JSON parser with validation
   auto result = ProjectJsonHandler::loadFromFile(path, m_metadata);
   if (result.isError()) {
-    return Result<void>::error("Failed to load project file: " + path + " - " +
-                               result.error());
+    return Result<void>::error("Failed to load project file: " + path + " - " + result.error());
   }
 
   return Result<void>::ok();
@@ -251,11 +253,9 @@ Result<void> ProjectManager::saveProjectFile() {
   fs::path projectFile = fs::path(m_projectPath) / "project.json";
 
   // Use atomic write with validation
-  auto result =
-      ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
+  auto result = ProjectJsonHandler::saveToFile(projectFile.string(), m_metadata);
   if (result.isError()) {
-    return Result<void>::error("Failed to save project file: " +
-                               result.error());
+    return Result<void>::error("Failed to save project file: " + result.error());
   }
 
   return Result<void>::ok();

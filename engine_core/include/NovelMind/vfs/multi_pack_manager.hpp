@@ -104,9 +104,9 @@ struct DiscoveredPack {
 /**
  * @brief Callback types
  */
-using OnPackLoaded = std::function<void(const PackInfo &)>;
-using OnPackUnloaded = std::function<void(const std::string &packId)>;
-using OnResourceOverridden = std::function<void(const ResourceOverride &)>;
+using OnPackLoaded = std::function<void(const PackInfo&)>;
+using OnPackUnloaded = std::function<void(const std::string& packId)>;
+using OnResourceOverridden = std::function<void(const ResourceOverride&)>;
 
 /**
  * @brief Multi-Pack Manager - Layered pack file management
@@ -158,8 +158,8 @@ public:
   ~MultiPackManager();
 
   // Non-copyable
-  MultiPackManager(const MultiPackManager &) = delete;
-  MultiPackManager &operator=(const MultiPackManager &) = delete;
+  MultiPackManager(const MultiPackManager&) = delete;
+  MultiPackManager& operator=(const MultiPackManager&) = delete;
 
   // =========================================================================
   // Initialization
@@ -179,31 +179,31 @@ public:
   /**
    * @brief Set the base directory for pack discovery
    */
-  void setPackDirectory(const std::string &path);
+  void setPackDirectory(const std::string& path);
 
   /**
    * @brief Set the mods directory for mod discovery
    */
-  void setModsDirectory(const std::string &path);
+  void setModsDirectory(const std::string& path);
 
   /**
    * @brief Set public key PEM for signed pack verification
    */
-  void setPackPublicKeyPem(const std::string &pem);
+  void setPackPublicKeyPem(const std::string& pem);
 
   /**
    * @brief Set public key path for signed pack verification
    */
-  void setPackPublicKeyPath(const std::string &path);
+  void setPackPublicKeyPath(const std::string& path);
 
   /**
    * @brief Set decryption key for encrypted packs
    */
-  void setPackDecryptionKey(const std::vector<u8> &key);
+  void setPackDecryptionKey(const std::vector<u8>& key);
   /**
    * @brief Load decryption key from a binary file
    */
-  Result<void> setPackDecryptionKeyFromFile(const std::string &path);
+  Result<void> setPackDecryptionKeyFromFile(const std::string& path);
   /**
    * @brief Load decryption key from environment variables.
    *
@@ -223,7 +223,7 @@ public:
    * @param path Path to base pack file
    * @return Load result
    */
-  PackLoadResult loadBasePack(const std::string &path);
+  PackLoadResult loadBasePack(const std::string& path);
 
   /**
    * @brief Load a pack file
@@ -232,8 +232,7 @@ public:
    * @param priority Priority within type (default 0)
    * @return Load result
    */
-  PackLoadResult loadPack(const std::string &path, PackType type,
-                          i32 priority = 0);
+  PackLoadResult loadPack(const std::string& path, PackType type, i32 priority = 0);
 
   /**
    * @brief Load a pack file asynchronously (non-blocking)
@@ -243,16 +242,15 @@ public:
    * @param progressCallback Optional callback for loading progress
    * @return Future with load result
    */
-  std::future<PackLoadResult> loadPackAsync(const std::string &path,
-                                             PackType type,
-                                             i32 priority = 0,
-                                             ProgressCallback progressCallback = nullptr);
+  std::future<PackLoadResult> loadPackAsync(const std::string& path, PackType type,
+                                            i32 priority = 0,
+                                            ProgressCallback progressCallback = nullptr);
 
   /**
    * @brief Unload a pack
    * @param packId Pack identifier to unload
    */
-  void unloadPack(const std::string &packId);
+  void unloadPack(const std::string& packId);
 
   /**
    * @brief Unload all packs of a specific type
@@ -267,12 +265,12 @@ public:
   /**
    * @brief Reload a pack (unload then load)
    */
-  PackLoadResult reloadPack(const std::string &packId);
+  PackLoadResult reloadPack(const std::string& packId);
 
   /**
    * @brief Enable/disable a loaded pack
    */
-  void setPackEnabled(const std::string &packId, bool enabled);
+  void setPackEnabled(const std::string& packId, bool enabled);
 
   // =========================================================================
   // Pack Discovery
@@ -283,7 +281,7 @@ public:
    * @param directory Directory to scan
    * @return List of discovered packs
    */
-  std::vector<DiscoveredPack> discoverPacks(const std::string &directory);
+  std::vector<DiscoveredPack> discoverPacks(const std::string& directory);
 
   /**
    * @brief Discover available mods in the mods directory
@@ -298,12 +296,12 @@ public:
   /**
    * @brief Check if a pack's dependencies are satisfied
    */
-  bool areDependenciesSatisfied(const PackInfo &pack) const;
+  bool areDependenciesSatisfied(const PackInfo& pack) const;
 
   /**
    * @brief Get missing dependencies for a pack
    */
-  std::vector<std::string> getMissingDependencies(const PackInfo &pack) const;
+  std::vector<std::string> getMissingDependencies(const PackInfo& pack) const;
 
   // =========================================================================
   // Pack Information
@@ -312,28 +310,27 @@ public:
   /**
    * @brief Get info for a loaded pack
    */
-  [[nodiscard]] const PackInfo *getPackInfo(const std::string &packId) const;
+  [[nodiscard]] const PackInfo* getPackInfo(const std::string& packId) const;
 
   /**
    * @brief Get all loaded packs
    */
-  [[nodiscard]] std::vector<const PackInfo *> getLoadedPacks() const;
+  [[nodiscard]] std::vector<const PackInfo*> getLoadedPacks() const;
 
   /**
    * @brief Get loaded packs of a specific type
    */
-  [[nodiscard]] std::vector<const PackInfo *>
-  getPacksOfType(PackType type) const;
+  [[nodiscard]] std::vector<const PackInfo*> getPacksOfType(PackType type) const;
 
   /**
    * @brief Check if a pack is loaded
    */
-  [[nodiscard]] bool isPackLoaded(const std::string &packId) const;
+  [[nodiscard]] bool isPackLoaded(const std::string& packId) const;
 
   /**
    * @brief Check if a pack is enabled
    */
-  [[nodiscard]] bool isPackEnabled(const std::string &packId) const;
+  [[nodiscard]] bool isPackEnabled(const std::string& packId) const;
 
   // =========================================================================
   // Resource Access
@@ -344,24 +341,22 @@ public:
    * @param resourceId Resource identifier
    * @return Resource data or error
    */
-  Result<std::vector<u8>> readResource(const std::string &resourceId);
+  Result<std::vector<u8>> readResource(const std::string& resourceId);
 
   /**
    * @brief Check if a resource exists in any loaded pack
    */
-  [[nodiscard]] bool exists(const std::string &resourceId) const;
+  [[nodiscard]] bool exists(const std::string& resourceId) const;
 
   /**
    * @brief Get resource info
    */
-  [[nodiscard]] std::optional<ResourceInfo>
-  getResourceInfo(const std::string &resourceId) const;
+  [[nodiscard]] std::optional<ResourceInfo> getResourceInfo(const std::string& resourceId) const;
 
   /**
    * @brief Get the pack that provides a resource (with overrides resolved)
    */
-  [[nodiscard]] std::string
-  getResourcePack(const std::string &resourceId) const;
+  [[nodiscard]] std::string getResourcePack(const std::string& resourceId) const;
 
   /**
    * @brief List all resources of a type
@@ -377,8 +372,8 @@ public:
   /**
    * @brief Read resource from a specific pack (bypassing priority)
    */
-  Result<std::vector<u8>> readResourceFromPack(const std::string &packId,
-                                               const std::string &resourceId);
+  Result<std::vector<u8>> readResourceFromPack(const std::string& packId,
+                                               const std::string& resourceId);
 
   // =========================================================================
   // Mod Support
@@ -392,27 +387,27 @@ public:
   /**
    * @brief Set the mod load order
    */
-  void setModLoadOrder(const std::vector<std::string> &order);
+  void setModLoadOrder(const std::vector<std::string>& order);
 
   /**
    * @brief Move a mod up in load order
    */
-  void moveModUp(const std::string &packId);
+  void moveModUp(const std::string& packId);
 
   /**
    * @brief Move a mod down in load order
    */
-  void moveModDown(const std::string &packId);
+  void moveModDown(const std::string& packId);
 
   /**
    * @brief Save mod configuration to file
    */
-  Result<void> saveModConfig(const std::string &path);
+  Result<void> saveModConfig(const std::string& path);
 
   /**
    * @brief Load mod configuration from file
    */
-  Result<void> loadModConfig(const std::string &path);
+  Result<void> loadModConfig(const std::string& path);
 
   // =========================================================================
   // Statistics
@@ -443,14 +438,13 @@ public:
 
 private:
   // Internal helpers
-  PackLoadResult loadPackInternal(const std::string &path, PackType type,
-                                  i32 priority);
-  PackInfo readPackManifest(const std::string &path);
+  PackLoadResult loadPackInternal(const std::string& path, PackType type, i32 priority);
+  PackInfo readPackManifest(const std::string& path);
   void rebuildResourceIndex();
   i32 calculateEffectivePriority(PackType type, i32 basePriority) const;
-  void firePackLoaded(const PackInfo &info);
-  void firePackUnloaded(const std::string &packId);
-  void fireResourceOverridden(const ResourceOverride &override);
+  void firePackLoaded(const PackInfo& info);
+  void firePackUnloaded(const std::string& packId);
+  void fireResourceOverridden(const ResourceOverride& override);
 
   // State
   bool m_initialized = false;

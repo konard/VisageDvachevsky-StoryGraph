@@ -56,27 +56,25 @@
 
 namespace NovelMind::editor::qt {
 
-void NMScriptEditorPanel::goToLocation(const QString &path, int line) {
+void NMScriptEditorPanel::goToLocation(const QString& path, int line) {
   openScript(path);
-  auto *editor = qobject_cast<NMScriptEditor *>(m_tabs->currentWidget());
+  auto* editor = qobject_cast<NMScriptEditor*>(m_tabs->currentWidget());
   if (!editor) {
     return;
   }
-  QTextCursor cursor(
-      editor->document()->findBlockByLineNumber(std::max(0, line - 1)));
+  QTextCursor cursor(editor->document()->findBlockByLineNumber(std::max(0, line - 1)));
   editor->setTextCursor(cursor);
   editor->setFocus();
 }
 
-bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
+bool NMScriptEditorPanel::goToSceneDefinition(const QString& sceneName) {
   QMutexLocker locker(&m_symbolIndexMutex);
   const QString key = sceneName.toLower();
-  for (auto it = m_symbolIndex.scenes.constBegin();
-       it != m_symbolIndex.scenes.constEnd(); ++it) {
+  for (auto it = m_symbolIndex.scenes.constBegin(); it != m_symbolIndex.scenes.constEnd(); ++it) {
     if (it.key().toLower() == key) {
       const QString filePath = it.value();
       const int line = m_symbolIndex.sceneLines.value(it.key(), 1);
-      locker.unlock();  // Unlock before calling goToLocation to avoid deadlock
+      locker.unlock(); // Unlock before calling goToLocation to avoid deadlock
       goToLocation(filePath, line);
       return true;
     }
@@ -84,8 +82,7 @@ bool NMScriptEditorPanel::goToSceneDefinition(const QString &sceneName) {
   return false;
 }
 
-QList<ReferenceResult>
-NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
+QList<ReferenceResult> NMScriptEditorPanel::findAllReferences(const QString& symbol) const {
   QList<ReferenceResult> results;
   const QString root = scriptsRootPath();
   if (root.isEmpty()) {
@@ -93,9 +90,8 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
   }
 
   const QString lowerSymbol = symbol.toLower();
-  const QRegularExpression re(
-      QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
-      QRegularExpression::CaseInsensitiveOption);
+  const QRegularExpression re(QString("\\b%1\\b").arg(QRegularExpression::escape(symbol)),
+                              QRegularExpression::CaseInsensitiveOption);
 
   namespace fs = std::filesystem;
   fs::path base(root.toStdString());
@@ -104,7 +100,7 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
   }
 
   try {
-    for (const auto &entry : fs::recursive_directory_iterator(base)) {
+    for (const auto& entry : fs::recursive_directory_iterator(base)) {
       if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
         continue;
       }
@@ -117,7 +113,7 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
 
       const QStringList lines = QString::fromUtf8(file.readAll()).split('\n');
       for (int i = 0; i < lines.size(); ++i) {
-        const QString &line = lines[i];
+        const QString& line = lines[i];
         if (re.match(line).hasMatch()) {
           ReferenceResult ref;
           ref.filePath = filePath;
@@ -125,77 +121,71 @@ NMScriptEditorPanel::findAllReferences(const QString &symbol) const {
           ref.context = line.trimmed();
 
           // Check if this is a definition (scene, character declaration)
-          ref.isDefinition = line.contains(
-              QRegularExpression(QString("\\b(scene|character)\\s+%1\\b")
-                                     .arg(QRegularExpression::escape(symbol)),
-                                 QRegularExpression::CaseInsensitiveOption));
+          ref.isDefinition = line.contains(QRegularExpression(
+              QString("\\b(scene|character)\\s+%1\\b").arg(QRegularExpression::escape(symbol)),
+              QRegularExpression::CaseInsensitiveOption));
           results.append(ref);
         }
       }
     }
-  } catch (const std::exception &e) {
-    core::Logger::instance().warning(
-        std::string("Failed to find references: ") + e.what());
+  } catch (const std::exception& e) {
+    core::Logger::instance().warning(std::string("Failed to find references: ") + e.what());
   }
 
   return results;
 }
 
-void NMScriptEditorPanel::onGoToDefinition(const QString &symbol,
-                                           const SymbolLocation &location) {
+void NMScriptEditorPanel::onGoToDefinition(const QString& symbol, const SymbolLocation& location) {
   (void)symbol;
   if (!location.filePath.isEmpty()) {
     goToLocation(location.filePath, location.line);
   }
 }
 
-void NMScriptEditorPanel::onFindReferences(const QString &symbol) {
+void NMScriptEditorPanel::onFindReferences(const QString& symbol) {
   const QList<ReferenceResult> references = findAllReferences(symbol);
   showReferencesDialog(symbol, references);
   emit referencesFound(symbol, references);
 }
 
 void NMScriptEditorPanel::onInsertSnippetRequested() {
-  if (auto *editor = currentEditor()) {
+  if (auto* editor = currentEditor()) {
     editor->insertSnippet("scene");
   }
 }
 
-void NMScriptEditorPanel::onNavigateToGraphNode(const QString &sceneId) {
+void NMScriptEditorPanel::onNavigateToGraphNode(const QString& sceneId) {
   emit navigateToGraphNode(sceneId);
 }
 
-void NMScriptEditorPanel::showReferencesDialog(
-    const QString &symbol, const QList<ReferenceResult> &references) {
+void NMScriptEditorPanel::showReferencesDialog(const QString& symbol,
+                                               const QList<ReferenceResult>& references) {
   if (references.isEmpty()) {
     return;
   }
 
   // Create a simple dialog to show references
-  auto *dialog = new QDialog(this);
-  dialog->setWindowTitle(
-      tr("References to '%1' (%2 found)").arg(symbol).arg(references.size()));
+  auto* dialog = new QDialog(this);
+  dialog->setWindowTitle(tr("References to '%1' (%2 found)").arg(symbol).arg(references.size()));
   dialog->resize(600, 400);
 
-  auto *layout = new QVBoxLayout(dialog);
-  auto *list = new QListWidget(dialog);
+  auto* layout = new QVBoxLayout(dialog);
+  auto* list = new QListWidget(dialog);
 
-  const auto &palette = NMStyleManager::instance().palette();
-  list->setStyleSheet(
-      QString("QListWidget { background-color: %1; color: %2; }"
-              "QListWidget::item:selected { background-color: %3; }")
-          .arg(palette.bgMedium.name())
-          .arg(palette.textPrimary.name())
-          .arg(palette.bgLight.name()));
+  const auto& palette = NMStyleManager::instance().palette();
+  list->setStyleSheet(QString("QListWidget { background-color: %1; color: %2; }"
+                              "QListWidget::item:selected { background-color: %3; }")
+                          .arg(palette.bgMedium.name())
+                          .arg(palette.textPrimary.name())
+                          .arg(palette.bgLight.name()));
 
-  for (const auto &ref : references) {
+  for (const auto& ref : references) {
     const QString fileName = QFileInfo(ref.filePath).fileName();
-    QString label =
-        QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
+    QString label = QString("%1:%2: %3").arg(fileName).arg(ref.line).arg(ref.context);
     if (ref.isDefinition) {
       label = "[DEF] " + label;
     }
-    auto *item = new QListWidgetItem(label);
+    auto* item = new QListWidgetItem(label);
     item->setData(Qt::UserRole, ref.filePath);
     item->setData(Qt::UserRole + 1, ref.line);
     if (ref.isDefinition) {
@@ -204,13 +194,12 @@ void NMScriptEditorPanel::showReferencesDialog(
     list->addItem(item);
   }
 
-  connect(list, &QListWidget::itemDoubleClicked, this,
-          [this, dialog](QListWidgetItem *item) {
-            const QString path = item->data(Qt::UserRole).toString();
-            const int line = item->data(Qt::UserRole + 1).toInt();
-            goToLocation(path, line);
-            dialog->accept();
-          });
+  connect(list, &QListWidget::itemDoubleClicked, this, [this, dialog](QListWidgetItem* item) {
+    const QString path = item->data(Qt::UserRole).toString();
+    const int line = item->data(Qt::UserRole + 1).toInt();
+    goToLocation(path, line);
+    dialog->accept();
+  });
 
   layout->addWidget(list);
   dialog->setLayout(layout);
@@ -222,7 +211,7 @@ void NMScriptEditorPanel::showFindDialog() {
   if (!m_findReplaceWidget) {
     return;
   }
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (editor) {
     m_findReplaceWidget->setEditor(editor);
     // Pre-fill with selected text
@@ -238,7 +227,7 @@ void NMScriptEditorPanel::showReplaceDialog() {
   if (!m_findReplaceWidget) {
     return;
   }
-  auto *editor = currentEditor();
+  auto* editor = currentEditor();
   if (editor) {
     m_findReplaceWidget->setEditor(editor);
     const QString selected = editor->textCursor().selectedText();

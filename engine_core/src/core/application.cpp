@@ -8,9 +8,11 @@ namespace NovelMind::core {
 
 Application::Application() = default;
 
-Application::~Application() { shutdown(); }
+Application::~Application() {
+  shutdown();
+}
 
-Result<void> Application::initialize(const EngineConfig &config) {
+Result<void> Application::initialize(const EngineConfig& config) {
   m_config = config;
 
   if (m_config.debug) {
@@ -54,7 +56,7 @@ Result<void> Application::initialize(const EngineConfig &config) {
   m_input = std::make_unique<input::InputManager>();
 
   m_audio = std::make_unique<audio::AudioManager>();
-  m_audio->setDataProvider([this](const std::string &id) {
+  m_audio->setDataProvider([this](const std::string& id) {
     if (!m_resources) {
       return Result<std::vector<u8>>::error("Resource manager unavailable");
     }
@@ -122,39 +124,59 @@ void Application::run() {
   mainLoop();
 }
 
-void Application::quit() { m_running = false; }
+void Application::quit() {
+  m_running = false;
+}
 
-bool Application::isRunning() const { return m_running; }
+bool Application::isRunning() const {
+  return m_running;
+}
 
-f64 Application::getDeltaTime() const { return m_timer.getDeltaTime(); }
+f64 Application::getDeltaTime() const {
+  return m_timer.getDeltaTime();
+}
 
-f64 Application::getElapsedTime() const { return m_timer.getElapsedSeconds(); }
+f64 Application::getElapsedTime() const {
+  return m_timer.getElapsedSeconds();
+}
 
-platform::IWindow *Application::getWindow() { return m_window.get(); }
-
-const platform::IWindow *Application::getWindow() const {
+platform::IWindow* Application::getWindow() {
   return m_window.get();
 }
 
-platform::IFileSystem *Application::getFileSystem() {
+const platform::IWindow* Application::getWindow() const {
+  return m_window.get();
+}
+
+platform::IFileSystem* Application::getFileSystem() {
   return m_fileSystem.get();
 }
 
-renderer::IRenderer *Application::getRenderer() { return m_renderer.get(); }
+renderer::IRenderer* Application::getRenderer() {
+  return m_renderer.get();
+}
 
-resource::ResourceManager *Application::getResources() {
+resource::ResourceManager* Application::getResources() {
   return m_resources.get();
 }
 
-scene::SceneGraph *Application::getSceneGraph() { return m_sceneGraph.get(); }
+scene::SceneGraph* Application::getSceneGraph() {
+  return m_sceneGraph.get();
+}
 
-input::InputManager *Application::getInput() { return m_input.get(); }
+input::InputManager* Application::getInput() {
+  return m_input.get();
+}
 
-audio::AudioManager *Application::getAudio() { return m_audio.get(); }
+audio::AudioManager* Application::getAudio() {
+  return m_audio.get();
+}
 
-save::SaveManager *Application::getSaveManager() { return m_saveManager.get(); }
+save::SaveManager* Application::getSaveManager() {
+  return m_saveManager.get();
+}
 
-localization::LocalizationManager *Application::getLocalization() {
+localization::LocalizationManager* Application::getLocalization() {
   return m_localization.get();
 }
 

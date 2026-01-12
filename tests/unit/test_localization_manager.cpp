@@ -309,15 +309,14 @@ TEST_CASE("LocalizationManager - Language change callback", "[localization][mana
   REQUIRE(newLocale.language == "fr");
 }
 
-TEST_CASE("LocalizationManager - Language change callback not fired when same", "[localization][manager][callback]") {
+TEST_CASE("LocalizationManager - Language change callback not fired when same",
+          "[localization][manager][callback]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
   int callbackCount = 0;
 
-  manager.setOnLanguageChanged([&](const LocaleId&) {
-    callbackCount++;
-  });
+  manager.setOnLanguageChanged([&](const LocaleId&) { callbackCount++; });
 
   // Set to same locale - should not fire
   manager.setCurrentLocale(LocaleId("en"));
@@ -350,7 +349,8 @@ TEST_CASE("LocalizationManager - Fallback to default locale", "[localization][ma
   REQUIRE(manager.get("common.button.cancel") == "Cancel");
 }
 
-TEST_CASE("LocalizationManager - No fallback when key doesn't exist", "[localization][manager][fallback]") {
+TEST_CASE("LocalizationManager - No fallback when key doesn't exist",
+          "[localization][manager][fallback]") {
   LocalizationManager manager;
   manager.setDefaultLocale(LocaleId("en"));
   manager.setCurrentLocale(LocaleId("en"));
@@ -386,7 +386,8 @@ TEST_CASE("LocalizationManager - Missing string callback", "[localization][manag
   REQUIRE(missingLocale.language == "ja");
 }
 
-TEST_CASE("LocalizationManager - hasString checks current locale", "[localization][manager][missing]") {
+TEST_CASE("LocalizationManager - hasString checks current locale",
+          "[localization][manager][missing]") {
   LocalizationManager manager;
 
   manager.setString(LocaleId("en"), "key1", "English");
@@ -401,7 +402,8 @@ TEST_CASE("LocalizationManager - hasString checks current locale", "[localizatio
   REQUIRE(manager.hasString("key2"));
 }
 
-TEST_CASE("LocalizationManager - hasString with specific locale", "[localization][manager][missing]") {
+TEST_CASE("LocalizationManager - hasString with specific locale",
+          "[localization][manager][missing]") {
   LocalizationManager manager;
 
   manager.setString(LocaleId("en"), "key1", "English");
@@ -443,7 +445,8 @@ TEST_CASE("LocalizationManager - Russian plural rules", "[localization][manager]
   REQUIRE(manager.getPluralCategory(LocaleId("ru"), 25) == PluralCategory::Many);
 }
 
-TEST_CASE("LocalizationManager - Japanese plural rules (no plural)", "[localization][manager][plural]") {
+TEST_CASE("LocalizationManager - Japanese plural rules (no plural)",
+          "[localization][manager][plural]") {
   LocalizationManager manager;
 
   // Japanese has no plural distinction
@@ -549,7 +552,8 @@ TEST_CASE("LocalizationManager - RTL with locale config", "[localization][manage
 // Variable Interpolation Tests
 // ============================================================================
 
-TEST_CASE("LocalizationManager - Variable interpolation single variable", "[localization][manager][interpolation]") {
+TEST_CASE("LocalizationManager - Variable interpolation single variable",
+          "[localization][manager][interpolation]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -561,7 +565,8 @@ TEST_CASE("LocalizationManager - Variable interpolation single variable", "[loca
   REQUIRE(manager.get("greeting", vars) == "Hello, Alice!");
 }
 
-TEST_CASE("LocalizationManager - Variable interpolation multiple variables", "[localization][manager][interpolation]") {
+TEST_CASE("LocalizationManager - Variable interpolation multiple variables",
+          "[localization][manager][interpolation]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -575,7 +580,8 @@ TEST_CASE("LocalizationManager - Variable interpolation multiple variables", "[l
   REQUIRE(manager.get("message", vars) == "Bob sent 5 messages to Carol");
 }
 
-TEST_CASE("LocalizationManager - Variable interpolation with same variable multiple times", "[localization][manager][interpolation]") {
+TEST_CASE("LocalizationManager - Variable interpolation with same variable multiple times",
+          "[localization][manager][interpolation]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -587,7 +593,8 @@ TEST_CASE("LocalizationManager - Variable interpolation with same variable multi
   REQUIRE(manager.get("repeat", vars) == "echo echo echo");
 }
 
-TEST_CASE("LocalizationManager - Variable interpolation with missing variable", "[localization][manager][interpolation]") {
+TEST_CASE("LocalizationManager - Variable interpolation with missing variable",
+          "[localization][manager][interpolation]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -601,7 +608,8 @@ TEST_CASE("LocalizationManager - Variable interpolation with missing variable", 
   REQUIRE(manager.get("template", vars) == "Hello, Alice! You have {count} messages.");
 }
 
-TEST_CASE("LocalizationManager - Plural with variable interpolation", "[localization][manager][interpolation][plural]") {
+TEST_CASE("LocalizationManager - Plural with variable interpolation",
+          "[localization][manager][interpolation][plural]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -623,7 +631,8 @@ TEST_CASE("LocalizationManager - Plural with variable interpolation", "[localiza
   REQUIRE(manager.getPlural("message_count", 5, vars) == "You have 5 messages");
 }
 
-TEST_CASE("LocalizationManager - Direct interpolate function", "[localization][manager][interpolation]") {
+TEST_CASE("LocalizationManager - Direct interpolate function",
+          "[localization][manager][interpolation]") {
   LocalizationManager manager;
 
   std::unordered_map<std::string, std::string> vars;
@@ -638,7 +647,8 @@ TEST_CASE("LocalizationManager - Direct interpolate function", "[localization][m
 // Locale Configuration Tests
 // ============================================================================
 
-TEST_CASE("LocalizationManager - Register and retrieve locale config", "[localization][manager][config]") {
+TEST_CASE("LocalizationManager - Register and retrieve locale config",
+          "[localization][manager][config]") {
   LocalizationManager manager;
 
   LocaleConfig config;
@@ -662,7 +672,8 @@ TEST_CASE("LocalizationManager - Register and retrieve locale config", "[localiz
   REQUIRE(retrieved->dateFormat == "MM/DD/YYYY");
 }
 
-TEST_CASE("LocalizationManager - Get config for unregistered locale", "[localization][manager][config]") {
+TEST_CASE("LocalizationManager - Get config for unregistered locale",
+          "[localization][manager][config]") {
   LocalizationManager manager;
 
   auto config = manager.getLocaleConfig(LocaleId("xx"));
@@ -694,7 +705,8 @@ TEST_CASE("LocalizationManager - removeString", "[localization][manager][string]
   REQUIRE_FALSE(manager.hasString("temp.key"));
 }
 
-TEST_CASE("LocalizationManager - getForLocale bypasses current locale", "[localization][manager][string]") {
+TEST_CASE("LocalizationManager - getForLocale bypasses current locale",
+          "[localization][manager][string]") {
   LocalizationManager manager;
   manager.setCurrentLocale(LocaleId("en"));
 
@@ -1109,7 +1121,8 @@ TEST_CASE("LocalizationManager - Export non-existent locale", "[localization][ma
 
   fs::path tempPath = fs::temp_directory_path() / "test_export.json";
 
-  auto result = manager.exportStrings(LocaleId("nonexistent"), tempPath.string(), LocalizationFormat::JSON);
+  auto result =
+      manager.exportStrings(LocaleId("nonexistent"), tempPath.string(), LocalizationFormat::JSON);
 
   REQUIRE(result.isError());
 }
@@ -1128,12 +1141,14 @@ TEST_CASE("LocalizationManager - Export missing strings", "[localization][manage
 
   fs::path tempPath = fs::temp_directory_path() / "test_missing.json";
 
-  auto result = manager.exportMissingStrings(LocaleId("ja"), tempPath.string(), LocalizationFormat::JSON);
+  auto result =
+      manager.exportMissingStrings(LocaleId("ja"), tempPath.string(), LocalizationFormat::JSON);
   REQUIRE(result.isOk());
 
   // Load the missing strings back and verify
   LocalizationManager verifyManager;
-  auto loadResult = verifyManager.loadStrings(LocaleId("test"), tempPath.string(), LocalizationFormat::JSON);
+  auto loadResult =
+      verifyManager.loadStrings(LocaleId("test"), tempPath.string(), LocalizationFormat::JSON);
   REQUIRE(loadResult.isOk());
 
   verifyManager.setCurrentLocale(LocaleId("test"));
@@ -1181,14 +1196,11 @@ TEST_CASE("LocalizationManager - Complete workflow", "[localization][manager][in
 
   // Set up callbacks
   bool languageChanged = false;
-  manager.setOnLanguageChanged([&](const LocaleId&) {
-    languageChanged = true;
-  });
+  manager.setOnLanguageChanged([&](const LocaleId&) { languageChanged = true; });
 
   std::vector<std::string> missingKeys;
-  manager.setOnStringMissing([&](const std::string& key, const LocaleId&) {
-    missingKeys.push_back(key);
-  });
+  manager.setOnStringMissing(
+      [&](const std::string& key, const LocaleId&) { missingKeys.push_back(key); });
 
   // Test English
   manager.setCurrentLocale(LocaleId("en"));
@@ -1218,7 +1230,8 @@ TEST_CASE("LocalizationManager - Complete workflow", "[localization][manager][in
   REQUIRE(std::find(missingKeys.begin(), missingKeys.end(), "user.greeting") != missingKeys.end());
 }
 
-TEST_CASE("LocalizationManager - Round-trip export and import", "[localization][manager][integration]") {
+TEST_CASE("LocalizationManager - Round-trip export and import",
+          "[localization][manager][integration]") {
   LocalizationManager manager1;
 
   manager1.setString(LocaleId("en"), "key1", "Value 1");
@@ -1228,12 +1241,14 @@ TEST_CASE("LocalizationManager - Round-trip export and import", "[localization][
   fs::path tempPath = fs::temp_directory_path() / "roundtrip_test.json";
 
   // Export
-  auto exportResult = manager1.exportStrings(LocaleId("en"), tempPath.string(), LocalizationFormat::JSON);
+  auto exportResult =
+      manager1.exportStrings(LocaleId("en"), tempPath.string(), LocalizationFormat::JSON);
   REQUIRE(exportResult.isOk());
 
   // Import into new manager
   LocalizationManager manager2;
-  auto importResult = manager2.loadStrings(LocaleId("test"), tempPath.string(), LocalizationFormat::JSON);
+  auto importResult =
+      manager2.loadStrings(LocaleId("test"), tempPath.string(), LocalizationFormat::JSON);
   REQUIRE(importResult.isOk());
 
   // Verify

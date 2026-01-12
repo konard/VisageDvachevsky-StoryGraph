@@ -387,20 +387,20 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
 }
 
 Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
-                                                     const std::string& relativePath) {
+                                                    const std::string& relativePath) {
   // Reject paths containing ".." components before filesystem resolution
   // This provides an early defense against path traversal attempts
   if (relativePath.find("..") != std::string::npos) {
-    return Result<std::string>::error(
-        "Path traversal detected: path contains '..' component: " + relativePath);
+    return Result<std::string>::error("Path traversal detected: path contains '..' component: " +
+                                      relativePath);
   }
 
   // Normalize the base path to ensure we have a canonical reference
   std::error_code ec;
   fs::path canonicalBase = fs::weakly_canonical(basePath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize base path: " + basePath +
-                                      " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize base path: " + basePath + " - " +
+                                      ec.message());
   }
 
   // Construct the full output path
@@ -410,19 +410,19 @@ Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
   // weakly_canonical resolves ".." and "." components and follows symlinks
   fs::path canonicalPath = fs::weakly_canonical(fullPath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize output path: " +
-                                      fullPath.string() + " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize output path: " + fullPath.string() +
+                                      " - " + ec.message());
   }
 
   // Security check: Verify the resolved path is within the base directory
   // This prevents writing to arbitrary locations on the filesystem
   auto [rootEnd, nothing] = std::mismatch(canonicalBase.begin(), canonicalBase.end(),
-                                           canonicalPath.begin(), canonicalPath.end());
+                                          canonicalPath.begin(), canonicalPath.end());
 
   if (rootEnd != canonicalBase.end()) {
-    return Result<std::string>::error(
-        "Path traversal detected: resolved path '" + canonicalPath.string() +
-        "' escapes base directory '" + canonicalBase.string() + "'");
+    return Result<std::string>::error("Path traversal detected: resolved path '" +
+                                      canonicalPath.string() + "' escapes base directory '" +
+                                      canonicalBase.string() + "'");
   }
 
   return Result<std::string>::ok(fullPath.string());

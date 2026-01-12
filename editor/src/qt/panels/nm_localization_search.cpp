@@ -8,8 +8,8 @@
 namespace NovelMind::editor::qt {
 
 // Key validation: allows alphanumeric, underscore, dot, dash
-const QRegularExpression NMLocalizationSearch::s_keyValidationRegex(
-    QStringLiteral("^[A-Za-z0-9_.-]+$"));
+const QRegularExpression
+    NMLocalizationSearch::s_keyValidationRegex(QStringLiteral("^[A-Za-z0-9_.-]+$"));
 
 NMLocalizationSearch::NMLocalizationSearch(NMLocalizationDataModel& dataModel)
     : m_dataModel(dataModel) {}

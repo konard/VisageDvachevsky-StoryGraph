@@ -19,8 +19,7 @@ namespace NovelMind::editor::qt {
 // NMSceneGraphicsView
 // ============================================================================
 
-NMSceneGraphicsView::NMSceneGraphicsView(QWidget *parent)
-    : QGraphicsView(parent) {
+NMSceneGraphicsView::NMSceneGraphicsView(QWidget* parent) : QGraphicsView(parent) {
   setRenderHint(QPainter::Antialiasing);
   setRenderHint(QPainter::SmoothPixmapTransform);
   setViewportUpdateMode(FullViewportUpdate);
@@ -50,7 +49,9 @@ void NMSceneGraphicsView::setZoomLevel(qreal zoom) {
   emit zoomChanged(m_zoomLevel);
 }
 
-void NMSceneGraphicsView::centerOnScene() { centerOn(0, 0); }
+void NMSceneGraphicsView::centerOnScene() {
+  centerOn(0, 0);
+}
 
 void NMSceneGraphicsView::fitToScene() {
   if (scene() && !scene()->items().isEmpty()) {
@@ -60,7 +61,7 @@ void NMSceneGraphicsView::fitToScene() {
   }
 }
 
-void NMSceneGraphicsView::wheelEvent(QWheelEvent *event) {
+void NMSceneGraphicsView::wheelEvent(QWheelEvent* event) {
   // Zoom with mouse wheel
   qreal factor = 1.15;
   if (event->angleDelta().y() < 0) {
@@ -71,7 +72,7 @@ void NMSceneGraphicsView::wheelEvent(QWheelEvent *event) {
   event->accept();
 }
 
-void NMSceneGraphicsView::updateCursor(const QCursor &newCursor) {
+void NMSceneGraphicsView::updateCursor(const QCursor& newCursor) {
   // Only set cursor if it's actually different to avoid redundant calls
   if (m_currentCursor.shape() != newCursor.shape()) {
     m_currentCursor = newCursor;
@@ -79,7 +80,7 @@ void NMSceneGraphicsView::updateCursor(const QCursor &newCursor) {
   }
 }
 
-void NMSceneGraphicsView::mousePressEvent(QMouseEvent *event) {
+void NMSceneGraphicsView::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton) {
     // Start panning
     m_isPanning = true;
@@ -92,7 +93,7 @@ void NMSceneGraphicsView::mousePressEvent(QMouseEvent *event) {
   QGraphicsView::mousePressEvent(event);
 }
 
-void NMSceneGraphicsView::mouseMoveEvent(QMouseEvent *event) {
+void NMSceneGraphicsView::mouseMoveEvent(QMouseEvent* event) {
   // Emit cursor position in scene coordinates
   QPointF scenePos = mapToScene(event->pos());
   emit cursorPositionChanged(scenePos);
@@ -110,7 +111,7 @@ void NMSceneGraphicsView::mouseMoveEvent(QMouseEvent *event) {
   QGraphicsView::mouseMoveEvent(event);
 }
 
-void NMSceneGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
+void NMSceneGraphicsView::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::MiddleButton && m_isPanning) {
     m_isPanning = false;
     updateCursor(Qt::ArrowCursor);
@@ -121,7 +122,7 @@ void NMSceneGraphicsView::mouseReleaseEvent(QMouseEvent *event) {
   QGraphicsView::mouseReleaseEvent(event);
 }
 
-void NMSceneGraphicsView::dragEnterEvent(QDragEnterEvent *event) {
+void NMSceneGraphicsView::dragEnterEvent(QDragEnterEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
     emit dragActiveChanged(true);
@@ -130,7 +131,7 @@ void NMSceneGraphicsView::dragEnterEvent(QDragEnterEvent *event) {
   QGraphicsView::dragEnterEvent(event);
 }
 
-void NMSceneGraphicsView::dragMoveEvent(QDragMoveEvent *event) {
+void NMSceneGraphicsView::dragMoveEvent(QDragMoveEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
     return;
@@ -138,11 +139,11 @@ void NMSceneGraphicsView::dragMoveEvent(QDragMoveEvent *event) {
   QGraphicsView::dragMoveEvent(event);
 }
 
-void NMSceneGraphicsView::dropEvent(QDropEvent *event) {
+void NMSceneGraphicsView::dropEvent(QDropEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     QStringList paths;
     const QList<QUrl> urls = event->mimeData()->urls();
-    for (const QUrl &url : urls) {
+    for (const QUrl& url : urls) {
       if (url.isLocalFile()) {
         paths.append(url.toLocalFile());
       }
@@ -159,12 +160,12 @@ void NMSceneGraphicsView::dropEvent(QDropEvent *event) {
   QGraphicsView::dropEvent(event);
 }
 
-void NMSceneGraphicsView::dragLeaveEvent(QDragLeaveEvent *event) {
+void NMSceneGraphicsView::dragLeaveEvent(QDragLeaveEvent* event) {
   emit dragActiveChanged(false);
   QGraphicsView::dragLeaveEvent(event);
 }
 
-void NMSceneGraphicsView::contextMenuEvent(QContextMenuEvent *event) {
+void NMSceneGraphicsView::contextMenuEvent(QContextMenuEvent* event) {
   if (!event) {
     return;
   }

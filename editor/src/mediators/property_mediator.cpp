@@ -11,67 +11,58 @@
 
 namespace NovelMind::editor::mediators {
 
-PropertyMediator::PropertyMediator(qt::NMSceneViewPanel *sceneView,
-                                   qt::NMInspectorPanel *inspector,
-                                   qt::NMStoryGraphPanel *storyGraph,
-                                   qt::NMCurveEditorPanel *curveEditor,
-                                   qt::NMScriptEditorPanel *scriptEditor,
-                                   qt::NMScriptDocPanel *scriptDoc,
-                                   QObject *parent)
-    : QObject(parent), m_sceneView(sceneView), m_inspector(inspector),
-      m_storyGraph(storyGraph), m_curveEditor(curveEditor),
-      m_scriptEditor(scriptEditor), m_scriptDoc(scriptDoc) {}
+PropertyMediator::PropertyMediator(qt::NMSceneViewPanel* sceneView, qt::NMInspectorPanel* inspector,
+                                   qt::NMStoryGraphPanel* storyGraph,
+                                   qt::NMCurveEditorPanel* curveEditor,
+                                   qt::NMScriptEditorPanel* scriptEditor,
+                                   qt::NMScriptDocPanel* scriptDoc, QObject* parent)
+    : QObject(parent), m_sceneView(sceneView), m_inspector(inspector), m_storyGraph(storyGraph),
+      m_curveEditor(curveEditor), m_scriptEditor(scriptEditor), m_scriptDoc(scriptDoc) {}
 
-PropertyMediator::~PropertyMediator() { shutdown(); }
+PropertyMediator::~PropertyMediator() {
+  shutdown();
+}
 
 void PropertyMediator::initialize() {
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Property change events from inspector
-  m_subscriptions.push_back(
-      bus.subscribe<events::InspectorPropertyChangedEvent>(
-          [this](const events::InspectorPropertyChangedEvent &event) {
-            onInspectorPropertyChanged(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::InspectorPropertyChangedEvent>(
+      [this](const events::InspectorPropertyChangedEvent& event) {
+        onInspectorPropertyChanged(event);
+      }));
 
   // Scene object position changes from scene view
-  m_subscriptions.push_back(
-      bus.subscribe<events::SceneObjectPositionChangedEvent>(
-          [this](const events::SceneObjectPositionChangedEvent &event) {
-            onSceneObjectPositionChanged(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::SceneObjectPositionChangedEvent>(
+      [this](const events::SceneObjectPositionChangedEvent& event) {
+        onSceneObjectPositionChanged(event);
+      }));
 
   // Scene object transform finished
-  m_subscriptions.push_back(
-      bus.subscribe<events::SceneObjectTransformFinishedEvent>(
-          [this](const events::SceneObjectTransformFinishedEvent &event) {
-            onSceneObjectTransformFinished(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::SceneObjectTransformFinishedEvent>(
+      [this](const events::SceneObjectTransformFinishedEvent& event) {
+        onSceneObjectTransformFinished(event);
+      }));
 
   // Update inspector property (from other panels)
   m_subscriptions.push_back(bus.subscribe<events::UpdateInspectorPropertyEvent>(
-      [this](const events::UpdateInspectorPropertyEvent &event) {
+      [this](const events::UpdateInspectorPropertyEvent& event) {
         onUpdateInspectorProperty(event);
       }));
 
   // Curve editor requests
-  m_subscriptions.push_back(
-      bus.subscribe<events::OpenCurveEditorRequestedEvent>(
-          [this](const events::OpenCurveEditorRequestedEvent &event) {
-            onOpenCurveEditorRequested(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::OpenCurveEditorRequestedEvent>(
+      [this](const events::OpenCurveEditorRequestedEvent& event) {
+        onOpenCurveEditorRequested(event);
+      }));
 
   // Curve changes
   m_subscriptions.push_back(bus.subscribe<events::CurveChangedEvent>(
-      [this](const events::CurveChangedEvent &event) {
-        onCurveChanged(event);
-      }));
+      [this](const events::CurveChangedEvent& event) { onCurveChanged(event); }));
 
   // Script doc HTML changes
   m_subscriptions.push_back(bus.subscribe<events::ScriptDocHtmlChangedEvent>(
-      [this](const events::ScriptDocHtmlChangedEvent &event) {
-        onScriptDocHtmlChanged(event);
-      }));
+      [this](const events::ScriptDocHtmlChangedEvent& event) { onScriptDocHtmlChanged(event); }));
 
   // =========================================================================
   // Issue #203: Connect Qt signals to EventBus for panel integration
@@ -82,8 +73,7 @@ void PropertyMediator::initialize() {
   // Connect Inspector Panel's propertyChanged signal to publish EventBus event
   if (m_inspector) {
     connect(m_inspector, &qt::NMInspectorPanel::propertyChanged, this,
-            [](const QString &objectId, const QString &propertyName,
-               const QString &newValue) {
+            [](const QString& objectId, const QString& propertyName, const QString& newValue) {
               qDebug() << "[PropertyMediator] Publishing "
                           "InspectorPropertyChangedEvent for property:"
                        << propertyName << "on" << objectId;
@@ -97,13 +87,12 @@ void PropertyMediator::initialize() {
             });
   }
 
-  qDebug() << "[PropertyMediator] Initialized with"
-           << m_subscriptions.size() << "subscriptions";
+  qDebug() << "[PropertyMediator] Initialized with" << m_subscriptions.size() << "subscriptions";
 }
 
 void PropertyMediator::shutdown() {
-  auto &bus = EventBus::instance();
-  for (const auto &sub : m_subscriptions) {
+  auto& bus = EventBus::instance();
+  for (const auto& sub : m_subscriptions) {
     bus.unsubscribe(sub);
   }
   m_subscriptions.clear();
@@ -111,20 +100,20 @@ void PropertyMediator::shutdown() {
 }
 
 void PropertyMediator::onInspectorPropertyChanged(
-    const events::InspectorPropertyChangedEvent &event) {
+    const events::InspectorPropertyChangedEvent& event) {
   if (m_processingProperty || event.objectId.isEmpty()) {
     return;
   }
   m_processingProperty = true;
 
-  qDebug() << "[PropertyMediator] Property changed:" << event.propertyName
-           << "=" << event.newValue << "on" << event.objectId;
+  qDebug() << "[PropertyMediator] Property changed:" << event.propertyName << "=" << event.newValue
+           << "on" << event.objectId;
 
   // Check if this is a curve editor open request
   if (event.propertyName.endsWith(":openCurveEditor")) {
     events::OpenCurveEditorRequestedEvent curveEvent;
-    curveEvent.propertyName = event.propertyName.left(
-        event.propertyName.length() - QString(":openCurveEditor").length());
+    curveEvent.propertyName =
+        event.propertyName.left(event.propertyName.length() - QString(":openCurveEditor").length());
     curveEvent.curveData = event.newValue;
     EventBus::instance().publish(curveEvent);
     m_processingProperty = false;
@@ -143,14 +132,14 @@ void PropertyMediator::onInspectorPropertyChanged(
   m_processingProperty = false;
 }
 
-void PropertyMediator::applyPropertyToSceneObject(const QString &objectId,
-                                                   const QString &propertyName,
-                                                   const QString &value) {
+void PropertyMediator::applyPropertyToSceneObject(const QString& objectId,
+                                                  const QString& propertyName,
+                                                  const QString& value) {
   if (!m_sceneView) {
     return;
   }
 
-  auto *obj = m_sceneView->findObjectById(objectId);
+  auto* obj = m_sceneView->findObjectById(objectId);
   if (!obj) {
     return;
   }
@@ -183,8 +172,8 @@ void PropertyMediator::applyPropertyToSceneObject(const QString &objectId,
     const bool newVisible = (value.toLower() == "true" || value == "1");
     const bool oldVisible = obj->isVisible();
     if (oldVisible != newVisible) {
-      auto *cmd = new qt::ToggleObjectVisibilityCommand(
-          m_sceneView, objectId, oldVisible, newVisible);
+      auto* cmd =
+          new qt::ToggleObjectVisibilityCommand(m_sceneView, objectId, oldVisible, newVisible);
       qt::NMUndoManager::instance().pushCommand(cmd);
     }
   } else if (propertyName == "alpha") {
@@ -195,8 +184,7 @@ void PropertyMediator::applyPropertyToSceneObject(const QString &objectId,
     const bool newLocked = (value.toLower() == "true" || value == "1");
     const bool oldLocked = obj->isLocked();
     if (oldLocked != newLocked) {
-      auto *cmd = new qt::ToggleObjectLockedCommand(
-          m_sceneView, objectId, oldLocked, newLocked);
+      auto* cmd = new qt::ToggleObjectLockedCommand(m_sceneView, objectId, oldLocked, newLocked);
       qt::NMUndoManager::instance().pushCommand(cmd);
     }
   }
@@ -207,9 +195,9 @@ void PropertyMediator::applyPropertyToSceneObject(const QString &objectId,
   }
 }
 
-void PropertyMediator::applyPropertyToStoryGraphNode(const QString &nodeId,
-                                                      const QString &propertyName,
-                                                      const QString &value) {
+void PropertyMediator::applyPropertyToStoryGraphNode(const QString& nodeId,
+                                                     const QString& propertyName,
+                                                     const QString& value) {
   if (!m_storyGraph) {
     return;
   }
@@ -223,9 +211,8 @@ void PropertyMediator::applyPropertyToStoryGraphNode(const QString &nodeId,
 
   // Update scene preview if dialogue properties changed
   if (m_sceneView) {
-    if (auto *node = m_storyGraph->findNodeByIdString(nodeId)) {
-      m_sceneView->setStoryPreview(node->dialogueSpeaker(),
-                                   node->dialogueText(),
+    if (auto* node = m_storyGraph->findNodeByIdString(nodeId)) {
+      m_sceneView->setStoryPreview(node->dialogueSpeaker(), node->dialogueText(),
                                    node->choiceOptions());
     }
   }
@@ -237,47 +224,40 @@ void PropertyMediator::applyPropertyToStoryGraphNode(const QString &nodeId,
 }
 
 void PropertyMediator::onSceneObjectPositionChanged(
-    const events::SceneObjectPositionChangedEvent &event) {
+    const events::SceneObjectPositionChangedEvent& event) {
   if (m_processingProperty) {
     return;
   }
   m_processingProperty = true;
 
   if (m_inspector && m_inspector->currentObjectId() == event.objectId) {
-    m_inspector->updatePropertyValue("position_x",
-                                     QString::number(event.newPosition.x()));
-    m_inspector->updatePropertyValue("position_y",
-                                     QString::number(event.newPosition.y()));
+    m_inspector->updatePropertyValue("position_x", QString::number(event.newPosition.x()));
+    m_inspector->updatePropertyValue("position_y", QString::number(event.newPosition.y()));
   }
 
   m_processingProperty = false;
 }
 
 void PropertyMediator::onSceneObjectTransformFinished(
-    const events::SceneObjectTransformFinishedEvent &event) {
+    const events::SceneObjectTransformFinishedEvent& event) {
   if (m_processingProperty) {
     return;
   }
   m_processingProperty = true;
 
   if (m_inspector && m_inspector->currentObjectId() == event.objectId) {
-    m_inspector->updatePropertyValue("position_x",
-                                     QString::number(event.newPosition.x()));
-    m_inspector->updatePropertyValue("position_y",
-                                     QString::number(event.newPosition.y()));
-    m_inspector->updatePropertyValue("rotation",
-                                     QString::number(event.newRotation));
-    m_inspector->updatePropertyValue("scale_x",
-                                     QString::number(event.newScaleX));
-    m_inspector->updatePropertyValue("scale_y",
-                                     QString::number(event.newScaleY));
+    m_inspector->updatePropertyValue("position_x", QString::number(event.newPosition.x()));
+    m_inspector->updatePropertyValue("position_y", QString::number(event.newPosition.y()));
+    m_inspector->updatePropertyValue("rotation", QString::number(event.newRotation));
+    m_inspector->updatePropertyValue("scale_x", QString::number(event.newScaleX));
+    m_inspector->updatePropertyValue("scale_y", QString::number(event.newScaleY));
   }
 
   m_processingProperty = false;
 }
 
 void PropertyMediator::onUpdateInspectorProperty(
-    const events::UpdateInspectorPropertyEvent &event) {
+    const events::UpdateInspectorPropertyEvent& event) {
   if (m_processingProperty) {
     return;
   }
@@ -291,7 +271,7 @@ void PropertyMediator::onUpdateInspectorProperty(
 }
 
 void PropertyMediator::onOpenCurveEditorRequested(
-    const events::OpenCurveEditorRequestedEvent &event) {
+    const events::OpenCurveEditorRequestedEvent& event) {
   if (!m_curveEditor) {
     return;
   }
@@ -304,13 +284,12 @@ void PropertyMediator::onOpenCurveEditorRequested(
   m_curveEditor->setFocus();
 }
 
-void PropertyMediator::onCurveChanged(const events::CurveChangedEvent &event) {
+void PropertyMediator::onCurveChanged(const events::CurveChangedEvent& event) {
   qDebug() << "[PropertyMediator] Curve changed:" << event.curveId;
   // Curve editing triggers document modification tracking through the undo system
 }
 
-void PropertyMediator::onScriptDocHtmlChanged(
-    const events::ScriptDocHtmlChangedEvent &event) {
+void PropertyMediator::onScriptDocHtmlChanged(const events::ScriptDocHtmlChangedEvent& event) {
   if (m_scriptDoc) {
     m_scriptDoc->setDocHtml(event.docHtml);
   }

@@ -37,7 +37,7 @@ void ensureQtApp() {
   if (!QApplication::instance()) {
     static int argc = 1;
     static char arg0[] = "integration_tests";
-    static char *argv[] = {arg0, nullptr};
+    static char* argv[] = {arg0, nullptr};
     new QApplication(argc, argv);
   }
 }
@@ -45,7 +45,7 @@ void ensureQtApp() {
 /**
  * @brief Helper to create a test NMScript file
  */
-bool createTestScriptFile(const QString &filePath, const QString &content) {
+bool createTestScriptFile(const QString& filePath, const QString& content) {
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
     return false;
@@ -71,15 +71,15 @@ void waitForFileSystemUpdate() {
 /**
  * @brief Helper to find the current editor in the Script Editor panel
  */
-NMScriptEditor *getCurrentEditor(NMScriptEditorPanel &panel) {
+NMScriptEditor* getCurrentEditor(NMScriptEditorPanel& panel) {
   // Find the tab widget to get the current editor
-  QTabWidget *tabs = panel.findChild<QTabWidget *>();
+  QTabWidget* tabs = panel.findChild<QTabWidget*>();
   if (!tabs || tabs->count() == 0) {
     return nullptr;
   }
 
   // The current widget should be an NMScriptEditor
-  return qobject_cast<NMScriptEditor *>(tabs->currentWidget());
+  return qobject_cast<NMScriptEditor*>(tabs->currentWidget());
 }
 
 } // namespace
@@ -88,8 +88,7 @@ NMScriptEditor *getCurrentEditor(NMScriptEditorPanel &panel) {
 // Script Editor Panel Construction Tests
 // =============================================================================
 
-TEST_CASE("ScriptEditorPanel: Panel can be constructed",
-          "[integration][editor][script_editor]") {
+TEST_CASE("ScriptEditorPanel: Panel can be constructed", "[integration][editor][script_editor]") {
   ensureQtApp();
 
   SECTION("Panel construction without crash") {
@@ -103,8 +102,7 @@ TEST_CASE("ScriptEditorPanel: Panel can be constructed",
   }
 }
 
-TEST_CASE("ScriptEditorPanel: Panel initialization",
-          "[integration][editor][script_editor]") {
+TEST_CASE("ScriptEditorPanel: Panel initialization", "[integration][editor][script_editor]") {
   ensureQtApp();
 
   SECTION("Panel initializes without crash") {
@@ -155,7 +153,7 @@ TEST_CASE("ScriptEditorPanel: File open operations",
     waitForFileSystemUpdate();
 
     // Verify that an editor tab was created
-    NMScriptEditor *editor = getCurrentEditor(panel);
+    NMScriptEditor* editor = getCurrentEditor(panel);
     REQUIRE(editor != nullptr);
 
     // Verify content was loaded (allowing for some whitespace differences)
@@ -176,7 +174,7 @@ TEST_CASE("ScriptEditorPanel: File open operations",
     waitForFileSystemUpdate();
 
     // Should still have only one tab
-    QTabWidget *tabs = panel.findChild<QTabWidget *>();
+    QTabWidget* tabs = panel.findChild<QTabWidget*>();
     REQUIRE(tabs != nullptr);
     // Note: The exact tab count may vary depending on welcome dialogs, etc.
     // We just verify it doesn't double
@@ -219,14 +217,15 @@ TEST_CASE("ScriptEditorPanel: File save operations",
     panel.openScript(testScriptPath);
     waitForFileSystemUpdate();
 
-    NMScriptEditor *editor = getCurrentEditor(panel);
+    NMScriptEditor* editor = getCurrentEditor(panel);
     REQUIRE(editor != nullptr);
 
     // Modify content
     const QString newContent = "scene modified\n  say hero \"Modified content\"\n";
     editor->setPlainText(newContent);
 
-    // Trigger save (simulated by direct file write since we don't have access to private save method)
+    // Trigger save (simulated by direct file write since we don't have access to private save
+    // method)
     QFile file(testScriptPath);
     if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
       QTextStream out(&file);
@@ -417,8 +416,7 @@ TEST_CASE("ScriptEditorPanel: Auto-completion features",
     editor.setCompletionEntries(entries);
 
     // Get contextual completions with a prefix
-    QList<NMScriptEditor::CompletionEntry> completions =
-        editor.getContextualCompletions("h");
+    QList<NMScriptEditor::CompletionEntry> completions = editor.getContextualCompletions("h");
 
     // Should return completions (may be filtered)
     REQUIRE(completions.size() >= 0);
@@ -473,11 +471,12 @@ TEST_CASE("ScriptEditorPanel: Go to definition feature",
     // Connect signal to verify it can be emitted
     bool signalEmitted = false;
     QString emittedSymbol;
-    QObject::connect(&editor, &NMScriptEditor::goToDefinitionRequested,
-                     [&signalEmitted, &emittedSymbol](const QString &symbol, const SymbolLocation &) {
-                       signalEmitted = true;
-                       emittedSymbol = symbol;
-                     });
+    QObject::connect(
+        &editor, &NMScriptEditor::goToDefinitionRequested,
+        [&signalEmitted, &emittedSymbol](const QString& symbol, const SymbolLocation&) {
+          signalEmitted = true;
+          emittedSymbol = symbol;
+        });
 
     // Trigger go to definition programmatically would require simulating F12 key
     // For now, we just verify the signal exists and can be connected
@@ -528,8 +527,7 @@ scene chapter1
 // Additional Editor Features Tests
 // =============================================================================
 
-TEST_CASE("ScriptEditorPanel: Code folding",
-          "[integration][editor][script_editor][folding]") {
+TEST_CASE("ScriptEditorPanel: Code folding", "[integration][editor][script_editor][folding]") {
   ensureQtApp();
 
   SECTION("Editor supports folding regions") {
@@ -550,7 +548,7 @@ TEST_CASE("ScriptEditorPanel: Code folding",
     editor.updateFoldingRegions();
 
     // Get folding regions
-    const QList<NMScriptEditor::FoldingRegion> &regions = editor.foldingRegions();
+    const QList<NMScriptEditor::FoldingRegion>& regions = editor.foldingRegions();
 
     // Should have detected some foldable regions
     REQUIRE(regions.size() >= 0);
@@ -568,8 +566,7 @@ TEST_CASE("ScriptEditorPanel: Code folding",
   }
 }
 
-TEST_CASE("ScriptEditorPanel: Minimap feature",
-          "[integration][editor][script_editor][minimap]") {
+TEST_CASE("ScriptEditorPanel: Minimap feature", "[integration][editor][script_editor][minimap]") {
   ensureQtApp();
 
   SECTION("Minimap can be enabled and disabled") {
@@ -588,7 +585,7 @@ TEST_CASE("ScriptEditorPanel: Minimap feature",
     NMScriptEditor editor;
     editor.setMinimapEnabled(true);
 
-    NMScriptMinimap *minimap = editor.minimap();
+    NMScriptMinimap* minimap = editor.minimap();
     // Minimap may be created lazily or always exists
     // We just verify the accessor doesn't crash
     SUCCEED();
@@ -774,8 +771,7 @@ TEST_CASE("ScriptEditorPanel: Command palette",
 // Read-only Mode Tests
 // =============================================================================
 
-TEST_CASE("ScriptEditorPanel: Read-only mode",
-          "[integration][editor][script_editor][readonly]") {
+TEST_CASE("ScriptEditorPanel: Read-only mode", "[integration][editor][script_editor][readonly]") {
   ensureQtApp();
 
   SECTION("Panel can be set to read-only mode") {

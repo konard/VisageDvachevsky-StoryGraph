@@ -56,8 +56,8 @@ struct TreemapNode {
   f32 x, y, width, height; // Calculated layout
 };
 
-TreemapNode buildTreemap(const BuildSizeAnalysis &analysis);
-void layoutTreemap(TreemapNode &root, f32 x, f32 y, f32 width, f32 height);
+TreemapNode buildTreemap(const BuildSizeAnalysis& analysis);
+void layoutTreemap(TreemapNode& root, f32 x, f32 y, f32 width, f32 height);
 } // namespace SizeVisualization
 
 /**
@@ -72,30 +72,23 @@ public:
   void render();
   void onResize(i32 width, i32 height);
 
-  void setAnalyzer(BuildSizeAnalyzer *analyzer);
+  void setAnalyzer(BuildSizeAnalyzer* analyzer);
 
   // Actions
   void refreshAnalysis();
-  void exportReport(const std::string &path);
+  void exportReport(const std::string& path);
 
   // View modes
-  enum class ViewMode : u8 {
-    Overview,
-    ByCategory,
-    BySize,
-    Duplicates,
-    Unused,
-    Suggestions
-  };
+  enum class ViewMode : u8 { Overview, ByCategory, BySize, Duplicates, Unused, Suggestions };
   void setViewMode(ViewMode mode) { m_viewMode = mode; }
   [[nodiscard]] ViewMode getViewMode() const { return m_viewMode; }
 
   // Filtering
-  void setFilter(const std::string &filter);
+  void setFilter(const std::string& filter);
   void setCategoryFilter(AssetCategory category);
 
   // Callbacks
-  void setOnAssetSelected(std::function<void(const std::string &)> callback);
+  void setOnAssetSelected(std::function<void(const std::string&)> callback);
   void setOnOptimizationApplied(std::function<void()> callback);
 
 private:
@@ -111,7 +104,7 @@ private:
 
   std::string formatSize(u64 bytes) const;
 
-  BuildSizeAnalyzer *m_analyzer = nullptr;
+  BuildSizeAnalyzer* m_analyzer = nullptr;
 
   ViewMode m_viewMode = ViewMode::Overview;
 
@@ -132,7 +125,7 @@ private:
   bool m_showDetails = true;
 
   // Callbacks
-  std::function<void(const std::string &)> m_onAssetSelected;
+  std::function<void(const std::string&)> m_onAssetSelected;
   std::function<void()> m_onOptimizationApplied;
 };
 

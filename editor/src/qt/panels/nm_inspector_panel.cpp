@@ -223,10 +223,9 @@ void NMInspectorPanel::inspectStoryGraphNode(NMGraphNodeItem* node, bool editabl
   m_currentObjectIds.clear();
   m_editMode = editable;
 
-  m_uiManager->setHeader(
-      m_headerLabel, QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
-                         .arg(node->nodeType())
-                         .arg(node->nodeIdString()));
+  m_uiManager->setHeader(m_headerLabel, QString("<b>%1</b><br><span style='color: gray;'>%2</span>")
+                                            .arg(node->nodeType())
+                                            .arg(node->nodeIdString()));
 
   // Delegate property creation to the property editor module
   m_propertyEditor->createStoryGraphNodeProperties(node, m_editMode, m_sceneRegistry);
@@ -298,8 +297,7 @@ void NMInspectorPanel::inspectMultipleObjects(const QList<NMSceneObject*>& objec
   }
 
   // Set header showing multi-selection
-  m_uiManager->setHeader(m_headerLabel,
-                         QString("<b>%1 Objects Selected</b>").arg(objects.size()));
+  m_uiManager->setHeader(m_headerLabel, QString("<b>%1 Objects Selected</b>").arg(objects.size()));
 
   // Delegate to component list module
   m_componentList->createMultiObjectPropertyGroups(objects, m_editMode);
@@ -316,9 +314,8 @@ void NMInspectorPanel::inspectMultipleObjects(const QList<NMSceneObject*>& objec
 void NMInspectorPanel::onGroupPropertyChanged(const QString& propertyName,
                                               const QString& newValue) {
   // Delegate to validators module
-  m_validators->handlePropertyChanged(propertyName, newValue, m_currentObjectId,
-                                      m_currentObjectIds, m_multiEditMode, m_lockAspectRatio,
-                                      m_lastScale);
+  m_validators->handlePropertyChanged(propertyName, newValue, m_currentObjectId, m_currentObjectIds,
+                                      m_multiEditMode, m_lockAspectRatio, m_lastScale);
 }
 
 void NMInspectorPanel::updatePropertyValue(const QString& propertyName, const QString& newValue) {

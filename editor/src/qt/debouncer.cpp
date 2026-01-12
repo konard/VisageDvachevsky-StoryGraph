@@ -14,8 +14,7 @@
 
 namespace NovelMind::editor::qt {
 
-Debouncer::Debouncer(int delayMs, QObject *parent)
-    : QObject(parent), m_delayMs(delayMs) {
+Debouncer::Debouncer(int delayMs, QObject* parent) : QObject(parent), m_delayMs(delayMs) {
   m_timer.setSingleShot(true);
   connect(&m_timer, &QTimer::timeout, this, &Debouncer::onTimeout);
 }
@@ -30,8 +29,7 @@ void Debouncer::onTimeout() {
   }
 }
 
-PropertyDebouncer::PropertyDebouncer(int delayMs, QObject *parent)
-    : Debouncer(delayMs, parent) {}
+PropertyDebouncer::PropertyDebouncer(int delayMs, QObject* parent) : Debouncer(delayMs, parent) {}
 
 PropertyDebouncer::~PropertyDebouncer() = default;
 

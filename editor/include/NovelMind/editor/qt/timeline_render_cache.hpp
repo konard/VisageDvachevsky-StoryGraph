@@ -33,8 +33,8 @@ namespace NovelMind::editor::qt {
 struct TimelineRenderCacheConfig {
   qint64 maxMemoryBytes = 32 * 1024 * 1024; // 32 MB default
   int tileWidth = 256;                      // Width of each cached tile
-  int tileHeight = 32;     // Height of each cached tile (track height)
-  bool enableCache = true; // Master enable/disable
+  int tileHeight = 32;                      // Height of each cached tile (track height)
+  bool enableCache = true;                  // Master enable/disable
 };
 
 /**
@@ -47,7 +47,7 @@ struct RenderCacheKey {
   float zoom = 1.0f;
   int pixelsPerFrame = 4;
 
-  bool operator==(const RenderCacheKey &other) const {
+  bool operator==(const RenderCacheKey& other) const {
     return trackIndex == other.trackIndex && startFrame == other.startFrame &&
            endFrame == other.endFrame && zoom == other.zoom &&
            pixelsPerFrame == other.pixelsPerFrame;
@@ -59,8 +59,7 @@ struct RenderCacheKey {
 // Hash function for RenderCacheKey
 namespace std {
 template <> struct hash<NovelMind::editor::qt::RenderCacheKey> {
-  std::size_t
-  operator()(const NovelMind::editor::qt::RenderCacheKey &key) const noexcept {
+  std::size_t operator()(const NovelMind::editor::qt::RenderCacheKey& key) const noexcept {
     std::size_t h = std::hash<int>{}(key.trackIndex);
     h ^= std::hash<int>{}(key.startFrame) << 1;
     h ^= std::hash<int>{}(key.endFrame) << 2;
@@ -102,26 +101,24 @@ class TimelineRenderCache : public QObject {
   Q_OBJECT
 
 public:
-  explicit TimelineRenderCache(QObject *parent = nullptr);
-  explicit TimelineRenderCache(const TimelineRenderCacheConfig &config,
-                               QObject *parent = nullptr);
+  explicit TimelineRenderCache(QObject* parent = nullptr);
+  explicit TimelineRenderCache(const TimelineRenderCacheConfig& config, QObject* parent = nullptr);
   ~TimelineRenderCache() override;
 
   /**
    * @brief Get a cached render, or null if not cached
    */
-  QPixmap get(const RenderCacheKey &key, uint64_t currentDataVersion);
+  QPixmap get(const RenderCacheKey& key, uint64_t currentDataVersion);
 
   /**
    * @brief Store a render in the cache
    */
-  void put(const RenderCacheKey &key, const QPixmap &pixmap,
-           uint64_t dataVersion);
+  void put(const RenderCacheKey& key, const QPixmap& pixmap, uint64_t dataVersion);
 
   /**
    * @brief Check if a key is cached and valid
    */
-  bool contains(const RenderCacheKey &key, uint64_t currentDataVersion) const;
+  bool contains(const RenderCacheKey& key, uint64_t currentDataVersion) const;
 
   /**
    * @brief Invalidate all entries for a specific track
@@ -163,7 +160,7 @@ public:
   /**
    * @brief Configure the cache
    */
-  void setConfig(const TimelineRenderCacheConfig &config);
+  void setConfig(const TimelineRenderCacheConfig& config);
   TimelineRenderCacheConfig config() const { return m_config; }
 
   /**
@@ -193,9 +190,8 @@ private:
 
   // LRU list: front = most recently used, back = least recently used
   std::list<RenderCacheKey> m_lruList;
-  std::unordered_map<
-      RenderCacheKey,
-      std::pair<std::list<RenderCacheKey>::iterator, RenderCacheEntry>>
+  std::unordered_map<RenderCacheKey,
+                     std::pair<std::list<RenderCacheKey>::iterator, RenderCacheEntry>>
       m_cache;
 
   qint64 m_currentMemoryBytes = 0;
@@ -210,7 +206,7 @@ private:
  */
 class ScopedCacheInvalidation {
 public:
-  ScopedCacheInvalidation(TimelineRenderCache *cache, int trackIndex)
+  ScopedCacheInvalidation(TimelineRenderCache* cache, int trackIndex)
       : m_cache(cache), m_trackIndex(trackIndex) {}
 
   ~ScopedCacheInvalidation() {
@@ -219,11 +215,11 @@ public:
     }
   }
 
-  ScopedCacheInvalidation(const ScopedCacheInvalidation &) = delete;
-  ScopedCacheInvalidation &operator=(const ScopedCacheInvalidation &) = delete;
+  ScopedCacheInvalidation(const ScopedCacheInvalidation&) = delete;
+  ScopedCacheInvalidation& operator=(const ScopedCacheInvalidation&) = delete;
 
 private:
-  TimelineRenderCache *m_cache;
+  TimelineRenderCache* m_cache;
   int m_trackIndex;
 };
 

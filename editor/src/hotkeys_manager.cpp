@@ -17,74 +17,69 @@ HotkeysManager::HotkeysManager() {}
 
 HotkeysManager::~HotkeysManager() {}
 
-HotkeysManager &HotkeysManager::instance() {
+HotkeysManager& HotkeysManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<HotkeysManager>();
   }
   return *s_instance;
 }
 
-void HotkeysManager::registerCommand(const ShortcutCommand &command) {
+void HotkeysManager::registerCommand(const ShortcutCommand& command) {
   m_commands[command.id] = command;
   m_bindingMapDirty = true;
 }
 
-void HotkeysManager::unregisterCommand(const std::string &commandId) {
+void HotkeysManager::unregisterCommand(const std::string& commandId) {
   m_commands.erase(commandId);
   m_bindingMapDirty = true;
 }
 
-bool HotkeysManager::hasCommand(const std::string &commandId) const {
+bool HotkeysManager::hasCommand(const std::string& commandId) const {
   return m_commands.find(commandId) != m_commands.end();
 }
 
-const ShortcutCommand *
-HotkeysManager::getCommand(const std::string &commandId) const {
+const ShortcutCommand* HotkeysManager::getCommand(const std::string& commandId) const {
   auto it = m_commands.find(commandId);
   return (it != m_commands.end()) ? &it->second : nullptr;
 }
 
-std::vector<const ShortcutCommand *> HotkeysManager::getAllCommands() const {
-  std::vector<const ShortcutCommand *> result;
+std::vector<const ShortcutCommand*> HotkeysManager::getAllCommands() const {
+  std::vector<const ShortcutCommand*> result;
   result.reserve(m_commands.size());
 
-  for (const auto &[id, cmd] : m_commands) {
+  for (const auto& [id, cmd] : m_commands) {
     result.push_back(&cmd);
   }
 
   // Sort by category, then by display name
-  std::sort(result.begin(), result.end(),
-            [](const ShortcutCommand *a, const ShortcutCommand *b) {
-              if (a->category != b->category) {
-                return static_cast<u8>(a->category) <
-                       static_cast<u8>(b->category);
-              }
-              return a->displayName < b->displayName;
-            });
+  std::sort(result.begin(), result.end(), [](const ShortcutCommand* a, const ShortcutCommand* b) {
+    if (a->category != b->category) {
+      return static_cast<u8>(a->category) < static_cast<u8>(b->category);
+    }
+    return a->displayName < b->displayName;
+  });
 
   return result;
 }
 
-std::vector<const ShortcutCommand *>
+std::vector<const ShortcutCommand*>
 HotkeysManager::getCommandsInCategory(ShortcutCategory category) const {
-  std::vector<const ShortcutCommand *> result;
+  std::vector<const ShortcutCommand*> result;
 
-  for (const auto &[id, cmd] : m_commands) {
+  for (const auto& [id, cmd] : m_commands) {
     if (cmd.category == category) {
       result.push_back(&cmd);
     }
   }
 
-  std::sort(result.begin(), result.end(),
-            [](const ShortcutCommand *a, const ShortcutCommand *b) {
-              return a->displayName < b->displayName;
-            });
+  std::sort(result.begin(), result.end(), [](const ShortcutCommand* a, const ShortcutCommand* b) {
+    return a->displayName < b->displayName;
+  });
 
   return result;
 }
 
-void HotkeysManager::setCustomBinding(const std::string &commandId,
-                                      const Shortcut &binding) {
+void HotkeysManager::setCustomBinding(const std::string& commandId, const Shortcut& binding) {
   auto it = m_commands.find(commandId);
   if (it != m_commands.end()) {
     it->second.customBinding = binding;
@@ -93,7 +88,7 @@ void HotkeysManager::setCustomBinding(const std::string &commandId,
   }
 }
 
-void HotkeysManager::clearCustomBinding(const std::string &commandId) {
+void HotkeysManager::clearCustomBinding(const std::string& commandId) {
   auto it = m_commands.find(commandId);
   if (it != m_commands.end()) {
     it->second.useCustomBinding = false;
@@ -101,21 +96,19 @@ void HotkeysManager::clearCustomBinding(const std::string &commandId) {
   }
 }
 
-Shortcut HotkeysManager::getBinding(const std::string &commandId) const {
+Shortcut HotkeysManager::getBinding(const std::string& commandId) const {
   auto it = m_commands.find(commandId);
   if (it == m_commands.end()) {
     return {};
   }
 
-  return it->second.useCustomBinding ? it->second.customBinding
-                                     : it->second.defaultBinding;
+  return it->second.useCustomBinding ? it->second.customBinding : it->second.defaultBinding;
 }
 
-std::optional<std::string>
-HotkeysManager::getCommandForBinding(const Shortcut &binding,
-                                     ShortcutContext context) const {
+std::optional<std::string> HotkeysManager::getCommandForBinding(const Shortcut& binding,
+                                                                ShortcutContext context) const {
   if (m_bindingMapDirty) {
-    const_cast<HotkeysManager *>(this)->rebuildBindingMap();
+    const_cast<HotkeysManager*>(this)->rebuildBindingMap();
   }
 
   // Check context-specific bindings first
@@ -136,25 +129,22 @@ HotkeysManager::getCommandForBinding(const Shortcut &binding,
   return std::nullopt;
 }
 
-std::vector<std::string>
-HotkeysManager::getConflicts(const std::string &commandId,
-                             const Shortcut &binding) const {
+std::vector<std::string> HotkeysManager::getConflicts(const std::string& commandId,
+                                                      const Shortcut& binding) const {
   std::vector<std::string> conflicts;
 
   auto cmd = getCommand(commandId);
   if (!cmd)
     return conflicts;
 
-  for (const auto &[id, other] : m_commands) {
+  for (const auto& [id, other] : m_commands) {
     if (id == commandId)
       continue;
 
-    Shortcut otherBinding =
-        other.useCustomBinding ? other.customBinding : other.defaultBinding;
+    Shortcut otherBinding = other.useCustomBinding ? other.customBinding : other.defaultBinding;
     if (otherBinding == binding) {
       // Check if contexts overlap
-      if (cmd->context == ShortcutContext::Global ||
-          other.context == ShortcutContext::Global ||
+      if (cmd->context == ShortcutContext::Global || other.context == ShortcutContext::Global ||
           cmd->context == other.context) {
         conflicts.push_back(id);
       }
@@ -165,7 +155,7 @@ HotkeysManager::getConflicts(const std::string &commandId,
 }
 
 void HotkeysManager::resetAllToDefaults() {
-  for (auto &[id, cmd] : m_commands) {
+  for (auto& [id, cmd] : m_commands) {
     cmd.useCustomBinding = false;
   }
   m_bindingMapDirty = true;
@@ -187,8 +177,7 @@ bool HotkeysManager::handleKeyEvent(KeyCode key, Modifiers modifiers) {
   return executeCommand(*cmdId);
 }
 
-bool HotkeysManager::handleKeyDown(i32 keyCode, bool ctrl, bool shift, bool alt,
-                                   bool meta) {
+bool HotkeysManager::handleKeyDown(i32 keyCode, bool ctrl, bool shift, bool alt, bool meta) {
   KeyCode key = static_cast<KeyCode>(keyCode);
 
   Modifiers mods = Modifiers::None;
@@ -204,7 +193,7 @@ bool HotkeysManager::handleKeyDown(i32 keyCode, bool ctrl, bool shift, bool alt,
   return handleKeyEvent(key, mods);
 }
 
-bool HotkeysManager::executeCommand(const std::string &commandId) {
+bool HotkeysManager::executeCommand(const std::string& commandId) {
   auto cmd = getCommand(commandId);
   if (!cmd) {
     return false;
@@ -229,14 +218,14 @@ bool HotkeysManager::executeCommand(const std::string &commandId) {
   return false;
 }
 
-Result<void> HotkeysManager::saveBindings(const std::string &filepath) {
+Result<void> HotkeysManager::saveBindings(const std::string& filepath) {
   std::ofstream file(filepath);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + filepath);
   }
 
   // Simple format: commandId=binding
-  for (const auto &[id, cmd] : m_commands) {
+  for (const auto& [id, cmd] : m_commands) {
     if (cmd.useCustomBinding) {
       file << id << "=" << cmd.customBinding.toString() << "\n";
     }
@@ -245,7 +234,7 @@ Result<void> HotkeysManager::saveBindings(const std::string &filepath) {
   return Result<void>::ok();
 }
 
-Result<void> HotkeysManager::loadBindings(const std::string &filepath) {
+Result<void> HotkeysManager::loadBindings(const std::string& filepath) {
   std::ifstream file(filepath);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for reading: " + filepath);
@@ -827,9 +816,8 @@ void HotkeysManager::rebuildBindingMap() {
   m_globalBindings.clear();
   m_contextBindings.clear();
 
-  for (const auto &[id, cmd] : m_commands) {
-    Shortcut binding =
-        cmd.useCustomBinding ? cmd.customBinding : cmd.defaultBinding;
+  for (const auto& [id, cmd] : m_commands) {
+    Shortcut binding = cmd.useCustomBinding ? cmd.customBinding : cmd.defaultBinding;
     if (!binding.isValid())
       continue;
 
@@ -881,7 +869,7 @@ std::string Shortcut::toString() const {
   return result;
 }
 
-Shortcut Shortcut::fromString(const std::string &str) {
+Shortcut Shortcut::fromString(const std::string& str) {
   Shortcut result;
 
   std::string remaining = str;
@@ -889,8 +877,7 @@ Shortcut Shortcut::fromString(const std::string &str) {
 
   while (true) {
     auto pos = remaining.find(delimiter);
-    std::string part =
-        (pos != std::string::npos) ? remaining.substr(0, pos) : remaining;
+    std::string part = (pos != std::string::npos) ? remaining.substr(0, pos) : remaining;
 
     // Convert to lowercase for comparison
     std::string lower = part;
@@ -943,8 +930,7 @@ Shortcut Shortcut::fromString(const std::string &str) {
         // F keys
         i32 fNum = std::stoi(lower.substr(1));
         if (fNum >= 1 && fNum <= 12) {
-          result.key =
-              static_cast<KeyCode>(static_cast<i32>(KeyCode::F1) + fNum - 1);
+          result.key = static_cast<KeyCode>(static_cast<i32>(KeyCode::F1) + fNum - 1);
         }
       }
     }
@@ -960,20 +946,17 @@ Shortcut Shortcut::fromString(const std::string &str) {
 std::string HotkeysManager::keyCodeToString(KeyCode key) {
   // Letters and numbers
   if (key >= KeyCode::A && key <= KeyCode::Z) {
-    return std::string(1,
-                       static_cast<char>('A' + (static_cast<i32>(key) -
-                                                static_cast<i32>(KeyCode::A))));
+    return std::string(
+        1, static_cast<char>('A' + (static_cast<i32>(key) - static_cast<i32>(KeyCode::A))));
   }
   if (key >= KeyCode::Num0 && key <= KeyCode::Num9) {
     return std::string(
-        1, static_cast<char>('0' + (static_cast<i32>(key) -
-                                    static_cast<i32>(KeyCode::Num0))));
+        1, static_cast<char>('0' + (static_cast<i32>(key) - static_cast<i32>(KeyCode::Num0))));
   }
 
   // Function keys
   if (key >= KeyCode::F1 && key <= KeyCode::F12) {
-    return "F" + std::to_string(static_cast<i32>(key) -
-                                static_cast<i32>(KeyCode::F1) + 1);
+    return "F" + std::to_string(static_cast<i32>(key) - static_cast<i32>(KeyCode::F1) + 1);
   }
 
   // Special keys

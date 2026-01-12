@@ -20,10 +20,10 @@ class IWindow {
 public:
   virtual ~IWindow() = default;
 
-  virtual Result<void> create(const WindowConfig &config) = 0;
+  virtual Result<void> create(const WindowConfig& config) = 0;
   virtual void destroy() = 0;
 
-  virtual void setTitle(const std::string &title) = 0;
+  virtual void setTitle(const std::string& title) = 0;
   virtual void setSize(i32 width, i32 height) = 0;
   virtual void setFullscreen(bool fullscreen) = 0;
 
@@ -35,7 +35,7 @@ public:
   virtual void pollEvents() = 0;
   virtual void swapBuffers() = 0;
 
-  [[nodiscard]] virtual void *getNativeHandle() const = 0;
+  [[nodiscard]] virtual void* getNativeHandle() const = 0;
 };
 
 std::unique_ptr<IWindow> createWindow();

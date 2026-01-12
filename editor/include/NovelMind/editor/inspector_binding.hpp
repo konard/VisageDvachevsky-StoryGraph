@@ -54,13 +54,13 @@ enum class InspectorTargetType : u8 {
 struct InspectorTarget {
   InspectorTargetType type = InspectorTargetType::None;
   std::string id;
-  void *object = nullptr;
+  void* object = nullptr;
   std::type_index typeIndex = std::type_index(typeid(void));
 
   InspectorTarget() = default;
 
   template <typename T>
-  InspectorTarget(InspectorTargetType t, const std::string &targetId, T *obj)
+  InspectorTarget(InspectorTargetType t, const std::string& targetId, T* obj)
       : type(t), id(targetId), object(obj), typeIndex(typeid(T)) {}
 
   [[nodiscard]] bool isValid() const {
@@ -83,12 +83,10 @@ struct PropertyChangeContext {
 /**
  * @brief Property change handler types
  */
-using BeforePropertyChangeHandler =
-    std::function<bool(const PropertyChangeContext &)>;
-using AfterPropertyChangeHandler =
-    std::function<void(const PropertyChangeContext &)>;
+using BeforePropertyChangeHandler = std::function<bool(const PropertyChangeContext&)>;
+using AfterPropertyChangeHandler = std::function<void(const PropertyChangeContext&)>;
 using PropertyValidatorHandler =
-    std::function<std::optional<std::string>(const PropertyChangeContext &)>;
+    std::function<std::optional<std::string>(const PropertyChangeContext&)>;
 
 /**
  * @brief Binding configuration for a property
@@ -111,10 +109,9 @@ class IInspectorBindingListener {
 public:
   virtual ~IInspectorBindingListener() = default;
 
-  virtual void onTargetChanged(const InspectorTarget & /*target*/) {}
-  virtual void onPropertyWillChange(const PropertyChangeContext & /*context*/) {
-  }
-  virtual void onPropertyDidChange(const PropertyChangeContext & /*context*/) {}
+  virtual void onTargetChanged(const InspectorTarget& /*target*/) {}
+  virtual void onPropertyWillChange(const PropertyChangeContext& /*context*/) {}
+  virtual void onPropertyDidChange(const PropertyChangeContext& /*context*/) {}
   virtual void onPropertiesRefreshed() {}
 };
 
@@ -125,7 +122,7 @@ struct PropertyGroup {
   std::string name;
   std::string category;
   bool collapsed = false;
-  std::vector<const IPropertyAccessor *> properties;
+  std::vector<const IPropertyAccessor*> properties;
 };
 
 /**
@@ -144,13 +141,13 @@ public:
   ~InspectorBindingManager();
 
   // Prevent copying
-  InspectorBindingManager(const InspectorBindingManager &) = delete;
-  InspectorBindingManager &operator=(const InspectorBindingManager &) = delete;
+  InspectorBindingManager(const InspectorBindingManager&) = delete;
+  InspectorBindingManager& operator=(const InspectorBindingManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static InspectorBindingManager &instance();
+  static InspectorBindingManager& instance();
 
   // =========================================================================
   // Target Management
@@ -159,40 +156,38 @@ public:
   /**
    * @brief Set the current inspection target
    */
-  void setTarget(const InspectorTarget &target);
+  void setTarget(const InspectorTarget& target);
 
   /**
    * @brief Set multiple inspection targets (multi-object editing)
    */
-  void setTargets(const std::vector<InspectorTarget> &targets);
+  void setTargets(const std::vector<InspectorTarget>& targets);
 
   /**
    * @brief Set target to a scene object
    */
-  void inspectSceneObject(const std::string &objectId, void *object);
+  void inspectSceneObject(const std::string& objectId, void* object);
 
   /**
    * @brief Set targets to multiple scene objects (multi-object editing)
    */
-  void inspectSceneObjects(const std::vector<std::string> &objectIds,
-                           const std::vector<void *> &objects);
+  void inspectSceneObjects(const std::vector<std::string>& objectIds,
+                           const std::vector<void*>& objects);
 
   /**
    * @brief Set target to a story graph node
    */
-  void inspectStoryGraphNode(scripting::NodeId nodeId,
-                             scripting::VisualGraphNode *node);
+  void inspectStoryGraphNode(scripting::NodeId nodeId, scripting::VisualGraphNode* node);
 
   /**
    * @brief Set target to timeline track
    */
-  void inspectTimelineTrack(const std::string &trackId, void *track);
+  void inspectTimelineTrack(const std::string& trackId, void* track);
 
   /**
    * @brief Set target to a keyframe
    */
-  void inspectTimelineKeyframe(const std::string &trackId, u64 keyframeIndex,
-                               void *keyframe);
+  void inspectTimelineKeyframe(const std::string& trackId, u64 keyframeIndex, void* keyframe);
 
   /**
    * @brief Clear the current target
@@ -202,7 +197,7 @@ public:
   /**
    * @brief Get the current target
    */
-  [[nodiscard]] const InspectorTarget &getTarget() const;
+  [[nodiscard]] const InspectorTarget& getTarget() const;
 
   /**
    * @brief Check if there's a valid target
@@ -212,7 +207,7 @@ public:
   /**
    * @brief Get all targets (for multi-object editing)
    */
-  [[nodiscard]] const std::vector<InspectorTarget> &getTargets() const;
+  [[nodiscard]] const std::vector<InspectorTarget>& getTargets() const;
 
   /**
    * @brief Check if inspecting multiple targets
@@ -231,7 +226,7 @@ public:
   /**
    * @brief Get all properties for the current target
    */
-  [[nodiscard]] std::vector<const IPropertyAccessor *> getProperties() const;
+  [[nodiscard]] std::vector<const IPropertyAccessor*> getProperties() const;
 
   /**
    * @brief Get properties organized by group/category
@@ -241,37 +236,34 @@ public:
   /**
    * @brief Get a specific property accessor
    */
-  [[nodiscard]] const IPropertyAccessor *
-  getProperty(const std::string &name) const;
+  [[nodiscard]] const IPropertyAccessor* getProperty(const std::string& name) const;
 
   /**
    * @brief Get property value
    */
-  [[nodiscard]] PropertyValue getPropertyValue(const std::string &name) const;
+  [[nodiscard]] PropertyValue getPropertyValue(const std::string& name) const;
 
   /**
    * @brief Get property value as string
    */
-  [[nodiscard]] std::string
-  getPropertyValueAsString(const std::string &name) const;
+  [[nodiscard]] std::string getPropertyValueAsString(const std::string& name) const;
 
   /**
    * @brief Set property value
    * @return Error message if validation fails, empty optional on success
    */
-  std::optional<std::string> setPropertyValue(const std::string &name,
-                                              const PropertyValue &value);
+  std::optional<std::string> setPropertyValue(const std::string& name, const PropertyValue& value);
 
   /**
    * @brief Set property value from string
    */
-  std::optional<std::string>
-  setPropertyValueFromString(const std::string &name, const std::string &value);
+  std::optional<std::string> setPropertyValueFromString(const std::string& name,
+                                                        const std::string& value);
 
   /**
    * @brief Begin a batch of property changes (single undo entry)
    */
-  void beginPropertyBatch(const std::string &description);
+  void beginPropertyBatch(const std::string& description);
 
   /**
    * @brief End the current property batch
@@ -290,32 +282,28 @@ public:
   /**
    * @brief Register a property binding
    */
-  void registerBinding(const std::string &propertyName,
-                       const PropertyBinding &binding);
+  void registerBinding(const std::string& propertyName, const PropertyBinding& binding);
 
   /**
    * @brief Register before-change handler for a property
    */
-  void onBeforePropertyChange(const std::string &propertyName,
-                              BeforePropertyChangeHandler handler);
+  void onBeforePropertyChange(const std::string& propertyName, BeforePropertyChangeHandler handler);
 
   /**
    * @brief Register after-change handler for a property
    */
-  void onAfterPropertyChange(const std::string &propertyName,
-                             AfterPropertyChangeHandler handler);
+  void onAfterPropertyChange(const std::string& propertyName, AfterPropertyChangeHandler handler);
 
   /**
    * @brief Register property validator
    */
-  void addPropertyValidator(const std::string &propertyName,
-                            PropertyValidatorHandler validator);
+  void addPropertyValidator(const std::string& propertyName, PropertyValidatorHandler validator);
 
   /**
    * @brief Set property dependencies
    */
-  void setPropertyDependencies(const std::string &propertyName,
-                               const std::vector<std::string> &dependencies);
+  void setPropertyDependencies(const std::string& propertyName,
+                               const std::vector<std::string>& dependencies);
 
   // =========================================================================
   // Type Registration
@@ -325,8 +313,7 @@ public:
    * @brief Register type info for inspection
    */
   template <typename T>
-  void registerType(const std::string &typeName,
-                    std::unique_ptr<TypeInfo> info) {
+  void registerType(const std::string& typeName, std::unique_ptr<TypeInfo> info) {
     m_typeInfoMap[std::type_index(typeid(T))] = std::move(info);
     m_typeNames[std::type_index(typeid(T))] = typeName;
   }
@@ -334,7 +321,7 @@ public:
   /**
    * @brief Get type info for a type
    */
-  template <typename T> [[nodiscard]] const TypeInfo *getTypeInfo() const {
+  template <typename T> [[nodiscard]] const TypeInfo* getTypeInfo() const {
     auto it = m_typeInfoMap.find(std::type_index(typeid(T)));
     if (it != m_typeInfoMap.end()) {
       return it->second.get();
@@ -349,12 +336,12 @@ public:
   /**
    * @brief Set the undo manager for property change recording
    */
-  void setUndoManager(UndoManager *manager);
+  void setUndoManager(UndoManager* manager);
 
   /**
    * @brief Set the event bus for notifications
    */
-  void setEventBus(EventBus *bus);
+  void setEventBus(EventBus* bus);
 
   // =========================================================================
   // Listeners
@@ -363,12 +350,12 @@ public:
   /**
    * @brief Add a binding listener
    */
-  void addListener(IInspectorBindingListener *listener);
+  void addListener(IInspectorBindingListener* listener);
 
   /**
    * @brief Remove a binding listener
    */
-  void removeListener(IInspectorBindingListener *listener);
+  void removeListener(IInspectorBindingListener* listener);
 
   // =========================================================================
   // Utility
@@ -382,21 +369,20 @@ public:
   /**
    * @brief Check if a property has changed since last refresh
    */
-  [[nodiscard]] bool hasPropertyChanged(const std::string &name) const;
+  [[nodiscard]] bool hasPropertyChanged(const std::string& name) const;
 
 private:
   // Internal methods
-  const TypeInfo *getTypeInfoForTarget() const;
-  bool validatePropertyChange(const PropertyChangeContext &context,
-                              std::string &error) const;
+  const TypeInfo* getTypeInfoForTarget() const;
+  bool validatePropertyChange(const PropertyChangeContext& context, std::string& error) const;
   void notifyTargetChanged();
-  void notifyPropertyWillChange(const PropertyChangeContext &context);
-  void notifyPropertyDidChange(const PropertyChangeContext &context);
-  void recordPropertyChange(const PropertyChangeContext &context);
-  void applyPropertyChangeFromUndo(const PropertyChangeContext &context,
-                                   const PropertyValue &value, bool isUndo);
-  void refreshDependentProperties(const std::string &propertyName);
-  void publishPropertyChangedEvent(const PropertyChangeContext &context);
+  void notifyPropertyWillChange(const PropertyChangeContext& context);
+  void notifyPropertyDidChange(const PropertyChangeContext& context);
+  void recordPropertyChange(const PropertyChangeContext& context);
+  void applyPropertyChangeFromUndo(const PropertyChangeContext& context, const PropertyValue& value,
+                                   bool isUndo);
+  void refreshDependentProperties(const std::string& propertyName);
+  void publishPropertyChangedEvent(const PropertyChangeContext& context);
 
   // Current target (for single-object editing, first element of m_targets)
   InspectorTarget m_target;
@@ -421,11 +407,11 @@ private:
   bool m_applyingUndoRedo = false;
 
   // Integration
-  UndoManager *m_undoManager = nullptr;
-  EventBus *m_eventBus = nullptr;
+  UndoManager* m_undoManager = nullptr;
+  EventBus* m_eventBus = nullptr;
 
   // Listeners
-  std::vector<IInspectorBindingListener *> m_listeners;
+  std::vector<IInspectorBindingListener*> m_listeners;
 
   // Singleton instance
   static std::unique_ptr<InspectorBindingManager> s_instance;
@@ -436,9 +422,8 @@ private:
  */
 class PropertyBatchScope {
 public:
-  explicit PropertyBatchScope(
-      InspectorBindingManager *manager,
-      const std::string &description = "Edit Properties")
+  explicit PropertyBatchScope(InspectorBindingManager* manager,
+                              const std::string& description = "Edit Properties")
       : m_manager(manager) {
     if (m_manager) {
       m_manager->beginPropertyBatch(description);
@@ -452,11 +437,11 @@ public:
   }
 
   // Prevent copying
-  PropertyBatchScope(const PropertyBatchScope &) = delete;
-  PropertyBatchScope &operator=(const PropertyBatchScope &) = delete;
+  PropertyBatchScope(const PropertyBatchScope&) = delete;
+  PropertyBatchScope& operator=(const PropertyBatchScope&) = delete;
 
 private:
-  InspectorBindingManager *m_manager;
+  InspectorBindingManager* m_manager;
 };
 
 } // namespace NovelMind::editor

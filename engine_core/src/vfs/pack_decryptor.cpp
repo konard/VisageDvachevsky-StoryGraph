@@ -12,15 +12,16 @@
 
 namespace NovelMind::VFS {
 
-void PackDecryptor::setKey(const Core::SecureVector<u8> &key) { m_key = key; }
+void PackDecryptor::setKey(const Core::SecureVector<u8>& key) {
+  m_key = key;
+}
 
-void PackDecryptor::setKey(const u8 *key, usize keySize) {
+void PackDecryptor::setKey(const u8* key, usize keySize) {
   m_key.assign(key, key + keySize);
 }
 
-Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
-                                               const u8 *iv, usize ivSize,
-                                               const u8 *aad, usize aadSize) {
+Result<std::vector<u8>> PackDecryptor::decrypt(const u8* data, usize size, const u8* iv,
+                                               usize ivSize, const u8* aad, usize aadSize) {
   if (m_key.empty()) {
     return Result<std::vector<u8>>::error("Decryption key not set");
   }
@@ -39,9 +40,9 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
   }
 
   const usize cipherSize = size - detail::kGcmTagSize;
-  const u8 *tag = data + cipherSize;
+  const u8* tag = data + cipherSize;
 
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
   if (!ctx) {
     return Result<std::vector<u8>>::error("Failed to create cipher context");
   }
@@ -49,14 +50,12 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
   Core::SecureVector<u8> key256(32, 0);
   std::memcpy(key256.data(), m_key.data(), std::min(m_key.size(), size_t(32)));
 
-  if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) !=
-      1) {
+  if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Failed to initialize AES-GCM");
   }
 
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(ivSize),
-                          nullptr) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(ivSize), nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Failed to set IV length");
   }
@@ -68,23 +67,20 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
 
   int outLen = 0;
   if (aad && aadSize > 0) {
-    if (EVP_DecryptUpdate(ctx, nullptr, &outLen, aad,
-                          static_cast<int>(aadSize)) != 1) {
+    if (EVP_DecryptUpdate(ctx, nullptr, &outLen, aad, static_cast<int>(aadSize)) != 1) {
       EVP_CIPHER_CTX_free(ctx);
       return Result<std::vector<u8>>::error("Failed to add AAD");
     }
   }
 
   std::vector<u8> result(cipherSize);
-  if (EVP_DecryptUpdate(ctx, result.data(), &outLen, data,
-                        static_cast<int>(cipherSize)) != 1) {
+  if (EVP_DecryptUpdate(ctx, result.data(), &outLen, data, static_cast<int>(cipherSize)) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("AES-GCM decryption failed");
   }
 
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG,
-                          static_cast<int>(detail::kGcmTagSize),
-                          const_cast<u8 *>(tag)) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, static_cast<int>(detail::kGcmTagSize),
+                          const_cast<u8*>(tag)) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Failed to set AES-GCM tag");
   }
@@ -94,8 +90,7 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
   EVP_CIPHER_CTX_free(ctx);
 
   if (finalResult != 1) {
-    return Result<std::vector<u8>>::error(
-        "AES-GCM authentication failed (bad tag)");
+    return Result<std::vector<u8>>::error("AES-GCM authentication failed (bad tag)");
   }
 
   result.resize(static_cast<usize>(outLen + finalLen));
@@ -111,9 +106,8 @@ Result<std::vector<u8>> PackDecryptor::decrypt(const u8 *data, usize size,
 #endif
 }
 
-Result<Core::SecureVector<u8>> PackDecryptor::deriveKey(const std::string &password,
-                                                 const u8 *salt,
-                                                 usize saltSize) {
+Result<Core::SecureVector<u8>> PackDecryptor::deriveKey(const std::string& password, const u8* salt,
+                                                        usize saltSize) {
   if (password.empty()) {
     return Result<Core::SecureVector<u8>>::error("Password cannot be empty");
   }
@@ -122,17 +116,14 @@ Result<Core::SecureVector<u8>> PackDecryptor::deriveKey(const std::string &passw
   Core::SecureVector<u8> key(32);
   const int iterations = 100000;
 
-  std::vector<u8> defaultSalt = {0x4E, 0x6F, 0x76, 0x65, 0x6C, 0x4D,
-                                 0x69, 0x6E, 0x64, 0x00, 0x00, 0x00,
-                                 0x00, 0x00, 0x00, 0x00};
-  const u8 *actualSalt = (salt && saltSize > 0) ? salt : defaultSalt.data();
-  const usize actualSaltSize =
-      (salt && saltSize > 0) ? saltSize : defaultSalt.size();
+  std::vector<u8> defaultSalt = {0x4E, 0x6F, 0x76, 0x65, 0x6C, 0x4D, 0x69, 0x6E,
+                                 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  const u8* actualSalt = (salt && saltSize > 0) ? salt : defaultSalt.data();
+  const usize actualSaltSize = (salt && saltSize > 0) ? saltSize : defaultSalt.size();
 
-  int result = PKCS5_PBKDF2_HMAC(
-      password.c_str(), static_cast<int>(password.size()), actualSalt,
-      static_cast<int>(actualSaltSize), iterations, EVP_sha256(),
-      static_cast<int>(key.size()), key.data());
+  int result = PKCS5_PBKDF2_HMAC(password.c_str(), static_cast<int>(password.size()), actualSalt,
+                                 static_cast<int>(actualSaltSize), iterations, EVP_sha256(),
+                                 static_cast<int>(key.size()), key.data());
 
   if (result != 1) {
     return Result<Core::SecureVector<u8>>::error("PBKDF2 derivation failed");

@@ -82,8 +82,7 @@ TEST_CASE("PackReader - Pack flags", "[vfs][pack][security]") {
   }
 
   SECTION("Combined flags") {
-    u32 flags = static_cast<u32>(PackFlags::Encrypted) |
-                static_cast<u32>(PackFlags::Compressed);
+    u32 flags = static_cast<u32>(PackFlags::Encrypted) | static_cast<u32>(PackFlags::Compressed);
     CHECK((flags & static_cast<u32>(PackFlags::Encrypted)) != 0);
     CHECK((flags & static_cast<u32>(PackFlags::Compressed)) != 0);
     CHECK((flags & static_cast<u32>(PackFlags::Signed)) == 0);
@@ -138,13 +137,13 @@ TEST_CASE("PackReader - List resources", "[vfs][pack]") {
 
 TEST_CASE("PackIntegrityChecker - CRC32 calculation", "[vfs][security]") {
   SECTION("CRC32 of known data") {
-    const char *testData = "Hello, World!";
-    u32 crc = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
+    const char* testData = "Hello, World!";
+    u32 crc = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(testData),
+                                                   std::strlen(testData));
 
     // CRC32 should be deterministic
-    u32 crc2 = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
+    u32 crc2 = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(testData),
+                                                    std::strlen(testData));
     CHECK(crc == crc2);
   }
 
@@ -155,25 +154,25 @@ TEST_CASE("PackIntegrityChecker - CRC32 calculation", "[vfs][security]") {
   }
 
   SECTION("CRC32 changes with different data") {
-    const char *data1 = "Test Data 1";
-    const char *data2 = "Test Data 2";
+    const char* data1 = "Test Data 1";
+    const char* data2 = "Test Data 2";
 
-    u32 crc1 = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(data1), std::strlen(data1));
-    u32 crc2 = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(data2), std::strlen(data2));
+    u32 crc1 = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(data1),
+                                                    std::strlen(data1));
+    u32 crc2 = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(data2),
+                                                    std::strlen(data2));
 
     CHECK(crc1 != crc2);
   }
 
   SECTION("CRC32 is sensitive to data order") {
-    const char *data1 = "ABC";
-    const char *data2 = "CBA";
+    const char* data1 = "ABC";
+    const char* data2 = "CBA";
 
-    u32 crc1 = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(data1), std::strlen(data1));
-    u32 crc2 = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(data2), std::strlen(data2));
+    u32 crc1 = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(data1),
+                                                    std::strlen(data1));
+    u32 crc2 = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(data2),
+                                                    std::strlen(data2));
 
     CHECK(crc1 != crc2);
   }
@@ -181,11 +180,11 @@ TEST_CASE("PackIntegrityChecker - CRC32 calculation", "[vfs][security]") {
 
 TEST_CASE("PackIntegrityChecker - SHA256 calculation", "[vfs][security]") {
   SECTION("SHA256 of known data") {
-    const char *testData = "Test";
-    auto hash1 = PackIntegrityChecker::calculateSha256(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
-    auto hash2 = PackIntegrityChecker::calculateSha256(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
+    const char* testData = "Test";
+    auto hash1 = PackIntegrityChecker::calculateSha256(reinterpret_cast<const u8*>(testData),
+                                                       std::strlen(testData));
+    auto hash2 = PackIntegrityChecker::calculateSha256(reinterpret_cast<const u8*>(testData),
+                                                       std::strlen(testData));
 
     // SHA256 should be deterministic
     CHECK(hash1 == hash2);
@@ -197,26 +196,24 @@ TEST_CASE("PackIntegrityChecker - SHA256 calculation", "[vfs][security]") {
     CHECK(hash.size() == 32);
 
     // SHA256 of empty string is a known value (not all zeros)
-    bool allZeros = std::all_of(hash.begin(), hash.end(),
-                                 [](u8 byte) { return byte == 0; });
+    bool allZeros = std::all_of(hash.begin(), hash.end(), [](u8 byte) { return byte == 0; });
     CHECK_FALSE(allZeros);
   }
 
   SECTION("SHA256 changes with different data") {
-    const char *data1 = "Data 1";
-    const char *data2 = "Data 2";
+    const char* data1 = "Data 1";
+    const char* data2 = "Data 2";
 
-    auto hash1 = PackIntegrityChecker::calculateSha256(
-        reinterpret_cast<const u8 *>(data1), std::strlen(data1));
-    auto hash2 = PackIntegrityChecker::calculateSha256(
-        reinterpret_cast<const u8 *>(data2), std::strlen(data2));
+    auto hash1 = PackIntegrityChecker::calculateSha256(reinterpret_cast<const u8*>(data1),
+                                                       std::strlen(data1));
+    auto hash2 = PackIntegrityChecker::calculateSha256(reinterpret_cast<const u8*>(data2),
+                                                       std::strlen(data2));
 
     CHECK(hash1 != hash2);
   }
 }
 
-TEST_CASE("PackIntegrityChecker - Header verification",
-          "[vfs][security][header]") {
+TEST_CASE("PackIntegrityChecker - Header verification", "[vfs][security][header]") {
   PackIntegrityChecker checker;
 
   SECTION("Verify valid header structure") {
@@ -232,8 +229,7 @@ TEST_CASE("PackIntegrityChecker - Header verification",
     header.totalSize = 4096;
     std::memset(header.contentHash, 0, sizeof(header.contentHash));
 
-    auto result = checker.verifyHeader(reinterpret_cast<const u8 *>(&header),
-                                        sizeof(header));
+    auto result = checker.verifyHeader(reinterpret_cast<const u8*>(&header), sizeof(header));
 
     // Note: Actual implementation may validate more fields
     // This tests the basic structure
@@ -246,8 +242,7 @@ TEST_CASE("PackIntegrityChecker - Header verification",
     header.versionMajor = PACK_VERSION_MAJOR;
     header.versionMinor = PACK_VERSION_MINOR;
 
-    auto result = checker.verifyHeader(reinterpret_cast<const u8 *>(&header),
-                                        sizeof(header));
+    auto result = checker.verifyHeader(reinterpret_cast<const u8*>(&header), sizeof(header));
 
     if (result.isOk()) {
       CHECK(result.value().result == PackVerificationResult::InvalidMagic);
@@ -260,8 +255,7 @@ TEST_CASE("PackIntegrityChecker - Header verification",
     header.versionMajor = 99; // Future version
     header.versionMinor = 0;
 
-    auto result = checker.verifyHeader(reinterpret_cast<const u8 *>(&header),
-                                        sizeof(header));
+    auto result = checker.verifyHeader(reinterpret_cast<const u8*>(&header), sizeof(header));
 
     if (result.isOk()) {
       CHECK(result.value().result == PackVerificationResult::InvalidVersion);
@@ -275,8 +269,7 @@ TEST_CASE("PackIntegrityChecker - Header verification",
     header.versionMinor = PACK_VERSION_MINOR;
     header.totalSize = 0; // Invalid: pack can't be size 0
 
-    auto result = checker.verifyHeader(reinterpret_cast<const u8 *>(&header),
-                                        sizeof(header));
+    auto result = checker.verifyHeader(reinterpret_cast<const u8*>(&header), sizeof(header));
 
     if (result.isOk()) {
       CHECK(result.value().result != PackVerificationResult::Valid);
@@ -284,18 +277,16 @@ TEST_CASE("PackIntegrityChecker - Header verification",
   }
 }
 
-TEST_CASE("PackIntegrityChecker - Resource checksum verification",
-          "[vfs][security]") {
+TEST_CASE("PackIntegrityChecker - Resource checksum verification", "[vfs][security]") {
   PackIntegrityChecker checker;
 
   SECTION("Verify resource with correct checksum") {
-    const char *testData = "Resource content";
+    const char* testData = "Resource content";
     u32 expectedChecksum = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
+        reinterpret_cast<const u8*>(testData), std::strlen(testData));
 
-    auto result = checker.verifyResource(
-        reinterpret_cast<const u8 *>(testData), 1024, 0, std::strlen(testData),
-        expectedChecksum);
+    auto result = checker.verifyResource(reinterpret_cast<const u8*>(testData), 1024, 0,
+                                         std::strlen(testData), expectedChecksum);
 
     CHECK(result.isOk());
     if (result.isOk()) {
@@ -304,12 +295,11 @@ TEST_CASE("PackIntegrityChecker - Resource checksum verification",
   }
 
   SECTION("Detect corrupted resource with wrong checksum") {
-    const char *testData = "Resource content";
+    const char* testData = "Resource content";
     u32 wrongChecksum = 0xDEADBEEF; // Intentionally wrong
 
-    auto result = checker.verifyResource(
-        reinterpret_cast<const u8 *>(testData), 1024, 0, std::strlen(testData),
-        wrongChecksum);
+    auto result = checker.verifyResource(reinterpret_cast<const u8*>(testData), 1024, 0,
+                                         std::strlen(testData), wrongChecksum);
 
     if (result.isOk()) {
       CHECK(result.value().result == PackVerificationResult::ChecksumMismatch);
@@ -317,15 +307,15 @@ TEST_CASE("PackIntegrityChecker - Resource checksum verification",
   }
 
   SECTION("Detect resource read out of bounds") {
-    const char *testData = "Small";
-    u32 checksum = PackIntegrityChecker::calculateCrc32(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData));
+    const char* testData = "Small";
+    u32 checksum = PackIntegrityChecker::calculateCrc32(reinterpret_cast<const u8*>(testData),
+                                                        std::strlen(testData));
 
     // Try to read past end of buffer
-    auto result = checker.verifyResource(
-        reinterpret_cast<const u8 *>(testData), std::strlen(testData), 0,
-        1000, // Requesting 1000 bytes from 5-byte buffer
-        checksum);
+    auto result =
+        checker.verifyResource(reinterpret_cast<const u8*>(testData), std::strlen(testData), 0,
+                               1000, // Requesting 1000 bytes from 5-byte buffer
+                               checksum);
 
     // Should detect corruption
     if (result.isOk()) {
@@ -356,8 +346,7 @@ TEST_CASE("PackDecryptor - Key management", "[vfs][security][encryption]") {
   }
 }
 
-TEST_CASE("PackDecryptor - Random IV generation",
-          "[vfs][security][encryption]") {
+TEST_CASE("PackDecryptor - Random IV generation", "[vfs][security][encryption]") {
   SECTION("Generate random IV") {
     auto iv1Result = PackDecryptor::generateRandomIV(16);
     CHECK(iv1Result.isOk());
@@ -390,7 +379,7 @@ TEST_CASE("PackDecryptor - Random IV generation",
 
 TEST_CASE("PackDecryptor - Key derivation", "[vfs][security][encryption]") {
   SECTION("Derive key from password") {
-    const char *password = "test_password";
+    const char* password = "test_password";
     u8 salt[16] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
                    0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10};
 
@@ -439,8 +428,7 @@ TEST_CASE("PackDecryptor - Key derivation", "[vfs][security][encryption]") {
 // Secure Pack Reader Tests (Issue #187 - P0)
 // ============================================================================
 
-TEST_CASE("SecurePackReader - Basic operations",
-          "[vfs][security][pack_reader]") {
+TEST_CASE("SecurePackReader - Basic operations", "[vfs][security][pack_reader]") {
   SecurePackReader reader;
 
   SECTION("Initial state") {
@@ -463,8 +451,7 @@ TEST_CASE("SecurePackReader - Basic operations",
   }
 }
 
-TEST_CASE("SecurePackReader - Decryptor and checker injection",
-          "[vfs][security]") {
+TEST_CASE("SecurePackReader - Decryptor and checker injection", "[vfs][security]") {
   SecurePackReader reader;
 
   SECTION("Set decryptor") {
@@ -561,8 +548,7 @@ TEST_CASE("PackResourceMeta - Structure and validation", "[vfs][pack]") {
 // Concurrent Access Tests (Issue #187 - P0)
 // ============================================================================
 
-TEST_CASE("PackReader - Thread safety for concurrent reads",
-          "[vfs][pack][concurrency]") {
+TEST_CASE("PackReader - Thread safety for concurrent reads", "[vfs][pack][concurrency]") {
   PackReader reader;
 
   SECTION("Multiple exists() calls are thread-safe") {
@@ -622,8 +608,7 @@ TEST_CASE("PackReader - Error recovery", "[vfs][pack][error_handling]") {
 // Integer Overflow Security Tests (Issue #561 - P0)
 // ============================================================================
 
-TEST_CASE("SecurePackReader - String boundary overflow protection",
-          "[vfs][security][overflow]") {
+TEST_CASE("SecurePackReader - String boundary overflow protection", "[vfs][security][overflow]") {
   SECTION("Boundary check prevents integer overflow") {
     // Test the safe boundary check logic
     // if (offset > size || length > size - offset) -> reject
@@ -700,14 +685,12 @@ TEST_CASE("SecurePackReader - String boundary overflow protection",
     CHECK(unsafeCheck == false); // Demonstrates the vulnerability
 
     // Safe check: prevents overflow
-    bool safeCheck = (offset > stringDataSize ||
-                      strSize > stringDataSize - offset);
+    bool safeCheck = (offset > stringDataSize || strSize > stringDataSize - offset);
     CHECK(safeCheck == true); // Correctly rejects
   }
 }
 
-TEST_CASE("SecurePackReader - Resource table overflow protection",
-          "[vfs][security][overflow]") {
+TEST_CASE("SecurePackReader - Resource table overflow protection", "[vfs][security][overflow]") {
   SECTION("Resource table offset + size overflow protection") {
     const u64 fileSize = 10000;
     const u64 maxU64 = std::numeric_limits<u64>::max();
@@ -717,8 +700,7 @@ TEST_CASE("SecurePackReader - Resource table overflow protection",
     u64 tableSize = 200;
 
     // Safe check
-    bool shouldReject = (offset > fileSize ||
-                         tableSize > fileSize - offset);
+    bool shouldReject = (offset > fileSize || tableSize > fileSize - offset);
     CHECK(shouldReject == true);
 
     // Case 2: Valid resource table
@@ -735,8 +717,7 @@ TEST_CASE("SecurePackReader - Resource table overflow protection",
   }
 }
 
-TEST_CASE("SecurePackReader - Resource data overflow protection",
-          "[vfs][security][overflow]") {
+TEST_CASE("SecurePackReader - Resource data overflow protection", "[vfs][security][overflow]") {
   SECTION("Absolute offset calculation overflow protection") {
     const u64 fileSize = 100000;
     const u64 maxU64 = std::numeric_limits<u64>::max();
@@ -745,15 +726,13 @@ TEST_CASE("SecurePackReader - Resource data overflow protection",
     u64 dataOffset = maxU64 - 1000;
     u64 entryOffset = 2000;
 
-    bool shouldReject = (entryOffset > fileSize ||
-                         dataOffset > fileSize - entryOffset);
+    bool shouldReject = (entryOffset > fileSize || dataOffset > fileSize - entryOffset);
     CHECK(shouldReject == true);
 
     // Case 2: Valid offsets
     dataOffset = 10000;
     entryOffset = 5000;
-    shouldReject = (entryOffset > fileSize ||
-                    dataOffset > fileSize - entryOffset);
+    shouldReject = (entryOffset > fileSize || dataOffset > fileSize - entryOffset);
     CHECK(shouldReject == false);
   }
 
@@ -767,22 +746,20 @@ TEST_CASE("SecurePackReader - Resource data overflow protection",
     u64 absoluteOffset = maxU64 - 1000;
     u64 compressedSize = 2000;
 
-    bool shouldReject = (absoluteOffset > maxDataEnd ||
-                         compressedSize > maxDataEnd - absoluteOffset);
+    bool shouldReject =
+        (absoluteOffset > maxDataEnd || compressedSize > maxDataEnd - absoluteOffset);
     CHECK(shouldReject == true);
 
     // Case 2: Data extends past footer boundary
     absoluteOffset = 99000;
     compressedSize = 2000; // Would extend to 101000, past maxDataEnd of 99744
-    shouldReject = (absoluteOffset > maxDataEnd ||
-                    compressedSize > maxDataEnd - absoluteOffset);
+    shouldReject = (absoluteOffset > maxDataEnd || compressedSize > maxDataEnd - absoluteOffset);
     CHECK(shouldReject == true);
 
     // Case 3: Valid resource data
     absoluteOffset = 50000;
     compressedSize = 10000;
-    shouldReject = (absoluteOffset > maxDataEnd ||
-                    compressedSize > maxDataEnd - absoluteOffset);
+    shouldReject = (absoluteOffset > maxDataEnd || compressedSize > maxDataEnd - absoluteOffset);
     CHECK(shouldReject == false);
   }
 }

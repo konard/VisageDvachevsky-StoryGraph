@@ -23,13 +23,13 @@ class NMAssetPreviewFrame : public QFrame {
   Q_OBJECT
 
 public:
-  explicit NMAssetPreviewFrame(QWidget *parent = nullptr);
+  explicit NMAssetPreviewFrame(QWidget* parent = nullptr);
   ~NMAssetPreviewFrame() override = default;
 
   /**
    * @brief Update the preview with the given asset path
    */
-  void updatePreview(const QString &path);
+  void updatePreview(const QString& path);
 
   /**
    * @brief Clear the current preview
@@ -44,9 +44,9 @@ public:
 private:
   void setupUi();
 
-  QLabel *m_previewImage = nullptr;
-  QLabel *m_previewName = nullptr;
-  QLabel *m_previewMeta = nullptr;
+  QLabel* m_previewImage = nullptr;
+  QLabel* m_previewName = nullptr;
+  QLabel* m_previewMeta = nullptr;
   QString m_previewPath;
 };
 

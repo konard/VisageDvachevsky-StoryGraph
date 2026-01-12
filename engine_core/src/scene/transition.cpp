@@ -8,10 +8,9 @@ namespace NovelMind::Scene {
 // FadeTransition
 // ============================================================================
 
-FadeTransition::FadeTransition(const renderer::Color &fadeColor, bool fadeOut)
-    : m_fadeColor(fadeColor), m_fadeOut(fadeOut), m_duration(1.0f),
-      m_elapsed(0.0f), m_running(false), m_complete(false),
-      m_onComplete(nullptr) {}
+FadeTransition::FadeTransition(const renderer::Color& fadeColor, bool fadeOut)
+    : m_fadeColor(fadeColor), m_fadeOut(fadeOut), m_duration(1.0f), m_elapsed(0.0f),
+      m_running(false), m_complete(false), m_onComplete(nullptr) {}
 
 FadeTransition::~FadeTransition() = default;
 
@@ -40,7 +39,7 @@ void FadeTransition::update(f64 deltaTime) {
   }
 }
 
-void FadeTransition::render(renderer::IRenderer &renderer) {
+void FadeTransition::render(renderer::IRenderer& renderer) {
   if (!m_running && !m_complete) {
     return;
   }
@@ -64,7 +63,9 @@ void FadeTransition::render(renderer::IRenderer &renderer) {
   renderer.setFade(alpha, fadeColorWithAlpha);
 }
 
-bool FadeTransition::isComplete() const { return m_complete; }
+bool FadeTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 FadeTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -77,22 +78,25 @@ void FadeTransition::setOnComplete(CompletionCallback callback) {
   m_onComplete = std::move(callback);
 }
 
-TransitionType FadeTransition::getType() const { return TransitionType::Fade; }
+TransitionType FadeTransition::getType() const {
+  return TransitionType::Fade;
+}
 
-void FadeTransition::setFadeColor(const renderer::Color &color) {
+void FadeTransition::setFadeColor(const renderer::Color& color) {
   m_fadeColor = color;
 }
 
-void FadeTransition::setFadeOut(bool fadeOut) { m_fadeOut = fadeOut; }
+void FadeTransition::setFadeOut(bool fadeOut) {
+  m_fadeOut = fadeOut;
+}
 
 // ============================================================================
 // FadeThroughTransition
 // ============================================================================
 
-FadeThroughTransition::FadeThroughTransition(const renderer::Color &fadeColor)
-    : m_fadeColor(fadeColor), m_duration(1.0f), m_elapsed(0.0f),
-      m_running(false), m_complete(false), m_pastMidpoint(false),
-      m_onComplete(nullptr), m_onMidpoint(nullptr) {}
+FadeThroughTransition::FadeThroughTransition(const renderer::Color& fadeColor)
+    : m_fadeColor(fadeColor), m_duration(1.0f), m_elapsed(0.0f), m_running(false),
+      m_complete(false), m_pastMidpoint(false), m_onComplete(nullptr), m_onMidpoint(nullptr) {}
 
 FadeThroughTransition::~FadeThroughTransition() = default;
 
@@ -132,7 +136,7 @@ void FadeThroughTransition::update(f64 deltaTime) {
   }
 }
 
-void FadeThroughTransition::render(renderer::IRenderer &renderer) {
+void FadeThroughTransition::render(renderer::IRenderer& renderer) {
   if (!m_running && !m_complete) {
     return;
   }
@@ -156,7 +160,9 @@ void FadeThroughTransition::render(renderer::IRenderer &renderer) {
   renderer.setFade(alpha, m_fadeColor);
 }
 
-bool FadeThroughTransition::isComplete() const { return m_complete; }
+bool FadeThroughTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 FadeThroughTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -177,15 +183,17 @@ void FadeThroughTransition::setOnMidpoint(CompletionCallback callback) {
   m_onMidpoint = std::move(callback);
 }
 
-bool FadeThroughTransition::isPastMidpoint() const { return m_pastMidpoint; }
+bool FadeThroughTransition::isPastMidpoint() const {
+  return m_pastMidpoint;
+}
 
 // ============================================================================
 // SlideTransition
 // ============================================================================
 
 SlideTransition::SlideTransition(Direction direction)
-    : m_direction(direction), m_duration(1.0f), m_elapsed(0.0f),
-      m_running(false), m_complete(false), m_offset(0.0f),
+    : m_direction(direction), m_duration(1.0f), m_elapsed(0.0f), m_running(false),
+      m_complete(false), m_offset(0.0f),
       m_screenSize(1920.0f) // Default, should be set based on actual screen
       ,
       m_onComplete(nullptr) {}
@@ -254,13 +262,15 @@ void SlideTransition::update(f64 deltaTime) {
   }
 }
 
-void SlideTransition::render(renderer::IRenderer &renderer) {
+void SlideTransition::render(renderer::IRenderer& renderer) {
   // Slide transitions don't directly render anything
   // They provide offset values for the scene to use
   (void)renderer;
 }
 
-bool SlideTransition::isComplete() const { return m_complete; }
+bool SlideTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 SlideTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -291,7 +301,9 @@ void SlideTransition::setDirection(Direction direction) {
   m_direction = direction;
 }
 
-f32 SlideTransition::getOffset() const { return m_offset; }
+f32 SlideTransition::getOffset() const {
+  return m_offset;
+}
 
 // ============================================================================
 // DissolveTransition
@@ -328,14 +340,16 @@ void DissolveTransition::update(f64 deltaTime) {
   }
 }
 
-void DissolveTransition::render(renderer::IRenderer &renderer) {
+void DissolveTransition::render(renderer::IRenderer& renderer) {
   // Dissolve uses alpha blending controlled by getDissolveAlpha()
   // The actual dissolve pattern would need shader support
   // For now, we can approximate with a simple crossfade
   (void)renderer;
 }
 
-bool DissolveTransition::isComplete() const { return m_complete; }
+bool DissolveTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 DissolveTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -362,11 +376,9 @@ f32 DissolveTransition::getDissolveAlpha() const {
 // WipeTransition
 // ============================================================================
 
-WipeTransition::WipeTransition(const renderer::Color &maskColor,
-                               Direction direction)
-    : m_maskColor(maskColor), m_direction(direction), m_duration(1.0f),
-      m_elapsed(0.0f), m_running(false), m_complete(false),
-      m_onComplete(nullptr) {}
+WipeTransition::WipeTransition(const renderer::Color& maskColor, Direction direction)
+    : m_maskColor(maskColor), m_direction(direction), m_duration(1.0f), m_elapsed(0.0f),
+      m_running(false), m_complete(false), m_onComplete(nullptr) {}
 
 WipeTransition::~WipeTransition() = default;
 
@@ -393,7 +405,7 @@ void WipeTransition::update(f64 deltaTime) {
   }
 }
 
-void WipeTransition::render(renderer::IRenderer &renderer) {
+void WipeTransition::render(renderer::IRenderer& renderer) {
   if (!m_running && !m_complete) {
     return;
   }
@@ -428,7 +440,9 @@ void WipeTransition::render(renderer::IRenderer &renderer) {
   renderer.fillRect(rect, color);
 }
 
-bool WipeTransition::isComplete() const { return m_complete; }
+bool WipeTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 WipeTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -441,7 +455,9 @@ void WipeTransition::setOnComplete(CompletionCallback callback) {
   m_onComplete = std::move(callback);
 }
 
-TransitionType WipeTransition::getType() const { return TransitionType::Wipe; }
+TransitionType WipeTransition::getType() const {
+  return TransitionType::Wipe;
+}
 
 void WipeTransition::setDirection(Direction direction) {
   m_direction = direction;
@@ -451,10 +467,9 @@ void WipeTransition::setDirection(Direction direction) {
 // ZoomTransition
 // ============================================================================
 
-ZoomTransition::ZoomTransition(const renderer::Color &maskColor, bool zoomIn)
-    : m_maskColor(maskColor), m_zoomIn(zoomIn), m_duration(1.0f),
-      m_elapsed(0.0f), m_running(false), m_complete(false),
-      m_onComplete(nullptr) {}
+ZoomTransition::ZoomTransition(const renderer::Color& maskColor, bool zoomIn)
+    : m_maskColor(maskColor), m_zoomIn(zoomIn), m_duration(1.0f), m_elapsed(0.0f), m_running(false),
+      m_complete(false), m_onComplete(nullptr) {}
 
 ZoomTransition::~ZoomTransition() = default;
 
@@ -481,7 +496,7 @@ void ZoomTransition::update(f64 deltaTime) {
   }
 }
 
-void ZoomTransition::render(renderer::IRenderer &renderer) {
+void ZoomTransition::render(renderer::IRenderer& renderer) {
   if (!m_running && !m_complete) {
     return;
   }
@@ -496,16 +511,14 @@ void ZoomTransition::render(renderer::IRenderer &renderer) {
 
   renderer::Color color = m_maskColor;
   renderer.fillRect(renderer::Rect{0.0f, 0.0f, width, insetY}, color);
-  renderer.fillRect(renderer::Rect{0.0f, height - insetY, width, insetY},
-                    color);
-  renderer.fillRect(
-      renderer::Rect{0.0f, insetY, insetX, height - insetY * 2.0f}, color);
-  renderer.fillRect(
-      renderer::Rect{width - insetX, insetY, insetX, height - insetY * 2.0f},
-      color);
+  renderer.fillRect(renderer::Rect{0.0f, height - insetY, width, insetY}, color);
+  renderer.fillRect(renderer::Rect{0.0f, insetY, insetX, height - insetY * 2.0f}, color);
+  renderer.fillRect(renderer::Rect{width - insetX, insetY, insetX, height - insetY * 2.0f}, color);
 }
 
-bool ZoomTransition::isComplete() const { return m_complete; }
+bool ZoomTransition::isComplete() const {
+  return m_complete;
+}
 
 f32 ZoomTransition::getProgress() const {
   if (m_duration <= 0.0f) {
@@ -518,16 +531,19 @@ void ZoomTransition::setOnComplete(CompletionCallback callback) {
   m_onComplete = std::move(callback);
 }
 
-TransitionType ZoomTransition::getType() const { return TransitionType::Zoom; }
+TransitionType ZoomTransition::getType() const {
+  return TransitionType::Zoom;
+}
 
-void ZoomTransition::setZoomIn(bool zoomIn) { m_zoomIn = zoomIn; }
+void ZoomTransition::setZoomIn(bool zoomIn) {
+  m_zoomIn = zoomIn;
+}
 
 // ============================================================================
 // Factory and utility functions
 // ============================================================================
 
-std::unique_ptr<ITransition> createTransition(TransitionType type,
-                                              const renderer::Color &color) {
+std::unique_ptr<ITransition> createTransition(TransitionType type, const renderer::Color& color) {
   switch (type) {
   case TransitionType::None:
     return nullptr;
@@ -563,7 +579,7 @@ std::unique_ptr<ITransition> createTransition(TransitionType type,
   return nullptr;
 }
 
-TransitionType parseTransitionType(const std::string &name) {
+TransitionType parseTransitionType(const std::string& name) {
   if (name == "none")
     return TransitionType::None;
   if (name == "fade")
@@ -588,7 +604,7 @@ TransitionType parseTransitionType(const std::string &name) {
   return TransitionType::Fade; // Default
 }
 
-const char *transitionTypeName(TransitionType type) {
+const char* transitionTypeName(TransitionType type) {
   switch (type) {
   case TransitionType::None:
     return "none";

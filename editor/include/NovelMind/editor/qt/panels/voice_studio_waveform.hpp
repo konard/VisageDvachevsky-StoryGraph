@@ -27,10 +27,10 @@ class WaveformWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit WaveformWidget(QWidget *parent = nullptr);
+  explicit WaveformWidget(QWidget* parent = nullptr);
 
   // Set the clip to display
-  void setClip(const VoiceClip *clip);
+  void setClip(const VoiceClip* clip);
 
   // Selection (for trimming)
   void setSelection(double startSec, double endSec);
@@ -57,19 +57,19 @@ signals:
   void zoomChanged(double samplesPerPixel);
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void wheelEvent(QWheelEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
 
 private:
   double timeToX(double seconds) const;
   double xToTime(double x) const;
   void updatePeakCache();
 
-  const VoiceClip *m_clip = nullptr;
+  const VoiceClip* m_clip = nullptr;
   std::vector<float> m_displayPeaks;
 
   double m_selectionStart = 0.0;
@@ -90,13 +90,13 @@ class StudioVUMeterWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit StudioVUMeterWidget(QWidget *parent = nullptr);
+  explicit StudioVUMeterWidget(QWidget* parent = nullptr);
 
   void setLevel(float rmsDb, float peakDb, bool clipping);
   void reset();
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
 
 private:
   float m_rmsDb = -60.0f;

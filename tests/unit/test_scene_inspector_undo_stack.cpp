@@ -42,8 +42,8 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
     // First, create enough objects to test with
     std::vector<std::string> objectIds;
     for (int i = 0; i < 10; ++i) {
-      auto result = fixture.inspector->createObject(
-          LayerType::Character, SceneObjectType::Sprite, "", true);
+      auto result =
+          fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite, "", true);
       REQUIRE(result.isOk());
       objectIds.push_back(result.getValue());
     }
@@ -52,8 +52,7 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
     // Default max history size is 100, so we'll do 105 operations
     for (int i = 0; i < 105; ++i) {
       auto objId = objectIds[i % objectIds.size()];
-      fixture.inspector->setProperty(objId, "name",
-                                     "Object_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Object_" + std::to_string(i), true);
     }
 
     // The stack should have been limited to 100 entries
@@ -73,16 +72,15 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
 
     // Verify the last object has the correct name (from operation 104)
     auto lastObjId = objectIds[104 % objectIds.size()];
-    auto nameValue =
-        fixture.inspector->getProperty(lastObjId, "name");
+    auto nameValue = fixture.inspector->getProperty(lastObjId, "name");
     REQUIRE(nameValue.has_value());
     REQUIRE(nameValue.value() == "Object_104");
   }
 
   SECTION("Undo after stack limiting applies changes in correct order") {
     // Create a test object
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
@@ -91,8 +89,7 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
 
     // Perform many operations to exceed stack limit
     for (int i = 0; i < 105; ++i) {
-      fixture.inspector->setProperty(objId, "name",
-                                     "Value_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Value_" + std::to_string(i), true);
     }
 
     // The stack should now contain operations 6-105 (100 operations)
@@ -128,9 +125,8 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
     // Create test objects
     std::vector<std::string> objectIds;
     for (int i = 0; i < 3; ++i) {
-      auto result = fixture.inspector->createObject(
-          LayerType::Character, SceneObjectType::Sprite,
-          "obj_" + std::to_string(i), true);
+      auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                    "obj_" + std::to_string(i), true);
       REQUIRE(result.isOk());
       objectIds.push_back(result.getValue());
     }
@@ -138,8 +134,7 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
     // Perform 105 property changes on different objects
     for (int i = 0; i < 105; ++i) {
       auto objId = objectIds[i % 3];
-      fixture.inspector->setProperty(objId, "name",
-                                     "Step_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Step_" + std::to_string(i), true);
     }
 
     // Undo all 100 operations (that fit in the stack)
@@ -159,21 +154,19 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
 
   SECTION("Multiple cycles of stack limiting maintain order") {
     // Create a test object
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
     // First batch: operations 0-104 (105 ops, stack limited to 100)
     for (int i = 0; i < 105; ++i) {
-      fixture.inspector->setProperty(objId, "name",
-                                     "Batch1_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Batch1_" + std::to_string(i), true);
     }
 
     // Second batch: 10 more operations (stack re-limited)
     for (int i = 0; i < 10; ++i) {
-      fixture.inspector->setProperty(objId, "name",
-                                     "Batch2_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Batch2_" + std::to_string(i), true);
     }
 
     // Current name should be Batch2_9
@@ -200,15 +193,14 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
 
   SECTION("Undo/Redo order consistency after limiting") {
     // Create a test object
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
     // Perform operations beyond stack limit
     for (int i = 0; i < 110; ++i) {
-      fixture.inspector->setProperty(objId, "name",
-                                     "Op_" + std::to_string(i), true);
+      fixture.inspector->setProperty(objId, "name", "Op_" + std::to_string(i), true);
     }
 
     // Undo 5 times
@@ -240,8 +232,8 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
 
   SECTION("Empty undo stack after clearing history") {
     // Create object and perform operations
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
@@ -257,13 +249,12 @@ TEST_CASE("SceneInspectorAPI - Undo Stack Limiting", "[scene][inspector][undo][b
   }
 }
 
-TEST_CASE("SceneInspectorAPI - Basic Undo/Redo Operations",
-          "[scene][inspector][undo]") {
+TEST_CASE("SceneInspectorAPI - Basic Undo/Redo Operations", "[scene][inspector][undo]") {
   SceneInspectorTestFixture fixture;
 
   SECTION("Single property change undo/redo") {
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
@@ -296,8 +287,8 @@ TEST_CASE("SceneInspectorAPI - Basic Undo/Redo Operations",
 
   SECTION("Object creation undo/redo") {
     // Create object
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 
@@ -323,8 +314,8 @@ TEST_CASE("SceneInspectorAPI - Basic Undo/Redo Operations",
   }
 
   SECTION("Sequential property changes maintain order") {
-    auto result = fixture.inspector->createObject(
-        LayerType::Character, SceneObjectType::Sprite, "test_obj", true);
+    auto result = fixture.inspector->createObject(LayerType::Character, SceneObjectType::Sprite,
+                                                  "test_obj", true);
     REQUIRE(result.isOk());
     std::string objId = result.getValue();
 

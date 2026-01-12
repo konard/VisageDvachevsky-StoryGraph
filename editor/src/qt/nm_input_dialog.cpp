@@ -14,15 +14,15 @@
 
 namespace NovelMind::editor::qt {
 
-NMInputDialog::NMInputDialog(QWidget *parent, const QString &title,
-                             const QString &label, InputType type)
+NMInputDialog::NMInputDialog(QWidget* parent, const QString& title, const QString& label,
+                             InputType type)
     : QDialog(parent), m_type(type) {
   setWindowTitle(title);
   setModal(true);
   setObjectName("NMInputDialog");
   setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(12, 12, 12, 12);
   layout->setSpacing(8);
 
@@ -49,7 +49,7 @@ NMInputDialog::NMInputDialog(QWidget *parent, const QString &title,
     layout->addWidget(m_multiLineEdit);
   }
 
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
   auto& iconMgr = NMIconManager::instance();
@@ -75,8 +75,7 @@ NMInputDialog::NMInputDialog(QWidget *parent, const QString &title,
   detail::animateDialogIn(this);
 }
 
-void NMInputDialog::configureText(const QString &text,
-                                  QLineEdit::EchoMode mode) {
+void NMInputDialog::configureText(const QString& text, QLineEdit::EchoMode mode) {
   if (m_textEdit) {
     m_textEdit->setEchoMode(mode);
     m_textEdit->setText(text);
@@ -88,8 +87,7 @@ void NMInputDialog::configureText(const QString &text,
   }
 }
 
-void NMInputDialog::configureInt(int value, int minValue, int maxValue,
-                                 int step) {
+void NMInputDialog::configureInt(int value, int minValue, int maxValue, int step) {
   if (m_intSpin) {
     m_intSpin->setRange(minValue, maxValue);
     m_intSpin->setSingleStep(step);
@@ -101,8 +99,7 @@ void NMInputDialog::configureInt(int value, int minValue, int maxValue,
   }
 }
 
-void NMInputDialog::configureDouble(double value, double minValue,
-                                    double maxValue, int decimals) {
+void NMInputDialog::configureDouble(double value, double minValue, double maxValue, int decimals) {
   if (m_doubleSpin) {
     m_doubleSpin->setRange(minValue, maxValue);
     m_doubleSpin->setDecimals(decimals);
@@ -126,8 +123,7 @@ double NMInputDialog::doubleValue() const {
   return m_doubleSpin ? m_doubleSpin->value() : 0.0;
 }
 
-void NMInputDialog::configureItem(const QStringList &items, int current,
-                                  bool editable) {
+void NMInputDialog::configureItem(const QStringList& items, int current, bool editable) {
   if (m_comboBox) {
     m_comboBox->setEditable(editable);
     m_comboBox->addItems(items);
@@ -141,7 +137,7 @@ void NMInputDialog::configureItem(const QStringList &items, int current,
   }
 }
 
-void NMInputDialog::configureMultiLine(const QString &text) {
+void NMInputDialog::configureMultiLine(const QString& text) {
   if (m_multiLineEdit) {
     m_multiLineEdit->setPlainText(text);
     m_multiLineEdit->selectAll();
@@ -160,9 +156,8 @@ QString NMInputDialog::multiLineValue() const {
   return m_multiLineEdit ? m_multiLineEdit->toPlainText() : QString();
 }
 
-QString NMInputDialog::getText(QWidget *parent, const QString &title,
-                               const QString &label, QLineEdit::EchoMode mode,
-                               const QString &text, bool *ok) {
+QString NMInputDialog::getText(QWidget* parent, const QString& title, const QString& label,
+                               QLineEdit::EchoMode mode, const QString& text, bool* ok) {
   NMInputDialog dialog(parent, title, label, InputType::Text);
   dialog.configureText(text, mode);
   const int result = dialog.exec();
@@ -172,9 +167,8 @@ QString NMInputDialog::getText(QWidget *parent, const QString &title,
   return result == QDialog::Accepted ? dialog.textValue() : QString();
 }
 
-int NMInputDialog::getInt(QWidget *parent, const QString &title,
-                          const QString &label, int value, int minValue,
-                          int maxValue, int step, bool *ok) {
+int NMInputDialog::getInt(QWidget* parent, const QString& title, const QString& label, int value,
+                          int minValue, int maxValue, int step, bool* ok) {
   NMInputDialog dialog(parent, title, label, InputType::Int);
   dialog.configureInt(value, minValue, maxValue, step);
   const int result = dialog.exec();
@@ -184,10 +178,9 @@ int NMInputDialog::getInt(QWidget *parent, const QString &title,
   return result == QDialog::Accepted ? dialog.intValue() : value;
 }
 
-double NMInputDialog::getDouble(QWidget *parent, const QString &title,
-                                const QString &label, double value,
-                                double minValue, double maxValue, int decimals,
-                                bool *ok) {
+double NMInputDialog::getDouble(QWidget* parent, const QString& title, const QString& label,
+                                double value, double minValue, double maxValue, int decimals,
+                                bool* ok) {
   NMInputDialog dialog(parent, title, label, InputType::Double);
   dialog.configureDouble(value, minValue, maxValue, decimals);
   const int result = dialog.exec();
@@ -197,9 +190,8 @@ double NMInputDialog::getDouble(QWidget *parent, const QString &title,
   return result == QDialog::Accepted ? dialog.doubleValue() : value;
 }
 
-QString NMInputDialog::getItem(QWidget *parent, const QString &title,
-                               const QString &label, const QStringList &items,
-                               int current, bool editable, bool *ok) {
+QString NMInputDialog::getItem(QWidget* parent, const QString& title, const QString& label,
+                               const QStringList& items, int current, bool editable, bool* ok) {
   NMInputDialog dialog(parent, title, label, InputType::Item);
   dialog.configureItem(items, current, editable);
   const int result = dialog.exec();
@@ -209,13 +201,11 @@ QString NMInputDialog::getItem(QWidget *parent, const QString &title,
   if (result == QDialog::Accepted) {
     return dialog.itemValue();
   }
-  return (current >= 0 && current < items.size()) ? items.at(current)
-                                                  : QString();
+  return (current >= 0 && current < items.size()) ? items.at(current) : QString();
 }
 
-QString NMInputDialog::getMultiLineText(QWidget *parent, const QString &title,
-                                        const QString &label,
-                                        const QString &text, bool *ok) {
+QString NMInputDialog::getMultiLineText(QWidget* parent, const QString& title, const QString& label,
+                                        const QString& text, bool* ok) {
   NMInputDialog dialog(parent, title, label, InputType::MultiLine);
   dialog.configureMultiLine(text);
   const int result = dialog.exec();

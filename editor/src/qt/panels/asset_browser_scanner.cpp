@@ -8,42 +8,33 @@
 
 namespace NovelMind::editor::qt {
 
-QString importDestinationForExtension(const QString &extension,
-                                      const QString &rootPath) {
-  auto &projectManager = ProjectManager::instance();
+QString importDestinationForExtension(const QString& extension, const QString& rootPath) {
+  auto& projectManager = ProjectManager::instance();
   if (!projectManager.hasOpenProject()) {
     return QString();
   }
 
   const QString ext = extension.toLower();
-  if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-      ext == "gif") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Images));
+  if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "gif") {
+    return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Images));
   }
   if (ext == "wav" || ext == "mp3" || ext == "ogg" || ext == "flac") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Audio));
+    return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Audio));
   }
   if (ext == "ttf" || ext == "otf") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Fonts));
+    return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Fonts));
   }
   if (ext == "nms") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Scripts));
+    return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Scripts));
   }
   if (ext == "nmscene") {
-    return QString::fromStdString(
-        projectManager.getFolderPath(ProjectFolder::Scenes));
+    return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Scenes));
   }
 
-  return QString::fromStdString(
-      projectManager.getFolderPath(ProjectFolder::Assets));
+  return QString::fromStdString(projectManager.getFolderPath(ProjectFolder::Assets));
 }
 
-QString generateUniquePath(const QString &directory,
-                          const QString &fileName) {
+QString generateUniquePath(const QString& directory, const QString& fileName) {
   QDir dir(directory);
   QString baseName = QFileInfo(fileName).completeBaseName();
   QString suffix = QFileInfo(fileName).suffix();
@@ -51,10 +42,9 @@ QString generateUniquePath(const QString &directory,
   int counter = 1;
 
   while (QFileInfo::exists(candidate)) {
-    QString numbered =
-        suffix.isEmpty()
-            ? QString("%1_%2").arg(baseName).arg(counter)
-            : QString("%1_%2.%3").arg(baseName).arg(counter).arg(suffix);
+    QString numbered = suffix.isEmpty()
+                           ? QString("%1_%2").arg(baseName).arg(counter)
+                           : QString("%1_%2.%3").arg(baseName).arg(counter).arg(suffix);
     candidate = dir.filePath(numbered);
     counter++;
   }
@@ -62,7 +52,7 @@ QString generateUniquePath(const QString &directory,
   return candidate;
 }
 
-AssetMetadata getAssetMetadata(const QString &path) {
+AssetMetadata getAssetMetadata(const QString& path) {
   AssetMetadata meta;
   QFileInfo info(path);
 
@@ -71,8 +61,7 @@ AssetMetadata getAssetMetadata(const QString &path) {
   }
 
   // Generate a stable ID based on path
-  meta.id =
-      QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Md5).toHex();
+  meta.id = QCryptographicHash::hash(path.toUtf8(), QCryptographicHash::Md5).toHex();
   meta.path = path;
   meta.size = info.size();
   meta.modified = info.lastModified();

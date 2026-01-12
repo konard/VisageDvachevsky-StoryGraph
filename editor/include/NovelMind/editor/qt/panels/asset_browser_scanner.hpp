@@ -42,8 +42,7 @@ struct AssetMetadata {
  * @param rootPath Project assets root path
  * @return Path to the appropriate subfolder (Images, Audio, Fonts, etc.)
  */
-QString importDestinationForExtension(const QString &extension,
-                                      const QString &rootPath);
+QString importDestinationForExtension(const QString& extension, const QString& rootPath);
 
 /**
  * @brief Generate a unique file path to avoid overwriting existing files
@@ -51,13 +50,13 @@ QString importDestinationForExtension(const QString &extension,
  * @param fileName Desired file name
  * @return Unique file path (may have _1, _2, etc. suffix)
  */
-QString generateUniquePath(const QString &directory, const QString &fileName);
+QString generateUniquePath(const QString& directory, const QString& fileName);
 
 /**
  * @brief Extract metadata from an asset file
  * @param path Absolute file path
  * @return Asset metadata structure
  */
-AssetMetadata getAssetMetadata(const QString &path);
+AssetMetadata getAssetMetadata(const QString& path);
 
 } // namespace NovelMind::editor::qt

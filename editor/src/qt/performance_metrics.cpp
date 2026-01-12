@@ -10,8 +10,7 @@ namespace NovelMind::editor::qt {
 // ScopedTimer Implementation
 // =============================================================================
 
-ScopedTimer::ScopedTimer(const QString &name, bool enabled)
-    : m_name(name), m_enabled(enabled) {
+ScopedTimer::ScopedTimer(const QString& name, bool enabled) : m_name(name), m_enabled(enabled) {
   if (m_enabled) {
     m_start = Clock::now();
   }
@@ -43,23 +42,25 @@ double ScopedTimer::stop() {
 // PerformanceMetrics Implementation
 // =============================================================================
 
-PerformanceMetrics &PerformanceMetrics::instance() {
+PerformanceMetrics& PerformanceMetrics::instance() {
   static PerformanceMetrics instance;
   return instance;
 }
 
 PerformanceMetrics::PerformanceMetrics() : QObject(nullptr) {}
 
-void PerformanceMetrics::setEnabled(bool enabled) { m_enabled.store(enabled); }
+void PerformanceMetrics::setEnabled(bool enabled) {
+  m_enabled.store(enabled);
+}
 
-void PerformanceMetrics::recordTiming(const QString &name, double ms) {
+void PerformanceMetrics::recordTiming(const QString& name, double ms) {
   if (!m_enabled.load()) {
     return;
   }
 
   QMutexLocker locker(&m_mutex);
 
-  auto &stats = m_timingStats[name];
+  auto& stats = m_timingStats[name];
   if (stats.name.isEmpty()) {
     stats.name = name;
   }
@@ -72,7 +73,7 @@ void PerformanceMetrics::recordTiming(const QString &name, double ms) {
   }
 }
 
-void PerformanceMetrics::recordCount(const QString &name, int count) {
+void PerformanceMetrics::recordCount(const QString& name, int count) {
   if (!m_enabled.load()) {
     return;
   }
@@ -81,7 +82,7 @@ void PerformanceMetrics::recordCount(const QString &name, int count) {
   m_countStats[name] = count;
 }
 
-MetricStats PerformanceMetrics::getStats(const QString &name) const {
+MetricStats PerformanceMetrics::getStats(const QString& name) const {
   QMutexLocker locker(&m_mutex);
 
   auto it = m_timingStats.find(name);
@@ -98,7 +99,7 @@ QStringList PerformanceMetrics::metricNames() const {
   QMutexLocker locker(&m_mutex);
 
   QStringList names;
-  for (const auto &[name, _] : m_timingStats) {
+  for (const auto& [name, _] : m_timingStats) {
     names.append(name);
   }
   return names;
@@ -110,7 +111,7 @@ void PerformanceMetrics::reset() {
   m_countStats.clear();
 }
 
-void PerformanceMetrics::reset(const QString &name) {
+void PerformanceMetrics::reset(const QString& name) {
   QMutexLocker locker(&m_mutex);
 
   auto it = m_timingStats.find(name);
@@ -128,7 +129,7 @@ QString PerformanceMetrics::getSummary() const {
   summary += "=== Performance Metrics ===\n";
 
   summary += "\nTiming Metrics:\n";
-  for (const auto &[name, stats] : m_timingStats) {
+  for (const auto& [name, stats] : m_timingStats) {
     summary += QString("  %1: avg=%.2f ms, min=%.2f ms, max=%.2f ms, "
                        "samples=%2\n")
                    .arg(name)
@@ -139,7 +140,7 @@ QString PerformanceMetrics::getSummary() const {
   }
 
   summary += "\nCount Metrics:\n";
-  for (const auto &[name, count] : m_countStats) {
+  for (const auto& [name, count] : m_countStats) {
     summary += QString("  %1: %2\n").arg(name).arg(count);
   }
 

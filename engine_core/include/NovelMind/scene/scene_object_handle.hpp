@@ -49,7 +49,7 @@ public:
    * @param sceneGraph Pointer to the scene graph (must outlive this handle)
    * @param objectId ID of the object to track
    */
-  SceneObjectHandle(SceneGraph *sceneGraph, const std::string &objectId);
+  SceneObjectHandle(SceneGraph* sceneGraph, const std::string& objectId);
 
   /**
    * @brief Check if the referenced object still exists
@@ -63,7 +63,7 @@ public:
   /**
    * @brief Get the object ID
    */
-  [[nodiscard]] const std::string &getId() const { return m_objectId; }
+  [[nodiscard]] const std::string& getId() const { return m_objectId; }
 
   /**
    * @brief Get the object pointer if it still exists
@@ -74,7 +74,7 @@ public:
    * prefer using withObject() or withObjectAs() which guarantee atomic
    * check-and-use operations.
    */
-  [[nodiscard]] SceneObjectBase *get() const;
+  [[nodiscard]] SceneObjectBase* get() const;
 
   /**
    * @brief Get the object with type checking
@@ -83,9 +83,7 @@ public:
    *
    * THREAD SAFETY: See get() documentation for thread safety notes.
    */
-  template <typename T> [[nodiscard]] T *getAs() const {
-    return dynamic_cast<T *>(get());
-  }
+  template <typename T> [[nodiscard]] T* getAs() const { return dynamic_cast<T*>(get()); }
 
   /**
    * @brief Execute a function with the object if it exists
@@ -96,7 +94,7 @@ public:
    * preventing TOCTOU race conditions. The function is executed under
    * mutex protection, ensuring the object cannot be deleted during execution.
    */
-  bool withObject(std::function<void(SceneObjectBase *)> fn) const;
+  bool withObject(std::function<void(SceneObjectBase*)> fn) const;
 
   /**
    * @brief Execute a function with typed object if it exists and matches type
@@ -108,8 +106,8 @@ public:
    * preventing TOCTOU race conditions. The function is executed under
    * mutex protection, ensuring the object cannot be deleted during execution.
    */
-  template <typename T> bool withObjectAs(std::function<void(T *)> fn) const {
-    if (auto *obj = getAs<T>()) {
+  template <typename T> bool withObjectAs(std::function<void(T*)> fn) const {
+    if (auto* obj = getAs<T>()) {
       fn(obj);
       return true;
     }
@@ -127,7 +125,7 @@ public:
   explicit operator bool() const { return isValid(); }
 
 private:
-  SceneGraph *m_sceneGraph = nullptr;
+  SceneGraph* m_sceneGraph = nullptr;
   std::string m_objectId;
   u64 m_generation = 0; // Generation counter for TOCTOU prevention
 };
@@ -147,8 +145,7 @@ public:
    * @param handle Handle to the selected object
    * @param onClear Callback to execute when selection is cleared
    */
-  explicit ScopedInspectorSelection(SceneObjectHandle handle,
-                                    ClearCallback onClear = nullptr)
+  explicit ScopedInspectorSelection(SceneObjectHandle handle, ClearCallback onClear = nullptr)
       : m_handle(std::move(handle)), m_onClear(std::move(onClear)) {}
 
   /**
@@ -161,18 +158,17 @@ public:
   }
 
   // Non-copyable
-  ScopedInspectorSelection(const ScopedInspectorSelection &) = delete;
-  ScopedInspectorSelection &
-  operator=(const ScopedInspectorSelection &) = delete;
+  ScopedInspectorSelection(const ScopedInspectorSelection&) = delete;
+  ScopedInspectorSelection& operator=(const ScopedInspectorSelection&) = delete;
 
   // Movable
-  ScopedInspectorSelection(ScopedInspectorSelection &&) = default;
-  ScopedInspectorSelection &operator=(ScopedInspectorSelection &&) = default;
+  ScopedInspectorSelection(ScopedInspectorSelection&&) = default;
+  ScopedInspectorSelection& operator=(ScopedInspectorSelection&&) = default;
 
   /**
    * @brief Get the handle
    */
-  [[nodiscard]] const SceneObjectHandle &getHandle() const { return m_handle; }
+  [[nodiscard]] const SceneObjectHandle& getHandle() const { return m_handle; }
 
   /**
    * @brief Check if selection is still valid

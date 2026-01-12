@@ -44,20 +44,20 @@ class NMGraphNodeItem : public QGraphicsItem {
 public:
   enum { Type = QGraphicsItem::UserType + 1 };
 
-  explicit NMGraphNodeItem(const QString &title, const QString &nodeType);
+  explicit NMGraphNodeItem(const QString& title, const QString& nodeType);
 
   int type() const override { return Type; }
 
-  void setTitle(const QString &title);
+  void setTitle(const QString& title);
   [[nodiscard]] QString title() const { return m_title; }
 
-  void setNodeType(const QString &type);
+  void setNodeType(const QString& type);
   [[nodiscard]] QString nodeType() const { return m_nodeType; }
 
   void setNodeId(uint64_t id) { m_nodeId = id; }
   [[nodiscard]] uint64_t nodeId() const { return m_nodeId; }
 
-  void setNodeIdString(const QString &id) { m_nodeIdString = id; }
+  void setNodeIdString(const QString& id) { m_nodeIdString = id; }
   [[nodiscard]] QString nodeIdString() const { return m_nodeIdString; }
 
   void setSelected(bool selected);
@@ -65,45 +65,37 @@ public:
   void setCurrentlyExecuting(bool isExecuting);
   void setEntry(bool isEntry);
 
-  void setScriptPath(const QString &path) { m_scriptPath = path; }
+  void setScriptPath(const QString& path) { m_scriptPath = path; }
   [[nodiscard]] QString scriptPath() const { return m_scriptPath; }
 
-  void setDialogueSpeaker(const QString &speaker) {
-    m_dialogueSpeaker = speaker;
-  }
+  void setDialogueSpeaker(const QString& speaker) { m_dialogueSpeaker = speaker; }
   [[nodiscard]] QString dialogueSpeaker() const { return m_dialogueSpeaker; }
 
-  void setDialogueText(const QString &text) { m_dialogueText = text; }
+  void setDialogueText(const QString& text) { m_dialogueText = text; }
   [[nodiscard]] QString dialogueText() const { return m_dialogueText; }
 
-  void setChoiceOptions(const QStringList &choices) {
-    m_choiceOptions = choices;
-  }
+  void setChoiceOptions(const QStringList& choices) { m_choiceOptions = choices; }
   [[nodiscard]] QStringList choiceOptions() const { return m_choiceOptions; }
 
   // Voice-over properties for dialogue nodes
-  void setVoiceClipPath(const QString &path) { m_voiceClipPath = path; }
+  void setVoiceClipPath(const QString& path) { m_voiceClipPath = path; }
   [[nodiscard]] QString voiceClipPath() const { return m_voiceClipPath; }
 
   void setVoiceBindingStatus(int status) { m_voiceBindingStatus = status; }
   [[nodiscard]] int voiceBindingStatus() const { return m_voiceBindingStatus; }
 
-  void setLocalizationKey(const QString &key) { m_localizationKey = key; }
+  void setLocalizationKey(const QString& key) { m_localizationKey = key; }
   [[nodiscard]] QString localizationKey() const { return m_localizationKey; }
 
   // Dialogue localization properties
   void setTranslationStatus(int status) { m_translationStatus = status; }
   [[nodiscard]] int translationStatus() const { return m_translationStatus; }
 
-  void setLocalizedText(const QString &text) { m_localizedText = text; }
+  void setLocalizedText(const QString& text) { m_localizedText = text; }
   [[nodiscard]] QString localizedText() const { return m_localizedText; }
 
-  [[nodiscard]] bool hasTranslation() const {
-    return m_translationStatus == 2;
-  } // Translated
-  [[nodiscard]] bool isMissingTranslation() const {
-    return m_translationStatus == 4;
-  } // Missing
+  [[nodiscard]] bool hasTranslation() const { return m_translationStatus == 2; }       // Translated
+  [[nodiscard]] bool isMissingTranslation() const { return m_translationStatus == 4; } // Missing
 
   [[nodiscard]] bool hasVoiceClip() const { return !m_voiceClipPath.isEmpty(); }
   [[nodiscard]] bool isDialogueNode() const {
@@ -111,20 +103,16 @@ public:
   }
 
   // Scene Node specific properties
-  void setSceneId(const QString &id) { m_sceneId = id; }
+  void setSceneId(const QString& id) { m_sceneId = id; }
   [[nodiscard]] QString sceneId() const { return m_sceneId; }
 
-  void setHasEmbeddedDialogue(bool embedded) {
-    m_hasEmbeddedDialogue = embedded;
-  }
-  [[nodiscard]] bool hasEmbeddedDialogue() const {
-    return m_hasEmbeddedDialogue;
-  }
+  void setHasEmbeddedDialogue(bool embedded) { m_hasEmbeddedDialogue = embedded; }
+  [[nodiscard]] bool hasEmbeddedDialogue() const { return m_hasEmbeddedDialogue; }
 
   void setDialogueCount(int count) { m_dialogueCount = count; }
   [[nodiscard]] int dialogueCount() const { return m_dialogueCount; }
 
-  void setThumbnailPath(const QString &path) { m_thumbnailPath = path; }
+  void setThumbnailPath(const QString& path) { m_thumbnailPath = path; }
   [[nodiscard]] QString thumbnailPath() const { return m_thumbnailPath; }
 
   [[nodiscard]] bool isSceneNode() const {
@@ -138,62 +126,44 @@ public:
   void setSceneValidationWarning(bool hasWarning);
   [[nodiscard]] bool hasSceneValidationWarning() const { return m_hasSceneValidationWarning; }
 
-  void setSceneValidationMessage(const QString &message);
+  void setSceneValidationMessage(const QString& message);
   [[nodiscard]] QString sceneValidationMessage() const { return m_sceneValidationMessage; }
 
   // Script file creation state
   void setScriptFileError(bool hasError);
   [[nodiscard]] bool hasScriptFileError() const { return m_hasScriptFileError; }
 
-  void setScriptFileErrorMessage(const QString &message);
+  void setScriptFileErrorMessage(const QString& message);
   [[nodiscard]] QString scriptFileErrorMessage() const { return m_scriptFileErrorMessage; }
 
   // Condition Node specific properties
-  void setConditionExpression(const QString &expr) {
-    m_conditionExpression = expr;
-  }
-  [[nodiscard]] QString conditionExpression() const {
-    return m_conditionExpression;
-  }
+  void setConditionExpression(const QString& expr) { m_conditionExpression = expr; }
+  [[nodiscard]] QString conditionExpression() const { return m_conditionExpression; }
 
-  void setConditionOutputs(const QStringList &outputs) {
-    m_conditionOutputs = outputs;
-  }
-  [[nodiscard]] QStringList conditionOutputs() const {
-    return m_conditionOutputs;
-  }
+  void setConditionOutputs(const QStringList& outputs) { m_conditionOutputs = outputs; }
+  [[nodiscard]] QStringList conditionOutputs() const { return m_conditionOutputs; }
 
   [[nodiscard]] bool isConditionNode() const {
     return m_nodeType.compare("Condition", Qt::CaseInsensitive) == 0;
   }
 
   // Choice branching properties - maps choice options to target node IDs
-  void setChoiceTargets(const QHash<QString, QString> &targets) {
-    m_choiceTargets = targets;
-  }
-  [[nodiscard]] QHash<QString, QString> choiceTargets() const {
-    return m_choiceTargets;
-  }
-  void setChoiceTarget(const QString &choiceOption,
-                       const QString &targetNodeId) {
+  void setChoiceTargets(const QHash<QString, QString>& targets) { m_choiceTargets = targets; }
+  [[nodiscard]] QHash<QString, QString> choiceTargets() const { return m_choiceTargets; }
+  void setChoiceTarget(const QString& choiceOption, const QString& targetNodeId) {
     m_choiceTargets.insert(choiceOption, targetNodeId);
   }
-  [[nodiscard]] QString choiceTarget(const QString &choiceOption) const {
+  [[nodiscard]] QString choiceTarget(const QString& choiceOption) const {
     return m_choiceTargets.value(choiceOption);
   }
 
   // Condition branching properties - maps condition outputs to target node IDs
-  void setConditionTargets(const QHash<QString, QString> &targets) {
-    m_conditionTargets = targets;
-  }
-  [[nodiscard]] QHash<QString, QString> conditionTargets() const {
-    return m_conditionTargets;
-  }
-  void setConditionTarget(const QString &outputLabel,
-                          const QString &targetNodeId) {
+  void setConditionTargets(const QHash<QString, QString>& targets) { m_conditionTargets = targets; }
+  [[nodiscard]] QHash<QString, QString> conditionTargets() const { return m_conditionTargets; }
+  void setConditionTarget(const QString& outputLabel, const QString& targetNodeId) {
     m_conditionTargets.insert(outputLabel, targetNodeId);
   }
-  [[nodiscard]] QString conditionTarget(const QString &outputLabel) const {
+  [[nodiscard]] QString conditionTarget(const QString& outputLabel) const {
     return m_conditionTargets.value(outputLabel);
   }
 
@@ -202,24 +172,20 @@ public:
   }
 
   [[nodiscard]] bool hasBreakpoint() const { return m_hasBreakpoint; }
-  [[nodiscard]] bool isCurrentlyExecuting() const {
-    return m_isCurrentlyExecuting;
-  }
+  [[nodiscard]] bool isCurrentlyExecuting() const { return m_isCurrentlyExecuting; }
   [[nodiscard]] bool isEntry() const { return m_isEntry; }
 
   [[nodiscard]] QPointF inputPortPosition() const;
   [[nodiscard]] QPointF outputPortPosition() const;
-  [[nodiscard]] bool hitTestInputPort(const QPointF &scenePos) const;
-  [[nodiscard]] bool hitTestOutputPort(const QPointF &scenePos) const;
+  [[nodiscard]] bool hitTestInputPort(const QPointF& scenePos) const;
+  [[nodiscard]] bool hitTestOutputPort(const QPointF& scenePos) const;
 
   QRectF boundingRect() const override;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override;
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 protected:
-  QVariant itemChange(GraphicsItemChange change,
-                      const QVariant &value) override;
-  void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+  QVariant itemChange(GraphicsItemChange change, const QVariant& value) override;
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
 private:
   void updateTooltip();
@@ -238,8 +204,7 @@ private:
 
   // Voice-over properties (for Dialogue nodes)
   QString m_voiceClipPath;
-  int m_voiceBindingStatus =
-      0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
+  int m_voiceBindingStatus = 0; // 0=Unbound, 1=Bound, 2=MissingFile, 3=AutoMapped, 4=Pending
   QString m_localizationKey;
 
   // Dialogue localization properties
@@ -284,17 +249,17 @@ class NMGraphConnectionItem : public QGraphicsItem {
 public:
   enum { Type = QGraphicsItem::UserType + 2 };
 
-  NMGraphConnectionItem(NMGraphNodeItem *startNode, NMGraphNodeItem *endNode);
+  NMGraphConnectionItem(NMGraphNodeItem* startNode, NMGraphNodeItem* endNode);
 
   int type() const override { return Type; }
 
   void updatePath();
 
-  [[nodiscard]] NMGraphNodeItem *startNode() const { return m_startNode; }
-  [[nodiscard]] NMGraphNodeItem *endNode() const { return m_endNode; }
+  [[nodiscard]] NMGraphNodeItem* startNode() const { return m_startNode; }
+  [[nodiscard]] NMGraphNodeItem* endNode() const { return m_endNode; }
 
   // Edge label for branch indication (e.g., "true", "false", "Option 1")
-  void setLabel(const QString &label) { m_label = label; }
+  void setLabel(const QString& label) { m_label = label; }
   [[nodiscard]] QString label() const { return m_label; }
 
   // Branch index for ordering (0-based)
@@ -302,11 +267,10 @@ public:
   [[nodiscard]] int branchIndex() const { return m_branchIndex; }
 
   QRectF boundingRect() const override;
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget) override;
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option, QWidget* widget) override;
 
 protected:
-  void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent* event) override;
 
 private:
   /**
@@ -315,10 +279,10 @@ private:
    * @param pos The position to draw at (midpoint of connection)
    * @param isCrossScene Whether this is a cross-scene (scene-to-scene) connection
    */
-  void drawSceneTransitionIndicator(QPainter *painter, const QPointF &pos, bool isCrossScene);
+  void drawSceneTransitionIndicator(QPainter* painter, const QPointF& pos, bool isCrossScene);
 
-  NMGraphNodeItem *m_startNode;
-  NMGraphNodeItem *m_endNode;
+  NMGraphNodeItem* m_startNode;
+  NMGraphNodeItem* m_endNode;
   QPainterPath m_path;
   QString m_label;        // Branch label (e.g., "true", "Option 1")
   int m_branchIndex = -1; // -1 means no specific branch
@@ -331,31 +295,29 @@ class NMStoryGraphScene : public QGraphicsScene {
   Q_OBJECT
 
 public:
-  explicit NMStoryGraphScene(QObject *parent = nullptr);
+  explicit NMStoryGraphScene(QObject* parent = nullptr);
 
   /**
    * @brief Add a node to the graph
    */
-  NMGraphNodeItem *addNode(const QString &title, const QString &nodeType,
-                           const QPointF &pos, uint64_t nodeId = 0,
-                           const QString &nodeIdString = QString());
+  NMGraphNodeItem* addNode(const QString& title, const QString& nodeType, const QPointF& pos,
+                           uint64_t nodeId = 0, const QString& nodeIdString = QString());
 
   /**
    * @brief Add a connection between nodes
    */
-  NMGraphConnectionItem *addConnection(NMGraphNodeItem *from,
-                                       NMGraphNodeItem *to);
-  NMGraphConnectionItem *addConnection(uint64_t fromNodeId, uint64_t toNodeId);
+  NMGraphConnectionItem* addConnection(NMGraphNodeItem* from, NMGraphNodeItem* to);
+  NMGraphConnectionItem* addConnection(uint64_t fromNodeId, uint64_t toNodeId);
 
   /**
    * @brief Remove a node and its connections
    */
-  void removeNode(NMGraphNodeItem *node);
+  void removeNode(NMGraphNodeItem* node);
 
   /**
    * @brief Remove a connection
    */
-  void removeConnection(NMGraphConnectionItem *connection);
+  void removeConnection(NMGraphConnectionItem* connection);
   bool removeConnection(uint64_t fromNodeId, uint64_t toNodeId);
 
   /**
@@ -366,28 +328,22 @@ public:
   /**
    * @brief Get all nodes
    */
-  [[nodiscard]] const QList<NMGraphNodeItem *> &nodes() const {
-    return m_nodes;
-  }
+  [[nodiscard]] const QList<NMGraphNodeItem*>& nodes() const { return m_nodes; }
 
-  [[nodiscard]] NMGraphNodeItem *findNode(uint64_t nodeId) const;
-  [[nodiscard]] bool hasConnection(uint64_t fromNodeId,
-                                   uint64_t toNodeId) const;
+  [[nodiscard]] NMGraphNodeItem* findNode(uint64_t nodeId) const;
+  [[nodiscard]] bool hasConnection(uint64_t fromNodeId, uint64_t toNodeId) const;
 
   /**
    * @brief Get all connections
    */
-  [[nodiscard]] const QList<NMGraphConnectionItem *> &connections() const {
-    return m_connections;
-  }
+  [[nodiscard]] const QList<NMGraphConnectionItem*>& connections() const { return m_connections; }
 
   /**
    * @brief Find connections attached to a node
    */
-  QList<NMGraphConnectionItem *>
-  findConnectionsForNode(NMGraphNodeItem *node) const;
+  QList<NMGraphConnectionItem*> findConnectionsForNode(NMGraphNodeItem* node) const;
 
-  void requestEntryNode(const QString &nodeIdString);
+  void requestEntryNode(const QString& nodeIdString);
 
   /**
    * @brief Check if adding a connection would create a cycle
@@ -395,8 +351,7 @@ public:
    * @param toNodeId Target node
    * @return true if adding this connection would create a cycle
    */
-  [[nodiscard]] bool wouldCreateCycle(uint64_t fromNodeId,
-                                      uint64_t toNodeId) const;
+  [[nodiscard]] bool wouldCreateCycle(uint64_t fromNodeId, uint64_t toNodeId) const;
 
   /**
    * @brief Detect all cycles in the graph
@@ -421,13 +376,13 @@ public:
    * @param projectPath Project root path for finding .nmscene files
    * @return List of validation error messages
    */
-  [[nodiscard]] QStringList validateSceneReferences(const QString &projectPath) const;
+  [[nodiscard]] QStringList validateSceneReferences(const QString& projectPath) const;
 
   /**
    * @brief Update validation state for all scene nodes
    * @param projectPath Project root path for finding .nmscene files
    */
-  void updateSceneValidationState(const QString &projectPath);
+  void updateSceneValidationState(const QString& projectPath);
 
   /**
    * @brief Set read-only mode for workflow enforcement
@@ -468,25 +423,24 @@ public:
    * @param sceneNode The scene node to find children for
    * @return List of dialogue/choice nodes that belong to this scene
    */
-  QList<NMGraphNodeItem *> findDialogueNodesInScene(NMGraphNodeItem *sceneNode) const;
+  QList<NMGraphNodeItem*> findDialogueNodesInScene(NMGraphNodeItem* sceneNode) const;
 
 signals:
-  void nodeAdded(uint64_t nodeId, const QString &nodeIdString,
-                 const QString &nodeType);
+  void nodeAdded(uint64_t nodeId, const QString& nodeIdString, const QString& nodeType);
   void nodeDeleted(uint64_t nodeId);
   void connectionAdded(uint64_t fromNodeId, uint64_t toNodeId);
   void connectionDeleted(uint64_t fromNodeId, uint64_t toNodeId);
-  void entryNodeRequested(const QString &nodeIdString);
+  void entryNodeRequested(const QString& nodeIdString);
   void deleteSelectionRequested();
-  void nodesMoved(const QVector<GraphNodeMove> &moves);
-  void scriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
-                                const QString &errorMessage);
+  void nodesMoved(const QVector<GraphNodeMove>& moves);
+  void scriptFileCreationFailed(uint64_t nodeId, const QString& nodeIdString,
+                                const QString& errorMessage);
 
 protected:
-  void drawBackground(QPainter *painter, const QRectF &rect) override;
-  void keyPressEvent(QKeyEvent *event) override;
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
+  void drawBackground(QPainter* painter, const QRectF& rect) override;
+  void keyPressEvent(QKeyEvent* event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
 
 private:
   /**
@@ -494,15 +448,15 @@ private:
    * @param painter The painter to use
    * @param viewRect The visible view rectangle for culling
    */
-  void drawSceneContainers(QPainter *painter, const QRectF &viewRect);
+  void drawSceneContainers(QPainter* painter, const QRectF& viewRect);
 
-  QList<NMGraphNodeItem *> m_nodes;
-  QList<NMGraphConnectionItem *> m_connections;
-  QHash<uint64_t, NMGraphNodeItem *> m_nodeLookup;
+  QList<NMGraphNodeItem*> m_nodes;
+  QList<NMGraphConnectionItem*> m_connections;
+  QHash<uint64_t, NMGraphNodeItem*> m_nodeLookup;
   uint64_t m_nextNodeId = 1;
   QHash<uint64_t, QPointF> m_dragStartPositions;
   bool m_isDraggingNodes = false;
-  bool m_readOnly = false; // Issue #117: Read-only mode for workflow enforcement
+  bool m_readOnly = false;           // Issue #117: Read-only mode for workflow enforcement
   bool m_showSceneContainers = true; // Issue #345: Scene container visualization
 };
 
@@ -513,7 +467,7 @@ class NMStoryGraphView : public QGraphicsView {
   Q_OBJECT
 
 public:
-  explicit NMStoryGraphView(QWidget *parent = nullptr);
+  explicit NMStoryGraphView(QWidget* parent = nullptr);
 
   void setZoomLevel(qreal zoom);
   [[nodiscard]] qreal zoomLevel() const { return m_zoomLevel; }
@@ -521,14 +475,10 @@ public:
   void centerOnGraph();
 
   void setConnectionModeEnabled(bool enabled);
-  [[nodiscard]] bool isConnectionModeEnabled() const {
-    return m_connectionModeEnabled;
-  }
+  [[nodiscard]] bool isConnectionModeEnabled() const { return m_connectionModeEnabled; }
 
   void setConnectionDrawingMode(bool enabled);
-  [[nodiscard]] bool isConnectionDrawingMode() const {
-    return m_isDrawingConnection;
-  }
+  [[nodiscard]] bool isConnectionDrawingMode() const { return m_isDrawingConnection; }
 
   void emitNodeClicked(uint64_t nodeId) { emit nodeClicked(nodeId); }
 
@@ -542,20 +492,20 @@ signals:
    * @param scriptPath Path to the dropped script file
    * @param position Scene position where the file was dropped
    */
-  void scriptFileDropped(const QString &scriptPath, const QPointF &position);
+  void scriptFileDropped(const QString& scriptPath, const QPointF& position);
 
 protected:
-  void wheelEvent(QWheelEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseDoubleClickEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void drawForeground(QPainter *painter, const QRectF &rect) override;
+  void wheelEvent(QWheelEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseDoubleClickEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void drawForeground(QPainter* painter, const QRectF& rect) override;
   // Issue #173: Drag-and-drop validation for StoryFlow editor
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dragMoveEvent(QDragMoveEvent *event) override;
-  void dropEvent(QDropEvent *event) override;
-  void hideEvent(QHideEvent *event) override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void dropEvent(QDropEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 private:
   /**
@@ -572,7 +522,7 @@ private:
   QPoint m_lastPanPoint;
   bool m_isDrawingConnection = false;
   bool m_connectionModeEnabled = false;
-  NMGraphNodeItem *m_connectionStartNode = nullptr;
+  NMGraphNodeItem* m_connectionStartNode = nullptr;
   QPointF m_connectionEndPoint;
   // Drag tracking to prevent double-click conflict
   QPoint m_dragStartPos;
@@ -590,15 +540,15 @@ class NMNodePalette : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMNodePalette(QWidget *parent = nullptr);
+  explicit NMNodePalette(QWidget* parent = nullptr);
 
 signals:
-  void nodeTypeSelected(const QString &nodeType);
+  void nodeTypeSelected(const QString& nodeType);
 
 private:
-  void createNodeButton(const QString &nodeType, const QString &icon);
+  void createNodeButton(const QString& nodeType, const QString& icon);
 
-  QVBoxLayout *m_contentLayout = nullptr;
+  QVBoxLayout* m_contentLayout = nullptr;
 };
 
 /**
@@ -608,7 +558,7 @@ class NMStoryGraphPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMStoryGraphPanel(QWidget *parent = nullptr);
+  explicit NMStoryGraphPanel(QWidget* parent = nullptr);
   ~NMStoryGraphPanel() override;
 
   /**
@@ -623,7 +573,7 @@ public:
    * @param readOnly true to enable read-only mode
    * @param reason Optional reason text for the banner (e.g., "Script Mode")
    */
-  void setReadOnly(bool readOnly, const QString &reason = QString());
+  void setReadOnly(bool readOnly, const QString& reason = QString());
 
   /**
    * @brief Check if panel is in read-only mode
@@ -661,49 +611,45 @@ public:
   Q_SLOT void rebuildFromProjectScripts();
 
   // PERF-5: Incremental graph update methods (avoid full rebuild)
-  void updateSingleNode(const QString &nodeIdString, const LayoutNode &data);
-  void addSingleConnection(const QString &fromNodeIdString,
-                           const QString &toNodeIdString);
-  void removeSingleConnection(const QString &fromNodeIdString,
-                              const QString &toNodeIdString);
-  void updateNodePosition(const QString &nodeIdString, const QPointF &newPos);
+  void updateSingleNode(const QString& nodeIdString, const LayoutNode& data);
+  void addSingleConnection(const QString& fromNodeIdString, const QString& toNodeIdString);
+  void removeSingleConnection(const QString& fromNodeIdString, const QString& toNodeIdString);
+  void updateNodePosition(const QString& nodeIdString, const QPointF& newPos);
 
-  [[nodiscard]] NMStoryGraphScene *graphScene() const { return m_scene; }
-  [[nodiscard]] NMStoryGraphView *graphView() const { return m_view; }
-  [[nodiscard]] NMStoryGraphMinimap *minimap() const { return m_minimap; }
-  [[nodiscard]] NMGraphNodeItem *findNodeById(uint64_t nodeId) const;
+  [[nodiscard]] NMStoryGraphScene* graphScene() const { return m_scene; }
+  [[nodiscard]] NMStoryGraphView* graphView() const { return m_view; }
+  [[nodiscard]] NMStoryGraphMinimap* minimap() const { return m_minimap; }
+  [[nodiscard]] NMGraphNodeItem* findNodeById(uint64_t nodeId) const;
 
   /**
    * @brief Find node by string ID
    */
-  NMGraphNodeItem *findNodeByIdString(const QString &id) const;
+  NMGraphNodeItem* findNodeByIdString(const QString& id) const;
 
-  void applyNodePropertyChange(const QString &nodeIdString,
-                               const QString &propertyName,
-                               const QString &newValue);
+  void applyNodePropertyChange(const QString& nodeIdString, const QString& propertyName,
+                               const QString& newValue);
 
   /**
    * @brief Create a new node at the view center
    */
-  void createNode(const QString &nodeType);
+  void createNode(const QString& nodeType);
 
   /**
    * @brief Navigate to a node and highlight it
    * @param nodeIdString The node ID to navigate to
    * @return true if navigation succeeded, false if node not found
    */
-  bool navigateToNode(const QString &nodeIdString);
+  bool navigateToNode(const QString& nodeIdString);
 
 signals:
-  void nodeSelected(const QString &nodeIdString);
-  void nodeActivated(const QString &nodeIdString);
-  void scriptNodeRequested(const QString &scriptPath);
+  void nodeSelected(const QString& nodeIdString);
+  void nodeActivated(const QString& nodeIdString);
+  void scriptNodeRequested(const QString& scriptPath);
   // Scene Node specific signals
-  void sceneNodeDoubleClicked(const QString &sceneId);
-  void editSceneLayoutRequested(const QString &sceneId);
-  void editDialogueFlowRequested(const QString &sceneId);
-  void openSceneScriptRequested(const QString &sceneId,
-                                const QString &scriptPath);
+  void sceneNodeDoubleClicked(const QString& sceneId);
+  void editSceneLayoutRequested(const QString& sceneId);
+  void editDialogueFlowRequested(const QString& sceneId);
+  void openSceneScriptRequested(const QString& sceneId, const QString& scriptPath);
   /**
    * @brief Emitted when user requests to navigate to script definition (Issue #239)
    *
@@ -713,26 +659,19 @@ signals:
    * @param sceneId The scene ID to find
    * @param scriptPath The script file path (may be empty if unknown)
    */
-  void navigateToScriptDefinitionRequested(const QString &sceneId,
-                                           const QString &scriptPath);
+  void navigateToScriptDefinitionRequested(const QString& sceneId, const QString& scriptPath);
   // Voice-over specific signals (for Dialogue nodes)
-  void voiceClipAssignRequested(const QString &nodeIdString,
-                                const QString &currentPath);
-  void voiceClipPreviewRequested(const QString &nodeIdString,
-                                 const QString &voicePath);
-  void voiceRecordingRequested(const QString &nodeIdString,
-                               const QString &dialogueText,
-                               const QString &speaker);
-  void voiceAutoDetectRequested(const QString &nodeIdString,
-                                const QString &localizationKey);
-  void voiceClipChanged(const QString &nodeIdString, const QString &voicePath,
-                        int bindingStatus);
+  void voiceClipAssignRequested(const QString& nodeIdString, const QString& currentPath);
+  void voiceClipPreviewRequested(const QString& nodeIdString, const QString& voicePath);
+  void voiceRecordingRequested(const QString& nodeIdString, const QString& dialogueText,
+                               const QString& speaker);
+  void voiceAutoDetectRequested(const QString& nodeIdString, const QString& localizationKey);
+  void voiceClipChanged(const QString& nodeIdString, const QString& voicePath, int bindingStatus);
   // Dialogue localization signals
-  void localePreviewChanged(const QString &localeCode);
-  void dialogueExportRequested(const QString &sceneId);
-  void localizationKeyClicked(const QString &nodeIdString,
-                              const QString &localizationKey);
-  void missingTranslationHighlighted(const QString &nodeIdString);
+  void localePreviewChanged(const QString& localeCode);
+  void dialogueExportRequested(const QString& sceneId);
+  void localizationKeyClicked(const QString& nodeIdString, const QString& localizationKey);
+  void missingTranslationHighlighted(const QString& nodeIdString);
 
 private slots:
   void onZoomIn();
@@ -740,54 +679,53 @@ private slots:
   void onZoomReset();
   void onFitToGraph();
   void onAutoLayout();
-  void onCurrentNodeChanged(const QString &nodeId);
+  void onCurrentNodeChanged(const QString& nodeId);
   void onBreakpointsChanged();
-  void onNodeTypeSelected(const QString &nodeType);
+  void onNodeTypeSelected(const QString& nodeType);
   void onNodeClicked(uint64_t nodeId);
   void onNodeDoubleClicked(uint64_t nodeId);
-  void onNodeAdded(uint64_t nodeId, const QString &nodeIdString,
-                   const QString &nodeType);
+  void onNodeAdded(uint64_t nodeId, const QString& nodeIdString, const QString& nodeType);
   void onNodeDeleted(uint64_t nodeId);
   void onConnectionAdded(uint64_t fromNodeId, uint64_t toNodeId);
   void onConnectionDeleted(uint64_t fromNodeId, uint64_t toNodeId);
   void onRequestConnection(uint64_t fromNodeId, uint64_t toNodeId);
   void onDeleteSelected();
-  void onNodesMoved(const QVector<GraphNodeMove> &moves);
-  void onEntryNodeRequested(const QString &nodeIdString);
+  void onNodesMoved(const QVector<GraphNodeMove>& moves);
+  void onEntryNodeRequested(const QString& nodeIdString);
   void onLocalePreviewChanged(int index);
   void onExportDialogueClicked();
   void onGenerateLocalizationKeysClicked();
   void onSyncGraphToScript(); // Issue #82: Sync Graph -> Script
   void onSyncScriptToGraph(); // Issue #127: Sync Script -> Graph
-  void onScriptFileCreationFailed(uint64_t nodeId, const QString &nodeIdString,
-                                  const QString &errorMessage);
+  void onScriptFileCreationFailed(uint64_t nodeId, const QString& nodeIdString,
+                                  const QString& errorMessage);
 
   // Scene auto-sync event handlers (Issue #223)
-  void onSceneThumbnailUpdated(const QString &sceneId, const QString &thumbnailPath);
-  void onSceneRenamed(const QString &sceneId, const QString &newName);
-  void onSceneDeleted(const QString &sceneId);
+  void onSceneThumbnailUpdated(const QString& sceneId, const QString& thumbnailPath);
+  void onSceneRenamed(const QString& sceneId, const QString& newName);
+  void onSceneDeleted(const QString& sceneId);
 
 private:
   void setupToolBar();
   void setupContent();
   void setupNodePalette();
   void updateNodeBreakpoints();
-  void updateCurrentNode(const QString &nodeId);
+  void updateCurrentNode(const QString& nodeId);
   void updateSyncButtonsVisibility(); // Issue #127: Mode-aware button visibility
 
-  NMStoryGraphScene *m_scene = nullptr;
-  NMStoryGraphView *m_view = nullptr;
-  NMStoryGraphMinimap *m_minimap = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  class NMScrollableToolBar *m_scrollableToolBar = nullptr;
-  NMNodePalette *m_nodePalette = nullptr;
+  NMStoryGraphScene* m_scene = nullptr;
+  NMStoryGraphView* m_view = nullptr;
+  NMStoryGraphMinimap* m_minimap = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  class NMScrollableToolBar* m_scrollableToolBar = nullptr;
+  NMNodePalette* m_nodePalette = nullptr;
   QString m_currentExecutingNode;
 
   // Issue #339: Deferred centering and follow mode
-  QString m_pendingCenterNode;        // Node ID to center when view becomes visible
-  bool m_followCurrentNode = true;    // Whether to auto-center on current node
-  QAction *m_followNodeAction = nullptr;
+  QString m_pendingCenterNode;     // Node ID to center when view becomes visible
+  bool m_followCurrentNode = true; // Whether to auto-center on current node
+  QAction* m_followNodeAction = nullptr;
 
   QHash<QString, LayoutNode> m_layoutNodes;
   QHash<uint64_t, QString> m_nodeIdToString;
@@ -797,23 +735,23 @@ private:
   bool m_markNextNodeAsEntry = false;
 
   // Localization controls
-  QComboBox *m_localePreviewSelector = nullptr;
-  QPushButton *m_exportDialogueBtn = nullptr;
-  QPushButton *m_generateKeysBtn = nullptr;
+  QComboBox* m_localePreviewSelector = nullptr;
+  QPushButton* m_exportDialogueBtn = nullptr;
+  QPushButton* m_generateKeysBtn = nullptr;
   QString m_currentPreviewLocale;
 
   // Sync controls (issue #82, #127)
-  QPushButton *m_syncGraphToScriptBtn = nullptr;
-  QPushButton *m_syncScriptToGraphBtn = nullptr; // Issue #127
+  QPushButton* m_syncGraphToScriptBtn = nullptr;
+  QPushButton* m_syncScriptToGraphBtn = nullptr; // Issue #127
 
   // Read-only mode for workflow enforcement (issue #117)
   bool m_readOnly = false;
-  QWidget *m_readOnlyBanner = nullptr;
-  QLabel *m_readOnlyLabel = nullptr;
+  QWidget* m_readOnlyBanner = nullptr;
+  QLabel* m_readOnlyLabel = nullptr;
 
   // Scene validation UI (Issue #332)
-  QLabel *m_validationStatusLabel = nullptr;
-  QPushButton *m_fixIssuesBtn = nullptr;
+  QLabel* m_validationStatusLabel = nullptr;
+  QPushButton* m_fixIssuesBtn = nullptr;
   void updateValidationStatus();
   void showValidationIssuesDialog();
 

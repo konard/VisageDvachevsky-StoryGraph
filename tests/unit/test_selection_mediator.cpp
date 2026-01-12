@@ -38,8 +38,7 @@ void processEvents(int milliseconds = 100) {
 // Debouncer Tests (Issue #470)
 // ============================================================================
 
-TEST_CASE("Debouncer coalesces rapid events",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Debouncer coalesces rapid events", "[selection_mediator][debounce][issue-470]") {
   int callCount = 0;
   Debouncer debouncer(50); // 50ms delay
 
@@ -72,13 +71,12 @@ TEST_CASE("Debouncer executes final callback after delay",
   processEvents(20);
   debouncer.trigger([&lastValue]() { lastValue = "final"; });
 
-  REQUIRE(lastValue.isEmpty()); // Not executed yet
-  processEvents(100); // Wait for debounce
+  REQUIRE(lastValue.isEmpty());  // Not executed yet
+  processEvents(100);            // Wait for debounce
   REQUIRE(lastValue == "final"); // Only last value applied
 }
 
-TEST_CASE("Debouncer cancel prevents execution",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Debouncer cancel prevents execution", "[selection_mediator][debounce][issue-470]") {
   bool executed = false;
   Debouncer debouncer(50);
 
@@ -92,8 +90,7 @@ TEST_CASE("Debouncer cancel prevents execution",
   REQUIRE(!executed); // Should not execute after cancel
 }
 
-TEST_CASE("Debouncer flush executes immediately",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Debouncer flush executes immediately", "[selection_mediator][debounce][issue-470]") {
   int value = 0;
   Debouncer debouncer(1000); // Long delay
 
@@ -151,8 +148,7 @@ TEST_CASE("Selection debouncing prevents event flood",
   // Scene load would have executed once (tested via nested trigger)
 }
 
-TEST_CASE("Debouncer allows configurable delay",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Debouncer allows configurable delay", "[selection_mediator][debounce][issue-470]") {
   Debouncer fastDebouncer(20);
   Debouncer slowDebouncer(100);
 
@@ -171,7 +167,7 @@ TEST_CASE("Rapid selection changes maintain final state",
 
   std::vector<QString> nodeIds = {"node1", "node2", "node3", "node4", "node5"};
 
-  for (const auto &nodeId : nodeIds) {
+  for (const auto& nodeId : nodeIds) {
     debouncer.trigger([&finalNodeId, nodeId]() { finalNodeId = nodeId; });
     processEvents(10); // Rapid changes
   }
@@ -184,8 +180,7 @@ TEST_CASE("Rapid selection changes maintain final state",
   REQUIRE(finalNodeId == "node5");
 }
 
-TEST_CASE("Multiple debouncers work independently",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Multiple debouncers work independently", "[selection_mediator][debounce][issue-470]") {
   int uiUpdateCount = 0;
   int sceneLoadCount = 0;
 
@@ -239,10 +234,9 @@ TEST_CASE("Debouncer reduces event processing overhead",
   for (int i = 0; i < iterations; ++i) {
     ++withoutDebounceCount; // Simulate expensive operation
   }
-  auto withoutDebounceTime =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now() - start)
-          .count();
+  auto withoutDebounceTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                                 std::chrono::high_resolution_clock::now() - start)
+                                 .count();
 
   // With debouncing
   start = std::chrono::high_resolution_clock::now();
@@ -264,8 +258,7 @@ TEST_CASE("Debouncer reduces event processing overhead",
   // The key benefit is reducing the number of expensive operations from 100 to 1
 }
 
-TEST_CASE("Shutdown cancels pending operations",
-          "[selection_mediator][debounce][issue-470]") {
+TEST_CASE("Shutdown cancels pending operations", "[selection_mediator][debounce][issue-470]") {
   bool executed = false;
   Debouncer debouncer(50);
 
@@ -291,15 +284,14 @@ TEST_CASE("Shutdown cancels pending operations",
 TEST_CASE("SelectionMediator disconnects Qt signals on shutdown",
           "[selection_mediator][cleanup][issue-463]") {
   // Create mock panels
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
 
   // Create mediator with story graph panel
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr,  // sceneView
-      nullptr,  // hierarchy
-      nullptr,  // inspector
-      storyGraph,
-      nullptr   // parent
+  auto* mediator = new mediators::SelectionMediator(nullptr, // sceneView
+                                                    nullptr, // hierarchy
+                                                    nullptr, // inspector
+                                                    storyGraph,
+                                                    nullptr // parent
   );
 
   // Initialize to establish connections
@@ -331,10 +323,8 @@ TEST_CASE("SelectionMediator handles multiple initialize/shutdown cycles",
   // This tests for connection accumulation bugs where each initialize()
   // would add duplicate connections without proper cleanup
 
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, storyGraph, nullptr
-  );
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, storyGraph, nullptr);
 
   // Multiple initialize/shutdown cycles
   for (int i = 0; i < 3; ++i) {
@@ -363,10 +353,8 @@ TEST_CASE("SelectionMediator destructor calls shutdown",
           "[selection_mediator][cleanup][issue-463]") {
   // Verify that destructor properly cleans up even if shutdown() wasn't called
 
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, storyGraph, nullptr
-  );
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, storyGraph, nullptr);
 
   mediator->initialize();
 
@@ -387,9 +375,7 @@ TEST_CASE("SelectionMediator handles null panel pointers safely",
           "[selection_mediator][cleanup][issue-463]") {
   // Test that shutdown() handles null pointers gracefully
 
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, nullptr, nullptr
-  );
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, nullptr, nullptr);
 
   mediator->initialize();
   mediator->shutdown();
@@ -412,10 +398,8 @@ TEST_CASE("SelectionMediator re-entrancy guard is thread-safe",
   // Issue #479: Test that m_processingSelection flag prevents race conditions
   // when multiple threads publish selection events simultaneously
 
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, storyGraph, nullptr
-  );
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, storyGraph, nullptr);
 
   mediator->initialize();
 
@@ -428,11 +412,11 @@ TEST_CASE("SelectionMediator re-entrancy guard is thread-safe",
   const int eventsPerThread = 100;
   std::vector<std::thread> threads;
 
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Subscribe to count actual event processing
   auto subscription = bus.subscribe<events::StoryGraphNodeSelectedEvent>(
-      [&completionCount, &entryAttemptCount](const events::StoryGraphNodeSelectedEvent &) {
+      [&completionCount, &entryAttemptCount](const events::StoryGraphNodeSelectedEvent&) {
         ++entryAttemptCount;
         // Simulate some work
         std::this_thread::sleep_for(std::chrono::microseconds(10));
@@ -450,7 +434,7 @@ TEST_CASE("SelectionMediator re-entrancy guard is thread-safe",
   }
 
   // Wait for all threads to complete
-  for (auto &thread : threads) {
+  for (auto& thread : threads) {
     thread.join();
   }
 
@@ -478,17 +462,15 @@ TEST_CASE("SelectionMediator atomic flag prevents data races",
   // Issue #479: Test that the atomic flag prevents data races
   // This test should pass ThreadSanitizer (TSan) checks
 
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, storyGraph, nullptr
-  );
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, storyGraph, nullptr);
 
   mediator->initialize();
 
   std::atomic<bool> testComplete{false};
   std::vector<std::thread> threads;
 
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Create threads that rapidly publish events
   for (int i = 0; i < 5; ++i) {
@@ -507,7 +489,7 @@ TEST_CASE("SelectionMediator atomic flag prevents data races",
   testComplete = true;
 
   // Wait for all threads
-  for (auto &thread : threads) {
+  for (auto& thread : threads) {
     thread.join();
   }
 
@@ -526,17 +508,15 @@ TEST_CASE("SelectionMediator concurrent event publishing",
           "[selection_mediator][threading][issue-479]") {
   // Issue #479: Test concurrent publishing of different event types
 
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-  auto *mediator = new mediators::SelectionMediator(
-      nullptr, nullptr, nullptr, storyGraph, nullptr
-  );
+  auto* storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto* mediator = new mediators::SelectionMediator(nullptr, nullptr, nullptr, storyGraph, nullptr);
 
   mediator->initialize();
 
   std::atomic<int> sceneEventCount{0};
   std::atomic<int> storyEventCount{0};
 
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Launch threads publishing different event types
   std::thread sceneThread([&bus, &sceneEventCount]() {

@@ -12,9 +12,9 @@ using namespace NovelMind::scene;
 // Mock window for renderer initialization
 class MockWindow : public platform::IWindow {
 public:
-  Result<void> create(const platform::WindowConfig &) override { return Result<void>(); }
+  Result<void> create(const platform::WindowConfig&) override { return Result<void>(); }
   void destroy() override {}
-  void setTitle(const std::string &) override {}
+  void setTitle(const std::string&) override {}
   void setSize(i32, i32) override {}
   void setFullscreen(bool) override {}
   i32 getWidth() const override { return 800; }
@@ -23,29 +23,27 @@ public:
   bool shouldClose() const override { return false; }
   void pollEvents() override {}
   void swapBuffers() override {}
-  void *getNativeHandle() const override { return nullptr; }
+  void* getNativeHandle() const override { return nullptr; }
 };
 
 // Mock renderer for testing
 class MockRenderer : public renderer::IRenderer {
 public:
-  Result<void> initialize(platform::IWindow &) override { return Result<void>(); }
+  Result<void> initialize(platform::IWindow&) override { return Result<void>(); }
   void shutdown() override {}
   void beginFrame() override {}
   void endFrame() override {}
-  void clear(const renderer::Color &color) override {
-    (void)color;
-  }
+  void clear(const renderer::Color& color) override { (void)color; }
   void setBlendMode(renderer::BlendMode) override {}
-  void drawSprite(const renderer::Texture &, const renderer::Transform2D &,
-                  const renderer::Color &) override {}
-  void drawSprite(const renderer::Texture &, const renderer::Rect &,
-                  const renderer::Transform2D &, const renderer::Color &) override {}
-  void drawRect(const renderer::Rect &, const renderer::Color &) override {}
-  void fillRect(const renderer::Rect &, const renderer::Color &) override {}
-  void drawText(const renderer::Font &, const std::string &, f32, f32,
-                const renderer::Color &) override {}
-  void setFade(f32, const renderer::Color &) override {}
+  void drawSprite(const renderer::Texture&, const renderer::Transform2D&,
+                  const renderer::Color&) override {}
+  void drawSprite(const renderer::Texture&, const renderer::Rect&, const renderer::Transform2D&,
+                  const renderer::Color&) override {}
+  void drawRect(const renderer::Rect&, const renderer::Color&) override {}
+  void fillRect(const renderer::Rect&, const renderer::Color&) override {}
+  void drawText(const renderer::Font&, const std::string&, f32, f32,
+                const renderer::Color&) override {}
+  void setFade(f32, const renderer::Color&) override {}
   i32 getWidth() const override { return 800; }
   i32 getHeight() const override { return 600; }
 };
@@ -73,30 +71,30 @@ TEST_CASE("SceneGraph - Layer access", "[scene_graph][layer]") {
   SceneGraph graph;
 
   SECTION("Access background layer") {
-    Layer &bgLayer = graph.getBackgroundLayer();
+    Layer& bgLayer = graph.getBackgroundLayer();
     CHECK(bgLayer.getType() == LayerType::Background);
   }
 
   SECTION("Access character layer") {
-    Layer &charLayer = graph.getCharacterLayer();
+    Layer& charLayer = graph.getCharacterLayer();
     CHECK(charLayer.getType() == LayerType::Characters);
   }
 
   SECTION("Access UI layer") {
-    Layer &uiLayer = graph.getUILayer();
+    Layer& uiLayer = graph.getUILayer();
     CHECK(uiLayer.getType() == LayerType::UI);
   }
 
   SECTION("Access effect layer") {
-    Layer &effectLayer = graph.getEffectLayer();
+    Layer& effectLayer = graph.getEffectLayer();
     CHECK(effectLayer.getType() == LayerType::Effects);
   }
 
   SECTION("Access layer by type") {
-    Layer &layer1 = graph.getLayer(LayerType::Background);
-    Layer &layer2 = graph.getLayer(LayerType::Characters);
-    Layer &layer3 = graph.getLayer(LayerType::UI);
-    Layer &layer4 = graph.getLayer(LayerType::Effects);
+    Layer& layer1 = graph.getLayer(LayerType::Background);
+    Layer& layer2 = graph.getLayer(LayerType::Characters);
+    Layer& layer3 = graph.getLayer(LayerType::UI);
+    Layer& layer4 = graph.getLayer(LayerType::Effects);
 
     CHECK(layer1.getType() == LayerType::Background);
     CHECK(layer2.getType() == LayerType::Characters);
@@ -114,10 +112,10 @@ TEST_CASE("SceneGraph - Object management", "[scene_graph][objects]") {
 
     graph.addToLayer(LayerType::Background, std::move(bg));
 
-    auto *found = graph.findObject("bg1");
+    auto* found = graph.findObject("bg1");
     CHECK(found != nullptr);
     if (found) {
-      auto *bgObj = dynamic_cast<BackgroundObject *>(found);
+      auto* bgObj = dynamic_cast<BackgroundObject*>(found);
       CHECK(bgObj != nullptr);
       if (bgObj) {
         CHECK(bgObj->getTextureId() == "test_bg.png");
@@ -132,12 +130,12 @@ TEST_CASE("SceneGraph - Object management", "[scene_graph][objects]") {
     auto removed = graph.removeFromLayer(LayerType::Background, "bg1");
     CHECK(removed != nullptr);
 
-    auto *found = graph.findObject("bg1");
+    auto* found = graph.findObject("bg1");
     CHECK(found == nullptr);
   }
 
   SECTION("Find non-existent object returns nullptr") {
-    auto *found = graph.findObject("nonexistent");
+    auto* found = graph.findObject("nonexistent");
     CHECK(found == nullptr);
   }
 }
@@ -151,14 +149,13 @@ TEST_CASE("SceneGraph - Convenience methods", "[scene_graph][convenience]") {
   }
 
   SECTION("Show character") {
-    auto *character = graph.showCharacter("hero", "hero_sprite",
-                                          CharacterObject::Position::Center);
+    auto* character = graph.showCharacter("hero", "hero_sprite", CharacterObject::Position::Center);
     // May return null if not fully initialized
     (void)character;
   }
 
   SECTION("Show dialogue") {
-    auto *dialogue = graph.showDialogue("Hero", "Hello, world!");
+    auto* dialogue = graph.showDialogue("Hero", "Hello, world!");
     // May return null if not fully initialized
     (void)dialogue;
   }
@@ -293,7 +290,7 @@ TEST_CASE("SceneObjectBase - Property system", "[scene_graph][property]") {
     obj.setProperty("prop2", "value2");
     obj.setProperty("prop3", "value3");
 
-    const auto &props = obj.getProperties();
+    const auto& props = obj.getProperties();
     CHECK(props.size() == 3);
     CHECK(props.at("prop1") == "value1");
     CHECK(props.at("prop2") == "value2");
@@ -399,7 +396,7 @@ TEST_CASE("BackgroundObject - Properties", "[scene_graph][background]") {
     NovelMind::renderer::Color tint{255, 128, 64, 200};
     bg.setTint(tint);
 
-    const auto &storedTint = bg.getTint();
+    const auto& storedTint = bg.getTint();
     CHECK(storedTint.r == 255);
     CHECK(storedTint.g == 128);
     CHECK(storedTint.b == 64);
@@ -441,18 +438,16 @@ TEST_CASE("ChoiceUIObject - Choice management", "[scene_graph][choice]") {
   ChoiceUIObject choice("choice1");
 
   SECTION("Set and get choices") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""},
-        {"opt2", "Option 2", true, true, ""},
-        {"opt3", "Option 3", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""},
+                                                         {"opt2", "Option 2", true, true, ""},
+                                                         {"opt3", "Option 3", true, true, ""}};
 
     choice.setChoices(choices);
     CHECK(choice.getChoices().size() == 3);
   }
 
   SECTION("Clear choices") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""}};
     choice.setChoices(choices);
     CHECK(choice.getChoices().size() == 1);
 
@@ -461,9 +456,8 @@ TEST_CASE("ChoiceUIObject - Choice management", "[scene_graph][choice]") {
   }
 
   SECTION("Selection") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""},
-        {"opt2", "Option 2", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""},
+                                                         {"opt2", "Option 2", true, true, ""}};
     choice.setChoices(choices);
 
     choice.setSelectedIndex(1);
@@ -648,8 +642,8 @@ TEST_CASE("SceneGraph - Stress test with complex hierarchy", "[scene_graph][dept
       std::vector<SceneObjectBase*> nextLevel;
       for (auto* parent : currentLevel) {
         for (int i = 0; i < 2; ++i) {
-          auto child = std::make_unique<BackgroundObject>(
-            "L" + std::to_string(level) + "_" + std::to_string(i));
+          auto child = std::make_unique<BackgroundObject>("L" + std::to_string(level) + "_" +
+                                                          std::to_string(i));
           SceneObjectBase* childPtr = child.get();
           parent->addChild(std::move(child));
           nextLevel.push_back(childPtr);

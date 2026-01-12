@@ -24,37 +24,34 @@ namespace property_manager {
  * @param propertyName Property name to change
  * @param newValue New property value
  */
-void applyNodePropertyChange(NMStoryGraphPanel *panel,
-                             const QString &nodeIdString,
-                             const QString &propertyName,
-                             const QString &newValue);
+void applyNodePropertyChange(NMStoryGraphPanel* panel, const QString& nodeIdString,
+                             const QString& propertyName, const QString& newValue);
 
 /**
  * @brief Handle node position changes
  * @param panel The story graph panel
  * @param moves Vector of node moves
  */
-void handleNodesMoved(NMStoryGraphPanel *panel,
-                      const QVector<GraphNodeMove> &moves);
+void handleNodesMoved(NMStoryGraphPanel* panel, const QVector<GraphNodeMove>& moves);
 
 /**
  * @brief Handle locale preview change for localization
  * @param panel The story graph panel
  * @param index Locale selector index
  */
-void handleLocalePreviewChange(NMStoryGraphPanel *panel, int index);
+void handleLocalePreviewChange(NMStoryGraphPanel* panel, int index);
 
 /**
  * @brief Export dialogue entries for localization
  * @param panel The story graph panel
  */
-void handleExportDialogue(NMStoryGraphPanel *panel);
+void handleExportDialogue(NMStoryGraphPanel* panel);
 
 /**
  * @brief Generate localization keys for dialogue nodes
  * @param panel The story graph panel
  */
-void handleGenerateLocalizationKeys(NMStoryGraphPanel *panel);
+void handleGenerateLocalizationKeys(NMStoryGraphPanel* panel);
 
 } // namespace property_manager
 } // namespace NovelMind::editor::qt

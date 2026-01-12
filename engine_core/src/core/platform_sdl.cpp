@@ -14,10 +14,9 @@ public:
   SDLWindow() = default;
   ~SDLWindow() override { destroy(); }
 
-  Result<void> create(const WindowConfig &config) override {
+  Result<void> create(const WindowConfig& config) override {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-      return Result<void>::error(std::string("Failed to initialize SDL: ") +
-                                 SDL_GetError());
+      return Result<void>::error(std::string("Failed to initialize SDL: ") + SDL_GetError());
     }
 
     u32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL;
@@ -29,14 +28,12 @@ public:
     }
 
     m_window = SDL_CreateWindow(config.title.c_str(), SDL_WINDOWPOS_CENTERED,
-                                SDL_WINDOWPOS_CENTERED, config.width,
-                                config.height, flags);
+                                SDL_WINDOWPOS_CENTERED, config.width, config.height, flags);
 
     if (!m_window) {
       // Clean up SDL on window creation failure
       SDL_Quit();
-      return Result<void>::error(std::string("Failed to create window: ") +
-                                 SDL_GetError());
+      return Result<void>::error(std::string("Failed to create window: ") + SDL_GetError());
     }
 
     m_config = config;
@@ -54,7 +51,7 @@ public:
     SDL_Quit();
   }
 
-  void setTitle(const std::string &title) override {
+  void setTitle(const std::string& title) override {
     if (m_window) {
       SDL_SetWindowTitle(m_window, title.c_str());
       m_config.title = title;
@@ -80,9 +77,7 @@ public:
 
   [[nodiscard]] i32 getHeight() const override { return m_config.height; }
 
-  [[nodiscard]] bool isFullscreen() const override {
-    return m_config.fullscreen;
-  }
+  [[nodiscard]] bool isFullscreen() const override { return m_config.fullscreen; }
 
   [[nodiscard]] bool shouldClose() const override { return m_shouldClose; }
 
@@ -106,10 +101,10 @@ public:
     }
   }
 
-  [[nodiscard]] void *getNativeHandle() const override { return m_window; }
+  [[nodiscard]] void* getNativeHandle() const override { return m_window; }
 
 private:
-  SDL_Window *m_window = nullptr;
+  SDL_Window* m_window = nullptr;
   WindowConfig m_config;
   bool m_shouldClose = false;
 };
@@ -118,7 +113,7 @@ private:
 
 class NullWindow : public IWindow {
 public:
-  Result<void> create(const WindowConfig &config) override {
+  Result<void> create(const WindowConfig& config) override {
     m_config = config;
     m_shouldClose = false;
     NOVELMIND_LOG_WARN("Using null window (no SDL2 available)");
@@ -129,24 +124,20 @@ public:
     // Nothing to do
   }
 
-  void setTitle(const std::string &title) override { m_config.title = title; }
+  void setTitle(const std::string& title) override { m_config.title = title; }
 
   void setSize(i32 width, i32 height) override {
     m_config.width = width;
     m_config.height = height;
   }
 
-  void setFullscreen(bool fullscreen) override {
-    m_config.fullscreen = fullscreen;
-  }
+  void setFullscreen(bool fullscreen) override { m_config.fullscreen = fullscreen; }
 
   [[nodiscard]] i32 getWidth() const override { return m_config.width; }
 
   [[nodiscard]] i32 getHeight() const override { return m_config.height; }
 
-  [[nodiscard]] bool isFullscreen() const override {
-    return m_config.fullscreen;
-  }
+  [[nodiscard]] bool isFullscreen() const override { return m_config.fullscreen; }
 
   [[nodiscard]] bool shouldClose() const override { return m_shouldClose; }
 
@@ -158,7 +149,7 @@ public:
     // Nothing to do
   }
 
-  [[nodiscard]] void *getNativeHandle() const override { return nullptr; }
+  [[nodiscard]] void* getNativeHandle() const override { return nullptr; }
 
   void requestClose() { m_shouldClose = true; }
 

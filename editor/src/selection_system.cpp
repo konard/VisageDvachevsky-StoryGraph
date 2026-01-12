@@ -4,8 +4,7 @@
 namespace NovelMind::editor {
 
 // Static instance
-std::unique_ptr<EditorSelectionManager> EditorSelectionManager::s_instance =
-    nullptr;
+std::unique_ptr<EditorSelectionManager> EditorSelectionManager::s_instance = nullptr;
 
 // ============================================================================
 // SelectionItem Implementation
@@ -14,23 +13,23 @@ std::unique_ptr<EditorSelectionManager> EditorSelectionManager::s_instance =
 std::string SelectionItem::getDisplayName() const {
   switch (type) {
   case SelectionType::SceneObject:
-    if (auto *objId = std::get_if<ObjectId>(&this->id)) {
+    if (auto* objId = std::get_if<ObjectId>(&this->id)) {
       return "Object: " + *objId;
     }
     break;
   case SelectionType::StoryGraphNode:
-    if (auto *nodeId = std::get_if<scripting::NodeId>(&this->id)) {
+    if (auto* nodeId = std::get_if<scripting::NodeId>(&this->id)) {
       return "Node: " + std::to_string(*nodeId);
     }
     break;
   case SelectionType::TimelineItem:
-    if (auto *timelineId = std::get_if<TimelineItemId>(&this->id)) {
-      return "Timeline: " + timelineId->trackId + "[" +
-             std::to_string(timelineId->keyframeIndex) + "]";
+    if (auto* timelineId = std::get_if<TimelineItemId>(&this->id)) {
+      return "Timeline: " + timelineId->trackId + "[" + std::to_string(timelineId->keyframeIndex) +
+             "]";
     }
     break;
   case SelectionType::Asset:
-    if (auto *assetId = std::get_if<AssetId>(&this->id)) {
+    if (auto* assetId = std::get_if<AssetId>(&this->id)) {
       return "Asset: " + assetId->path;
     }
     break;
@@ -44,25 +43,24 @@ std::string SelectionItem::getDisplayName() const {
 // SceneObjectSelection Implementation
 // ============================================================================
 
-SceneObjectSelection::SceneObjectSelection(const ObjectId &objectId)
-    : m_objectId(objectId) {}
+SceneObjectSelection::SceneObjectSelection(const ObjectId& objectId) : m_objectId(objectId) {}
 
-bool SceneObjectSelection::isValid() const { return !m_objectId.empty(); }
+bool SceneObjectSelection::isValid() const {
+  return !m_objectId.empty();
+}
 
 std::vector<std::string> SceneObjectSelection::getPropertyNames() const {
   // This would be populated from the actual scene object
-  return {"name",    "position_x", "position_y", "rotation",
-          "scale_x", "scale_y",    "visible",    "alpha"};
+  return {"name", "position_x", "position_y", "rotation", "scale_x", "scale_y", "visible", "alpha"};
 }
 
-std::string
-SceneObjectSelection::getPropertyValue(const std::string & /*name*/) const {
+std::string SceneObjectSelection::getPropertyValue(const std::string& /*name*/) const {
   // This would fetch from the actual scene object
   return "";
 }
 
-void SceneObjectSelection::setPropertyValue(const std::string & /*name*/,
-                                            const std::string & /*value*/) {
+void SceneObjectSelection::setPropertyValue(const std::string& /*name*/,
+                                            const std::string& /*value*/) {
   // This would set on the actual scene object
 }
 
@@ -71,14 +69,14 @@ void SceneObjectSelection::setPropertyValue(const std::string & /*name*/,
 // ============================================================================
 
 StoryGraphNodeSelection::StoryGraphNodeSelection(scripting::NodeId nodeId,
-                                                 scripting::VisualGraph *graph)
+                                                 scripting::VisualGraph* graph)
     : m_nodeId(nodeId), m_graph(graph) {}
 
 bool StoryGraphNodeSelection::isValid() const {
   return m_nodeId != 0 && m_graph != nullptr;
 }
 
-const scripting::VisualGraphNode *StoryGraphNodeSelection::getNode() const {
+const scripting::VisualGraphNode* StoryGraphNodeSelection::getNode() const {
   if (!m_graph) {
     return nullptr;
   }
@@ -86,7 +84,7 @@ const scripting::VisualGraphNode *StoryGraphNodeSelection::getNode() const {
 }
 
 std::vector<std::string> StoryGraphNodeSelection::getPropertyNames() const {
-  const auto *node = getNode();
+  const auto* node = getNode();
   if (!node) {
     return {};
   }
@@ -96,16 +94,15 @@ std::vector<std::string> StoryGraphNodeSelection::getPropertyNames() const {
   names.push_back("type");
   names.push_back("position");
 
-  for (const auto &prop : node->properties) {
+  for (const auto& prop : node->properties) {
     names.push_back(prop.first);
   }
 
   return names;
 }
 
-std::string
-StoryGraphNodeSelection::getPropertyValue(const std::string &name) const {
-  const auto *node = getNode();
+std::string StoryGraphNodeSelection::getPropertyValue(const std::string& name) const {
+  const auto* node = getNode();
   if (!node) {
     return "";
   }
@@ -125,13 +122,12 @@ StoryGraphNodeSelection::getPropertyValue(const std::string &name) const {
   return "";
 }
 
-void StoryGraphNodeSelection::setPropertyValue(const std::string &name,
-                                               const std::string &value) {
+void StoryGraphNodeSelection::setPropertyValue(const std::string& name, const std::string& value) {
   if (!m_graph) {
     return;
   }
 
-  auto *node = m_graph->findNode(m_nodeId);
+  auto* node = m_graph->findNode(m_nodeId);
   if (!node) {
     return;
   }
@@ -156,8 +152,7 @@ void StoryGraphNodeSelection::setPropertyValue(const std::string &name,
 // TimelineItemSelection Implementation
 // ============================================================================
 
-TimelineItemSelection::TimelineItemSelection(const TimelineItemId &itemId)
-    : m_itemId(itemId) {}
+TimelineItemSelection::TimelineItemSelection(const TimelineItemId& itemId) : m_itemId(itemId) {}
 
 bool TimelineItemSelection::isValid() const {
   return !m_itemId.trackId.empty();
@@ -167,14 +162,13 @@ std::vector<std::string> TimelineItemSelection::getPropertyNames() const {
   return {"track", "time", "value", "easing"};
 }
 
-std::string
-TimelineItemSelection::getPropertyValue(const std::string & /*name*/) const {
+std::string TimelineItemSelection::getPropertyValue(const std::string& /*name*/) const {
   // This would fetch from the actual timeline system
   return "";
 }
 
-void TimelineItemSelection::setPropertyValue(const std::string & /*name*/,
-                                             const std::string & /*value*/) {
+void TimelineItemSelection::setPropertyValue(const std::string& /*name*/,
+                                             const std::string& /*value*/) {
   // This would set on the actual timeline system
 }
 
@@ -188,7 +182,7 @@ EditorSelectionManager::EditorSelectionManager() {
 
 EditorSelectionManager::~EditorSelectionManager() = default;
 
-EditorSelectionManager &EditorSelectionManager::instance() {
+EditorSelectionManager& EditorSelectionManager::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<EditorSelectionManager>();
   }
@@ -197,7 +191,7 @@ EditorSelectionManager &EditorSelectionManager::instance() {
 
 // Selection Operations
 
-void EditorSelectionManager::select(const SelectionItem &item) {
+void EditorSelectionManager::select(const SelectionItem& item) {
   if (!item.isValid()) {
     clearSelection();
     return;
@@ -211,7 +205,7 @@ void EditorSelectionManager::select(const SelectionItem &item) {
   notifyPrimarySelectionChanged();
 }
 
-void EditorSelectionManager::selectObject(const ObjectId &objectId) {
+void EditorSelectionManager::selectObject(const ObjectId& objectId) {
   select(SelectionItem(objectId));
 }
 
@@ -219,15 +213,15 @@ void EditorSelectionManager::selectNode(scripting::NodeId nodeId) {
   select(SelectionItem(nodeId));
 }
 
-void EditorSelectionManager::selectTimelineItem(const TimelineItemId &itemId) {
+void EditorSelectionManager::selectTimelineItem(const TimelineItemId& itemId) {
   select(SelectionItem(itemId));
 }
 
-void EditorSelectionManager::selectAsset(const AssetId &assetId) {
+void EditorSelectionManager::selectAsset(const AssetId& assetId) {
   select(SelectionItem(assetId));
 }
 
-void EditorSelectionManager::addToSelection(const SelectionItem &item) {
+void EditorSelectionManager::addToSelection(const SelectionItem& item) {
   if (!item.isValid()) {
     return;
   }
@@ -249,7 +243,7 @@ void EditorSelectionManager::addToSelection(const SelectionItem &item) {
   notifySelectionChanged();
 }
 
-void EditorSelectionManager::removeFromSelection(const SelectionItem &item) {
+void EditorSelectionManager::removeFromSelection(const SelectionItem& item) {
   auto it = std::find(m_selection.begin(), m_selection.end(), item);
   if (it != m_selection.end()) {
     bool wasPrimary = (it == m_selection.begin());
@@ -267,7 +261,7 @@ void EditorSelectionManager::removeFromSelection(const SelectionItem &item) {
   }
 }
 
-void EditorSelectionManager::toggleSelection(const SelectionItem &item) {
+void EditorSelectionManager::toggleSelection(const SelectionItem& item) {
   if (isSelected(item)) {
     removeFromSelection(item);
   } else {
@@ -275,8 +269,7 @@ void EditorSelectionManager::toggleSelection(const SelectionItem &item) {
   }
 }
 
-void EditorSelectionManager::selectMultiple(
-    const std::vector<SelectionItem> &items) {
+void EditorSelectionManager::selectMultiple(const std::vector<SelectionItem>& items) {
   if (items.empty()) {
     clearSelection();
     return;
@@ -289,18 +282,16 @@ void EditorSelectionManager::selectMultiple(
   notifyPrimarySelectionChanged();
 }
 
-void EditorSelectionManager::selectObjects(
-    const std::vector<ObjectId> &objectIds) {
+void EditorSelectionManager::selectObjects(const std::vector<ObjectId>& objectIds) {
   std::vector<SelectionItem> items;
   items.reserve(objectIds.size());
-  for (const auto &id : objectIds) {
+  for (const auto& id : objectIds) {
     items.emplace_back(id);
   }
   selectMultiple(items);
 }
 
-void EditorSelectionManager::selectNodes(
-    const std::vector<scripting::NodeId> &nodeIds) {
+void EditorSelectionManager::selectNodes(const std::vector<scripting::NodeId>& nodeIds) {
   std::vector<SelectionItem> items;
   items.reserve(nodeIds.size());
   for (auto id : nodeIds) {
@@ -341,20 +332,18 @@ SelectionType EditorSelectionManager::getCurrentSelectionType() const {
   return m_currentType;
 }
 
-const std::vector<SelectionItem> &EditorSelectionManager::getSelection() const {
+const std::vector<SelectionItem>& EditorSelectionManager::getSelection() const {
   return m_selection;
 }
 
-std::vector<SelectionItem>
-EditorSelectionManager::getSelectionOfType(SelectionType type) const {
+std::vector<SelectionItem> EditorSelectionManager::getSelectionOfType(SelectionType type) const {
   if (m_currentType != type) {
     return {};
   }
   return m_selection;
 }
 
-std::optional<SelectionItem>
-EditorSelectionManager::getPrimarySelection() const {
+std::optional<SelectionItem> EditorSelectionManager::getPrimarySelection() const {
   if (m_selection.empty()) {
     return std::nullopt;
   }
@@ -368,52 +357,49 @@ std::vector<ObjectId> EditorSelectionManager::getSelectedObjectIds() const {
   }
 
   result.reserve(m_selection.size());
-  for (const auto &item : m_selection) {
-    if (auto *id = std::get_if<ObjectId>(&item.id)) {
+  for (const auto& item : m_selection) {
+    if (auto* id = std::get_if<ObjectId>(&item.id)) {
       result.push_back(*id);
     }
   }
   return result;
 }
 
-std::vector<scripting::NodeId>
-EditorSelectionManager::getSelectedNodeIds() const {
+std::vector<scripting::NodeId> EditorSelectionManager::getSelectedNodeIds() const {
   std::vector<scripting::NodeId> result;
   if (m_currentType != SelectionType::StoryGraphNode) {
     return result;
   }
 
   result.reserve(m_selection.size());
-  for (const auto &item : m_selection) {
-    if (auto *id = std::get_if<scripting::NodeId>(&item.id)) {
+  for (const auto& item : m_selection) {
+    if (auto* id = std::get_if<scripting::NodeId>(&item.id)) {
       result.push_back(*id);
     }
   }
   return result;
 }
 
-std::vector<TimelineItemId>
-EditorSelectionManager::getSelectedTimelineItemIds() const {
+std::vector<TimelineItemId> EditorSelectionManager::getSelectedTimelineItemIds() const {
   std::vector<TimelineItemId> result;
   if (m_currentType != SelectionType::TimelineItem) {
     return result;
   }
 
   result.reserve(m_selection.size());
-  for (const auto &item : m_selection) {
-    if (auto *id = std::get_if<TimelineItemId>(&item.id)) {
+  for (const auto& item : m_selection) {
+    if (auto* id = std::get_if<TimelineItemId>(&item.id)) {
       result.push_back(*id);
     }
   }
   return result;
 }
 
-bool EditorSelectionManager::isSelected(const SelectionItem &item) const {
-  return std::find(m_selection.begin(), m_selection.end(), item) !=
-         m_selection.end();
+bool EditorSelectionManager::isSelected(const SelectionItem& item) const {
+  return std::find(m_selection.begin(), m_selection.end(), item) != m_selection.end();
 }
 
-bool EditorSelectionManager::isObjectSelected(const ObjectId &objectId) const {
+bool EditorSelectionManager::isObjectSelected(const ObjectId& objectId) const {
   return isSelected(SelectionItem(objectId));
 }
 
@@ -427,37 +413,34 @@ size_t EditorSelectionManager::getSelectionCount() const {
 
 // Selection Proxies
 
-std::optional<SceneObjectSelection>
-EditorSelectionManager::getSceneObjectSelection() const {
+std::optional<SceneObjectSelection> EditorSelectionManager::getSceneObjectSelection() const {
   if (m_currentType != SelectionType::SceneObject || m_selection.empty()) {
     return std::nullopt;
   }
 
-  if (auto *id = std::get_if<ObjectId>(&m_selection.front().id)) {
+  if (auto* id = std::get_if<ObjectId>(&m_selection.front().id)) {
     return SceneObjectSelection(*id);
   }
   return std::nullopt;
 }
 
-std::optional<StoryGraphNodeSelection>
-EditorSelectionManager::getStoryGraphNodeSelection() const {
+std::optional<StoryGraphNodeSelection> EditorSelectionManager::getStoryGraphNodeSelection() const {
   if (m_currentType != SelectionType::StoryGraphNode || m_selection.empty()) {
     return std::nullopt;
   }
 
-  if (auto *id = std::get_if<scripting::NodeId>(&m_selection.front().id)) {
+  if (auto* id = std::get_if<scripting::NodeId>(&m_selection.front().id)) {
     return StoryGraphNodeSelection(*id, m_activeGraph);
   }
   return std::nullopt;
 }
 
-std::optional<TimelineItemSelection>
-EditorSelectionManager::getTimelineItemSelection() const {
+std::optional<TimelineItemSelection> EditorSelectionManager::getTimelineItemSelection() const {
   if (m_currentType != SelectionType::TimelineItem || m_selection.empty()) {
     return std::nullopt;
   }
 
-  if (auto *id = std::get_if<TimelineItemId>(&m_selection.front().id)) {
+  if (auto* id = std::get_if<TimelineItemId>(&m_selection.front().id)) {
     return TimelineItemSelection(*id);
   }
   return std::nullopt;
@@ -465,12 +448,11 @@ EditorSelectionManager::getTimelineItemSelection() const {
 
 // Context Management
 
-void EditorSelectionManager::setActiveVisualGraph(
-    scripting::VisualGraph *graph) {
+void EditorSelectionManager::setActiveVisualGraph(scripting::VisualGraph* graph) {
   m_activeGraph = graph;
 }
 
-scripting::VisualGraph *EditorSelectionManager::getActiveVisualGraph() const {
+scripting::VisualGraph* EditorSelectionManager::getActiveVisualGraph() const {
   return m_activeGraph;
 }
 
@@ -523,36 +505,33 @@ void EditorSelectionManager::clearHistory() {
 
 // Listener Management
 
-void EditorSelectionManager::addListener(ISelectionListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void EditorSelectionManager::addListener(ISelectionListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void EditorSelectionManager::removeListener(ISelectionListener *listener) {
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+void EditorSelectionManager::removeListener(ISelectionListener* listener) {
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
 // Callbacks
 
 void EditorSelectionManager::setOnSelectionChanged(
-    std::function<void(SelectionType, const std::vector<SelectionItem> &)>
-        callback) {
+    std::function<void(SelectionType, const std::vector<SelectionItem>&)> callback) {
   m_onSelectionChanged = std::move(callback);
 }
 
-void EditorSelectionManager::setOnSelectionCleared(
-    std::function<void()> callback) {
+void EditorSelectionManager::setOnSelectionCleared(std::function<void()> callback) {
   m_onSelectionCleared = std::move(callback);
 }
 
 // Private Methods
 
 void EditorSelectionManager::notifySelectionChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onSelectionChanged(m_currentType, m_selection);
   }
 
@@ -562,7 +541,7 @@ void EditorSelectionManager::notifySelectionChanged() {
 }
 
 void EditorSelectionManager::notifySelectionCleared() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onSelectionCleared();
   }
 
@@ -574,7 +553,7 @@ void EditorSelectionManager::notifySelectionCleared() {
 void EditorSelectionManager::notifyPrimarySelectionChanged() {
   auto primary = getPrimarySelection();
   if (primary) {
-    for (auto *listener : m_listeners) {
+    for (auto* listener : m_listeners) {
       listener->onPrimarySelectionChanged(*primary);
     }
   }
@@ -601,8 +580,7 @@ void EditorSelectionManager::pushToHistory() {
 // SelectionScope Implementation
 // ============================================================================
 
-SelectionScope::SelectionScope(EditorSelectionManager *manager)
-    : m_manager(manager) {
+SelectionScope::SelectionScope(EditorSelectionManager* manager) : m_manager(manager) {
   if (m_manager) {
     m_originalSelection = m_manager->getSelection();
   }

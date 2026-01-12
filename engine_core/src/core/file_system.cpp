@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 
 class NativeFileSystem : public IFileSystem {
 public:
-  Result<std::vector<u8>> readFile(const std::string &path) const override {
+  Result<std::vector<u8>> readFile(const std::string& path) const override {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) {
       return Result<std::vector<u8>>::error("Failed to open file: " + path);
@@ -26,15 +26,13 @@ public:
     file.seekg(0, std::ios::end);
     const std::streampos size = file.tellg();
     if (size < 0) {
-      return Result<std::vector<u8>>::error("Failed to read file size: " +
-                                            path);
+      return Result<std::vector<u8>>::error("Failed to read file size: " + path);
     }
 
     std::vector<u8> data(static_cast<size_t>(size));
     file.seekg(0, std::ios::beg);
     if (!data.empty()) {
-      file.read(reinterpret_cast<char *>(data.data()),
-                static_cast<std::streamsize>(data.size()));
+      file.read(reinterpret_cast<char*>(data.data()), static_cast<std::streamsize>(data.size()));
       if (!file) {
         return Result<std::vector<u8>>::error("Failed to read file: " + path);
       }
@@ -43,8 +41,7 @@ public:
     return Result<std::vector<u8>>::ok(std::move(data));
   }
 
-  Result<void> writeFile(const std::string &path,
-                         const std::vector<u8> &data) const override {
+  Result<void> writeFile(const std::string& path, const std::vector<u8>& data) const override {
     fs::path target(path);
     if (target.has_parent_path()) {
       std::error_code ec;
@@ -57,7 +54,7 @@ public:
     }
 
     if (!data.empty()) {
-      file.write(reinterpret_cast<const char *>(data.data()),
+      file.write(reinterpret_cast<const char*>(data.data()),
                  static_cast<std::streamsize>(data.size()));
       if (!file) {
         return Result<void>::error("Failed to write file: " + path);
@@ -67,17 +64,11 @@ public:
     return Result<void>::ok();
   }
 
-  bool exists(const std::string &path) const override {
-    return fs::exists(path);
-  }
+  bool exists(const std::string& path) const override { return fs::exists(path); }
 
-  bool isFile(const std::string &path) const override {
-    return fs::is_regular_file(path);
-  }
+  bool isFile(const std::string& path) const override { return fs::is_regular_file(path); }
 
-  bool isDirectory(const std::string &path) const override {
-    return fs::is_directory(path);
-  }
+  bool isDirectory(const std::string& path) const override { return fs::is_directory(path); }
 
   std::string getExecutablePath() const override {
 #if defined(_WIN32)
@@ -103,7 +94,7 @@ public:
 
   std::string getUserDataPath() const override {
 #if defined(_WIN32)
-    char *appData = nullptr;
+    char* appData = nullptr;
     size_t len = 0;
     if (_dupenv_s(&appData, &len, "APPDATA") == 0 && appData) {
       std::string path(appData);
@@ -112,7 +103,7 @@ public:
     }
     return ".";
 #else
-    const char *home = std::getenv("HOME");
+    const char* home = std::getenv("HOME");
     if (home && *home) {
       return std::string(home);
     }

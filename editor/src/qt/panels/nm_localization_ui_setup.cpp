@@ -101,8 +101,7 @@ void NMLocalizationUISetup::setupUI(NMLocalizationPanel* panel) {
 
   // Search box
   panel->m_searchEdit = new QLineEdit(filterToolbar);
-  panel->m_searchEdit->setPlaceholderText(
-      QObject::tr("Search keys, source, or translations..."));
+  panel->m_searchEdit->setPlaceholderText(QObject::tr("Search keys, source, or translations..."));
   panel->m_searchEdit->setClearButtonEnabled(true);
   QObject::connect(panel->m_searchEdit, &QLineEdit::textChanged, panel,
                    &NMLocalizationPanel::onSearchTextChanged);
@@ -286,15 +285,16 @@ void NMLocalizationUISetup::setupUI(NMLocalizationPanel* panel) {
 
   // Status bar with improved styling
   panel->m_statusLabel = new QLabel(panel->contentWidget());
-  panel->m_statusLabel->setStyleSheet(QString("QLabel {"
-                                              "  color: %1;"
-                                              "  padding: 4px 8px;"
-                                              "  background-color: %2;"
-                                              "  border-top: 1px solid %3;"
-                                              "}")
-                                          .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
-                                          .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
-                                          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
+  panel->m_statusLabel->setStyleSheet(
+      QString("QLabel {"
+              "  color: %1;"
+              "  padding: 4px 8px;"
+              "  background-color: %2;"
+              "  border-top: 1px solid %3;"
+              "}")
+          .arg(NMStyleManager::colorToStyleString(palette.textSecondary))
+          .arg(NMStyleManager::colorToStyleString(palette.bgDarkest))
+          .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
   layout->addWidget(panel->m_statusLabel);
 
   // Connect signal for undo/redo to trigger UI refresh

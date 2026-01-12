@@ -29,7 +29,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMWelcomeDialog::NMWelcomeDialog(QWidget *parent) : QDialog(parent) {
+NMWelcomeDialog::NMWelcomeDialog(QWidget* parent) : QDialog(parent) {
   setWindowTitle("Welcome to NovelMind Editor");
   setMinimumSize(1200, 700);
   resize(1400, 800);
@@ -43,32 +43,31 @@ NMWelcomeDialog::NMWelcomeDialog(QWidget *parent) : QDialog(parent) {
 NMWelcomeDialog::~NMWelcomeDialog() = default;
 
 void NMWelcomeDialog::setupUI() {
-  QVBoxLayout *mainLayout = new QVBoxLayout(this);
+  QVBoxLayout* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
   // Header
-  QWidget *header = new QWidget(this);
+  QWidget* header = new QWidget(this);
   header->setObjectName("WelcomeHeader");
-  QHBoxLayout *headerLayout = new QHBoxLayout(header);
+  QHBoxLayout* headerLayout = new QHBoxLayout(header);
   headerLayout->setContentsMargins(24, 16, 24, 16);
 
-  QLabel *titleLabel = new QLabel("NovelMind Editor", header);
+  QLabel* titleLabel = new QLabel("NovelMind Editor", header);
   titleLabel->setObjectName("WelcomeTitle");
   QFont titleFont = titleLabel->font();
   titleFont.setPointSize(18);
   titleFont.setBold(true);
   titleLabel->setFont(titleFont);
 
-  QLabel *versionLabel = new QLabel("v0.3.0", header);
+  QLabel* versionLabel = new QLabel("v0.3.0", header);
   versionLabel->setObjectName("WelcomeVersion");
 
   // Search box
   m_searchBox = new QLineEdit(header);
   m_searchBox->setPlaceholderText("Search projects and templates...");
   m_searchBox->setMinimumWidth(300);
-  connect(m_searchBox, &QLineEdit::textChanged, this,
-          &NMWelcomeDialog::onSearchTextChanged);
+  connect(m_searchBox, &QLineEdit::textChanged, this, &NMWelcomeDialog::onSearchTextChanged);
 
   headerLayout->addWidget(titleLabel);
   headerLayout->addWidget(versionLabel);
@@ -78,8 +77,8 @@ void NMWelcomeDialog::setupUI() {
   mainLayout->addWidget(header);
 
   // Content area - three columns
-  QWidget *content = new QWidget(this);
-  QHBoxLayout *contentLayout = new QHBoxLayout(content);
+  QWidget* content = new QWidget(this);
+  QHBoxLayout* contentLayout = new QHBoxLayout(content);
   contentLayout->setContentsMargins(0, 0, 0, 0);
   contentLayout->setSpacing(0);
 
@@ -96,12 +95,11 @@ void NMWelcomeDialog::setupUI() {
   // Footer
   m_footer = new QWidget(this);
   m_footer->setObjectName("WelcomeFooter");
-  QHBoxLayout *footerLayout = new QHBoxLayout(m_footer);
+  QHBoxLayout* footerLayout = new QHBoxLayout(m_footer);
   footerLayout->setContentsMargins(24, 12, 24, 12);
 
-  QCheckBox *skipCheckbox = new QCheckBox("Don't show this again", m_footer);
-  connect(skipCheckbox, &QCheckBox::toggled,
-          [this](bool checked) { m_skipInFuture = checked; });
+  QCheckBox* skipCheckbox = new QCheckBox("Don't show this again", m_footer);
+  connect(skipCheckbox, &QCheckBox::toggled, [this](bool checked) { m_skipInFuture = checked; });
 
   m_btnClose = new QPushButton("Close", m_footer);
   m_btnClose->setIcon(NMIconManager::instance().getIcon("file-close", 16));
@@ -123,7 +121,7 @@ void NMWelcomeDialog::setupLeftPanel() {
   m_leftLayout->setSpacing(12);
 
   // Section: Quick Actions
-  QLabel *quickActionsLabel = new QLabel("Quick Actions", m_leftPanel);
+  QLabel* quickActionsLabel = new QLabel("Quick Actions", m_leftPanel);
   quickActionsLabel->setObjectName("SectionTitle");
   QFont sectionFont = quickActionsLabel->font();
   sectionFont.setPointSize(12);
@@ -138,8 +136,7 @@ void NMWelcomeDialog::setupLeftPanel() {
   m_btnNewProject->setIcon(iconMgr.getIcon("welcome-new", 16));
   m_btnNewProject->setObjectName("PrimaryActionButton");
   m_btnNewProject->setMinimumHeight(48);
-  connect(m_btnNewProject, &QPushButton::clicked, this,
-          &NMWelcomeDialog::onNewProjectClicked);
+  connect(m_btnNewProject, &QPushButton::clicked, this, &NMWelcomeDialog::onNewProjectClicked);
   m_leftLayout->addWidget(m_btnNewProject);
 
   // Open Project button
@@ -147,8 +144,7 @@ void NMWelcomeDialog::setupLeftPanel() {
   m_btnOpenProject->setIcon(iconMgr.getIcon("welcome-open", 16));
   m_btnOpenProject->setObjectName("SecondaryActionButton");
   m_btnOpenProject->setMinimumHeight(48);
-  connect(m_btnOpenProject, &QPushButton::clicked, this,
-          &NMWelcomeDialog::onOpenProjectClicked);
+  connect(m_btnOpenProject, &QPushButton::clicked, this, &NMWelcomeDialog::onOpenProjectClicked);
   m_leftLayout->addWidget(m_btnOpenProject);
 
   // Browse Examples button
@@ -163,7 +159,7 @@ void NMWelcomeDialog::setupLeftPanel() {
   m_leftLayout->addSpacing(24);
 
   // Section: Recent Projects
-  QLabel *recentLabel = new QLabel("Recent Projects", m_leftPanel);
+  QLabel* recentLabel = new QLabel("Recent Projects", m_leftPanel);
   recentLabel->setObjectName("SectionTitle");
   recentLabel->setFont(sectionFont);
   m_leftLayout->addWidget(recentLabel);
@@ -178,12 +174,12 @@ void NMWelcomeDialog::setupLeftPanel() {
 void NMWelcomeDialog::setupCenterPanel() {
   m_centerPanel = new QWidget(this);
   m_centerPanel->setObjectName("WelcomeCenterPanel");
-  QVBoxLayout *centerLayout = new QVBoxLayout(m_centerPanel);
+  QVBoxLayout* centerLayout = new QVBoxLayout(m_centerPanel);
   centerLayout->setContentsMargins(12, 24, 12, 24);
   centerLayout->setSpacing(16);
 
   // Section title
-  QLabel *templatesLabel = new QLabel("Project Templates", m_centerPanel);
+  QLabel* templatesLabel = new QLabel("Project Templates", m_centerPanel);
   templatesLabel->setObjectName("SectionTitle");
   QFont sectionFont = templatesLabel->font();
   sectionFont.setPointSize(12);
@@ -209,12 +205,12 @@ void NMWelcomeDialog::setupCenterPanel() {
 void NMWelcomeDialog::setupRightPanel() {
   m_rightPanel = new QWidget(this);
   m_rightPanel->setObjectName("WelcomeRightPanel");
-  QVBoxLayout *rightLayout = new QVBoxLayout(m_rightPanel);
+  QVBoxLayout* rightLayout = new QVBoxLayout(m_rightPanel);
   rightLayout->setContentsMargins(12, 24, 24, 24);
   rightLayout->setSpacing(16);
 
   // Section title
-  QLabel *resourcesLabel = new QLabel("Learning Resources", m_rightPanel);
+  QLabel* resourcesLabel = new QLabel("Learning Resources", m_rightPanel);
   resourcesLabel->setObjectName("SectionTitle");
   QFont sectionFont = resourcesLabel->font();
   sectionFont.setPointSize(12);
@@ -229,7 +225,7 @@ void NMWelcomeDialog::setupRightPanel() {
   m_resourcesScrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   m_resourcesContainer = new QWidget();
-  QVBoxLayout *resourcesLayout = new QVBoxLayout(m_resourcesContainer);
+  QVBoxLayout* resourcesLayout = new QVBoxLayout(m_resourcesContainer);
   resourcesLayout->setSpacing(12);
   resourcesLayout->setAlignment(Qt::AlignTop);
 
@@ -253,22 +249,22 @@ void NMWelcomeDialog::setupRightPanel() {
       {"Report Issues", "Found a bug? Let us know!",
        "https://github.com/VisageDvachevsky/NovelMind/issues"}};
 
-  for (const auto &resource : resources) {
-    QFrame *resourceCard = new QFrame(m_resourcesContainer);
+  for (const auto& resource : resources) {
+    QFrame* resourceCard = new QFrame(m_resourcesContainer);
     resourceCard->setObjectName("ResourceCard");
     resourceCard->setFrameShape(QFrame::StyledPanel);
     resourceCard->setCursor(Qt::PointingHandCursor);
 
-    QVBoxLayout *cardLayout = new QVBoxLayout(resourceCard);
+    QVBoxLayout* cardLayout = new QVBoxLayout(resourceCard);
     cardLayout->setContentsMargins(12, 12, 12, 12);
 
-    QLabel *titleLabel = new QLabel(resource.title, resourceCard);
+    QLabel* titleLabel = new QLabel(resource.title, resourceCard);
     titleLabel->setObjectName("ResourceTitle");
     QFont titleFont = titleLabel->font();
     titleFont.setBold(true);
     titleLabel->setFont(titleFont);
 
-    QLabel *descLabel = new QLabel(resource.description, resourceCard);
+    QLabel* descLabel = new QLabel(resource.description, resourceCard);
     descLabel->setObjectName("ResourceDescription");
     descLabel->setWordWrap(true);
 
@@ -305,10 +301,8 @@ void NMWelcomeDialog::loadRecentProjects() {
       m_recentProjects.append(project);
 
       // Add to list widget
-      QString displayText =
-          QString("%1\n%2").arg(project.name, project.lastOpened);
-      QListWidgetItem *item =
-          new QListWidgetItem(displayText, m_recentProjectsList);
+      QString displayText = QString("%1\n%2").arg(project.name, project.lastOpened);
+      QListWidgetItem* item = new QListWidgetItem(displayText, m_recentProjectsList);
       item->setData(Qt::UserRole, project.path);
     }
   }
@@ -320,12 +314,9 @@ void NMWelcomeDialog::loadTemplates() {
   // Define available templates
   m_templates = {
       {"Blank Project", "Start with an empty project", "", "Blank"},
-      {"Visual Novel", "Traditional visual novel with dialogue and choices", "",
-       "Visual Novel"},
-      {"Dating Sim", "Dating simulation with relationship mechanics", "",
-       "Dating Sim"},
-      {"Mystery/Detective", "Investigation-focused story with clues", "",
-       "Mystery"},
+      {"Visual Novel", "Traditional visual novel with dialogue and choices", "", "Visual Novel"},
+      {"Dating Sim", "Dating simulation with relationship mechanics", "", "Dating Sim"},
+      {"Mystery/Detective", "Investigation-focused story with clues", "", "Mystery"},
       {"RPG Story", "Story with stat tracking and combat", "", "RPG"},
       {"Horror", "Atmospheric horror visual novel", "", "Horror"}};
 
@@ -335,7 +326,7 @@ void NMWelcomeDialog::loadTemplates() {
   const int COLS = 2;
 
   for (int i = 0; i < m_templates.size(); ++i) {
-    QWidget *card = createTemplateCard(m_templates[i], i);
+    QWidget* card = createTemplateCard(m_templates[i], i);
     m_templatesLayout->addWidget(card, row, col);
 
     col++;
@@ -346,33 +337,32 @@ void NMWelcomeDialog::loadTemplates() {
   }
 }
 
-QWidget *NMWelcomeDialog::createTemplateCard(const ProjectTemplate &tmpl,
-                                             int index) {
-  QFrame *card = new QFrame(m_templatesContainer);
+QWidget* NMWelcomeDialog::createTemplateCard(const ProjectTemplate& tmpl, int index) {
+  QFrame* card = new QFrame(m_templatesContainer);
   card->setObjectName("TemplateCard");
   card->setFrameShape(QFrame::StyledPanel);
   card->setMinimumSize(CARD_WIDTH, CARD_HEIGHT);
   card->setMaximumSize(CARD_WIDTH, CARD_HEIGHT);
   card->setCursor(Qt::PointingHandCursor);
 
-  QVBoxLayout *cardLayout = new QVBoxLayout(card);
+  QVBoxLayout* cardLayout = new QVBoxLayout(card);
   cardLayout->setContentsMargins(16, 16, 16, 16);
   cardLayout->setSpacing(8);
 
   // Icon
-  QLabel *iconLabel = new QLabel(card);
+  QLabel* iconLabel = new QLabel(card);
   iconLabel->setObjectName("TemplateIcon");
   iconLabel->setMinimumSize(48, 48);
   iconLabel->setMaximumSize(48, 48);
   iconLabel->setAlignment(Qt::AlignCenter);
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
   iconLabel->setPixmap(iconMgr.getPixmap("file-new", 32));
   QFont iconFont = iconLabel->font();
   iconFont.setPointSize(24);
   iconLabel->setFont(iconFont);
 
   // Title
-  QLabel *titleLabel = new QLabel(tmpl.name, card);
+  QLabel* titleLabel = new QLabel(tmpl.name, card);
   titleLabel->setObjectName("TemplateTitle");
   QFont titleFont = titleLabel->font();
   titleFont.setPointSize(11);
@@ -380,7 +370,7 @@ QWidget *NMWelcomeDialog::createTemplateCard(const ProjectTemplate &tmpl,
   titleLabel->setFont(titleFont);
 
   // Description
-  QLabel *descLabel = new QLabel(tmpl.description, card);
+  QLabel* descLabel = new QLabel(tmpl.description, card);
   descLabel->setObjectName("TemplateDescription");
   descLabel->setWordWrap(true);
 
@@ -410,8 +400,8 @@ void NMWelcomeDialog::onNewProjectClicked() {
 }
 
 void NMWelcomeDialog::onOpenProjectClicked() {
-  QString projectPath = NMFileDialog::getExistingDirectory(
-      this, tr("Open NovelMind Project"), QDir::homePath());
+  QString projectPath =
+      NMFileDialog::getExistingDirectory(this, tr("Open NovelMind Project"), QDir::homePath());
 
   if (!projectPath.isEmpty()) {
     m_selectedProjectPath = projectPath;
@@ -420,7 +410,7 @@ void NMWelcomeDialog::onOpenProjectClicked() {
   }
 }
 
-void NMWelcomeDialog::onRecentProjectClicked(QListWidgetItem *item) {
+void NMWelcomeDialog::onRecentProjectClicked(QListWidgetItem* item) {
   if (item) {
     m_selectedProjectPath = item->data(Qt::UserRole).toString();
     m_createNewProject = false;
@@ -441,14 +431,14 @@ void NMWelcomeDialog::onBrowseExamplesClicked() {
       QUrl("https://github.com/VisageDvachevsky/NovelMind/tree/main/examples"));
 }
 
-void NMWelcomeDialog::onSearchTextChanged(const QString &text) {
+void NMWelcomeDialog::onSearchTextChanged(const QString& text) {
   // Filter templates and recent projects based on search text
   const QString query = text.trimmed().toLower();
 
   // Filter templates
   if (m_templatesContainer) {
-    const auto cards = m_templatesContainer->findChildren<QWidget *>();
-    for (QWidget *card : cards) {
+    const auto cards = m_templatesContainer->findChildren<QWidget*>();
+    for (QWidget* card : cards) {
       bool match = query.isEmpty();
       const QVariant indexValue = card->property("templateIndex");
       if (indexValue.isValid()) {
@@ -456,8 +446,7 @@ void NMWelcomeDialog::onSearchTextChanged(const QString &text) {
         if (index >= 0 && index < m_templates.size()) {
           const QString name = m_templates[index].name.toLower();
           const QString description = m_templates[index].description.toLower();
-          match = query.isEmpty() || name.contains(query) ||
-                  description.contains(query);
+          match = query.isEmpty() || name.contains(query) || description.contains(query);
         }
         card->setVisible(match);
       }
@@ -467,14 +456,13 @@ void NMWelcomeDialog::onSearchTextChanged(const QString &text) {
   // Filter recent projects list
   if (m_recentProjectsList) {
     for (int i = 0; i < m_recentProjectsList->count(); ++i) {
-      auto *item = m_recentProjectsList->item(i);
+      auto* item = m_recentProjectsList->item(i);
       if (!item) {
         continue;
       }
       const QString textValue = item->text().toLower();
       const QString pathValue = item->data(Qt::UserRole).toString().toLower();
-      const bool match = query.isEmpty() || textValue.contains(query) ||
-                         pathValue.contains(query);
+      const bool match = query.isEmpty() || textValue.contains(query) || pathValue.contains(query);
       item->setHidden(!match);
     }
   }
@@ -819,17 +807,17 @@ void NMWelcomeDialog::startEntranceAnimations() {
   // Create opacity effects for smooth fade-in without affecting visibility
   // Using QGraphicsOpacityEffect which properly handles the rendering pipeline
 
-  auto createFadeIn = [this](QWidget *widget, int delayMs) {
+  auto createFadeIn = [this](QWidget* widget, int delayMs) {
     if (!widget)
       return;
 
     // Create and apply opacity effect
-    auto *effect = new QGraphicsOpacityEffect(widget);
+    auto* effect = new QGraphicsOpacityEffect(widget);
     effect->setOpacity(0.0);
     widget->setGraphicsEffect(effect);
 
     // Create fade-in animation
-    auto *anim = new QPropertyAnimation(effect, "opacity", this);
+    auto* anim = new QPropertyAnimation(effect, "opacity", this);
     anim->setDuration(350);
     anim->setStartValue(0.0);
     anim->setEndValue(1.0);
@@ -859,16 +847,14 @@ void NMWelcomeDialog::startEntranceAnimations() {
   createFadeIn(m_rightPanel, 200);  // Right panel last
 }
 
-void NMWelcomeDialog::animateButtonHover(QWidget *button, bool entering) {
+void NMWelcomeDialog::animateButtonHover(QWidget* button, bool entering) {
   if (!button)
     return;
 
   // Create smooth scale animation for button hover
-  QPropertyAnimation *scaleAnim =
-      new QPropertyAnimation(button, "geometry", this);
+  QPropertyAnimation* scaleAnim = new QPropertyAnimation(button, "geometry", this);
   scaleAnim->setDuration(150);
-  scaleAnim->setEasingCurve(entering ? QEasingCurve::OutBack
-                                     : QEasingCurve::InOutQuad);
+  scaleAnim->setEasingCurve(entering ? QEasingCurve::OutBack : QEasingCurve::InOutQuad);
 
   QRect currentGeom = button->geometry();
   QRect targetGeom = currentGeom;
@@ -883,7 +869,7 @@ void NMWelcomeDialog::animateButtonHover(QWidget *button, bool entering) {
   scaleAnim->start(QPropertyAnimation::DeleteWhenStopped);
 }
 
-void NMWelcomeDialog::showEvent(QShowEvent *event) {
+void NMWelcomeDialog::showEvent(QShowEvent* event) {
   QDialog::showEvent(event);
 
   if (!m_animationsPlayed) {
@@ -893,10 +879,10 @@ void NMWelcomeDialog::showEvent(QShowEvent *event) {
   }
 }
 
-bool NMWelcomeDialog::eventFilter(QObject *watched, QEvent *event) {
+bool NMWelcomeDialog::eventFilter(QObject* watched, QEvent* event) {
   if (event->type() == QEvent::MouseButtonPress) {
     // Handle template card clicks
-    QWidget *widget = qobject_cast<QWidget *>(watched);
+    QWidget* widget = qobject_cast<QWidget*>(watched);
     if (widget && widget->objectName() == "TemplateCard") {
       int templateIndex = widget->property("templateIndex").toInt();
       onTemplateClicked(templateIndex);
@@ -913,13 +899,13 @@ bool NMWelcomeDialog::eventFilter(QObject *watched, QEvent *event) {
     }
   } else if (event->type() == QEvent::Enter) {
     // Handle hover enter on buttons only (avoid geometry shifts on cards)
-    QWidget *widget = qobject_cast<QWidget *>(watched);
+    QWidget* widget = qobject_cast<QWidget*>(watched);
     if (widget && widget->objectName().contains("Button")) {
       animateButtonHover(widget, true);
     }
   } else if (event->type() == QEvent::Leave) {
     // Handle hover leave on buttons only (avoid geometry shifts on cards)
-    QWidget *widget = qobject_cast<QWidget *>(watched);
+    QWidget* widget = qobject_cast<QWidget*>(watched);
     if (widget && widget->objectName().contains("Button")) {
       animateButtonHover(widget, false);
     }

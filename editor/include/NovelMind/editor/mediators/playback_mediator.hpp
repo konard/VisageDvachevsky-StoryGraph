@@ -31,9 +31,8 @@ public:
   /**
    * @brief Construct the playback mediator
    */
-  PlaybackMediator(qt::NMSceneViewPanel *sceneView,
-                   qt::NMTimelinePanel *timeline,
-                   QObject *parent = nullptr);
+  PlaybackMediator(qt::NMSceneViewPanel* sceneView, qt::NMTimelinePanel* timeline,
+                   QObject* parent = nullptr);
 
   ~PlaybackMediator() override;
 
@@ -48,12 +47,12 @@ public:
   void shutdown();
 
 private:
-  void onTimelineFrameChanged(const events::TimelineFrameChangedEvent &event);
-  void onTimelinePlaybackStateChanged(const events::TimelinePlaybackStateChangedEvent &event);
-  void onSetAnimationPreviewMode(const events::SetAnimationPreviewModeEvent &event);
+  void onTimelineFrameChanged(const events::TimelineFrameChangedEvent& event);
+  void onTimelinePlaybackStateChanged(const events::TimelinePlaybackStateChangedEvent& event);
+  void onSetAnimationPreviewMode(const events::SetAnimationPreviewModeEvent& event);
 
-  qt::NMSceneViewPanel *m_sceneView = nullptr;
-  qt::NMTimelinePanel *m_timeline = nullptr;
+  qt::NMSceneViewPanel* m_sceneView = nullptr;
+  qt::NMTimelinePanel* m_timeline = nullptr;
 
   std::vector<EventSubscription> m_subscriptions;
 };

@@ -37,18 +37,18 @@ class NMStoryGraphMinimap : public QGraphicsView {
   Q_OBJECT
 
 public:
-  explicit NMStoryGraphMinimap(QWidget *parent = nullptr);
+  explicit NMStoryGraphMinimap(QWidget* parent = nullptr);
   ~NMStoryGraphMinimap() override;
 
   /**
    * @brief Set the main graph view to track
    */
-  void setMainView(NMStoryGraphView *mainView);
+  void setMainView(NMStoryGraphView* mainView);
 
   /**
    * @brief Set the scene to display
    */
-  void setGraphScene(NMStoryGraphScene *scene);
+  void setGraphScene(NMStoryGraphScene* scene);
 
   /**
    * @brief Update the minimap (called when graph changes)
@@ -65,15 +65,15 @@ signals:
    * @brief Emitted when user clicks on minimap to navigate
    * @param scenePos Position in scene coordinates to center on
    */
-  void navigationRequested(const QPointF &scenePos);
+  void navigationRequested(const QPointF& scenePos);
 
 protected:
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void drawForeground(QPainter *painter, const QRectF &rect) override;
-  void resizeEvent(QResizeEvent *event) override;
-  void hideEvent(QHideEvent *event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void drawForeground(QPainter* painter, const QRectF& rect) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void hideEvent(QHideEvent* event) override;
 
 private slots:
   void onMainViewTransformed();
@@ -84,11 +84,11 @@ private:
   void setupView();
   void fitGraphInView();
   QRectF getViewportRectInScene() const;
-  void navigateToScenePos(const QPointF &scenePos);
+  void navigateToScenePos(const QPointF& scenePos);
 
-  NMStoryGraphView *m_mainView = nullptr;
-  NMStoryGraphScene *m_graphScene = nullptr;
-  QTimer *m_updateTimer = nullptr;
+  NMStoryGraphView* m_mainView = nullptr;
+  NMStoryGraphScene* m_graphScene = nullptr;
+  QTimer* m_updateTimer = nullptr;
   bool m_isDraggingViewport = false;
   QPointF m_lastMousePos;
 

@@ -11,21 +11,13 @@ struct Vec2 {
   constexpr Vec2() : x(0.0f), y(0.0f) {}
   constexpr Vec2(f32 x_, f32 y_) : x(x_), y(y_) {}
 
-  constexpr Vec2 operator+(const Vec2 &other) const {
-    return Vec2(x + other.x, y + other.y);
-  }
+  constexpr Vec2 operator+(const Vec2& other) const { return Vec2(x + other.x, y + other.y); }
 
-  constexpr Vec2 operator-(const Vec2 &other) const {
-    return Vec2(x - other.x, y - other.y);
-  }
+  constexpr Vec2 operator-(const Vec2& other) const { return Vec2(x - other.x, y - other.y); }
 
-  constexpr Vec2 operator*(f32 scalar) const {
-    return Vec2(x * scalar, y * scalar);
-  }
+  constexpr Vec2 operator*(f32 scalar) const { return Vec2(x * scalar, y * scalar); }
 
-  constexpr Vec2 operator/(f32 scalar) const {
-    return Vec2(x / scalar, y / scalar);
-  }
+  constexpr Vec2 operator/(f32 scalar) const { return Vec2(x / scalar, y / scalar); }
 
   static const Vec2 Zero;
   static const Vec2 One;
@@ -46,14 +38,13 @@ struct Rect {
 
   constexpr Rect() : x(0.0f), y(0.0f), width(0.0f), height(0.0f) {}
 
-  constexpr Rect(f32 x_, f32 y_, f32 w, f32 h)
-      : x(x_), y(y_), width(w), height(h) {}
+  constexpr Rect(f32 x_, f32 y_, f32 w, f32 h) : x(x_), y(y_), width(w), height(h) {}
 
   [[nodiscard]] constexpr bool contains(f32 px, f32 py) const {
     return px >= x && px < x + width && py >= y && py < y + height;
   }
 
-  [[nodiscard]] constexpr bool contains(const Vec2 &point) const {
+  [[nodiscard]] constexpr bool contains(const Vec2& point) const {
     return contains(point.x, point.y);
   }
 };
@@ -69,7 +60,7 @@ struct Transform2D {
 
   [[nodiscard]] Vec2 getPosition() const { return Vec2(x, y); }
 
-  void setPosition(const Vec2 &pos) {
+  void setPosition(const Vec2& pos) {
     x = pos.x;
     y = pos.y;
   }

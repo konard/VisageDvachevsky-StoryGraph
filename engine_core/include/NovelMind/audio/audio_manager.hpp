@@ -96,9 +96,7 @@ struct AudioHandle {
   }
 
   // Extract index from handle ID
-  [[nodiscard]] static u32 getIndex(u32 handleId) {
-    return handleId & 0x00FFFFFF;
-  }
+  [[nodiscard]] static u32 getIndex(u32 handleId) { return handleId & 0x00FFFFFF; }
 
   // Create handle ID from generation and index
   [[nodiscard]] static u32 makeHandleId(u8 generation, u32 index) {
@@ -159,15 +157,7 @@ enum class AudioTransition : u8 {
  * - Other frameworks: Post to main thread event queue
  */
 struct AudioEvent {
-  enum class Type : u8 {
-    Started,
-    Stopped,
-    Paused,
-    Resumed,
-    Looped,
-    FadeComplete,
-    Error
-  };
+  enum class Type : u8 { Started, Stopped, Paused, Resumed, Looped, FadeComplete, Error };
 
   Type type;
   AudioHandle handle;
@@ -175,7 +165,7 @@ struct AudioEvent {
   std::string errorMessage;
 };
 
-using AudioCallback = std::function<void(const AudioEvent &)>;
+using AudioCallback = std::function<void(const AudioEvent&)>;
 
 /**
  * @brief Internal audio source representation
@@ -202,8 +192,7 @@ public:
   [[nodiscard]] f32 getPlaybackPosition() const { return m_position; }
   [[nodiscard]] f32 getDuration() const { return m_duration; }
   [[nodiscard]] bool isPlaying() const {
-    return m_state == PlaybackState::Playing ||
-           m_state == PlaybackState::FadingIn ||
+    return m_state == PlaybackState::Playing || m_state == PlaybackState::FadingIn ||
            m_state == PlaybackState::FadingOut;
   }
 
@@ -246,8 +235,7 @@ class AudioManager {
   friend class AudioManagerTestAccess;
 
 public:
-  using DataProvider =
-      std::function<Result<std::vector<u8>>(const std::string &id)>;
+  using DataProvider = std::function<Result<std::vector<u8>>(const std::string& id)>;
   AudioManager();
   ~AudioManager();
 
@@ -280,13 +268,12 @@ public:
    *
    * @see Issue #558 for details on the TOCTOU race condition that was fixed
    */
-  AudioHandle playSound(const std::string &id,
-                        const PlaybackConfig &config = {});
+  AudioHandle playSound(const std::string& id, const PlaybackConfig& config = {});
 
   /**
    * @brief Play a sound effect with simple parameters
    */
-  AudioHandle playSound(const std::string &id, f32 volume, bool loop = false);
+  AudioHandle playSound(const std::string& id, f32 volume, bool loop = false);
 
   /**
    * @brief Stop a specific sound
@@ -305,13 +292,12 @@ public:
   /**
    * @brief Play background music
    */
-  AudioHandle playMusic(const std::string &id, const MusicConfig &config = {});
+  AudioHandle playMusic(const std::string& id, const MusicConfig& config = {});
 
   /**
    * @brief Play music with crossfade from current track
    */
-  AudioHandle crossfadeMusic(const std::string &id, f32 duration,
-                             const MusicConfig &config = {});
+  AudioHandle crossfadeMusic(const std::string& id, f32 duration, const MusicConfig& config = {});
 
   /**
    * @brief Stop music
@@ -336,7 +322,7 @@ public:
   /**
    * @brief Get current music track ID
    */
-  [[nodiscard]] const std::string &getCurrentMusicId() const;
+  [[nodiscard]] const std::string& getCurrentMusicId() const;
 
   /**
    * @brief Get music playback position
@@ -355,7 +341,7 @@ public:
   /**
    * @brief Play voice line (auto-ducks music)
    */
-  AudioHandle playVoice(const std::string &id, const VoiceConfig &config = {});
+  AudioHandle playVoice(const std::string& id, const VoiceConfig& config = {});
 
   /**
    * @brief Stop voice playback
@@ -447,7 +433,7 @@ public:
   /**
    * @brief Get source by handle
    */
-  AudioSource *getSource(AudioHandle handle);
+  AudioSource* getSource(AudioHandle handle);
 
   /**
    * @brief Check if handle is still valid and playing
@@ -495,14 +481,13 @@ public:
   void setDuckingParams(f32 duckVolume, f32 fadeDuration);
 
 private:
-  AudioHandle createSource(const std::string &trackId, AudioChannel channel);
-  AudioHandle createSourceLocked(const std::string &trackId, AudioChannel channel);
+  AudioHandle createSource(const std::string& trackId, AudioChannel channel);
+  AudioHandle createSourceLocked(const std::string& trackId, AudioChannel channel);
   void releaseSource(AudioHandle handle);
-  void fireEvent(AudioEvent::Type type, AudioHandle handle,
-                 const std::string &trackId = "");
+  void fireEvent(AudioEvent::Type type, AudioHandle handle, const std::string& trackId = "");
 
   void updateDucking(f64 deltaTime);
-  f32 calculateEffectiveVolume(const AudioSource &source) const;
+  f32 calculateEffectiveVolume(const AudioSource& source) const;
 
   bool m_initialized = false;
   MaEnginePtr m_engine;
@@ -517,8 +502,8 @@ private:
   // Active sources (protected by m_sourcesMutex for thread-safe access)
   mutable std::shared_mutex m_sourcesMutex;
   std::vector<std::unique_ptr<AudioSource>> m_sources;
-  std::atomic<u32> m_nextHandleIndex{1};  // Lower 24 bits: index counter
-  std::atomic<u8> m_handleGeneration{0};  // Upper 8 bits: generation counter
+  std::atomic<u32> m_nextHandleIndex{1}; // Lower 24 bits: index counter
+  std::atomic<u8> m_handleGeneration{0}; // Upper 8 bits: generation counter
   std::atomic<size_t> m_maxSounds{32};
 
   // Music state (protected by m_stateMutex)

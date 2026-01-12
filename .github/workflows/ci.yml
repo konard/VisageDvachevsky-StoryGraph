@@ -155,9 +155,9 @@ jobs:
 
     - name: Check formatting
       run: |
-        find engine_core -name '*.cpp' -o -name '*.hpp' | \
+        find engine_core editor compiler runtime tests -name '*.cpp' -o -name '*.hpp' | \
           xargs clang-format-14 --dry-run --Werror || \
-          echo "::warning::Code formatting issues found. Run clang-format to fix."
+          echo "::error::Code formatting issues found. Run clang-format to fix."
 
   static-analysis:
     runs-on: ubuntu-latest

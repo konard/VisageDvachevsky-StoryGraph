@@ -16,15 +16,15 @@ class NMIssuesPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMIssuesPanel(QWidget *parent = nullptr);
+  explicit NMIssuesPanel(QWidget* parent = nullptr);
 
-  void setIssues(const QList<NMScriptIssue> &issues);
+  void setIssues(const QList<NMScriptIssue>& issues);
 
 signals:
-  void issueActivated(const QString &file, int line);
+  void issueActivated(const QString& file, int line);
 
 private:
-  QListWidget *m_list = nullptr;
+  QListWidget* m_list = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

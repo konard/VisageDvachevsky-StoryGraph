@@ -40,7 +40,7 @@ public:
    * @brief Construct a new QtAudioPlayer
    * @param parent Optional parent QObject for memory management
    */
-  explicit QtAudioPlayer(QObject *parent = nullptr);
+  explicit QtAudioPlayer(QObject* parent = nullptr);
 
   /**
    * @brief Destructor - cleans up Qt multimedia resources
@@ -48,14 +48,14 @@ public:
   ~QtAudioPlayer() override;
 
   // Prevent copying
-  QtAudioPlayer(const QtAudioPlayer &) = delete;
-  QtAudioPlayer &operator=(const QtAudioPlayer &) = delete;
+  QtAudioPlayer(const QtAudioPlayer&) = delete;
+  QtAudioPlayer& operator=(const QtAudioPlayer&) = delete;
 
   // =========================================================================
   // IAudioPlayer Implementation
   // =========================================================================
 
-  bool load(const std::string &filePath) override;
+  bool load(const std::string& filePath) override;
   bool play() override;
   bool pause() override;
   bool stop() override;
@@ -80,11 +80,9 @@ public:
   [[nodiscard]] std::string getErrorString() const override;
 
   void setOnPlaybackFinished(std::function<void()> callback) override;
-  void setOnError(std::function<void(const std::string &)> callback) override;
-  void setOnPlaybackStateChanged(
-      std::function<void(AudioPlaybackState)> callback) override;
-  void setOnMediaStatusChanged(
-      std::function<void(AudioMediaStatus)> callback) override;
+  void setOnError(std::function<void(const std::string&)> callback) override;
+  void setOnPlaybackStateChanged(std::function<void(AudioPlaybackState)> callback) override;
+  void setOnMediaStatusChanged(std::function<void(AudioMediaStatus)> callback) override;
   void setOnDurationChanged(std::function<void(i64)> callback) override;
   void setOnPositionChanged(std::function<void(i64)> callback) override;
 
@@ -102,7 +100,7 @@ private:
 
   // Callbacks
   std::function<void()> m_onPlaybackFinished;
-  std::function<void(const std::string &)> m_onError;
+  std::function<void(const std::string&)> m_onError;
   std::function<void(AudioPlaybackState)> m_onPlaybackStateChanged;
   std::function<void(AudioMediaStatus)> m_onMediaStatusChanged;
   std::function<void(i64)> m_onDurationChanged;

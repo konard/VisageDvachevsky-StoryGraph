@@ -23,7 +23,7 @@ class InspectorPropertyEditor;
 class InspectorComponentList;
 class InspectorValidators;
 class InspectorUI;
-}
+} // namespace NovelMind::editor::qt
 
 namespace NovelMind::editor {
 class SceneRegistry;

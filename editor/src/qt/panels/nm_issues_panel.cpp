@@ -7,15 +7,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMIssuesPanel::NMIssuesPanel(QWidget *parent)
-    : NMDockPanel(tr("Problems"), parent) {
+NMIssuesPanel::NMIssuesPanel(QWidget* parent) : NMDockPanel(tr("Problems"), parent) {
   setPanelId("Problems");
-  auto *widget = new QWidget(this);
-  auto *layout = new QVBoxLayout(widget);
+  auto* widget = new QWidget(this);
+  auto* layout = new QVBoxLayout(widget);
   layout->setContentsMargins(6, 6, 6, 6);
   layout->setSpacing(6);
 
-  auto *label = new QLabel(tr("Problems"), widget);
+  auto* label = new QLabel(tr("Problems"), widget);
   label->setObjectName("IssuesHeader");
   layout->addWidget(label);
 
@@ -26,24 +25,23 @@ NMIssuesPanel::NMIssuesPanel(QWidget *parent)
   setContentWidget(widget);
   setWindowTitle(tr("Problems"));
 
-  connect(m_list, &QListWidget::itemActivated, this,
-          [this](QListWidgetItem *item) {
-            if (!item) {
-              return;
-            }
-            const QString file = item->data(Qt::UserRole).toString();
-            const int line = item->data(Qt::UserRole + 1).toInt();
-            emit issueActivated(file, line);
-          });
+  connect(m_list, &QListWidget::itemActivated, this, [this](QListWidgetItem* item) {
+    if (!item) {
+      return;
+    }
+    const QString file = item->data(Qt::UserRole).toString();
+    const int line = item->data(Qt::UserRole + 1).toInt();
+    emit issueActivated(file, line);
+  });
 }
 
-void NMIssuesPanel::setIssues(const QList<NMScriptIssue> &issues) {
+void NMIssuesPanel::setIssues(const QList<NMScriptIssue>& issues) {
   m_list->clear();
-  const auto &palette = NMStyleManager::instance().palette();
-  for (const auto &issue : issues) {
+  const auto& palette = NMStyleManager::instance().palette();
+  for (const auto& issue : issues) {
     const QString fileName = QFileInfo(issue.file).fileName();
-    auto *item = new QListWidgetItem(
-        QString("%1(%2): %3").arg(fileName).arg(issue.line).arg(issue.message));
+    auto* item =
+        new QListWidgetItem(QString("%1(%2): %3").arg(fileName).arg(issue.line).arg(issue.message));
     QColor color = palette.textPrimary;
     if (issue.severity == "error") {
       color = QColor(220, 90, 90);

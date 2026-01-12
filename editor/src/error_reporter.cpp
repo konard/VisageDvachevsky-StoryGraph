@@ -11,7 +11,7 @@ ErrorReporter::ErrorReporter() = default;
 
 ErrorReporter::~ErrorReporter() = default;
 
-ErrorReporter &ErrorReporter::instance() {
+ErrorReporter& ErrorReporter::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<ErrorReporter>();
   }
@@ -22,13 +22,12 @@ ErrorReporter &ErrorReporter::instance() {
 // Reporting
 // ============================================================================
 
-u64 ErrorReporter::report(const Diagnostic &diagnostic) {
+u64 ErrorReporter::report(const Diagnostic& diagnostic) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   Diagnostic diag = diagnostic;
   diag.id = m_nextId++;
-  diag.timestamp = static_cast<u64>(
-      std::chrono::steady_clock::now().time_since_epoch().count());
+  diag.timestamp = static_cast<u64>(std::chrono::steady_clock::now().time_since_epoch().count());
 
   if (m_inBatch) {
     m_batchDiagnostics.push_back(diag);
@@ -42,8 +41,7 @@ u64 ErrorReporter::report(const Diagnostic &diagnostic) {
   return diag.id;
 }
 
-u64 ErrorReporter::reportError(const std::string &message,
-                               const SourceLocation &location,
+u64 ErrorReporter::reportError(const std::string& message, const SourceLocation& location,
                                DiagnosticCategory category) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Error;
@@ -53,8 +51,7 @@ u64 ErrorReporter::reportError(const std::string &message,
   return report(diag);
 }
 
-u64 ErrorReporter::reportWarning(const std::string &message,
-                                 const SourceLocation &location,
+u64 ErrorReporter::reportWarning(const std::string& message, const SourceLocation& location,
                                  DiagnosticCategory category) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Warning;
@@ -64,8 +61,7 @@ u64 ErrorReporter::reportWarning(const std::string &message,
   return report(diag);
 }
 
-u64 ErrorReporter::reportInfo(const std::string &message,
-                              const SourceLocation &location,
+u64 ErrorReporter::reportInfo(const std::string& message, const SourceLocation& location,
                               DiagnosticCategory category) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Info;
@@ -75,9 +71,8 @@ u64 ErrorReporter::reportInfo(const std::string &message,
   return report(diag);
 }
 
-u64 ErrorReporter::reportScriptError(const std::string &file, u32 line,
-                                     u32 column, const std::string &message,
-                                     const std::string &code) {
+u64 ErrorReporter::reportScriptError(const std::string& file, u32 line, u32 column,
+                                     const std::string& message, const std::string& code) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Error;
   diag.category = DiagnosticCategory::Script;
@@ -89,8 +84,8 @@ u64 ErrorReporter::reportScriptError(const std::string &file, u32 line,
   return report(diag);
 }
 
-u64 ErrorReporter::reportMissingAsset(const std::string &assetPath,
-                                      const std::string &referencedBy) {
+u64 ErrorReporter::reportMissingAsset(const std::string& assetPath,
+                                      const std::string& referencedBy) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Error;
   diag.category = DiagnosticCategory::Asset;
@@ -101,8 +96,7 @@ u64 ErrorReporter::reportMissingAsset(const std::string &assetPath,
   return report(diag);
 }
 
-u64 ErrorReporter::reportMissingVoice(const std::string &lineId,
-                                      const std::string &expectedPath) {
+u64 ErrorReporter::reportMissingVoice(const std::string& lineId, const std::string& expectedPath) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Warning;
   diag.category = DiagnosticCategory::Voice;
@@ -111,8 +105,7 @@ u64 ErrorReporter::reportMissingVoice(const std::string &lineId,
   return report(diag);
 }
 
-u64 ErrorReporter::reportGraphError(const std::string &message,
-                                    const std::string &nodeInfo) {
+u64 ErrorReporter::reportGraphError(const std::string& message, const std::string& nodeInfo) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Error;
   diag.category = DiagnosticCategory::Graph;
@@ -123,8 +116,7 @@ u64 ErrorReporter::reportGraphError(const std::string &message,
   return report(diag);
 }
 
-u64 ErrorReporter::reportRuntimeError(const std::string &message,
-                                      const std::string &stackTrace) {
+u64 ErrorReporter::reportRuntimeError(const std::string& message, const std::string& stackTrace) {
   Diagnostic diag;
   diag.severity = DiagnosticSeverity::Error;
   diag.category = DiagnosticCategory::Runtime;
@@ -142,23 +134,20 @@ std::vector<Diagnostic> ErrorReporter::getAllDiagnostics() const {
   return m_diagnostics;
 }
 
-std::vector<Diagnostic>
-ErrorReporter::getDiagnostics(const DiagnosticFilter &filter) const {
+std::vector<Diagnostic> ErrorReporter::getDiagnostics(const DiagnosticFilter& filter) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   std::vector<Diagnostic> result;
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     bool match = true;
 
     if (filter.minSeverity.has_value() &&
-        static_cast<u8>(diag.severity) <
-            static_cast<u8>(filter.minSeverity.value())) {
+        static_cast<u8>(diag.severity) < static_cast<u8>(filter.minSeverity.value())) {
       match = false;
     }
 
-    if (filter.category.has_value() &&
-        diag.category != filter.category.value()) {
+    if (filter.category.has_value() && diag.category != filter.category.value()) {
       match = false;
     }
 
@@ -168,8 +157,7 @@ ErrorReporter::getDiagnostics(const DiagnosticFilter &filter) const {
 
     if (filter.filePattern.has_value() && !filter.filePattern->empty()) {
       // Simple pattern matching (would use regex in production)
-      if (diag.location.file.find(filter.filePattern.value()) ==
-          std::string::npos) {
+      if (diag.location.file.find(filter.filePattern.value()) == std::string::npos) {
         match = false;
       }
     }
@@ -186,7 +174,7 @@ std::optional<Diagnostic> ErrorReporter::getDiagnostic(u64 id) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = std::find_if(m_diagnostics.begin(), m_diagnostics.end(),
-                         [id](const Diagnostic &d) { return d.id == id; });
+                         [id](const Diagnostic& d) { return d.id == id; });
 
   if (it != m_diagnostics.end()) {
     return *it;
@@ -194,13 +182,12 @@ std::optional<Diagnostic> ErrorReporter::getDiagnostic(u64 id) const {
   return std::nullopt;
 }
 
-std::vector<Diagnostic>
-ErrorReporter::getDiagnosticsForFile(const std::string &file) const {
+std::vector<Diagnostic> ErrorReporter::getDiagnosticsForFile(const std::string& file) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   std::vector<Diagnostic> result;
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     if (diag.location.file == file) {
       result.push_back(diag);
     }
@@ -209,8 +196,7 @@ ErrorReporter::getDiagnosticsForFile(const std::string &file) const {
   return result;
 }
 
-std::vector<Diagnostic>
-ErrorReporter::getDiagnosticsByCategory(DiagnosticCategory category) const {
+std::vector<Diagnostic> ErrorReporter::getDiagnosticsByCategory(DiagnosticCategory category) const {
   DiagnosticFilter filter;
   filter.category = category;
   return getDiagnostics(filter);
@@ -221,7 +207,7 @@ DiagnosticSummary ErrorReporter::getSummary() const {
 
   DiagnosticSummary summary;
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     summary.totalCount++;
 
     switch (diag.severity) {
@@ -250,7 +236,7 @@ DiagnosticSummary ErrorReporter::getSummary(DiagnosticCategory category) const {
 
   DiagnosticSummary summary;
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     if (diag.category != category) {
       continue;
     }
@@ -281,7 +267,7 @@ DiagnosticSummary ErrorReporter::getSummary(DiagnosticCategory category) const {
 bool ErrorReporter::hasErrors() const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     if (diag.isError()) {
       return true;
     }
@@ -292,7 +278,7 @@ bool ErrorReporter::hasErrors() const {
 bool ErrorReporter::hasWarnings() const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &diag : m_diagnostics) {
+  for (const auto& diag : m_diagnostics) {
     if (diag.isWarning()) {
       return true;
     }
@@ -313,7 +299,7 @@ void ErrorReporter::remove(u64 id) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = std::find_if(m_diagnostics.begin(), m_diagnostics.end(),
-                         [id](const Diagnostic &d) { return d.id == id; });
+                         [id](const Diagnostic& d) { return d.id == id; });
 
   if (it != m_diagnostics.end()) {
     m_diagnostics.erase(it);
@@ -325,11 +311,10 @@ void ErrorReporter::remove(u64 id) {
 void ErrorReporter::clear(DiagnosticCategory category) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_diagnostics.erase(std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
-                                     [category](const Diagnostic &d) {
-                                       return d.category == category;
-                                     }),
-                      m_diagnostics.end());
+  m_diagnostics.erase(
+      std::remove_if(m_diagnostics.begin(), m_diagnostics.end(),
+                     [category](const Diagnostic& d) { return d.category == category; }),
+      m_diagnostics.end());
 
   notifyCategoryCleared(category);
   notifySummaryChanged();
@@ -346,7 +331,7 @@ void ErrorReporter::acknowledge(u64 id) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = std::find_if(m_diagnostics.begin(), m_diagnostics.end(),
-                         [id](const Diagnostic &d) { return d.id == id; });
+                         [id](const Diagnostic& d) { return d.id == id; });
 
   if (it != m_diagnostics.end()) {
     it->acknowledged = true;
@@ -356,7 +341,7 @@ void ErrorReporter::acknowledge(u64 id) {
 void ErrorReporter::acknowledgeAll() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (auto &diag : m_diagnostics) {
+  for (auto& diag : m_diagnostics) {
     diag.acknowledged = true;
   }
 }
@@ -382,7 +367,7 @@ void ErrorReporter::navigateTo(u64 id) {
   }
 }
 
-void ErrorReporter::navigateTo(const SourceLocation &location) {
+void ErrorReporter::navigateTo(const SourceLocation& location) {
   if (m_navigationCallback && location.isValid()) {
     m_navigationCallback(location);
   }
@@ -416,21 +401,20 @@ std::vector<DiagnosticFix> ErrorReporter::getFixes(u64 id) const {
 // Listeners
 // ============================================================================
 
-void ErrorReporter::addListener(IDiagnosticListener *listener) {
+void ErrorReporter::addListener(IDiagnosticListener* listener) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void ErrorReporter::removeListener(IDiagnosticListener *listener) {
+void ErrorReporter::removeListener(IDiagnosticListener* listener) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
 // ============================================================================
@@ -452,13 +436,13 @@ void ErrorReporter::endBatch() {
 
   m_inBatch = false;
 
-  for (const auto &diag : m_batchDiagnostics) {
+  for (const auto& diag : m_batchDiagnostics) {
     m_diagnostics.push_back(diag);
   }
 
   trimDiagnostics();
 
-  for (const auto &diag : m_batchDiagnostics) {
+  for (const auto& diag : m_batchDiagnostics) {
     notifyDiagnosticAdded(diag);
   }
 
@@ -470,33 +454,33 @@ void ErrorReporter::endBatch() {
 // Private Methods
 // ============================================================================
 
-void ErrorReporter::notifyDiagnosticAdded(const Diagnostic &diagnostic) {
-  for (auto *listener : m_listeners) {
+void ErrorReporter::notifyDiagnosticAdded(const Diagnostic& diagnostic) {
+  for (auto* listener : m_listeners) {
     listener->onDiagnosticAdded(diagnostic);
   }
 }
 
 void ErrorReporter::notifyDiagnosticRemoved(u64 id) {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onDiagnosticRemoved(id);
   }
 }
 
 void ErrorReporter::notifyCategoryCleared(DiagnosticCategory category) {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onDiagnosticsCleared(category);
   }
 }
 
 void ErrorReporter::notifyAllCleared() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onAllDiagnosticsCleared();
   }
 }
 
 void ErrorReporter::notifySummaryChanged() {
   DiagnosticSummary summary = getSummary();
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onSummaryChanged(summary);
   }
 }
@@ -505,7 +489,7 @@ void ErrorReporter::trimDiagnostics() {
   while (m_diagnostics.size() > m_maxDiagnostics) {
     // Remove oldest acknowledged first, then oldest overall
     auto it = std::find_if(m_diagnostics.begin(), m_diagnostics.end(),
-                           [](const Diagnostic &d) { return d.acknowledged; });
+                           [](const Diagnostic& d) { return d.acknowledged; });
 
     if (it != m_diagnostics.end()) {
       m_diagnostics.erase(it);
@@ -519,7 +503,7 @@ void ErrorReporter::trimDiagnostics() {
 // Utility Functions
 // ============================================================================
 
-const char *severityToString(DiagnosticSeverity severity) {
+const char* severityToString(DiagnosticSeverity severity) {
   switch (severity) {
   case DiagnosticSeverity::Hint:
     return "Hint";
@@ -535,7 +519,7 @@ const char *severityToString(DiagnosticSeverity severity) {
   return "Unknown";
 }
 
-const char *categoryToString(DiagnosticCategory category) {
+const char* categoryToString(DiagnosticCategory category) {
   switch (category) {
   case DiagnosticCategory::General:
     return "General";

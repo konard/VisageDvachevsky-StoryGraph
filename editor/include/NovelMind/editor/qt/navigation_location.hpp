@@ -42,15 +42,14 @@ public:
    * @brief Construct a StoryGraph location
    * @param nodeId The node ID string
    */
-  static NavigationLocation makeStoryGraph(const QString &nodeId);
+  static NavigationLocation makeStoryGraph(const QString& nodeId);
 
   /**
    * @brief Construct a Script location
    * @param filePath The script file path
    * @param lineNumber The line number (1-based, -1 for no specific line)
    */
-  static NavigationLocation makeScript(const QString &filePath,
-                                       int lineNumber = -1);
+  static NavigationLocation makeScript(const QString& filePath, int lineNumber = -1);
 
   /**
    * @brief Parse a location string into a NavigationLocation
@@ -58,7 +57,7 @@ public:
    * "Script:path:line"
    * @return Parsed location, or std::nullopt if parsing failed
    */
-  static std::optional<NavigationLocation> parse(const QString &locationString);
+  static std::optional<NavigationLocation> parse(const QString& locationString);
 
   /**
    * @brief Check if this location is valid

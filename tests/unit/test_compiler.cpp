@@ -12,7 +12,7 @@ using namespace NovelMind::scripting;
 namespace CompilerTestHelpers {
 
 // Helper to compile a script and return the result
-Result<CompiledScript> compileScript(const std::string &source) {
+Result<CompiledScript> compileScript(const std::string& source) {
   Lexer lexer;
   auto tokens = lexer.tokenize(source);
   if (tokens.isError()) {
@@ -30,8 +30,8 @@ Result<CompiledScript> compileScript(const std::string &source) {
 }
 
 // Helper to check if instruction exists in compiled script
-bool hasInstruction(const CompiledScript &script, OpCode opcode) {
-  for (const auto &instr : script.instructions) {
+bool hasInstruction(const CompiledScript& script, OpCode opcode) {
+  for (const auto& instr : script.instructions) {
     if (instr.opcode == opcode) {
       return true;
     }
@@ -40,9 +40,9 @@ bool hasInstruction(const CompiledScript &script, OpCode opcode) {
 }
 
 // Helper to count instructions of a specific opcode
-int countInstructions(const CompiledScript &script, OpCode opcode) {
+int countInstructions(const CompiledScript& script, OpCode opcode) {
   int count = 0;
-  for (const auto &instr : script.instructions) {
+  for (const auto& instr : script.instructions) {
     if (instr.opcode == opcode) {
       count++;
     }
@@ -51,7 +51,7 @@ int countInstructions(const CompiledScript &script, OpCode opcode) {
 }
 
 // Helper to get instruction at index
-const Instruction* getInstructionAt(const CompiledScript &script, size_t index) {
+const Instruction* getInstructionAt(const CompiledScript& script, size_t index) {
   if (index >= script.instructions.size()) {
     return nullptr;
   }
@@ -74,13 +74,13 @@ TEST_CASE("Compiler generates PUSH_INT for integer literals", "[compiler][opcode
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PUSH_INT));
 
   // Find the PUSH_INT instruction
   bool foundCorrectValue = false;
-  for (const auto &instr : script.instructions) {
+  for (const auto& instr : script.instructions) {
     if (instr.opcode == OpCode::PUSH_INT && instr.operand == 42) {
       foundCorrectValue = true;
       break;
@@ -97,7 +97,7 @@ TEST_CASE("Compiler generates PUSH_FLOAT for float literals", "[compiler][opcode
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PUSH_FLOAT));
 }
@@ -110,14 +110,14 @@ TEST_CASE("Compiler generates PUSH_STRING for string literals", "[compiler][opco
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PUSH_STRING));
   REQUIRE(script.stringTable.size() >= 2); // "message" and "Hello, World!"
 
   // Check that "Hello, World!" is in the string table
   bool foundString = false;
-  for (const auto &str : script.stringTable) {
+  for (const auto& str : script.stringTable) {
     if (str == "Hello, World!") {
       foundString = true;
       break;
@@ -135,17 +135,19 @@ TEST_CASE("Compiler generates PUSH_BOOL for boolean literals", "[compiler][opcod
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(countInstructions(script, OpCode::PUSH_BOOL) >= 2);
 
   // Check for true (operand = 1) and false (operand = 0)
   bool foundTrue = false;
   bool foundFalse = false;
-  for (const auto &instr : script.instructions) {
+  for (const auto& instr : script.instructions) {
     if (instr.opcode == OpCode::PUSH_BOOL) {
-      if (instr.operand == 1) foundTrue = true;
-      if (instr.operand == 0) foundFalse = true;
+      if (instr.operand == 1)
+        foundTrue = true;
+      if (instr.operand == 0)
+        foundFalse = true;
     }
   }
   REQUIRE(foundTrue);
@@ -160,7 +162,7 @@ TEST_CASE("Compiler generates PUSH_NULL for null literals", "[compiler][opcode]"
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PUSH_NULL));
 }
@@ -173,7 +175,7 @@ TEST_CASE("Compiler generates ADD for addition", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::ADD));
 }
@@ -186,7 +188,7 @@ TEST_CASE("Compiler generates SUB for subtraction", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::SUB));
 }
@@ -199,7 +201,7 @@ TEST_CASE("Compiler generates MUL for multiplication", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::MUL));
 }
@@ -212,7 +214,7 @@ TEST_CASE("Compiler generates DIV for division", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::DIV));
 }
@@ -225,7 +227,7 @@ TEST_CASE("Compiler generates MOD for modulo", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::MOD));
 }
@@ -238,7 +240,7 @@ TEST_CASE("Compiler generates NEG for unary minus", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::NEG));
 }
@@ -348,7 +350,7 @@ TEST_CASE("Compiler generates LOAD_GLOBAL and STORE_GLOBAL", "[compiler][opcode]
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::STORE_GLOBAL));
   REQUIRE(hasInstruction(script, OpCode::LOAD_GLOBAL));
@@ -362,7 +364,7 @@ TEST_CASE("Compiler generates HALT at program end", "[compiler][opcode]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // HALT should be the last instruction
   REQUIRE(script.instructions.size() > 0);
@@ -377,7 +379,7 @@ TEST_CASE("Compiler generates POP for expression statements", "[compiler][opcode
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::POP));
 }
@@ -394,13 +396,13 @@ TEST_CASE("Compiler generates SHOW_BACKGROUND", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::SHOW_BACKGROUND));
 
   // Check that "forest.png" is in string table
   bool found = false;
-  for (const auto &str : script.stringTable) {
+  for (const auto& str : script.stringTable) {
     if (str == "forest.png") {
       found = true;
       break;
@@ -419,7 +421,7 @@ TEST_CASE("Compiler generates SHOW_CHARACTER", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::SHOW_CHARACTER));
 }
@@ -434,7 +436,7 @@ TEST_CASE("Compiler generates HIDE_CHARACTER", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::HIDE_CHARACTER));
 }
@@ -449,7 +451,7 @@ TEST_CASE("Compiler generates SAY", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::SAY));
 }
@@ -469,7 +471,7 @@ TEST_CASE("Compiler generates CHOICE", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::CHOICE));
 }
@@ -482,7 +484,7 @@ TEST_CASE("Compiler generates PLAY_SOUND", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PLAY_SOUND));
 }
@@ -495,7 +497,7 @@ TEST_CASE("Compiler generates PLAY_MUSIC", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::PLAY_MUSIC));
 }
@@ -508,7 +510,7 @@ TEST_CASE("Compiler generates STOP_MUSIC", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::STOP_MUSIC));
 }
@@ -521,7 +523,7 @@ TEST_CASE("Compiler generates WAIT", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::WAIT));
 }
@@ -534,7 +536,7 @@ TEST_CASE("Compiler generates TRANSITION", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::TRANSITION));
 }
@@ -549,7 +551,7 @@ TEST_CASE("Compiler generates MOVE_CHARACTER", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::MOVE_CHARACTER));
 }
@@ -566,7 +568,7 @@ TEST_CASE("Compiler generates GOTO_SCENE", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::GOTO_SCENE));
 }
@@ -579,7 +581,7 @@ TEST_CASE("Compiler generates SET_FLAG", "[compiler][opcode][vn]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   REQUIRE(hasInstruction(script, OpCode::SET_FLAG));
 }
@@ -598,16 +600,15 @@ TEST_CASE("Compiler resolves jump targets for if statements", "[compiler][jump]"
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have JUMP_IF_NOT for else branch and JUMP to skip else
   REQUIRE(hasInstruction(script, OpCode::JUMP_IF_NOT));
   REQUIRE(hasInstruction(script, OpCode::JUMP));
 
   // Verify jump targets are valid (within instruction range)
-  for (const auto &instr : script.instructions) {
-    if (instr.opcode == OpCode::JUMP ||
-        instr.opcode == OpCode::JUMP_IF ||
+  for (const auto& instr : script.instructions) {
+    if (instr.opcode == OpCode::JUMP || instr.opcode == OpCode::JUMP_IF ||
         instr.opcode == OpCode::JUMP_IF_NOT) {
       REQUIRE(instr.operand <= script.instructions.size());
     }
@@ -626,16 +627,15 @@ TEST_CASE("Compiler resolves jump targets for if-else statements", "[compiler][j
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have JUMP_IF_NOT for else and JUMP to skip else
   REQUIRE(countInstructions(script, OpCode::JUMP_IF_NOT) >= 1);
   REQUIRE(countInstructions(script, OpCode::JUMP) >= 1);
 
   // Verify all jump targets are valid
-  for (const auto &instr : script.instructions) {
-    if (instr.opcode == OpCode::JUMP ||
-        instr.opcode == OpCode::JUMP_IF ||
+  for (const auto& instr : script.instructions) {
+    if (instr.opcode == OpCode::JUMP || instr.opcode == OpCode::JUMP_IF ||
         instr.opcode == OpCode::JUMP_IF_NOT) {
       REQUIRE(instr.operand <= script.instructions.size());
     }
@@ -656,15 +656,14 @@ TEST_CASE("Compiler resolves nested jump targets", "[compiler][jump]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have multiple jump instructions for nested ifs
   REQUIRE(countInstructions(script, OpCode::JUMP_IF_NOT) >= 2);
 
   // All jump targets must be valid
-  for (const auto &instr : script.instructions) {
-    if (instr.opcode == OpCode::JUMP ||
-        instr.opcode == OpCode::JUMP_IF ||
+  for (const auto& instr : script.instructions) {
+    if (instr.opcode == OpCode::JUMP || instr.opcode == OpCode::JUMP_IF ||
         instr.opcode == OpCode::JUMP_IF_NOT) {
       REQUIRE(instr.operand <= script.instructions.size());
     }
@@ -683,7 +682,7 @@ TEST_CASE("Compiler resolves scene labels", "[compiler][jump]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Verify scene entry points are recorded
   REQUIRE(script.sceneEntryPoints.count("first") > 0);
@@ -722,7 +721,7 @@ TEST_CASE("Compiler handles forward references", "[compiler][jump]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // All three scenes should have entry points
   REQUIRE(script.sceneEntryPoints.size() == 3);
@@ -743,7 +742,7 @@ TEST_CASE("Compiler handles backward references", "[compiler][jump]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Both scenes should be accessible
   REQUIRE(script.sceneEntryPoints.count("first") > 0);
@@ -762,17 +761,16 @@ TEST_CASE("Compiler evaluates operator precedence", "[compiler][expression]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should compile in correct order: push 3, push 4, MUL, push 2, ADD
   // Find the sequence: PUSH_INT(3), PUSH_INT(4), MUL
   bool foundCorrectOrder = false;
   for (size_t i = 0; i + 2 < script.instructions.size(); ++i) {
-    if (script.instructions[i].opcode == OpCode::PUSH_INT &&
-        script.instructions[i].operand == 3 &&
-        script.instructions[i+1].opcode == OpCode::PUSH_INT &&
-        script.instructions[i+1].operand == 4 &&
-        script.instructions[i+2].opcode == OpCode::MUL) {
+    if (script.instructions[i].opcode == OpCode::PUSH_INT && script.instructions[i].operand == 3 &&
+        script.instructions[i + 1].opcode == OpCode::PUSH_INT &&
+        script.instructions[i + 1].operand == 4 &&
+        script.instructions[i + 2].opcode == OpCode::MUL) {
       foundCorrectOrder = true;
       break;
     }
@@ -788,20 +786,19 @@ TEST_CASE("Compiler handles parenthesized expressions", "[compiler][expression]"
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should compile with ADD before MUL due to parentheses
   // Find sequence: PUSH_INT(2), PUSH_INT(3), ADD, PUSH_INT(4), MUL
   bool foundCorrectOrder = false;
   for (size_t i = 0; i + 4 < script.instructions.size(); ++i) {
-    if (script.instructions[i].opcode == OpCode::PUSH_INT &&
-        script.instructions[i].operand == 2 &&
-        script.instructions[i+1].opcode == OpCode::PUSH_INT &&
-        script.instructions[i+1].operand == 3 &&
-        script.instructions[i+2].opcode == OpCode::ADD &&
-        script.instructions[i+3].opcode == OpCode::PUSH_INT &&
-        script.instructions[i+3].operand == 4 &&
-        script.instructions[i+4].opcode == OpCode::MUL) {
+    if (script.instructions[i].opcode == OpCode::PUSH_INT && script.instructions[i].operand == 2 &&
+        script.instructions[i + 1].opcode == OpCode::PUSH_INT &&
+        script.instructions[i + 1].operand == 3 &&
+        script.instructions[i + 2].opcode == OpCode::ADD &&
+        script.instructions[i + 3].opcode == OpCode::PUSH_INT &&
+        script.instructions[i + 3].operand == 4 &&
+        script.instructions[i + 4].opcode == OpCode::MUL) {
       foundCorrectOrder = true;
       break;
     }
@@ -817,7 +814,7 @@ TEST_CASE("Compiler handles complex nested expressions", "[compiler][expression]
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have all required opcodes
   REQUIRE(hasInstruction(script, OpCode::ADD));
@@ -882,7 +879,7 @@ TEST_CASE("Compiler handles comparison chains", "[compiler][expression]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have multiple LT comparisons
   REQUIRE(countInstructions(script, OpCode::LT) >= 3);
@@ -902,11 +899,11 @@ TEST_CASE("Compiler deduplicates strings in string table", "[compiler][stringtab
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Count occurrences of "duplicate" in string table
   int duplicateCount = 0;
-  for (const auto &str : script.stringTable) {
+  for (const auto& str : script.stringTable) {
     if (str == "duplicate") {
       duplicateCount++;
     }
@@ -924,11 +921,11 @@ TEST_CASE("Compiler adds variable names to string table", "[compiler][stringtabl
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Variable name should be in string table
   bool found = false;
-  for (const auto &str : script.stringTable) {
+  for (const auto& str : script.stringTable) {
     if (str == "myVariable") {
       found = true;
       break;
@@ -949,13 +946,13 @@ TEST_CASE("Compiler records source mappings", "[compiler][debug]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have source mappings for instructions
   REQUIRE(script.sourceMappings.size() > 0);
 
   // Check that source mappings have valid line numbers
-  for (const auto &[ip, loc] : script.sourceMappings) {
+  for (const auto& [ip, loc] : script.sourceMappings) {
     REQUIRE(loc.line > 0);
     REQUIRE(loc.filePath == "test.nm");
   }
@@ -969,11 +966,11 @@ TEST_CASE("Compiler records scene names in source mappings", "[compiler][debug]"
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Find source mappings with scene name
   bool foundSceneName = false;
-  for (const auto &[ip, loc] : script.sourceMappings) {
+  for (const auto& [ip, loc] : script.sourceMappings) {
     if (loc.sceneName == "myScene") {
       foundSceneName = true;
       break;
@@ -997,7 +994,7 @@ TEST_CASE("Compiler records character declarations", "[compiler][character]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have both characters registered
   REQUIRE(script.characters.size() == 2);
@@ -1020,7 +1017,7 @@ TEST_CASE("Compiler handles empty scene", "[compiler][edge]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have scene entry point
   REQUIRE(script.sceneEntryPoints.count("empty") > 0);
@@ -1045,7 +1042,7 @@ TEST_CASE("Compiler handles multiple scenes", "[compiler][edge]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // All scenes should have entry points
   REQUIRE(script.sceneEntryPoints.size() == 3);
@@ -1084,18 +1081,22 @@ TEST_CASE("Compiler handles choice with multiple options", "[compiler][edge]") {
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have CHOICE instruction
   REQUIRE(hasInstruction(script, OpCode::CHOICE));
 
   // Should have all option strings in string table
   bool found1 = false, found2 = false, found3 = false, found4 = false;
-  for (const auto &str : script.stringTable) {
-    if (str == "Option 1") found1 = true;
-    if (str == "Option 2") found2 = true;
-    if (str == "Option 3") found3 = true;
-    if (str == "Option 4") found4 = true;
+  for (const auto& str : script.stringTable) {
+    if (str == "Option 1")
+      found1 = true;
+    if (str == "Option 2")
+      found2 = true;
+    if (str == "Option 3")
+      found3 = true;
+    if (str == "Option 4")
+      found4 = true;
   }
   REQUIRE(found1);
   REQUIRE(found2);
@@ -1118,7 +1119,7 @@ TEST_CASE("Compiler does NOT perform constant folding", "[compiler][optimization
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should have PUSH_INT for both 2 and 3, followed by ADD
   // (constant folding would optimize this to just PUSH_INT 5)
@@ -1138,7 +1139,7 @@ TEST_CASE("Compiler compiles boolean constant expressions literally", "[compiler
   )");
 
   REQUIRE(result.isOk());
-  const auto &script = result.value();
+  const auto& script = result.value();
 
   // Should emit PUSH_BOOL for both true and false, not fold to just true
   REQUIRE(hasInstruction(script, OpCode::PUSH_BOOL));
@@ -1148,14 +1149,14 @@ TEST_CASE("Compiler compiles boolean constant expressions literally", "[compiler
 #include "NovelMind/scripting/parser.hpp"
 #include <catch2/catch_test_macros.hpp>
 
-using namespace NovelMind;
-using namespace NovelMind::scripting;
+  using namespace NovelMind;
+  using namespace NovelMind::scripting;
 
-// =============================================================================
-// Compiler Tests
-// =============================================================================
+  // =============================================================================
+  // Compiler Tests
+  // =============================================================================
 
-TEST_CASE("Compiler: undefined label produces compilation error", "[compiler]") {
+  TEST_CASE("Compiler: undefined label produces compilation error", "[compiler]") {
     // Test that the compiler produces an error when a goto references an
     // undefined label/scene, as per issue #455
 
@@ -1184,9 +1185,9 @@ scene start {
     std::string errorMsg = result.error();
     REQUIRE(errorMsg.find("Undefined label") != std::string::npos);
     REQUIRE(errorMsg.find("nonexistent_scene") != std::string::npos);
-}
+  }
 
-TEST_CASE("Compiler: undefined label in choice produces compilation error", "[compiler]") {
+  TEST_CASE("Compiler: undefined label in choice produces compilation error", "[compiler]") {
     // Test that the compiler produces an error when a choice option references
     // an undefined label/scene
 
@@ -1216,9 +1217,9 @@ scene start {
     // Error message should mention the undefined label
     std::string errorMsg = result.error();
     REQUIRE(errorMsg.find("Undefined label") != std::string::npos);
-}
+  }
 
-TEST_CASE("Compiler: forward reference resolved correctly", "[compiler]") {
+  TEST_CASE("Compiler: forward reference resolved correctly", "[compiler]") {
     // Test that the compiler correctly resolves forward references to labels
     // that are defined later in the script
 
@@ -1256,15 +1257,15 @@ scene end_scene {
     // The GOTO_SCENE instruction should have been patched with the target address
     bool foundResolvedJump = false;
     for (const auto& instruction : compiled.instructions) {
-        if (instruction.opcode == OpCode::GOTO_SCENE && instruction.operand != 0) {
-            foundResolvedJump = true;
-            break;
-        }
+      if (instruction.opcode == OpCode::GOTO_SCENE && instruction.operand != 0) {
+        foundResolvedJump = true;
+        break;
+      }
     }
     REQUIRE(foundResolvedJump);
-}
+  }
 
-TEST_CASE("Compiler: forward reference in choice resolved correctly", "[compiler]") {
+  TEST_CASE("Compiler: forward reference in choice resolved correctly", "[compiler]") {
     // Test that forward references in choice options are resolved correctly
 
     const char* script = R"(
@@ -1303,9 +1304,9 @@ scene end {
     REQUIRE(compiled.sceneEntryPoints.count("start") > 0);
     REQUIRE(compiled.sceneEntryPoints.count("middle") > 0);
     REQUIRE(compiled.sceneEntryPoints.count("end") > 0);
-}
+  }
 
-TEST_CASE("Compiler: backward reference works correctly", "[compiler]") {
+  TEST_CASE("Compiler: backward reference works correctly", "[compiler]") {
     // Test that backward references (jumping to a previously defined scene) work
 
     const char* script = R"(
@@ -1332,9 +1333,9 @@ scene second {
 
     // Compilation should succeed
     REQUIRE(result.isOk());
-}
+  }
 
-TEST_CASE("Compiler: multiple undefined labels produce multiple errors", "[compiler]") {
+  TEST_CASE("Compiler: multiple undefined labels produce multiple errors", "[compiler]") {
     // Test that multiple undefined labels are all caught and reported
 
     const char* script = R"(
@@ -1362,9 +1363,9 @@ scene start {
     // Check that all errors were collected
     const auto& errors = compiler.getErrors();
     REQUIRE(errors.size() >= 3);
-}
+  }
 
-TEST_CASE("Compiler: error includes source location", "[compiler]") {
+  TEST_CASE("Compiler: error includes source location", "[compiler]") {
     // Test that compilation errors include source location information
 
     const char* script = R"(
@@ -1397,4 +1398,4 @@ scene start {
     REQUIRE(error.location.line > 0);
     // The goto statement is on line 4, so location should reflect that
     REQUIRE(error.location.line == 4);
-}
+  }

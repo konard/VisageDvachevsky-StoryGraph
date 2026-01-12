@@ -42,17 +42,17 @@ enum class SceneTemplateType : uint8_t {
  * @brief Metadata for a scene template
  */
 struct SceneTemplateMetadata {
-  QString id;                      ///< Unique identifier
-  QString name;                    ///< Human-readable display name
-  QString description;             ///< Description of what template contains
-  QString category;                ///< Category for grouping (e.g., "Standard", "Visual Novel")
-  SceneTemplateType type;          ///< Built-in or user-created
-  QString previewPath;             ///< Path to preview image
-  QStringList tags;                ///< Tags for filtering/searching
-  QString author;                  ///< Template author
-  QString version;                 ///< Template version
-  QDateTime created;               ///< Creation timestamp
-  QDateTime modified;              ///< Last modification timestamp
+  QString id;             ///< Unique identifier
+  QString name;           ///< Human-readable display name
+  QString description;    ///< Description of what template contains
+  QString category;       ///< Category for grouping (e.g., "Standard", "Visual Novel")
+  SceneTemplateType type; ///< Built-in or user-created
+  QString previewPath;    ///< Path to preview image
+  QStringList tags;       ///< Tags for filtering/searching
+  QString author;         ///< Template author
+  QString version;        ///< Template version
+  QDateTime created;      ///< Creation timestamp
+  QDateTime modified;     ///< Last modification timestamp
 
   /**
    * @brief Convert metadata to JSON
@@ -62,7 +62,7 @@ struct SceneTemplateMetadata {
   /**
    * @brief Load metadata from JSON
    */
-  static SceneTemplateMetadata fromJson(const QJsonObject &json);
+  static SceneTemplateMetadata fromJson(const QJsonObject& json);
 };
 
 /**
@@ -70,7 +70,7 @@ struct SceneTemplateMetadata {
  */
 struct SceneTemplate {
   SceneTemplateMetadata metadata;
-  SceneDocument content;           ///< The actual scene structure
+  SceneDocument content; ///< The actual scene structure
 
   /**
    * @brief Convert complete template to JSON
@@ -80,7 +80,7 @@ struct SceneTemplate {
   /**
    * @brief Load complete template from JSON
    */
-  static SceneTemplate fromJson(const QJsonObject &json);
+  static SceneTemplate fromJson(const QJsonObject& json);
 };
 
 /**
@@ -107,7 +107,7 @@ class SceneTemplateManager : public QObject {
   Q_OBJECT
 
 public:
-  explicit SceneTemplateManager(QObject *parent = nullptr);
+  explicit SceneTemplateManager(QObject* parent = nullptr);
   ~SceneTemplateManager() override;
 
   // ==========================================================================
@@ -125,7 +125,7 @@ public:
    * @param projectPath Path to project root
    * @return Number of user templates loaded
    */
-  int loadUserTemplates(const QString &projectPath);
+  int loadUserTemplates(const QString& projectPath);
 
   /**
    * @brief Reload all templates (both built-in and user)
@@ -153,7 +153,7 @@ public:
    * @return List of template metadata
    */
   [[nodiscard]] QList<SceneTemplateMetadata>
-  getAvailableTemplates(const QString &category = QString()) const;
+  getAvailableTemplates(const QString& category = QString()) const;
 
   /**
    * @brief Get list of all template categories
@@ -166,38 +166,34 @@ public:
    * @param templateId Template identifier
    * @return Template if found, empty optional otherwise
    */
-  [[nodiscard]] std::optional<SceneTemplate>
-  getTemplate(const QString &templateId) const;
+  [[nodiscard]] std::optional<SceneTemplate> getTemplate(const QString& templateId) const;
 
   /**
    * @brief Get template metadata by ID
    * @param templateId Template identifier
    * @return Metadata if found, empty metadata otherwise
    */
-  [[nodiscard]] SceneTemplateMetadata
-  getTemplateMetadata(const QString &templateId) const;
+  [[nodiscard]] SceneTemplateMetadata getTemplateMetadata(const QString& templateId) const;
 
   /**
    * @brief Check if a template exists
    * @param templateId Template identifier
    * @return true if template is loaded
    */
-  [[nodiscard]] bool hasTemplate(const QString &templateId) const;
+  [[nodiscard]] bool hasTemplate(const QString& templateId) const;
 
   /**
    * @brief Get preview image for a template
    * @param templateId Template identifier
    * @return Preview pixmap, or placeholder if not found
    */
-  [[nodiscard]] QPixmap getTemplatePreview(const QString &templateId) const;
+  [[nodiscard]] QPixmap getTemplatePreview(const QString& templateId) const;
 
   /**
    * @brief Get number of loaded templates
    * @return Template count
    */
-  [[nodiscard]] int templateCount() const {
-    return static_cast<int>(m_templates.size());
-  }
+  [[nodiscard]] int templateCount() const { return static_cast<int>(m_templates.size()); }
 
   // ==========================================================================
   // Template Instantiation
@@ -209,8 +205,8 @@ public:
    * @param sceneId ID for the new scene
    * @return SceneDocument configured from template, or error
    */
-  [[nodiscard]] Result<SceneDocument>
-  instantiateTemplate(const QString &templateId, const QString &sceneId) const;
+  [[nodiscard]] Result<SceneDocument> instantiateTemplate(const QString& templateId,
+                                                          const QString& sceneId) const;
 
   /**
    * @brief Create a scene from template and save to file
@@ -219,9 +215,9 @@ public:
    * @param outputPath Path to save the .nmscene file
    * @return Success or error
    */
-  [[nodiscard]] Result<void>
-  createSceneFromTemplate(const QString &templateId, const QString &sceneId,
-                          const QString &outputPath) const;
+  [[nodiscard]] Result<void> createSceneFromTemplate(const QString& templateId,
+                                                     const QString& sceneId,
+                                                     const QString& outputPath) const;
 
   // ==========================================================================
   // User Template Management
@@ -235,9 +231,9 @@ public:
    * @param projectPath Project to save template in
    * @return ID of saved template, or error
    */
-  [[nodiscard]] Result<QString>
-  saveAsUserTemplate(const SceneDocument &scene, const QString &name,
-                     const QString &description, const QString &projectPath);
+  [[nodiscard]] Result<QString> saveAsUserTemplate(const SceneDocument& scene, const QString& name,
+                                                   const QString& description,
+                                                   const QString& projectPath);
 
   /**
    * @brief Delete a user template
@@ -245,8 +241,8 @@ public:
    * @param projectPath Project containing the template
    * @return Success or error
    */
-  [[nodiscard]] Result<void>
-  deleteUserTemplate(const QString &templateId, const QString &projectPath);
+  [[nodiscard]] Result<void> deleteUserTemplate(const QString& templateId,
+                                                const QString& projectPath);
 
   /**
    * @brief Update an existing user template
@@ -255,9 +251,9 @@ public:
    * @param projectPath Project containing the template
    * @return Success or error
    */
-  [[nodiscard]] Result<void>
-  updateUserTemplate(const QString &templateId, const SceneDocument &scene,
-                     const QString &projectPath);
+  [[nodiscard]] Result<void> updateUserTemplate(const QString& templateId,
+                                                const SceneDocument& scene,
+                                                const QString& projectPath);
 
   // ==========================================================================
   // Configuration
@@ -267,23 +263,19 @@ public:
    * @brief Set path to built-in templates directory
    * @param path Resource path (e.g., ":/templates/scenes")
    */
-  void setBuiltInTemplatesPath(const QString &path);
+  void setBuiltInTemplatesPath(const QString& path);
 
   /**
    * @brief Get path to built-in templates directory
    * @return Resource path
    */
-  [[nodiscard]] QString builtInTemplatesPath() const {
-    return m_builtInTemplatesPath;
-  }
+  [[nodiscard]] QString builtInTemplatesPath() const { return m_builtInTemplatesPath; }
 
   /**
    * @brief Get the user templates directory name
    * @return Relative directory name within projects
    */
-  static constexpr const char *userTemplatesDir() {
-    return "templates/scenes";
-  }
+  static constexpr const char* userTemplatesDir() { return "templates/scenes"; }
 
 signals:
   /**
@@ -295,19 +287,19 @@ signals:
    * @brief Emitted when a new user template is created
    * @param templateId ID of the new template
    */
-  void userTemplateCreated(const QString &templateId);
+  void userTemplateCreated(const QString& templateId);
 
   /**
    * @brief Emitted when a user template is deleted
    * @param templateId ID of the deleted template
    */
-  void userTemplateDeleted(const QString &templateId);
+  void userTemplateDeleted(const QString& templateId);
 
   /**
    * @brief Emitted when a user template is updated
    * @param templateId ID of the updated template
    */
-  void userTemplateUpdated(const QString &templateId);
+  void userTemplateUpdated(const QString& templateId);
 
 private:
   /**
@@ -316,7 +308,7 @@ private:
    * @param type Template type (built-in or user)
    * @return Loaded template, or nullopt on failure
    */
-  std::optional<SceneTemplate> loadTemplateFromFile(const QString &filePath,
+  std::optional<SceneTemplate> loadTemplateFromFile(const QString& filePath,
                                                     SceneTemplateType type);
 
   /**
@@ -324,7 +316,7 @@ private:
    * @param name Template name
    * @return Sanitized ID
    */
-  QString generateTemplateId(const QString &name) const;
+  QString generateTemplateId(const QString& name) const;
 
   /**
    * @brief Create built-in templates programmatically
@@ -362,14 +354,14 @@ private:
    * @param templateName Name to display on preview
    * @return Generated preview pixmap
    */
-  QPixmap generatePlaceholderPreview(const QString &templateName) const;
+  QPixmap generatePlaceholderPreview(const QString& templateName) const;
 
   QHash<QString, SceneTemplate> m_templates; ///< Loaded templates by ID
   QHash<QString, QPixmap> m_previewCache;    ///< Cached preview images
   QString m_builtInTemplatesPath = ":/templates/scenes";
   QString m_currentProjectPath;
 
-  static constexpr const char *TEMPLATE_FILE_EXTENSION = ".nmscene_template";
+  static constexpr const char* TEMPLATE_FILE_EXTENSION = ".nmscene_template";
   static constexpr int PREVIEW_WIDTH = 256;
   static constexpr int PREVIEW_HEIGHT = 144;
 };

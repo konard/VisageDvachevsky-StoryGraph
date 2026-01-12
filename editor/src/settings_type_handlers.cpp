@@ -17,7 +17,7 @@ namespace NovelMind::editor {
 
 namespace detail {
 
-std::string escapeJson(const std::string &str) {
+std::string escapeJson(const std::string& str) {
   std::string result;
   for (char c : str) {
     switch (c) {
@@ -44,7 +44,7 @@ std::string escapeJson(const std::string &str) {
   return result;
 }
 
-std::string unescapeJson(const std::string &str) {
+std::string unescapeJson(const std::string& str) {
   std::string result;
   bool escape = false;
   for (char c : str) {
@@ -79,9 +79,9 @@ std::string unescapeJson(const std::string &str) {
 // Type Conversion Functions
 // ============================================================================
 
-std::string settingValueToString(const SettingValue &value) {
+std::string settingValueToString(const SettingValue& value) {
   return std::visit(
-      [](auto &&arg) -> std::string {
+      [](auto&& arg) -> std::string {
         using T = std::decay_t<decltype(arg)>;
         if constexpr (std::is_same_v<T, bool>) {
           return arg ? "true" : "false";
@@ -106,8 +106,7 @@ std::string settingValueToString(const SettingValue &value) {
       value);
 }
 
-std::optional<SettingValue> stringToSettingValue(const std::string &str,
-                                                 SettingType type) {
+std::optional<SettingValue> stringToSettingValue(const std::string& str, SettingType type) {
   try {
     switch (type) {
     case SettingType::Bool:
@@ -131,7 +130,7 @@ std::optional<SettingValue> stringToSettingValue(const std::string &str,
   return std::nullopt;
 }
 
-const char *settingTypeToString(SettingType type) {
+const char* settingTypeToString(SettingType type) {
   switch (type) {
   case SettingType::Bool:
     return "Bool";
@@ -157,7 +156,7 @@ const char *settingTypeToString(SettingType type) {
   return "Unknown";
 }
 
-const char *settingScopeToString(SettingScope scope) {
+const char* settingScopeToString(SettingScope scope) {
   switch (scope) {
   case SettingScope::User:
     return "User (Editor Preferences)";

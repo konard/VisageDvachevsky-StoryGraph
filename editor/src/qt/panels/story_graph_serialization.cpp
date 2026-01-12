@@ -24,17 +24,17 @@ void SyncToScriptWorker::process() {
       break;
     }
 
-    const auto &item = m_items.at(i);
+    const auto& item = m_items.at(i);
 
     // Perform the actual sync (file I/O in background thread)
-    bool success = detail::updateSceneSayStatement(
-        item.sceneId, item.scriptPath, item.speaker, item.dialogueText);
+    bool success = detail::updateSceneSayStatement(item.sceneId, item.scriptPath, item.speaker,
+                                                   item.dialogueText);
 
     if (success) {
       ++result.nodesSynced;
     } else {
-      result.syncErrors << tr("Failed to sync node '%1' to '%2'")
-                               .arg(item.sceneId, item.scriptPath);
+      result.syncErrors
+          << tr("Failed to sync node '%1' to '%2'").arg(item.sceneId, item.scriptPath);
     }
 
     // Report progress
@@ -44,13 +44,13 @@ void SyncToScriptWorker::process() {
   emit finished(result);
 }
 
-void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
+void syncGraphToScript(NMStoryGraphPanel* panel, QWidget* parent) {
   // Issue #82: Sync Story Graph data to NMScript files
   // Issue #96: Run sync asynchronously to prevent UI freeze
   // This ensures that visual edits made in the Story Graph are persisted
   // to the authoritative NMScript source files without blocking the UI.
 
-  auto *scene = panel->graphScene();
+  auto* scene = panel->graphScene();
   if (!scene) {
     return;
   }
@@ -59,8 +59,8 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
   QList<SyncItem> syncItems;
   int nodesSkipped = 0;
 
-  for (auto *item : scene->items()) {
-    auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item);
+  for (auto* item : scene->items()) {
+    auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item);
     if (!node) {
       continue;
     }
@@ -89,19 +89,17 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
 
   // If nothing to sync, show message immediately
   if (syncItems.isEmpty()) {
-    QString message =
-        QObject::tr("No nodes needed synchronization.\n"
-                    "(%1 node(s) skipped - no script or empty content)")
-            .arg(nodesSkipped);
-    NMMessageDialog::showInfo(parent, QObject::tr("Sync Graph to Script"),
-                              message);
+    QString message = QObject::tr("No nodes needed synchronization.\n"
+                                  "(%1 node(s) skipped - no script or empty content)")
+                          .arg(nodesSkipped);
+    NMMessageDialog::showInfo(parent, QObject::tr("Sync Graph to Script"), message);
     return;
   }
 
   // Create progress dialog (Issue #96: keep UI responsive)
-  auto *progressDialog = new QProgressDialog(
-      QObject::tr("Synchronizing nodes to scripts..."),
-      QObject::tr("Cancel"), 0, static_cast<int>(syncItems.size()), parent);
+  auto* progressDialog =
+      new QProgressDialog(QObject::tr("Synchronizing nodes to scripts..."), QObject::tr("Cancel"),
+                          0, static_cast<int>(syncItems.size()), parent);
   progressDialog->setWindowModality(Qt::WindowModal);
   progressDialog->setMinimumDuration(0); // Show immediately
   progressDialog->setValue(0);
@@ -115,32 +113,29 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
   auto cancelled = std::make_shared<std::atomic<bool>>(false);
 
   // Create worker thread
-  auto *workerThread = new QThread(parent);
-  auto *worker = new SyncToScriptWorker(syncItems, cancelled);
+  auto* workerThread = new QThread(parent);
+  auto* worker = new SyncToScriptWorker(syncItems, cancelled);
   worker->moveToThread(workerThread);
 
   // Connect cancel button to set cancellation flag
   QObject::connect(progressDialog, &QProgressDialog::canceled, parent,
                    [cancelled, progressDialog]() {
                      cancelled->store(true);
-                     progressDialog->setLabelText(
-                         QObject::tr("Cancelling..."));
+                     progressDialog->setLabelText(QObject::tr("Cancelling..."));
                    });
 
   // Connect signals for progress updates
-  QObject::connect(
-      worker, &SyncToScriptWorker::progressUpdated, progressDialog,
-      [progressDialog](int current, int total) {
-        progressDialog->setValue(current);
-        progressDialog->setLabelText(
-            QObject::tr("Synchronizing node %1 of %2...").arg(current).arg(total));
-      });
+  QObject::connect(worker, &SyncToScriptWorker::progressUpdated, progressDialog,
+                   [progressDialog](int current, int total) {
+                     progressDialog->setValue(current);
+                     progressDialog->setLabelText(
+                         QObject::tr("Synchronizing node %1 of %2...").arg(current).arg(total));
+                   });
 
   // Connect finished signal to handle results
   QObject::connect(
       worker, &SyncToScriptWorker::finished, parent,
-      [panel, progressDialog, workerThread, worker,
-       initialSkipped](const SyncResult &result) {
+      [panel, progressDialog, workerThread, worker, initialSkipped](const SyncResult& result) {
         progressDialog->close();
         progressDialog->deleteLater();
 
@@ -157,20 +152,20 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
         if (result.syncErrors.isEmpty()) {
           if (result.nodesSynced > 0) {
             message = QObject::tr("Successfully synchronized %1 node(s) to NMScript "
-                             "files.\n"
-                             "(%2 node(s) skipped - no script or empty content)")
+                                  "files.\n"
+                                  "(%2 node(s) skipped - no script or empty content)")
                           .arg(result.nodesSynced)
                           .arg(totalSkipped);
-            qDebug() << "[StoryGraph] Sync to Script:" << result.nodesSynced
-                     << "synced," << totalSkipped << "skipped";
+            qDebug() << "[StoryGraph] Sync to Script:" << result.nodesSynced << "synced,"
+                     << totalSkipped << "skipped";
           } else {
             message = QObject::tr("No nodes needed synchronization.\n"
-                             "(%1 node(s) skipped - no script or empty content)")
+                                  "(%1 node(s) skipped - no script or empty content)")
                           .arg(totalSkipped);
           }
         } else {
           message = QObject::tr("Synchronization completed with errors:\n\n%1\n\n"
-                           "(%2 node(s) synced, %3 failed)")
+                                "(%2 node(s) synced, %3 failed)")
                         .arg(result.syncErrors.join("\n"))
                         .arg(result.nodesSynced)
                         .arg(result.syncErrors.size());
@@ -178,46 +173,40 @@ void syncGraphToScript(NMStoryGraphPanel *panel, QWidget *parent) {
         }
 
         // Show notification (non-blocking info dialog)
-        NMMessageDialog::showInfo(panel, QObject::tr("Sync Graph to Script"),
-                                  message);
+        NMMessageDialog::showInfo(panel, QObject::tr("Sync Graph to Script"), message);
       });
 
   // Connect thread started signal to start worker
-  QObject::connect(workerThread, &QThread::started, worker,
-                   &SyncToScriptWorker::process);
+  QObject::connect(workerThread, &QThread::started, worker, &SyncToScriptWorker::process);
 
   // Start the worker thread
   workerThread->start();
 }
 
-void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
+void syncScriptToGraph(NMStoryGraphPanel* panel, QWidget* parent) {
   // Issue #127: Sync NMScript files to Story Graph
   // This parses .nms script files and creates/updates graph nodes
 
-  auto *scene = panel->graphScene();
+  auto* scene = panel->graphScene();
   if (!scene) {
-    NMMessageDialog::showWarning(
-        parent, QObject::tr("Sync Script to Graph"),
-        QObject::tr("Story Graph scene is not initialized."));
+    NMMessageDialog::showWarning(parent, QObject::tr("Sync Script to Graph"),
+                                 QObject::tr("Story Graph scene is not initialized."));
     return;
   }
 
   // Get the scripts folder path
-  const auto &pm = ProjectManager::instance();
+  const auto& pm = ProjectManager::instance();
   if (!pm.hasOpenProject()) {
-    NMMessageDialog::showWarning(
-        parent, QObject::tr("Sync Script to Graph"),
-        QObject::tr("No project is currently open."));
+    NMMessageDialog::showWarning(parent, QObject::tr("Sync Script to Graph"),
+                                 QObject::tr("No project is currently open."));
     return;
   }
 
-  const QString scriptsPath =
-      QString::fromStdString(pm.getFolderPath(ProjectFolder::Scripts));
+  const QString scriptsPath = QString::fromStdString(pm.getFolderPath(ProjectFolder::Scripts));
 
   if (scriptsPath.isEmpty()) {
-    NMMessageDialog::showWarning(
-        parent, QObject::tr("Sync Script to Graph"),
-        QObject::tr("Could not find scripts folder in project."));
+    NMMessageDialog::showWarning(parent, QObject::tr("Sync Script to Graph"),
+                                 QObject::tr("Could not find scripts folder in project."));
     return;
   }
 
@@ -232,16 +221,15 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
 
   // Find all .nms files recursively
   QStringList nmsFiles;
-  QDirIterator it(scriptsPath, QStringList() << "*.nms",
-                  QDir::Files | QDir::Readable, QDirIterator::Subdirectories);
+  QDirIterator it(scriptsPath, QStringList() << "*.nms", QDir::Files | QDir::Readable,
+                  QDirIterator::Subdirectories);
   while (it.hasNext()) {
     nmsFiles.append(it.next());
   }
 
   if (nmsFiles.isEmpty()) {
-    NMMessageDialog::showInfo(
-        parent, QObject::tr("Sync Script to Graph"),
-        QObject::tr("No .nms script files found in:\n%1").arg(scriptsPath));
+    NMMessageDialog::showInfo(parent, QObject::tr("Sync Script to Graph"),
+                              QObject::tr("No .nms script files found in:\n%1").arg(scriptsPath));
     return;
   }
 
@@ -249,8 +237,8 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
   auto result = NMMessageDialog::showQuestion(
       parent, QObject::tr("Sync Script to Graph"),
       QObject::tr("This will parse %1 script file(s) and update the Story Graph.\n\n"
-             "Existing graph content will be replaced.\n\n"
-             "Do you want to continue?")
+                  "Existing graph content will be replaced.\n\n"
+                  "Do you want to continue?")
           .arg(nmsFiles.size()),
       {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
 
@@ -266,13 +254,13 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
   int parseErrors = 0;
   QStringList errorMessages;
 
-  for (const QString &filePath : nmsFiles) {
+  for (const QString& filePath : nmsFiles) {
     detail::ParseResult parseResult = detail::parseNMScriptFile(filePath);
 
     if (!parseResult.success) {
       ++parseErrors;
-      errorMessages.append(QString("%1: %2").arg(
-          QFileInfo(filePath).fileName(), parseResult.errorMessage));
+      errorMessages.append(
+          QString("%1: %2").arg(QFileInfo(filePath).fileName(), parseResult.errorMessage));
       continue;
     }
 
@@ -290,11 +278,9 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
   if (allNodes.isEmpty()) {
     QString message = QObject::tr("No scenes found in script files.");
     if (!errorMessages.isEmpty()) {
-      message +=
-          QObject::tr("\n\nParse errors:\n") + errorMessages.join("\n");
+      message += QObject::tr("\n\nParse errors:\n") + errorMessages.join("\n");
     }
-    NMMessageDialog::showWarning(parent,
-                                 QObject::tr("Sync Script to Graph"), message);
+    NMMessageDialog::showWarning(parent, QObject::tr("Sync Script to Graph"), message);
     return;
   }
 
@@ -303,13 +289,13 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
   scene->clearGraph();
 
   // Create nodes from parsed data
-  QHash<QString, NMGraphNodeItem *> nodeMap;
+  QHash<QString, NMGraphNodeItem*> nodeMap;
   int col = 0;
   int row = 0;
   const qreal horizontalSpacing = 260.0;
   const qreal verticalSpacing = 140.0;
 
-  for (const detail::ParsedNode &parsedNode : allNodes) {
+  for (const detail::ParsedNode& parsedNode : allNodes) {
     // Calculate default position (grid layout)
     const QPointF defaultPos(col * horizontalSpacing, row * verticalSpacing);
     ++col;
@@ -324,8 +310,7 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
       nodeType = "Scene";
     }
 
-    NMGraphNodeItem *node =
-        scene->addNode(parsedNode.id, nodeType, defaultPos, 0, parsedNode.id);
+    NMGraphNodeItem* node = scene->addNode(parsedNode.id, nodeType, defaultPos, 0, parsedNode.id);
 
     if (!node) {
       continue;
@@ -345,9 +330,7 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
 
       // Build choice targets mapping
       QHash<QString, QString> choiceTargets;
-      for (int i = 0;
-           i < parsedNode.choices.size() && i < parsedNode.targets.size();
-           ++i) {
+      for (int i = 0; i < parsedNode.choices.size() && i < parsedNode.targets.size(); ++i) {
         choiceTargets.insert(parsedNode.choices[i], parsedNode.targets[i]);
       }
       node->setChoiceTargets(choiceTargets);
@@ -367,9 +350,9 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
 
   // Create connections from edges
   int connectionsCreated = 0;
-  for (const auto &edge : allEdges) {
-    NMGraphNodeItem *fromNode = nodeMap.value(edge.first);
-    NMGraphNodeItem *toNode = nodeMap.value(edge.second);
+  for (const auto& edge : allEdges) {
+    NMGraphNodeItem* fromNode = nodeMap.value(edge.first);
+    NMGraphNodeItem* toNode = nodeMap.value(edge.second);
 
     if (fromNode && toNode) {
       // Check if connection already exists
@@ -381,19 +364,17 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
   }
 
   // Fit view to content
-  auto *view = panel->graphView();
+  auto* view = panel->graphView();
   if (view && !scene->nodes().isEmpty()) {
-    view->fitInView(scene->itemsBoundingRect().adjusted(-50, -50, 50, 50),
-                    Qt::KeepAspectRatio);
+    view->fitInView(scene->itemsBoundingRect().adjusted(-50, -50, 50, 50), Qt::KeepAspectRatio);
   }
 
   // Show result
-  QString message =
-      QObject::tr("Successfully imported %1 node(s) with %2 connection(s) from %3 "
-             "file(s).")
-          .arg(allNodes.size())
-          .arg(connectionsCreated)
-          .arg(filesProcessed);
+  QString message = QObject::tr("Successfully imported %1 node(s) with %2 connection(s) from %3 "
+                                "file(s).")
+                        .arg(allNodes.size())
+                        .arg(connectionsCreated)
+                        .arg(filesProcessed);
 
   if (parseErrors > 0) {
     message += QObject::tr("\n\n%1 file(s) had parse errors:\n%2")
@@ -401,12 +382,10 @@ void syncScriptToGraph(NMStoryGraphPanel *panel, QWidget *parent) {
                    .arg(errorMessages.join("\n"));
   }
 
-  qDebug() << "[StoryGraph] Sync Script to Graph completed:" << allNodes.size()
-           << "nodes," << connectionsCreated << "connections from"
-           << filesProcessed << "files";
+  qDebug() << "[StoryGraph] Sync Script to Graph completed:" << allNodes.size() << "nodes,"
+           << connectionsCreated << "connections from" << filesProcessed << "files";
 
-  NMMessageDialog::showInfo(parent, QObject::tr("Sync Script to Graph"),
-                            message);
+  NMMessageDialog::showInfo(parent, QObject::tr("Sync Script to Graph"), message);
 
   // Note: Entry scene and layout saving is handled by the panel
 }

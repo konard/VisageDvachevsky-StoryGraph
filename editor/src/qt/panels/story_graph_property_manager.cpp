@@ -10,11 +10,9 @@
 
 namespace NovelMind::editor::qt::property_manager {
 
-void applyNodePropertyChange(NMStoryGraphPanel *panel,
-                             const QString &nodeIdString,
-                             const QString &propertyName,
-                             const QString &newValue) {
-  auto *node = panel->findNodeByIdString(nodeIdString);
+void applyNodePropertyChange(NMStoryGraphPanel* panel, const QString& nodeIdString,
+                             const QString& propertyName, const QString& newValue) {
+  auto* node = panel->findNodeByIdString(nodeIdString);
   if (!node) {
     return;
   }
@@ -27,8 +25,8 @@ void applyNodePropertyChange(NMStoryGraphPanel *panel,
     node->setScriptPath(newValue);
     QString scriptPath = newValue;
     if (QFileInfo(newValue).isRelative()) {
-      scriptPath = QString::fromStdString(
-          ProjectManager::instance().toAbsolutePath(newValue.toStdString()));
+      scriptPath =
+          QString::fromStdString(ProjectManager::instance().toAbsolutePath(newValue.toStdString()));
     }
     QFile scriptFile(scriptPath);
     if (!scriptPath.isEmpty() && !scriptFile.exists()) {
@@ -58,16 +56,16 @@ void applyNodePropertyChange(NMStoryGraphPanel *panel,
     // Sync speaker change to the .nms script file
     const QString scriptPath = detail::resolveScriptPath(node);
     if (!scriptPath.isEmpty()) {
-      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath,
-                                      newValue, node->dialogueText());
+      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath, newValue,
+                                      node->dialogueText());
     }
   } else if (propertyName == "text") {
     node->setDialogueText(newValue);
     // Sync text change to the .nms script file
     const QString scriptPath = detail::resolveScriptPath(node);
     if (!scriptPath.isEmpty()) {
-      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath,
-                                      node->dialogueSpeaker(), newValue);
+      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath, node->dialogueSpeaker(),
+                                      newValue);
     }
   } else if (propertyName == "choices") {
     node->setChoiceOptions(detail::splitChoiceLines(newValue));
@@ -79,7 +77,7 @@ void applyNodePropertyChange(NMStoryGraphPanel *panel,
     // Parse "OptionText=TargetNodeId" format
     QHash<QString, QString> targets;
     const QStringList lines = detail::splitChoiceLines(newValue);
-    for (const QString &line : lines) {
+    for (const QString& line : lines) {
       qsizetype eqPos = line.indexOf('=');
       if (eqPos > 0) {
         QString option = line.left(eqPos).trimmed();
@@ -94,7 +92,7 @@ void applyNodePropertyChange(NMStoryGraphPanel *panel,
     // Parse "OutputLabel=TargetNodeId" format
     QHash<QString, QString> targets;
     const QStringList lines = detail::splitChoiceLines(newValue);
-    for (const QString &line : lines) {
+    for (const QString& line : lines) {
       qsizetype eqPos = line.indexOf('=');
       if (eqPos > 0) {
         QString output = line.left(eqPos).trimmed();
@@ -110,15 +108,14 @@ void applyNodePropertyChange(NMStoryGraphPanel *panel,
   // Note: Layout saving is handled by the panel
 }
 
-void handleNodesMoved(NMStoryGraphPanel *panel,
-                      const QVector<GraphNodeMove> &moves) {
+void handleNodesMoved(NMStoryGraphPanel* panel, const QVector<GraphNodeMove>& moves) {
   // Note: Undo command handling is done by the panel
   // This function is for layout updates only
   // Layout update is handled by the panel
 }
 
-void handleLocalePreviewChange(NMStoryGraphPanel *panel, int index) {
-  auto *scene = panel->graphScene();
+void handleLocalePreviewChange(NMStoryGraphPanel* panel, int index) {
+  auto* scene = panel->graphScene();
   if (!scene) {
     return;
   }
@@ -127,8 +124,8 @@ void handleLocalePreviewChange(NMStoryGraphPanel *panel, int index) {
   // Note: Locale retrieval is handled by the panel
 
   // Update dialogue nodes to show translated text or highlight missing
-  for (auto *item : scene->items()) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : scene->items()) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       if (node->isDialogueNode()) {
         // Localization status update handled by panel based on locale
         node->update();
@@ -137,16 +134,16 @@ void handleLocalePreviewChange(NMStoryGraphPanel *panel, int index) {
   }
 }
 
-void handleExportDialogue(NMStoryGraphPanel *panel) {
-  auto *scene = panel->graphScene();
+void handleExportDialogue(NMStoryGraphPanel* panel) {
+  auto* scene = panel->graphScene();
   if (!scene) {
     return;
   }
 
   // Collect all dialogue nodes and their text
   QStringList dialogueEntries;
-  for (auto *item : scene->items()) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : scene->items()) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       if (node->isDialogueNode() && !node->localizationKey().isEmpty()) {
         // Format: key,speaker,text
         QString line = QString("\"%1\",\"%2\",\"%3\"")
@@ -163,45 +160,38 @@ void handleExportDialogue(NMStoryGraphPanel *panel) {
     return;
   }
 
-  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size()
-           << "dialogue entries";
+  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size() << "dialogue entries";
 
   // Signal emission handled by panel
 }
 
-void handleGenerateLocalizationKeys(NMStoryGraphPanel *panel) {
-  auto *scene = panel->graphScene();
+void handleGenerateLocalizationKeys(NMStoryGraphPanel* panel) {
+  auto* scene = panel->graphScene();
   if (!scene) {
     return;
   }
 
   int keysGenerated = 0;
 
-  for (auto *item : scene->items()) {
-    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+  for (auto* item : scene->items()) {
+    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
       // Generate keys for dialogue nodes that don't have one
       if (node->isDialogueNode() && node->localizationKey().isEmpty()) {
         // Generate key in format: scene.{sceneId}.dialogue.{nodeId}
-        QString sceneId =
-            node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
-        QString key =
-            QString("scene.%1.dialogue.%2").arg(sceneId).arg(node->nodeId());
+        QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
+        QString key = QString("scene.%1.dialogue.%2").arg(sceneId).arg(node->nodeId());
         node->setLocalizationKey(key);
         ++keysGenerated;
       }
 
       // Generate keys for choice nodes
       if (node->nodeType().compare("Choice", Qt::CaseInsensitive) == 0) {
-        QString sceneId =
-            node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
-        const QStringList &options = node->choiceOptions();
+        QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
+        const QStringList& options = node->choiceOptions();
         for (int i = 0; i < options.size(); ++i) {
           // Each choice option gets its own key
           // Keys are stored as a property on the node
-          QString key = QString("scene.%1.choice.%2.%3")
-                            .arg(sceneId)
-                            .arg(node->nodeId())
-                            .arg(i);
+          QString key = QString("scene.%1.choice.%2.%3").arg(sceneId).arg(node->nodeId()).arg(i);
           // Store choice keys - would need to extend node to store multiple
           // keys
           ++keysGenerated;
@@ -212,8 +202,7 @@ void handleGenerateLocalizationKeys(NMStoryGraphPanel *panel) {
     }
   }
 
-  qDebug() << "[StoryGraph] Generated" << keysGenerated
-           << "localization keys";
+  qDebug() << "[StoryGraph] Generated" << keysGenerated << "localization keys";
 
   // Layout saving handled by panel
 }

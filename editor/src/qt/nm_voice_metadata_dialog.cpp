@@ -24,10 +24,10 @@
 namespace NovelMind::editor::qt {
 
 NMVoiceMetadataDialog::NMVoiceMetadataDialog(
-    QWidget *parent, const QString &lineId, const QStringList &currentTags,
-    const QString &currentNotes, const QString &currentSpeaker,
-    const QString &currentScene, const QStringList &availableSpeakers,
-    const QStringList &availableScenes, const QStringList &suggestedTags)
+    QWidget* parent, const QString& lineId, const QStringList& currentTags,
+    const QString& currentNotes, const QString& currentSpeaker, const QString& currentScene,
+    const QStringList& availableSpeakers, const QStringList& availableScenes,
+    const QStringList& suggestedTags)
     : QDialog(parent) {
   setWindowTitle(tr("Edit Voice Line Metadata"));
   setModal(true);
@@ -36,31 +36,31 @@ NMVoiceMetadataDialog::NMVoiceMetadataDialog(
   setMinimumSize(450, 500);
   resize(500, 550);
 
-  buildUi(lineId, currentTags, currentNotes, currentSpeaker, currentScene,
-          availableSpeakers, availableScenes, suggestedTags);
+  buildUi(lineId, currentTags, currentNotes, currentSpeaker, currentScene, availableSpeakers,
+          availableScenes, suggestedTags);
 
   detail::applyDialogFrameStyle(this);
   detail::animateDialogIn(this);
 }
 
-void NMVoiceMetadataDialog::buildUi(
-    const QString &lineId, const QStringList &currentTags,
-    const QString &currentNotes, const QString &currentSpeaker,
-    const QString &currentScene, const QStringList &availableSpeakers,
-    const QStringList &availableScenes, const QStringList &suggestedTags) {
-
-  auto *mainLayout = new QVBoxLayout(this);
+void NMVoiceMetadataDialog::buildUi(const QString& lineId, const QStringList& currentTags,
+                                    const QString& currentNotes, const QString& currentSpeaker,
+                                    const QString& currentScene,
+                                    const QStringList& availableSpeakers,
+                                    const QStringList& availableScenes,
+                                    const QStringList& suggestedTags) {
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(16, 16, 16, 16);
   mainLayout->setSpacing(12);
 
   // Line ID header (read-only)
-  auto *headerLabel = new QLabel(tr("Line ID: <b>%1</b>").arg(lineId), this);
+  auto* headerLabel = new QLabel(tr("Line ID: <b>%1</b>").arg(lineId), this);
   headerLabel->setObjectName("NMDialogHeader");
   mainLayout->addWidget(headerLabel);
 
   // Speaker and Scene section
-  auto *identityGroup = new QGroupBox(tr("Identity"), this);
-  auto *identityLayout = new QFormLayout(identityGroup);
+  auto* identityGroup = new QGroupBox(tr("Identity"), this);
+  auto* identityLayout = new QFormLayout(identityGroup);
   identityLayout->setSpacing(8);
 
   m_speakerCombo = new QComboBox(this);
@@ -98,12 +98,12 @@ void NMVoiceMetadataDialog::buildUi(
   mainLayout->addWidget(identityGroup);
 
   // Tags section
-  auto *tagsGroup = new QGroupBox(tr("Tags"), this);
-  auto *tagsLayout = new QVBoxLayout(tagsGroup);
+  auto* tagsGroup = new QGroupBox(tr("Tags"), this);
+  auto* tagsLayout = new QVBoxLayout(tagsGroup);
   tagsLayout->setSpacing(8);
 
   // Tag input row
-  auto *tagInputLayout = new QHBoxLayout();
+  auto* tagInputLayout = new QHBoxLayout();
   m_tagInput = new QLineEdit(this);
   m_tagInput->setPlaceholderText(tr("Enter a tag and press Add..."));
   tagInputLayout->addWidget(m_tagInput, 1);
@@ -113,18 +113,15 @@ void NMVoiceMetadataDialog::buildUi(
   m_addTagBtn = new QPushButton(tr("Add"), this);
   m_addTagBtn->setIcon(iconMgr.getIcon("add", 16));
   m_addTagBtn->setObjectName("NMSecondaryButton");
-  connect(m_addTagBtn, &QPushButton::clicked, this,
-          &NMVoiceMetadataDialog::onAddTag);
-  connect(m_tagInput, &QLineEdit::returnPressed, this,
-          &NMVoiceMetadataDialog::onAddTag);
+  connect(m_addTagBtn, &QPushButton::clicked, this, &NMVoiceMetadataDialog::onAddTag);
+  connect(m_tagInput, &QLineEdit::returnPressed, this, &NMVoiceMetadataDialog::onAddTag);
   tagInputLayout->addWidget(m_addTagBtn);
 
   m_removeTagBtn = new QPushButton(tr("Remove"), this);
   m_removeTagBtn->setIcon(iconMgr.getIcon("remove", 16));
   m_removeTagBtn->setObjectName("NMSecondaryButton");
   m_removeTagBtn->setEnabled(false);
-  connect(m_removeTagBtn, &QPushButton::clicked, this,
-          &NMVoiceMetadataDialog::onRemoveTag);
+  connect(m_removeTagBtn, &QPushButton::clicked, this, &NMVoiceMetadataDialog::onRemoveTag);
   tagInputLayout->addWidget(m_removeTagBtn);
 
   tagsLayout->addLayout(tagInputLayout);
@@ -134,31 +131,29 @@ void NMVoiceMetadataDialog::buildUi(
   m_tagList->setMaximumHeight(100);
   m_tagList->setSelectionMode(QAbstractItemView::SingleSelection);
   m_tagList->addItems(currentTags);
-  connect(m_tagList, &QListWidget::itemSelectionChanged, this, [this]() {
-    m_removeTagBtn->setEnabled(!m_tagList->selectedItems().isEmpty());
-  });
+  connect(m_tagList, &QListWidget::itemSelectionChanged, this,
+          [this]() { m_removeTagBtn->setEnabled(!m_tagList->selectedItems().isEmpty()); });
   tagsLayout->addWidget(m_tagList);
 
   // Tag suggestions (if any)
   if (!suggestedTags.isEmpty()) {
-    auto *suggestionsLabel = new QLabel(tr("Suggestions:"), this);
+    auto* suggestionsLabel = new QLabel(tr("Suggestions:"), this);
     suggestionsLabel->setStyleSheet("color: #888;");
     tagsLayout->addWidget(suggestionsLabel);
 
     m_suggestionsWidget = new QWidget(this);
-    auto *suggestionsLayout = new QHBoxLayout(m_suggestionsWidget);
+    auto* suggestionsLayout = new QHBoxLayout(m_suggestionsWidget);
     suggestionsLayout->setContentsMargins(0, 0, 0, 0);
     suggestionsLayout->setSpacing(4);
 
-    for (const QString &tag : suggestedTags) {
+    for (const QString& tag : suggestedTags) {
       if (!currentTags.contains(tag)) {
-        auto *suggBtn = new QPushButton(tag, m_suggestionsWidget);
+        auto* suggBtn = new QPushButton(tag, m_suggestionsWidget);
         suggBtn->setObjectName("NMTagButton");
         suggBtn->setFlat(true);
-        suggBtn->setStyleSheet(
-            "QPushButton { background: #333; border: 1px solid #555; "
-            "border-radius: 4px; padding: 2px 8px; color: #aaa; } "
-            "QPushButton:hover { background: #444; color: #fff; }");
+        suggBtn->setStyleSheet("QPushButton { background: #333; border: 1px solid #555; "
+                               "border-radius: 4px; padding: 2px 8px; color: #aaa; } "
+                               "QPushButton:hover { background: #444; color: #fff; }");
         connect(suggBtn, &QPushButton::clicked, this,
                 [this, tag]() { onTagSuggestionClicked(tag); });
         suggestionsLayout->addWidget(suggBtn);
@@ -171,12 +166,11 @@ void NMVoiceMetadataDialog::buildUi(
   mainLayout->addWidget(tagsGroup);
 
   // Notes section
-  auto *notesGroup = new QGroupBox(tr("Notes"), this);
-  auto *notesLayout = new QVBoxLayout(notesGroup);
+  auto* notesGroup = new QGroupBox(tr("Notes"), this);
+  auto* notesLayout = new QVBoxLayout(notesGroup);
 
   m_notesEdit = new QTextEdit(this);
-  m_notesEdit->setPlaceholderText(
-      tr("Enter notes for actors/directors..."));
+  m_notesEdit->setPlaceholderText(tr("Enter notes for actors/directors..."));
   m_notesEdit->setAcceptRichText(false);
   m_notesEdit->setMinimumHeight(80);
   m_notesEdit->setPlainText(currentNotes);
@@ -186,7 +180,7 @@ void NMVoiceMetadataDialog::buildUi(
   mainLayout->addStretch();
 
   // Button row
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
   m_cancelButton = new QPushButton(tr("Cancel"), this);
@@ -219,7 +213,7 @@ void NMVoiceMetadataDialog::onAddTag() {
   }
 
   // Check if tag already exists
-  QList<QListWidgetItem *> existing = m_tagList->findItems(tag, Qt::MatchExactly);
+  QList<QListWidgetItem*> existing = m_tagList->findItems(tag, Qt::MatchExactly);
   if (!existing.isEmpty()) {
     m_tagInput->clear();
     return;
@@ -231,16 +225,16 @@ void NMVoiceMetadataDialog::onAddTag() {
 }
 
 void NMVoiceMetadataDialog::onRemoveTag() {
-  QList<QListWidgetItem *> selected = m_tagList->selectedItems();
-  for (QListWidgetItem *item : selected) {
+  QList<QListWidgetItem*> selected = m_tagList->selectedItems();
+  for (QListWidgetItem* item : selected) {
     delete m_tagList->takeItem(m_tagList->row(item));
   }
   m_removeTagBtn->setEnabled(false);
 }
 
-void NMVoiceMetadataDialog::onTagSuggestionClicked(const QString &tag) {
+void NMVoiceMetadataDialog::onTagSuggestionClicked(const QString& tag) {
   // Check if tag already exists
-  QList<QListWidgetItem *> existing = m_tagList->findItems(tag, Qt::MatchExactly);
+  QList<QListWidgetItem*> existing = m_tagList->findItems(tag, Qt::MatchExactly);
   if (!existing.isEmpty()) {
     return;
   }
@@ -249,9 +243,8 @@ void NMVoiceMetadataDialog::onTagSuggestionClicked(const QString &tag) {
 
   // Hide the clicked suggestion button
   if (m_suggestionsWidget) {
-    QList<QPushButton *> buttons =
-        m_suggestionsWidget->findChildren<QPushButton *>();
-    for (QPushButton *btn : buttons) {
+    QList<QPushButton*> buttons = m_suggestionsWidget->findChildren<QPushButton*>();
+    for (QPushButton* btn : buttons) {
       if (btn->text() == tag) {
         btn->hide();
         break;
@@ -272,16 +265,15 @@ void NMVoiceMetadataDialog::updateResult() {
   m_result.scene = m_sceneCombo->currentText().trimmed();
 }
 
-bool NMVoiceMetadataDialog::getMetadata(
-    QWidget *parent, const QString &lineId, const QStringList &currentTags,
-    const QString &currentNotes, const QString &currentSpeaker,
-    const QString &currentScene, MetadataResult &outResult,
-    const QStringList &availableSpeakers, const QStringList &availableScenes,
-    const QStringList &suggestedTags) {
-
-  NMVoiceMetadataDialog dialog(parent, lineId, currentTags, currentNotes,
-                                currentSpeaker, currentScene, availableSpeakers,
-                                availableScenes, suggestedTags);
+bool NMVoiceMetadataDialog::getMetadata(QWidget* parent, const QString& lineId,
+                                        const QStringList& currentTags, const QString& currentNotes,
+                                        const QString& currentSpeaker, const QString& currentScene,
+                                        MetadataResult& outResult,
+                                        const QStringList& availableSpeakers,
+                                        const QStringList& availableScenes,
+                                        const QStringList& suggestedTags) {
+  NMVoiceMetadataDialog dialog(parent, lineId, currentTags, currentNotes, currentSpeaker,
+                               currentScene, availableSpeakers, availableScenes, suggestedTags);
 
   if (dialog.exec() == QDialog::Accepted) {
     outResult = dialog.result();

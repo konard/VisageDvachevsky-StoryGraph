@@ -489,5 +489,4 @@ void ProjectValidators::checkResourceConflicts(std::vector<IntegrityIssue>& issu
   }
 }
 
-
 } // namespace NovelMind::editor

@@ -4,18 +4,17 @@
 
 namespace NovelMind::editor::qt {
 
-QtSelectionManager &QtSelectionManager::instance() {
+QtSelectionManager& QtSelectionManager::instance() {
   static QtSelectionManager instance;
   return instance;
 }
 
 QtSelectionManager::QtSelectionManager() : QObject(nullptr) {}
 
-void QtSelectionManager::select(const QString &id, SelectionType type) {
+void QtSelectionManager::select(const QString& id, SelectionType type) {
   QMutexLocker locker(&m_mutex);
 
-  if (m_selectedIds.size() == 1 && m_selectedIds.first() == id &&
-      m_currentType == type) {
+  if (m_selectedIds.size() == 1 && m_selectedIds.first() == id && m_currentType == type) {
     return; // Already selected
   }
 
@@ -26,8 +25,7 @@ void QtSelectionManager::select(const QString &id, SelectionType type) {
   notifySelectionChanged();
 }
 
-void QtSelectionManager::selectMultiple(const QStringList &ids,
-                                        SelectionType type) {
+void QtSelectionManager::selectMultiple(const QStringList& ids, SelectionType type) {
   QMutexLocker locker(&m_mutex);
 
   m_selectedIds = ids;
@@ -36,7 +34,7 @@ void QtSelectionManager::selectMultiple(const QStringList &ids,
   notifySelectionChanged();
 }
 
-void QtSelectionManager::addToSelection(const QString &id, SelectionType type) {
+void QtSelectionManager::addToSelection(const QString& id, SelectionType type) {
   QMutexLocker locker(&m_mutex);
 
   // Can only add items of the same type
@@ -58,7 +56,7 @@ void QtSelectionManager::addToSelection(const QString &id, SelectionType type) {
   }
 }
 
-void QtSelectionManager::removeFromSelection(const QString &id) {
+void QtSelectionManager::removeFromSelection(const QString& id) {
   QMutexLocker locker(&m_mutex);
 
   if (m_selectedIds.removeOne(id)) {
@@ -69,8 +67,7 @@ void QtSelectionManager::removeFromSelection(const QString &id) {
   }
 }
 
-void QtSelectionManager::toggleSelection(const QString &id,
-                                         SelectionType type) {
+void QtSelectionManager::toggleSelection(const QString& id, SelectionType type) {
   QMutexLocker locker(&m_mutex);
 
   if (m_selectedIds.contains(id)) {
@@ -122,7 +119,7 @@ int QtSelectionManager::selectionCount() const {
   return static_cast<int>(m_selectedIds.size());
 }
 
-bool QtSelectionManager::isSelected(const QString &id) const {
+bool QtSelectionManager::isSelected(const QString& id) const {
   QMutexLocker locker(&m_mutex);
   return m_selectedIds.contains(id);
 }

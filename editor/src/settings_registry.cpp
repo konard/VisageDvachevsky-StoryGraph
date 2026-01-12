@@ -15,7 +15,7 @@
 namespace {
 
 // Convert lowercase string for case-insensitive search
-std::string toLower(const std::string &str) {
+std::string toLower(const std::string& str) {
   std::string result = str;
   std::transform(result.begin(), result.end(), result.begin(),
                  [](unsigned char c) { return std::tolower(c); });
@@ -32,7 +32,7 @@ namespace NovelMind::editor {
 
 NMSettingsRegistry::NMSettingsRegistry() {}
 
-void NMSettingsRegistry::registerSetting(const SettingDefinition &def) {
+void NMSettingsRegistry::registerSetting(const SettingDefinition& def) {
   std::unique_lock lock(m_mutex);
   m_definitions[def.key] = def;
 
@@ -43,7 +43,7 @@ void NMSettingsRegistry::registerSetting(const SettingDefinition &def) {
   }
 }
 
-void NMSettingsRegistry::unregisterSetting(const std::string &key) {
+void NMSettingsRegistry::unregisterSetting(const std::string& key) {
   std::unique_lock lock(m_mutex);
   m_definitions.erase(key);
   m_values.erase(key);
@@ -51,8 +51,7 @@ void NMSettingsRegistry::unregisterSetting(const std::string &key) {
   m_changeCallbacks.erase(key);
 }
 
-std::optional<SettingDefinition>
-NMSettingsRegistry::getDefinition(const std::string &key) const {
+std::optional<SettingDefinition> NMSettingsRegistry::getDefinition(const std::string& key) const {
   std::shared_lock lock(m_mutex);
   auto it = m_definitions.find(key);
   if (it != m_definitions.end()) {
@@ -61,17 +60,17 @@ NMSettingsRegistry::getDefinition(const std::string &key) const {
   return std::nullopt;
 }
 
-const std::unordered_map<std::string, SettingDefinition> &
+const std::unordered_map<std::string, SettingDefinition>&
 NMSettingsRegistry::getAllDefinitions() const {
   std::shared_lock lock(m_mutex);
   return m_definitions;
 }
 
 std::vector<SettingDefinition>
-NMSettingsRegistry::getByCategory(const std::string &category) const {
+NMSettingsRegistry::getByCategory(const std::string& category) const {
   std::shared_lock lock(m_mutex);
   std::vector<SettingDefinition> result;
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.category == category) {
       result.push_back(def);
     }
@@ -79,11 +78,10 @@ NMSettingsRegistry::getByCategory(const std::string &category) const {
   return result;
 }
 
-std::vector<SettingDefinition>
-NMSettingsRegistry::getByScope(SettingScope scope) const {
+std::vector<SettingDefinition> NMSettingsRegistry::getByScope(SettingScope scope) const {
   std::shared_lock lock(m_mutex);
   std::vector<SettingDefinition> result;
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.scope == scope) {
       result.push_back(def);
     }
@@ -91,12 +89,11 @@ NMSettingsRegistry::getByScope(SettingScope scope) const {
   return result;
 }
 
-std::vector<SettingDefinition>
-NMSettingsRegistry::search(const std::string &query) const {
+std::vector<SettingDefinition> NMSettingsRegistry::search(const std::string& query) const {
   std::shared_lock lock(m_mutex);
   if (query.empty()) {
     std::vector<SettingDefinition> all;
-    for (const auto &[key, def] : m_definitions) {
+    for (const auto& [key, def] : m_definitions) {
       all.push_back(def);
     }
     return all;
@@ -105,7 +102,7 @@ NMSettingsRegistry::search(const std::string &query) const {
   std::string queryLower = toLower(query);
   std::vector<SettingDefinition> result;
 
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     // Search in key, display name, description, and tags
     if (toLower(def.key).find(queryLower) != std::string::npos ||
         toLower(def.displayName).find(queryLower) != std::string::npos ||
@@ -115,7 +112,7 @@ NMSettingsRegistry::search(const std::string &query) const {
       continue;
     }
 
-    for (const auto &tag : def.tags) {
+    for (const auto& tag : def.tags) {
       if (toLower(tag).find(queryLower) != std::string::npos) {
         result.push_back(def);
         break;
@@ -128,8 +125,7 @@ NMSettingsRegistry::search(const std::string &query) const {
 
 // ========== Value Management ==========
 
-std::optional<SettingValue>
-NMSettingsRegistry::getValue(const std::string &key) const {
+std::optional<SettingValue> NMSettingsRegistry::getValue(const std::string& key) const {
   std::shared_lock lock(m_mutex);
   auto it = m_values.find(key);
   if (it != m_values.end()) {
@@ -145,8 +141,7 @@ NMSettingsRegistry::getValue(const std::string &key) const {
   return std::nullopt;
 }
 
-std::string NMSettingsRegistry::setValue(const std::string &key,
-                                         const SettingValue &value) {
+std::string NMSettingsRegistry::setValue(const std::string& key, const SettingValue& value) {
   std::unique_lock lock(m_mutex);
   auto defIt = m_definitions.find(key);
   if (defIt == m_definitions.end()) {
@@ -174,7 +169,7 @@ std::string NMSettingsRegistry::setValue(const std::string &key,
   return ""; // Success
 }
 
-void NMSettingsRegistry::resetToDefault(const std::string &key) {
+void NMSettingsRegistry::resetToDefault(const std::string& key) {
   std::unique_lock lock(m_mutex);
   auto defIt = m_definitions.find(key);
   if (defIt != m_definitions.end()) {
@@ -187,16 +182,16 @@ void NMSettingsRegistry::resetToDefault(const std::string &key) {
 
 void NMSettingsRegistry::resetAllToDefaults() {
   std::unique_lock lock(m_mutex);
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     m_values[key] = def.defaultValue;
   }
   m_originalValues.clear();
   m_isDirty = true;
 }
 
-void NMSettingsRegistry::resetCategoryToDefaults(const std::string &category) {
+void NMSettingsRegistry::resetCategoryToDefaults(const std::string& category) {
   std::unique_lock lock(m_mutex);
-  for (const auto &[key, def] : m_definitions) {
+  for (const auto& [key, def] : m_definitions) {
     if (def.category == category) {
       m_values[key] = def.defaultValue;
       m_originalValues.erase(key);
@@ -208,8 +203,7 @@ void NMSettingsRegistry::resetCategoryToDefaults(const std::string &category) {
 
 // ========== Type-safe Getters ==========
 
-bool NMSettingsRegistry::getBool(const std::string &key,
-                                 bool defaultVal) const {
+bool NMSettingsRegistry::getBool(const std::string& key, bool defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -220,7 +214,7 @@ bool NMSettingsRegistry::getBool(const std::string &key,
   }
 }
 
-i32 NMSettingsRegistry::getInt(const std::string &key, i32 defaultVal) const {
+i32 NMSettingsRegistry::getInt(const std::string& key, i32 defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -231,7 +225,7 @@ i32 NMSettingsRegistry::getInt(const std::string &key, i32 defaultVal) const {
   }
 }
 
-f32 NMSettingsRegistry::getFloat(const std::string &key, f32 defaultVal) const {
+f32 NMSettingsRegistry::getFloat(const std::string& key, f32 defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -242,8 +236,8 @@ f32 NMSettingsRegistry::getFloat(const std::string &key, f32 defaultVal) const {
   }
 }
 
-std::string NMSettingsRegistry::getString(const std::string &key,
-                                          const std::string &defaultVal) const {
+std::string NMSettingsRegistry::getString(const std::string& key,
+                                          const std::string& defaultVal) const {
   auto value = getValue(key);
   if (!value)
     return defaultVal;
@@ -256,7 +250,7 @@ std::string NMSettingsRegistry::getString(const std::string &key,
 
 // ========== Change Tracking ==========
 
-bool NMSettingsRegistry::isModified(const std::string &key) const {
+bool NMSettingsRegistry::isModified(const std::string& key) const {
   std::shared_lock lock(m_mutex);
   return m_originalValues.find(key) != m_originalValues.end();
 }
@@ -264,7 +258,7 @@ bool NMSettingsRegistry::isModified(const std::string &key) const {
 std::vector<std::string> NMSettingsRegistry::getModifiedSettings() const {
   std::shared_lock lock(m_mutex);
   std::vector<std::string> result;
-  for (const auto &[key, value] : m_originalValues) {
+  for (const auto& [key, value] : m_originalValues) {
     result.push_back(key);
   }
   return result;
@@ -272,7 +266,7 @@ std::vector<std::string> NMSettingsRegistry::getModifiedSettings() const {
 
 void NMSettingsRegistry::revert() {
   std::unique_lock lock(m_mutex);
-  for (const auto &[key, originalValue] : m_originalValues) {
+  for (const auto& [key, originalValue] : m_originalValues) {
     m_values[key] = originalValue;
     notifyChange(key, originalValue);
   }
@@ -286,38 +280,38 @@ void NMSettingsRegistry::apply() {
   m_isDirty = false;
 }
 
-void NMSettingsRegistry::registerChangeCallback(
-    const std::string &key, SettingChangeCallback callback) {
+void NMSettingsRegistry::registerChangeCallback(const std::string& key,
+                                                SettingChangeCallback callback) {
   std::unique_lock lock(m_mutex);
   m_changeCallbacks[key].push_back(std::move(callback));
 }
 
-void NMSettingsRegistry::unregisterChangeCallback(const std::string &key) {
+void NMSettingsRegistry::unregisterChangeCallback(const std::string& key) {
   std::unique_lock lock(m_mutex);
   m_changeCallbacks.erase(key);
 }
 
 // ========== Persistence ==========
 
-Result<void> NMSettingsRegistry::loadUserSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::loadUserSettings(const std::string& path) {
   std::unique_lock lock(m_mutex);
   m_userSettingsPath = path;
   return loadFromJson(path, SettingScope::User);
 }
 
-Result<void> NMSettingsRegistry::saveUserSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::saveUserSettings(const std::string& path) {
   std::unique_lock lock(m_mutex);
   m_userSettingsPath = path;
   return saveToJson(path, SettingScope::User);
 }
 
-Result<void> NMSettingsRegistry::loadProjectSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::loadProjectSettings(const std::string& path) {
   std::unique_lock lock(m_mutex);
   m_projectSettingsPath = path;
   return loadFromJson(path, SettingScope::Project);
 }
 
-Result<void> NMSettingsRegistry::saveProjectSettings(const std::string &path) {
+Result<void> NMSettingsRegistry::saveProjectSettings(const std::string& path) {
   std::unique_lock lock(m_mutex);
   m_projectSettingsPath = path;
   return saveToJson(path, SettingScope::Project);
@@ -325,8 +319,8 @@ Result<void> NMSettingsRegistry::saveProjectSettings(const std::string &path) {
 
 // ========== Private Methods ==========
 
-std::string NMSettingsRegistry::validateValue(const std::string &key,
-                                              const SettingValue &value) const {
+std::string NMSettingsRegistry::validateValue(const std::string& key,
+                                              const SettingValue& value) const {
   auto defIt = m_definitions.find(key);
   if (defIt == m_definitions.end()) {
     return "Setting not found";
@@ -335,18 +329,16 @@ std::string NMSettingsRegistry::validateValue(const std::string &key,
   return SettingsValidation::validateValue(key, value, defIt->second);
 }
 
-Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
-                                              SettingScope scope) {
-  auto result = SettingsPersistence::loadFromJson(path, scope, m_definitions,
-                                                   m_values, m_schemaVersion);
+Result<void> NMSettingsRegistry::loadFromJson(const std::string& path, SettingScope scope) {
+  auto result =
+      SettingsPersistence::loadFromJson(path, scope, m_definitions, m_values, m_schemaVersion);
   if (result.isOk()) {
     m_originalValues.clear(); // Reset change tracking after load
     m_isDirty = false;
 
     // Apply migrations if needed
-    auto migrationResult = SettingsMigration::migrate(
-        m_values, m_definitions, m_schemaVersion,
-        SettingsMigration::getCurrentVersion());
+    auto migrationResult = SettingsMigration::migrate(m_values, m_definitions, m_schemaVersion,
+                                                      SettingsMigration::getCurrentVersion());
     if (!migrationResult.isOk()) {
       return migrationResult;
     }
@@ -355,8 +347,7 @@ Result<void> NMSettingsRegistry::loadFromJson(const std::string &path,
   return result;
 }
 
-Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
-                                            SettingScope scope) const {
+Result<void> NMSettingsRegistry::saveToJson(const std::string& path, SettingScope scope) const {
   namespace fs = std::filesystem;
 
   try {
@@ -384,7 +375,7 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
       file << "  \"settings\": {\n";
 
       bool first = true;
-      for (const auto &[key, def] : m_definitions) {
+      for (const auto& [key, def] : m_definitions) {
         if (def.scope != scope)
           continue;
 
@@ -398,14 +389,12 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
 
         file << "    \"" << escapeJson(key) << "\": ";
 
-        const auto &value = valueIt->second;
+        const auto& value = valueIt->second;
         if (def.type == SettingType::Bool) {
           file << (std::get<bool>(value) ? "true" : "false");
-        } else if (def.type == SettingType::Int ||
-                   def.type == SettingType::IntRange) {
+        } else if (def.type == SettingType::Int || def.type == SettingType::IntRange) {
           file << std::get<i32>(value);
-        } else if (def.type == SettingType::Float ||
-                   def.type == SettingType::FloatRange) {
+        } else if (def.type == SettingType::Float || def.type == SettingType::FloatRange) {
           file << std::get<f32>(value);
         } else {
           file << "\"" << escapeJson(std::get<std::string>(value)) << "\"";
@@ -428,14 +417,12 @@ Result<void> NMSettingsRegistry::saveToJson(const std::string &path,
 
     NOVELMIND_LOG_INFO(std::string("Saved settings to: ") + path);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save settings: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save settings: ") + e.what());
   }
 }
 
-void NMSettingsRegistry::notifyChange(const std::string &key,
-                                      const SettingValue &newValue) {
+void NMSettingsRegistry::notifyChange(const std::string& key, const SettingValue& newValue) {
   // Copy callbacks to avoid holding lock during callback execution
   // and to prevent iterator invalidation if callbacks modify the registry
   std::vector<SettingChangeCallback> callbacks;
@@ -450,7 +437,7 @@ void NMSettingsRegistry::notifyChange(const std::string &key,
 
   // Execute callbacks without holding the lock
   // Note: This is safe because we copied the callbacks
-  for (const auto &callback : callbacks) {
+  for (const auto& callback : callbacks) {
     if (callback) {
       callback(key, newValue);
     }

@@ -67,13 +67,11 @@ struct PropertyExpr {
  * @brief Expression variant type
  */
 struct Expression {
-  std::variant<LiteralExpr, IdentifierExpr, BinaryExpr, UnaryExpr, CallExpr,
-               PropertyExpr>
-      data;
+  std::variant<LiteralExpr, IdentifierExpr, BinaryExpr, UnaryExpr, CallExpr, PropertyExpr> data;
   SourceLocation location;
 
   template <typename T>
-  explicit Expression(T &&expr, SourceLocation loc = {})
+  explicit Expression(T&& expr, SourceLocation loc = {})
       : data(std::forward<T>(expr)), location(loc) {}
 };
 
@@ -240,14 +238,14 @@ struct BlockStmt {
  * @brief Statement variant type
  */
 struct Statement {
-  std::variant<CharacterDecl, SceneDecl, ShowStmt, HideStmt, SayStmt,
-               ChoiceStmt, IfStmt, GotoStmt, WaitStmt, PlayStmt, StopStmt,
-               SetStmt, TransitionStmt, MoveStmt, ExpressionStmt, BlockStmt>
+  std::variant<CharacterDecl, SceneDecl, ShowStmt, HideStmt, SayStmt, ChoiceStmt, IfStmt, GotoStmt,
+               WaitStmt, PlayStmt, StopStmt, SetStmt, TransitionStmt, MoveStmt, ExpressionStmt,
+               BlockStmt>
       data;
   SourceLocation location;
 
   template <typename T>
-  explicit Statement(T &&stmt, SourceLocation loc = {})
+  explicit Statement(T&& stmt, SourceLocation loc = {})
       : data(std::forward<T>(stmt)), location(loc) {}
 };
 
@@ -263,14 +261,14 @@ struct Program {
 /**
  * @brief Helper to create expressions
  */
-template <typename T> ExprPtr makeExpr(T &&expr, SourceLocation loc = {}) {
+template <typename T> ExprPtr makeExpr(T&& expr, SourceLocation loc = {}) {
   return std::make_unique<Expression>(std::forward<T>(expr), loc);
 }
 
 /**
  * @brief Helper to create statements
  */
-template <typename T> StmtPtr makeStmt(T &&stmt, SourceLocation loc = {}) {
+template <typename T> StmtPtr makeStmt(T&& stmt, SourceLocation loc = {}) {
   return std::make_unique<Statement>(std::forward<T>(stmt), loc);
 }
 

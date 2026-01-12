@@ -18,7 +18,7 @@ namespace NovelMind::editor::qt {
 InspectorPropertyEditor::InspectorPropertyEditor(NMInspectorPanel* panel) : m_panel(panel) {}
 
 void InspectorPropertyEditor::createSceneObjectProperties(NMSceneObject* object, bool editable,
-                                                           SceneRegistry* registry) {
+                                                          SceneRegistry* registry) {
   if (!object) {
     return;
   }
@@ -68,7 +68,7 @@ void InspectorPropertyEditor::createGeneralGroup(NMSceneObject* object, bool edi
 }
 
 void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool editable,
-                                                    QPointF& lastScale, bool& lockAspectRatio) {
+                                                   QPointF& lastScale, bool& lockAspectRatio) {
   auto* transformGroup = m_panel->addGroup(QObject::tr("Transform"));
   const QPointF pos = object->pos();
 
@@ -77,9 +77,9 @@ void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool e
 
   if (editable) {
     // Position controls
-    if (auto* xEdit = transformGroup->addEditableProperty(
-            "position_x", QObject::tr("Position X"), NMPropertyType::Float,
-            QString::number(pos.x()))) {
+    if (auto* xEdit =
+            transformGroup->addEditableProperty("position_x", QObject::tr("Position X"),
+                                                NMPropertyType::Float, QString::number(pos.x()))) {
       // Configure spinbox for position
       if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(xEdit)) {
         spinBox->setRange(-10000.0, 10000.0);
@@ -88,9 +88,9 @@ void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool e
         spinBox->setToolTip(QObject::tr("X position in pixels"));
       }
     }
-    if (auto* yEdit = transformGroup->addEditableProperty(
-            "position_y", QObject::tr("Position Y"), NMPropertyType::Float,
-            QString::number(pos.y()))) {
+    if (auto* yEdit =
+            transformGroup->addEditableProperty("position_y", QObject::tr("Position Y"),
+                                                NMPropertyType::Float, QString::number(pos.y()))) {
       if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(yEdit)) {
         spinBox->setRange(-10000.0, 10000.0);
         spinBox->setSingleStep(1.0);
@@ -103,10 +103,9 @@ void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool e
     transformGroup->addResetButton("reset_position", QVariant("0,0"));
 
     // Rotation control
-    if (auto* rotEdit =
-            transformGroup->addEditableProperty("rotation", QObject::tr("Rotation"),
-                                                NMPropertyType::Float,
-                                                QString::number(object->rotation()))) {
+    if (auto* rotEdit = transformGroup->addEditableProperty("rotation", QObject::tr("Rotation"),
+                                                            NMPropertyType::Float,
+                                                            QString::number(object->rotation()))) {
       if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(rotEdit)) {
         spinBox->setRange(-360.0, 360.0);
         spinBox->setSingleStep(1.0);
@@ -121,9 +120,9 @@ void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool e
     transformGroup->addResetButton("reset_rotation", QVariant("0"));
 
     // Scale controls
-    if (auto* sxEdit = transformGroup->addEditableProperty(
-            "scale_x", QObject::tr("Scale X"), NMPropertyType::Float,
-            QString::number(object->scaleX()))) {
+    if (auto* sxEdit = transformGroup->addEditableProperty("scale_x", QObject::tr("Scale X"),
+                                                           NMPropertyType::Float,
+                                                           QString::number(object->scaleX()))) {
       if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(sxEdit)) {
         spinBox->setRange(0.01, 100.0);
         spinBox->setSingleStep(0.1);
@@ -131,9 +130,9 @@ void InspectorPropertyEditor::createTransformGroup(NMSceneObject* object, bool e
         spinBox->setToolTip(QObject::tr("Scale on X axis (1.0 = original size)"));
       }
     }
-    if (auto* syEdit = transformGroup->addEditableProperty(
-            "scale_y", QObject::tr("Scale Y"), NMPropertyType::Float,
-            QString::number(object->scaleY()))) {
+    if (auto* syEdit = transformGroup->addEditableProperty("scale_y", QObject::tr("Scale Y"),
+                                                           NMPropertyType::Float,
+                                                           QString::number(object->scaleY()))) {
       if (auto* spinBox = qobject_cast<QDoubleSpinBox*>(syEdit)) {
         spinBox->setRange(0.01, 100.0);
         spinBox->setSingleStep(0.1);
@@ -182,15 +181,14 @@ void InspectorPropertyEditor::createRenderingGroup(NMSceneObject* object, bool e
                                              QString::number(object->opacity()))) {
       // Track property widget
     }
-    if (auto* zEdit = renderGroup->addEditableProperty("z", QObject::tr("Z-Order"),
-                                                        NMPropertyType::Integer,
-                                                        QString::number(object->zValue()))) {
+    if (auto* zEdit =
+            renderGroup->addEditableProperty("z", QObject::tr("Z-Order"), NMPropertyType::Integer,
+                                             QString::number(object->zValue()))) {
       // Track property widget
     }
-    if (auto* lockEdit =
-            renderGroup->addEditableProperty("locked", QObject::tr("Locked"),
-                                             NMPropertyType::Boolean,
-                                             object->isLocked() ? "true" : "false")) {
+    if (auto* lockEdit = renderGroup->addEditableProperty("locked", QObject::tr("Locked"),
+                                                          NMPropertyType::Boolean,
+                                                          object->isLocked() ? "true" : "false")) {
       // Track property widget
     }
   } else {
@@ -245,7 +243,7 @@ void InspectorPropertyEditor::createTagsGroup(NMSceneObject* object, bool editab
 }
 
 void InspectorPropertyEditor::createStoryGraphNodeProperties(NMGraphNodeItem* node, bool editable,
-                                                              SceneRegistry* registry) {
+                                                             SceneRegistry* registry) {
   if (!node) {
     return;
   }
@@ -292,8 +290,8 @@ void InspectorPropertyEditor::createNodeContentGroup(NMGraphNodeItem* node, bool
             "speaker", QObject::tr("Speaker"), NMPropertyType::String, speakerValue)) {
       // Track property widget
     }
-    if (auto* textEdit = contentGroup->addEditableProperty(
-            "text", QObject::tr("Text"), NMPropertyType::MultiLine, textValue)) {
+    if (auto* textEdit = contentGroup->addEditableProperty("text", QObject::tr("Text"),
+                                                           NMPropertyType::MultiLine, textValue)) {
       // Track property widget
     }
     if (node->nodeType().contains("Choice", Qt::CaseInsensitive)) {
@@ -387,7 +385,7 @@ void InspectorPropertyEditor::createNodeScriptGroup(NMGraphNodeItem* node, bool 
 }
 
 void InspectorPropertyEditor::createNodeSceneGroup(NMGraphNodeItem* node, bool editable,
-                                                    SceneRegistry* registry) {
+                                                   SceneRegistry* registry) {
   // Scene node handling - provides Scene ID picker with quick actions
   if (!node->isSceneNode()) {
     return;
@@ -456,16 +454,15 @@ void InspectorPropertyEditor::createNodeConditionGroup(NMGraphNodeItem* node, bo
     }
 
     // Output path labels (branch names like "true", "false", or custom)
-    if (auto* outputsEdit =
-            conditionGroup->addEditableProperty("conditionOutputs",
-                                                QObject::tr("Output Paths (one per line)"),
-                                                NMPropertyType::MultiLine, outputsValue)) {
+    if (auto* outputsEdit = conditionGroup->addEditableProperty(
+            "conditionOutputs", QObject::tr("Output Paths (one per line)"),
+            NMPropertyType::MultiLine, outputsValue)) {
       // Track property widget
     }
   } else {
-    conditionGroup->addProperty(
-        QObject::tr("Expression"),
-        expressionValue.isEmpty() ? QObject::tr("(no expression)") : expressionValue);
+    conditionGroup->addProperty(QObject::tr("Expression"), expressionValue.isEmpty()
+                                                               ? QObject::tr("(no expression)")
+                                                               : expressionValue);
     conditionGroup->addProperty(QObject::tr("Outputs"),
                                 outputsValue.isEmpty() ? QObject::tr("true, false") : outputsValue);
   }
@@ -519,7 +516,7 @@ void InspectorPropertyEditor::createNodeConditionGroup(NMGraphNodeItem* node, bo
 }
 
 void InspectorPropertyEditor::createMultiObjectProperties(const QList<NMSceneObject*>& objects,
-                                                           bool editable) {
+                                                          bool editable) {
   // This is handled by InspectorComponentList
   // Left empty as it's delegated to the component list module
 }

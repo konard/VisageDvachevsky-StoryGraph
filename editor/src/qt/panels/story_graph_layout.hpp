@@ -35,9 +35,8 @@ namespace layout {
  * @param nodes List of nodes to layout
  * @param connections List of connections between nodes
  */
-void applyAutoLayout(NMStoryGraphScene *scene,
-                     const QList<NMGraphNodeItem *> &nodes,
-                     const QList<NMGraphConnectionItem *> &connections);
+void applyAutoLayout(NMStoryGraphScene* scene, const QList<NMGraphNodeItem*>& nodes,
+                     const QList<NMGraphConnectionItem*>& connections);
 
 } // namespace layout
 } // namespace NovelMind::editor::qt

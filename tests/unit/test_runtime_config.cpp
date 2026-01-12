@@ -34,7 +34,7 @@ public:
 
   std::string path() const { return m_path.string(); }
 
-  void writeFile(const std::string &relativePath, const std::string &content) {
+  void writeFile(const std::string& relativePath, const std::string& content) {
     std::ofstream file(m_path / relativePath);
     file << content;
   }
@@ -121,8 +121,7 @@ TEST_CASE("ConfigManager initialization", "[config_manager]") {
   }
 }
 
-TEST_CASE("ConfigManager loads defaults when no config file",
-          "[config_manager]") {
+TEST_CASE("ConfigManager loads defaults when no config file", "[config_manager]") {
   TestDirectory testDir;
   ConfigManager manager;
 
@@ -327,7 +326,7 @@ TEST_CASE("GameSettings apply and discard", "[game_settings]") {
     REQUIRE_FALSE(settings.hasPendingChanges());
 
     // The setting should be back to original
-    auto *setting = settings.getSetting("master_volume");
+    auto* setting = settings.getSetting("master_volume");
     REQUIRE(setting != nullptr);
     REQUIRE(setting->floatValue == originalVolume);
   }
@@ -349,7 +348,7 @@ TEST_CASE("GameSettings get items by category", "[game_settings]") {
 
     bool hasFullscreen = false;
     bool hasResolution = false;
-    for (const auto &item : videoItems) {
+    for (const auto& item : videoItems) {
       if (item.id == "fullscreen")
         hasFullscreen = true;
       if (item.id == "resolution")
@@ -364,7 +363,7 @@ TEST_CASE("GameSettings get items by category", "[game_settings]") {
     REQUIRE_FALSE(audioItems.empty());
 
     bool hasMasterVolume = false;
-    for (const auto &item : audioItems) {
+    for (const auto& item : audioItems) {
       if (item.id == "master_volume")
         hasMasterVolume = true;
     }
@@ -376,7 +375,7 @@ TEST_CASE("GameSettings get items by category", "[game_settings]") {
     REQUIRE_FALSE(inputItems.empty());
 
     int keyBindingCount = 0;
-    for (const auto &item : inputItems) {
+    for (const auto& item : inputItems) {
       if (item.type == SettingType::Key)
         keyBindingCount++;
     }
@@ -400,7 +399,7 @@ TEST_CASE("GameSettings available resolutions", "[game_settings]") {
   // Should include common resolutions
   bool has720p = false;
   bool has1080p = false;
-  for (const auto &[w, h] : resolutions) {
+  for (const auto& [w, h] : resolutions) {
     if (w == 1280 && h == 720)
       has720p = true;
     if (w == 1920 && h == 1080)

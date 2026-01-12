@@ -380,8 +380,8 @@ void NMMainWindow::setupMenuBar() {
   // =========================================================================
   // Theme Menu
   // =========================================================================
-  QMenu *themeMenu = viewMenu->addMenu(tr("&Theme"));
-  QActionGroup *themeGroup = new QActionGroup(themeMenu);
+  QMenu* themeMenu = viewMenu->addMenu(tr("&Theme"));
+  QActionGroup* themeGroup = new QActionGroup(themeMenu);
   themeGroup->setExclusive(true);
 
   m_actionThemeDark = themeMenu->addAction(tr("&Dark Theme"));

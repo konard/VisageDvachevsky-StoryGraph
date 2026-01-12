@@ -8,8 +8,7 @@ namespace NovelMind::editor::qt {
 
 NMLocalizationIO::NMLocalizationIO(::NovelMind::localization::LocalizationManager& localization,
                                    NMLocalizationDataModel& dataModel)
-    : m_localization(localization)
-    , m_dataModel(dataModel) {}
+    : m_localization(localization), m_dataModel(dataModel) {}
 
 NMLocalizationIO::~NMLocalizationIO() = default;
 
@@ -70,11 +69,10 @@ bool NMLocalizationIO::saveChanges(const QStringList& availableLocales,
                                                ::NovelMind::localization::LocalizationFormat::CSV);
 
     if (result.isError()) {
-      NMMessageDialog::showError(
-          parentWidget, QObject::tr("Save Failed"),
-          QObject::tr("Failed to save %1: %2")
-              .arg(localeCode)
-              .arg(QString::fromStdString(result.error())));
+      NMMessageDialog::showError(parentWidget, QObject::tr("Save Failed"),
+                                 QObject::tr("Failed to save %1: %2")
+                                     .arg(localeCode)
+                                     .arg(QString::fromStdString(result.error())));
       return false;
     }
   }
@@ -90,8 +88,8 @@ void NMLocalizationIO::exportLocale(const QString& currentLocale, const QString&
 
   const QString filter = QObject::tr("Localization (*.csv *.json *.po *.xliff *.xlf)");
   const QString defaultName = QDir(localizationRoot).filePath(currentLocale + ".csv");
-  const QString path = NMFileDialog::getSaveFileName(parentWidget, QObject::tr("Export Localization"),
-                                                     defaultName, filter);
+  const QString path = NMFileDialog::getSaveFileName(
+      parentWidget, QObject::tr("Export Localization"), defaultName, filter);
   if (path.isEmpty()) {
     return;
   }
@@ -134,7 +132,8 @@ bool NMLocalizationIO::importLocale(const QString& localizationRoot, QWidget* pa
 }
 
 void NMLocalizationIO::exportMissingStrings(const QString& currentLocale,
-                                            const QString& localizationRoot, QWidget* parentWidget) {
+                                            const QString& localizationRoot,
+                                            QWidget* parentWidget) {
   if (currentLocale.isEmpty()) {
     return;
   }

@@ -67,7 +67,7 @@ public:
    * @brief Construct the welcome dialog
    * @param parent Parent widget
    */
-  explicit NMWelcomeDialog(QWidget *parent = nullptr);
+  explicit NMWelcomeDialog(QWidget* parent = nullptr);
 
   /**
    * @brief Destructor
@@ -78,9 +78,7 @@ public:
    * @brief Get the path of the project to open
    * @return Empty string if no project selected, otherwise project path
    */
-  [[nodiscard]] QString selectedProjectPath() const {
-    return m_selectedProjectPath;
-  }
+  [[nodiscard]] QString selectedProjectPath() const { return m_selectedProjectPath; }
 
   /**
    * @brief Get the template for new project creation
@@ -91,9 +89,7 @@ public:
   /**
    * @brief Check if user wants to create a new project
    */
-  [[nodiscard]] bool shouldCreateNewProject() const {
-    return m_createNewProject;
-  }
+  [[nodiscard]] bool shouldCreateNewProject() const { return m_createNewProject; }
 
   /**
    * @brief Check if user wants to skip the welcome screen in future
@@ -105,19 +101,19 @@ signals:
    * @brief Emitted when user requests to create a new project
    * @param templateName Name of the template to use
    */
-  void newProjectRequested(const QString &templateName);
+  void newProjectRequested(const QString& templateName);
 
   /**
    * @brief Emitted when user requests to open an existing project
    * @param projectPath Path to the project file
    */
-  void openProjectRequested(const QString &projectPath);
+  void openProjectRequested(const QString& projectPath);
 
   /**
    * @brief Emitted when user clicks on a learning resource
    * @param url URL to open
    */
-  void learningResourceClicked(const QString &url);
+  void learningResourceClicked(const QString& url);
 
 public slots:
   /**
@@ -128,14 +124,14 @@ public slots:
 private slots:
   void onNewProjectClicked();
   void onOpenProjectClicked();
-  void onRecentProjectClicked(QListWidgetItem *item);
+  void onRecentProjectClicked(QListWidgetItem* item);
   void onTemplateClicked(int templateIndex);
   void onBrowseExamplesClicked();
-  void onSearchTextChanged(const QString &text);
+  void onSearchTextChanged(const QString& text);
 
 protected:
-  void showEvent(QShowEvent *event) override;
-  bool eventFilter(QObject *watched, QEvent *event) override;
+  void showEvent(QShowEvent* event) override;
+  bool eventFilter(QObject* watched, QEvent* event) override;
 
 private:
   void setupUI();
@@ -147,39 +143,39 @@ private:
   void styleDialog();
   void setupAnimations();
   void startEntranceAnimations();
-  void animateButtonHover(QWidget *button, bool entering);
+  void animateButtonHover(QWidget* button, bool entering);
 
-  QWidget *createProjectCard(const RecentProject &project);
-  QWidget *createTemplateCard(const ProjectTemplate &tmpl, int index);
-  QWidget *createQuickActionButton(const QString &icon, const QString &text,
-                                   const QString &description);
+  QWidget* createProjectCard(const RecentProject& project);
+  QWidget* createTemplateCard(const ProjectTemplate& tmpl, int index);
+  QWidget* createQuickActionButton(const QString& icon, const QString& text,
+                                   const QString& description);
 
   // UI Components
-  QLineEdit *m_searchBox = nullptr;
-  QWidget *m_leftPanel = nullptr;
-  QWidget *m_centerPanel = nullptr;
-  QWidget *m_rightPanel = nullptr;
+  QLineEdit* m_searchBox = nullptr;
+  QWidget* m_leftPanel = nullptr;
+  QWidget* m_centerPanel = nullptr;
+  QWidget* m_rightPanel = nullptr;
 
   // Left panel - Quick actions and recent projects
-  QVBoxLayout *m_leftLayout = nullptr;
-  QPushButton *m_btnNewProject = nullptr;
-  QPushButton *m_btnOpenProject = nullptr;
-  QPushButton *m_btnBrowseExamples = nullptr;
-  QListWidget *m_recentProjectsList = nullptr;
+  QVBoxLayout* m_leftLayout = nullptr;
+  QPushButton* m_btnNewProject = nullptr;
+  QPushButton* m_btnOpenProject = nullptr;
+  QPushButton* m_btnBrowseExamples = nullptr;
+  QListWidget* m_recentProjectsList = nullptr;
 
   // Center panel - Templates
-  QScrollArea *m_templatesScrollArea = nullptr;
-  QWidget *m_templatesContainer = nullptr;
-  QGridLayout *m_templatesLayout = nullptr;
+  QScrollArea* m_templatesScrollArea = nullptr;
+  QWidget* m_templatesContainer = nullptr;
+  QGridLayout* m_templatesLayout = nullptr;
 
   // Right panel - Learning resources and news
-  QScrollArea *m_resourcesScrollArea = nullptr;
-  QWidget *m_resourcesContainer = nullptr;
+  QScrollArea* m_resourcesScrollArea = nullptr;
+  QWidget* m_resourcesContainer = nullptr;
 
   // Footer
-  QWidget *m_footer = nullptr;
-  QPushButton *m_btnSkipInFuture = nullptr;
-  QPushButton *m_btnClose = nullptr;
+  QWidget* m_footer = nullptr;
+  QPushButton* m_btnSkipInFuture = nullptr;
+  QPushButton* m_btnClose = nullptr;
 
   // State
   QString m_selectedProjectPath;
@@ -191,7 +187,7 @@ private:
   QVector<ProjectTemplate> m_templates;
 
   // Animations
-  QParallelAnimationGroup *m_entranceAnimGroup = nullptr;
+  QParallelAnimationGroup* m_entranceAnimGroup = nullptr;
   bool m_animationsPlayed = false;
 
   // Constants

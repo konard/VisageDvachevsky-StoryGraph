@@ -59,7 +59,8 @@ private:
   bool handleAspectRatioLock(const QString& propertyName, const QString& newValue,
                              const QString& currentObjectId, bool& lockAspectRatio,
                              QPointF& lastScale);
-  void updateScaleTracking(const QString& propertyName, const QString& newValue, QPointF& lastScale);
+  void updateScaleTracking(const QString& propertyName, const QString& newValue,
+                           QPointF& lastScale);
 };
 
 } // namespace NovelMind::editor::qt

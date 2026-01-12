@@ -176,17 +176,15 @@ class Theme {
 public:
   Theme();
 
-  void setStyle(const std::string &name, const Style &style);
-  [[nodiscard]] const Style &getStyle(const std::string &name) const;
-  [[nodiscard]] bool hasStyle(const std::string &name) const;
+  void setStyle(const std::string& name, const Style& style);
+  [[nodiscard]] const Style& getStyle(const std::string& name) const;
+  [[nodiscard]] bool hasStyle(const std::string& name) const;
 
   // Predefined styles
-  [[nodiscard]] const Style &getButtonStyle() const {
-    return getStyle("button");
-  }
-  [[nodiscard]] const Style &getLabelStyle() const { return getStyle("label"); }
-  [[nodiscard]] const Style &getPanelStyle() const { return getStyle("panel"); }
-  [[nodiscard]] const Style &getInputStyle() const { return getStyle("input"); }
+  [[nodiscard]] const Style& getButtonStyle() const { return getStyle("button"); }
+  [[nodiscard]] const Style& getLabelStyle() const { return getStyle("label"); }
+  [[nodiscard]] const Style& getPanelStyle() const { return getStyle("panel"); }
+  [[nodiscard]] const Style& getInputStyle() const { return getStyle("input"); }
 
   // Create default dark theme
   static Theme createDarkTheme();
@@ -202,37 +200,31 @@ private:
  */
 class Widget : public std::enable_shared_from_this<Widget> {
 public:
-  explicit Widget(const std::string &id = "");
+  explicit Widget(const std::string& id = "");
   virtual ~Widget() = default;
 
   // Identity
-  [[nodiscard]] const std::string &getId() const { return m_id; }
-  void setId(const std::string &id) { m_id = id; }
+  [[nodiscard]] const std::string& getId() const { return m_id; }
+  void setId(const std::string& id) { m_id = id; }
 
   // Hierarchy
-  void setParent(Widget *parent);
-  [[nodiscard]] Widget *getParent() const { return m_parent; }
+  void setParent(Widget* parent);
+  [[nodiscard]] Widget* getParent() const { return m_parent; }
 
   // Geometry
-  void setBounds(const Rect &bounds);
-  [[nodiscard]] const Rect &getBounds() const { return m_bounds; }
+  void setBounds(const Rect& bounds);
+  [[nodiscard]] const Rect& getBounds() const { return m_bounds; }
   void setPosition(f32 x, f32 y);
   void setSize(f32 width, f32 height);
 
   // Size constraints
-  void setConstraints(const SizeConstraints &constraints);
-  [[nodiscard]] const SizeConstraints &getConstraints() const {
-    return m_constraints;
-  }
+  void setConstraints(const SizeConstraints& constraints);
+  [[nodiscard]] const SizeConstraints& getConstraints() const { return m_constraints; }
 
   // Layout
   void setAlignment(Alignment horizontal, Alignment vertical);
-  [[nodiscard]] Alignment getHorizontalAlignment() const {
-    return m_horizontalAlign;
-  }
-  [[nodiscard]] Alignment getVerticalAlignment() const {
-    return m_verticalAlign;
-  }
+  [[nodiscard]] Alignment getHorizontalAlignment() const { return m_horizontalAlign; }
+  [[nodiscard]] Alignment getVerticalAlignment() const { return m_verticalAlign; }
   void setFlexGrow(f32 grow) { m_flexGrow = grow; }
   [[nodiscard]] f32 getFlexGrow() const { return m_flexGrow; }
 
@@ -243,9 +235,9 @@ public:
   [[nodiscard]] bool isEnabled() const { return m_enabled; }
 
   // Style
-  void setStyle(const Style &style);
-  [[nodiscard]] const Style &getStyle() const { return m_style; }
-  void setStyleProperty(const std::string &property, const std::string &value);
+  void setStyle(const Style& style);
+  [[nodiscard]] const Style& getStyle() const { return m_style; }
+  void setStyleProperty(const std::string& property, const std::string& value);
 
   // Focus
   void setFocusable(bool focusable) { m_focusable = focusable; }
@@ -259,35 +251,35 @@ public:
   [[nodiscard]] bool isPressed() const { return m_pressed; }
 
   // Events
-  using EventHandler = std::function<void(UIEvent &)>;
+  using EventHandler = std::function<void(UIEvent&)>;
   void on(UIEventType type, EventHandler handler);
   void off(UIEventType type);
 
   // Lifecycle
   virtual void update(f64 deltaTime);
-  virtual void render(renderer::IRenderer &renderer);
+  virtual void render(renderer::IRenderer& renderer);
   virtual void layout();
 
   // Event handling
-  virtual bool handleEvent(UIEvent &event);
+  virtual bool handleEvent(UIEvent& event);
 
   // Measurement
   [[nodiscard]] virtual Rect measure(f32 availableWidth, f32 availableHeight);
 
   // Tooltip
-  void setTooltip(const std::string &tooltip) { m_tooltip = tooltip; }
-  [[nodiscard]] const std::string &getTooltip() const { return m_tooltip; }
+  void setTooltip(const std::string& tooltip) { m_tooltip = tooltip; }
+  [[nodiscard]] const std::string& getTooltip() const { return m_tooltip; }
 
   // User data
-  void setUserData(void *data) { m_userData = data; }
-  [[nodiscard]] void *getUserData() const { return m_userData; }
+  void setUserData(void* data) { m_userData = data; }
+  [[nodiscard]] void* getUserData() const { return m_userData; }
 
 protected:
-  void fireEvent(UIEvent &event);
-  void renderBackground(renderer::IRenderer &renderer);
+  void fireEvent(UIEvent& event);
+  void renderBackground(renderer::IRenderer& renderer);
 
   std::string m_id;
-  Widget *m_parent = nullptr;
+  Widget* m_parent = nullptr;
   Rect m_bounds;
   SizeConstraints m_constraints;
   Alignment m_horizontalAlign = Alignment::Start;
@@ -303,7 +295,7 @@ protected:
 
   Style m_style;
   std::string m_tooltip;
-  void *m_userData = nullptr;
+  void* m_userData = nullptr;
 
   std::unordered_map<UIEventType, EventHandler> m_eventHandlers;
 };
@@ -313,33 +305,28 @@ protected:
  */
 class Container : public Widget {
 public:
-  explicit Container(const std::string &id = "");
+  explicit Container(const std::string& id = "");
 
   // Children management
   void addChild(std::shared_ptr<Widget> child);
-  void removeChild(const std::string &id);
-  void removeChild(Widget *child);
+  void removeChild(const std::string& id);
+  void removeChild(Widget* child);
   void clearChildren();
-  [[nodiscard]] Widget *findChild(const std::string &id);
-  [[nodiscard]] const std::vector<std::shared_ptr<Widget>> &
-  getChildren() const {
+  [[nodiscard]] Widget* findChild(const std::string& id);
+  [[nodiscard]] const std::vector<std::shared_ptr<Widget>>& getChildren() const {
     return m_children;
   }
 
   // Layout
-  void setLayoutDirection(LayoutDirection direction) {
-    m_layoutDirection = direction;
-  }
-  [[nodiscard]] LayoutDirection getLayoutDirection() const {
-    return m_layoutDirection;
-  }
+  void setLayoutDirection(LayoutDirection direction) { m_layoutDirection = direction; }
+  [[nodiscard]] LayoutDirection getLayoutDirection() const { return m_layoutDirection; }
   void setSpacing(f32 spacing) { m_spacing = spacing; }
   [[nodiscard]] f32 getSpacing() const { return m_spacing; }
 
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   void layout() override;
-  bool handleEvent(UIEvent &event) override;
+  bool handleEvent(UIEvent& event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
 protected:
@@ -355,7 +342,7 @@ protected:
  */
 class HBox : public Container {
 public:
-  explicit HBox(const std::string &id = "");
+  explicit HBox(const std::string& id = "");
   void layoutChildren() override;
 };
 
@@ -364,7 +351,7 @@ public:
  */
 class VBox : public Container {
 public:
-  explicit VBox(const std::string &id = "");
+  explicit VBox(const std::string& id = "");
   void layoutChildren() override;
 };
 
@@ -373,7 +360,7 @@ public:
  */
 class Grid : public Container {
 public:
-  explicit Grid(const std::string &id = "");
+  explicit Grid(const std::string& id = "");
 
   void setColumns(i32 cols) { m_columns = cols; }
   [[nodiscard]] i32 getColumns() const { return m_columns; }
@@ -393,15 +380,15 @@ private:
  */
 class Label : public Widget {
 public:
-  explicit Label(const std::string &text = "", const std::string &id = "");
+  explicit Label(const std::string& text = "", const std::string& id = "");
 
-  void setText(const std::string &text);
-  [[nodiscard]] const std::string &getText() const { return m_text; }
+  void setText(const std::string& text);
+  [[nodiscard]] const std::string& getText() const { return m_text; }
 
   void setWordWrap(bool wrap) { m_wordWrap = wrap; }
   [[nodiscard]] bool getWordWrap() const { return m_wordWrap; }
 
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
 private:
@@ -414,19 +401,19 @@ private:
  */
 class Button : public Widget {
 public:
-  explicit Button(const std::string &text = "", const std::string &id = "");
+  explicit Button(const std::string& text = "", const std::string& id = "");
 
-  void setText(const std::string &text) { m_text = text; }
-  [[nodiscard]] const std::string &getText() const { return m_text; }
+  void setText(const std::string& text) { m_text = text; }
+  [[nodiscard]] const std::string& getText() const { return m_text; }
 
-  void setIcon(const std::string &iconId) { m_iconId = iconId; }
-  [[nodiscard]] const std::string &getIcon() const { return m_iconId; }
+  void setIcon(const std::string& iconId) { m_iconId = iconId; }
+  [[nodiscard]] const std::string& getIcon() const { return m_iconId; }
 
   using ClickHandler = std::function<void()>;
   void onClick(ClickHandler handler) { m_onClick = std::move(handler); }
 
-  void render(renderer::IRenderer &renderer) override;
-  bool handleEvent(UIEvent &event) override;
+  void render(renderer::IRenderer& renderer) override;
+  bool handleEvent(UIEvent& event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
 private:
@@ -440,17 +427,13 @@ private:
  */
 class TextInput : public Widget {
 public:
-  explicit TextInput(const std::string &id = "");
+  explicit TextInput(const std::string& id = "");
 
-  void setText(const std::string &text);
-  [[nodiscard]] const std::string &getText() const { return m_text; }
+  void setText(const std::string& text);
+  [[nodiscard]] const std::string& getText() const { return m_text; }
 
-  void setPlaceholder(const std::string &placeholder) {
-    m_placeholder = placeholder;
-  }
-  [[nodiscard]] const std::string &getPlaceholder() const {
-    return m_placeholder;
-  }
+  void setPlaceholder(const std::string& placeholder) { m_placeholder = placeholder; }
+  [[nodiscard]] const std::string& getPlaceholder() const { return m_placeholder; }
 
   void setPassword(bool password) { m_password = password; }
   [[nodiscard]] bool isPassword() const { return m_password; }
@@ -458,14 +441,14 @@ public:
   void setMaxLength(size_t maxLength) { m_maxLength = maxLength; }
   [[nodiscard]] size_t getMaxLength() const { return m_maxLength; }
 
-  using ChangeHandler = std::function<void(const std::string &)>;
+  using ChangeHandler = std::function<void(const std::string&)>;
   void onChange(ChangeHandler handler) { m_onChange = std::move(handler); }
 
-  using SubmitHandler = std::function<void(const std::string &)>;
+  using SubmitHandler = std::function<void(const std::string&)>;
   void onSubmit(SubmitHandler handler) { m_onSubmit = std::move(handler); }
 
-  void render(renderer::IRenderer &renderer) override;
-  bool handleEvent(UIEvent &event) override;
+  void render(renderer::IRenderer& renderer) override;
+  bool handleEvent(UIEvent& event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
   // Selection helpers
@@ -499,10 +482,10 @@ private:
  */
 class Checkbox : public Widget {
 public:
-  explicit Checkbox(const std::string &label = "", const std::string &id = "");
+  explicit Checkbox(const std::string& label = "", const std::string& id = "");
 
-  void setLabel(const std::string &label) { m_label = label; }
-  [[nodiscard]] const std::string &getLabel() const { return m_label; }
+  void setLabel(const std::string& label) { m_label = label; }
+  [[nodiscard]] const std::string& getLabel() const { return m_label; }
 
   void setChecked(bool checked);
   [[nodiscard]] bool isChecked() const { return m_checked; }
@@ -511,8 +494,8 @@ public:
   using ChangeHandler = std::function<void(bool)>;
   void onChange(ChangeHandler handler) { m_onChange = std::move(handler); }
 
-  void render(renderer::IRenderer &renderer) override;
-  bool handleEvent(UIEvent &event) override;
+  void render(renderer::IRenderer& renderer) override;
+  bool handleEvent(UIEvent& event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
 private:
@@ -526,7 +509,7 @@ private:
  */
 class Slider : public Widget {
 public:
-  explicit Slider(const std::string &id = "");
+  explicit Slider(const std::string& id = "");
 
   void setValue(f32 value);
   [[nodiscard]] f32 getValue() const { return m_value; }
@@ -541,8 +524,8 @@ public:
   using ChangeHandler = std::function<void(f32)>;
   void onChange(ChangeHandler handler) { m_onChange = std::move(handler); }
 
-  void render(renderer::IRenderer &renderer) override;
-  bool handleEvent(UIEvent &event) override;
+  void render(renderer::IRenderer& renderer) override;
+  bool handleEvent(UIEvent& event) override;
   [[nodiscard]] Rect measure(f32 availableWidth, f32 availableHeight) override;
 
 private:
@@ -559,20 +542,18 @@ private:
  */
 class ScrollPanel : public Container {
 public:
-  explicit ScrollPanel(const std::string &id = "");
+  explicit ScrollPanel(const std::string& id = "");
 
   void setScrollX(f32 x);
   void setScrollY(f32 y);
   [[nodiscard]] f32 getScrollX() const { return m_scrollX; }
   [[nodiscard]] f32 getScrollY() const { return m_scrollY; }
 
-  void setHorizontalScrollEnabled(bool enabled) {
-    m_horizontalScroll = enabled;
-  }
+  void setHorizontalScrollEnabled(bool enabled) { m_horizontalScroll = enabled; }
   void setVerticalScrollEnabled(bool enabled) { m_verticalScroll = enabled; }
 
-  void render(renderer::IRenderer &renderer) override;
-  bool handleEvent(UIEvent &event) override;
+  void render(renderer::IRenderer& renderer) override;
+  bool handleEvent(UIEvent& event) override;
   void layoutChildren() override;
 
 private:
@@ -589,8 +570,8 @@ private:
  */
 class Panel : public Container {
 public:
-  explicit Panel(const std::string &id = "");
-  void render(renderer::IRenderer &renderer) override;
+  explicit Panel(const std::string& id = "");
+  void render(renderer::IRenderer& renderer) override;
 };
 
 /**
@@ -603,15 +584,15 @@ public:
 
   // Root widget
   void setRoot(std::shared_ptr<Widget> root);
-  [[nodiscard]] Widget *getRoot() const { return m_root.get(); }
+  [[nodiscard]] Widget* getRoot() const { return m_root.get(); }
 
   // Theme
-  void setTheme(const Theme &theme);
-  [[nodiscard]] const Theme &getTheme() const { return m_theme; }
+  void setTheme(const Theme& theme);
+  [[nodiscard]] const Theme& getTheme() const { return m_theme; }
 
   // Focus management
-  void setFocus(Widget *widget);
-  [[nodiscard]] Widget *getFocusedWidget() const { return m_focusedWidget; }
+  void setFocus(Widget* widget);
+  [[nodiscard]] Widget* getFocusedWidget() const { return m_focusedWidget; }
   void clearFocus();
   void focusNext();
   void focusPrevious();
@@ -623,7 +604,7 @@ public:
 
   // Update and render
   void update(f64 deltaTime);
-  void render(renderer::IRenderer &renderer);
+  void render(renderer::IRenderer& renderer);
 
   // Event handling
   void handleMouseMove(f32 x, f32 y);
@@ -635,21 +616,21 @@ public:
   void handleTextInput(char character);
 
   // Hit testing
-  [[nodiscard]] Widget *hitTest(f32 x, f32 y);
+  [[nodiscard]] Widget* hitTest(f32 x, f32 y);
 
   // Layout
   void invalidateLayout();
   void performLayout();
 
 private:
-  Widget *hitTestRecursive(Widget *widget, f32 x, f32 y);
-  void collectFocusableWidgets(Widget *widget, std::vector<Widget *> &out);
+  Widget* hitTestRecursive(Widget* widget, f32 x, f32 y);
+  void collectFocusableWidgets(Widget* widget, std::vector<Widget*>& out);
 
   std::shared_ptr<Widget> m_root;
   std::vector<std::shared_ptr<Widget>> m_modalStack;
-  Widget *m_focusedWidget = nullptr;
-  Widget *m_hoveredWidget = nullptr;
-  Widget *m_pressedWidget = nullptr;
+  Widget* m_focusedWidget = nullptr;
+  Widget* m_hoveredWidget = nullptr;
+  Widget* m_pressedWidget = nullptr;
 
   Theme m_theme;
   bool m_layoutDirty = true;

@@ -16,7 +16,7 @@ namespace NovelMind::editor::qt {
 // NMScriptMinimap - VSCode-like code overview
 // ============================================================================
 
-NMScriptMinimap::NMScriptMinimap(NMScriptEditor *editor, QWidget *parent)
+NMScriptMinimap::NMScriptMinimap(NMScriptEditor* editor, QWidget* parent)
     : QWidget(parent), m_editor(editor) {
   setFixedWidth(kMinimapWidth);
   setMouseTracking(true);
@@ -24,8 +24,7 @@ NMScriptMinimap::NMScriptMinimap(NMScriptEditor *editor, QWidget *parent)
   // Connect to editor signals for updates
   connect(m_editor->document(), &QTextDocument::contentsChanged, this,
           &NMScriptMinimap::updateContent);
-  connect(m_editor, &NMScriptEditor::viewportChanged, this,
-          &NMScriptMinimap::setViewportRange);
+  connect(m_editor, &NMScriptEditor::viewportChanged, this, &NMScriptMinimap::setViewportRange);
 }
 
 void NMScriptMinimap::updateContent() {
@@ -39,12 +38,11 @@ void NMScriptMinimap::updateContent() {
     return;
   }
 
-  m_cachedImage = QImage(kMinimapWidth, std::max(1, height),
-                         QImage::Format_ARGB32_Premultiplied);
+  m_cachedImage = QImage(kMinimapWidth, std::max(1, height), QImage::Format_ARGB32_Premultiplied);
   m_cachedImage.fill(Qt::transparent);
 
   QPainter painter(&m_cachedImage);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Draw each line as colored rectangles
   QTextBlock block = m_editor->document()->begin();
@@ -55,7 +53,7 @@ void NMScriptMinimap::updateContent() {
     const int y = static_cast<int>(lineNum * kMinimapLineHeight);
     int x = 0;
 
-    for (const QChar &ch : text) {
+    for (const QChar& ch : text) {
       if (ch.isSpace()) {
         x += static_cast<int>(kMinimapCharWidth);
         continue;
@@ -69,8 +67,7 @@ void NMScriptMinimap::updateContent() {
         color = QColor(220, 180, 120);
       }
 
-      painter.fillRect(QRectF(x, y, kMinimapCharWidth, kMinimapLineHeight - 1),
-                       color);
+      painter.fillRect(QRectF(x, y, kMinimapCharWidth, kMinimapLineHeight - 1), color);
       x += static_cast<int>(kMinimapCharWidth);
 
       if (x >= kMinimapWidth - 10) {
@@ -91,10 +88,10 @@ void NMScriptMinimap::setViewportRange(int firstLine, int lastLine) {
   update();
 }
 
-void NMScriptMinimap::paintEvent(QPaintEvent *event) {
+void NMScriptMinimap::paintEvent(QPaintEvent* event) {
   Q_UNUSED(event);
   QPainter painter(this);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Background
   painter.fillRect(rect(), palette.bgMedium);
@@ -104,9 +101,8 @@ void NMScriptMinimap::paintEvent(QPaintEvent *event) {
   }
 
   // Calculate scale factor to fit minimap
-  const double scale =
-      std::min(1.0, static_cast<double>(height()) /
-                        static_cast<double>(m_totalLines * kMinimapLineHeight));
+  const double scale = std::min(1.0, static_cast<double>(height()) /
+                                         static_cast<double>(m_totalLines * kMinimapLineHeight));
 
   // Draw the cached minimap image
   painter.save();
@@ -116,17 +112,13 @@ void NMScriptMinimap::paintEvent(QPaintEvent *event) {
 
   // Draw viewport indicator (the visible region box)
   if (m_totalLines > 0) {
-    const double viewportTop =
-        (static_cast<double>(m_firstVisibleLine) / m_totalLines) * height();
+    const double viewportTop = (static_cast<double>(m_firstVisibleLine) / m_totalLines) * height();
     const double viewportHeight =
-        (static_cast<double>(m_lastVisibleLine - m_firstVisibleLine + 1) /
-         m_totalLines) *
-        height();
+        (static_cast<double>(m_lastVisibleLine - m_firstVisibleLine + 1) / m_totalLines) * height();
 
     QColor viewportColor = palette.bgLight;
     viewportColor.setAlpha(80);
-    painter.fillRect(QRectF(0, viewportTop, width(), viewportHeight),
-                     viewportColor);
+    painter.fillRect(QRectF(0, viewportTop, width(), viewportHeight), viewportColor);
 
     // Border for viewport
     painter.setPen(QPen(palette.borderLight, 1));
@@ -134,12 +126,12 @@ void NMScriptMinimap::paintEvent(QPaintEvent *event) {
   }
 }
 
-void NMScriptMinimap::mousePressEvent(QMouseEvent *event) {
+void NMScriptMinimap::mousePressEvent(QMouseEvent* event) {
   m_isDragging = true;
   // Navigate to clicked position
   if (m_totalLines > 0) {
-    const int targetLine = static_cast<int>(
-        (static_cast<double>(event->pos().y()) / height()) * m_totalLines);
+    const int targetLine =
+        static_cast<int>((static_cast<double>(event->pos().y()) / height()) * m_totalLines);
     QTextBlock block = m_editor->document()->findBlockByNumber(targetLine);
     if (block.isValid()) {
       QTextCursor cursor(block);
@@ -149,11 +141,11 @@ void NMScriptMinimap::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void NMScriptMinimap::mouseMoveEvent(QMouseEvent *event) {
+void NMScriptMinimap::mouseMoveEvent(QMouseEvent* event) {
   if (m_isDragging && (event->buttons() & Qt::LeftButton)) {
     if (m_totalLines > 0) {
-      const int targetLine = static_cast<int>(
-          (static_cast<double>(event->pos().y()) / height()) * m_totalLines);
+      const int targetLine =
+          static_cast<int>((static_cast<double>(event->pos().y()) / height()) * m_totalLines);
       QTextBlock block = m_editor->document()->findBlockByNumber(
           std::max(0, std::min(targetLine, m_totalLines - 1)));
       if (block.isValid()) {
@@ -165,7 +157,7 @@ void NMScriptMinimap::mouseMoveEvent(QMouseEvent *event) {
   }
 }
 
-void NMScriptMinimap::wheelEvent(QWheelEvent *event) {
+void NMScriptMinimap::wheelEvent(QWheelEvent* event) {
   // Forward wheel events to the editor
   QCoreApplication::sendEvent(m_editor, event);
 }

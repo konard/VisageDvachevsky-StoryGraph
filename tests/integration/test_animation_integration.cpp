@@ -25,7 +25,8 @@ public:
   }
 };
 
-TEST_CASE("Animation Integration - Timeline to engine_core conversion", "[integration][animation]") {
+TEST_CASE("Animation Integration - Timeline to engine_core conversion",
+          "[integration][animation]") {
   SECTION("Single property animation") {
     // Simulate a Timeline track with keyframes
     // Frame 0: position X = 0
@@ -52,13 +53,10 @@ TEST_CASE("Animation Integration - Timeline to engine_core conversion", "[integr
     f32 x = 0.0f;
     f32 y = 0.0f;
 
-    auto tween = std::make_unique<PositionTween>(
-        &x, &y,
-        0.0f, 0.0f,      // Start position
-        100.0f, 200.0f,  // End position
-        2.0f,            // Duration: 2 seconds
-        EaseType::EaseOutQuad
-    );
+    auto tween = std::make_unique<PositionTween>(&x, &y, 0.0f, 0.0f, // Start position
+                                                 100.0f, 200.0f,     // End position
+                                                 2.0f,               // Duration: 2 seconds
+                                                 EaseType::EaseOutQuad);
 
     tween->start();
 
@@ -83,7 +81,7 @@ TEST_CASE("Animation Integration - Timeline to engine_core conversion", "[integr
 
     AnimationTimeline timeline;
     timeline.append(std::make_unique<FloatTween>(&positionX, 0.0f, 50.0f, 1.0f))
-            .append(std::make_unique<FloatTween>(&positionX, 50.0f, 100.0f, 1.0f));
+        .append(std::make_unique<FloatTween>(&positionX, 50.0f, 100.0f, 1.0f));
 
     timeline.start();
 
@@ -102,12 +100,12 @@ TEST_CASE("Animation Integration - Timeline to engine_core conversion", "[integr
     f32 easeInValue = 0.0f;
     f32 easeOutValue = 0.0f;
 
-    auto linearTween = std::make_unique<FloatTween>(
-        &linearValue, 0.0f, 100.0f, 1.0f, EaseType::Linear);
-    auto easeInTween = std::make_unique<FloatTween>(
-        &easeInValue, 0.0f, 100.0f, 1.0f, EaseType::EaseInQuad);
-    auto easeOutTween = std::make_unique<FloatTween>(
-        &easeOutValue, 0.0f, 100.0f, 1.0f, EaseType::EaseOutQuad);
+    auto linearTween =
+        std::make_unique<FloatTween>(&linearValue, 0.0f, 100.0f, 1.0f, EaseType::Linear);
+    auto easeInTween =
+        std::make_unique<FloatTween>(&easeInValue, 0.0f, 100.0f, 1.0f, EaseType::EaseInQuad);
+    auto easeOutTween =
+        std::make_unique<FloatTween>(&easeOutValue, 0.0f, 100.0f, 1.0f, EaseType::EaseOutQuad);
 
     linearTween->start();
     easeInTween->start();
@@ -150,13 +148,8 @@ TEST_CASE("Animation Integration - Scene object property updates", "[integration
     f32 targetX = 100.0f;
     f32 targetY = 200.0f;
 
-    auto tween = std::make_unique<PositionTween>(
-        &targetX, &targetY,
-        0.0f, 0.0f,
-        100.0f, 200.0f,
-        1.0f,
-        EaseType::Linear
-    );
+    auto tween = std::make_unique<PositionTween>(&targetX, &targetY, 0.0f, 0.0f, 100.0f, 200.0f,
+                                                 1.0f, EaseType::Linear);
 
     tween->start();
     tween->update(1.0);
@@ -180,9 +173,7 @@ TEST_CASE("Animation Integration - Scene object property updates", "[integration
     CHECK(objPtr->getAlpha() == Catch::Approx(1.0f));
 
     f32 alpha = 1.0f;
-    auto tween = std::make_unique<FloatTween>(
-        &alpha, 1.0f, 0.0f, 2.0f, EaseType::Linear
-    );
+    auto tween = std::make_unique<FloatTween>(&alpha, 1.0f, 0.0f, 2.0f, EaseType::Linear);
 
     tween->start();
 
@@ -212,12 +203,8 @@ TEST_CASE("Animation Integration - Scene object property updates", "[integration
     f32 alpha = 1.0f;
 
     AnimationTimeline timeline;
-    timeline.append(std::make_unique<PositionTween>(
-        &x, &y, 0.0f, 0.0f, 100.0f, 100.0f, 1.0f
-    ));
-    timeline.join(std::make_unique<FloatTween>(
-        &alpha, 1.0f, 0.0f, 1.0f
-    ));
+    timeline.append(std::make_unique<PositionTween>(&x, &y, 0.0f, 0.0f, 100.0f, 100.0f, 1.0f));
+    timeline.join(std::make_unique<FloatTween>(&alpha, 1.0f, 0.0f, 1.0f));
 
     timeline.start();
     timeline.update(1.0);
@@ -285,9 +272,9 @@ TEST_CASE("Animation Integration - Preview playback synchronization", "[integrat
     manager.update(0.5);
 
     // Each animation should progress according to its duration
-    CHECK(obj1_x == Catch::Approx(50.0f).margin(1.0f));  // 50% of 1s
-    CHECK(obj2_x == Catch::Approx(50.0f).margin(1.0f));  // 25% of 2s
-    CHECK(obj3_x == Catch::Approx(25.0f).margin(1.0f));  // 50% of 1s
+    CHECK(obj1_x == Catch::Approx(50.0f).margin(1.0f)); // 50% of 1s
+    CHECK(obj2_x == Catch::Approx(50.0f).margin(1.0f)); // 25% of 2s
+    CHECK(obj3_x == Catch::Approx(25.0f).margin(1.0f)); // 50% of 1s
 
     // Complete all animations
     manager.update(1.5);
@@ -298,7 +285,8 @@ TEST_CASE("Animation Integration - Preview playback synchronization", "[integrat
   }
 }
 
-TEST_CASE("Animation Integration - Object cache invalidation on deletion", "[integration][animation][cache]") {
+TEST_CASE("Animation Integration - Object cache invalidation on deletion",
+          "[integration][animation][cache]") {
   SECTION("Cache entry removed when object deleted") {
     // This is a conceptual test - in real implementation, this would test the
     // NMAnimationAdapter's cache invalidation when receiving objectDeleted signal
@@ -338,7 +326,7 @@ TEST_CASE("Animation Integration - RAII and resource management", "[integration]
       AnimationTimeline timeline;
 
       // Create and move tween into timeline
-      auto tween = std::make_unique<CallbackTween>([](f32){}, 1.0f);
+      auto tween = std::make_unique<CallbackTween>([](f32) {}, 1.0f);
       timeline.append(std::move(tween));
 
       // Verify ownership was transferred (tween should be null after move)

@@ -31,11 +31,11 @@ Result<void> ProjectManager::createFolderStructure() {
                                    base / ".temp",
                                    base / ".backup"};
 
-  for (const auto &folder : folders) {
+  for (const auto& folder : folders) {
     if (!fs::exists(folder)) {
       if (!fs::create_directories(folder, ec)) {
-        return Result<void>::error("Failed to create folder: " +
-                                   folder.string() + " - " + ec.message());
+        return Result<void>::error("Failed to create folder: " + folder.string() + " - " +
+                                   ec.message());
       }
     }
   }
@@ -53,10 +53,9 @@ bool ProjectManager::verifyFolderStructure() const {
   fs::path base(m_projectPath);
 
   // Check required folders
-  std::vector<fs::path> required = {base / "Assets", base / "scripts",
-                                    base / "Scenes"};
+  std::vector<fs::path> required = {base / "Assets", base / "scripts", base / "Scenes"};
 
-  for (const auto &folder : required) {
+  for (const auto& folder : required) {
     if (!fs::exists(folder) || !fs::is_directory(folder)) {
       return false;
     }
@@ -65,7 +64,7 @@ bool ProjectManager::verifyFolderStructure() const {
   return true;
 }
 
-Result<void> ProjectManager::createFolder(const std::string &relativePath) {
+Result<void> ProjectManager::createFolder(const std::string& relativePath) {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -82,7 +81,7 @@ Result<void> ProjectManager::createFolder(const std::string &relativePath) {
   return Result<void>::ok();
 }
 
-bool ProjectManager::isPathInProject(const std::string &path) const {
+bool ProjectManager::isPathInProject(const std::string& path) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -92,14 +91,13 @@ bool ProjectManager::isPathInProject(const std::string &path) const {
   fs::path projectPath = fs::canonical(m_projectPath);
   fs::path targetPath = fs::canonical(path);
 
-  auto it = std::search(targetPath.begin(), targetPath.end(),
-                        projectPath.begin(), projectPath.end());
+  auto it =
+      std::search(targetPath.begin(), targetPath.end(), projectPath.begin(), projectPath.end());
 
   return it == targetPath.begin();
 }
 
-std::string
-ProjectManager::toRelativePath(const std::string &absolutePath) const {
+std::string ProjectManager::toRelativePath(const std::string& absolutePath) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -109,8 +107,7 @@ ProjectManager::toRelativePath(const std::string &absolutePath) const {
   return fs::relative(absolutePath, m_projectPath).string();
 }
 
-std::string
-ProjectManager::toAbsolutePath(const std::string &relativePath) const {
+std::string ProjectManager::toAbsolutePath(const std::string& relativePath) const {
   namespace fs = std::filesystem;
 
   if (m_projectPath.empty()) {
@@ -159,8 +156,7 @@ std::string ProjectManager::getFolderPath(ProjectFolder folder) const {
   return m_projectPath;
 }
 
-std::vector<std::string>
-ProjectManager::getProjectFiles(const std::string &extension) const {
+std::vector<std::string> ProjectManager::getProjectFiles(const std::string& extension) const {
   namespace fs = std::filesystem;
 
   std::vector<std::string> files;
@@ -169,7 +165,7 @@ ProjectManager::getProjectFiles(const std::string &extension) const {
     return files;
   }
 
-  for (const auto &entry : fs::recursive_directory_iterator(m_projectPath)) {
+  for (const auto& entry : fs::recursive_directory_iterator(m_projectPath)) {
     if (entry.is_regular_file() && entry.path().extension() == extension) {
       files.push_back(entry.path().string());
     }

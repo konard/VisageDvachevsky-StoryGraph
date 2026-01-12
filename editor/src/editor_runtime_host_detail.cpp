@@ -4,7 +4,7 @@ namespace NovelMind::editor::detail {
 
 namespace {
 
-std::string escapeListValue(const std::string &value) {
+std::string escapeListValue(const std::string& value) {
   std::string out;
   out.reserve(value.size());
   for (char c : value) {
@@ -19,7 +19,7 @@ std::string escapeListValue(const std::string &value) {
   return out;
 }
 
-std::string unescapeListValue(const std::string &value) {
+std::string unescapeListValue(const std::string& value) {
   std::string out;
   out.reserve(value.size());
   for (size_t i = 0; i < value.size(); ++i) {
@@ -44,7 +44,7 @@ std::string unescapeListValue(const std::string &value) {
 
 } // namespace
 
-bool readFileToString(std::ifstream &file, std::string &out) {
+bool readFileToString(std::ifstream& file, std::string& out) {
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
   if (size < 0) {
@@ -57,7 +57,7 @@ bool readFileToString(std::ifstream &file, std::string &out) {
   return static_cast<bool>(file);
 }
 
-std::string encodeList(const std::vector<std::string> &items) {
+std::string encodeList(const std::vector<std::string>& items) {
   std::string out;
   for (size_t i = 0; i < items.size(); ++i) {
     if (i > 0) {
@@ -68,7 +68,7 @@ std::string encodeList(const std::vector<std::string> &items) {
   return out;
 }
 
-std::vector<std::string> decodeList(const std::string &value) {
+std::vector<std::string> decodeList(const std::string& value) {
   std::vector<std::string> out;
   std::string current;
   for (char c : value) {
@@ -85,7 +85,7 @@ std::vector<std::string> decodeList(const std::string &value) {
   return out;
 }
 
-bool startsWith(const std::string &value, const std::string &prefix) {
+bool startsWith(const std::string& value, const std::string& prefix) {
   if (value.size() < prefix.size()) {
     return false;
   }

@@ -55,21 +55,19 @@ struct CurvePoint {
 class AnimationCurve {
 public:
   AnimationCurve();
-  AnimationCurve(const std::string &name);
+  AnimationCurve(const std::string& name);
   ~AnimationCurve() = default;
 
-  [[nodiscard]] const std::string &getName() const { return m_name; }
-  void setName(const std::string &name) { m_name = name; }
+  [[nodiscard]] const std::string& getName() const { return m_name; }
+  void setName(const std::string& name) { m_name = name; }
 
-  [[nodiscard]] const std::string &getId() const { return m_id; }
+  [[nodiscard]] const std::string& getId() const { return m_id; }
 
   // Points
-  void addPoint(const CurvePoint &point);
+  void addPoint(const CurvePoint& point);
   void removePoint(size_t index);
-  void updatePoint(size_t index, const CurvePoint &point);
-  [[nodiscard]] const std::vector<CurvePoint> &getPoints() const {
-    return m_points;
-  }
+  void updatePoint(size_t index, const CurvePoint& point);
+  [[nodiscard]] const std::vector<CurvePoint>& getPoints() const { return m_points; }
   [[nodiscard]] size_t getPointCount() const { return m_points.size(); }
 
   // Evaluation
@@ -107,14 +105,13 @@ public:
   void normalize(); // Ensure points are in valid range and sorted
 
   // Serialization
-  Result<void> save(const std::string &path) const;
-  static Result<AnimationCurve> load(const std::string &path);
+  Result<void> save(const std::string& path) const;
+  static Result<AnimationCurve> load(const std::string& path);
   [[nodiscard]] std::string toJson() const;
-  static Result<AnimationCurve> fromJson(const std::string &json);
+  static Result<AnimationCurve> fromJson(const std::string& json);
 
 private:
-  f32 evaluateBezierSegment(const CurvePoint &p0, const CurvePoint &p1,
-                            f32 localT) const;
+  f32 evaluateBezierSegment(const CurvePoint& p0, const CurvePoint& p1, f32 localT) const;
   i32 findSegment(f32 t) const;
 
   std::string m_id;
@@ -131,18 +128,16 @@ public:
   ~CurveLibrary() = default;
 
   // Curve management
-  void addCurve(const AnimationCurve &curve);
-  void removeCurve(const std::string &id);
-  void updateCurve(const std::string &id, const AnimationCurve &curve);
-  [[nodiscard]] const AnimationCurve *getCurve(const std::string &id) const;
+  void addCurve(const AnimationCurve& curve);
+  void removeCurve(const std::string& id);
+  void updateCurve(const std::string& id, const AnimationCurve& curve);
+  [[nodiscard]] const AnimationCurve* getCurve(const std::string& id) const;
   [[nodiscard]] std::vector<std::string> getCurveIds() const;
   [[nodiscard]] std::vector<std::string> getCurveNames() const;
 
   // Categories
-  void setCurveCategory(const std::string &curveId,
-                        const std::string &category);
-  [[nodiscard]] std::vector<std::string>
-  getCurvesInCategory(const std::string &category) const;
+  void setCurveCategory(const std::string& curveId, const std::string& category);
+  [[nodiscard]] std::vector<std::string> getCurvesInCategory(const std::string& category) const;
   [[nodiscard]] std::vector<std::string> getCategories() const;
 
   // Presets
@@ -150,8 +145,8 @@ public:
   [[nodiscard]] std::vector<std::string> getPresetIds() const;
 
   // Persistence
-  Result<void> saveLibrary(const std::string &path);
-  Result<void> loadLibrary(const std::string &path);
+  Result<void> saveLibrary(const std::string& path);
+  Result<void> loadLibrary(const std::string& path);
 
 private:
   std::unordered_map<std::string, AnimationCurve> m_curves;
@@ -215,8 +210,8 @@ public:
   void onResize(i32 width, i32 height);
 
   // Curve management
-  void setCurve(AnimationCurve *curve);
-  [[nodiscard]] AnimationCurve *getCurve() const { return m_curve; }
+  void setCurve(AnimationCurve* curve);
+  [[nodiscard]] AnimationCurve* getCurve() const { return m_curve; }
 
   void setEditingEnabled(bool enabled) { m_editingEnabled = enabled; }
   [[nodiscard]] bool isEditingEnabled() const { return m_editingEnabled; }
@@ -224,9 +219,7 @@ public:
   // Selection
   void selectPoint(size_t index);
   void deselectAll();
-  [[nodiscard]] const std::vector<size_t> &getSelectedPoints() const {
-    return m_selectedPoints;
-  }
+  [[nodiscard]] const std::vector<size_t>& getSelectedPoints() const { return m_selectedPoints; }
 
   // View
   void setZoom(f32 zoom);
@@ -239,25 +232,23 @@ public:
   void resetView();
 
   // Configuration
-  void setConfig(const CurveEditorConfig &config);
-  [[nodiscard]] const CurveEditorConfig &getConfig() const { return m_config; }
+  void setConfig(const CurveEditorConfig& config);
+  [[nodiscard]] const CurveEditorConfig& getConfig() const { return m_config; }
 
   // Curve library
-  void setCurveLibrary(CurveLibrary *library) { m_library = library; }
-  [[nodiscard]] CurveLibrary *getCurveLibrary() const { return m_library; }
+  void setCurveLibrary(CurveLibrary* library) { m_library = library; }
+  [[nodiscard]] CurveLibrary* getCurveLibrary() const { return m_library; }
 
   // Presets panel
   void showPresetsPanel();
   void hidePresetsPanel();
-  [[nodiscard]] bool isPresetsPanelVisible() const {
-    return m_showPresetsPanel;
-  }
+  [[nodiscard]] bool isPresetsPanelVisible() const { return m_showPresetsPanel; }
 
   // Apply preset
-  void applyPreset(const std::string &presetId);
+  void applyPreset(const std::string& presetId);
 
   // Callbacks
-  void setOnCurveModified(std::function<void(const AnimationCurve &)> callback);
+  void setOnCurveModified(std::function<void(const AnimationCurve&)> callback);
   void setOnPointSelected(std::function<void(size_t)> callback);
 
 private:
@@ -280,7 +271,7 @@ private:
 
   // Hit testing
   i32 hitTestPoint(f32 x, f32 y) const;
-  i32 hitTestHandle(f32 x, f32 y, bool &isInHandle) const;
+  i32 hitTestHandle(f32 x, f32 y, bool& isInHandle) const;
 
   // Point manipulation
   void addPointAtScreenPos(f32 x, f32 y);
@@ -288,8 +279,8 @@ private:
   void updatePointPosition(size_t index, f32 t, f32 v);
   void updateHandlePosition(size_t index, bool isInHandle, f32 dx, f32 dy);
 
-  AnimationCurve *m_curve = nullptr;
-  CurveLibrary *m_library = nullptr;
+  AnimationCurve* m_curve = nullptr;
+  CurveLibrary* m_library = nullptr;
   CurveEditorConfig m_config;
 
   bool m_editingEnabled = true;
@@ -318,7 +309,7 @@ private:
   bool isVisible() const { return m_visible; }
 
   // Callbacks
-  std::function<void(const AnimationCurve &)> m_onCurveModified;
+  std::function<void(const AnimationCurve&)> m_onCurveModified;
   std::function<void(size_t)> m_onPointSelected;
 };
 
@@ -330,19 +321,19 @@ public:
   InlineCurveWidget(f32 width, f32 height);
   ~InlineCurveWidget() = default;
 
-  void setCurve(const AnimationCurve &curve);
-  [[nodiscard]] const AnimationCurve &getCurve() const { return m_curve; }
+  void setCurve(const AnimationCurve& curve);
+  [[nodiscard]] const AnimationCurve& getCurve() const { return m_curve; }
 
   void setSize(f32 width, f32 height);
 
   void update(f64 deltaTime);
-  void render(renderer::IRenderer *renderer, f32 x, f32 y);
+  void render(renderer::IRenderer* renderer, f32 x, f32 y);
 
   bool handleClick(f32 x, f32 y);
   bool handleDrag(f32 x, f32 y, f32 dx, f32 dy);
   void handleRelease();
 
-  void setOnCurveChanged(std::function<void(const AnimationCurve &)> callback);
+  void setOnCurveChanged(std::function<void(const AnimationCurve&)> callback);
 
 private:
   AnimationCurve m_curve;
@@ -352,7 +343,7 @@ private:
   i32 m_selectedPoint = -1;
   bool m_isDragging = false;
 
-  std::function<void(const AnimationCurve &)> m_onCurveChanged;
+  std::function<void(const AnimationCurve&)> m_onCurveChanged;
 };
 
 } // namespace NovelMind::editor

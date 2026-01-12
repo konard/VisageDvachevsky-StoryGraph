@@ -52,7 +52,7 @@ void printVersion() {
 /**
  * @brief Main entry point
  */
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   // Enable High-DPI scaling
   QApplication::setHighDpiScaleFactorRoundingPolicy(
       Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
@@ -83,12 +83,10 @@ int main(int argc, char *argv[]) {
   QCommandLineOption noWelcomeOption("no-welcome", "Skip the welcome screen");
   parser.addOption(noWelcomeOption);
 
-  QCommandLineOption resetLayoutOption("reset-layout",
-                                       "Reset panel layout to defaults");
+  QCommandLineOption resetLayoutOption("reset-layout", "Reset panel layout to defaults");
   parser.addOption(resetLayoutOption);
 
-  QCommandLineOption scaleOption("scale", "Set UI scale factor (0.5-3.0)",
-                                 "factor", "1.0");
+  QCommandLineOption scaleOption("scale", "Set UI scale factor (0.5-3.0)", "factor", "1.0");
   parser.addOption(scaleOption);
 
   // Add positional argument for project file
@@ -104,7 +102,7 @@ int main(int argc, char *argv[]) {
   core::Logger::instance().info("NovelMind Editor starting...");
 
   // Initialize style manager and apply dark theme
-  NMStyleManager &styleManager = NMStyleManager::instance();
+  NMStyleManager& styleManager = NMStyleManager::instance();
   styleManager.initialize(&app);
 
   // Apply scale factor if specified
@@ -129,7 +127,7 @@ int main(int argc, char *argv[]) {
     mainWindow.resetToDefaultLayout();
   }
 
-  auto resolveTemplateId = [](const QString &templateName) {
+  auto resolveTemplateId = [](const QString& templateName) {
     const QString lowered = templateName.trimmed().toLower();
     if (lowered.contains("blank")) {
       return QString("empty");
@@ -152,8 +150,7 @@ int main(int argc, char *argv[]) {
     return QString("empty");
   };
 
-  auto updateRecentProjects = [](const QString &projectPath,
-                                 const QString &projectName) {
+  auto updateRecentProjects = [](const QString& projectPath, const QString& projectName) {
     if (projectPath.isEmpty()) {
       return;
     }
@@ -191,8 +188,7 @@ int main(int argc, char *argv[]) {
 
     RecentEntry current;
     current.path = normalizedPath;
-    current.name = projectName.isEmpty() ? QFileInfo(normalizedPath).fileName()
-                                         : projectName;
+    current.name = projectName.isEmpty() ? QFileInfo(normalizedPath).fileName() : projectName;
     current.lastOpened = QDateTime::currentDateTime().toString(Qt::ISODate);
     current.thumbnail = QString();
     entries.prepend(current);
@@ -215,47 +211,45 @@ int main(int argc, char *argv[]) {
 
   auto applyProjectToPanels = [&mainWindow]() {
     core::Logger::instance().info("applyProjectToPanels: Starting");
-    auto &projectManager = NovelMind::editor::ProjectManager::instance();
+    auto& projectManager = NovelMind::editor::ProjectManager::instance();
     if (!projectManager.hasOpenProject()) {
       core::Logger::instance().info("applyProjectToPanels: No open project");
       return;
     }
 
-    const QString projectName =
-        QString::fromStdString(projectManager.getProjectName());
+    const QString projectName = QString::fromStdString(projectManager.getProjectName());
     core::Logger::instance().info("applyProjectToPanels: Updating window title");
     mainWindow.updateWindowTitle(projectName);
 
     const QString assetsRoot = QString::fromStdString(
         projectManager.getFolderPath(NovelMind::editor::ProjectFolder::Assets));
     core::Logger::instance().info("applyProjectToPanels: Setting up asset panel");
-    if (auto *assetPanel = mainWindow.assetBrowserPanel()) {
+    if (auto* assetPanel = mainWindow.assetBrowserPanel()) {
       assetPanel->setRootPath(assetsRoot);
     }
     core::Logger::instance().info("applyProjectToPanels: Refreshing script panel");
-    if (auto *scriptPanel = mainWindow.scriptEditorPanel()) {
+    if (auto* scriptPanel = mainWindow.scriptEditorPanel()) {
       scriptPanel->refreshFileList();
     }
     core::Logger::instance().info("applyProjectToPanels: Refreshing hierarchy panel");
-    if (auto *hierarchyPanel = mainWindow.hierarchyPanel()) {
+    if (auto* hierarchyPanel = mainWindow.hierarchyPanel()) {
       hierarchyPanel->refresh();
     }
     core::Logger::instance().info("applyProjectToPanels: Loading scene document");
-    if (auto *sceneView = mainWindow.sceneViewPanel()) {
+    if (auto* sceneView = mainWindow.sceneViewPanel()) {
       const std::string startScene = projectManager.getStartScene();
       if (!startScene.empty()) {
         core::Logger::instance().info("applyProjectToPanels: Loading start scene: " + startScene);
         sceneView->loadSceneDocument(QString::fromStdString(startScene));
       } else {
-        const QString scenesRoot =
-            QString::fromStdString(projectManager.getFolderPath(
-                NovelMind::editor::ProjectFolder::Scenes));
+        const QString scenesRoot = QString::fromStdString(
+            projectManager.getFolderPath(NovelMind::editor::ProjectFolder::Scenes));
         QDir scenesDir(scenesRoot);
-        const QStringList scenes =
-            scenesDir.entryList(QStringList() << "*.nmscene", QDir::Files);
+        const QStringList scenes = scenesDir.entryList(QStringList() << "*.nmscene", QDir::Files);
         if (!scenes.isEmpty()) {
           const QString sceneId = QFileInfo(scenes.first()).completeBaseName();
-          core::Logger::instance().info("applyProjectToPanels: Loading first scene: " + sceneId.toStdString());
+          core::Logger::instance().info("applyProjectToPanels: Loading first scene: " +
+                                        sceneId.toStdString());
           sceneView->loadSceneDocument(sceneId);
         } else {
           core::Logger::instance().info("applyProjectToPanels: No scenes found to load");
@@ -267,35 +261,33 @@ int main(int argc, char *argv[]) {
     core::Logger::instance().info("applyProjectToPanels: Completed");
   };
 
-  auto applyProjectAndRemember = [&applyProjectToPanels, &updateRecentProjects,
-                                  &mainWindow]() {
+  auto applyProjectAndRemember = [&applyProjectToPanels, &updateRecentProjects, &mainWindow]() {
     core::Logger::instance().info("applyProjectAndRemember: Starting");
-    auto &projectManager = NovelMind::editor::ProjectManager::instance();
+    auto& projectManager = NovelMind::editor::ProjectManager::instance();
     try {
       applyProjectToPanels();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       core::Logger::instance().error(
           std::string("applyProjectAndRemember: Exception in applyProjectToPanels: ") + e.what());
     }
     core::Logger::instance().info("applyProjectAndRemember: Updating recent projects");
     try {
-      updateRecentProjects(
-          QString::fromStdString(projectManager.getProjectPath()),
-          QString::fromStdString(projectManager.getProjectName()));
-    } catch (const std::exception &e) {
+      updateRecentProjects(QString::fromStdString(projectManager.getProjectPath()),
+                           QString::fromStdString(projectManager.getProjectName()));
+    } catch (const std::exception& e) {
       core::Logger::instance().error(
           std::string("applyProjectAndRemember: Exception in updateRecentProjects: ") + e.what());
     }
 
     // Issue #327: Apply workflow mode panel visibility when project is opened
-    core::Logger::instance().info("applyProjectAndRemember: Applying workflow mode panel visibility");
+    core::Logger::instance().info(
+        "applyProjectAndRemember: Applying workflow mode panel visibility");
     try {
-      const auto &metadata = projectManager.getMetadata();
+      const auto& metadata = projectManager.getMetadata();
       mainWindow.onWorkflowModeChanged(metadata.playbackSourceMode);
-      core::Logger::instance().info(
-          "applyProjectAndRemember: Workflow mode applied: " +
-          std::to_string(static_cast<int>(metadata.playbackSourceMode)));
-    } catch (const std::exception &e) {
+      core::Logger::instance().info("applyProjectAndRemember: Workflow mode applied: " +
+                                    std::to_string(static_cast<int>(metadata.playbackSourceMode)));
+    } catch (const std::exception& e) {
       core::Logger::instance().error(
           std::string("applyProjectAndRemember: Exception applying workflow mode: ") + e.what());
     }
@@ -304,25 +296,21 @@ int main(int argc, char *argv[]) {
     QTimer::singleShot(0, &mainWindow, []() {
       try {
         if (!NMPlayModeController::instance().loadCurrentProject()) {
-          core::Logger::instance().warning(
-              "PlayMode runtime did not load for current project");
+          core::Logger::instance().warning("PlayMode runtime did not load for current project");
         }
-      } catch (const std::exception &e) {
-        core::Logger::instance().error(
-            std::string("PlayMode runtime exception: ") + e.what());
+      } catch (const std::exception& e) {
+        core::Logger::instance().error(std::string("PlayMode runtime exception: ") + e.what());
       }
     });
     core::Logger::instance().info("applyProjectAndRemember: Completed");
   };
 
-  const QStringList templateOptions = {"Blank Project", "Visual Novel",
-                                       "Dating Sim",    "Mystery/Detective",
-                                       "RPG Story",     "Horror"};
+  const QStringList templateOptions = {"Blank Project",     "Visual Novel", "Dating Sim",
+                                       "Mystery/Detective", "RPG Story",    "Horror"};
 
-  auto runNewProjectDialog =
-      [&mainWindow, &templateOptions, resolveTemplateId,
-       applyProjectAndRemember](const QString &preferredTemplate =
-                                    QString()) -> bool {
+  auto runNewProjectDialog = [&mainWindow, &templateOptions, resolveTemplateId,
+                              applyProjectAndRemember](const QString& preferredTemplate =
+                                                           QString()) -> bool {
     core::Logger::instance().info("Opening New Project dialog");
     NMNewProjectDialog dialog(&mainWindow);
     dialog.setTemplateOptions(templateOptions);
@@ -336,35 +324,29 @@ int main(int argc, char *argv[]) {
       const QString baseDir = dialog.baseDirectory();
       const QString templateName = dialog.templateName();
       const int workflowMode = dialog.workflowMode();
-      core::Logger::instance().info("New Project accepted: name='" +
-                                    name.toStdString() + "', base='" +
-                                    baseDir.toStdString() + "', template='" +
-                                    templateName.toStdString() + "', workflow=" +
-                                    std::to_string(workflowMode));
+      core::Logger::instance().info("New Project accepted: name='" + name.toStdString() +
+                                    "', base='" + baseDir.toStdString() + "', template='" +
+                                    templateName.toStdString() +
+                                    "', workflow=" + std::to_string(workflowMode));
       if (name.isEmpty() || baseDir.isEmpty()) {
-        NMMessageDialog::showWarning(
-            &mainWindow, QObject::tr("New Project"),
-            QObject::tr("Please enter a project name and location."));
+        NMMessageDialog::showWarning(&mainWindow, QObject::tr("New Project"),
+                                     QObject::tr("Please enter a project name and location."));
         continue;
       }
 
       const QString projectPath = QDir(baseDir).filePath(name.trimmed());
-      auto &projectManager = NovelMind::editor::ProjectManager::instance();
+      auto& projectManager = NovelMind::editor::ProjectManager::instance();
       const QString templateId = resolveTemplateId(templateName);
       Result<void> result = Result<void>::error("Unknown error");
       try {
-        result = projectManager.createProject(projectPath.toStdString(),
-                                              name.toStdString(),
+        result = projectManager.createProject(projectPath.toStdString(), name.toStdString(),
                                               templateId.toStdString());
-      } catch (const std::exception &e) {
-        result = Result<void>::error(
-            std::string("Exception during project creation: ") + e.what());
+      } catch (const std::exception& e) {
+        result = Result<void>::error(std::string("Exception during project creation: ") + e.what());
       }
       if (result.isError()) {
-        core::Logger::instance().warning("Create Project Failed: " +
-                                         result.error());
-        NMMessageDialog::showError(&mainWindow,
-                                   QObject::tr("Create Project Failed"),
+        core::Logger::instance().warning("Create Project Failed: " + result.error());
+        NMMessageDialog::showError(&mainWindow, QObject::tr("Create Project Failed"),
                                    QString::fromStdString(result.error()));
         continue;
       }
@@ -373,27 +355,22 @@ int main(int argc, char *argv[]) {
       auto metadata = projectManager.getMetadata();
       switch (workflowMode) {
       case 0: // Code-Only (Script)
-        metadata.playbackSourceMode =
-            NovelMind::editor::PlaybackSourceMode::Script;
+        metadata.playbackSourceMode = NovelMind::editor::PlaybackSourceMode::Script;
         break;
       case 1: // Graph-Only
-        metadata.playbackSourceMode =
-            NovelMind::editor::PlaybackSourceMode::Graph;
+        metadata.playbackSourceMode = NovelMind::editor::PlaybackSourceMode::Graph;
         break;
       case 2: // Mixed
-        metadata.playbackSourceMode =
-            NovelMind::editor::PlaybackSourceMode::Mixed;
+        metadata.playbackSourceMode = NovelMind::editor::PlaybackSourceMode::Mixed;
         break;
       default:
-        metadata.playbackSourceMode =
-            NovelMind::editor::PlaybackSourceMode::Script;
+        metadata.playbackSourceMode = NovelMind::editor::PlaybackSourceMode::Script;
         break;
       }
       projectManager.setMetadata(metadata);
       projectManager.saveProject();
 
-      core::Logger::instance().info("Project created at: " +
-                                    projectPath.toStdString());
+      core::Logger::instance().info("Project created at: " + projectPath.toStdString());
       applyProjectAndRemember();
       core::Logger::instance().info("New Project flow completed");
       return true;
@@ -408,7 +385,7 @@ int main(int argc, char *argv[]) {
 
   // Auto-validation helper (light check on project open)
   auto runAutoValidation = [&mainWindow]() {
-    auto &pm = NovelMind::editor::ProjectManager::instance();
+    auto& pm = NovelMind::editor::ProjectManager::instance();
     if (!pm.hasOpenProject()) {
       return;
     }
@@ -419,15 +396,13 @@ int main(int argc, char *argv[]) {
     auto report = checker.runQuickCheck();
 
     // Only show critical or error issues in diagnostics
-    auto *diagnosticsPanel = mainWindow.diagnosticsPanel();
+    auto* diagnosticsPanel = mainWindow.diagnosticsPanel();
     int criticalCount = 0;
-    for (const auto &issue : report.issues) {
+    for (const auto& issue : report.issues) {
       if (issue.severity == NovelMind::editor::IssueSeverity::Critical ||
           issue.severity == NovelMind::editor::IssueSeverity::Error) {
         QString type =
-            (issue.severity == NovelMind::editor::IssueSeverity::Critical)
-                ? "Critical"
-                : "Error";
+            (issue.severity == NovelMind::editor::IssueSeverity::Critical) ? "Critical" : "Error";
         QString message = QString::fromStdString(issue.message);
         QString location;
         if (!issue.filePath.empty()) {
@@ -440,45 +415,40 @@ int main(int argc, char *argv[]) {
 
     if (criticalCount > 0) {
       mainWindow.setStatusMessage(
-          QObject::tr(
-              "Project validation found %1 issue(s) - check Diagnostics")
+          QObject::tr("Project validation found %1 issue(s) - check Diagnostics")
               .arg(criticalCount),
           5000);
     }
   };
 
-  QObject::connect(
-      &mainWindow, &NMMainWindow::openProjectRequested,
-      [&mainWindow, applyProjectAndRemember, runAutoValidation]() {
-        const QString path = NMFileDialog::getExistingDirectory(
-            &mainWindow, QObject::tr("Open Project"), QDir::homePath());
-        if (path.isEmpty()) {
-          return;
-        }
+  QObject::connect(&mainWindow, &NMMainWindow::openProjectRequested,
+                   [&mainWindow, applyProjectAndRemember, runAutoValidation]() {
+                     const QString path = NMFileDialog::getExistingDirectory(
+                         &mainWindow, QObject::tr("Open Project"), QDir::homePath());
+                     if (path.isEmpty()) {
+                       return;
+                     }
 
-        auto &projectManager = NovelMind::editor::ProjectManager::instance();
-        auto result = projectManager.openProject(path.toStdString());
-        if (result.isError()) {
-          NMMessageDialog::showError(&mainWindow,
-                                     QObject::tr("Open Project Failed"),
-                                     QString::fromStdString(result.error()));
-          return;
-        }
+                     auto& projectManager = NovelMind::editor::ProjectManager::instance();
+                     auto result = projectManager.openProject(path.toStdString());
+                     if (result.isError()) {
+                       NMMessageDialog::showError(&mainWindow, QObject::tr("Open Project Failed"),
+                                                  QString::fromStdString(result.error()));
+                       return;
+                     }
 
-        applyProjectAndRemember();
-        runAutoValidation();
-      });
+                     applyProjectAndRemember();
+                     runAutoValidation();
+                   });
 
-  QObject::connect(
-      &mainWindow, &NMMainWindow::saveProjectRequested, [&mainWindow]() {
-        auto &projectManager = NovelMind::editor::ProjectManager::instance();
-        auto result = projectManager.saveProject();
-        if (result.isError()) {
-          NMMessageDialog::showError(&mainWindow,
-                                     QObject::tr("Save Project Failed"),
-                                     QString::fromStdString(result.error()));
-        }
-      });
+  QObject::connect(&mainWindow, &NMMainWindow::saveProjectRequested, [&mainWindow]() {
+    auto& projectManager = NovelMind::editor::ProjectManager::instance();
+    auto result = projectManager.saveProject();
+    if (result.isError()) {
+      NMMessageDialog::showError(&mainWindow, QObject::tr("Save Project Failed"),
+                                 QString::fromStdString(result.error()));
+    }
+  });
 
   // Handle project opening
   QString projectPath;
@@ -492,12 +462,11 @@ int main(int argc, char *argv[]) {
     QFileInfo info(projectPath);
     const QString projectName = info.fileName();
     if (!projectName.isEmpty()) {
-      auto &projectManager = NovelMind::editor::ProjectManager::instance();
-      auto result = projectManager.createProject(
-          projectPath.toStdString(), projectName.toStdString(), "empty");
+      auto& projectManager = NovelMind::editor::ProjectManager::instance();
+      auto result = projectManager.createProject(projectPath.toStdString(),
+                                                 projectName.toStdString(), "empty");
       if (result.isError()) {
-        NMMessageDialog::showError(&mainWindow,
-                                   QObject::tr("Create Project Failed"),
+        NMMessageDialog::showError(&mainWindow, QObject::tr("Create Project Failed"),
                                    QString::fromStdString(result.error()));
         projectPath.clear();
       } else {
@@ -516,21 +485,17 @@ int main(int argc, char *argv[]) {
   // Show welcome dialog if needed
   if (!skipWelcome) {
     QSettings settings("NovelMind", "Editor");
-    bool skipWelcomeInFuture =
-        settings.value("skipWelcomeScreen", false).toBool();
+    bool skipWelcomeInFuture = settings.value("skipWelcomeScreen", false).toBool();
 
     if (!skipWelcomeInFuture) {
       NMWelcomeDialog welcomeDialog;
       if (welcomeDialog.exec() == QDialog::Accepted) {
         if (welcomeDialog.shouldCreateNewProject()) {
-          core::Logger::instance().info(
-              "User requested new project with template: " +
-              welcomeDialog.selectedTemplate().toStdString());
+          core::Logger::instance().info("User requested new project with template: " +
+                                        welcomeDialog.selectedTemplate().toStdString());
           if (runNewProjectDialog(welcomeDialog.selectedTemplate())) {
-            auto &projectManager =
-                NovelMind::editor::ProjectManager::instance();
-            projectPath =
-                QString::fromStdString(projectManager.getProjectPath());
+            auto& projectManager = NovelMind::editor::ProjectManager::instance();
+            projectPath = QString::fromStdString(projectManager.getProjectPath());
             projectAlreadyOpened = true;
           }
         } else if (!welcomeDialog.selectedProjectPath().isEmpty()) {
@@ -549,11 +514,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (!projectPath.isEmpty() && !projectAlreadyOpened) {
-    auto &projectManager = NovelMind::editor::ProjectManager::instance();
+    auto& projectManager = NovelMind::editor::ProjectManager::instance();
     auto result = projectManager.openProject(projectPath.toStdString());
     if (result.isError()) {
-      NMMessageDialog::showError(&mainWindow,
-                                 QObject::tr("Open Project Failed"),
+      NMMessageDialog::showError(&mainWindow, QObject::tr("Open Project Failed"),
                                  QString::fromStdString(result.error()));
     } else {
       applyProjectAndRemember();
@@ -561,11 +525,10 @@ int main(int argc, char *argv[]) {
   }
 
   // D1: Project Gate - Ensure a project is always loaded before showing editor
-  auto &projectManager = NovelMind::editor::ProjectManager::instance();
+  auto& projectManager = NovelMind::editor::ProjectManager::instance();
   if (!projectManager.hasOpenProject()) {
     // No project is open - we must have a project to continue
-    core::Logger::instance().warning(
-        "No project loaded - returning to project selection");
+    core::Logger::instance().warning("No project loaded - returning to project selection");
 
     // Show project picker in a loop until user opens/creates a project or quits
     while (!projectManager.hasOpenProject()) {
@@ -576,21 +539,19 @@ int main(int argc, char *argv[]) {
             break; // Project created successfully
           }
         } else if (!projectPicker.selectedProjectPath().isEmpty()) {
-          auto result = projectManager.openProject(
-              projectPicker.selectedProjectPath().toStdString());
+          auto result =
+              projectManager.openProject(projectPicker.selectedProjectPath().toStdString());
           if (!result.isError()) {
             applyProjectAndRemember();
             break; // Project opened successfully
           }
-          NMMessageDialog::showError(&mainWindow,
-                                     QObject::tr("Open Project Failed"),
+          NMMessageDialog::showError(&mainWindow, QObject::tr("Open Project Failed"),
                                      QString::fromStdString(result.error()));
         }
       } else {
         // User closed project picker - exit application (cannot use editor
         // without project)
-        core::Logger::instance().info(
-            "User declined to select a project - exiting application");
+        core::Logger::instance().info("User declined to select a project - exiting application");
         return 0;
       }
     }

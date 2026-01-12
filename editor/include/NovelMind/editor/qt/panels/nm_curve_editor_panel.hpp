@@ -70,9 +70,8 @@ public:
    * @param interpolation Interpolation type
    * @return The ID of the newly added point
    */
-  CurvePointId
-  addPoint(qreal time, qreal value,
-           CurveInterpolation interpolation = CurveInterpolation::Linear);
+  CurvePointId addPoint(qreal time, qreal value,
+                        CurveInterpolation interpolation = CurveInterpolation::Linear);
 
   /**
    * @brief Remove a point by ID
@@ -96,21 +95,20 @@ public:
    * @param interpolation New interpolation type
    * @return true if point was found and updated
    */
-  bool updatePointInterpolation(CurvePointId id,
-                                CurveInterpolation interpolation);
+  bool updatePointInterpolation(CurvePointId id, CurveInterpolation interpolation);
 
   /**
    * @brief Get point by ID
    * @param id Point ID
    * @return Pointer to point or nullptr if not found
    */
-  CurveDataPoint *getPoint(CurvePointId id);
-  const CurveDataPoint *getPoint(CurvePointId id) const;
+  CurveDataPoint* getPoint(CurvePointId id);
+  const CurveDataPoint* getPoint(CurvePointId id) const;
 
   /**
    * @brief Get all points (sorted by time)
    */
-  const std::vector<CurveDataPoint> &points() const { return m_points; }
+  const std::vector<CurveDataPoint>& points() const { return m_points; }
 
   /**
    * @brief Get point count
@@ -161,7 +159,7 @@ class NMCurveView : public QGraphicsView {
   Q_OBJECT
 
 public:
-  explicit NMCurveView(QGraphicsScene *scene, QWidget *parent = nullptr);
+  explicit NMCurveView(QGraphicsScene* scene, QWidget* parent = nullptr);
 
 signals:
   /**
@@ -177,9 +175,9 @@ signals:
   void viewResized();
 
 protected:
-  void resizeEvent(QResizeEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void wheelEvent(QWheelEvent* event) override;
 };
 
 /**
@@ -189,7 +187,7 @@ class NMCurveEditorPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMCurveEditorPanel(QWidget *parent = nullptr);
+  explicit NMCurveEditorPanel(QWidget* parent = nullptr);
   ~NMCurveEditorPanel() override;
 
   void onInitialize() override;
@@ -200,33 +198,32 @@ public:
    * @brief Set the curve data to edit
    * @param curveId Optional curve identifier for external tracking
    */
-  void setCurve(const QString &curveId = QString());
+  void setCurve(const QString& curveId = QString());
 
   /**
    * @brief Get current curve ID
    */
-  const QString &curveId() const { return m_curveId; }
+  const QString& curveId() const { return m_curveId; }
 
   /**
    * @brief Get curve data model
    */
-  CurveData &curveData() { return m_curveData; }
-  const CurveData &curveData() const { return m_curveData; }
+  CurveData& curveData() { return m_curveData; }
+  const CurveData& curveData() const { return m_curveData; }
 
 signals:
   /**
    * @brief Emitted when curve data changes
    * @param curveId Curve identifier
    */
-  void curveChanged(const QString &curveId);
+  void curveChanged(const QString& curveId);
 
   /**
    * @brief Emitted to request opening from Inspector
    * @param propertyName The property requesting the curve editor
    * @param curveId Curve data identifier
    */
-  void openCurveEditorRequested(const QString &propertyName,
-                                const QString &curveId);
+  void openCurveEditorRequested(const QString& propertyName, const QString& curveId);
 
 public slots:
   /**
@@ -304,28 +301,27 @@ private:
   QRectF usableRect() const;
 
   // UI components
-  NMCurveView *m_curveView = nullptr;
-  QGraphicsScene *m_curveScene = nullptr;
-  QToolBar *m_toolbar = nullptr;
-  QPushButton *m_addPointBtn = nullptr;
-  QPushButton *m_deletePointBtn = nullptr;
-  QComboBox *m_interpCombo = nullptr;
+  NMCurveView* m_curveView = nullptr;
+  QGraphicsScene* m_curveScene = nullptr;
+  QToolBar* m_toolbar = nullptr;
+  QPushButton* m_addPointBtn = nullptr;
+  QPushButton* m_deletePointBtn = nullptr;
+  QComboBox* m_interpCombo = nullptr;
 
   // Data model
   CurveData m_curveData;
   QString m_curveId;
 
   // Visual elements
-  QGraphicsPathItem *m_curvePathItem = nullptr;
-  std::vector<QGraphicsLineItem *> m_gridLines;
-  std::unordered_map<CurvePointId, NMCurvePointItem *> m_pointItems;
+  QGraphicsPathItem* m_curvePathItem = nullptr;
+  std::vector<QGraphicsLineItem*> m_gridLines;
+  std::unordered_map<CurvePointId, NMCurvePointItem*> m_pointItems;
 
   // Selection state
   std::vector<CurvePointId> m_selectedPoints;
 
   // Drag tracking for undo
-  std::unordered_map<CurvePointId, std::pair<qreal, qreal>>
-      m_dragStartPositions;
+  std::unordered_map<CurvePointId, std::pair<qreal, qreal>> m_dragStartPositions;
 
   // Layout constants
   static constexpr qreal MARGIN = 40.0;

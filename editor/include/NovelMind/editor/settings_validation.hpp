@@ -22,9 +22,8 @@ public:
    * @param definition Setting definition with validation rules
    * @return Empty string if valid, error message if invalid
    */
-  static std::string validateValue(const std::string &key,
-                                   const SettingValue &value,
-                                   const SettingDefinition &definition);
+  static std::string validateValue(const std::string& key, const SettingValue& value,
+                                   const SettingDefinition& definition);
 };
 
 } // namespace NovelMind::editor

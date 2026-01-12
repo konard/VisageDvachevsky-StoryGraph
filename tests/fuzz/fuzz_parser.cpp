@@ -11,9 +11,9 @@ using namespace NovelMind::scripting;
 
 // libFuzzer entry point
 // See: https://llvm.org/docs/LibFuzzer.html
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
   // Convert raw bytes to string
-  std::string input(reinterpret_cast<const char *>(Data), Size);
+  std::string input(reinterpret_cast<const char*>(Data), Size);
 
   // Test full lexer -> parser pipeline with arbitrary input
   try {
@@ -29,11 +29,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
       // We just want to ensure no crashes, hangs, or undefined behavior
       if (parseResult.isOk()) {
         // Access the AST to ensure it's valid
-        const auto &program = parseResult.value();
+        const auto& program = parseResult.value();
         (void)program.declarations.size();
       } else {
         // Parse error is acceptable for malformed input
-        const auto &error = parseResult.error();
+        const auto& error = parseResult.error();
         (void)error.size();
       }
     }

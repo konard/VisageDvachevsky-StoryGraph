@@ -31,7 +31,7 @@ public:
    * @return true if user clicked OK and entered valid data
    */
   static bool showAddKeyDialog(NMLocalizationPanel* panel, NMLocalizationSearch& searchHelper,
-                                QString& outKey, QString& outDefaultValue);
+                               QString& outKey, QString& outDefaultValue);
 
   /**
    * @brief Show dialog for editing plural forms
@@ -41,7 +41,7 @@ public:
    * @return true if user clicked OK
    */
   static bool showPluralFormsDialog(NMLocalizationPanel* panel, NMLocalizationDataModel& dataModel,
-                                     const QString& key);
+                                    const QString& key);
 
 private:
   NMLocalizationDialogs() = default;

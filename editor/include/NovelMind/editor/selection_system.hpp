@@ -45,13 +45,11 @@ struct TimelineItemId {
   std::string trackId;
   u64 keyframeIndex = 0;
 
-  bool operator==(const TimelineItemId &other) const {
+  bool operator==(const TimelineItemId& other) const {
     return trackId == other.trackId && keyframeIndex == other.keyframeIndex;
   }
 
-  bool operator!=(const TimelineItemId &other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const TimelineItemId& other) const { return !(*this == other); }
 };
 
 /**
@@ -61,9 +59,9 @@ struct AssetId {
   std::string path;
   std::string type;
 
-  bool operator==(const AssetId &other) const { return path == other.path; }
+  bool operator==(const AssetId& other) const { return path == other.path; }
 
-  bool operator!=(const AssetId &other) const { return !(*this == other); }
+  bool operator!=(const AssetId& other) const { return !(*this == other); }
 };
 
 /**
@@ -83,9 +81,7 @@ enum class SelectionType : u8 {
  */
 struct SelectionItem {
   SelectionType type = SelectionType::None;
-  std::variant<std::monostate, ObjectId, scripting::NodeId, TimelineItemId,
-               AssetId>
-      id;
+  std::variant<std::monostate, ObjectId, scripting::NodeId, TimelineItemId, AssetId> id;
 
   SelectionItem() = default;
 
@@ -98,20 +94,15 @@ struct SelectionItem {
   explicit SelectionItem(TimelineItemId timelineId)
       : type(SelectionType::TimelineItem), id(std::move(timelineId)) {}
 
-  explicit SelectionItem(AssetId assetId)
-      : type(SelectionType::Asset), id(std::move(assetId)) {}
+  explicit SelectionItem(AssetId assetId) : type(SelectionType::Asset), id(std::move(assetId)) {}
 
   [[nodiscard]] bool isValid() const { return type != SelectionType::None; }
 
   [[nodiscard]] std::string getDisplayName() const;
 
-  bool operator==(const SelectionItem &other) const {
-    return type == other.type && id == other.id;
-  }
+  bool operator==(const SelectionItem& other) const { return type == other.type && id == other.id; }
 
-  bool operator!=(const SelectionItem &other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const SelectionItem& other) const { return !(*this == other); }
 };
 
 /**
@@ -119,15 +110,15 @@ struct SelectionItem {
  */
 class SceneObjectSelection {
 public:
-  explicit SceneObjectSelection(const ObjectId &objectId);
+  explicit SceneObjectSelection(const ObjectId& objectId);
 
-  [[nodiscard]] const ObjectId &getObjectId() const { return m_objectId; }
+  [[nodiscard]] const ObjectId& getObjectId() const { return m_objectId; }
   [[nodiscard]] bool isValid() const;
 
   // Property access for Inspector
   [[nodiscard]] std::vector<std::string> getPropertyNames() const;
-  [[nodiscard]] std::string getPropertyValue(const std::string &name) const;
-  void setPropertyValue(const std::string &name, const std::string &value);
+  [[nodiscard]] std::string getPropertyValue(const std::string& name) const;
+  void setPropertyValue(const std::string& name, const std::string& value);
 
 private:
   ObjectId m_objectId;
@@ -139,21 +130,21 @@ private:
 class StoryGraphNodeSelection {
 public:
   explicit StoryGraphNodeSelection(scripting::NodeId nodeId,
-                                   scripting::VisualGraph *graph = nullptr);
+                                   scripting::VisualGraph* graph = nullptr);
 
   [[nodiscard]] scripting::NodeId getNodeId() const { return m_nodeId; }
-  [[nodiscard]] scripting::VisualGraph *getGraph() const { return m_graph; }
+  [[nodiscard]] scripting::VisualGraph* getGraph() const { return m_graph; }
   [[nodiscard]] bool isValid() const;
 
   // Property access for Inspector
-  [[nodiscard]] const scripting::VisualGraphNode *getNode() const;
+  [[nodiscard]] const scripting::VisualGraphNode* getNode() const;
   [[nodiscard]] std::vector<std::string> getPropertyNames() const;
-  [[nodiscard]] std::string getPropertyValue(const std::string &name) const;
-  void setPropertyValue(const std::string &name, const std::string &value);
+  [[nodiscard]] std::string getPropertyValue(const std::string& name) const;
+  void setPropertyValue(const std::string& name, const std::string& value);
 
 private:
   scripting::NodeId m_nodeId;
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
 };
 
 /**
@@ -161,15 +152,15 @@ private:
  */
 class TimelineItemSelection {
 public:
-  explicit TimelineItemSelection(const TimelineItemId &itemId);
+  explicit TimelineItemSelection(const TimelineItemId& itemId);
 
-  [[nodiscard]] const TimelineItemId &getItemId() const { return m_itemId; }
+  [[nodiscard]] const TimelineItemId& getItemId() const { return m_itemId; }
   [[nodiscard]] bool isValid() const;
 
   // Property access for Inspector
   [[nodiscard]] std::vector<std::string> getPropertyNames() const;
-  [[nodiscard]] std::string getPropertyValue(const std::string &name) const;
-  void setPropertyValue(const std::string &name, const std::string &value);
+  [[nodiscard]] std::string getPropertyValue(const std::string& name) const;
+  void setPropertyValue(const std::string& name, const std::string& value);
 
 private:
   TimelineItemId m_itemId;
@@ -185,9 +176,8 @@ public:
   /**
    * @brief Called when selection changes
    */
-  virtual void
-  onSelectionChanged(SelectionType /*type*/,
-                     const std::vector<SelectionItem> & /*selection*/) {}
+  virtual void onSelectionChanged(SelectionType /*type*/,
+                                  const std::vector<SelectionItem>& /*selection*/) {}
 
   /**
    * @brief Called when selection is cleared
@@ -197,7 +187,7 @@ public:
   /**
    * @brief Called when primary selection changes (first item in multi-select)
    */
-  virtual void onPrimarySelectionChanged(const SelectionItem & /*item*/) {}
+  virtual void onPrimarySelectionChanged(const SelectionItem& /*item*/) {}
 };
 
 /**
@@ -216,13 +206,13 @@ public:
   ~EditorSelectionManager();
 
   // Prevent copying
-  EditorSelectionManager(const EditorSelectionManager &) = delete;
-  EditorSelectionManager &operator=(const EditorSelectionManager &) = delete;
+  EditorSelectionManager(const EditorSelectionManager&) = delete;
+  EditorSelectionManager& operator=(const EditorSelectionManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static EditorSelectionManager &instance();
+  static EditorSelectionManager& instance();
 
   // =========================================================================
   // Selection Operations
@@ -231,12 +221,12 @@ public:
   /**
    * @brief Select a single item (clears previous selection)
    */
-  void select(const SelectionItem &item);
+  void select(const SelectionItem& item);
 
   /**
    * @brief Select a scene object by ID
    */
-  void selectObject(const ObjectId &objectId);
+  void selectObject(const ObjectId& objectId);
 
   /**
    * @brief Select a story graph node by ID
@@ -246,42 +236,42 @@ public:
   /**
    * @brief Select a timeline item
    */
-  void selectTimelineItem(const TimelineItemId &itemId);
+  void selectTimelineItem(const TimelineItemId& itemId);
 
   /**
    * @brief Select an asset
    */
-  void selectAsset(const AssetId &assetId);
+  void selectAsset(const AssetId& assetId);
 
   /**
    * @brief Add item to selection (multi-select)
    */
-  void addToSelection(const SelectionItem &item);
+  void addToSelection(const SelectionItem& item);
 
   /**
    * @brief Remove item from selection
    */
-  void removeFromSelection(const SelectionItem &item);
+  void removeFromSelection(const SelectionItem& item);
 
   /**
    * @brief Toggle item selection
    */
-  void toggleSelection(const SelectionItem &item);
+  void toggleSelection(const SelectionItem& item);
 
   /**
    * @brief Select multiple items
    */
-  void selectMultiple(const std::vector<SelectionItem> &items);
+  void selectMultiple(const std::vector<SelectionItem>& items);
 
   /**
    * @brief Select multiple scene objects
    */
-  void selectObjects(const std::vector<ObjectId> &objectIds);
+  void selectObjects(const std::vector<ObjectId>& objectIds);
 
   /**
    * @brief Select multiple story graph nodes
    */
-  void selectNodes(const std::vector<scripting::NodeId> &nodeIds);
+  void selectNodes(const std::vector<scripting::NodeId>& nodeIds);
 
   /**
    * @brief Clear all selection
@@ -315,13 +305,12 @@ public:
   /**
    * @brief Get all selected items
    */
-  [[nodiscard]] const std::vector<SelectionItem> &getSelection() const;
+  [[nodiscard]] const std::vector<SelectionItem>& getSelection() const;
 
   /**
    * @brief Get selection of a specific type
    */
-  [[nodiscard]] std::vector<SelectionItem>
-  getSelectionOfType(SelectionType type) const;
+  [[nodiscard]] std::vector<SelectionItem> getSelectionOfType(SelectionType type) const;
 
   /**
    * @brief Get primary selection (first selected item)
@@ -346,12 +335,12 @@ public:
   /**
    * @brief Check if a specific item is selected
    */
-  [[nodiscard]] bool isSelected(const SelectionItem &item) const;
+  [[nodiscard]] bool isSelected(const SelectionItem& item) const;
 
   /**
    * @brief Check if a specific object is selected
    */
-  [[nodiscard]] bool isObjectSelected(const ObjectId &objectId) const;
+  [[nodiscard]] bool isObjectSelected(const ObjectId& objectId) const;
 
   /**
    * @brief Check if a specific node is selected
@@ -370,20 +359,17 @@ public:
   /**
    * @brief Get scene object selection proxy for primary selection
    */
-  [[nodiscard]] std::optional<SceneObjectSelection>
-  getSceneObjectSelection() const;
+  [[nodiscard]] std::optional<SceneObjectSelection> getSceneObjectSelection() const;
 
   /**
    * @brief Get story graph node selection proxy for primary selection
    */
-  [[nodiscard]] std::optional<StoryGraphNodeSelection>
-  getStoryGraphNodeSelection() const;
+  [[nodiscard]] std::optional<StoryGraphNodeSelection> getStoryGraphNodeSelection() const;
 
   /**
    * @brief Get timeline item selection proxy for primary selection
    */
-  [[nodiscard]] std::optional<TimelineItemSelection>
-  getTimelineItemSelection() const;
+  [[nodiscard]] std::optional<TimelineItemSelection> getTimelineItemSelection() const;
 
   // =========================================================================
   // Context Management
@@ -392,12 +378,12 @@ public:
   /**
    * @brief Set the active visual graph (for node selection context)
    */
-  void setActiveVisualGraph(scripting::VisualGraph *graph);
+  void setActiveVisualGraph(scripting::VisualGraph* graph);
 
   /**
    * @brief Get the active visual graph
    */
-  [[nodiscard]] scripting::VisualGraph *getActiveVisualGraph() const;
+  [[nodiscard]] scripting::VisualGraph* getActiveVisualGraph() const;
 
   // =========================================================================
   // Selection History
@@ -435,12 +421,12 @@ public:
   /**
    * @brief Add a selection listener
    */
-  void addListener(ISelectionListener *listener);
+  void addListener(ISelectionListener* listener);
 
   /**
    * @brief Remove a selection listener
    */
-  void removeListener(ISelectionListener *listener);
+  void removeListener(ISelectionListener* listener);
 
   // =========================================================================
   // Callbacks
@@ -450,8 +436,7 @@ public:
    * @brief Set callback for selection changed
    */
   void setOnSelectionChanged(
-      std::function<void(SelectionType, const std::vector<SelectionItem> &)>
-          callback);
+      std::function<void(SelectionType, const std::vector<SelectionItem>&)> callback);
 
   /**
    * @brief Set callback for selection cleared
@@ -468,7 +453,7 @@ private:
   SelectionType m_currentType = SelectionType::None;
 
   // Context
-  scripting::VisualGraph *m_activeGraph = nullptr;
+  scripting::VisualGraph* m_activeGraph = nullptr;
 
   // History for navigation
   std::vector<std::vector<SelectionItem>> m_history;
@@ -476,11 +461,10 @@ private:
   static constexpr size_t MAX_HISTORY_SIZE = 50;
 
   // Listeners
-  std::vector<ISelectionListener *> m_listeners;
+  std::vector<ISelectionListener*> m_listeners;
 
   // Callbacks
-  std::function<void(SelectionType, const std::vector<SelectionItem> &)>
-      m_onSelectionChanged;
+  std::function<void(SelectionType, const std::vector<SelectionItem>&)> m_onSelectionChanged;
   std::function<void()> m_onSelectionCleared;
 
   // Singleton instance
@@ -497,15 +481,15 @@ private:
  */
 class SelectionScope {
 public:
-  explicit SelectionScope(EditorSelectionManager *manager);
+  explicit SelectionScope(EditorSelectionManager* manager);
   ~SelectionScope();
 
   // Prevent copying
-  SelectionScope(const SelectionScope &) = delete;
-  SelectionScope &operator=(const SelectionScope &) = delete;
+  SelectionScope(const SelectionScope&) = delete;
+  SelectionScope& operator=(const SelectionScope&) = delete;
 
 private:
-  EditorSelectionManager *m_manager;
+  EditorSelectionManager* m_manager;
   std::vector<SelectionItem> m_originalSelection;
 };
 

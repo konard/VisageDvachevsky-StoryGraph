@@ -17,13 +17,13 @@ class VMDebugger;
 
 class VirtualMachine {
 public:
-  using NativeCallback = std::function<void(const std::vector<Value> &)>;
+  using NativeCallback = std::function<void(const std::vector<Value>&)>;
 
   VirtualMachine();
   ~VirtualMachine();
 
-  Result<void> load(const std::vector<Instruction> &program,
-                    const std::vector<std::string> &stringTable);
+  Result<void> load(const std::vector<Instruction>& program,
+                    const std::vector<std::string>& stringTable);
   void reset();
 
   bool step();
@@ -36,24 +36,20 @@ public:
   [[nodiscard]] bool isWaiting() const;
   [[nodiscard]] bool isHalted() const;
   [[nodiscard]] u32 getIP() const { return m_ip; }
-  [[nodiscard]] u32 getProgramSize() const {
-    return static_cast<u32>(m_program.size());
-  }
+  [[nodiscard]] u32 getProgramSize() const { return static_cast<u32>(m_program.size()); }
   void setIP(u32 ip);
 
-  void setVariable(const std::string &name, Value value);
-  [[nodiscard]] Value getVariable(const std::string &name) const;
-  [[nodiscard]] const Value& getVariableRef(const std::string &name) const;
-  [[nodiscard]] bool hasVariable(const std::string &name) const;
+  void setVariable(const std::string& name, Value value);
+  [[nodiscard]] Value getVariable(const std::string& name) const;
+  [[nodiscard]] const Value& getVariableRef(const std::string& name) const;
+  [[nodiscard]] bool hasVariable(const std::string& name) const;
   [[nodiscard]] std::unordered_map<std::string, Value> getAllVariables() const {
     return m_variables;
   }
 
-  void setFlag(const std::string &name, bool value);
-  [[nodiscard]] bool getFlag(const std::string &name) const;
-  [[nodiscard]] std::unordered_map<std::string, bool> getAllFlags() const {
-    return m_flags;
-  }
+  void setFlag(const std::string& name, bool value);
+  [[nodiscard]] bool getFlag(const std::string& name) const;
+  [[nodiscard]] std::unordered_map<std::string, bool> getAllFlags() const { return m_flags; }
 
   void registerCallback(OpCode op, NativeCallback callback);
 
@@ -68,7 +64,7 @@ public:
    * @brief Attach a debugger to this VM
    * @param debugger Pointer to debugger (ownership not transferred)
    */
-  void attachDebugger(VMDebugger *debugger);
+  void attachDebugger(VMDebugger* debugger);
 
   /**
    * @brief Detach the current debugger
@@ -83,13 +79,13 @@ public:
   /**
    * @brief Get the attached debugger
    */
-  [[nodiscard]] VMDebugger *debugger() const { return m_debugger; }
+  [[nodiscard]] VMDebugger* debugger() const { return m_debugger; }
 
   /**
    * @brief Get the current instruction at IP (for debugging display)
    * @return Pointer to instruction, or nullptr if invalid
    */
-  [[nodiscard]] const Instruction *getCurrentInstruction() const {
+  [[nodiscard]] const Instruction* getCurrentInstruction() const {
     if (m_ip < m_program.size()) {
       return &m_program[m_ip];
     }
@@ -101,7 +97,7 @@ public:
    * @param ip Instruction pointer
    * @return Pointer to instruction, or nullptr if invalid
    */
-  [[nodiscard]] const Instruction *getInstructionAt(u32 ip) const {
+  [[nodiscard]] const Instruction* getInstructionAt(u32 ip) const {
     if (ip < m_program.size()) {
       return &m_program[ip];
     }
@@ -111,7 +107,7 @@ public:
   /**
    * @brief Get current stack contents (for debugging)
    */
-  [[nodiscard]] const std::vector<Value> &getStack() const { return m_stack; }
+  [[nodiscard]] const std::vector<Value>& getStack() const { return m_stack; }
 
   /**
    * @brief Get string from string table (for debugging)
@@ -123,16 +119,14 @@ public:
     return "";
   }
 
-  [[nodiscard]] VMSecurityGuard &securityGuard() { return m_securityGuard; }
-  [[nodiscard]] const VMSecurityGuard &securityGuard() const {
-    return m_securityGuard;
-  }
+  [[nodiscard]] VMSecurityGuard& securityGuard() { return m_securityGuard; }
+  [[nodiscard]] const VMSecurityGuard& securityGuard() const { return m_securityGuard; }
 
 private:
-  void executeInstruction(const Instruction &instr);
+  void executeInstruction(const Instruction& instr);
   void push(Value value);
   Value pop();
-  [[nodiscard]] const std::string &getString(u32 index);
+  [[nodiscard]] const std::string& getString(u32 index);
 
   std::vector<Instruction> m_program;
   std::vector<std::string> m_stringTable;
@@ -152,7 +146,7 @@ private:
   i32 m_choiceResult;
 
   // Debugger integration
-  VMDebugger *m_debugger = nullptr; ///< Attached debugger (not owned)
+  VMDebugger* m_debugger = nullptr; ///< Attached debugger (not owned)
 };
 
 } // namespace NovelMind::scripting

@@ -705,8 +705,7 @@ void AudioRecorder::finalizeRecording() {
   m_processingActive = false;
 }
 
-void AudioRecorder::processRecording(const std::string& outputPath,
-                                     bool& outTrimmed,
+void AudioRecorder::processRecording(const std::string& outputPath, bool& outTrimmed,
                                      bool& outNormalized) {
   // Post-processing: silence trimming and normalization
   // These operations modify the recorded WAV file in-place

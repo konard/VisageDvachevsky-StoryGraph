@@ -57,15 +57,12 @@ public:
   /**
    * @brief Check if command can be merged with another
    */
-  [[nodiscard]] virtual bool
-  canMergeWith(const IEditorCommand * /*other*/) const {
-    return false;
-  }
+  [[nodiscard]] virtual bool canMergeWith(const IEditorCommand* /*other*/) const { return false; }
 
   /**
    * @brief Merge with another command (for continuous operations)
    */
-  virtual void mergeWith(const IEditorCommand * /*other*/) {}
+  virtual void mergeWith(const IEditorCommand* /*other*/) {}
 };
 
 // ============================================================================
@@ -77,22 +74,18 @@ public:
  */
 class StoryGraphAddNodeCommand : public IEditorCommand {
 public:
-  StoryGraphAddNodeCommand(scripting::VisualGraph *graph,
-                           scripting::IRNodeType nodeType, f32 x, f32 y);
+  StoryGraphAddNodeCommand(scripting::VisualGraph* graph, scripting::IRNodeType nodeType, f32 x,
+                           f32 y);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
-  [[nodiscard]] scripting::NodeId getCreatedNodeId() const {
-    return m_createdNodeId;
-  }
+  [[nodiscard]] scripting::NodeId getCreatedNodeId() const { return m_createdNodeId; }
 
 private:
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   scripting::IRNodeType m_nodeType;
   f32 m_x, m_y;
   scripting::NodeId m_createdNodeId = 0;
@@ -104,15 +97,13 @@ private:
  */
 class StoryGraphRemoveNodesCommand : public IEditorCommand {
 public:
-  StoryGraphRemoveNodesCommand(scripting::VisualGraph *graph,
-                               const std::vector<scripting::NodeId> &nodeIds);
+  StoryGraphRemoveNodesCommand(scripting::VisualGraph* graph,
+                               const std::vector<scripting::NodeId>& nodeIds);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
 private:
   struct SavedNode {
@@ -128,7 +119,7 @@ private:
     std::string toPort;
   };
 
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   std::vector<scripting::NodeId> m_nodeIds;
   std::vector<SavedNode> m_savedNodes;
   std::vector<SavedConnection> m_savedConnections;
@@ -139,26 +130,22 @@ private:
  */
 class StoryGraphMoveNodesCommand : public IEditorCommand {
 public:
-  StoryGraphMoveNodesCommand(scripting::VisualGraph *graph,
-                             const std::vector<scripting::NodeId> &nodeIds,
-                             f32 deltaX, f32 deltaY);
+  StoryGraphMoveNodesCommand(scripting::VisualGraph* graph,
+                             const std::vector<scripting::NodeId>& nodeIds, f32 deltaX, f32 deltaY);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
-  [[nodiscard]] bool canMergeWith(const IEditorCommand *other) const override;
-  void mergeWith(const IEditorCommand *other) override;
+  [[nodiscard]] bool canMergeWith(const IEditorCommand* other) const override;
+  void mergeWith(const IEditorCommand* other) override;
 
 private:
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   std::vector<scripting::NodeId> m_nodeIds;
   f32 m_deltaX, m_deltaY;
-  std::unordered_map<scripting::NodeId, std::pair<f32, f32>>
-      m_originalPositions;
+  std::unordered_map<scripting::NodeId, std::pair<f32, f32>> m_originalPositions;
 };
 
 /**
@@ -166,20 +153,17 @@ private:
  */
 class StoryGraphConnectCommand : public IEditorCommand {
 public:
-  StoryGraphConnectCommand(scripting::VisualGraph *graph,
-                           scripting::NodeId fromNode,
-                           const std::string &fromPort,
-                           scripting::NodeId toNode, const std::string &toPort);
+  StoryGraphConnectCommand(scripting::VisualGraph* graph, scripting::NodeId fromNode,
+                           const std::string& fromPort, scripting::NodeId toNode,
+                           const std::string& toPort);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
 private:
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   scripting::NodeId m_fromNode, m_toNode;
   std::string m_fromPort, m_toPort;
 };
@@ -189,21 +173,17 @@ private:
  */
 class StoryGraphDisconnectCommand : public IEditorCommand {
 public:
-  StoryGraphDisconnectCommand(scripting::VisualGraph *graph,
-                              scripting::NodeId fromNode,
-                              const std::string &fromPort,
-                              scripting::NodeId toNode,
-                              const std::string &toPort);
+  StoryGraphDisconnectCommand(scripting::VisualGraph* graph, scripting::NodeId fromNode,
+                              const std::string& fromPort, scripting::NodeId toNode,
+                              const std::string& toPort);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
 private:
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   scripting::NodeId m_fromNode, m_toNode;
   std::string m_fromPort, m_toPort;
 };
@@ -213,21 +193,17 @@ private:
  */
 class StoryGraphSetNodePropertyCommand : public IEditorCommand {
 public:
-  StoryGraphSetNodePropertyCommand(scripting::VisualGraph *graph,
-                                   scripting::NodeId nodeId,
-                                   const std::string &propertyName,
-                                   const std::string &oldValue,
-                                   const std::string &newValue);
+  StoryGraphSetNodePropertyCommand(scripting::VisualGraph* graph, scripting::NodeId nodeId,
+                                   const std::string& propertyName, const std::string& oldValue,
+                                   const std::string& newValue);
 
   void execute() override;
   void undo() override;
   [[nodiscard]] std::string getDescription() const override;
-  [[nodiscard]] std::string getCategory() const override {
-    return "StoryGraph";
-  }
+  [[nodiscard]] std::string getCategory() const override { return "StoryGraph"; }
 
 private:
-  scripting::VisualGraph *m_graph;
+  scripting::VisualGraph* m_graph;
   scripting::NodeId m_nodeId;
   std::string m_propertyName;
   std::string m_oldValue;
@@ -243,7 +219,7 @@ private:
  */
 class AssetRenameCommand : public IEditorCommand {
 public:
-  AssetRenameCommand(const std::string &oldPath, const std::string &newPath);
+  AssetRenameCommand(const std::string& oldPath, const std::string& newPath);
 
   void execute() override;
   void undo() override;
@@ -260,7 +236,7 @@ private:
  */
 class AssetMoveCommand : public IEditorCommand {
 public:
-  AssetMoveCommand(const std::string &sourcePath, const std::string &destPath);
+  AssetMoveCommand(const std::string& sourcePath, const std::string& destPath);
 
   void execute() override;
   void undo() override;
@@ -277,7 +253,7 @@ private:
  */
 class AssetDeleteCommand : public IEditorCommand {
 public:
-  AssetDeleteCommand(const std::string &assetPath);
+  AssetDeleteCommand(const std::string& assetPath);
 
   void execute() override;
   void undo() override;
@@ -295,7 +271,7 @@ private:
  */
 class AssetCreateFolderCommand : public IEditorCommand {
 public:
-  AssetCreateFolderCommand(const std::string &folderPath);
+  AssetCreateFolderCommand(const std::string& folderPath);
 
   void execute() override;
   void undo() override;
@@ -315,8 +291,7 @@ private:
  */
 class EditorLayoutChangeCommand : public IEditorCommand {
 public:
-  EditorLayoutChangeCommand(const std::string &oldLayoutJson,
-                            const std::string &newLayoutJson);
+  EditorLayoutChangeCommand(const std::string& oldLayoutJson, const std::string& newLayoutJson);
 
   void execute() override;
   void undo() override;
@@ -333,9 +308,8 @@ private:
  */
 class EditorHotkeyChangeCommand : public IEditorCommand {
 public:
-  EditorHotkeyChangeCommand(const std::string &action,
-                            const std::string &oldHotkey,
-                            const std::string &newHotkey);
+  EditorHotkeyChangeCommand(const std::string& action, const std::string& oldHotkey,
+                            const std::string& newHotkey);
 
   void execute() override;
   void undo() override;
@@ -353,8 +327,7 @@ private:
  */
 class EditorThemeChangeCommand : public IEditorCommand {
 public:
-  EditorThemeChangeCommand(const std::string &oldTheme,
-                           const std::string &newTheme);
+  EditorThemeChangeCommand(const std::string& oldTheme, const std::string& newTheme);
 
   void execute() override;
   void undo() override;
@@ -375,7 +348,7 @@ private:
  */
 class CompositeCommand : public IEditorCommand {
 public:
-  explicit CompositeCommand(const std::string &description);
+  explicit CompositeCommand(const std::string& description);
 
   void addCommand(std::unique_ptr<IEditorCommand> command);
 
@@ -403,9 +376,9 @@ class IUndoListener {
 public:
   virtual ~IUndoListener() = default;
   virtual void onUndoStackChanged(bool canUndo, bool canRedo) = 0;
-  virtual void onCommandExecuted(const std::string &description) = 0;
-  virtual void onUndoPerformed(const std::string &description) = 0;
-  virtual void onRedoPerformed(const std::string &description) = 0;
+  virtual void onCommandExecuted(const std::string& description) = 0;
+  virtual void onUndoPerformed(const std::string& description) = 0;
+  virtual void onRedoPerformed(const std::string& description) = 0;
 };
 
 /**
@@ -476,7 +449,7 @@ public:
   /**
    * @brief Begin a transaction (group multiple commands)
    */
-  void beginTransaction(const std::string &description);
+  void beginTransaction(const std::string& description);
 
   /**
    * @brief Commit the current transaction
@@ -516,18 +489,18 @@ public:
   /**
    * @brief Add a listener for undo events
    */
-  void addListener(IUndoListener *listener);
+  void addListener(IUndoListener* listener);
 
   /**
    * @brief Remove a listener
    */
-  void removeListener(IUndoListener *listener);
+  void removeListener(IUndoListener* listener);
 
 private:
   void notifyListeners();
-  void notifyCommandExecuted(const std::string &description);
-  void notifyUndoPerformed(const std::string &description);
-  void notifyRedoPerformed(const std::string &description);
+  void notifyCommandExecuted(const std::string& description);
+  void notifyUndoPerformed(const std::string& description);
+  void notifyRedoPerformed(const std::string& description);
   void trimHistory();
 
   std::vector<std::unique_ptr<IEditorCommand>> m_undoStack;
@@ -542,7 +515,7 @@ private:
   size_t m_savedAtIndex = 0;
 
   // Listeners
-  std::vector<IUndoListener *> m_listeners;
+  std::vector<IUndoListener*> m_listeners;
 };
 
 /**
@@ -550,14 +523,14 @@ private:
  */
 class UndoTransaction {
 public:
-  UndoTransaction(UndoManager *manager, const std::string &description);
+  UndoTransaction(UndoManager* manager, const std::string& description);
   ~UndoTransaction();
 
   void commit();
   void rollback();
 
 private:
-  UndoManager *m_manager;
+  UndoManager* m_manager;
   bool m_completed = false;
 };
 

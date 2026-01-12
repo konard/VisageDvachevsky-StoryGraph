@@ -30,14 +30,14 @@ namespace NovelMind::editor::qt::detail {
  * Sets consistent background, border, and widget styles
  * for all NovelMind dialogs.
  */
-void applyDialogFrameStyle(QDialog *dialog);
+void applyDialogFrameStyle(QDialog* dialog);
 
 /**
  * @brief D4: Animate dialog entrance
  *
  * Provides smooth fade-in animation when dialog appears.
  */
-void animateDialogIn(QDialog *dialog);
+void animateDialogIn(QDialog* dialog);
 
 /**
  * @brief D4: Create standard button bar layout
@@ -54,11 +54,9 @@ void animateDialogIn(QDialog *dialog);
  * @param parent Parent widget
  * @return Configured button bar layout
  */
-QHBoxLayout *createStandardButtonBar(const QString &primaryText,
-                                     const QString &secondaryText,
-                                     QPushButton **outPrimary,
-                                     QPushButton **outSecondary,
-                                     QWidget *parent);
+QHBoxLayout* createStandardButtonBar(const QString& primaryText, const QString& secondaryText,
+                                     QPushButton** outPrimary, QPushButton** outSecondary,
+                                     QWidget* parent);
 
 /**
  * @brief D4: Apply validation styling to input field
@@ -72,8 +70,8 @@ QHBoxLayout *createStandardButtonBar(const QString &primaryText,
  * @param isValid Whether the current input is valid
  * @param errorMessage Error message to show (empty for valid state)
  */
-void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
-                          const QString &errorMessage = QString());
+void applyValidationStyle(QLineEdit* lineEdit, bool isValid,
+                          const QString& errorMessage = QString());
 
 /**
  * @brief D4: Setup input validation with callback
@@ -87,10 +85,9 @@ void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
  * input
  * @param onValidChanged Callback when validity state changes
  */
-void setupInputValidation(
-    QLineEdit *lineEdit, std::function<bool(const QString &)> validator,
-    std::function<QString(const QString &)> errorMessageProvider = nullptr,
-    std::function<void(bool)> onValidChanged = nullptr);
+void setupInputValidation(QLineEdit* lineEdit, std::function<bool(const QString&)> validator,
+                          std::function<QString(const QString&)> errorMessageProvider = nullptr,
+                          std::function<void(bool)> onValidChanged = nullptr);
 
 /**
  * @brief D4: Configure dialog for standard keyboard behavior
@@ -103,7 +100,7 @@ void setupInputValidation(
  * @param dialog The dialog to configure
  * @param primaryButton The primary action button
  */
-void setupDialogKeyboardBehavior(QDialog *dialog, QPushButton *primaryButton);
+void setupDialogKeyboardBehavior(QDialog* dialog, QPushButton* primaryButton);
 
 /**
  * @brief D7: Standard dialog minimum sizes

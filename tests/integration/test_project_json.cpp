@@ -17,7 +17,7 @@ using namespace NovelMind::editor;
 
 TEST_CASE("ProjectJson - String escaping", "[project_json][escaping]") {
   ProjectMetadata metadata;
-  metadata.name = "Test Project";  // Valid name without quotes
+  metadata.name = "Test Project"; // Valid name without quotes
   metadata.description = "Description with \"quotes\" and\nspecial\tchars";
   metadata.version = "1.0.0";
 
@@ -25,9 +25,9 @@ TEST_CASE("ProjectJson - String escaping", "[project_json][escaping]") {
   auto result = ProjectJsonHandler::serializeToString(metadata, json);
 
   REQUIRE(result.isOk());
-  CHECK(json.find("\\\"") != std::string::npos);  // Escaped quotes in description
-  CHECK(json.find("\\n") != std::string::npos);   // Escaped newline
-  CHECK(json.find("\\t") != std::string::npos);   // Escaped tab
+  CHECK(json.find("\\\"") != std::string::npos); // Escaped quotes in description
+  CHECK(json.find("\\n") != std::string::npos);  // Escaped newline
+  CHECK(json.find("\\t") != std::string::npos);  // Escaped tab
 }
 
 // =============================================================================
@@ -36,7 +36,7 @@ TEST_CASE("ProjectJson - String escaping", "[project_json][escaping]") {
 
 TEST_CASE("ProjectJson - Validation rejects empty name", "[project_json][validation]") {
   ProjectMetadata metadata;
-  metadata.name = "";  // Invalid: empty name
+  metadata.name = ""; // Invalid: empty name
   metadata.version = "1.0.0";
 
   auto result = ProjectJsonHandler::validate(metadata);
@@ -46,7 +46,7 @@ TEST_CASE("ProjectJson - Validation rejects empty name", "[project_json][validat
 
 TEST_CASE("ProjectJson - Validation rejects invalid characters", "[project_json][validation]") {
   ProjectMetadata metadata;
-  metadata.name = "Invalid<Name>";  // Invalid: contains <
+  metadata.name = "Invalid<Name>"; // Invalid: contains <
   metadata.version = "1.0.0";
 
   auto result = ProjectJsonHandler::validate(metadata);
@@ -57,7 +57,7 @@ TEST_CASE("ProjectJson - Validation rejects invalid characters", "[project_json]
 TEST_CASE("ProjectJson - Validation rejects invalid version", "[project_json][validation]") {
   ProjectMetadata metadata;
   metadata.name = "Test Project";
-  metadata.version = "not_a_version";  // Invalid: not semver
+  metadata.version = "not_a_version"; // Invalid: not semver
 
   auto result = ProjectJsonHandler::validate(metadata);
   CHECK(result.isError());
@@ -68,7 +68,7 @@ TEST_CASE("ProjectJson - Validation rejects invalid resolution", "[project_json]
   ProjectMetadata metadata;
   metadata.name = "Test Project";
   metadata.version = "1.0.0";
-  metadata.targetResolution = "invalid";  // Invalid: not WIDTHxHEIGHT
+  metadata.targetResolution = "invalid"; // Invalid: not WIDTHxHEIGHT
 
   auto result = ProjectJsonHandler::validate(metadata);
   CHECK(result.isError());
@@ -154,7 +154,7 @@ TEST_CASE("ProjectJson - Parse minimal JSON", "[project_json][parsing]") {
 
   REQUIRE(result.isOk());
   CHECK(metadata.name == "Test Project");
-  CHECK(metadata.version == "1.0.0");  // Default value
+  CHECK(metadata.version == "1.0.0"); // Default value
 }
 
 TEST_CASE("ProjectJson - Parse complete JSON", "[project_json][parsing]") {
@@ -318,7 +318,7 @@ TEST_CASE("ProjectJson - Save and load from file", "[project_json][file_io]") {
 
   // Create metadata
   ProjectMetadata original;
-  original.name = "File IO Test";  // No slash in name
+  original.name = "File IO Test"; // No slash in name
   original.version = "1.0.0";
   original.author = "Test";
   original.createdAt = 12345;
@@ -386,7 +386,8 @@ TEST_CASE("ProjectJson - Atomic write creates temp file", "[project_json][atomic
   CHECK_FALSE(fs::exists(tempFile));
 }
 
-TEST_CASE("ProjectJson - Atomic write preserves existing file on error", "[project_json][atomic_write]") {
+TEST_CASE("ProjectJson - Atomic write preserves existing file on error",
+          "[project_json][atomic_write]") {
   namespace fs = std::filesystem;
 
   // Create temp directory
@@ -416,7 +417,7 @@ TEST_CASE("ProjectJson - Atomic write preserves existing file on error", "[proje
 
   // Try to save invalid metadata (should fail validation)
   ProjectMetadata invalid;
-  invalid.name = "";  // Invalid: empty name
+  invalid.name = ""; // Invalid: empty name
   invalid.version = "1.0.0";
 
   auto invalidSaveResult = ProjectJsonHandler::saveToFile(projectFile.string(), invalid);
@@ -438,7 +439,7 @@ TEST_CASE("ProjectJson - Atomic write preserves existing file on error", "[proje
 // =============================================================================
 
 TEST_CASE("ProjectJson - Error codes are descriptive", "[project_json][errors]") {
-  const char *msg = projectJsonErrorToString(ProjectJsonError::MissingRequiredField);
+  const char* msg = projectJsonErrorToString(ProjectJsonError::MissingRequiredField);
   CHECK(msg != nullptr);
   CHECK(std::string(msg).find("Missing") != std::string::npos);
 
@@ -475,7 +476,7 @@ TEST_CASE("ProjectJson - Detects truncated project file", "[project_json][corrup
       "fileVersion": 1,
       "name": "Truncated Project",
       "version": "1.0.0",
-      "author": "Test)";  // Truncated here - no closing quotes, braces
+      "author": "Test)"; // Truncated here - no closing quotes, braces
 
     std::ofstream file(projectFile);
     file << truncatedJson;
@@ -546,7 +547,7 @@ TEST_CASE("ProjectJson - Detects invalid JSON syntax", "[project_json][corruptio
     std::string invalidJson = R"({
       "fileVersion": 1,
       "name": "Invalid Project"
-    )";  // Missing closing }
+    )"; // Missing closing }
 
     std::ofstream file(projectFile);
     file << invalidJson;
@@ -562,7 +563,7 @@ TEST_CASE("ProjectJson - Detects invalid JSON syntax", "[project_json][corruptio
     std::string invalidJson = R"({
       "fileVersion": 1
       "name": "Invalid Project"
-    })";  // Missing comma after fileVersion
+    })"; // Missing comma after fileVersion
 
     std::ofstream file(projectFile);
     file << invalidJson;
@@ -594,7 +595,7 @@ TEST_CASE("ProjectJson - Detects invalid JSON syntax", "[project_json][corruptio
     std::string invalidJson = R"({
       "fileVersion": 1,
       "name": "Invalid Project",
-    })";  // Trailing comma before }
+    })"; // Trailing comma before }
 
     std::ofstream file(projectFile);
     file << invalidJson;
@@ -651,7 +652,8 @@ TEST_CASE("ProjectJson - Detects invalid JSON syntax", "[project_json][corruptio
   }
 }
 
-TEST_CASE("ProjectJson - Handles missing required fields gracefully", "[project_json][corruption]") {
+TEST_CASE("ProjectJson - Handles missing required fields gracefully",
+          "[project_json][corruption]") {
   namespace fs = std::filesystem;
 
   fs::path tempDir = fs::temp_directory_path() / "novelmind_test_missing_fields";
@@ -748,7 +750,8 @@ TEST_CASE("ProjectJson - Handles missing required fields gracefully", "[project_
   }
 }
 
-TEST_CASE("ProjectJson - Partial corruption preserves valid fields", "[project_json][corruption][recovery]") {
+TEST_CASE("ProjectJson - Partial corruption preserves valid fields",
+          "[project_json][corruption][recovery]") {
   namespace fs = std::filesystem;
 
   fs::path tempDir = fs::temp_directory_path() / "novelmind_test_partial";
@@ -782,12 +785,13 @@ TEST_CASE("ProjectJson - Partial corruption preserves valid fields", "[project_j
   }
 }
 
-TEST_CASE("ProjectManager - Backup creation and restoration", "[project_manager][backup][recovery]") {
+TEST_CASE("ProjectManager - Backup creation and restoration",
+          "[project_manager][backup][recovery]") {
   namespace fs = std::filesystem;
 
   // Create temp directory for test project
   fs::path tempDir = fs::temp_directory_path() / "novelmind_test_backup";
-  fs::remove_all(tempDir);  // Clean any previous test
+  fs::remove_all(tempDir); // Clean any previous test
   fs::create_directories(tempDir);
 
   struct Cleanup {
@@ -818,7 +822,7 @@ TEST_CASE("ProjectManager - Backup creation and restoration", "[project_manager]
   assetFile.close();
 
   SECTION("Backup captures current project state") {
-    ProjectManager &pm = ProjectManager::instance();
+    ProjectManager& pm = ProjectManager::instance();
     auto openResult = pm.openProject(tempDir.string());
     REQUIRE(openResult.isOk());
 
@@ -834,7 +838,7 @@ TEST_CASE("ProjectManager - Backup creation and restoration", "[project_manager]
   }
 
   SECTION("Backup restoration recovers corrupted project") {
-    ProjectManager &pm = ProjectManager::instance();
+    ProjectManager& pm = ProjectManager::instance();
     auto openResult = pm.openProject(tempDir.string());
     REQUIRE(openResult.isOk());
 
@@ -896,7 +900,7 @@ TEST_CASE("ProjectManager - Backup creation and restoration", "[project_manager]
   }
 
   SECTION("Multiple backups are maintained") {
-    ProjectManager &pm = ProjectManager::instance();
+    ProjectManager& pm = ProjectManager::instance();
     auto openResult = pm.openProject(tempDir.string());
     REQUIRE(openResult.isOk());
 

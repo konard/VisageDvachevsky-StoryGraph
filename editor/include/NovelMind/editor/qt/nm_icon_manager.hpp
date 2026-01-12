@@ -19,7 +19,7 @@ namespace NovelMind::editor::qt {
  */
 class NMIconManager {
 public:
-  static NMIconManager &instance();
+  static NMIconManager& instance();
 
   /**
    * @brief Get an icon by name
@@ -28,8 +28,7 @@ public:
    * @param color Icon color (if empty, uses theme color)
    * @return QIcon instance
    */
-  QIcon getIcon(const QString &iconName, int size = 16,
-                const QColor &color = QColor());
+  QIcon getIcon(const QString& iconName, int size = 16, const QColor& color = QColor());
 
   /**
    * @brief Get a pixmap by icon name
@@ -38,8 +37,7 @@ public:
    * @param color Icon color (if empty, uses theme color)
    * @return QPixmap instance
    */
-  QPixmap getPixmap(const QString &iconName, int size = 16,
-                    const QColor &color = QColor());
+  QPixmap getPixmap(const QString& iconName, int size = 16, const QColor& color = QColor());
 
   /**
    * @brief Clear icon cache (useful when theme changes)
@@ -49,7 +47,7 @@ public:
   /**
    * @brief Set default icon color for the current theme
    */
-  void setDefaultColor(const QColor &color);
+  void setDefaultColor(const QColor& color);
 
   /**
    * @brief Get default icon color
@@ -60,12 +58,12 @@ private:
   NMIconManager();
   ~NMIconManager() = default;
 
-  NMIconManager(const NMIconManager &) = delete;
-  NMIconManager &operator=(const NMIconManager &) = delete;
+  NMIconManager(const NMIconManager&) = delete;
+  NMIconManager& operator=(const NMIconManager&) = delete;
 
-  QString getSvgData(const QString &iconName);
-  QString loadSvgFromResource(const QString &resourcePath);
-  QPixmap renderSvg(const QString &svgData, int size, const QColor &color);
+  QString getSvgData(const QString& iconName);
+  QString loadSvgFromResource(const QString& resourcePath);
+  QPixmap renderSvg(const QString& svgData, int size, const QColor& color);
 
   // DEPRECATED: Old hardcoded SVG data (kept for fallback compatibility)
   QMap<QString, QString> m_iconSvgData;

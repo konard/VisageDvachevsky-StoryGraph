@@ -15,7 +15,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMNewProjectDialog::NMNewProjectDialog(QWidget *parent) : QDialog(parent) {
+NMNewProjectDialog::NMNewProjectDialog(QWidget* parent) : QDialog(parent) {
   setWindowTitle(tr("New Project"));
   setModal(true);
   setObjectName("NMNewProjectDialog");
@@ -53,13 +53,13 @@ QStringList NMNewProjectDialog::workflowModes() {
 }
 
 void NMNewProjectDialog::buildUi() {
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(12);
 
   // Basic Settings Group
-  auto *basicGroup = new QGroupBox(tr("Project Information"), this);
-  auto *basicLayout = new QFormLayout(basicGroup);
+  auto* basicGroup = new QGroupBox(tr("Project Information"), this);
+  auto* basicLayout = new QFormLayout(basicGroup);
   basicLayout->setSpacing(8);
 
   m_nameEdit = new QLineEdit(basicGroup);
@@ -67,12 +67,11 @@ void NMNewProjectDialog::buildUi() {
   basicLayout->addRow(tr("Name:"), m_nameEdit);
 
   m_templateCombo = new QComboBox(basicGroup);
-  m_templateCombo->setToolTip(
-      tr("Select a starting template for your project"));
+  m_templateCombo->setToolTip(tr("Select a starting template for your project"));
   basicLayout->addRow(tr("Template:"), m_templateCombo);
 
-  auto *dirRow = new QWidget(basicGroup);
-  auto *dirLayout = new QHBoxLayout(dirRow);
+  auto* dirRow = new QWidget(basicGroup);
+  auto* dirLayout = new QHBoxLayout(dirRow);
   dirLayout->setContentsMargins(0, 0, 0, 0);
   dirLayout->setSpacing(6);
 
@@ -82,8 +81,7 @@ void NMNewProjectDialog::buildUi() {
   m_browseButton = new QPushButton(tr("Browse..."), dirRow);
   m_browseButton->setIcon(NMIconManager::instance().getIcon("folder-open", 16));
   m_browseButton->setObjectName("NMSecondaryButton");
-  connect(m_browseButton, &QPushButton::clicked, this,
-          &NMNewProjectDialog::browseDirectory);
+  connect(m_browseButton, &QPushButton::clicked, this, &NMNewProjectDialog::browseDirectory);
 
   dirLayout->addWidget(m_directoryEdit, 1);
   dirLayout->addWidget(m_browseButton);
@@ -92,17 +90,16 @@ void NMNewProjectDialog::buildUi() {
   layout->addWidget(basicGroup);
 
   // Display Settings Group
-  auto *displayGroup = new QGroupBox(tr("Display Settings"), this);
-  auto *displayLayout = new QFormLayout(displayGroup);
+  auto* displayGroup = new QGroupBox(tr("Display Settings"), this);
+  auto* displayLayout = new QFormLayout(displayGroup);
   displayLayout->setSpacing(8);
 
   m_resolutionCombo = new QComboBox(displayGroup);
   m_resolutionCombo->addItems(standardResolutions());
   m_resolutionCombo->setCurrentIndex(0); // Default to 1920x1080
-  m_resolutionCombo->setToolTip(
-      tr("Base resolution for the visual novel.\n"
-         "Common choices: 1920x1080 for modern displays,\n"
-         "1280x720 for wider compatibility."));
+  m_resolutionCombo->setToolTip(tr("Base resolution for the visual novel.\n"
+                                   "Common choices: 1920x1080 for modern displays,\n"
+                                   "1280x720 for wider compatibility."));
   displayLayout->addRow(tr("Base Resolution:"), m_resolutionCombo);
 
   m_localeCombo = new QComboBox(displayGroup);
@@ -115,8 +112,8 @@ void NMNewProjectDialog::buildUi() {
   layout->addWidget(displayGroup);
 
   // Workflow Settings Group (issue #100)
-  auto *workflowGroup = new QGroupBox(tr("Workflow Settings"), this);
-  auto *workflowLayout = new QFormLayout(workflowGroup);
+  auto* workflowGroup = new QGroupBox(tr("Workflow Settings"), this);
+  auto* workflowLayout = new QFormLayout(workflowGroup);
   workflowLayout->setSpacing(8);
 
   m_workflowCombo = new QComboBox(workflowGroup);
@@ -133,8 +130,8 @@ void NMNewProjectDialog::buildUi() {
       "color: #888; padding: 8px; background: #2a2a2a; border-radius: 4px;");
   workflowLayout->addRow(m_workflowDescription);
 
-  connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMNewProjectDialog::updateWorkflowDescription);
+  connect(m_workflowCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMNewProjectDialog::updateWorkflowDescription);
   updateWorkflowDescription();
 
   layout->addWidget(workflowGroup);
@@ -148,7 +145,7 @@ void NMNewProjectDialog::buildUi() {
   layout->addStretch();
 
   // Buttons
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
   m_cancelButton = new QPushButton(tr("Cancel"), this);
@@ -166,10 +163,8 @@ void NMNewProjectDialog::buildUi() {
   layout->addLayout(buttonLayout);
 
   // Connect signals
-  connect(m_nameEdit, &QLineEdit::textChanged, this,
-          &NMNewProjectDialog::updatePreview);
-  connect(m_directoryEdit, &QLineEdit::textChanged, this,
-          &NMNewProjectDialog::updatePreview);
+  connect(m_nameEdit, &QLineEdit::textChanged, this, &NMNewProjectDialog::updatePreview);
+  connect(m_directoryEdit, &QLineEdit::textChanged, this, &NMNewProjectDialog::updatePreview);
   connect(m_templateCombo, &QComboBox::currentTextChanged, this,
           &NMNewProjectDialog::updatePreview);
 
@@ -177,7 +172,7 @@ void NMNewProjectDialog::buildUi() {
   updateCreateEnabled();
 }
 
-void NMNewProjectDialog::setTemplateOptions(const QStringList &templates) {
+void NMNewProjectDialog::setTemplateOptions(const QStringList& templates) {
   if (!m_templateCombo) {
     return;
   }
@@ -186,7 +181,7 @@ void NMNewProjectDialog::setTemplateOptions(const QStringList &templates) {
   updatePreview();
 }
 
-void NMNewProjectDialog::setTemplate(const QString &templateName) {
+void NMNewProjectDialog::setTemplate(const QString& templateName) {
   if (!m_templateCombo) {
     return;
   }
@@ -200,14 +195,14 @@ void NMNewProjectDialog::setTemplate(const QString &templateName) {
   updatePreview();
 }
 
-void NMNewProjectDialog::setProjectName(const QString &name) {
+void NMNewProjectDialog::setProjectName(const QString& name) {
   if (m_nameEdit) {
     m_nameEdit->setText(name);
   }
   updatePreview();
 }
 
-void NMNewProjectDialog::setBaseDirectory(const QString &directory) {
+void NMNewProjectDialog::setBaseDirectory(const QString& directory) {
   if (m_directoryEdit) {
     m_directoryEdit->setText(directory);
   }
@@ -235,18 +230,17 @@ QString NMNewProjectDialog::templateName() const {
   return m_templateCombo ? m_templateCombo->currentText().trimmed() : QString();
 }
 
-void NMNewProjectDialog::setResolution(const QString &resolution) {
+void NMNewProjectDialog::setResolution(const QString& resolution) {
   if (!m_resolutionCombo) {
     return;
   }
-  const int index =
-      m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
+  const int index = m_resolutionCombo->findText(resolution, Qt::MatchStartsWith);
   if (index >= 0) {
     m_resolutionCombo->setCurrentIndex(index);
   }
 }
 
-void NMNewProjectDialog::setLocale(const QString &locale) {
+void NMNewProjectDialog::setLocale(const QString& locale) {
   if (!m_localeCombo) {
     return;
   }
@@ -342,10 +336,9 @@ void NMNewProjectDialog::updateCreateEnabled() {
 }
 
 void NMNewProjectDialog::browseDirectory() {
-  const QString current =
-      baseDirectory().isEmpty() ? QDir::homePath() : baseDirectory();
-  const QString dir = NMFileDialog::getExistingDirectory(
-      this, tr("Select Project Location"), current);
+  const QString current = baseDirectory().isEmpty() ? QDir::homePath() : baseDirectory();
+  const QString dir =
+      NMFileDialog::getExistingDirectory(this, tr("Select Project Location"), current);
   if (!dir.isEmpty()) {
     setBaseDirectory(dir);
   }

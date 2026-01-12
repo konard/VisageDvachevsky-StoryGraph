@@ -140,8 +140,8 @@ class IProjectListener {
 public:
   virtual ~IProjectListener() = default;
 
-  virtual void onProjectCreated(const std::string & /*path*/) {}
-  virtual void onProjectOpened(const std::string & /*path*/) {}
+  virtual void onProjectCreated(const std::string& /*path*/) {}
+  virtual void onProjectOpened(const std::string& /*path*/) {}
   virtual void onProjectClosed() {}
   virtual void onProjectSaved() {}
   virtual void onProjectModified() {}
@@ -164,13 +164,13 @@ public:
   ~ProjectManager();
 
   // Prevent copying
-  ProjectManager(const ProjectManager &) = delete;
-  ProjectManager &operator=(const ProjectManager &) = delete;
+  ProjectManager(const ProjectManager&) = delete;
+  ProjectManager& operator=(const ProjectManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static ProjectManager &instance();
+  static ProjectManager& instance();
 
   // =========================================================================
   // Project Lifecycle
@@ -183,15 +183,15 @@ public:
    * @param templateName Optional template to use
    * @return Success or error
    */
-  Result<void> createProject(const std::string &path, const std::string &name,
-                             const std::string &templateName = "empty");
+  Result<void> createProject(const std::string& path, const std::string& name,
+                             const std::string& templateName = "empty");
 
   /**
    * @brief Open an existing project
    * @param path Path to project directory or project.json
    * @return Success or error
    */
-  Result<void> openProject(const std::string &path);
+  Result<void> openProject(const std::string& path);
 
   /**
    * @brief Save the current project
@@ -204,7 +204,7 @@ public:
    * @param path New project path
    * @return Success or error
    */
-  Result<void> saveProjectAs(const std::string &path);
+  Result<void> saveProjectAs(const std::string& path);
 
   /**
    * @brief Close the current project
@@ -245,12 +245,12 @@ public:
   /**
    * @brief Get project metadata
    */
-  [[nodiscard]] const ProjectMetadata &getMetadata() const;
+  [[nodiscard]] const ProjectMetadata& getMetadata() const;
 
   /**
    * @brief Update project metadata
    */
-  void setMetadata(const ProjectMetadata &metadata);
+  void setMetadata(const ProjectMetadata& metadata);
 
   /**
    * @brief Get project root path
@@ -270,7 +270,7 @@ public:
   /**
    * @brief Set start scene id (entry point)
    */
-  void setStartScene(const std::string &sceneId);
+  void setStartScene(const std::string& sceneId);
 
   /**
    * @brief Get path to a specific project folder
@@ -281,8 +281,7 @@ public:
    * @brief Get all project files of a certain type
    * @param extension File extension filter (e.g., ".nms", ".png")
    */
-  [[nodiscard]] std::vector<std::string>
-  getProjectFiles(const std::string &extension) const;
+  [[nodiscard]] std::vector<std::string> getProjectFiles(const std::string& extension) const;
 
   // =========================================================================
   // Folder Structure
@@ -302,24 +301,22 @@ public:
    * @brief Create a folder within the project
    * @param relativePath Path relative to project root
    */
-  Result<void> createFolder(const std::string &relativePath);
+  Result<void> createFolder(const std::string& relativePath);
 
   /**
    * @brief Check if a path is within the project
    */
-  [[nodiscard]] bool isPathInProject(const std::string &path) const;
+  [[nodiscard]] bool isPathInProject(const std::string& path) const;
 
   /**
    * @brief Convert absolute path to project-relative path
    */
-  [[nodiscard]] std::string
-  toRelativePath(const std::string &absolutePath) const;
+  [[nodiscard]] std::string toRelativePath(const std::string& absolutePath) const;
 
   /**
    * @brief Convert project-relative path to absolute path
    */
-  [[nodiscard]] std::string
-  toAbsolutePath(const std::string &relativePath) const;
+  [[nodiscard]] std::string toAbsolutePath(const std::string& relativePath) const;
 
   // =========================================================================
   // Recent Projects
@@ -328,17 +325,17 @@ public:
   /**
    * @brief Get list of recent projects
    */
-  [[nodiscard]] const std::vector<RecentProject> &getRecentProjects() const;
+  [[nodiscard]] const std::vector<RecentProject>& getRecentProjects() const;
 
   /**
    * @brief Add a project to recent list
    */
-  void addToRecentProjects(const std::string &path);
+  void addToRecentProjects(const std::string& path);
 
   /**
    * @brief Remove a project from recent list
    */
-  void removeFromRecentProjects(const std::string &path);
+  void removeFromRecentProjects(const std::string& path);
 
   /**
    * @brief Clear recent projects list
@@ -402,7 +399,7 @@ public:
   /**
    * @brief Check if project file exists
    */
-  [[nodiscard]] static bool isValidProjectPath(const std::string &path);
+  [[nodiscard]] static bool isValidProjectPath(const std::string& path);
 
   /**
    * @brief Get list of available project templates
@@ -412,7 +409,7 @@ public:
   /**
    * @brief Access the asset database for the current project
    */
-  [[nodiscard]] AssetDatabase *assetDatabase() { return &m_assetDatabase; }
+  [[nodiscard]] AssetDatabase* assetDatabase() { return &m_assetDatabase; }
 
   // =========================================================================
   // Backup
@@ -427,7 +424,7 @@ public:
    * @brief Restore from a backup
    * @param backupPath Path to backup
    */
-  Result<void> restoreFromBackup(const std::string &backupPath);
+  Result<void> restoreFromBackup(const std::string& backupPath);
 
   /**
    * @brief Get list of available backups
@@ -446,12 +443,12 @@ public:
   /**
    * @brief Add a project listener
    */
-  void addListener(IProjectListener *listener);
+  void addListener(IProjectListener* listener);
 
   /**
    * @brief Remove a project listener
    */
-  void removeListener(IProjectListener *listener);
+  void removeListener(IProjectListener* listener);
 
   // =========================================================================
   // Callbacks
@@ -465,9 +462,9 @@ public:
 
 private:
   // Internal methods
-  Result<void> loadProjectFile(const std::string &path);
+  Result<void> loadProjectFile(const std::string& path);
   Result<void> saveProjectFile();
-  Result<void> createProjectFromTemplate(const std::string &templateName);
+  Result<void> createProjectFromTemplate(const std::string& templateName);
   void updateRecentProjects();
   void notifyProjectCreated();
   void notifyProjectOpened();
@@ -497,7 +494,7 @@ private:
   size_t m_maxBackups = 5;
 
   // Listeners
-  std::vector<IProjectListener *> m_listeners;
+  std::vector<IProjectListener*> m_listeners;
 
   // Callbacks
   std::function<std::optional<bool>()> m_onUnsavedChangesPrompt;
@@ -511,7 +508,7 @@ private:
  */
 class ProjectScope {
 public:
-  explicit ProjectScope(const std::string &projectPath);
+  explicit ProjectScope(const std::string& projectPath);
   ~ProjectScope();
 
   [[nodiscard]] bool isValid() const { return m_valid; }

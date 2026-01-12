@@ -20,7 +20,7 @@ Result<void> EditorRuntimeHost::saveGame(i32 slot) {
   data.sceneId = state.currentScene;
   data.nodeId = std::to_string(state.instructionPointer);
 
-  for (const auto &[name, value] : state.variables) {
+  for (const auto& [name, value] : state.variables) {
     const std::string typeKey = "__var.type." + name;
     if (std::holds_alternative<i32>(value)) {
       data.intVariables[name] = std::get<i32>(value);
@@ -37,22 +37,19 @@ Result<void> EditorRuntimeHost::saveGame(i32 slot) {
     }
   }
 
-  for (const auto &[name, value] : state.flags) {
+  for (const auto& [name, value] : state.flags) {
     data.flags[name] = value;
   }
 
-  data.intVariables["__runtime.ip"] =
-      static_cast<i32>(state.instructionPointer);
+  data.intVariables["__runtime.ip"] = static_cast<i32>(state.instructionPointer);
   data.intVariables["__runtime.choice"] = state.selectedChoice;
   data.intVariables["__runtime.skip"] = state.skipMode ? 1 : 0;
   data.intVariables["__runtime.dialogue_active"] = state.inDialogue ? 1 : 0;
   data.stringVariables["__runtime.speaker"] = state.currentSpeaker;
   data.stringVariables["__runtime.dialogue"] = state.currentDialogue;
   data.stringVariables["__runtime.background"] = state.currentBackground;
-  data.stringVariables["__runtime.visible"] =
-      detail::encodeList(state.visibleCharacters);
-  data.stringVariables["__runtime.choices"] =
-      detail::encodeList(state.currentChoices);
+  data.stringVariables["__runtime.visible"] = detail::encodeList(state.visibleCharacters);
+  data.stringVariables["__runtime.choices"] = detail::encodeList(state.currentChoices);
 
   return m_saveManager->save(slot, data);
 }
@@ -78,7 +75,7 @@ Result<void> EditorRuntimeHost::saveAuto() {
   save::SaveData data;
   data.sceneId = state.currentScene;
   data.nodeId = std::to_string(state.instructionPointer);
-  for (const auto &[name, value] : state.variables) {
+  for (const auto& [name, value] : state.variables) {
     const std::string typeKey = "__var.type." + name;
     if (std::holds_alternative<i32>(value)) {
       data.intVariables[name] = std::get<i32>(value);
@@ -94,21 +91,18 @@ Result<void> EditorRuntimeHost::saveAuto() {
       data.stringVariables[typeKey] = "string";
     }
   }
-  for (const auto &[name, value] : state.flags) {
+  for (const auto& [name, value] : state.flags) {
     data.flags[name] = value;
   }
-  data.intVariables["__runtime.ip"] =
-      static_cast<i32>(state.instructionPointer);
+  data.intVariables["__runtime.ip"] = static_cast<i32>(state.instructionPointer);
   data.intVariables["__runtime.choice"] = state.selectedChoice;
   data.intVariables["__runtime.skip"] = state.skipMode ? 1 : 0;
   data.intVariables["__runtime.dialogue_active"] = state.inDialogue ? 1 : 0;
   data.stringVariables["__runtime.speaker"] = state.currentSpeaker;
   data.stringVariables["__runtime.dialogue"] = state.currentDialogue;
   data.stringVariables["__runtime.background"] = state.currentBackground;
-  data.stringVariables["__runtime.visible"] =
-      detail::encodeList(state.visibleCharacters);
-  data.stringVariables["__runtime.choices"] =
-      detail::encodeList(state.currentChoices);
+  data.stringVariables["__runtime.visible"] = detail::encodeList(state.visibleCharacters);
+  data.stringVariables["__runtime.choices"] = detail::encodeList(state.currentChoices);
 
   return m_saveManager->saveAuto(data);
 }
@@ -133,16 +127,14 @@ bool EditorRuntimeHost::autoSaveExists() const {
   return m_saveManager->autoSaveExists();
 }
 
-std::optional<save::SaveMetadata>
-EditorRuntimeHost::getSaveMetadata(i32 slot) const {
+std::optional<save::SaveMetadata> EditorRuntimeHost::getSaveMetadata(i32 slot) const {
   if (!m_saveManager) {
     return std::nullopt;
   }
   return m_saveManager->getSlotMetadata(slot);
 }
 
-Result<void>
-EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
+Result<void> EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData& data) {
   if (!m_compiledScript) {
     return Result<void>::error("No compiled script loaded");
   }
@@ -159,18 +151,17 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
   if (ipIt != data.intVariables.end()) {
     state.instructionPointer = static_cast<u32>(ipIt->second);
   } else if (!data.nodeId.empty()) {
-    state.instructionPointer =
-        static_cast<u32>(std::strtoul(data.nodeId.c_str(), nullptr, 10));
+    state.instructionPointer = static_cast<u32>(std::strtoul(data.nodeId.c_str(), nullptr, 10));
   }
 
   std::unordered_map<std::string, std::string> typeMap;
-  for (const auto &[name, value] : data.stringVariables) {
+  for (const auto& [name, value] : data.stringVariables) {
     if (detail::startsWith(name, "__var.type.")) {
       typeMap[name.substr(11)] = value;
     }
   }
 
-  for (const auto &[name, value] : data.intVariables) {
+  for (const auto& [name, value] : data.intVariables) {
     if (detail::startsWith(name, "__runtime.")) {
       continue;
     }
@@ -182,19 +173,18 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
     }
   }
 
-  for (const auto &[name, value] : data.floatVariables) {
+  for (const auto& [name, value] : data.floatVariables) {
     state.variables[name] = scripting::Value{value};
   }
 
-  for (const auto &[name, value] : data.stringVariables) {
-    if (detail::startsWith(name, "__runtime.") ||
-        detail::startsWith(name, "__var.type.")) {
+  for (const auto& [name, value] : data.stringVariables) {
+    if (detail::startsWith(name, "__runtime.") || detail::startsWith(name, "__var.type.")) {
       continue;
     }
     state.variables[name] = scripting::Value{value};
   }
 
-  for (const auto &[name, value] : data.flags) {
+  for (const auto& [name, value] : data.flags) {
     state.flags[name] = value;
   }
 
@@ -245,10 +235,9 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
       m_sceneGraph->showBackground(state.currentBackground);
     }
 
-    const auto &chars = state.visibleCharacters;
+    const auto& chars = state.visibleCharacters;
     for (size_t i = 0; i < chars.size(); ++i) {
-      scene::CharacterObject::Position pos =
-          scene::CharacterObject::Position::Center;
+      scene::CharacterObject::Position pos = scene::CharacterObject::Position::Center;
       if (chars.size() == 2) {
         pos = (i == 0) ? scene::CharacterObject::Position::Left
                        : scene::CharacterObject::Position::Right;
@@ -266,8 +255,7 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
       m_sceneGraph->showCharacter(chars[i], chars[i], pos);
     }
 
-    if (state.inDialogue || !state.currentDialogue.empty() ||
-        !state.currentSpeaker.empty()) {
+    if (state.inDialogue || !state.currentDialogue.empty() || !state.currentSpeaker.empty()) {
       m_sceneGraph->showDialogue(state.currentSpeaker, state.currentDialogue);
     } else {
       m_sceneGraph->hideDialogue();
@@ -282,7 +270,7 @@ EditorRuntimeHost::applySaveDataToRuntime(const save::SaveData &data) {
         opt.text = state.currentChoices[i];
         options.push_back(opt);
       }
-      auto *menu = m_sceneGraph->showChoices(options);
+      auto* menu = m_sceneGraph->showChoices(options);
       if (menu) {
         menu->setSelectedIndex(state.selectedChoice);
       }

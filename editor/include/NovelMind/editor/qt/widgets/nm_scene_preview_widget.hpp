@@ -37,11 +37,11 @@ class NMPlayPreviewOverlay;
  * @brief Preview status indicator
  */
 enum class PreviewStatus {
-  Idle,        // No preview active
-  Compiling,   // Compiling script
-  Rendering,   // Rendering scene
-  Ready,       // Preview ready and displayed
-  Error        // Compilation or rendering error
+  Idle,      // No preview active
+  Compiling, // Compiling script
+  Rendering, // Rendering scene
+  Ready,     // Preview ready and displayed
+  Error      // Compilation or rendering error
 };
 
 /**
@@ -108,7 +108,7 @@ class NMScenePreviewWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMScenePreviewWidget(QWidget *parent = nullptr);
+  explicit NMScenePreviewWidget(QWidget* parent = nullptr);
   ~NMScenePreviewWidget() override;
 
   /**
@@ -117,8 +117,7 @@ public:
    * @param cursorLine Current cursor line (1-based)
    * @param cursorColumn Current cursor column (0-based)
    */
-  void setScriptContent(const QString &scriptContent, int cursorLine,
-                        int cursorColumn);
+  void setScriptContent(const QString& scriptContent, int cursorLine, int cursorColumn);
 
   /**
    * @brief Update preview with new script content
@@ -141,7 +140,7 @@ public:
   /**
    * @brief Set the project assets root path for loading textures
    */
-  void setAssetsRoot(const QString &path);
+  void setAssetsRoot(const QString& path);
 
   /**
    * @brief Get current preview status
@@ -173,7 +172,7 @@ signals:
   /**
    * @brief Emitted when a compilation error occurs
    */
-  void compilationError(const QString &message, int line, int column);
+  void compilationError(const QString& message, int line, int column);
 
   /**
    * @brief Emitted when preview is successfully rendered
@@ -191,7 +190,7 @@ private:
   void setupConnections();
   void updatePreview();
   void setStatus(PreviewStatus status);
-  void showStatusMessage(const QString &message);
+  void showStatusMessage(const QString& message);
 
   /**
    * @brief Parse and compile the script incrementally
@@ -202,27 +201,27 @@ private:
   /**
    * @brief Apply the scene state to the graphics scene
    */
-  void applySceneState(const ScenePreviewState &state);
+  void applySceneState(const ScenePreviewState& state);
 
   /**
    * @brief Load and display background asset
    */
-  bool loadBackground(const QString &assetPath);
+  bool loadBackground(const QString& assetPath);
 
   /**
    * @brief Load and display character sprite
    */
-  bool loadCharacter(const QString &characterId, const QString &position);
+  bool loadCharacter(const QString& characterId, const QString& position);
 
   /**
    * @brief Update dialogue overlay
    */
-  void updateDialogueOverlay(const QString &speaker, const QString &text);
+  void updateDialogueOverlay(const QString& speaker, const QString& text);
 
   /**
    * @brief Update choices display
    */
-  void updateChoicesOverlay(const QStringList &choices);
+  void updateChoicesOverlay(const QStringList& choices);
 
   /**
    * @brief Clear all scene objects
@@ -232,22 +231,22 @@ private:
   /**
    * @brief Get position coordinates from position name (left, right, center)
    */
-  QPointF getPositionCoordinates(const QString &position) const;
+  QPointF getPositionCoordinates(const QString& position) const;
 
   // UI Components
-  QVBoxLayout *m_layout = nullptr;
-  QFrame *m_toolbarFrame = nullptr;
-  QPushButton *m_togglePreviewBtn = nullptr;
-  QPushButton *m_resetViewBtn = nullptr;
-  QPushButton *m_toggleGridBtn = nullptr;
-  QLabel *m_statusLabel = nullptr;
+  QVBoxLayout* m_layout = nullptr;
+  QFrame* m_toolbarFrame = nullptr;
+  QPushButton* m_togglePreviewBtn = nullptr;
+  QPushButton* m_resetViewBtn = nullptr;
+  QPushButton* m_toggleGridBtn = nullptr;
+  QLabel* m_statusLabel = nullptr;
 
-  NMSceneGraphicsScene *m_scene = nullptr;
-  NMSceneGraphicsView *m_view = nullptr;
-  NMPlayPreviewOverlay *m_overlay = nullptr;
+  NMSceneGraphicsScene* m_scene = nullptr;
+  NMSceneGraphicsView* m_view = nullptr;
+  NMPlayPreviewOverlay* m_overlay = nullptr;
 
-  QFrame *m_placeholderFrame = nullptr;
-  QLabel *m_placeholderLabel = nullptr;
+  QFrame* m_placeholderFrame = nullptr;
+  QLabel* m_placeholderLabel = nullptr;
 
   // Script content
   QString m_scriptContent;
@@ -256,7 +255,7 @@ private:
   QString m_assetsRoot;
 
   // Update control
-  QTimer *m_updateTimer = nullptr;
+  QTimer* m_updateTimer = nullptr;
   int m_debounceDelay = 300; // milliseconds
   bool m_updatePending = false;
 
@@ -267,7 +266,7 @@ private:
   ScenePreviewState m_currentState;
 
   // Scene objects tracking (for cleanup)
-  QHash<QString, QGraphicsItem *> m_sceneObjects;
+  QHash<QString, QGraphicsItem*> m_sceneObjects;
 };
 
 } // namespace NovelMind::editor::qt

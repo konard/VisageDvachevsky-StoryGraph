@@ -4,17 +4,17 @@
 
 namespace NovelMind::editor::qt::edge_manager {
 
-void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
-                           uint64_t fromNodeId, uint64_t toNodeId) {
-  auto *from = panel->findNodeById(fromNodeId);
-  auto *to = panel->findNodeById(toNodeId);
+void handleConnectionAdded(NMStoryGraphPanel* panel, NMStoryGraphScene* scene, uint64_t fromNodeId,
+                           uint64_t toNodeId) {
+  auto* from = panel->findNodeById(fromNodeId);
+  auto* to = panel->findNodeById(toNodeId);
   if (!from || !to) {
     return;
   }
 
   // Collect all connections from this source node
-  QList<NMGraphConnectionItem *> outgoingConns;
-  for (auto *conn : scene->connections()) {
+  QList<NMGraphConnectionItem*> outgoingConns;
+  for (auto* conn : scene->connections()) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
@@ -29,7 +29,7 @@ void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
     QHash<QString, QString> newTargets;
 
     for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto *conn = outgoingConns[i];
+      auto* conn = outgoingConns[i];
       QString label;
       if (i < choices.size()) {
         label = choices[i];
@@ -61,7 +61,7 @@ void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
 
     QHash<QString, QString> newTargets;
     for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto *conn = outgoingConns[i];
+      auto* conn = outgoingConns[i];
       QString label;
       if (i < outputs.size()) {
         label = outputs[i];
@@ -83,28 +83,27 @@ void handleConnectionAdded(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
 
   // Build targets list for script update
   QStringList targets;
-  for (auto *conn : outgoingConns) {
+  for (auto* conn : outgoingConns) {
     targets << conn->endNode()->nodeIdString();
   }
 
-  detail::updateSceneGraphBlock(from->nodeIdString(),
-                                 detail::resolveScriptPath(from), targets);
+  detail::updateSceneGraphBlock(from->nodeIdString(), detail::resolveScriptPath(from), targets);
 
   // Note: Layout saving is handled by the panel
 }
 
-void handleConnectionDeleted(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
+void handleConnectionDeleted(NMStoryGraphPanel* panel, NMStoryGraphScene* scene,
                              uint64_t fromNodeId, uint64_t toNodeId) {
   Q_UNUSED(toNodeId);
 
-  auto *from = panel->findNodeById(fromNodeId);
+  auto* from = panel->findNodeById(fromNodeId);
   if (!from) {
     return;
   }
 
   // Collect remaining connections from this source node
-  QList<NMGraphConnectionItem *> outgoingConns;
-  for (auto *conn : scene->connections()) {
+  QList<NMGraphConnectionItem*> outgoingConns;
+  for (auto* conn : scene->connections()) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
@@ -119,7 +118,7 @@ void handleConnectionDeleted(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
     QHash<QString, QString> newTargets;
 
     for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto *conn = outgoingConns[i];
+      auto* conn = outgoingConns[i];
       QString label;
       if (i < choices.size()) {
         label = choices[i];
@@ -148,7 +147,7 @@ void handleConnectionDeleted(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
 
     QHash<QString, QString> newTargets;
     for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto *conn = outgoingConns[i];
+      auto* conn = outgoingConns[i];
       QString label;
       if (i < outputs.size()) {
         label = outputs[i];
@@ -169,12 +168,11 @@ void handleConnectionDeleted(NMStoryGraphPanel *panel, NMStoryGraphScene *scene,
 
   // Build targets list for script update
   QStringList targets;
-  for (auto *conn : outgoingConns) {
+  for (auto* conn : outgoingConns) {
     targets << conn->endNode()->nodeIdString();
   }
 
-  detail::updateSceneGraphBlock(from->nodeIdString(),
-                                 detail::resolveScriptPath(from), targets);
+  detail::updateSceneGraphBlock(from->nodeIdString(), detail::resolveScriptPath(from), targets);
 
   // Note: Layout saving is handled by the panel
 }

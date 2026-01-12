@@ -139,9 +139,8 @@ enum class InputAction {
  * @brief Input binding for an action
  */
 struct InputBinding {
-  std::vector<std::string> keys; // Keyboard keys (e.g., "Space", "Enter")
-  std::vector<std::string>
-      mouseButtons; // Mouse buttons (e.g., "Left", "Right")
+  std::vector<std::string> keys;         // Keyboard keys (e.g., "Space", "Enter")
+  std::vector<std::string> mouseButtons; // Mouse buttons (e.g., "Left", "Right")
 };
 
 /**
@@ -222,7 +221,7 @@ inline std::string inputActionToString(InputAction action) {
 /**
  * @brief Convert string to InputAction enum
  */
-inline InputAction stringToInputAction(const std::string &str) {
+inline InputAction stringToInputAction(const std::string& str) {
   if (str == "next")
     return InputAction::Next;
   if (str == "backlog")

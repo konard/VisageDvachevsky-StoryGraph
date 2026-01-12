@@ -64,14 +64,14 @@ void NMScriptEditorPanel::showCommandPalette() {
 
 void NMScriptEditorPanel::onToggleMinimap() {
   m_minimapEnabled = !m_minimapEnabled;
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setMinimapEnabled(m_minimapEnabled);
   }
 }
 
 void NMScriptEditorPanel::onFoldAll() {
-  if (auto *editor = currentEditor()) {
-    for (const auto &region : editor->foldingRegions()) {
+  if (auto* editor = currentEditor()) {
+    for (const auto& region : editor->foldingRegions()) {
       if (!region.isCollapsed) {
         editor->toggleFold(region.startLine);
       }
@@ -80,8 +80,8 @@ void NMScriptEditorPanel::onFoldAll() {
 }
 
 void NMScriptEditorPanel::onUnfoldAll() {
-  if (auto *editor = currentEditor()) {
-    for (const auto &region : editor->foldingRegions()) {
+  if (auto* editor = currentEditor()) {
+    for (const auto& region : editor->foldingRegions()) {
       if (region.isCollapsed) {
         editor->toggleFold(region.startLine);
       }
@@ -89,51 +89,50 @@ void NMScriptEditorPanel::onUnfoldAll() {
   }
 }
 
-void NMScriptEditorPanel::onSyntaxHintChanged(const QString &hint) {
+void NMScriptEditorPanel::onSyntaxHintChanged(const QString& hint) {
   if (m_syntaxHintLabel) {
     m_syntaxHintLabel->setText(hint);
     m_syntaxHintLabel->setVisible(!hint.isEmpty());
   }
 }
 
-void NMScriptEditorPanel::onBreadcrumbsChanged(const QStringList &breadcrumbs) {
+void NMScriptEditorPanel::onBreadcrumbsChanged(const QStringList& breadcrumbs) {
   if (!m_breadcrumbBar) {
     return;
   }
 
   // Clear existing breadcrumb buttons
-  QLayoutItem *item;
+  QLayoutItem* item;
   while ((item = m_breadcrumbBar->layout()->takeAt(0)) != nullptr) {
     delete item->widget();
     delete item;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   for (int i = 0; i < breadcrumbs.size(); ++i) {
     if (i > 0) {
-      auto *separator = new QLabel(">", m_breadcrumbBar);
-      separator->setStyleSheet(QString("color: %1; padding: 0 4px;")
-                                   .arg(palette.textSecondary.name()));
+      auto* separator = new QLabel(">", m_breadcrumbBar);
+      separator->setStyleSheet(
+          QString("color: %1; padding: 0 4px;").arg(palette.textSecondary.name()));
       m_breadcrumbBar->layout()->addWidget(separator);
     }
 
-    auto *button = new QPushButton(breadcrumbs[i], m_breadcrumbBar);
+    auto* button = new QPushButton(breadcrumbs[i], m_breadcrumbBar);
     button->setFlat(true);
     button->setCursor(Qt::PointingHandCursor);
-    button->setStyleSheet(
-        QString("QPushButton { color: %1; border: none; padding: 2px 4px; }"
-                "QPushButton:hover { background-color: %2; }")
-            .arg(palette.textPrimary.name())
-            .arg(palette.bgLight.name()));
+    button->setStyleSheet(QString("QPushButton { color: %1; border: none; padding: 2px 4px; }"
+                                  "QPushButton:hover { background-color: %2; }")
+                              .arg(palette.textPrimary.name())
+                              .arg(palette.bgLight.name()));
     m_breadcrumbBar->layout()->addWidget(button);
   }
 
   // Add stretch at the end
-  static_cast<QHBoxLayout *>(m_breadcrumbBar->layout())->addStretch();
+  static_cast<QHBoxLayout*>(m_breadcrumbBar->layout())->addStretch();
 }
 
-void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
+void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString& reason) {
   if (m_readOnly == readOnly) {
     return;
   }
@@ -145,21 +144,20 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
     if (!m_readOnlyBanner) {
       m_readOnlyBanner = new QFrame(m_contentWidget);
       m_readOnlyBanner->setObjectName("WorkflowReadOnlyBanner");
-      m_readOnlyBanner->setStyleSheet(
-          "QFrame#WorkflowReadOnlyBanner {"
-          "  background-color: #4a5568;"
-          "  border: 1px solid #718096;"
-          "  border-radius: 4px;"
-          "  padding: 6px 12px;"
-          "  margin: 4px 8px;"
-          "}");
+      m_readOnlyBanner->setStyleSheet("QFrame#WorkflowReadOnlyBanner {"
+                                      "  background-color: #4a5568;"
+                                      "  border: 1px solid #718096;"
+                                      "  border-radius: 4px;"
+                                      "  padding: 6px 12px;"
+                                      "  margin: 4px 8px;"
+                                      "}");
 
-      auto *bannerLayout = new QHBoxLayout(m_readOnlyBanner);
+      auto* bannerLayout = new QHBoxLayout(m_readOnlyBanner);
       bannerLayout->setContentsMargins(8, 4, 8, 4);
       bannerLayout->setSpacing(8);
 
       // Info icon (using text for now)
-      auto *iconLabel = new QLabel(QString::fromUtf8("\xE2\x84\xB9"), // ℹ
+      auto* iconLabel = new QLabel(QString::fromUtf8("\xE2\x84\xB9"), // ℹ
                                    m_readOnlyBanner);
       iconLabel->setStyleSheet("font-size: 14px; color: #e2e8f0;");
       bannerLayout->addWidget(iconLabel);
@@ -172,19 +170,16 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
       // Sync to Graph button for Graph mode
       m_syncToGraphBtn = new QPushButton(tr("Sync to Graph"), m_readOnlyBanner);
-      m_syncToGraphBtn->setToolTip(
-          tr("Parse script content and update Story Graph nodes"));
-      m_syncToGraphBtn->setStyleSheet(
-          "QPushButton { background-color: #4299e1; color: white; "
-          "border: none; padding: 4px 12px; border-radius: 3px; }"
-          "QPushButton:hover { background-color: #3182ce; }");
+      m_syncToGraphBtn->setToolTip(tr("Parse script content and update Story Graph nodes"));
+      m_syncToGraphBtn->setStyleSheet("QPushButton { background-color: #4299e1; color: white; "
+                                      "border: none; padding: 4px 12px; border-radius: 3px; }"
+                                      "QPushButton:hover { background-color: #3182ce; }");
       connect(m_syncToGraphBtn, &QPushButton::clicked, this,
               &NMScriptEditorPanel::syncScriptToGraph);
       bannerLayout->addWidget(m_syncToGraphBtn);
 
       // Insert banner at the top of the content widget
-      if (auto *layout =
-              qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+      if (auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout())) {
         layout->insertWidget(0, m_readOnlyBanner);
       }
     }
@@ -200,15 +195,14 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
     // Hide sync button in Script mode (it wouldn't make sense)
     if (m_syncToGraphBtn) {
-      m_syncToGraphBtn->setVisible(
-          reason.contains("Graph", Qt::CaseInsensitive));
+      m_syncToGraphBtn->setVisible(reason.contains("Graph", Qt::CaseInsensitive));
     }
   } else if (m_readOnlyBanner) {
     m_readOnlyBanner->setVisible(false);
   }
 
   // Disable/enable all editors
-  for (auto *editor : editors()) {
+  for (auto* editor : editors()) {
     editor->setReadOnly(readOnly);
     if (readOnly) {
       editor->setStyleSheet("background-color: #2d3748;");
@@ -219,7 +213,7 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
 
   // Disable/enable toolbar save buttons
   if (m_toolBar) {
-    for (auto *action : m_toolBar->actions()) {
+    for (auto* action : m_toolBar->actions()) {
       if (action->text().contains("Save", Qt::CaseInsensitive) ||
           action->text().contains("Format", Qt::CaseInsensitive)) {
         action->setEnabled(!readOnly);
@@ -227,8 +221,7 @@ void NMScriptEditorPanel::setReadOnly(bool readOnly, const QString &reason) {
     }
   }
 
-  qDebug() << "[ScriptEditor] Read-only mode:" << readOnly
-           << "reason:" << reason;
+  qDebug() << "[ScriptEditor] Read-only mode:" << readOnly << "reason:" << reason;
 }
 
 void NMScriptEditorPanel::syncScriptToGraph() {
@@ -244,8 +237,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
   namespace fs = std::filesystem;
   fs::path base(scriptsRoot.toStdString());
   if (!fs::exists(base)) {
-    qWarning() << "[ScriptEditor] Scripts directory does not exist:"
-               << scriptsRoot;
+    qWarning() << "[ScriptEditor] Scripts directory does not exist:" << scriptsRoot;
     return;
   }
 
@@ -253,7 +245,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
   int total = 0;
 
   // Parse each NMS file
-  for (const auto &entry : fs::recursive_directory_iterator(base)) {
+  for (const auto& entry : fs::recursive_directory_iterator(base)) {
     if (!entry.is_regular_file() || entry.path().extension() != ".nms") {
       continue;
     }
@@ -266,19 +258,15 @@ void NMScriptEditorPanel::syncScriptToGraph() {
     file.close();
 
     // Parse scene definitions
-    const QRegularExpression sceneRe(
-        "\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
-        QRegularExpression::UseUnicodePropertiesOption);
-    const QRegularExpression sayRe(
-        "\\bsay\\s*(?:\"([^\"]*)\"\\s*)?\"([^\"]*)\"",
-        QRegularExpression::UseUnicodePropertiesOption);
-    const QRegularExpression choiceRe(
-        "\\bchoice\\s*\\{([^}]*)\\}",
-        QRegularExpression::UseUnicodePropertiesOption |
-            QRegularExpression::DotMatchesEverythingOption);
-    const QRegularExpression optionRe(
-        "\"([^\"]+)\"\\s*->\\s*([\\p{L}_][\\p{L}\\p{N}_]*)",
-        QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression sceneRe("\\bscene\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\{",
+                                     QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression sayRe("\\bsay\\s*(?:\"([^\"]*)\"\\s*)?\"([^\"]*)\"",
+                                   QRegularExpression::UseUnicodePropertiesOption);
+    const QRegularExpression choiceRe("\\bchoice\\s*\\{([^}]*)\\}",
+                                      QRegularExpression::UseUnicodePropertiesOption |
+                                          QRegularExpression::DotMatchesEverythingOption);
+    const QRegularExpression optionRe("\"([^\"]+)\"\\s*->\\s*([\\p{L}_][\\p{L}\\p{N}_]*)",
+                                      QRegularExpression::UseUnicodePropertiesOption);
 
     // Find each scene
     QRegularExpressionMatchIterator sceneIt = sceneRe.globalMatch(content);
@@ -290,8 +278,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
       // Find scene end (matching brace)
       int braceCount = 1;
       qsizetype sceneEnd = sceneStart;
-      for (qsizetype i = sceneStart; i < content.size() && braceCount > 0;
-           ++i) {
+      for (qsizetype i = sceneStart; i < content.size() && braceCount > 0; ++i) {
         if (content[i] == '{') {
           braceCount++;
         } else if (content[i] == '}') {
@@ -331,8 +318,7 @@ void NMScriptEditorPanel::syncScriptToGraph() {
     }
   }
 
-  qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total
-           << "scenes with data";
+  qDebug() << "[ScriptEditor] Sync complete:" << synced << "of" << total << "scenes with data";
 }
 
 } // namespace NovelMind::editor::qt

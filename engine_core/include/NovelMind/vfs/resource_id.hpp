@@ -26,18 +26,18 @@ public:
   explicit ResourceId(std::string id);
   ResourceId(std::string id, ResourceType type);
 
-  [[nodiscard]] const std::string &id() const { return m_id; }
+  [[nodiscard]] const std::string& id() const { return m_id; }
   [[nodiscard]] ResourceType type() const { return m_type; }
   [[nodiscard]] u64 hash() const { return m_hash; }
 
   [[nodiscard]] bool isEmpty() const { return m_id.empty(); }
   [[nodiscard]] bool isValid() const { return !m_id.empty(); }
 
-  bool operator==(const ResourceId &other) const;
-  bool operator!=(const ResourceId &other) const;
-  bool operator<(const ResourceId &other) const;
+  bool operator==(const ResourceId& other) const;
+  bool operator!=(const ResourceId& other) const;
+  bool operator<(const ResourceId& other) const;
 
-  static ResourceType typeFromExtension(const std::string &path);
+  static ResourceType typeFromExtension(const std::string& path);
 
 private:
   void computeHash();
@@ -61,7 +61,7 @@ struct ResourceInfo {
 namespace std {
 
 template <> struct hash<NovelMind::VFS::ResourceId> {
-  size_t operator()(const NovelMind::VFS::ResourceId &id) const noexcept {
+  size_t operator()(const NovelMind::VFS::ResourceId& id) const noexcept {
     return static_cast<size_t>(id.hash());
   }
 };

@@ -7,8 +7,8 @@
 
 namespace NovelMind::editor::qt::node_factory {
 
-void handleNodeClick(NMStoryGraphPanel *panel, uint64_t nodeId) {
-  auto *node = panel->findNodeById(nodeId);
+void handleNodeClick(NMStoryGraphPanel* panel, uint64_t nodeId) {
+  auto* node = panel->findNodeById(nodeId);
   if (!node) {
     return;
   }
@@ -19,19 +19,19 @@ void handleNodeClick(NMStoryGraphPanel *panel, uint64_t nodeId) {
   emit panel->nodeSelected(node->nodeIdString());
 }
 
-void handleNodeDoubleClick(NMStoryGraphPanel *panel, uint64_t nodeId) {
-  auto *node = panel->findNodeById(nodeId);
+void handleNodeDoubleClick(NMStoryGraphPanel* panel, uint64_t nodeId) {
+  auto* node = panel->findNodeById(nodeId);
   if (!node) {
     return;
   }
 
-  auto *scene = panel->graphScene();
+  auto* scene = panel->graphScene();
   if (scene) {
     scene->clearSelection();
   }
   node->setSelected(true);
 
-  auto *view = panel->graphView();
+  auto* view = panel->graphView();
   if (view) {
     view->centerOn(node);
   }
@@ -41,8 +41,7 @@ void handleNodeDoubleClick(NMStoryGraphPanel *panel, uint64_t nodeId) {
 
   // Scene Node specific: emit signal to open Scene View
   if (node->isSceneNode()) {
-    const QString sceneId =
-        node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
+    const QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
     qDebug() << "[StoryGraph] Scene node double-clicked, emitting "
                 "sceneNodeDoubleClicked:"
              << sceneId;
@@ -55,22 +54,22 @@ void handleNodeDoubleClick(NMStoryGraphPanel *panel, uint64_t nodeId) {
   }
 }
 
-void handleNodeAdded(NMStoryGraphPanel *panel, uint64_t nodeId,
-                     const QString &nodeIdString, const QString &nodeType) {
+void handleNodeAdded(NMStoryGraphPanel* panel, uint64_t nodeId, const QString& nodeIdString,
+                     const QString& nodeType) {
   Q_UNUSED(nodeIdString);
 
-  auto *node = panel->findNodeById(nodeId);
+  auto* node = panel->findNodeById(nodeId);
   if (!node) {
     return;
   }
 
-  auto *scene = panel->graphScene();
+  auto* scene = panel->graphScene();
   if (scene) {
     scene->clearSelection();
   }
   node->setSelected(true);
 
-  auto *view = panel->graphView();
+  auto* view = panel->graphView();
   if (view) {
     view->centerOn(node);
   }
@@ -91,7 +90,7 @@ void handleNodeAdded(NMStoryGraphPanel *panel, uint64_t nodeId,
   // Note: Layout saving is handled by the panel
 }
 
-void handleNodeDeleted(NMStoryGraphPanel *panel, uint64_t nodeId) {
+void handleNodeDeleted(NMStoryGraphPanel* panel, uint64_t nodeId) {
   Q_UNUSED(panel);
   Q_UNUSED(nodeId);
   // Note: Layout cleanup is handled by the panel

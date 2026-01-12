@@ -21,8 +21,7 @@ std::vector<std::string> ProjectManager::getAvailableTemplates() {
   };
 }
 
-Result<void>
-ProjectManager::createProjectFromTemplate(const std::string &templateName) {
+Result<void> ProjectManager::createProjectFromTemplate(const std::string& templateName) {
   // Template would be copied from editor/templates/<templateName>/
   // For now, just create a basic main.nms script
 
@@ -118,8 +117,7 @@ ProjectManager::createProjectFromTemplate(const std::string &templateName) {
 
   file.close();
 
-  auto createSceneDoc = [&](const std::string &sceneId,
-                            const std::string &bgAsset,
+  auto createSceneDoc = [&](const std::string& sceneId, const std::string& bgAsset,
                             bool includeHero) -> void {
     SceneDocument doc;
     doc.sceneId = sceneId;

@@ -15,7 +15,7 @@ namespace NovelMind::editor::qt {
 
 bool NMLocalizationDialogs::showAddKeyDialog(NMLocalizationPanel* panel,
                                              NMLocalizationSearch& searchHelper, QString& outKey,
-                                              QString& outDefaultValue) {
+                                             QString& outDefaultValue) {
   if (!panel) {
     return false;
   }
@@ -90,8 +90,8 @@ bool NMLocalizationDialogs::showAddKeyDialog(NMLocalizationPanel* panel,
 }
 
 bool NMLocalizationDialogs::showPluralFormsDialog(NMLocalizationPanel* panel,
-                                                    NMLocalizationDataModel& dataModel,
-                                                    const QString& key) {
+                                                  NMLocalizationDataModel& dataModel,
+                                                  const QString& key) {
   using namespace NovelMind::localization;
 
   if (!panel) {

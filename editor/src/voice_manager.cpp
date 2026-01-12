@@ -15,7 +15,7 @@ namespace NovelMind::editor {
 namespace fs = std::filesystem;
 namespace {
 
-bool readFileToString(std::ifstream &file, std::string &out) {
+bool readFileToString(std::ifstream& file, std::string& out) {
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
   if (size < 0) {
@@ -30,8 +30,7 @@ bool readFileToString(std::ifstream &file, std::string &out) {
 
 } // namespace
 
-VoiceManager::VoiceManager(audio::AudioManager *audioManager)
-    : m_audioManager(audioManager) {
+VoiceManager::VoiceManager(audio::AudioManager* audioManager) : m_audioManager(audioManager) {
   setDefaultPatterns();
 }
 
@@ -45,10 +44,9 @@ VoiceManager::~VoiceManager() {
 // Project Loading
 // =========================================================================
 
-Result<void> VoiceManager::loadProject(const std::string &projectPath) {
+Result<void> VoiceManager::loadProject(const std::string& projectPath) {
   m_projectPath = projectPath;
-  m_voiceAssetsPath =
-      (fs::path(projectPath) / "Assets" / "Audio" / "Voice").string();
+  m_voiceAssetsPath = (fs::path(projectPath) / "Assets" / "Audio" / "Voice").string();
 
   // Clear existing data
   m_dialogueLines.clear();
@@ -108,7 +106,7 @@ Result<void> VoiceManager::refreshDialogueLines() {
   }
 
   // Recursively parse all script files
-  for (const auto &entry : fs::recursive_directory_iterator(scriptsPath)) {
+  for (const auto& entry : fs::recursive_directory_iterator(scriptsPath)) {
     if (entry.is_regular_file()) {
       std::string ext = entry.path().extension().string();
       if (ext == ".nms" || ext == ".nm") {
@@ -125,8 +123,8 @@ Result<void> VoiceManager::refreshDialogueLines() {
   return {};
 }
 
-void VoiceManager::scanVoiceDirectory(const std::string &path) {
-  for (const auto &entry : fs::recursive_directory_iterator(path)) {
+void VoiceManager::scanVoiceDirectory(const std::string& path) {
+  for (const auto& entry : fs::recursive_directory_iterator(path)) {
     if (!entry.is_regular_file())
       continue;
 
@@ -137,12 +135,11 @@ void VoiceManager::scanVoiceDirectory(const std::string &path) {
     if (ext == ".ogg" || ext == ".wav" || ext == ".mp3" || ext == ".flac") {
       VoiceFileEntry voiceEntry;
       voiceEntry.path = entry.path().string();
-      voiceEntry.relativePath =
-          fs::relative(entry.path(), m_projectPath).string();
+      voiceEntry.relativePath = fs::relative(entry.path(), m_projectPath).string();
       voiceEntry.filename = entry.path().filename().string();
       voiceEntry.fileSize = fs::file_size(entry.path());
-      voiceEntry.modifiedTimestamp = static_cast<u64>(
-          fs::last_write_time(entry.path()).time_since_epoch().count());
+      voiceEntry.modifiedTimestamp =
+          static_cast<u64>(fs::last_write_time(entry.path()).time_since_epoch().count());
       voiceEntry.duration = getAudioDuration(voiceEntry.path);
       voiceEntry.bound = false;
 
@@ -151,7 +148,7 @@ void VoiceManager::scanVoiceDirectory(const std::string &path) {
   }
 }
 
-void VoiceManager::parseDialogueFromScript(const std::string &scriptPath) {
+void VoiceManager::parseDialogueFromScript(const std::string& scriptPath) {
   std::ifstream file(scriptPath);
   if (!file.is_open())
     return;
@@ -189,8 +186,8 @@ void VoiceManager::parseDialogueFromScript(const std::string &scriptPath) {
 
       // Generate unique ID
       std::stringstream ss;
-      ss << sceneName << "_" << dialogueLine.characterId << "_"
-         << std::setfill('0') << std::setw(3) << dialogueIndex++;
+      ss << sceneName << "_" << dialogueLine.characterId << "_" << std::setfill('0') << std::setw(3)
+         << dialogueIndex++;
       dialogueLine.id = ss.str();
 
       dialogueLine.status = VoiceBindingStatus::Unbound;
@@ -204,11 +201,10 @@ void VoiceManager::parseDialogueFromScript(const std::string &scriptPath) {
     if (std::regex_search(line, inlineMatch, inlineRegex)) {
       std::string potentialChar = inlineMatch[1].str();
       // Skip keywords
-      if (potentialChar != "show" && potentialChar != "hide" &&
-          potentialChar != "play" && potentialChar != "stop" &&
-          potentialChar != "goto" && potentialChar != "call" &&
-          potentialChar != "if" && potentialChar != "else" &&
-          potentialChar != "scene" && potentialChar != "background") {
+      if (potentialChar != "show" && potentialChar != "hide" && potentialChar != "play" &&
+          potentialChar != "stop" && potentialChar != "goto" && potentialChar != "call" &&
+          potentialChar != "if" && potentialChar != "else" && potentialChar != "scene" &&
+          potentialChar != "background") {
         DialogueLine dialogueLine;
         dialogueLine.characterId = potentialChar;
         dialogueLine.text = inlineMatch[2].str();
@@ -216,8 +212,8 @@ void VoiceManager::parseDialogueFromScript(const std::string &scriptPath) {
         dialogueLine.lineNumber = lineNumber;
 
         std::stringstream ss;
-        ss << sceneName << "_" << dialogueLine.characterId << "_"
-           << std::setfill('0') << std::setw(3) << dialogueIndex++;
+        ss << sceneName << "_" << dialogueLine.characterId << "_" << std::setfill('0')
+           << std::setw(3) << dialogueIndex++;
         dialogueLine.id = ss.str();
 
         dialogueLine.status = VoiceBindingStatus::Unbound;
@@ -231,15 +227,14 @@ void VoiceManager::parseDialogueFromScript(const std::string &scriptPath) {
 // Dialogue Lines
 // =========================================================================
 
-std::vector<const DialogueLine *>
-VoiceManager::getFilteredLines(const VoiceLineFilter &filter) const {
-  std::vector<const DialogueLine *> result;
+std::vector<const DialogueLine*>
+VoiceManager::getFilteredLines(const VoiceLineFilter& filter) const {
+  std::vector<const DialogueLine*> result;
   result.reserve(m_dialogueLines.size());
 
-  for (const auto &line : m_dialogueLines) {
+  for (const auto& line : m_dialogueLines) {
     // Character filter
-    if (!filter.characterFilter.empty() &&
-        line.characterId != filter.characterFilter)
+    if (!filter.characterFilter.empty() && line.characterId != filter.characterFilter)
       continue;
 
     // Scene filter
@@ -254,10 +249,8 @@ VoiceManager::getFilteredLines(const VoiceLineFilter &filter) const {
     if (!filter.searchText.empty()) {
       std::string lowerText = line.text;
       std::string lowerSearch = filter.searchText;
-      std::transform(lowerText.begin(), lowerText.end(), lowerText.begin(),
-                     ::tolower);
-      std::transform(lowerSearch.begin(), lowerSearch.end(),
-                     lowerSearch.begin(), ::tolower);
+      std::transform(lowerText.begin(), lowerText.end(), lowerText.begin(), ::tolower);
+      std::transform(lowerSearch.begin(), lowerSearch.end(), lowerSearch.begin(), ::tolower);
       if (lowerText.find(lowerSearch) == std::string::npos)
         continue;
     }
@@ -268,9 +261,9 @@ VoiceManager::getFilteredLines(const VoiceLineFilter &filter) const {
   return result;
 }
 
-std::vector<const DialogueLine *> VoiceManager::getUnboundLines() const {
-  std::vector<const DialogueLine *> result;
-  for (const auto &line : m_dialogueLines) {
+std::vector<const DialogueLine*> VoiceManager::getUnboundLines() const {
+  std::vector<const DialogueLine*> result;
+  for (const auto& line : m_dialogueLines) {
     if (line.status == VoiceBindingStatus::Unbound) {
       result.push_back(&line);
     }
@@ -278,7 +271,7 @@ std::vector<const DialogueLine *> VoiceManager::getUnboundLines() const {
   return result;
 }
 
-const DialogueLine *VoiceManager::getLine(const std::string &lineId) const {
+const DialogueLine* VoiceManager::getLine(const std::string& lineId) const {
   auto it = m_lineIdToIndex.find(lineId);
   if (it != m_lineIdToIndex.end()) {
     return &m_dialogueLines[it->second];
@@ -286,10 +279,10 @@ const DialogueLine *VoiceManager::getLine(const std::string &lineId) const {
   return nullptr;
 }
 
-std::vector<const DialogueLine *>
-VoiceManager::getLinesForCharacter(const std::string &characterId) const {
-  std::vector<const DialogueLine *> result;
-  for (const auto &line : m_dialogueLines) {
+std::vector<const DialogueLine*>
+VoiceManager::getLinesForCharacter(const std::string& characterId) const {
+  std::vector<const DialogueLine*> result;
+  for (const auto& line : m_dialogueLines) {
     if (line.characterId == characterId) {
       result.push_back(&line);
     }
@@ -297,10 +290,9 @@ VoiceManager::getLinesForCharacter(const std::string &characterId) const {
   return result;
 }
 
-std::vector<const DialogueLine *>
-VoiceManager::getLinesForScene(const std::string &sceneId) const {
-  std::vector<const DialogueLine *> result;
-  for (const auto &line : m_dialogueLines) {
+std::vector<const DialogueLine*> VoiceManager::getLinesForScene(const std::string& sceneId) const {
+  std::vector<const DialogueLine*> result;
+  for (const auto& line : m_dialogueLines) {
     if (line.sceneId == sceneId) {
       result.push_back(&line);
     }
@@ -312,9 +304,9 @@ VoiceManager::getLinesForScene(const std::string &sceneId) const {
 // Voice Files
 // =========================================================================
 
-std::vector<const VoiceFileEntry *> VoiceManager::getUnboundVoiceFiles() const {
-  std::vector<const VoiceFileEntry *> result;
-  for (const auto &file : m_voiceFiles) {
+std::vector<const VoiceFileEntry*> VoiceManager::getUnboundVoiceFiles() const {
+  std::vector<const VoiceFileEntry*> result;
+  for (const auto& file : m_voiceFiles) {
     if (!file.bound) {
       result.push_back(&file);
     }
@@ -322,8 +314,7 @@ std::vector<const VoiceFileEntry *> VoiceManager::getUnboundVoiceFiles() const {
   return result;
 }
 
-const VoiceFileEntry *
-VoiceManager::getVoiceFile(const std::string &path) const {
+const VoiceFileEntry* VoiceManager::getVoiceFile(const std::string& path) const {
   auto it = m_voicePathToIndex.find(path);
   if (it != m_voicePathToIndex.end()) {
     return &m_voiceFiles[it->second];
@@ -335,14 +326,13 @@ VoiceManager::getVoiceFile(const std::string &path) const {
 // Voice Binding
 // =========================================================================
 
-Result<void> VoiceManager::bindVoice(const std::string &lineId,
-                                     const std::string &voicePath) {
+Result<void> VoiceManager::bindVoice(const std::string& lineId, const std::string& voicePath) {
   auto lineIt = m_lineIdToIndex.find(lineId);
   if (lineIt == m_lineIdToIndex.end()) {
     return Result<void>::error("Dialogue line not found: " + lineId);
   }
 
-  DialogueLine &line = m_dialogueLines[lineIt->second];
+  DialogueLine& line = m_dialogueLines[lineIt->second];
 
   // Unbind previous voice file if any
   if (!line.voiceFile.empty()) {
@@ -379,12 +369,12 @@ Result<void> VoiceManager::bindVoice(const std::string &lineId,
   return {};
 }
 
-void VoiceManager::unbindVoice(const std::string &lineId) {
+void VoiceManager::unbindVoice(const std::string& lineId) {
   auto lineIt = m_lineIdToIndex.find(lineId);
   if (lineIt == m_lineIdToIndex.end())
     return;
 
-  DialogueLine &line = m_dialogueLines[lineIt->second];
+  DialogueLine& line = m_dialogueLines[lineIt->second];
 
   if (!line.voiceFile.empty()) {
     auto voiceIt = m_voicePathToIndex.find(line.voiceFile);
@@ -402,13 +392,13 @@ void VoiceManager::unbindVoice(const std::string &lineId) {
 }
 
 void VoiceManager::clearAllBindings() {
-  for (auto &line : m_dialogueLines) {
+  for (auto& line : m_dialogueLines) {
     line.voiceFile.clear();
     line.status = VoiceBindingStatus::Unbound;
     line.voiceDuration = 0.0f;
   }
 
-  for (auto &file : m_voiceFiles) {
+  for (auto& file : m_voiceFiles) {
     file.bound = false;
     file.boundLineId.clear();
   }
@@ -450,40 +440,38 @@ void VoiceManager::setDefaultPatterns() {
 
   // Sort by priority
   std::sort(m_mappingPatterns.begin(), m_mappingPatterns.end(),
-            [](const VoiceMappingPattern &a, const VoiceMappingPattern &b) {
+            [](const VoiceMappingPattern& a, const VoiceMappingPattern& b) {
               return a.priority > b.priority;
             });
 }
 
-void VoiceManager::addMappingPattern(const VoiceMappingPattern &pattern) {
+void VoiceManager::addMappingPattern(const VoiceMappingPattern& pattern) {
   m_mappingPatterns.push_back(pattern);
   std::sort(m_mappingPatterns.begin(), m_mappingPatterns.end(),
-            [](const VoiceMappingPattern &a, const VoiceMappingPattern &b) {
+            [](const VoiceMappingPattern& a, const VoiceMappingPattern& b) {
               return a.priority > b.priority;
             });
 }
 
-void VoiceManager::removeMappingPattern(const std::string &name) {
-  m_mappingPatterns.erase(std::remove_if(m_mappingPatterns.begin(),
-                                         m_mappingPatterns.end(),
-                                         [&name](const VoiceMappingPattern &p) {
-                                           return p.name == name;
-                                         }),
-                          m_mappingPatterns.end());
+void VoiceManager::removeMappingPattern(const std::string& name) {
+  m_mappingPatterns.erase(
+      std::remove_if(m_mappingPatterns.begin(), m_mappingPatterns.end(),
+                     [&name](const VoiceMappingPattern& p) { return p.name == name; }),
+      m_mappingPatterns.end());
 }
 
 Result<u32> VoiceManager::autoMapVoiceFiles() {
   u32 mapped = 0;
   u32 failed = 0;
 
-  for (const auto &voiceFile : m_voiceFiles) {
+  for (const auto& voiceFile : m_voiceFiles) {
     if (voiceFile.bound)
       continue;
 
     std::string character, lineId;
     bool matched = false;
 
-    for (const auto &pattern : m_mappingPatterns) {
+    for (const auto& pattern : m_mappingPatterns) {
       if (!pattern.enabled)
         continue;
 
@@ -495,16 +483,14 @@ Result<u32> VoiceManager::autoMapVoiceFiles() {
 
     if (matched) {
       // Try to find a matching dialogue line
-      for (auto &line : m_dialogueLines) {
+      for (auto& line : m_dialogueLines) {
         if (line.status != VoiceBindingStatus::Unbound)
           continue;
 
         // Case-insensitive comparison
         std::string lineChar = line.characterId;
-        std::transform(lineChar.begin(), lineChar.end(), lineChar.begin(),
-                       ::tolower);
-        std::transform(character.begin(), character.end(), character.begin(),
-                       ::tolower);
+        std::transform(lineChar.begin(), lineChar.end(), lineChar.begin(), ::tolower);
+        std::transform(character.begin(), character.end(), character.begin(), ::tolower);
 
         if (lineChar == character) {
           // Check if line ID matches or if it's a sequential match
@@ -513,8 +499,7 @@ Result<u32> VoiceManager::autoMapVoiceFiles() {
             // Mark as auto-mapped
             auto it = m_lineIdToIndex.find(line.id);
             if (it != m_lineIdToIndex.end()) {
-              m_dialogueLines[it->second].status =
-                  VoiceBindingStatus::AutoMapped;
+              m_dialogueLines[it->second].status = VoiceBindingStatus::AutoMapped;
             }
             ++mapped;
             break;
@@ -533,31 +518,28 @@ Result<u32> VoiceManager::autoMapVoiceFiles() {
   return Result<u32>::ok(mapped);
 }
 
-std::unordered_map<std::string, std::string>
-VoiceManager::previewAutoMapping() const {
+std::unordered_map<std::string, std::string> VoiceManager::previewAutoMapping() const {
   std::unordered_map<std::string, std::string> result;
 
-  for (const auto &voiceFile : m_voiceFiles) {
+  for (const auto& voiceFile : m_voiceFiles) {
     if (voiceFile.bound)
       continue;
 
     std::string character, lineId;
-    for (const auto &pattern : m_mappingPatterns) {
+    for (const auto& pattern : m_mappingPatterns) {
       if (!pattern.enabled)
         continue;
 
       if (matchPattern(voiceFile.filename, pattern, character, lineId)) {
         // Find potential matching line
-        for (const auto &line : m_dialogueLines) {
+        for (const auto& line : m_dialogueLines) {
           if (line.status != VoiceBindingStatus::Unbound)
             continue;
 
           std::string lineChar = line.characterId;
-          std::transform(lineChar.begin(), lineChar.end(), lineChar.begin(),
-                         ::tolower);
+          std::transform(lineChar.begin(), lineChar.end(), lineChar.begin(), ::tolower);
           std::string testChar = character;
-          std::transform(testChar.begin(), testChar.end(), testChar.begin(),
-                         ::tolower);
+          std::transform(testChar.begin(), testChar.end(), testChar.begin(), ::tolower);
 
           if (lineChar == testChar) {
             result[line.id] = voiceFile.relativePath;
@@ -572,10 +554,8 @@ VoiceManager::previewAutoMapping() const {
   return result;
 }
 
-bool VoiceManager::matchPattern(const std::string &filename,
-                                const VoiceMappingPattern &pattern,
-                                std::string &outCharacter,
-                                std::string &outLineId) const {
+bool VoiceManager::matchPattern(const std::string& filename, const VoiceMappingPattern& pattern,
+                                std::string& outCharacter, std::string& outLineId) const {
   try {
     std::regex regex(pattern.pattern);
     std::smatch match;
@@ -591,7 +571,7 @@ bool VoiceManager::matchPattern(const std::string &filename,
       }
       return true;
     }
-  } catch (const std::regex_error &) {
+  } catch (const std::regex_error&) {
     // Invalid regex pattern
   }
   return false;
@@ -601,8 +581,8 @@ bool VoiceManager::matchPattern(const std::string &filename,
 // Voice Preview
 // =========================================================================
 
-void VoiceManager::previewVoice(const std::string &lineId) {
-  const auto *line = getLine(lineId);
+void VoiceManager::previewVoice(const std::string& lineId) {
+  const auto* line = getLine(lineId);
   if (!line || line->voiceFile.empty())
     return;
 
@@ -610,7 +590,7 @@ void VoiceManager::previewVoice(const std::string &lineId) {
   m_previewingLineId = lineId;
 }
 
-void VoiceManager::previewVoiceFile(const std::string &voicePath) {
+void VoiceManager::previewVoiceFile(const std::string& voicePath) {
   if (m_previewPlaying) {
     stopPreview();
   }
@@ -651,7 +631,7 @@ void VoiceManager::stopPreview() {
 VoiceCoverageStats VoiceManager::getCoverageStats() const {
   VoiceCoverageStats stats;
 
-  for (const auto &line : m_dialogueLines) {
+  for (const auto& line : m_dialogueLines) {
     ++stats.totalLines;
     ++stats.linesByCharacter[line.characterId];
 
@@ -672,9 +652,8 @@ VoiceCoverageStats VoiceManager::getCoverageStats() const {
   }
 
   if (stats.totalLines > 0) {
-    stats.coveragePercent = (static_cast<f32>(stats.boundLines) /
-                             static_cast<f32>(stats.totalLines)) *
-                            100.0f;
+    stats.coveragePercent =
+        (static_cast<f32>(stats.boundLines) / static_cast<f32>(stats.totalLines)) * 100.0f;
   }
 
   return stats;
@@ -684,7 +663,7 @@ std::vector<std::string> VoiceManager::getCharacters() const {
   std::vector<std::string> result;
   std::unordered_map<std::string, bool> seen;
 
-  for (const auto &line : m_dialogueLines) {
+  for (const auto& line : m_dialogueLines) {
     if (!seen[line.characterId]) {
       result.push_back(line.characterId);
       seen[line.characterId] = true;
@@ -699,7 +678,7 @@ std::vector<std::string> VoiceManager::getScenes() const {
   std::vector<std::string> result;
   std::unordered_map<std::string, bool> seen;
 
-  for (const auto &line : m_dialogueLines) {
+  for (const auto& line : m_dialogueLines) {
     if (!seen[line.sceneId]) {
       result.push_back(line.sceneId);
       seen[line.sceneId] = true;
@@ -714,11 +693,11 @@ std::vector<std::string> VoiceManager::getScenes() const {
 // Import/Export
 // =========================================================================
 
-Result<void> VoiceManager::exportVoiceTable(const std::string &outputPath,
+Result<void> VoiceManager::exportVoiceTable(const std::string& outputPath,
                                             VoiceTableFormat format) const {
-  std::vector<const DialogueLine *> allLines;
+  std::vector<const DialogueLine*> allLines;
   allLines.reserve(m_dialogueLines.size());
-  for (const auto &line : m_dialogueLines) {
+  for (const auto& line : m_dialogueLines) {
     allLines.push_back(&line);
   }
 
@@ -734,8 +713,7 @@ Result<void> VoiceManager::exportVoiceTable(const std::string &outputPath,
   }
 }
 
-Result<void> VoiceManager::importVoiceTable(const std::string &inputPath,
-                                            VoiceTableFormat format) {
+Result<void> VoiceManager::importVoiceTable(const std::string& inputPath, VoiceTableFormat format) {
   switch (format) {
   case VoiceTableFormat::CSV:
     return importCSV(inputPath);
@@ -748,7 +726,7 @@ Result<void> VoiceManager::importVoiceTable(const std::string &inputPath,
   }
 }
 
-Result<void> VoiceManager::exportUnboundLines(const std::string &outputPath,
+Result<void> VoiceManager::exportUnboundLines(const std::string& outputPath,
                                               VoiceTableFormat format) const {
   auto unbound = getUnboundLines();
 
@@ -764,9 +742,8 @@ Result<void> VoiceManager::exportUnboundLines(const std::string &outputPath,
   }
 }
 
-Result<void>
-VoiceManager::exportCSV(const std::string &path,
-                        const std::vector<const DialogueLine *> &lines) const {
+Result<void> VoiceManager::exportCSV(const std::string& path,
+                                     const std::vector<const DialogueLine*>& lines) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -775,21 +752,19 @@ VoiceManager::exportCSV(const std::string &path,
   // Header
   file << "LineID,Scene,Character,Text,VoiceFile,Status\n";
 
-  for (const auto *line : lines) {
+  for (const auto* line : lines) {
     file << "\"" << line->id << "\","
          << "\"" << line->sceneId << "\","
          << "\"" << line->characterId << "\","
          << "\"" << line->text << "\","
-         << "\"" << line->voiceFile << "\"," << static_cast<int>(line->status)
-         << "\n";
+         << "\"" << line->voiceFile << "\"," << static_cast<int>(line->status) << "\n";
   }
 
   return {};
 }
 
-Result<void>
-VoiceManager::exportJSON(const std::string &path,
-                         const std::vector<const DialogueLine *> &lines) const {
+Result<void> VoiceManager::exportJSON(const std::string& path,
+                                      const std::vector<const DialogueLine*>& lines) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -798,7 +773,7 @@ VoiceManager::exportJSON(const std::string &path,
   file << "{\n  \"voiceAssignments\": [\n";
 
   for (size_t i = 0; i < lines.size(); ++i) {
-    const auto *line = lines[i];
+    const auto* line = lines[i];
     file << "    {\n"
          << "      \"lineId\": \"" << line->id << "\",\n"
          << "      \"scene\": \"" << line->sceneId << "\",\n"
@@ -816,9 +791,8 @@ VoiceManager::exportJSON(const std::string &path,
   return {};
 }
 
-Result<void>
-VoiceManager::exportTSV(const std::string &path,
-                        const std::vector<const DialogueLine *> &lines) const {
+Result<void> VoiceManager::exportTSV(const std::string& path,
+                                     const std::vector<const DialogueLine*>& lines) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -827,15 +801,15 @@ VoiceManager::exportTSV(const std::string &path,
   // Header
   file << "LineID\tScene\tCharacter\tText\tVoiceFile\n";
 
-  for (const auto *line : lines) {
-    file << line->id << "\t" << line->sceneId << "\t" << line->characterId
-         << "\t" << line->text << "\t" << line->voiceFile << "\n";
+  for (const auto* line : lines) {
+    file << line->id << "\t" << line->sceneId << "\t" << line->characterId << "\t" << line->text
+         << "\t" << line->voiceFile << "\n";
   }
 
   return {};
 }
 
-Result<void> VoiceManager::importCSV(const std::string &path) {
+Result<void> VoiceManager::importCSV(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for reading: " + path);
@@ -865,7 +839,7 @@ Result<void> VoiceManager::importCSV(const std::string &path) {
   return {};
 }
 
-Result<void> VoiceManager::importJSON(const std::string &path) {
+Result<void> VoiceManager::importJSON(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for reading: " + path);
@@ -883,8 +857,7 @@ Result<void> VoiceManager::importJSON(const std::string &path) {
   std::regex lineIdRegex(lineIdPattern);
   std::regex voiceFileRegex(voiceFilePattern);
 
-  auto lineIdBegin =
-      std::sregex_iterator(content.begin(), content.end(), lineIdRegex);
+  auto lineIdBegin = std::sregex_iterator(content.begin(), content.end(), lineIdRegex);
   auto lineIdEnd = std::sregex_iterator();
 
   std::vector<std::string> lineIds;
@@ -892,8 +865,7 @@ Result<void> VoiceManager::importJSON(const std::string &path) {
     lineIds.push_back((*it)[1].str());
   }
 
-  auto voiceFileBegin =
-      std::sregex_iterator(content.begin(), content.end(), voiceFileRegex);
+  auto voiceFileBegin = std::sregex_iterator(content.begin(), content.end(), voiceFileRegex);
   auto voiceFileEnd = std::sregex_iterator();
   std::vector<std::string> voiceFiles;
   for (auto it = voiceFileBegin; it != voiceFileEnd; ++it) {
@@ -909,7 +881,7 @@ Result<void> VoiceManager::importJSON(const std::string &path) {
   return {};
 }
 
-Result<void> VoiceManager::importTSV(const std::string &path) {
+Result<void> VoiceManager::importTSV(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for reading: " + path);
@@ -941,8 +913,8 @@ Result<void> VoiceManager::importTSV(const std::string &path) {
 Result<void> VoiceManager::saveBindings() {
   std::string bindingsPath = m_projectPath + "/voice_bindings.json";
 
-  std::vector<const DialogueLine *> boundLines;
-  for (const auto &line : m_dialogueLines) {
+  std::vector<const DialogueLine*> boundLines;
+  for (const auto& line : m_dialogueLines) {
     if (!line.voiceFile.empty()) {
       boundLines.push_back(&line);
     }
@@ -982,14 +954,13 @@ void VoiceManager::setOnVoicePreviewStop(OnVoicePreviewStop callback) {
   m_onPreviewStop = std::move(callback);
 }
 
-void VoiceManager::fireBindingChanged(const std::string &lineId,
-                                      const std::string &voiceFile) {
+void VoiceManager::fireBindingChanged(const std::string& lineId, const std::string& voiceFile) {
   if (m_onBindingChanged) {
     m_onBindingChanged(lineId, voiceFile);
   }
 }
 
-f32 VoiceManager::getAudioDuration(const std::string &path) const {
+f32 VoiceManager::getAudioDuration(const std::string& path) const {
   // Audio duration would be calculated using actual audio loading
   // For now, estimate based on file size (rough approximation)
   // Assumes ~128kbps average bitrate

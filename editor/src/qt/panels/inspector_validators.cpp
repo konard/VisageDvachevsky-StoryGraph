@@ -17,7 +17,8 @@ namespace NovelMind::editor::qt {
 
 InspectorValidators::InspectorValidators(NMInspectorPanel* panel) : m_panel(panel) {}
 
-bool InspectorValidators::handlePropertyChanged(const QString& propertyName, const QString& newValue,
+bool InspectorValidators::handlePropertyChanged(const QString& propertyName,
+                                                const QString& newValue,
                                                 const QString& currentObjectId,
                                                 const QStringList& currentObjectIds,
                                                 bool multiEditMode, bool& lockAspectRatio,
@@ -147,9 +148,8 @@ bool InspectorValidators::queuePropertyUpdate(const QString& propertyName, const
   return true;
 }
 
-void InspectorValidators::updatePropertyWidget(
-    const QString& propertyName, const QString& newValue,
-    const QHash<QString, QWidget*>& propertyWidgets) {
+void InspectorValidators::updatePropertyWidget(const QString& propertyName, const QString& newValue,
+                                               const QHash<QString, QWidget*>& propertyWidgets) {
   auto widgetIt = propertyWidgets.find(propertyName);
   if (widgetIt == propertyWidgets.end()) {
     return;
@@ -209,9 +209,8 @@ void InspectorValidators::updatePropertyWidget(
   }
 }
 
-void InspectorValidators::flushPendingUpdates(
-    const QHash<QString, QString>& pendingUpdates,
-    const QHash<QString, QWidget*>& propertyWidgets) {
+void InspectorValidators::flushPendingUpdates(const QHash<QString, QString>& pendingUpdates,
+                                              const QHash<QString, QWidget*>& propertyWidgets) {
   // Process all pending updates in one batch
   for (auto it = pendingUpdates.constBegin(); it != pendingUpdates.constEnd(); ++it) {
     const QString& propertyName = it.key();

@@ -15,27 +15,28 @@ namespace NovelMind::editor::qt {
 // VSCode-like features: Folding, Bracket Matching, Minimap, etc.
 // ============================================================================
 
-int NMScriptEditor::foldingAreaWidth() const { return 14; }
+int NMScriptEditor::foldingAreaWidth() const {
+  return 14;
+}
 
-void NMScriptEditor::foldingAreaPaintEvent(QPaintEvent *event) {
+void NMScriptEditor::foldingAreaPaintEvent(QPaintEvent* event) {
   if (!m_foldingArea) {
     return;
   }
 
   QPainter painter(m_foldingArea);
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   painter.fillRect(event->rect(), palette.bgMedium);
 
   QTextBlock block = firstVisibleBlock();
   int blockNumber = block.blockNumber();
-  int top = static_cast<int>(
-      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
   int bottom = top + static_cast<int>(blockBoundingRect(block).height());
 
   while (block.isValid() && top <= event->rect().bottom()) {
     if (block.isVisible() && bottom >= event->rect().top()) {
       // Check if this line starts a folding region
-      for (const auto &region : m_foldingRegions) {
+      for (const auto& region : m_foldingRegions) {
         if (region.startLine == blockNumber) {
           // Draw fold indicator
           const int iconSize = 10;
@@ -46,11 +47,9 @@ void NMScriptEditor::foldingAreaPaintEvent(QPaintEvent *event) {
           painter.drawRect(x, y, iconSize, iconSize);
 
           // Draw +/- sign
-          painter.drawLine(x + 2, y + iconSize / 2, x + iconSize - 2,
-                           y + iconSize / 2);
+          painter.drawLine(x + 2, y + iconSize / 2, x + iconSize - 2, y + iconSize / 2);
           if (region.isCollapsed) {
-            painter.drawLine(x + iconSize / 2, y + 2, x + iconSize / 2,
-                             y + iconSize - 2);
+            painter.drawLine(x + iconSize / 2, y + 2, x + iconSize / 2, y + iconSize - 2);
           }
           break;
         }
@@ -65,7 +64,7 @@ void NMScriptEditor::foldingAreaPaintEvent(QPaintEvent *event) {
 }
 
 void NMScriptEditor::toggleFold(int line) {
-  for (auto &region : m_foldingRegions) {
+  for (auto& region : m_foldingRegions) {
     if (region.startLine == line) {
       region.isCollapsed = !region.isCollapsed;
 
@@ -74,8 +73,7 @@ void NMScriptEditor::toggleFold(int line) {
       QTextBlock endBlock = document()->findBlockByNumber(region.endLine);
       (void)endBlock;
 
-      while (startBlock.isValid() &&
-             startBlock.blockNumber() <= region.endLine) {
+      while (startBlock.isValid() && startBlock.blockNumber() <= region.endLine) {
         startBlock.setVisible(!region.isCollapsed);
         startBlock = startBlock.next();
       }
@@ -101,7 +99,7 @@ void NMScriptEditor::updateFoldingRegions() {
   QStack<int> braceStack;
 
   for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
-    const QString &line = lines[i];
+    const QString& line = lines[i];
     const int openCount = static_cast<int>(line.count('{'));
     const int closeCount = static_cast<int>(line.count('}'));
 
@@ -146,18 +144,20 @@ void NMScriptEditor::updateMinimapGeometry() {
   if (m_minimapEnabled) {
     QRect cr = contentsRect();
     const int minimapWidth = 120;
-    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth,
-                           cr.height());
+    m_minimap->setGeometry(cr.right() - minimapWidth, cr.top(), minimapWidth, cr.height());
     m_minimap->show();
 
     // Adjust viewport margins to make room for minimap
     // Issue #239: Include graph gutter width
-    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0,
-                       minimapWidth, 0);
+    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() +
+                           foldingAreaWidth(),
+                       0, minimapWidth, 0);
   } else {
     m_minimap->hide();
     // Issue #239: Include graph gutter width
-    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() + foldingAreaWidth(), 0, 0, 0);
+    setViewportMargins(breakpointGutterWidth() + graphGutterWidth() + lineNumberAreaWidth() +
+                           foldingAreaWidth(),
+                       0, 0, 0);
   }
 }
 
@@ -168,8 +168,7 @@ void NMScriptEditor::emitViewportChanged() {
   // Calculate last visible line
   QTextBlock block = firstBlock;
   int lastLine = firstLine;
-  int top = static_cast<int>(
-      blockBoundingGeometry(block).translated(contentOffset()).top());
+  int top = static_cast<int>(blockBoundingGeometry(block).translated(contentOffset()).top());
 
   while (block.isValid() && top < viewport()->height()) {
     lastLine = block.blockNumber();
@@ -240,10 +239,9 @@ void NMScriptEditor::highlightMatchingBrackets() {
   QList<int> positions;
   positions << pos << (pos - 1);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   QTextCharFormat bracketFormat;
-  bracketFormat.setBackground(QColor(palette.accentPrimary.red(),
-                                     palette.accentPrimary.green(),
+  bracketFormat.setBackground(QColor(palette.accentPrimary.red(), palette.accentPrimary.green(),
                                      palette.accentPrimary.blue(), 80));
 
   for (int checkPos : positions) {
@@ -282,9 +280,8 @@ void NMScriptEditor::highlightMatchingBrackets() {
   // Current line highlight
   if (!isReadOnly()) {
     QTextEdit::ExtraSelection lineSelection;
-    lineSelection.format.setBackground(QColor(palette.bgLight.red(),
-                                              palette.bgLight.green(),
-                                              palette.bgLight.blue(), 60));
+    lineSelection.format.setBackground(
+        QColor(palette.bgLight.red(), palette.bgLight.green(), palette.bgLight.blue(), 60));
     lineSelection.format.setProperty(QTextFormat::FullWidthSelection, true);
     lineSelection.cursor = textCursor();
     lineSelection.cursor.clearSelection();
@@ -296,8 +293,7 @@ void NMScriptEditor::highlightMatchingBrackets() {
   setExtraSelections(allSelections);
 }
 
-void NMScriptEditor::setSearchHighlights(
-    const QList<QTextEdit::ExtraSelection> &highlights) {
+void NMScriptEditor::setSearchHighlights(const QList<QTextEdit::ExtraSelection>& highlights) {
   m_searchHighlights = highlights;
   highlightMatchingBrackets(); // This will combine all highlights
 }
@@ -307,7 +303,7 @@ void NMScriptEditor::clearSearchHighlights() {
   highlightMatchingBrackets();
 }
 
-void NMScriptEditor::paintEvent(QPaintEvent *event) {
+void NMScriptEditor::paintEvent(QPaintEvent* event) {
   QPlainTextEdit::paintEvent(event);
   // Additional custom painting can go here if needed
 }

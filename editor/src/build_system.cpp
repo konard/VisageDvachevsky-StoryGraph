@@ -178,7 +178,8 @@ Result<std::vector<u8>> BuildSystem::encryptData(const std::vector<u8>& data,
                                                  std::array<u8, 12>& ivOut) {
   if (key.size() != 32) {
     std::string errorMsg = "Build encryption error: Invalid encryption key size\n\n";
-    errorMsg += "What went wrong: The encryption key must be exactly 32 bytes (256 bits) for AES-256-GCM.\n";
+    errorMsg += "What went wrong: The encryption key must be exactly 32 bytes (256 bits) for "
+                "AES-256-GCM.\n";
     errorMsg += "Current key size: " + std::to_string(key.size()) + " bytes\n\n";
     errorMsg += "How to fix:\n";
     errorMsg += "  - Use a 32-byte (256-bit) encryption key\n";
@@ -268,20 +269,20 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
 
 // Path security validation to prevent path traversal attacks
 Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
-                                                     const std::string& relativePath) {
+                                                    const std::string& relativePath) {
   // Reject paths containing ".." components before filesystem resolution
   // This provides an early defense against path traversal attempts
   if (relativePath.find("..") != std::string::npos) {
-    return Result<std::string>::error(
-        "Path traversal detected: path contains '..' component: " + relativePath);
+    return Result<std::string>::error("Path traversal detected: path contains '..' component: " +
+                                      relativePath);
   }
 
   // Normalize the base path to ensure we have a canonical reference
   std::error_code ec;
   fs::path canonicalBase = fs::weakly_canonical(basePath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize base path: " + basePath +
-                                      " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize base path: " + basePath + " - " +
+                                      ec.message());
   }
 
   // Construct the full output path
@@ -291,19 +292,19 @@ Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
   // weakly_canonical resolves ".." and "." components and follows symlinks
   fs::path canonicalPath = fs::weakly_canonical(fullPath, ec);
   if (ec) {
-    return Result<std::string>::error("Failed to canonicalize output path: " +
-                                      fullPath.string() + " - " + ec.message());
+    return Result<std::string>::error("Failed to canonicalize output path: " + fullPath.string() +
+                                      " - " + ec.message());
   }
 
   // Security check: Verify the resolved path is within the base directory
   // This prevents writing to arbitrary locations on the filesystem
   auto [rootEnd, nothing] = std::mismatch(canonicalBase.begin(), canonicalBase.end(),
-                                           canonicalPath.begin(), canonicalPath.end());
+                                          canonicalPath.begin(), canonicalPath.end());
 
   if (rootEnd != canonicalBase.end()) {
-    return Result<std::string>::error(
-        "Path traversal detected: resolved path '" + canonicalPath.string() +
-        "' escapes base directory '" + canonicalBase.string() + "'");
+    return Result<std::string>::error("Path traversal detected: resolved path '" +
+                                      canonicalPath.string() + "' escapes base directory '" +
+                                      canonicalBase.string() + "'");
   }
 
   return Result<std::string>::ok(fullPath.string());
@@ -336,14 +337,15 @@ Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
         unsigned long val = std::stoul(byteStr, nullptr, 16);
         key[i] = static_cast<u8>(val);
       } catch (const std::invalid_argument& e) {
-        return Result<Core::SecureVector<u8>>::error("Invalid hex format in encryption key at byte " +
-                                              std::to_string(i) + ": " + e.what());
+        return Result<Core::SecureVector<u8>>::error(
+            "Invalid hex format in encryption key at byte " + std::to_string(i) + ": " + e.what());
       } catch (const std::out_of_range& e) {
-        return Result<Core::SecureVector<u8>>::error("Hex value out of range in encryption key at byte " +
-                                              std::to_string(i) + ": " + e.what());
+        return Result<Core::SecureVector<u8>>::error(
+            "Hex value out of range in encryption key at byte " + std::to_string(i) + ": " +
+            e.what());
       } catch (...) {
-        return Result<Core::SecureVector<u8>>::error("Unknown error parsing encryption key at byte " +
-                                              std::to_string(i));
+        return Result<Core::SecureVector<u8>>::error(
+            "Unknown error parsing encryption key at byte " + std::to_string(i));
       }
     }
     return Result<Core::SecureVector<u8>>::ok(std::move(key));
@@ -550,7 +552,8 @@ Result<void> BuildSystem::startBuild(const BuildConfig& config) {
   // Check project exists
   if (!fs::exists(config.projectPath)) {
     std::string errorMsg = "Build failed: Project directory not found\n\n";
-    errorMsg += "What went wrong: The project directory '" + config.projectPath + "' does not exist.\n\n";
+    errorMsg +=
+        "What went wrong: The project directory '" + config.projectPath + "' does not exist.\n\n";
     errorMsg += "How to fix:\n";
     errorMsg += "  - Verify the project path is correct\n";
     errorMsg += "  - Check if the project was moved or deleted\n";
@@ -1639,15 +1642,15 @@ Result<void> BuildSystem::signAndFinalize() {
     // Determine the executable path based on platform
     std::string executablePath;
     if (m_config.platform == BuildPlatform::Windows) {
-      executablePath =
-          (stagingDir / (m_config.executableName + BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
-              .string();
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
+                           .string();
     } else if (m_config.platform == BuildPlatform::MacOS) {
       executablePath = (stagingDir / (m_config.executableName + ".app")).string();
     } else if (m_config.platform == BuildPlatform::Linux) {
-      executablePath =
-          (stagingDir / (m_config.executableName + BuildUtils::getExecutableExtension(BuildPlatform::Linux)))
-              .string();
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Linux)))
+                           .string();
     }
 
     if (!executablePath.empty()) {
@@ -3817,9 +3820,9 @@ Result<void> BuildSystem::validateSigningToolPath(const std::string& toolPath,
   const std::string dangerousChars = "|&;<>$`\\\"'(){}[]!*?~";
   for (char c : toolPath) {
     if (dangerousChars.find(c) != std::string::npos) {
-      return Result<void>::error(
-          "Signing tool path contains invalid character: '" + std::string(1, c) +
-          "'. Paths with shell metacharacters are not allowed.");
+      return Result<void>::error("Signing tool path contains invalid character: '" +
+                                 std::string(1, c) +
+                                 "'. Paths with shell metacharacters are not allowed.");
     }
   }
 
@@ -4143,8 +4146,8 @@ Result<void> BuildSystem::signWindowsExecutable(const std::string& executablePat
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed Windows executable", false);
@@ -4192,8 +4195,7 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
   // Add entitlements if provided
   if (!m_config.signingEntitlements.empty()) {
     if (!fs::exists(m_config.signingEntitlements)) {
-      return Result<void>::error("Entitlements file not found: " +
-                                 m_config.signingEntitlements);
+      return Result<void>::error("Entitlements file not found: " + m_config.signingEntitlements);
     }
     cmd << " --entitlements \"" << m_config.signingEntitlements << "\"";
   }
@@ -4222,8 +4224,8 @@ Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
 
   i32 exitCode = result.value();
   if (exitCode != 0) {
-    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) +
-                               ": " + output);
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
   }
 
   logMessage("Successfully signed macOS bundle", false);

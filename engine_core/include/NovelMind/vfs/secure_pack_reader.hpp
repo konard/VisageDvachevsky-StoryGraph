@@ -20,26 +20,24 @@ public:
   SecurePackFileSystem();
   ~SecurePackFileSystem() override = default;
 
-  void setPublicKeyPem(const std::string &pem);
-  void setPublicKeyPath(const std::string &path);
-  void setDecryptionKey(const Core::SecureVector<u8> &key);
+  void setPublicKeyPem(const std::string& pem);
+  void setPublicKeyPath(const std::string& path);
+  void setDecryptionKey(const Core::SecureVector<u8>& key);
 
-  Result<void> mount(const std::string &packPath) override;
+  Result<void> mount(const std::string& packPath) override;
 
   // Async version of mount for non-blocking pack loading
-  std::future<Result<void>> mountAsync(const std::string &packPath,
+  std::future<Result<void>> mountAsync(const std::string& packPath,
                                        ProgressCallback progressCallback = nullptr);
 
-  void unmount(const std::string &packPath) override;
+  void unmount(const std::string& packPath) override;
   void unmountAll() override;
 
-  [[nodiscard]] Result<std::vector<u8>>
-  readFile(const std::string &resourceId) const override;
+  [[nodiscard]] Result<std::vector<u8>> readFile(const std::string& resourceId) const override;
 
-  [[nodiscard]] bool exists(const std::string &resourceId) const override;
+  [[nodiscard]] bool exists(const std::string& resourceId) const override;
 
-  [[nodiscard]] std::optional<ResourceInfo>
-  getInfo(const std::string &resourceId) const override;
+  [[nodiscard]] std::optional<ResourceInfo> getInfo(const std::string& resourceId) const override;
 
   [[nodiscard]] std::vector<std::string>
   listResources(ResourceType type = ResourceType::Unknown) const override;

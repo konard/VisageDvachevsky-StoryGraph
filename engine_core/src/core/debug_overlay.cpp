@@ -6,7 +6,7 @@
 
 namespace NovelMind::Core {
 
-DebugOverlay &DebugOverlay::instance() {
+DebugOverlay& DebugOverlay::instance() {
   static DebugOverlay instance;
   return instance;
 }
@@ -37,8 +37,8 @@ void DebugOverlay::render() {
   m_renderCallback(output, 10, 10);
 }
 
-void DebugOverlay::setMetric(const std::string &name, const std::string &value,
-                             const std::string &category) {
+void DebugOverlay::setMetric(const std::string& name, const std::string& value,
+                             const std::string& category) {
   DebugMetric metric;
   metric.name = name;
   metric.value = value;
@@ -46,19 +46,18 @@ void DebugOverlay::setMetric(const std::string &name, const std::string &value,
   m_customMetrics[name] = metric;
 }
 
-void DebugOverlay::setMetric(const std::string &name, i64 value,
-                             const std::string &category) {
+void DebugOverlay::setMetric(const std::string& name, i64 value, const std::string& category) {
   setMetric(name, std::to_string(value), category);
 }
 
-void DebugOverlay::setMetric(const std::string &name, f64 value,
-                             const std::string &category, int precision) {
+void DebugOverlay::setMetric(const std::string& name, f64 value, const std::string& category,
+                             int precision) {
   std::ostringstream oss;
   oss << std::fixed << std::setprecision(precision) << value;
   setMetric(name, oss.str(), category);
 }
 
-void DebugOverlay::removeMetric(const std::string &name) {
+void DebugOverlay::removeMetric(const std::string& name) {
   m_customMetrics.erase(name);
 }
 
@@ -74,8 +73,7 @@ f32 DebugOverlay::averageFps() const {
     return 0.0f;
   }
 
-  const f32 sum =
-      std::accumulate(m_fpsHistory.begin(), m_fpsHistory.end(), 0.0f);
+  const f32 sum = std::accumulate(m_fpsHistory.begin(), m_fpsHistory.end(), 0.0f);
   return sum / static_cast<f32>(m_fpsHistory.size());
 }
 
@@ -101,9 +99,8 @@ std::vector<DebugMetric> DebugOverlay::getAllMetrics() const {
 
   if (m_config.showFps) {
     std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << currentFps()
-        << " (avg: " << averageFps() << ", min: " << minFps()
-        << ", max: " << maxFps() << ")";
+    oss << std::fixed << std::setprecision(1) << currentFps() << " (avg: " << averageFps()
+        << ", min: " << minFps() << ", max: " << maxFps() << ")";
     result.push_back({"FPS", oss.str(), "Performance"});
   }
 
@@ -118,21 +115,19 @@ std::vector<DebugMetric> DebugOverlay::getAllMetrics() const {
   }
 
   if (m_config.showSceneObjects) {
-    result.push_back(
-        {"Scene Objects", std::to_string(m_sceneObjects), "Scene"});
+    result.push_back({"Scene Objects", std::to_string(m_sceneObjects), "Scene"});
   }
 
   if (m_config.showVfsStats) {
     result.push_back({"VFS Cache", formatBytes(m_vfsCacheSize), "Resources"});
-    result.push_back(
-        {"VFS Entries", std::to_string(m_vfsCacheEntries), "Resources"});
+    result.push_back({"VFS Entries", std::to_string(m_vfsCacheEntries), "Resources"});
   }
 
   if (m_config.showMemoryUsage) {
     result.push_back({"Memory", formatBytes(m_memoryUsage), "System"});
   }
 
-  for (const auto &[name, metric] : m_customMetrics) {
+  for (const auto& [name, metric] : m_customMetrics) {
     result.push_back(metric);
   }
 
@@ -145,7 +140,7 @@ std::string DebugOverlay::getFormattedOutput() const {
   const auto metrics = getAllMetrics();
 
   std::string currentCategory;
-  for (const auto &metric : metrics) {
+  for (const auto& metric : metrics) {
     if (metric.category != currentCategory && !metric.category.empty()) {
       if (!currentCategory.empty()) {
         oss << "\n";
@@ -175,8 +170,7 @@ void DebugOverlay::endFrame() {
   }
 
   const auto frameEnd = std::chrono::steady_clock::now();
-  m_frameTimeMs =
-      std::chrono::duration<f32, std::milli>(frameEnd - m_frameStart).count();
+  m_frameTimeMs = std::chrono::duration<f32, std::milli>(frameEnd - m_frameStart).count();
 }
 
 std::string DebugOverlay::formatBytes(usize bytes) const {

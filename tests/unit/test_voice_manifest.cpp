@@ -22,7 +22,7 @@ VoiceManifest createTestManifest() {
 }
 
 // Helper to create a test voice line
-VoiceManifestLine createTestLine(const std::string &id = "test.line.001") {
+VoiceManifestLine createTestLine(const std::string& id = "test.line.001") {
   VoiceManifestLine line;
   line.id = id;
   line.textKey = "dialog." + id;
@@ -80,7 +80,7 @@ TEST_CASE("VoiceManifest project configuration", "[voice_manifest]") {
 
     auto locales = manifest.getLocales();
     int count = 0;
-    for (const auto &loc : locales) {
+    for (const auto& loc : locales) {
       if (loc == "en")
         ++count;
     }
@@ -124,14 +124,14 @@ TEST_CASE("VoiceManifest voice line operations", "[voice_manifest]") {
     VoiceManifestLine line = createTestLine();
     manifest.addLine(line);
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     REQUIRE(retrieved != nullptr);
     REQUIRE(retrieved->id == "test.line.001");
     REQUIRE(retrieved->speaker == "narrator");
   }
 
   SECTION("get non-existent line returns nullptr") {
-    const auto *retrieved = manifest.getLine("non.existent");
+    const auto* retrieved = manifest.getLine("non.existent");
     REQUIRE(retrieved == nullptr);
   }
 
@@ -143,7 +143,7 @@ TEST_CASE("VoiceManifest voice line operations", "[voice_manifest]") {
     auto result = manifest.updateLine(line);
 
     REQUIRE(result.isOk());
-    const auto *updated = manifest.getLine("test.line.001");
+    const auto* updated = manifest.getLine("test.line.001");
     REQUIRE(updated->speaker == "alex");
   }
 
@@ -250,7 +250,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
   manifest.addLine(line);
 
   SECTION("initial status is missing") {
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     REQUIRE(retrieved->getOverallStatus() == VoiceLineStatus::Missing);
   }
 
@@ -258,7 +258,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.markAsRecorded("test.line.001", "en", "en/test.line.001.ogg");
 
     REQUIRE(result.isOk());
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file != nullptr);
     REQUIRE(file->status == VoiceLineStatus::Recorded);
@@ -269,7 +269,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.markAsImported("test.line.001", "en", "imported/voice.ogg");
 
     REQUIRE(result.isOk());
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->status == VoiceLineStatus::Imported);
   }
@@ -280,7 +280,7 @@ TEST_CASE("VoiceManifest status management", "[voice_manifest]") {
     auto result = manifest.setStatus("test.line.001", "en", VoiceLineStatus::NeedsReview);
     REQUIRE(result.isOk());
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->status == VoiceLineStatus::NeedsReview);
   }
@@ -355,7 +355,7 @@ TEST_CASE("VoiceManifest take management", "[voice_manifest]") {
     auto result = manifest.setActiveTake("test.line.001", "en", 1);
     REQUIRE(result.isOk());
 
-    const auto *retrieved = manifest.getLine("test.line.001");
+    const auto* retrieved = manifest.getLine("test.line.001");
     auto file = retrieved->getFile("en");
     REQUIRE(file->activeTakeIndex == 1);
     REQUIRE(file->filePath == "take2.ogg");
@@ -401,7 +401,7 @@ TEST_CASE("VoiceManifest validation", "[voice_manifest]") {
     REQUIRE_FALSE(errors.empty());
 
     bool foundMissingField = false;
-    for (const auto &error : errors) {
+    for (const auto& error : errors) {
       if (error.type == ManifestValidationError::Type::MissingRequiredField) {
         foundMissingField = true;
         break;
@@ -422,7 +422,7 @@ TEST_CASE("VoiceManifest validation", "[voice_manifest]") {
     REQUIRE_FALSE(errors.empty());
 
     bool foundInvalidLocale = false;
-    for (const auto &error : errors) {
+    for (const auto& error : errors) {
       if (error.type == ManifestValidationError::Type::InvalidLocale) {
         foundInvalidLocale = true;
         break;
@@ -522,7 +522,7 @@ TEST_CASE("VoiceManifest JSON serialization", "[voice_manifest]") {
     REQUIRE(loadedManifest.getDefaultLocale() == manifest.getDefaultLocale());
     REQUIRE(loadedManifest.getLineCount() == manifest.getLineCount());
 
-    const auto *loadedLine = loadedManifest.getLine("test.line.001");
+    const auto* loadedLine = loadedManifest.getLine("test.line.001");
     REQUIRE(loadedLine != nullptr);
     REQUIRE(loadedLine->speaker == "narrator");
   }
@@ -537,8 +537,7 @@ TEST_CASE("VoiceLineStatus string conversion", "[voice_manifest]") {
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Missing)) == "missing");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Recorded)) == "recorded");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Imported)) == "imported");
-    REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::NeedsReview)) ==
-            "needs_review");
+    REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::NeedsReview)) == "needs_review");
     REQUIRE(std::string(voiceLineStatusToString(VoiceLineStatus::Approved)) == "approved");
   }
 
@@ -588,16 +587,16 @@ TEST_CASE("VoiceManifest parses nested JSON objects correctly", "[voice_manifest
     REQUIRE(result.isOk());
     REQUIRE(manifest.getLineCount() == 1);
 
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->files.size() == 2);
 
-    const auto *enFile = line->getFile("en");
+    const auto* enFile = line->getFile("en");
     REQUIRE(enFile != nullptr);
     REQUIRE(enFile->filePath == "en/test.001.ogg");
     REQUIRE(enFile->duration == 3.5f);
 
-    const auto *ruFile = line->getFile("ru");
+    const auto* ruFile = line->getFile("ru");
     REQUIRE(ruFile != nullptr);
     REQUIRE(ruFile->filePath == "ru/test.001.ogg");
     REQUIRE(ruFile->duration == 4.2f);
@@ -626,7 +625,7 @@ TEST_CASE("VoiceManifest parses nested JSON objects correctly", "[voice_manifest
     auto result = manifest.loadFromString(json);
 
     REQUIRE(result.isOk());
-    const auto *line = manifest.getLine("deep.001");
+    const auto* line = manifest.getLine("deep.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->notes == "Test with {braces} and \"quotes\"");
   }
@@ -659,7 +658,7 @@ TEST_CASE("VoiceManifest parses nested JSON arrays correctly", "[voice_manifest]
     REQUIRE(manifest.getLocales().size() == 3);
     REQUIRE(manifest.hasLocale("ja"));
 
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->tags.size() == 4);
     REQUIRE(line->tags[0] == "calm");
@@ -686,13 +685,14 @@ TEST_CASE("VoiceManifest parses nested JSON arrays correctly", "[voice_manifest]
     auto result = manifest.loadFromString(json);
 
     REQUIRE(result.isOk());
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->tags.empty());
   }
 }
 
-TEST_CASE("VoiceManifest parses strings containing braces correctly", "[voice_manifest][issue_559]") {
+TEST_CASE("VoiceManifest parses strings containing braces correctly",
+          "[voice_manifest][issue_559]") {
   SECTION("notes field with braces") {
     std::string json = R"({
       "project": "test_project",
@@ -715,7 +715,7 @@ TEST_CASE("VoiceManifest parses strings containing braces correctly", "[voice_ma
     auto result = manifest.loadFromString(json);
 
     REQUIRE(result.isOk());
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->notes == "Use {expression} with {{nested}} braces and [brackets]");
   }
@@ -740,15 +740,16 @@ TEST_CASE("VoiceManifest parses strings containing braces correctly", "[voice_ma
     auto result = manifest.loadFromString(json);
 
     REQUIRE(result.isOk());
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
-    const auto *enFile = line->getFile("en");
+    const auto* enFile = line->getFile("en");
     REQUIRE(enFile != nullptr);
     REQUIRE(enFile->filePath == "assets/{locale}/voice/test.001.ogg");
   }
 }
 
-TEST_CASE("VoiceManifest handles malformed JSON with error messages", "[voice_manifest][issue_559]") {
+TEST_CASE("VoiceManifest handles malformed JSON with error messages",
+          "[voice_manifest][issue_559]") {
   SECTION("invalid JSON syntax") {
     std::string json = R"({
       "project": "test_project",
@@ -959,7 +960,7 @@ TEST_CASE("VoiceManifest JSON malformed input handling", "[voice_manifest][error
 
     auto result = manifest.loadFromString(jsonMissingTextKey);
     REQUIRE(result.isOk());
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->textKey == "test.001");
   }
@@ -1018,7 +1019,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
 
   SECTION("empty locale parameter") {
     // Create a temporary CSV file
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_empty_locale.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_empty_locale.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile << "test.001,alex,key.001,voice.ogg,intro\n";
@@ -1046,7 +1048,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with quoted fields containing commas") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_quoted_commas.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_quoted_commas.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile << "test.001,\"Smith, John\",key.001,\"path/with,comma.ogg\",intro\n";
@@ -1056,7 +1059,7 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
     REQUIRE(result.isOk());
     REQUIRE(manifest.getLineCount() == 1);
 
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->speaker == "Smith, John");
 
@@ -1064,7 +1067,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with Windows line endings") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_windows_endings.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_windows_endings.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\r\n";
     tempFile << "test.001,alex,key.001,voice.ogg,intro\r\n";
@@ -1078,7 +1082,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with empty lines") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_empty_lines.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_empty_lines.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile << "\n";
@@ -1095,10 +1100,11 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with missing required fields") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_missing_fields.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_missing_fields.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
-    tempFile << ",alex,key.001,voice.ogg,intro\n"; // Missing ID
+    tempFile << ",alex,key.001,voice.ogg,intro\n";          // Missing ID
     tempFile << "test.002,beth,key.002,voice2.ogg,intro\n"; // Valid
     tempFile.close();
 
@@ -1112,7 +1118,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with only header") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_only_header.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_only_header.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile.close();
@@ -1125,7 +1132,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV with escaped quotes") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_escaped_quotes.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_escaped_quotes.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile << "test.001,\"Alex \"\"The Great\"\"\",key.001,voice.ogg,intro\n";
@@ -1135,7 +1143,7 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
     REQUIRE(result.isOk());
     REQUIRE(manifest.getLineCount() == 1);
 
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->speaker == "Alex \"The Great\"");
 
@@ -1143,7 +1151,8 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
   }
 
   SECTION("CSV import defaults text_key to id when missing") {
-    std::filesystem::path tempPath = std::filesystem::temp_directory_path() / "test_default_textkey.csv";
+    std::filesystem::path tempPath =
+        std::filesystem::temp_directory_path() / "test_default_textkey.csv";
     std::ofstream tempFile(tempPath);
     tempFile << "id,speaker,text_key,voice_file,scene\n";
     tempFile << "test.001,alex,,voice.ogg,intro\n"; // Empty text_key
@@ -1152,7 +1161,7 @@ TEST_CASE("VoiceManifest CSV malformed input handling", "[voice_manifest][error_
     auto result = manifest.importFromCsv(tempPath.string(), "en");
     REQUIRE(result.isOk());
 
-    const auto *line = manifest.getLine("test.001");
+    const auto* line = manifest.getLine("test.001");
     REQUIRE(line != nullptr);
     REQUIRE(line->textKey == "test.001"); // Defaulted to ID
 
@@ -1179,124 +1188,130 @@ TEST_CASE("VoiceManifest file loading error handling", "[voice_manifest][error_h
     REQUIRE(result.error().find("empty") != std::string::npos);
 
     std::filesystem::remove(tempPath);
-// Security Tests - Path Traversal Prevention
-// ============================================================================
+    // Security Tests - Path Traversal Prevention
+    // ============================================================================
 
-TEST_CASE("VoiceManifest security - path traversal prevention", "[voice_manifest][security]") {
-  VoiceManifest manifest = createTestManifest();
+    TEST_CASE("VoiceManifest security - path traversal prevention", "[voice_manifest][security]") {
+      VoiceManifest manifest = createTestManifest();
 
-  SECTION("Unix path traversal - ../../../etc/passwd") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "../../../etc/passwd");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Unix path traversal - ../../../etc/passwd") {
+        auto result = manifest.markAsRecorded("test.line.001", "en", "../../../etc/passwd");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Windows path traversal - ..\\..\\..\\Windows\\System32\\config") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "..\\..\\..\\Windows\\System32\\config");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Windows path traversal - ..\\..\\..\\Windows\\System32\\config") {
+        auto result =
+            manifest.markAsRecorded("test.line.001", "en", "..\\..\\..\\Windows\\System32\\config");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Mixed separators path traversal - ../..\\../etc/passwd") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "../..\\../etc/passwd");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Mixed separators path traversal - ../..\\../etc/passwd") {
+        auto result = manifest.markAsRecorded("test.line.001", "en", "../..\\../etc/passwd");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Unix absolute path - /etc/passwd") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "/etc/passwd");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Unix absolute path - /etc/passwd") {
+        auto result = manifest.markAsRecorded("test.line.001", "en", "/etc/passwd");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Windows absolute path - C:\\Windows\\System32\\config") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "C:\\Windows\\System32\\config");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Windows absolute path - C:\\Windows\\System32\\config") {
+        auto result =
+            manifest.markAsRecorded("test.line.001", "en", "C:\\Windows\\System32\\config");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Null byte injection - audio\\0../../etc/passwd") {
-    std::string maliciousPath = "audio";
-    maliciousPath += '\0';
-    maliciousPath += "../../etc/passwd";
-    auto result = manifest.markAsRecorded("test.line.001", "en", maliciousPath);
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Null byte injection - audio\\0../../etc/passwd") {
+        std::string maliciousPath = "audio";
+        maliciousPath += '\0';
+        maliciousPath += "../../etc/passwd";
+        auto result = manifest.markAsRecorded("test.line.001", "en", maliciousPath);
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Valid relative path should succeed - en/voice001.ogg") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "en/voice001.ogg");
-    REQUIRE_FALSE(result.isError());
-  }
+      SECTION("Valid relative path should succeed - en/voice001.ogg") {
+        auto result = manifest.markAsRecorded("test.line.001", "en", "en/voice001.ogg");
+        REQUIRE_FALSE(result.isError());
+      }
 
-  SECTION("Valid relative path with subdirs - en/chapter1/scene1/voice001.ogg") {
-    auto result = manifest.markAsRecorded("test.line.001", "en", "en/chapter1/scene1/voice001.ogg");
-    REQUIRE_FALSE(result.isError());
-  }
-}
+      SECTION("Valid relative path with subdirs - en/chapter1/scene1/voice001.ogg") {
+        auto result =
+            manifest.markAsRecorded("test.line.001", "en", "en/chapter1/scene1/voice001.ogg");
+        REQUIRE_FALSE(result.isError());
+      }
+    }
 
-TEST_CASE("VoiceManifest security - markAsImported path validation", "[voice_manifest][security]") {
-  VoiceManifest manifest = createTestManifest();
+    TEST_CASE("VoiceManifest security - markAsImported path validation",
+              "[voice_manifest][security]") {
+      VoiceManifest manifest = createTestManifest();
 
-  SECTION("Unix path traversal in markAsImported") {
-    auto result = manifest.markAsImported("test.line.001", "en", "../../../etc/passwd");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Unix path traversal in markAsImported") {
+        auto result = manifest.markAsImported("test.line.001", "en", "../../../etc/passwd");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Windows absolute path in markAsImported") {
-    auto result = manifest.markAsImported("test.line.001", "en", "C:\\Users\\admin\\secret.txt");
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+      SECTION("Windows absolute path in markAsImported") {
+        auto result =
+            manifest.markAsImported("test.line.001", "en", "C:\\Users\\admin\\secret.txt");
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Valid path in markAsImported") {
-    auto result = manifest.markAsImported("test.line.001", "en", "imported/voice001.ogg");
-    REQUIRE_FALSE(result.isError());
-  }
-}
+      SECTION("Valid path in markAsImported") {
+        auto result = manifest.markAsImported("test.line.001", "en", "imported/voice001.ogg");
+        REQUIRE_FALSE(result.isError());
+      }
+    }
 
-TEST_CASE("VoiceManifest security - addTake path validation", "[voice_manifest][security]") {
-  VoiceManifest manifest = createTestManifest();
-  VoiceManifestLine line = createTestLine();
-  manifest.addLine(line);
+    TEST_CASE("VoiceManifest security - addTake path validation", "[voice_manifest][security]") {
+      VoiceManifest manifest = createTestManifest();
+      VoiceManifestLine line = createTestLine();
+      manifest.addLine(line);
 
-  SECTION("Unix path traversal in VoiceTake") {
-    VoiceTake take;
-    take.takeNumber = 1;
-    take.filePath = "../../../etc/passwd";
-    take.duration = 2.5f;
+      SECTION("Unix path traversal in VoiceTake") {
+        VoiceTake take;
+        take.takeNumber = 1;
+        take.filePath = "../../../etc/passwd";
+        take.duration = 2.5f;
 
-    auto result = manifest.addTake("test.line.001", "en", take);
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+        auto result = manifest.addTake("test.line.001", "en", take);
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Windows path traversal in VoiceTake") {
-    VoiceTake take;
-    take.takeNumber = 1;
-    take.filePath = "..\\..\\..\\Windows\\System32\\malware.exe";
-    take.duration = 2.5f;
+      SECTION("Windows path traversal in VoiceTake") {
+        VoiceTake take;
+        take.takeNumber = 1;
+        take.filePath = "..\\..\\..\\Windows\\System32\\malware.exe";
+        take.duration = 2.5f;
 
-    auto result = manifest.addTake("test.line.001", "en", take);
-    REQUIRE(result.isError());
-    REQUIRE(result.error().find("Invalid file path") != std::string::npos);
-  }
+        auto result = manifest.addTake("test.line.001", "en", take);
+        REQUIRE(result.isError());
+        REQUIRE(result.error().find("Invalid file path") != std::string::npos);
+      }
 
-  SECTION("Valid path in VoiceTake") {
-    VoiceTake take;
-    take.takeNumber = 1;
-    take.filePath = "takes/voice001_take1.ogg";
-    take.duration = 2.5f;
+      SECTION("Valid path in VoiceTake") {
+        VoiceTake take;
+        take.takeNumber = 1;
+        take.filePath = "takes/voice001_take1.ogg";
+        take.duration = 2.5f;
 
-    auto result = manifest.addTake("test.line.001", "en", take);
-    REQUIRE_FALSE(result.isError());
-  }
-}
+        auto result = manifest.addTake("test.line.001", "en", take);
+        REQUIRE_FALSE(result.isError());
+      }
+    }
 
-TEST_CASE("VoiceManifest security - JSON loading path validation", "[voice_manifest][security]") {
-  SECTION("Malicious JSON with path traversal") {
-    std::string maliciousJson = R"({
+    TEST_CASE("VoiceManifest security - JSON loading path validation",
+              "[voice_manifest][security]") {
+      SECTION("Malicious JSON with path traversal") {
+        std::string maliciousJson = R"({
       "project": "malicious_project",
       "default_locale": "en",
       "locales": ["en"],
@@ -1314,23 +1329,23 @@ TEST_CASE("VoiceManifest security - JSON loading path validation", "[voice_manif
       ]
     })";
 
-    VoiceManifest manifest;
-    auto result = manifest.loadFromString(maliciousJson);
+        VoiceManifest manifest;
+        auto result = manifest.loadFromString(maliciousJson);
 
-    // Loading should succeed but the malicious path should be rejected
-    REQUIRE_FALSE(result.isError());
+        // Loading should succeed but the malicious path should be rejected
+        REQUIRE_FALSE(result.isError());
 
-    // The line should be created but without the malicious file path
-    const auto* line = manifest.getLine("malicious.line.001");
-    REQUIRE(line != nullptr);
+        // The line should be created but without the malicious file path
+        const auto* line = manifest.getLine("malicious.line.001");
+        REQUIRE(line != nullptr);
 
-    // The file should not have been added due to path validation
-    auto file = line->getFile("en");
-    REQUIRE(file == nullptr);
-  }
+        // The file should not have been added due to path validation
+        auto file = line->getFile("en");
+        REQUIRE(file == nullptr);
+      }
 
-  SECTION("Valid JSON should load successfully") {
-    std::string validJson = R"({
+      SECTION("Valid JSON should load successfully") {
+        std::string validJson = R"({
       "project": "valid_project",
       "default_locale": "en",
       "locales": ["en"],
@@ -1348,121 +1363,122 @@ TEST_CASE("VoiceManifest security - JSON loading path validation", "[voice_manif
       ]
     })";
 
-    VoiceManifest manifest;
-    auto result = manifest.loadFromString(json);
+        VoiceManifest manifest;
+        auto result = manifest.loadFromString(json);
 
-    REQUIRE(result.isOk());
-    REQUIRE(manifest.getProjectName() == "my_visual_novel");
-    REQUIRE(manifest.getDefaultLocale() == "en");
-    REQUIRE(manifest.getLocales().size() == 3);
-    REQUIRE(manifest.getBasePath() == "assets/audio/voice");
-    REQUIRE(manifest.getLineCount() == 2);
+        REQUIRE(result.isOk());
+        REQUIRE(manifest.getProjectName() == "my_visual_novel");
+        REQUIRE(manifest.getDefaultLocale() == "en");
+        REQUIRE(manifest.getLocales().size() == 3);
+        REQUIRE(manifest.getBasePath() == "assets/audio/voice");
+        REQUIRE(manifest.getLineCount() == 2);
 
-    // Test first line
-    const auto *line1 = manifest.getLine("intro.alex.001");
-    REQUIRE(line1 != nullptr);
-    REQUIRE(line1->speaker == "alex");
-    REQUIRE(line1->scene == "intro");
-    REQUIRE(line1->notes == "Speak with {calm} emotion, use \"soft\" voice");
-    REQUIRE(line1->tags.size() == 3);
-    REQUIRE(line1->sourceScript == "scripts/intro.txt");
-    REQUIRE(line1->sourceLine == 42);
-    REQUIRE(line1->durationOverride == 5.5f);
-    REQUIRE(line1->files.size() == 3);
+        // Test first line
+        const auto* line1 = manifest.getLine("intro.alex.001");
+        REQUIRE(line1 != nullptr);
+        REQUIRE(line1->speaker == "alex");
+        REQUIRE(line1->scene == "intro");
+        REQUIRE(line1->notes == "Speak with {calm} emotion, use \"soft\" voice");
+        REQUIRE(line1->tags.size() == 3);
+        REQUIRE(line1->sourceScript == "scripts/intro.txt");
+        REQUIRE(line1->sourceLine == 42);
+        REQUIRE(line1->durationOverride == 5.5f);
+        REQUIRE(line1->files.size() == 3);
 
-    // Test second line with nested file object
-    const auto *line2 = manifest.getLine("intro.beth.001");
-    REQUIRE(line2 != nullptr);
-    REQUIRE(line2->speaker == "beth");
-    REQUIRE(line2->tags.size() == 1);
-    const auto *enFile = line2->getFile("en");
-    REQUIRE(enFile != nullptr);
-    REQUIRE(enFile->filePath == "assets/audio/voice/en/intro.beth.001.ogg");
-    REQUIRE(enFile->duration == 3.2f);
-    auto result = manifest.loadFromString(validJson);
+        // Test second line with nested file object
+        const auto* line2 = manifest.getLine("intro.beth.001");
+        REQUIRE(line2 != nullptr);
+        REQUIRE(line2->speaker == "beth");
+        REQUIRE(line2->tags.size() == 1);
+        const auto* enFile = line2->getFile("en");
+        REQUIRE(enFile != nullptr);
+        REQUIRE(enFile->filePath == "assets/audio/voice/en/intro.beth.001.ogg");
+        REQUIRE(enFile->duration == 3.2f);
+        auto result = manifest.loadFromString(validJson);
 
-    REQUIRE_FALSE(result.isError());
+        REQUIRE_FALSE(result.isError());
 
-    const auto* line = manifest.getLine("valid.line.001");
-    REQUIRE(line != nullptr);
+        const auto* line = manifest.getLine("valid.line.001");
+        REQUIRE(line != nullptr);
 
-    auto file = line->getFile("en");
-    REQUIRE(file != nullptr);
-    REQUIRE(file->filePath == "en/valid_voice.ogg");
-  }
-}
+        auto file = line->getFile("en");
+        REQUIRE(file != nullptr);
+        REQUIRE(file->filePath == "en/valid_voice.ogg");
+      }
+    }
 
-TEST_CASE("VoiceManifest security - CSV import path validation", "[voice_manifest][security]") {
-  namespace fs = std::filesystem;
+    TEST_CASE("VoiceManifest security - CSV import path validation", "[voice_manifest][security]") {
+      namespace fs = std::filesystem;
 
-  SECTION("Malicious CSV with path traversal") {
-    // Create a temporary malicious CSV file
-    std::string csvContent =
-      "id,speaker,text_key,voice_file,scene\n"
-      "exploit.001,hacker,dialog.exploit.001,../../../etc/passwd,exploit_scene\n"
-      "valid.001,narrator,dialog.valid.001,en/valid.ogg,normal_scene\n";
+      SECTION("Malicious CSV with path traversal") {
+        // Create a temporary malicious CSV file
+        std::string csvContent =
+            "id,speaker,text_key,voice_file,scene\n"
+            "exploit.001,hacker,dialog.exploit.001,../../../etc/passwd,exploit_scene\n"
+            "valid.001,narrator,dialog.valid.001,en/valid.ogg,normal_scene\n";
 
-    std::string tempPath = "test_malicious.csv";
-    std::ofstream csvFile(tempPath);
-    csvFile << csvContent;
-    csvFile.close();
+        std::string tempPath = "test_malicious.csv";
+        std::ofstream csvFile(tempPath);
+        csvFile << csvContent;
+        csvFile.close();
 
-    VoiceManifest manifest;
-    manifest.setDefaultLocale("en");
-    manifest.addLocale("en");
+        VoiceManifest manifest;
+        manifest.setDefaultLocale("en");
+        manifest.addLocale("en");
 
-    auto result = manifest.importFromCsv(tempPath, "en");
+        auto result = manifest.importFromCsv(tempPath, "en");
 
-    // Import should succeed
-    REQUIRE_FALSE(result.isError());
+        // Import should succeed
+        REQUIRE_FALSE(result.isError());
 
-    // The exploit line should be created but without the malicious path
-    const auto* exploitLine = manifest.getLine("exploit.001");
-    REQUIRE(exploitLine != nullptr);
-    auto exploitFile = exploitLine->getFile("en");
-    REQUIRE(exploitFile == nullptr); // Malicious path should be rejected
+        // The exploit line should be created but without the malicious path
+        const auto* exploitLine = manifest.getLine("exploit.001");
+        REQUIRE(exploitLine != nullptr);
+        auto exploitFile = exploitLine->getFile("en");
+        REQUIRE(exploitFile == nullptr); // Malicious path should be rejected
 
-    // The valid line should have its path
-    const auto* validLine = manifest.getLine("valid.001");
-    REQUIRE(validLine != nullptr);
-    auto validFile = validLine->getFile("en");
-    REQUIRE(validFile != nullptr);
-    REQUIRE(validFile->filePath == "en/valid.ogg");
+        // The valid line should have its path
+        const auto* validLine = manifest.getLine("valid.001");
+        REQUIRE(validLine != nullptr);
+        auto validFile = validLine->getFile("en");
+        REQUIRE(validFile != nullptr);
+        REQUIRE(validFile->filePath == "en/valid.ogg");
 
-    // Clean up
-    fs::remove(tempPath);
-  }
-}
+        // Clean up
+        fs::remove(tempPath);
+      }
+    }
 
-TEST_CASE("VoiceManifest security - validation detects malicious paths", "[voice_manifest][security]") {
-  VoiceManifest manifest = createTestManifest();
+    TEST_CASE("VoiceManifest security - validation detects malicious paths",
+              "[voice_manifest][security]") {
+      VoiceManifest manifest = createTestManifest();
 
-  // Manually create a line with a malicious path (bypassing the API for testing)
-  VoiceManifestLine line = createTestLine("exploit.001");
-  VoiceLocaleFile locFile;
-  locFile.locale = "en";
-  locFile.filePath = "../../../etc/passwd"; // Inject malicious path directly
-  locFile.status = VoiceLineStatus::Imported;
-  line.files["en"] = locFile;
+      // Manually create a line with a malicious path (bypassing the API for testing)
+      VoiceManifestLine line = createTestLine("exploit.001");
+      VoiceLocaleFile locFile;
+      locFile.locale = "en";
+      locFile.filePath = "../../../etc/passwd"; // Inject malicious path directly
+      locFile.status = VoiceLineStatus::Imported;
+      line.files["en"] = locFile;
 
-  // We can't use addLine because it would validate, so we test validation directly
-  // Instead, let's verify the validation catches this if it were in the manifest
+      // We can't use addLine because it would validate, so we test validation directly
+      // Instead, let's verify the validation catches this if it were in the manifest
 
-  SECTION("Validation should detect invalid file paths") {
-    // Create manifest with valid base path
-    manifest.setBasePath("/tmp/test_voice");
+      SECTION("Validation should detect invalid file paths") {
+        // Create manifest with valid base path
+        manifest.setBasePath("/tmp/test_voice");
 
-    // Add a normal line first
-    VoiceManifestLine normalLine = createTestLine("normal.001");
-    VoiceLocaleFile normalFile;
-    normalFile.locale = "en";
-    normalFile.filePath = "en/voice.ogg";
-    normalFile.status = VoiceLineStatus::Imported;
-    normalLine.files["en"] = normalFile;
-    manifest.addLine(normalLine);
+        // Add a normal line first
+        VoiceManifestLine normalLine = createTestLine("normal.001");
+        VoiceLocaleFile normalFile;
+        normalFile.locale = "en";
+        normalFile.filePath = "en/voice.ogg";
+        normalFile.status = VoiceLineStatus::Imported;
+        normalLine.files["en"] = normalFile;
+        manifest.addLine(normalLine);
 
-    // Validate - should pass for normal line
-    auto errors = manifest.validate(false);
-    REQUIRE(errors.empty());
-  }
-}
+        // Validate - should pass for normal line
+        auto errors = manifest.validate(false);
+        REQUIRE(errors.empty());
+      }
+    }
