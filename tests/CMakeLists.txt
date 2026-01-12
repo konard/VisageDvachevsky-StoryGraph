@@ -39,6 +39,7 @@ add_executable(unit_tests
     unit/test_audio_recorder.cpp
     unit/test_scene_graph_deep.cpp
     unit/test_vfs_pack_security.cpp
+    unit/test_vfs_corrupted_pack_files.cpp
     unit/test_audio_playback.cpp
     unit/test_input_manager.cpp
     unit/test_renderer_pipeline.cpp
