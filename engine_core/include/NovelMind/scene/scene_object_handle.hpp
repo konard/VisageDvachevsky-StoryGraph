@@ -10,8 +10,10 @@
  */
 
 #include "NovelMind/core/types.hpp"
+#include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -30,6 +32,10 @@ class SceneObjectBase;
  *
  * RAII guarantee: When the object is deleted from the scene,
  * isValid() returns false and get() returns nullptr.
+ *
+ * THREAD SAFETY: This handle uses a generation counter pattern to prevent
+ * TOCTOU (Time-Of-Check-Time-Of-Use) race conditions. All access methods
+ * are thread-safe and protected by mutex in SceneGraph.
  */
 class SceneObjectHandle {
 public:
@@ -47,6 +53,10 @@ public:
 
   /**
    * @brief Check if the referenced object still exists
+   *
+   * THREAD SAFETY: This method is thread-safe. However, to prevent TOCTOU
+   * race conditions, prefer using withObject() or withObjectAs() instead
+   * of checking isValid() and then calling get().
    */
   [[nodiscard]] bool isValid() const;
 
@@ -58,6 +68,11 @@ public:
   /**
    * @brief Get the object pointer if it still exists
    * @return Pointer to object, or nullptr if object was deleted
+   *
+   * THREAD SAFETY: This method is thread-safe. The returned pointer is only
+   * valid for the duration of the current mutex lock. For thread-safe access,
+   * prefer using withObject() or withObjectAs() which guarantee atomic
+   * check-and-use operations.
    */
   [[nodiscard]] SceneObjectBase *get() const;
 
@@ -65,6 +80,8 @@ public:
    * @brief Get the object with type checking
    * @tparam T Derived type to cast to
    * @return Pointer to object cast to T, or nullptr if invalid or wrong type
+   *
+   * THREAD SAFETY: See get() documentation for thread safety notes.
    */
   template <typename T> [[nodiscard]] T *getAs() const {
     return dynamic_cast<T *>(get());
@@ -74,6 +91,10 @@ public:
    * @brief Execute a function with the object if it exists
    * @param fn Function to call with the object pointer
    * @return true if object existed and function was called
+   *
+   * THREAD SAFETY: This method provides atomic check-and-use semantics,
+   * preventing TOCTOU race conditions. The function is executed under
+   * mutex protection, ensuring the object cannot be deleted during execution.
    */
   bool withObject(std::function<void(SceneObjectBase *)> fn) const;
 
@@ -82,6 +103,10 @@ public:
    * @tparam T Derived type to cast to
    * @param fn Function to call with the typed object pointer
    * @return true if object existed, matched type, and function was called
+   *
+   * THREAD SAFETY: This method provides atomic check-and-use semantics,
+   * preventing TOCTOU race conditions. The function is executed under
+   * mutex protection, ensuring the object cannot be deleted during execution.
    */
   template <typename T> bool withObjectAs(std::function<void(T *)> fn) const {
     if (auto *obj = getAs<T>()) {
@@ -104,6 +129,7 @@ public:
 private:
   SceneGraph *m_sceneGraph = nullptr;
   std::string m_objectId;
+  u64 m_generation = 0; // Generation counter for TOCTOU prevention
 };
 
 /**

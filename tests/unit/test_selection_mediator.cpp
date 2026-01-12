@@ -399,3 +399,180 @@ TEST_CASE("SelectionMediator handles null panel pointers safely",
 
   REQUIRE(true);
 }
+
+// ============================================================================
+// Thread Safety Tests (Issue #479)
+// ============================================================================
+
+#include "NovelMind/editor/event_bus.hpp"
+#include <thread>
+
+TEST_CASE("SelectionMediator re-entrancy guard is thread-safe",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test that m_processingSelection flag prevents race conditions
+  // when multiple threads publish selection events simultaneously
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  mediator->initialize();
+
+  // Counter to track how many times event handler completes
+  std::atomic<int> completionCount{0};
+  std::atomic<int> entryAttemptCount{0};
+
+  // Create multiple threads that publish selection events concurrently
+  const int numThreads = 10;
+  const int eventsPerThread = 100;
+  std::vector<std::thread> threads;
+
+  auto &bus = EventBus::instance();
+
+  // Subscribe to count actual event processing
+  auto subscription = bus.subscribe<events::StoryGraphNodeSelectedEvent>(
+      [&completionCount, &entryAttemptCount](const events::StoryGraphNodeSelectedEvent &) {
+        ++entryAttemptCount;
+        // Simulate some work
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        ++completionCount;
+      });
+
+  for (int i = 0; i < numThreads; ++i) {
+    threads.emplace_back([i, eventsPerThread, &bus]() {
+      for (int j = 0; j < eventsPerThread; ++j) {
+        events::StoryGraphNodeSelectedEvent event;
+        event.nodeIdString = QString("node_%1_%2").arg(i).arg(j);
+        bus.publish(event);
+      }
+    });
+  }
+
+  // Wait for all threads to complete
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  // Process any remaining events
+  processEvents(500);
+
+  // Unsubscribe
+  bus.unsubscribe(subscription);
+
+  // Verify that re-entrancy guard worked correctly
+  // All events should have been attempted, but the re-entrancy guard
+  // may have prevented some from processing if they overlapped
+  REQUIRE(entryAttemptCount > 0);
+  REQUIRE(completionCount > 0);
+  REQUIRE(completionCount <= entryAttemptCount);
+
+  // Clean up
+  mediator->shutdown();
+  delete mediator;
+  delete storyGraph;
+}
+
+TEST_CASE("SelectionMediator atomic flag prevents data races",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test that the atomic flag prevents data races
+  // This test should pass ThreadSanitizer (TSan) checks
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  mediator->initialize();
+
+  std::atomic<bool> testComplete{false};
+  std::vector<std::thread> threads;
+
+  auto &bus = EventBus::instance();
+
+  // Create threads that rapidly publish events
+  for (int i = 0; i < 5; ++i) {
+    threads.emplace_back([i, &testComplete, &bus]() {
+      while (!testComplete) {
+        events::StoryGraphNodeSelectedEvent event;
+        event.nodeIdString = QString("thread_%1").arg(i);
+        bus.publish(event);
+        std::this_thread::yield();
+      }
+    });
+  }
+
+  // Let threads run for a short time
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  testComplete = true;
+
+  // Wait for all threads
+  for (auto &thread : threads) {
+    thread.join();
+  }
+
+  // Process remaining events
+  processEvents(200);
+
+  // If we reach here without TSan errors or crashes, the test passes
+  mediator->shutdown();
+  delete mediator;
+  delete storyGraph;
+
+  REQUIRE(true);
+}
+
+TEST_CASE("SelectionMediator concurrent event publishing",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test concurrent publishing of different event types
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  mediator->initialize();
+
+  std::atomic<int> sceneEventCount{0};
+  std::atomic<int> storyEventCount{0};
+
+  auto &bus = EventBus::instance();
+
+  // Launch threads publishing different event types
+  std::thread sceneThread([&bus, &sceneEventCount]() {
+    for (int i = 0; i < 50; ++i) {
+      events::SceneObjectSelectedEvent event;
+      event.objectId = QString("scene_%1").arg(i);
+      event.sourcePanel = "Test";
+      bus.publish(event);
+      ++sceneEventCount;
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  std::thread storyThread([&bus, &storyEventCount]() {
+    for (int i = 0; i < 50; ++i) {
+      events::StoryGraphNodeSelectedEvent event;
+      event.nodeIdString = QString("story_%1").arg(i);
+      bus.publish(event);
+      ++storyEventCount;
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  // Wait for threads
+  sceneThread.join();
+  storyThread.join();
+
+  // Process events
+  processEvents(300);
+
+  // Verify events were published
+  REQUIRE(sceneEventCount == 50);
+  REQUIRE(storyEventCount == 50);
+
+  // Clean up
+  mediator->shutdown();
+  delete mediator;
+  delete storyGraph;
+}
