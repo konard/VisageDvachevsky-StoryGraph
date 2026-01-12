@@ -1,5 +1,6 @@
 #include "NovelMind/scripting/parser.hpp"
 #include <sstream>
+#include <cassert>
 
 namespace NovelMind::scripting {
 
@@ -34,9 +35,24 @@ const std::vector<ParseError> &Parser::getErrors() const { return m_errors; }
 
 bool Parser::isAtEnd() const { return peek().type == TokenType::EndOfFile; }
 
-const Token &Parser::peek() const { return (*m_tokens)[m_current]; }
+const Token &Parser::peek() const {
+  // Bounds check: return error token if current index is out of bounds
+  if (!m_tokens || m_current >= m_tokens->size()) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
+  return (*m_tokens)[m_current];
+}
 
-const Token &Parser::previous() const { return (*m_tokens)[m_current - 1]; }
+const Token &Parser::previous() const {
+  assert(m_current > 0 && "Cannot call previous() before any tokens are consumed");
+  // Bounds check: return error token if trying to access before start
+  if (!m_tokens || m_current == 0) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
+  return (*m_tokens)[m_current - 1];
+}
 
 const Token &Parser::advance() {
   if (!isAtEnd()) {
@@ -186,7 +202,7 @@ SceneDecl Parser::parseSceneDecl() {
   const Token &name = consume(TokenType::Identifier, "Expected scene name");
   decl.name = name.lexeme;
 
-  consume(TokenType::LeftBrace, "Expected '{' before scene body");
+  const Token &openBrace = consume(TokenType::LeftBrace, "Expected '{' before scene body");
 
   while (!check(TokenType::RightBrace) && !isAtEnd()) {
     skipNewlines();
@@ -199,7 +215,16 @@ SceneDecl Parser::parseSceneDecl() {
     }
   }
 
-  consume(TokenType::RightBrace, "Expected '}' after scene body");
+  // Check if we reached EOF without finding closing brace
+  if (isAtEnd() && !check(TokenType::RightBrace)) {
+    std::string errorMsg = "Incomplete scene block '" + decl.name +
+                          "' - missing closing brace '}'. Scene started at line " +
+                          std::to_string(openBrace.location.line) +
+                          ". Add '}' to close the scene block.";
+    error(errorMsg);
+  } else {
+    consume(TokenType::RightBrace, "Expected '}' after scene body");
+  }
 
   return decl;
 }

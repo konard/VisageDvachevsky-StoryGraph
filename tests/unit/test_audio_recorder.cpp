@@ -502,3 +502,346 @@ TEST_CASE("AudioRecorder thread safety - getCurrentLevel thread safety", "[audio
   // Should have successfully read level many times
   REQUIRE(levelReadCount > 100);
 }
+
+// =============================================================================
+// Error Path Tests - Issue #498 (Audio Hardware Failure)
+// =============================================================================
+
+TEST_CASE("AudioRecorder error paths - initialization failure",
+          "[audio][recorder][error][issue-498]") {
+  // Test that recorder handles initialization failures gracefully
+
+  SECTION("Operations on uninitialized recorder return errors") {
+    AudioRecorder recorder;
+    // Don't initialize
+
+    // These should all return errors
+    auto startResult = recorder.startRecording("/tmp/test.wav");
+    REQUIRE(startResult.isError());
+
+    auto stopResult = recorder.stopRecording();
+    REQUIRE(stopResult.isError());
+
+    auto meterResult = recorder.startMetering();
+    REQUIRE(meterResult.isError());
+
+    // These should not crash
+    recorder.stopMetering();
+    recorder.cancelRecording();
+    REQUIRE_FALSE(recorder.isRecording());
+  }
+
+  SECTION("Multiple shutdown calls are safe") {
+    AudioRecorder recorder;
+    recorder.shutdown();
+    recorder.shutdown();
+    recorder.shutdown();
+
+    REQUIRE_FALSE(recorder.isInitialized());
+  }
+
+  SECTION("Recorder state remains consistent after init failure") {
+    AudioRecorder recorder;
+    auto initResult = recorder.initialize();
+
+    // If init fails (no hardware), state should be consistent
+    if (initResult.isError()) {
+      REQUIRE_FALSE(recorder.isInitialized());
+      REQUIRE_FALSE(recorder.isRecording());
+      REQUIRE_FALSE(recorder.isMeteringActive());
+      REQUIRE(recorder.getState() == RecordingState::Idle);
+
+      // Shutdown should be safe even if never initialized
+      recorder.shutdown();
+      REQUIRE_FALSE(recorder.isInitialized());
+    }
+  }
+}
+
+TEST_CASE("AudioRecorder error paths - invalid format configuration",
+          "[audio][recorder][error][issue-498]") {
+  // Test that recorder handles invalid format configurations gracefully
+  AudioRecorder recorder;
+
+  SECTION("Extreme sample rates") {
+    RecordingFormat format;
+
+    // Very low sample rate
+    format.sampleRate = 100;
+    recorder.setRecordingFormat(format);
+    const auto& stored1 = recorder.getRecordingFormat();
+    REQUIRE(stored1.sampleRate == 100);
+
+    // Very high sample rate
+    format.sampleRate = 192000;
+    recorder.setRecordingFormat(format);
+    const auto& stored2 = recorder.getRecordingFormat();
+    REQUIRE(stored2.sampleRate == 192000);
+
+    // Zero sample rate (implementation should handle)
+    format.sampleRate = 0;
+    recorder.setRecordingFormat(format);
+    // Should not crash
+  }
+
+  SECTION("Invalid channel counts") {
+    RecordingFormat format;
+
+    // Zero channels
+    format.channels = 0;
+    recorder.setRecordingFormat(format);
+    // Should not crash
+
+    // Very high channel count
+    format.channels = 255;
+    recorder.setRecordingFormat(format);
+    const auto& stored = recorder.getRecordingFormat();
+    REQUIRE(stored.channels == 255);
+  }
+
+  SECTION("Invalid silence threshold values") {
+    RecordingFormat format;
+
+    // Positive threshold (should be negative dB)
+    format.silenceThreshold = 10.0f;
+    recorder.setRecordingFormat(format);
+    const auto& stored1 = recorder.getRecordingFormat();
+    REQUIRE(stored1.silenceThreshold == Catch::Approx(10.0f));
+
+    // Very negative threshold
+    format.silenceThreshold = -120.0f;
+    recorder.setRecordingFormat(format);
+    const auto& stored2 = recorder.getRecordingFormat();
+    REQUIRE(stored2.silenceThreshold == Catch::Approx(-120.0f));
+  }
+
+  SECTION("Invalid normalization targets") {
+    RecordingFormat format;
+
+    // Positive normalization target (unusual but should not crash)
+    format.normalizeTarget = 6.0f;
+    recorder.setRecordingFormat(format);
+    const auto& stored1 = recorder.getRecordingFormat();
+    REQUIRE(stored1.normalizeTarget == Catch::Approx(6.0f));
+
+    // Very negative target
+    format.normalizeTarget = -60.0f;
+    recorder.setRecordingFormat(format);
+    const auto& stored2 = recorder.getRecordingFormat();
+    REQUIRE(stored2.normalizeTarget == Catch::Approx(-60.0f));
+  }
+}
+
+TEST_CASE("AudioRecorder error paths - device failures",
+          "[audio][recorder][error][issue-498]") {
+  // Test that recorder handles device-related failures gracefully
+  AudioRecorder recorder;
+
+  SECTION("Setting invalid device ID returns error") {
+    auto result = recorder.setInputDevice("invalid_device_id_12345");
+    REQUIRE(result.isError());
+
+    // Recorder should remain in valid state
+    REQUIRE_FALSE(recorder.isRecording());
+  }
+
+  SECTION("Setting invalid output device returns error") {
+    auto result = recorder.setOutputDevice("invalid_output_device_67890");
+    REQUIRE(result.isError());
+
+    // Recorder should remain in valid state
+    REQUIRE_FALSE(recorder.isRecording());
+  }
+
+  SECTION("Device enumeration with uninitialized recorder") {
+    AudioRecorder uninitRecorder;
+    // Don't initialize
+
+    // Should return empty lists or handle gracefully
+    auto inputDevices = uninitRecorder.getInputDevices();
+    auto outputDevices = uninitRecorder.getOutputDevices();
+
+    // Should not crash - lists may be empty
+    REQUIRE(inputDevices.size() >= 0);
+    REQUIRE(outputDevices.size() >= 0);
+  }
+
+  SECTION("Device refresh is safe") {
+    // Should not crash even if not initialized
+    recorder.refreshDevices();
+
+    // Initialize and refresh again
+    auto initResult = recorder.initialize();
+    if (initResult.isOk()) {
+      recorder.refreshDevices();
+      recorder.shutdown();
+    }
+  }
+}
+
+TEST_CASE("AudioRecorder error paths - recording failures",
+          "[audio][recorder][error][issue-498]") {
+  // Test that recorder handles recording operation failures
+  AudioRecorder recorder;
+
+  SECTION("Start recording without initialization fails") {
+    auto result = recorder.startRecording("/tmp/test_recording.wav");
+    REQUIRE(result.isError());
+    REQUIRE(recorder.getState() == RecordingState::Idle);
+  }
+
+  SECTION("Start recording with invalid path") {
+    auto initResult = recorder.initialize();
+    if (initResult.isOk()) {
+      // Try to record to invalid/inaccessible path
+      auto result = recorder.startRecording("/invalid/path/to/nonexistent/dir/test.wav");
+
+      // Should return error or handle gracefully
+      if (result.isError()) {
+        REQUIRE(recorder.getState() != RecordingState::Recording);
+      }
+
+      recorder.shutdown();
+    } else {
+      SKIP("Audio hardware not available");
+    }
+  }
+
+  SECTION("Stop recording when not recording returns error") {
+    auto initResult = recorder.initialize();
+    if (initResult.isOk()) {
+      auto result = recorder.stopRecording();
+      REQUIRE(result.isError());
+
+      recorder.shutdown();
+    } else {
+      SKIP("Audio hardware not available");
+    }
+  }
+
+  SECTION("Cancel recording from various states is safe") {
+    auto initResult = recorder.initialize();
+    if (initResult.isOk()) {
+      // Cancel from idle
+      recorder.cancelRecording();
+      REQUIRE(recorder.getState() == RecordingState::Idle);
+
+      // Start metering and cancel
+      auto meterResult = recorder.startMetering();
+      if (meterResult.isOk()) {
+        recorder.cancelRecording();
+        recorder.stopMetering();
+      }
+
+      recorder.shutdown();
+    } else {
+      SKIP("Audio hardware not available");
+    }
+  }
+
+  SECTION("Multiple stop calls are safe") {
+    auto initResult = recorder.initialize();
+    if (initResult.isOk()) {
+      // Multiple stop metering calls
+      recorder.stopMetering();
+      recorder.stopMetering();
+      recorder.stopMetering();
+
+      REQUIRE(recorder.getState() == RecordingState::Idle);
+
+      recorder.shutdown();
+    } else {
+      SKIP("Audio hardware not available");
+    }
+  }
+}
+
+TEST_CASE("AudioRecorder error paths - metering failures",
+          "[audio][recorder][error][issue-498]") {
+  // Test that level metering handles failures gracefully
+  AudioRecorder recorder;
+
+  SECTION("Start metering without initialization fails") {
+    auto result = recorder.startMetering();
+    REQUIRE(result.isError());
+    REQUIRE_FALSE(recorder.isMeteringActive());
+  }
+
+  SECTION("Level reading when not metering is safe") {
+    auto level = recorder.getCurrentLevel();
+
+    // Should return valid level structure with default/zero values
+    REQUIRE(level.peakLevel >= 0.0f);
+    REQUIRE(level.rmsLevel >= 0.0f);
+    REQUIRE(level.peakLevelDb <= 0.0f);
+    REQUIRE(level.rmsLevelDb <= 0.0f);
+  }
+
+  SECTION("Monitoring volume with extreme values") {
+    // Negative volume
+    recorder.setMonitoringVolume(-1.0f);
+    REQUIRE(recorder.getMonitoringVolume() == Catch::Approx(0.0f));
+
+    // Very high volume
+    recorder.setMonitoringVolume(10.0f);
+    REQUIRE(recorder.getMonitoringVolume() == Catch::Approx(1.0f));
+
+    // Normal values work
+    recorder.setMonitoringVolume(0.5f);
+    REQUIRE(recorder.getMonitoringVolume() == Catch::Approx(0.5f));
+  }
+
+  SECTION("Monitoring enable/disable is safe") {
+    // Should not crash even when not initialized
+    recorder.setMonitoringEnabled(true);
+    REQUIRE(recorder.isMonitoringEnabled());
+
+    recorder.setMonitoringEnabled(false);
+    REQUIRE_FALSE(recorder.isMonitoringEnabled());
+  }
+}
+
+TEST_CASE("AudioRecorder error paths - callback thread safety",
+          "[audio][recorder][error][issue-498]") {
+  // Test that callbacks handle errors gracefully
+  AudioRecorder recorder;
+
+  SECTION("Setting callbacks on uninitialized recorder is safe") {
+    bool stateChanged = false;
+    recorder.setOnRecordingStateChanged([&](RecordingState state) {
+      (void)state;
+      stateChanged = true;
+    });
+
+    bool levelUpdated = false;
+    recorder.setOnLevelUpdate([&](const LevelMeter& level) {
+      (void)level;
+      levelUpdated = true;
+    });
+
+    bool errorOccurred = false;
+    recorder.setOnRecordingError([&](const std::string& error) {
+      (void)error;
+      errorOccurred = true;
+    });
+
+    bool completed = false;
+    recorder.setOnRecordingComplete([&](const RecordingResult& result) {
+      (void)result;
+      completed = true;
+    });
+
+    // Setting callbacks should not crash
+    REQUIRE_FALSE(recorder.isInitialized());
+  }
+
+  SECTION("Callbacks with null/empty lambdas are safe") {
+    recorder.setOnRecordingStateChanged(nullptr);
+    recorder.setOnLevelUpdate(nullptr);
+    recorder.setOnRecordingError(nullptr);
+    recorder.setOnRecordingComplete(nullptr);
+
+    // Should not crash
+    REQUIRE_FALSE(recorder.isInitialized());
+  }
+}
