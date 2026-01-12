@@ -1046,6 +1046,45 @@ TEST_CASE("test_vm_division_normal_operations", "[scripting][division]")
     }
 }
 
+// ============================================================================
+// Stack Underflow Tests - Issue #552
+// ============================================================================
+
+TEST_CASE("VM stack underflow detection - SHOW_CHARACTER", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // SHOW_CHARACTER expects 2 arguments on the stack (id, position)
+    // But we provide none - should detect underflow and halt
+    std::vector<Instruction> program = {
+        {OpCode::SHOW_CHARACTER, 0},  // Expects 2 stack args, but stack is empty
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"char1"};
+
+    vm.load(program, strings);
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM stack underflow detection - MOVE_CHARACTER", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // MOVE_CHARACTER expects at least 3 arguments on the stack
+    // (charId, posCode, duration) but we provide only 1
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1000},      // duration
+        {OpCode::MOVE_CHARACTER, 0},   // Expects 3+ stack args, but only 1 available
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"char1"};
+
+    vm.load(program, strings);
 // =========================================================================
 // CHOICE Opcode Stack Bounds Tests (Issue #508)
 // =========================================================================
@@ -1492,6 +1531,20 @@ TEST_CASE("test_vm_add_empty_stack", "[scripting][stack_underflow]")
     REQUIRE(vm.isHalted());
 }
 
+TEST_CASE("VM stack underflow detection - SAY", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // SAY expects 1 argument on the stack (speaker)
+    // But we provide none - should detect underflow and halt
+    std::vector<Instruction> program = {
+        {OpCode::SAY, 0},  // Expects 1 stack arg, but stack is empty
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"Hello world"};
+
+    vm.load(program, strings);
 TEST_CASE("test_vm_add_one_element_stack", "[scripting][stack_underflow]")
 {
     VirtualMachine vm;
@@ -1527,6 +1580,14 @@ TEST_CASE("test_vm_subtract_empty_stack", "[scripting][stack_underflow]")
     REQUIRE(vm.isHalted());
 }
 
+TEST_CASE("VM stack underflow detection - CHOICE", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // CHOICE expects count + 1 arguments on the stack
+    // (count choices + the count itself) but we provide none
+    std::vector<Instruction> program = {
+        {OpCode::CHOICE, 3},  // Expects 3 choices + count (4 total), but stack is empty
 TEST_CASE("test_vm_multiply_empty_stack", "[scripting][stack_underflow]")
 {
     VirtualMachine vm;
@@ -1544,6 +1605,20 @@ TEST_CASE("test_vm_multiply_empty_stack", "[scripting][stack_underflow]")
     REQUIRE(vm.isHalted());
 }
 
+TEST_CASE("VM stack underflow detection - TRANSITION", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // TRANSITION expects 1 argument on the stack (duration)
+    // But we provide none - should detect underflow and halt
+    std::vector<Instruction> program = {
+        {OpCode::TRANSITION, 0},  // Expects 1 stack arg, but stack is empty
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"fade"};
+
+    vm.load(program, strings);
 TEST_CASE("VM CHOICE opcode with insufficient stack - partial elements", "[scripting][choice][security]")
 {
     VirtualMachine vm;
@@ -1577,6 +1652,66 @@ TEST_CASE("test_vm_divide_empty_stack", "[scripting][stack_underflow]")
     REQUIRE(vm.isHalted());
 }
 
+TEST_CASE("VM stack underflow detection - partial underflow", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // SHOW_CHARACTER expects 2 arguments but we only provide 1
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},         // Push only position (1 arg)
+        {OpCode::SHOW_CHARACTER, 0},   // Expects 2 args (id, position)
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"char1"};
+
+    vm.load(program, strings);
+    vm.run();
+
+    // VM should halt due to stack underflow on second pop
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM stack underflow detection - multiple underflows", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // Multiple operations that could cause underflow
+    // VM should halt on the first underflow
+    std::vector<Instruction> program = {
+        {OpCode::SAY, 0},              // First underflow here
+        {OpCode::SHOW_CHARACTER, 1},   // Should never reach this
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"Hello", "char1"};
+
+    vm.load(program, strings);
+    vm.run();
+
+    // VM should halt on first underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM stack underflow - valid operations should not trigger", "[scripting][stack-underflow]")
+{
+    VirtualMachine vm;
+
+    // This should work correctly - no underflow
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 1},         // Push position
+        {OpCode::PUSH_INT, 0},         // Push id (will be replaced by default)
+        {OpCode::SHOW_CHARACTER, 0},   // Has enough args
+        {OpCode::HALT, 0}
+    };
+
+    std::vector<std::string> strings = {"char1"};
+
+    vm.load(program, strings);
+    vm.run();
+
+    // VM should complete successfully without underflow
+    REQUIRE(vm.isHalted());
 TEST_CASE("VM CHOICE opcode with zero choices", "[scripting][choice]")
 {
     VirtualMachine vm;
