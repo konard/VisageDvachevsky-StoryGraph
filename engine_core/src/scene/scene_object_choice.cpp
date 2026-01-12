@@ -182,7 +182,11 @@ void ChoiceUIObject::loadState(const SceneObjectState& state) {
 
   auto selIt = state.properties.find("selectedIndex");
   if (selIt != state.properties.end()) {
-    m_selectedIndex = std::stoi(selIt->second);
+    try {
+      m_selectedIndex = std::stoi(selIt->second);
+    } catch (...) {
+      m_selectedIndex = -1; // Default on parse error
+    }
   }
 }
 

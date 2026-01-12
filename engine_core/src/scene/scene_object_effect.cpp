@@ -100,12 +100,20 @@ void EffectOverlayObject::loadState(const SceneObjectState& state) {
 
   auto it = state.properties.find("effectType");
   if (it != state.properties.end()) {
-    m_effectType = static_cast<EffectType>(std::stoi(it->second));
+    try {
+      m_effectType = static_cast<EffectType>(std::stoi(it->second));
+    } catch (...) {
+      m_effectType = EffectType::None; // Default on parse error
+    }
   }
 
   it = state.properties.find("intensity");
   if (it != state.properties.end()) {
-    m_intensity = std::stof(it->second);
+    try {
+      m_intensity = std::stof(it->second);
+    } catch (...) {
+      m_intensity = 1.0f; // Default on parse error
+    }
   }
 
   it = state.properties.find("effectActive");

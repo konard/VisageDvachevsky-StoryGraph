@@ -228,7 +228,11 @@ void DialogueUIObject::loadState(const SceneObjectState& state) {
 
   it = state.properties.find("typewriterSpeed");
   if (it != state.properties.end()) {
-    m_typewriterSpeed = std::stof(it->second);
+    try {
+      m_typewriterSpeed = std::stof(it->second);
+    } catch (...) {
+      m_typewriterSpeed = 30.0f; // Default on parse error
+    }
   }
 }
 

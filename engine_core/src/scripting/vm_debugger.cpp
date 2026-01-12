@@ -541,9 +541,17 @@ bool VMDebugger::evaluateCondition(const std::string &condition) const {
       // String value - remove quotes
       compareValue = valueStr.substr(1, valueStr.length() - 2);
     } else if (valueStr.find('.') != std::string::npos) {
-      compareValue = std::stof(valueStr);
+      try {
+        compareValue = std::stof(valueStr);
+      } catch (...) {
+        compareValue = 0.0f; // Default on parse error
+      }
     } else {
-      compareValue = std::stoi(valueStr);
+      try {
+        compareValue = std::stoi(valueStr);
+      } catch (...) {
+        compareValue = 0; // Default on parse error
+      }
     }
 
     // Perform comparison
