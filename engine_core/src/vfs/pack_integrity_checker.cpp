@@ -18,12 +18,12 @@ namespace NovelMind::VFS {
 namespace {
 
 #ifdef NOVELMIND_HAS_OPENSSL
-bool tryComputeSha256(const u8 *data, usize size, std::array<u8, 32> &hash) {
+bool tryComputeSha256(const u8* data, usize size, std::array<u8, 32>& hash) {
   if (size > 0 && !data) {
     return false;
   }
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   if (!ctx) {
     return false;
   }
@@ -35,8 +35,7 @@ bool tryComputeSha256(const u8 *data, usize size, std::array<u8, 32> &hash) {
 
   unsigned int hashLen = 0;
   if (ok) {
-    ok = EVP_DigestFinal_ex(ctx, hash.data(), &hashLen) == 1 &&
-         hashLen == hash.size();
+    ok = EVP_DigestFinal_ex(ctx, hash.data(), &hashLen) == 1 && hashLen == hash.size();
   }
 
   EVP_MD_CTX_free(ctx);
@@ -57,14 +56,14 @@ std::string getOpenSslError() {
 } // namespace
 
 #ifdef NOVELMIND_HAS_OPENSSL
-void PackIntegrityChecker::EVPKeyDeleter::operator()(EVP_PKEY *key) const {
+void PackIntegrityChecker::EVPKeyDeleter::operator()(EVP_PKEY* key) const {
   if (key) {
     EVP_PKEY_free(key);
   }
 }
 #endif
 
-Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string &pem) {
+Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string& pem) {
 #ifdef NOVELMIND_HAS_OPENSSL
   if (pem.empty()) {
     return Result<void>::error("Public key PEM is empty");
@@ -76,11 +75,10 @@ Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string &pem) {
     return Result<void>::error("Failed to allocate BIO for public key");
   }
 
-  EVP_PKEY *key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
+  EVP_PKEY* key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
 
   if (!key) {
-    return Result<void>::error("Failed to parse public key PEM: " +
-                               getOpenSslError());
+    return Result<void>::error("Failed to parse public key PEM: " + getOpenSslError());
   }
 
   m_publicKey.reset(key);
@@ -91,8 +89,7 @@ Result<void> PackIntegrityChecker::setPublicKeyPem(const std::string &pem) {
 #endif
 }
 
-Result<void>
-PackIntegrityChecker::setPublicKeyFromFile(const std::string &path) {
+Result<void> PackIntegrityChecker::setPublicKeyFromFile(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open public key file: " + path);
@@ -105,8 +102,7 @@ PackIntegrityChecker::setPublicKeyFromFile(const std::string &path) {
   return setPublicKeyPem(pem);
 }
 
-Result<PackVerificationReport>
-PackIntegrityChecker::verifyHeader(const u8 *data, usize size) {
+Result<PackVerificationReport> PackIntegrityChecker::verifyHeader(const u8* data, usize size) {
   PackVerificationReport report;
 
   if (size < 64) {
@@ -129,8 +125,16 @@ PackIntegrityChecker::verifyHeader(const u8 *data, usize size) {
 
   if (versionMajor > detail::kPackVersionMajor) {
     report.result = PackVerificationResult::InvalidVersion;
-    report.message =
-        "Unsupported pack version: " + std::to_string(versionMajor);
+    report.message = "Unsupported pack version: " + std::to_string(versionMajor);
+    return Result<PackVerificationReport>::ok(report);
+  }
+
+  // Validate total size - offset 40 in the header struct
+  u64 totalSize;
+  std::memcpy(&totalSize, data + 40, sizeof(totalSize));
+  if (totalSize == 0) {
+    report.result = PackVerificationResult::CorruptedHeader;
+    report.message = "Invalid pack total size: cannot be zero";
     return Result<PackVerificationReport>::ok(report);
   }
 
@@ -139,13 +143,12 @@ PackIntegrityChecker::verifyHeader(const u8 *data, usize size) {
   return Result<PackVerificationReport>::ok(report);
 }
 
-Result<PackVerificationReport>
-PackIntegrityChecker::verifyResourceTable(const u8 *data, usize size,
-                                          u64 tableOffset, u32 resourceCount) {
+Result<PackVerificationReport> PackIntegrityChecker::verifyResourceTable(const u8* data, usize size,
+                                                                         u64 tableOffset,
+                                                                         u32 resourceCount) {
   PackVerificationReport report;
 
-  const usize requiredSize =
-      tableOffset + (resourceCount * detail::kResourceEntrySize);
+  const usize requiredSize = tableOffset + (resourceCount * detail::kResourceEntrySize);
 
   if (size < requiredSize) {
     report.result = PackVerificationResult::CorruptedResourceTable;
@@ -162,8 +165,7 @@ PackIntegrityChecker::verifyResourceTable(const u8 *data, usize size,
 
     if (dataOffset >= size) {
       report.result = PackVerificationResult::CorruptedResourceTable;
-      report.message =
-          "Invalid resource data offset in entry " + std::to_string(i);
+      report.message = "Invalid resource data offset in entry " + std::to_string(i);
       report.errorOffset = static_cast<u32>(entryOffset);
       return Result<PackVerificationReport>::ok(report);
     }
@@ -174,9 +176,9 @@ PackIntegrityChecker::verifyResourceTable(const u8 *data, usize size,
   return Result<PackVerificationReport>::ok(report);
 }
 
-Result<PackVerificationReport>
-PackIntegrityChecker::verifyResource(const u8 *data, usize size, u64 offset,
-                                     usize resourceSize, u32 expectedChecksum) {
+Result<PackVerificationReport> PackIntegrityChecker::verifyResource(const u8* data, usize size,
+                                                                    u64 offset, usize resourceSize,
+                                                                    u32 expectedChecksum) {
   PackVerificationReport report;
 
   if (offset + resourceSize > size) {
@@ -190,9 +192,8 @@ PackIntegrityChecker::verifyResource(const u8 *data, usize size, u64 offset,
 
   if (actualChecksum != expectedChecksum) {
     report.result = PackVerificationResult::ChecksumMismatch;
-    report.message = "Resource checksum mismatch: expected " +
-                     std::to_string(expectedChecksum) + ", got " +
-                     std::to_string(actualChecksum);
+    report.message = "Resource checksum mismatch: expected " + std::to_string(expectedChecksum) +
+                     ", got " + std::to_string(actualChecksum);
     report.errorOffset = static_cast<u32>(offset);
     return Result<PackVerificationReport>::ok(report);
   }
@@ -202,8 +203,9 @@ PackIntegrityChecker::verifyResource(const u8 *data, usize size, u64 offset,
   return Result<PackVerificationReport>::ok(report);
 }
 
-Result<PackVerificationReport> PackIntegrityChecker::verifyPackSignature(
-    const u8 *data, usize size, const u8 *signature, usize signatureSize) {
+Result<PackVerificationReport> PackIntegrityChecker::verifyPackSignature(const u8* data, usize size,
+                                                                         const u8* signature,
+                                                                         usize signatureSize) {
   PackVerificationReport report;
 
 #ifdef NOVELMIND_HAS_OPENSSL
@@ -225,32 +227,28 @@ Result<PackVerificationReport> PackIntegrityChecker::verifyPackSignature(
     return Result<PackVerificationReport>::ok(report);
   }
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   if (!ctx) {
     report.result = PackVerificationResult::SignatureInvalid;
     report.message = "Failed to create signature verification context";
     return Result<PackVerificationReport>::ok(report);
   }
 
-  if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr,
-                           m_publicKey.get()) != 1) {
+  if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr, m_publicKey.get()) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message =
-        "Failed to initialize signature verification: " + getOpenSslError();
+    report.message = "Failed to initialize signature verification: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
 
   if (EVP_DigestVerifyUpdate(ctx, data, static_cast<size_t>(size)) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message =
-        "Signature verification update failed: " + getOpenSslError();
+    report.message = "Signature verification update failed: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
 
-  int verify =
-      EVP_DigestVerifyFinal(ctx, signature, static_cast<size_t>(signatureSize));
+  int verify = EVP_DigestVerifyFinal(ctx, signature, static_cast<size_t>(signatureSize));
   EVP_MD_CTX_free(ctx);
 
   if (verify == 1) {
@@ -276,9 +274,8 @@ Result<PackVerificationReport> PackIntegrityChecker::verifyPackSignature(
 }
 
 Result<PackVerificationReport>
-PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
-                                                usize size, const u8 *signature,
-                                                usize signatureSize) {
+PackIntegrityChecker::verifyPackSignatureStream(std::istream& stream, usize size,
+                                                const u8* signature, usize signatureSize) {
   PackVerificationReport report;
 
 #ifdef NOVELMIND_HAS_OPENSSL
@@ -294,18 +291,16 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
     return Result<PackVerificationReport>::ok(report);
   }
 
-  EVP_MD_CTX *ctx = EVP_MD_CTX_new();
+  EVP_MD_CTX* ctx = EVP_MD_CTX_new();
   if (!ctx) {
     report.result = PackVerificationResult::SignatureInvalid;
     report.message = "Failed to create signature verification context";
     return Result<PackVerificationReport>::ok(report);
   }
 
-  if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr,
-                           m_publicKey.get()) != 1) {
+  if (EVP_DigestVerifyInit(ctx, nullptr, EVP_sha256(), nullptr, m_publicKey.get()) != 1) {
     report.result = PackVerificationResult::SignatureInvalid;
-    report.message =
-        "Failed to initialize signature verification: " + getOpenSslError();
+    report.message = "Failed to initialize signature verification: " + getOpenSslError();
     EVP_MD_CTX_free(ctx);
     return Result<PackVerificationReport>::ok(report);
   }
@@ -316,8 +311,7 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
 
   while (remaining > 0) {
     const usize toRead = std::min(remaining, kChunkSize);
-    stream.read(reinterpret_cast<char *>(buffer.data()),
-                static_cast<std::streamsize>(toRead));
+    stream.read(reinterpret_cast<char*>(buffer.data()), static_cast<std::streamsize>(toRead));
     const std::streamsize readCount = stream.gcount();
     if (readCount <= 0) {
       report.result = PackVerificationResult::SignatureInvalid;
@@ -326,11 +320,9 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
       return Result<PackVerificationReport>::ok(report);
     }
 
-    if (EVP_DigestVerifyUpdate(ctx, buffer.data(),
-                               static_cast<size_t>(readCount)) != 1) {
+    if (EVP_DigestVerifyUpdate(ctx, buffer.data(), static_cast<size_t>(readCount)) != 1) {
       report.result = PackVerificationResult::SignatureInvalid;
-      report.message =
-          "Signature verification update failed: " + getOpenSslError();
+      report.message = "Signature verification update failed: " + getOpenSslError();
       EVP_MD_CTX_free(ctx);
       return Result<PackVerificationReport>::ok(report);
     }
@@ -363,13 +355,12 @@ PackIntegrityChecker::verifyPackSignatureStream(std::istream &stream,
   return Result<PackVerificationReport>::ok(report);
 }
 
-u32 PackIntegrityChecker::calculateCrc32(const u8 *data, usize size) {
+u32 PackIntegrityChecker::calculateCrc32(const u8* data, usize size) {
   u32 crc = detail::updateCrc32(0xFFFFFFFF, data, size);
   return ~crc;
 }
 
-std::array<u8, 32> PackIntegrityChecker::calculateSha256(const u8 *data,
-                                                         usize size) {
+std::array<u8, 32> PackIntegrityChecker::calculateSha256(const u8* data, usize size) {
   std::array<u8, 32> hash{};
 
 #ifdef NOVELMIND_HAS_OPENSSL

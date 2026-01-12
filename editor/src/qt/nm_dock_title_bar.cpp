@@ -13,7 +13,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMDockTitleBar::NMDockTitleBar(QWidget *parent) : QWidget(parent) {
+NMDockTitleBar::NMDockTitleBar(QWidget* parent) : QWidget(parent) {
   setupUi();
   updateStyle();
 }
@@ -55,8 +55,7 @@ void NMDockTitleBar::setupUi() {
   m_settingsButton = new QPushButton(this);
   createButton(m_settingsButton, "settings", "Panel settings");
   m_layout->addWidget(m_settingsButton);
-  connect(m_settingsButton, &QPushButton::clicked, this,
-          &NMDockTitleBar::settingsClicked);
+  connect(m_settingsButton, &QPushButton::clicked, this, &NMDockTitleBar::settingsClicked);
 
   // Minimize button
   m_minimizeButton = new QPushButton(this);
@@ -71,27 +70,25 @@ void NMDockTitleBar::setupUi() {
   m_floatButton = new QPushButton(this);
   createButton(m_floatButton, "external-link", "Float/Dock panel");
   m_layout->addWidget(m_floatButton);
-  connect(m_floatButton, &QPushButton::clicked, this,
-          &NMDockTitleBar::floatClicked);
+  connect(m_floatButton, &QPushButton::clicked, this, &NMDockTitleBar::floatClicked);
 
   // Close button
   m_closeButton = new QPushButton(this);
   createButton(m_closeButton, "file-close", "Close panel");
   m_layout->addWidget(m_closeButton);
-  connect(m_closeButton, &QPushButton::clicked, this,
-          &NMDockTitleBar::closeClicked);
+  connect(m_closeButton, &QPushButton::clicked, this, &NMDockTitleBar::closeClicked);
 
   // Initial button visibility
   updateButtonVisibility();
 }
 
-void NMDockTitleBar::createButton(QPushButton *&button, const QString &iconName,
-                                  const QString &tooltip) {
+void NMDockTitleBar::createButton(QPushButton*& button, const QString& iconName,
+                                  const QString& tooltip) {
   if (!button) {
     return;
   }
 
-  auto &iconManager = NMIconManager::instance();
+  auto& iconManager = NMIconManager::instance();
   QColor buttonColor(180, 180, 180);
 
   button->setIcon(iconManager.getIcon(iconName, 14, buttonColor));
@@ -115,12 +112,12 @@ void NMDockTitleBar::createButton(QPushButton *&button, const QString &iconName,
   )");
 }
 
-void NMDockTitleBar::setTitle(const QString &title) {
+void NMDockTitleBar::setTitle(const QString& title) {
   m_title = title;
   m_titleLabel->setText(title);
 }
 
-void NMDockTitleBar::setIcon(const QIcon &icon) {
+void NMDockTitleBar::setIcon(const QIcon& icon) {
   m_icon = icon;
   if (!icon.isNull()) {
     m_iconLabel->setPixmap(icon.pixmap(16, 16));
@@ -135,7 +132,7 @@ void NMDockTitleBar::setPinned(bool pinned) {
     m_pinned = pinned;
 
     // Update pin button icon
-    auto &iconManager = NMIconManager::instance();
+    auto& iconManager = NMIconManager::instance();
     QColor buttonColor(180, 180, 180);
     QString iconName = pinned ? "pin" : "unpin";
     m_pinButton->setIcon(iconManager.getIcon(iconName, 14, buttonColor));
@@ -150,7 +147,7 @@ void NMDockTitleBar::setMinimized(bool minimized) {
     m_minimized = minimized;
 
     // Update minimize button icon
-    auto &iconManager = NMIconManager::instance();
+    auto& iconManager = NMIconManager::instance();
     QColor buttonColor(180, 180, 180);
     QString iconName = minimized ? "chevron-down" : "chevron-up";
     m_minimizeButton->setIcon(iconManager.getIcon(iconName, 14, buttonColor));
@@ -197,10 +194,9 @@ void NMDockTitleBar::updateStyle() {
 
   // Update title label color
   QColor textColor = m_active ? QColor(220, 220, 220) : QColor(160, 160, 160);
-  m_titleLabel->setStyleSheet(
-      QString("QLabel { font-weight: %1; font-size: 12px; color: %2; }")
-          .arg(m_active ? "600" : "500")
-          .arg(textColor.name()));
+  m_titleLabel->setStyleSheet(QString("QLabel { font-weight: %1; font-size: 12px; color: %2; }")
+                                  .arg(m_active ? "600" : "500")
+                                  .arg(textColor.name()));
 
   update();
 }
@@ -216,7 +212,7 @@ void NMDockTitleBar::updateButtonVisibility() {
   m_closeButton->setVisible(true);
 }
 
-void NMDockTitleBar::mousePressEvent(QMouseEvent *event) {
+void NMDockTitleBar::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_dragStartPos = event->pos();
     m_dragging = true;
@@ -224,7 +220,7 @@ void NMDockTitleBar::mousePressEvent(QMouseEvent *event) {
   QWidget::mousePressEvent(event);
 }
 
-void NMDockTitleBar::mouseMoveEvent(QMouseEvent *event) {
+void NMDockTitleBar::mouseMoveEvent(QMouseEvent* event) {
   if (m_dragging && (event->buttons() & Qt::LeftButton)) {
     // Let the dock widget handle dragging
     // We just track that we're dragging
@@ -235,21 +231,21 @@ void NMDockTitleBar::mouseMoveEvent(QMouseEvent *event) {
   QWidget::mouseMoveEvent(event);
 }
 
-void NMDockTitleBar::mouseReleaseEvent(QMouseEvent *event) {
+void NMDockTitleBar::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_dragging = false;
   }
   QWidget::mouseReleaseEvent(event);
 }
 
-void NMDockTitleBar::mouseDoubleClickEvent(QMouseEvent *event) {
+void NMDockTitleBar::mouseDoubleClickEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     emit titleDoubleClicked();
   }
   QWidget::mouseDoubleClickEvent(event);
 }
 
-void NMDockTitleBar::paintEvent(QPaintEvent *event) {
+void NMDockTitleBar::paintEvent(QPaintEvent* event) {
   // Paint background with style
   QStyleOption opt;
   opt.initFrom(this);

@@ -24,8 +24,7 @@ void NMScriptEditorPanel::toggleScenePreview() {
     if (m_mainSplitter) {
       int totalWidth = m_mainSplitter->width();
       QList<int> sizes;
-      sizes << static_cast<int>(totalWidth * 0.6)
-            << static_cast<int>(totalWidth * 0.4);
+      sizes << static_cast<int>(totalWidth * 0.6) << static_cast<int>(totalWidth * 0.4);
       m_mainSplitter->setSizes(sizes);
     }
 
@@ -57,7 +56,7 @@ void NMScriptEditorPanel::onScriptTextChanged() {
   }
 
   // Get current editor
-  NMScriptEditor *editor = currentEditor();
+  NMScriptEditor* editor = currentEditor();
   if (!editor) {
     return;
   }
@@ -72,8 +71,7 @@ void NMScriptEditorPanel::onScriptTextChanged() {
 
   // Set assets root from project (project_path/assets)
   std::string projectPath = ProjectManager::instance().getProjectPath();
-  QString assetsRoot =
-      QString::fromStdString(projectPath.empty() ? "" : projectPath + "/assets");
+  QString assetsRoot = QString::fromStdString(projectPath.empty() ? "" : projectPath + "/assets");
   m_scenePreview->setAssetsRoot(assetsRoot);
 
   // Update preview content

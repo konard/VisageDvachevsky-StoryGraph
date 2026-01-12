@@ -48,7 +48,7 @@ public:
    * @param title The panel title shown in the title bar
    * @param parent Parent widget (usually the main window)
    */
-  explicit NMDockPanel(const QString &title, QWidget *parent = nullptr);
+  explicit NMDockPanel(const QString& title, QWidget* parent = nullptr);
 
   /**
    * @brief Virtual destructor
@@ -66,13 +66,13 @@ public:
    * This also registers the panel with the guided learning anchor registry,
    * allowing the tutorial system to show hints attached to this panel.
    */
-  void setPanelId(const QString &id);
+  void setPanelId(const QString& id);
 
   /**
    * @brief Set panel icon (displayed in title bar)
    * @param icon The icon to display
    */
-  void setPanelIcon(const QIcon &icon);
+  void setPanelIcon(const QIcon& icon);
 
   /**
    * @brief Enable/disable settings button in title bar
@@ -89,7 +89,7 @@ public:
   /**
    * @brief Get custom title bar widget
    */
-  [[nodiscard]] NMDockTitleBar *titleBar() const { return m_customTitleBar; }
+  [[nodiscard]] NMDockTitleBar* titleBar() const { return m_customTitleBar; }
 
   /**
    * @brief Called when the panel should update its contents
@@ -136,7 +136,7 @@ public:
    * @brief Set the minimum size for this panel
    * @param size Minimum size
    */
-  void setMinimumPanelSize(const QSize &size);
+  void setMinimumPanelSize(const QSize& size);
 
   /**
    * @brief Get the default minimum size for panels
@@ -158,25 +158,25 @@ signals:
   /**
    * @brief Emitted when the panel's title changes
    */
-  void titleChanged(const QString &newTitle);
+  void titleChanged(const QString& newTitle);
 
 protected:
   /**
    * @brief Set the main content widget for this panel
    * @param widget The content widget
    */
-  void setContentWidget(QWidget *widget);
+  void setContentWidget(QWidget* widget);
 
   /**
    * @brief Get the content widget
    */
-  [[nodiscard]] QWidget *contentWidget() const { return m_contentWidget; }
+  [[nodiscard]] QWidget* contentWidget() const { return m_contentWidget; }
 
   // Qt event overrides
-  void focusInEvent(QFocusEvent *event) override;
-  void focusOutEvent(QFocusEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
-  void showEvent(QShowEvent *event) override;
+  void focusInEvent(QFocusEvent* event) override;
+  void focusOutEvent(QFocusEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void showEvent(QShowEvent* event) override;
 
   /**
    * @brief Register a UI element as an anchor for the tutorial system
@@ -187,25 +187,24 @@ protected:
    * The full anchor ID will be "{panelId}.{elementId}".
    * Use this to make specific UI elements targetable by tutorials.
    */
-  void registerAnchor(const std::string &elementId, QWidget *widget,
-                      const std::string &description = "");
+  void registerAnchor(const std::string& elementId, QWidget* widget,
+                      const std::string& description = "");
 
 private:
   void setupCustomTitleBar();
   void connectTitleBarSignals();
 
   QString m_panelId;
-  QWidget *m_contentWidget = nullptr;
+  QWidget* m_contentWidget = nullptr;
   bool m_initialized = false;
   bool m_inShowEvent = false; // Re-entrance guard for showEvent
 
   // Custom title bar (Issue #293)
-  NMDockTitleBar *m_customTitleBar = nullptr;
+  NMDockTitleBar* m_customTitleBar = nullptr;
 
   // Anchor registration for guided learning system
   std::unique_ptr<guided_learning::ScopedAnchorRegistration> m_panelAnchor;
-  std::vector<std::unique_ptr<guided_learning::ScopedAnchorRegistration>>
-      m_elementAnchors;
+  std::vector<std::unique_ptr<guided_learning::ScopedAnchorRegistration>> m_elementAnchors;
 };
 
 } // namespace NovelMind::editor::qt

@@ -17,15 +17,14 @@
 
 namespace NovelMind::editor::qt::detail {
 
-void applyDialogFrameStyle(QDialog *dialog) {
+void applyDialogFrameStyle(QDialog* dialog) {
   if (!dialog) {
     return;
   }
-  const auto &p = NMStyleManager::instance().palette();
+  const auto& p = NMStyleManager::instance().palette();
 
   // D4: Enhanced dialog styling for consistent UX
-  dialog->setStyleSheet(
-      QString(R"(
+  dialog->setStyleSheet(QString(R"(
     QDialog {
       background-color: %1;
       border: 1px solid %2;
@@ -120,21 +119,21 @@ void applyDialogFrameStyle(QDialog *dialog) {
       border-color: %4;
     }
   )")
-          .arg(NMStyleManager::colorToStyleString(p.bgDark))
-          .arg(NMStyleManager::colorToStyleString(p.borderLight))
-          .arg(NMStyleManager::colorToStyleString(p.textPrimary))
-          .arg(NMStyleManager::colorToStyleString(p.accentPrimary))
-          .arg(NMStyleManager::colorToStyleString(p.textPrimary))
-          .arg(NMStyleManager::colorToStyleString(p.accentHover))
-          .arg(NMStyleManager::colorToStyleString(p.bgMedium))
-          .arg(NMStyleManager::colorToStyleString(p.borderLight))
-          .arg(NMStyleManager::colorToStyleString(p.bgLight))
-          .arg(NMStyleManager::colorToStyleString(p.textSecondary))
-          .arg(DIALOG_BUTTON_MIN_WIDTH)
-          .arg(DIALOG_BUTTON_HEIGHT));
+                            .arg(NMStyleManager::colorToStyleString(p.bgDark))
+                            .arg(NMStyleManager::colorToStyleString(p.borderLight))
+                            .arg(NMStyleManager::colorToStyleString(p.textPrimary))
+                            .arg(NMStyleManager::colorToStyleString(p.accentPrimary))
+                            .arg(NMStyleManager::colorToStyleString(p.textPrimary))
+                            .arg(NMStyleManager::colorToStyleString(p.accentHover))
+                            .arg(NMStyleManager::colorToStyleString(p.bgMedium))
+                            .arg(NMStyleManager::colorToStyleString(p.borderLight))
+                            .arg(NMStyleManager::colorToStyleString(p.bgLight))
+                            .arg(NMStyleManager::colorToStyleString(p.textSecondary))
+                            .arg(DIALOG_BUTTON_MIN_WIDTH)
+                            .arg(DIALOG_BUTTON_HEIGHT));
 }
 
-void animateDialogIn(QDialog *dialog) {
+void animateDialogIn(QDialog* dialog) {
   if (!dialog) {
     return;
   }
@@ -143,7 +142,7 @@ void animateDialogIn(QDialog *dialog) {
     if (!dialog || !dialog->isVisible()) {
       return;
     }
-    auto *anim = new QPropertyAnimation(dialog, "windowOpacity", dialog);
+    auto* anim = new QPropertyAnimation(dialog, "windowOpacity", dialog);
     anim->setDuration(160);
     anim->setStartValue(0.0);
     anim->setEndValue(1.0);
@@ -151,22 +150,20 @@ void animateDialogIn(QDialog *dialog) {
   });
 }
 
-QHBoxLayout *createStandardButtonBar(const QString &primaryText,
-                                     const QString &secondaryText,
-                                     QPushButton **outPrimary,
-                                     QPushButton **outSecondary,
-                                     QWidget *parent) {
-  auto *layout = new QHBoxLayout();
+QHBoxLayout* createStandardButtonBar(const QString& primaryText, const QString& secondaryText,
+                                     QPushButton** outPrimary, QPushButton** outSecondary,
+                                     QWidget* parent) {
+  auto* layout = new QHBoxLayout();
   layout->setContentsMargins(0, DIALOG_SPACING, 0, 0);
   layout->setSpacing(DIALOG_SPACING);
 
   // D4: Secondary button on left, primary on right (platform standard)
-  auto *secondaryButton = new QPushButton(secondaryText, parent);
+  auto* secondaryButton = new QPushButton(secondaryText, parent);
   secondaryButton->setObjectName("NMSecondaryButton");
   secondaryButton->setMinimumWidth(DIALOG_BUTTON_MIN_WIDTH);
   secondaryButton->setMinimumHeight(DIALOG_BUTTON_HEIGHT);
 
-  auto *primaryButton = new QPushButton(primaryText, parent);
+  auto* primaryButton = new QPushButton(primaryText, parent);
   primaryButton->setObjectName("NMPrimaryButton");
   primaryButton->setMinimumWidth(DIALOG_BUTTON_MIN_WIDTH);
   primaryButton->setMinimumHeight(DIALOG_BUTTON_HEIGHT);
@@ -186,8 +183,7 @@ QHBoxLayout *createStandardButtonBar(const QString &primaryText,
   return layout;
 }
 
-void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
-                          const QString &errorMessage) {
+void applyValidationStyle(QLineEdit* lineEdit, bool isValid, const QString& errorMessage) {
   if (!lineEdit) {
     return;
   }
@@ -205,39 +201,37 @@ void applyValidationStyle(QLineEdit *lineEdit, bool isValid,
   lineEdit->style()->polish(lineEdit);
 }
 
-void setupInputValidation(
-    QLineEdit *lineEdit, std::function<bool(const QString &)> validator,
-    std::function<QString(const QString &)> errorMessageProvider,
-    std::function<void(bool)> onValidChanged) {
+void setupInputValidation(QLineEdit* lineEdit, std::function<bool(const QString&)> validator,
+                          std::function<QString(const QString&)> errorMessageProvider,
+                          std::function<void(bool)> onValidChanged) {
   if (!lineEdit || !validator) {
     return;
   }
 
   // Track previous validity state to only call callback on changes
-  auto *prevValid = new bool(true);
+  auto* prevValid = new bool(true);
 
-  QObject::connect(lineEdit, &QLineEdit::textChanged,
-                   [lineEdit, validator, errorMessageProvider, onValidChanged,
-                    prevValid](const QString &text) {
-                     bool isValid = validator(text);
-                     QString errorMsg;
-                     if (!isValid && errorMessageProvider) {
-                       errorMsg = errorMessageProvider(text);
-                     }
-                     applyValidationStyle(lineEdit, isValid, errorMsg);
+  QObject::connect(
+      lineEdit, &QLineEdit::textChanged,
+      [lineEdit, validator, errorMessageProvider, onValidChanged, prevValid](const QString& text) {
+        bool isValid = validator(text);
+        QString errorMsg;
+        if (!isValid && errorMessageProvider) {
+          errorMsg = errorMessageProvider(text);
+        }
+        applyValidationStyle(lineEdit, isValid, errorMsg);
 
-                     if (onValidChanged && isValid != *prevValid) {
-                       onValidChanged(isValid);
-                     }
-                     *prevValid = isValid;
-                   });
+        if (onValidChanged && isValid != *prevValid) {
+          onValidChanged(isValid);
+        }
+        *prevValid = isValid;
+      });
 
   // Clean up tracking variable when widget is destroyed
-  QObject::connect(lineEdit, &QObject::destroyed,
-                   [prevValid]() { delete prevValid; });
+  QObject::connect(lineEdit, &QObject::destroyed, [prevValid]() { delete prevValid; });
 }
 
-void setupDialogKeyboardBehavior(QDialog *dialog, QPushButton *primaryButton) {
+void setupDialogKeyboardBehavior(QDialog* dialog, QPushButton* primaryButton) {
   if (!dialog) {
     return;
   }

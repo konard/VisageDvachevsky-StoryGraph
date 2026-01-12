@@ -39,58 +39,57 @@ public:
    * @param id Unique identifier for this character instance
    * @param characterId The character definition ID (from NM Script)
    */
-  CharacterSprite(const std::string &id, const std::string &characterId);
+  CharacterSprite(const std::string& id, const std::string& characterId);
   ~CharacterSprite() override;
 
   /**
    * @brief Set the character's display name
    */
-  void setDisplayName(const std::string &name);
+  void setDisplayName(const std::string& name);
 
   /**
    * @brief Get the character's display name
    */
-  [[nodiscard]] const std::string &getDisplayName() const;
+  [[nodiscard]] const std::string& getDisplayName() const;
 
   /**
    * @brief Set the character definition ID
    */
-  void setCharacterId(const std::string &characterId);
+  void setCharacterId(const std::string& characterId);
 
   /**
    * @brief Get the character definition ID
    */
-  [[nodiscard]] const std::string &getCharacterId() const;
+  [[nodiscard]] const std::string& getCharacterId() const;
 
   /**
    * @brief Set the name color for dialogue display
    */
-  void setNameColor(const renderer::Color &color);
+  void setNameColor(const renderer::Color& color);
 
   /**
    * @brief Get the name color
    */
-  [[nodiscard]] const renderer::Color &getNameColor() const;
+  [[nodiscard]] const renderer::Color& getNameColor() const;
 
   /**
    * @brief Add a sprite texture for a specific expression/pose
    * @param expressionId Identifier for this expression (e.g., "happy", "sad")
    * @param texture The texture to use for this expression
    */
-  void addExpression(const std::string &expressionId,
-                     std::shared_ptr<renderer::Texture> texture);
+  void addExpression(const std::string& expressionId, std::shared_ptr<renderer::Texture> texture);
 
   /**
    * @brief Set the current expression
    * @param expressionId The expression to display
    * @param immediate If true, change immediately; if false, use transition
    */
-  void setExpression(const std::string &expressionId, bool immediate = true);
+  void setExpression(const std::string& expressionId, bool immediate = true);
 
   /**
    * @brief Get the current expression ID
    */
-  [[nodiscard]] const std::string &getCurrentExpression() const;
+  [[nodiscard]] const std::string& getCurrentExpression() const;
 
   /**
    * @brief Set position using a preset
@@ -98,8 +97,7 @@ public:
    * @param screenWidth The screen width for calculating position
    * @param screenHeight The screen height for calculating position
    */
-  void setPresetPosition(CharacterPosition position, f32 screenWidth,
-                         f32 screenHeight);
+  void setPresetPosition(CharacterPosition position, f32 screenWidth, f32 screenHeight);
 
   /**
    * @brief Set whether the sprite should be flipped horizontally
@@ -137,15 +135,14 @@ public:
   /**
    * @brief Render the character sprite
    */
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
 private:
   std::string m_characterId;
   std::string m_displayName;
   renderer::Color m_nameColor;
 
-  std::unordered_map<std::string, std::shared_ptr<renderer::Texture>>
-      m_expressions;
+  std::unordered_map<std::string, std::shared_ptr<renderer::Texture>> m_expressions;
   std::string m_currentExpression;
 
   bool m_flipped;

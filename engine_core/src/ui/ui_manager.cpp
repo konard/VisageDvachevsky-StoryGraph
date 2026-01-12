@@ -13,7 +13,9 @@ namespace NovelMind::ui {
 // UIManager Implementation
 // ============================================================================
 
-UIManager::UIManager() { m_theme = Theme::createDarkTheme(); }
+UIManager::UIManager() {
+  m_theme = Theme::createDarkTheme();
+}
 
 UIManager::~UIManager() = default;
 
@@ -22,9 +24,11 @@ void UIManager::setRoot(std::shared_ptr<Widget> root) {
   m_layoutDirty = true;
 }
 
-void UIManager::setTheme(const Theme &theme) { m_theme = theme; }
+void UIManager::setTheme(const Theme& theme) {
+  m_theme = theme;
+}
 
-void UIManager::setFocus(Widget *widget) {
+void UIManager::setFocus(Widget* widget) {
   if (m_focusedWidget != widget) {
     if (m_focusedWidget) {
       m_focusedWidget->releaseFocus();
@@ -44,10 +48,12 @@ void UIManager::setFocus(Widget *widget) {
   }
 }
 
-void UIManager::clearFocus() { setFocus(nullptr); }
+void UIManager::clearFocus() {
+  setFocus(nullptr);
+}
 
 void UIManager::focusNext() {
-  std::vector<Widget *> focusable;
+  std::vector<Widget*> focusable;
   if (m_root) {
     collectFocusableWidgets(m_root.get(), focusable);
   }
@@ -65,7 +71,7 @@ void UIManager::focusNext() {
 }
 
 void UIManager::focusPrevious() {
-  std::vector<Widget *> focusable;
+  std::vector<Widget*> focusable;
   if (m_root) {
     collectFocusableWidgets(m_root.get(), focusable);
   }
@@ -101,17 +107,17 @@ void UIManager::update(f64 deltaTime) {
     m_root->update(deltaTime);
   }
 
-  for (auto &modal : m_modalStack) {
+  for (auto& modal : m_modalStack) {
     modal->update(deltaTime);
   }
 }
 
-void UIManager::render(renderer::IRenderer &renderer) {
+void UIManager::render(renderer::IRenderer& renderer) {
   if (m_root) {
     m_root->render(renderer);
   }
 
-  for (auto &modal : m_modalStack) {
+  for (auto& modal : m_modalStack) {
     modal->render(renderer);
   }
 }
@@ -122,7 +128,7 @@ void UIManager::handleMouseMove(f32 x, f32 y) {
   m_mouseX = x;
   m_mouseY = y;
 
-  Widget *newHovered = hitTest(x, y);
+  Widget* newHovered = hitTest(x, y);
 
   if (newHovered != m_hoveredWidget) {
     if (m_hoveredWidget) {
@@ -164,7 +170,7 @@ void UIManager::handleMouseMove(f32 x, f32 y) {
 void UIManager::handleMouseDown(MouseButton button, f32 x, f32 y) {
   m_mouseDown[static_cast<int>(button)] = true;
 
-  Widget *target = hitTest(x, y);
+  Widget* target = hitTest(x, y);
 
   UIEvent event;
   event.type = UIEventType::MouseDown;
@@ -199,7 +205,7 @@ void UIManager::handleMouseUp(MouseButton button, f32 x, f32 y) {
   upEvent.ctrl = m_ctrlDown;
   upEvent.alt = m_altDown;
 
-  Widget *target = m_pressedWidget ? m_pressedWidget : hitTest(x, y);
+  Widget* target = m_pressedWidget ? m_pressedWidget : hitTest(x, y);
   if (target) {
     target->handleEvent(upEvent);
 
@@ -231,7 +237,7 @@ void UIManager::handleMouseScroll(f32 deltaX, f32 deltaY) {
   event.ctrl = m_ctrlDown;
   event.alt = m_altDown;
 
-  Widget *target = hitTest(m_mouseX, m_mouseY);
+  Widget* target = hitTest(m_mouseX, m_mouseY);
   if (target) {
     target->handleEvent(event);
   }
@@ -301,10 +307,10 @@ void UIManager::handleTextInput(char character) {
   }
 }
 
-Widget *UIManager::hitTest(f32 x, f32 y) {
+Widget* UIManager::hitTest(f32 x, f32 y) {
   // Check modals first (in reverse order)
   for (auto it = m_modalStack.rbegin(); it != m_modalStack.rend(); ++it) {
-    if (Widget *hit = hitTestRecursive(it->get(), x, y)) {
+    if (Widget* hit = hitTestRecursive(it->get(), x, y)) {
       return hit;
     }
   }
@@ -317,21 +323,23 @@ Widget *UIManager::hitTest(f32 x, f32 y) {
   return nullptr;
 }
 
-void UIManager::invalidateLayout() { m_layoutDirty = true; }
+void UIManager::invalidateLayout() {
+  m_layoutDirty = true;
+}
 
 void UIManager::performLayout() {
   if (m_root) {
     m_root->layout();
   }
 
-  for (auto &modal : m_modalStack) {
+  for (auto& modal : m_modalStack) {
     modal->layout();
   }
 
   m_layoutDirty = false;
 }
 
-Widget *UIManager::hitTestRecursive(Widget *widget, f32 x, f32 y) {
+Widget* UIManager::hitTestRecursive(Widget* widget, f32 x, f32 y) {
   if (!widget->isVisible()) {
     return nullptr;
   }
@@ -342,10 +350,10 @@ Widget *UIManager::hitTestRecursive(Widget *widget, f32 x, f32 y) {
   }
 
   // Check children in reverse order (top-most first)
-  if (auto *container = dynamic_cast<Container *>(widget)) {
-    const auto &children = container->getChildren();
+  if (auto* container = dynamic_cast<Container*>(widget)) {
+    const auto& children = container->getChildren();
     for (auto it = children.rbegin(); it != children.rend(); ++it) {
-      if (Widget *hit = hitTestRecursive(it->get(), x, y)) {
+      if (Widget* hit = hitTestRecursive(it->get(), x, y)) {
         return hit;
       }
     }
@@ -354,8 +362,7 @@ Widget *UIManager::hitTestRecursive(Widget *widget, f32 x, f32 y) {
   return widget;
 }
 
-void UIManager::collectFocusableWidgets(Widget *widget,
-                                        std::vector<Widget *> &out) {
+void UIManager::collectFocusableWidgets(Widget* widget, std::vector<Widget*>& out) {
   if (!widget->isVisible() || !widget->isEnabled()) {
     return;
   }
@@ -364,8 +371,8 @@ void UIManager::collectFocusableWidgets(Widget *widget,
     out.push_back(widget);
   }
 
-  if (auto *container = dynamic_cast<Container *>(widget)) {
-    for (const auto &child : container->getChildren()) {
+  if (auto* container = dynamic_cast<Container*>(widget)) {
+    for (const auto& child : container->getChildren()) {
       collectFocusableWidgets(child.get(), out);
     }
   }

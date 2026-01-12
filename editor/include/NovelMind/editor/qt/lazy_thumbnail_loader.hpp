@@ -37,7 +37,7 @@ struct ThumbnailLoaderConfig {
   int maxConcurrentTasks = 2;     // Max parallel loading tasks
   int maxCacheSizeKB = 50 * 1024; // 50 MB default cache size
   int thumbnailSize = 80;         // Default thumbnail size in pixels
-  int queueHighWaterMark = 100; // Max pending requests before dropping old ones
+  int queueHighWaterMark = 100;   // Max pending requests before dropping old ones
 };
 
 /**
@@ -70,9 +70,8 @@ struct ThumbnailRequest {
  */
 class ThumbnailLoadTask : public QRunnable {
 public:
-  ThumbnailLoadTask(const QString &path, const QSize &size,
-                    std::shared_ptr<std::atomic<bool>> cancelled,
-                    QObject *receiver);
+  ThumbnailLoadTask(const QString& path, const QSize& size,
+                    std::shared_ptr<std::atomic<bool>> cancelled, QObject* receiver);
 
   void run() override;
 
@@ -97,9 +96,8 @@ class LazyThumbnailLoader : public QObject {
   Q_OBJECT
 
 public:
-  explicit LazyThumbnailLoader(QObject *parent = nullptr);
-  explicit LazyThumbnailLoader(const ThumbnailLoaderConfig &config,
-                               QObject *parent = nullptr);
+  explicit LazyThumbnailLoader(QObject* parent = nullptr);
+  explicit LazyThumbnailLoader(const ThumbnailLoaderConfig& config, QObject* parent = nullptr);
   ~LazyThumbnailLoader() override;
 
   /**
@@ -109,20 +107,19 @@ public:
    * @param priority Loading priority (higher = sooner)
    * @return True if thumbnail is already cached
    */
-  bool requestThumbnail(const QString &path, const QSize &size,
-                        int priority = 0);
+  bool requestThumbnail(const QString& path, const QSize& size, int priority = 0);
 
   /**
    * @brief Get a cached thumbnail if available
    * @param path File path
    * @return Cached pixmap or null pixmap if not cached
    */
-  QPixmap getCached(const QString &path) const;
+  QPixmap getCached(const QString& path) const;
 
   /**
    * @brief Check if a thumbnail is valid (file not modified since caching)
    */
-  bool isThumbnailValid(const QString &path) const;
+  bool isThumbnailValid(const QString& path) const;
 
   /**
    * @brief Cancel all pending thumbnail requests
@@ -132,7 +129,7 @@ public:
   /**
    * @brief Cancel a specific pending request
    */
-  void cancelRequest(const QString &path);
+  void cancelRequest(const QString& path);
 
   /**
    * @brief Clear the cache
@@ -156,7 +153,7 @@ public:
   /**
    * @brief Configure the loader
    */
-  void setConfig(const ThumbnailLoaderConfig &config);
+  void setConfig(const ThumbnailLoaderConfig& config);
   ThumbnailLoaderConfig config() const { return m_config; }
 
   /**
@@ -170,32 +167,32 @@ signals:
    * @param path File path
    * @param pixmap Loaded pixmap
    */
-  void thumbnailReady(const QString &path, const QPixmap &pixmap);
+  void thumbnailReady(const QString& path, const QPixmap& pixmap);
 
   /**
    * @brief Emitted when thumbnail loading fails
    * @param path File path
    * @param error Error message
    */
-  void thumbnailFailed(const QString &path, const QString &error);
+  void thumbnailFailed(const QString& path, const QString& error);
 
   /**
    * @brief Internal signal for thread-safe thumbnail delivery
    */
-  void thumbnailLoadedInternal(const QString &path, const QPixmap &pixmap,
-                               const QDateTime &lastModified, qint64 fileSize);
+  void thumbnailLoadedInternal(const QString& path, const QPixmap& pixmap,
+                               const QDateTime& lastModified, qint64 fileSize);
 
 private slots:
-  void onThumbnailLoaded(const QString &path, const QPixmap &pixmap,
-                         const QDateTime &lastModified, qint64 fileSize);
+  void onThumbnailLoaded(const QString& path, const QPixmap& pixmap, const QDateTime& lastModified,
+                         qint64 fileSize);
 
 private:
   void processQueue();
   void trimCache();
-  QString cacheKey(const QString &path, const QSize &size) const;
+  QString cacheKey(const QString& path, const QSize& size) const;
 
   ThumbnailLoaderConfig m_config;
-  QThreadPool *m_threadPool = nullptr;
+  QThreadPool* m_threadPool = nullptr;
 
   mutable QMutex m_mutex;
   QCache<QString, CachedThumbnail> m_cache;

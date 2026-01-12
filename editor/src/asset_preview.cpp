@@ -16,7 +16,7 @@ AssetPreviewManager::AssetPreviewManager() = default;
 
 AssetPreviewManager::~AssetPreviewManager() = default;
 
-AssetPreviewManager &AssetPreviewManager::instance() {
+AssetPreviewManager& AssetPreviewManager::instance() {
   // Thread-safe in C++11+ due to magic statics
   static AssetPreviewManager instance;
   return instance;
@@ -26,8 +26,7 @@ AssetPreviewManager &AssetPreviewManager::instance() {
 // Preview Generation
 // ============================================================================
 
-AssetPreview AssetPreviewManager::getPreview(const std::string &assetPath,
-                                             u32 thumbnailSize) {
+AssetPreview AssetPreviewManager::getPreview(const std::string& assetPath, u32 thumbnailSize) {
   namespace fs = std::filesystem;
 
   // Check cache first (use shared lock for read access)
@@ -37,17 +36,15 @@ AssetPreview AssetPreviewManager::getPreview(const std::string &assetPath,
     if (cacheIt != m_cache.end()) {
       // Check if file was modified
       std::error_code ec;
-      auto modTime =
-          fs::last_write_time(assetPath, ec).time_since_epoch().count();
-      if (!ec && cacheIt->second.preview.assetModifiedTime ==
-                     static_cast<u64>(modTime)) {
+      auto modTime = fs::last_write_time(assetPath, ec).time_since_epoch().count();
+      if (!ec && cacheIt->second.preview.assetModifiedTime == static_cast<u64>(modTime)) {
         // Need to upgrade to unique lock for writing stats
         lock.unlock();
         std::unique_lock<std::shared_mutex> writeLock(m_cacheMutex);
         auto writeIt = m_cache.find(assetPath);
         if (writeIt != m_cache.end()) {
-          writeIt->second.lastAccessed = static_cast<u64>(
-              std::chrono::steady_clock::now().time_since_epoch().count());
+          writeIt->second.lastAccessed =
+              static_cast<u64>(std::chrono::steady_clock::now().time_since_epoch().count());
           writeIt->second.accessCount++;
           m_cacheHits++;
           return writeIt->second.preview;
@@ -63,14 +60,13 @@ AssetPreview AssetPreviewManager::getPreview(const std::string &assetPath,
   return generatePreview(assetPath, thumbnailSize);
 }
 
-void AssetPreviewManager::requestPreview(const PreviewRequest &request) {
+void AssetPreviewManager::requestPreview(const PreviewRequest& request) {
   std::lock_guard<std::mutex> lock(m_requestMutex);
   m_pendingRequests.push_back(request);
 }
 
-Result<ThumbnailData>
-AssetPreviewManager::generateImageThumbnail(const std::string &imagePath,
-                                            u32 width, u32 height) {
+Result<ThumbnailData> AssetPreviewManager::generateImageThumbnail(const std::string& imagePath,
+                                                                  u32 width, u32 height) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(imagePath)) {
@@ -81,26 +77,25 @@ AssetPreviewManager::generateImageThumbnail(const std::string &imagePath,
   thumbnail.width = width;
   thumbnail.height = height;
 
-  const int widthInt = static_cast<int>(
-      std::min<u32>(width, static_cast<u32>(std::numeric_limits<int>::max())));
-  const int heightInt = static_cast<int>(
-      std::min<u32>(height, static_cast<u32>(std::numeric_limits<int>::max())));
+  const int widthInt =
+      static_cast<int>(std::min<u32>(width, static_cast<u32>(std::numeric_limits<int>::max())));
+  const int heightInt =
+      static_cast<int>(std::min<u32>(height, static_cast<u32>(std::numeric_limits<int>::max())));
 
   QImage image(QString::fromStdString(imagePath));
   if (!image.isNull()) {
-    QImage scaled = image.scaled(widthInt, heightInt, Qt::KeepAspectRatio,
-                                 Qt::SmoothTransformation);
+    QImage scaled =
+        image.scaled(widthInt, heightInt, Qt::KeepAspectRatio, Qt::SmoothTransformation);
     QImage canvas(widthInt, heightInt, QImage::Format_RGBA8888);
     canvas.fill(Qt::transparent);
 
     QPainter painter(&canvas);
-    QPointF offset((widthInt - scaled.width()) / 2.0,
-                   (heightInt - scaled.height()) / 2.0);
+    QPointF offset((widthInt - scaled.width()) / 2.0, (heightInt - scaled.height()) / 2.0);
     painter.drawImage(offset, scaled);
     painter.end();
 
     thumbnail.pixels.resize(width * height * 4);
-    const uchar *data = canvas.constBits();
+    const uchar* data = canvas.constBits();
     std::copy(data, data + thumbnail.pixels.size(), thumbnail.pixels.begin());
     thumbnail.valid = true;
   } else {
@@ -108,15 +103,14 @@ AssetPreviewManager::generateImageThumbnail(const std::string &imagePath,
     thumbnail.valid = false;
   }
 
-  thumbnail.generatedAt = static_cast<u64>(
-      std::chrono::steady_clock::now().time_since_epoch().count());
+  thumbnail.generatedAt =
+      static_cast<u64>(std::chrono::steady_clock::now().time_since_epoch().count());
 
   return Result<ThumbnailData>::ok(std::move(thumbnail));
 }
 
-Result<WaveformData>
-AssetPreviewManager::generateAudioWaveform(const std::string &audioPath,
-                                           u32 sampleCount) {
+Result<WaveformData> AssetPreviewManager::generateAudioWaveform(const std::string& audioPath,
+                                                                u32 sampleCount) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(audioPath)) {
@@ -128,8 +122,7 @@ AssetPreviewManager::generateAudioWaveform(const std::string &audioPath,
 
   std::ifstream file(audioPath, std::ios::binary);
   if (!file.is_open()) {
-    return Result<WaveformData>::error("Failed to open audio file: " +
-                                       audioPath);
+    return Result<WaveformData>::error("Failed to open audio file: " + audioPath);
   }
 
   std::vector<unsigned char> bytes((std::istreambuf_iterator<char>(file)),
@@ -153,9 +146,8 @@ AssetPreviewManager::generateAudioWaveform(const std::string &audioPath,
   return Result<WaveformData>::ok(std::move(waveform));
 }
 
-Result<FontPreviewData>
-AssetPreviewManager::generateFontPreview(const std::string &fontPath,
-                                         u32 thumbnailSize) {
+Result<FontPreviewData> AssetPreviewManager::generateFontPreview(const std::string& fontPath,
+                                                                 u32 thumbnailSize) {
   namespace fs = std::filesystem;
 
   if (!fs::exists(fontPath)) {
@@ -183,8 +175,8 @@ AssetPreviewManager::generateFontPreview(const std::string &fontPath,
   }
   preview.isMonospace = QFontDatabase::isFixedPitch(family);
 
-  const int sizeInt = static_cast<int>(std::min<u32>(
-      thumbnailSize, static_cast<u32>(std::numeric_limits<int>::max())));
+  const int sizeInt = static_cast<int>(
+      std::min<u32>(thumbnailSize, static_cast<u32>(std::numeric_limits<int>::max())));
   QImage image(sizeInt, sizeInt, QImage::Format_RGBA8888);
   image.fill(Qt::transparent);
   QPainter painter(&image);
@@ -200,29 +192,28 @@ AssetPreviewManager::generateFontPreview(const std::string &fontPath,
   preview.thumbnail.width = thumbnailSize;
   preview.thumbnail.height = thumbnailSize;
   preview.thumbnail.pixels.resize(thumbnailSize * thumbnailSize * 4);
-  const uchar *data = image.constBits();
-  std::copy(data, data + preview.thumbnail.pixels.size(),
-            preview.thumbnail.pixels.begin());
+  const uchar* data = image.constBits();
+  std::copy(data, data + preview.thumbnail.pixels.size(), preview.thumbnail.pixels.begin());
   preview.thumbnail.valid = true;
 
   return Result<FontPreviewData>::ok(std::move(preview));
 }
 
-AssetPreviewType AssetPreviewManager::getAssetType(const std::string &path) {
+AssetPreviewType AssetPreviewManager::getAssetType(const std::string& path) {
   namespace fs = std::filesystem;
 
   std::string ext = fs::path(path).extension().string();
   std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
   // Image formats
-  if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" ||
-      ext == ".gif" || ext == ".tga" || ext == ".webp") {
+  if (ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".bmp" || ext == ".gif" ||
+      ext == ".tga" || ext == ".webp") {
     return AssetPreviewType::Image;
   }
 
   // Audio formats
-  if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac" ||
-      ext == ".aac" || ext == ".m4a") {
+  if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac" || ext == ".aac" ||
+      ext == ".m4a") {
     return AssetPreviewType::Audio;
   }
 
@@ -232,8 +223,7 @@ AssetPreviewType AssetPreviewManager::getAssetType(const std::string &path) {
   }
 
   // Video formats
-  if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm" ||
-      ext == ".mov") {
+  if (ext == ".mp4" || ext == ".avi" || ext == ".mkv" || ext == ".webm" || ext == ".mov") {
     return AssetPreviewType::Video;
   }
 
@@ -254,12 +244,12 @@ AssetPreviewType AssetPreviewManager::getAssetType(const std::string &path) {
 // Cache Management
 // ============================================================================
 
-bool AssetPreviewManager::hasCachedPreview(const std::string &assetPath) const {
+bool AssetPreviewManager::hasCachedPreview(const std::string& assetPath) const {
   std::shared_lock<std::shared_mutex> lock(m_cacheMutex);
   return m_cache.find(assetPath) != m_cache.end();
 }
 
-void AssetPreviewManager::invalidateCache(const std::string &assetPath) {
+void AssetPreviewManager::invalidateCache(const std::string& assetPath) {
   std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   auto it = m_cache.find(assetPath);
   if (it != m_cache.end()) {
@@ -306,15 +296,14 @@ void AssetPreviewManager::processPendingRequests() {
     std::swap(requests, m_pendingRequests);
   }
 
-  for (auto &request : requests) {
+  for (auto& request : requests) {
     try {
-      AssetPreview preview =
-          getPreview(request.assetPath, request.thumbnailWidth);
+      AssetPreview preview = getPreview(request.assetPath, request.thumbnailWidth);
 
       if (request.onComplete) {
         request.onComplete(preview);
       }
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
       if (request.onError) {
         request.onError(e.what());
       }
@@ -335,11 +324,11 @@ void AssetPreviewManager::setDefaultThumbnailSize(u32 size) {
   m_defaultThumbnailSize = size;
 }
 
-void AssetPreviewManager::setFontSampleText(const std::string &text) {
+void AssetPreviewManager::setFontSampleText(const std::string& text) {
   m_fontSampleText = text;
 }
 
-const std::string &AssetPreviewManager::getFontSampleText() const {
+const std::string& AssetPreviewManager::getFontSampleText() const {
   return m_fontSampleText;
 }
 
@@ -347,8 +336,7 @@ const std::string &AssetPreviewManager::getFontSampleText() const {
 // Private Methods
 // ============================================================================
 
-AssetPreview AssetPreviewManager::generatePreview(const std::string &assetPath,
-                                                  u32 thumbnailSize) {
+AssetPreview AssetPreviewManager::generatePreview(const std::string& assetPath, u32 thumbnailSize) {
   namespace fs = std::filesystem;
 
   AssetPreview preview;
@@ -359,8 +347,8 @@ AssetPreview AssetPreviewManager::generatePreview(const std::string &assetPath,
   std::error_code ec;
   if (fs::exists(assetPath, ec)) {
     preview.fileSize = fs::file_size(assetPath, ec);
-    preview.assetModifiedTime = static_cast<u64>(
-        fs::last_write_time(assetPath, ec).time_since_epoch().count());
+    preview.assetModifiedTime =
+        static_cast<u64>(fs::last_write_time(assetPath, ec).time_since_epoch().count());
   }
 
   preview.format = fs::path(assetPath).extension().string();
@@ -368,8 +356,7 @@ AssetPreview AssetPreviewManager::generatePreview(const std::string &assetPath,
   // Generate type-specific preview
   switch (preview.type) {
   case AssetPreviewType::Image: {
-    auto result =
-        generateImageThumbnail(assetPath, thumbnailSize, thumbnailSize);
+    auto result = generateImageThumbnail(assetPath, thumbnailSize, thumbnailSize);
     if (result.isOk()) {
       preview.thumbnail = result.value();
     }
@@ -416,21 +403,19 @@ AssetPreview AssetPreviewManager::generatePreview(const std::string &assetPath,
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 #endif
 
-void AssetPreviewManager::addToCache(const std::string &path,
-                                     const AssetPreview &preview) {
+void AssetPreviewManager::addToCache(const std::string& path, const AssetPreview& preview) {
   std::unique_lock<std::shared_mutex> lock(m_cacheMutex);
   size_t previewSize = estimatePreviewSize(preview);
 
   // Evict if necessary (evictLRU assumes lock is already held)
-  while (m_currentCacheSize + previewSize > m_maxCacheSize &&
-         !m_cache.empty()) {
+  while (m_currentCacheSize + previewSize > m_maxCacheSize && !m_cache.empty()) {
     evictLRULocked();
   }
 
   PreviewCacheEntry entry;
   entry.preview = preview;
-  entry.lastAccessed = static_cast<u64>(
-      std::chrono::steady_clock::now().time_since_epoch().count());
+  entry.lastAccessed =
+      static_cast<u64>(std::chrono::steady_clock::now().time_since_epoch().count());
   entry.accessCount = 1;
 
   m_cache[path] = std::move(entry);
@@ -465,8 +450,7 @@ void AssetPreviewManager::evictLRU() {
 #pragma GCC diagnostic pop
 #endif
 
-size_t
-AssetPreviewManager::estimatePreviewSize(const AssetPreview &preview) const {
+size_t AssetPreviewManager::estimatePreviewSize(const AssetPreview& preview) const {
   size_t size = sizeof(AssetPreview);
 
   // Thumbnail size
@@ -482,7 +466,7 @@ AssetPreviewManager::estimatePreviewSize(const AssetPreview &preview) const {
   size += preview.assetPath.size();
   size += preview.format.size();
 
-  for (const auto &pair : preview.metadata) {
+  for (const auto& pair : preview.metadata) {
     size += pair.first.size() + pair.second.size();
   }
 

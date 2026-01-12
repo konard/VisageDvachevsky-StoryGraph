@@ -2,7 +2,7 @@
 
 namespace NovelMind::editor::qt {
 
-NavigationLocation NavigationLocation::makeStoryGraph(const QString &nodeId) {
+NavigationLocation NavigationLocation::makeStoryGraph(const QString& nodeId) {
   NavigationLocation loc;
   loc.m_isValid = !nodeId.isEmpty();
   loc.m_sourceType = NavigationSourceType::StoryGraph;
@@ -10,8 +10,7 @@ NavigationLocation NavigationLocation::makeStoryGraph(const QString &nodeId) {
   return loc;
 }
 
-NavigationLocation NavigationLocation::makeScript(const QString &filePath,
-                                                  int lineNumber) {
+NavigationLocation NavigationLocation::makeScript(const QString& filePath, int lineNumber) {
   NavigationLocation loc;
   loc.m_isValid = !filePath.isEmpty();
   loc.m_sourceType = NavigationSourceType::Script;
@@ -20,8 +19,7 @@ NavigationLocation NavigationLocation::makeScript(const QString &filePath,
   return loc;
 }
 
-std::optional<NavigationLocation>
-NavigationLocation::parse(const QString &locationString) {
+std::optional<NavigationLocation> NavigationLocation::parse(const QString& locationString) {
   if (locationString.isEmpty()) {
     return std::nullopt;
   }

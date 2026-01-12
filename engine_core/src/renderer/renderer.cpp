@@ -13,7 +13,7 @@ namespace NovelMind::renderer {
 
 class NullRenderer : public IRenderer {
 public:
-  Result<void> initialize(platform::IWindow &window) override {
+  Result<void> initialize(platform::IWindow& window) override {
     m_width = window.getWidth();
     m_height = window.getHeight();
     NOVELMIND_LOG_WARN("Using null renderer");
@@ -32,7 +32,7 @@ public:
     // Nothing to do
   }
 
-  void clear(const Color & /*color*/) override {
+  void clear(const Color& /*color*/) override {
     // Nothing to do
   }
 
@@ -40,32 +40,30 @@ public:
     // Nothing to do
   }
 
-  void drawSprite(const Texture & /*texture*/,
-                  const Transform2D & /*transform*/,
-                  const Color & /*tint*/) override {
+  void drawSprite(const Texture& /*texture*/, const Transform2D& /*transform*/,
+                  const Color& /*tint*/) override {
     // Nothing to do
   }
 
-  void drawSprite(const Texture & /*texture*/, const Rect & /*sourceRect*/,
-                  const Transform2D & /*transform*/,
-                  const Color & /*tint*/) override {
+  void drawSprite(const Texture& /*texture*/, const Rect& /*sourceRect*/,
+                  const Transform2D& /*transform*/, const Color& /*tint*/) override {
     // Nothing to do
   }
 
-  void drawRect(const Rect & /*rect*/, const Color & /*color*/) override {
+  void drawRect(const Rect& /*rect*/, const Color& /*color*/) override {
     // Nothing to do
   }
 
-  void fillRect(const Rect & /*rect*/, const Color & /*color*/) override {
+  void fillRect(const Rect& /*rect*/, const Color& /*color*/) override {
     // Nothing to do
   }
 
-  void drawText(const Font & /*font*/, const std::string & /*text*/, f32 /*x*/,
-                f32 /*y*/, const Color & /*color*/) override {
+  void drawText(const Font& /*font*/, const std::string& /*text*/, f32 /*x*/, f32 /*y*/,
+                const Color& /*color*/) override {
     // Nothing to do
   }
 
-  void setFade(f32 /*alpha*/, const Color & /*color*/) override {
+  void setFade(f32 /*alpha*/, const Color& /*color*/) override {
     // Nothing to do
   }
 
@@ -85,20 +83,19 @@ public:
   SDLOpenGLRenderer() = default;
   ~SDLOpenGLRenderer() override { shutdown(); }
 
-  Result<void> initialize(platform::IWindow &window) override {
+  Result<void> initialize(platform::IWindow& window) override {
     m_width = window.getWidth();
     m_height = window.getHeight();
 
-    auto *native = window.getNativeHandle();
+    auto* native = window.getNativeHandle();
     if (!native) {
       return Result<void>::error("OpenGL renderer requires native window");
     }
 
-    m_window = static_cast<SDL_Window *>(native);
+    m_window = static_cast<SDL_Window*>(native);
     m_glContext = SDL_GL_CreateContext(m_window);
     if (!m_glContext) {
-      return Result<void>::error(std::string("Failed to create GL context: ") +
-                                 SDL_GetError());
+      return Result<void>::error(std::string("Failed to create GL context: ") + SDL_GetError());
     }
 
     SDL_GL_MakeCurrent(m_window, m_glContext);
@@ -107,8 +104,7 @@ public:
     glViewport(0, 0, m_width, m_height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0, static_cast<GLdouble>(m_width),
-            static_cast<GLdouble>(m_height), 0.0, -1.0, 1.0);
+    glOrtho(0.0, static_cast<GLdouble>(m_width), static_cast<GLdouble>(m_height), 0.0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
@@ -140,9 +136,8 @@ public:
     }
   }
 
-  void clear(const Color &color) override {
-    glClearColor(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f,
-                 color.a / 255.0f);
+  void clear(const Color& color) override {
+    glClearColor(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
@@ -166,28 +161,27 @@ public:
     }
   }
 
-  void drawSprite(const Texture &texture, const Transform2D &transform,
-                  const Color &tint) override {
+  void drawSprite(const Texture& texture, const Transform2D& transform,
+                  const Color& tint) override {
     if (!texture.isValid()) {
       return;
     }
-    drawTexturedQuad(texture,
-                     Rect{0, 0, static_cast<f32>(texture.getWidth()),
-                          static_cast<f32>(texture.getHeight())},
-                     transform, tint);
+    drawTexturedQuad(
+        texture,
+        Rect{0, 0, static_cast<f32>(texture.getWidth()), static_cast<f32>(texture.getHeight())},
+        transform, tint);
   }
 
-  void drawSprite(const Texture &texture, const Rect &sourceRect,
-                  const Transform2D &transform, const Color &tint) override {
+  void drawSprite(const Texture& texture, const Rect& sourceRect, const Transform2D& transform,
+                  const Color& tint) override {
     if (!texture.isValid()) {
       return;
     }
     drawTexturedQuad(texture, sourceRect, transform, tint);
   }
 
-  void drawRect(const Rect &rect, const Color &color) override {
-    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f,
-              color.a / 255.0f);
+  void drawRect(const Rect& rect, const Color& color) override {
+    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
     glBegin(GL_LINE_LOOP);
     glVertex2f(rect.x, rect.y);
     glVertex2f(rect.x + rect.width, rect.y);
@@ -196,9 +190,8 @@ public:
     glEnd();
   }
 
-  void fillRect(const Rect &rect, const Color &color) override {
-    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f,
-              color.a / 255.0f);
+  void fillRect(const Rect& rect, const Color& color) override {
+    glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, color.a / 255.0f);
     glBegin(GL_QUADS);
     glVertex2f(rect.x, rect.y);
     glVertex2f(rect.x + rect.width, rect.y);
@@ -207,8 +200,8 @@ public:
     glEnd();
   }
 
-  void drawText(const Font &font, const std::string &text, f32 x, f32 y,
-                const Color &color) override {
+  void drawText(const Font& font, const std::string& text, f32 x, f32 y,
+                const Color& color) override {
     if (text.empty()) {
       return;
     }
@@ -218,7 +211,7 @@ public:
       return;
     }
 
-    const Texture &texture = atlas->getAtlasTexture();
+    const Texture& texture = atlas->getAtlasTexture();
     if (!texture.isValid()) {
       return;
     }
@@ -233,16 +226,14 @@ public:
         continue;
       }
 
-      const auto *glyph = atlas->getGlyph(static_cast<unsigned char>(c));
+      const auto* glyph = atlas->getGlyph(static_cast<unsigned char>(c));
       if (!glyph) {
         penX += static_cast<f32>(font.getSize()) * 0.5f;
         continue;
       }
 
-      Rect src{glyph->uv.x * texture.getWidth(),
-               glyph->uv.y * texture.getHeight(),
-               glyph->uv.width * texture.getWidth(),
-               glyph->uv.height * texture.getHeight()};
+      Rect src{glyph->uv.x * texture.getWidth(), glyph->uv.y * texture.getHeight(),
+               glyph->uv.width * texture.getWidth(), glyph->uv.height * texture.getHeight()};
 
       Transform2D transform;
       transform.x = penX + glyph->bearingX;
@@ -259,7 +250,7 @@ public:
     }
   }
 
-  void setFade(f32 alpha, const Color &color) override {
+  void setFade(f32 alpha, const Color& color) override {
     glDisable(GL_TEXTURE_2D);
     glColor4f(color.r / 255.0f, color.g / 255.0f, color.b / 255.0f, alpha);
     glBegin(GL_QUADS);
@@ -275,8 +266,8 @@ public:
   [[nodiscard]] i32 getHeight() const override { return m_height; }
 
 private:
-  std::shared_ptr<FontAtlas> getOrBuildAtlas(const Font &font) {
-    const Font *key = &font;
+  std::shared_ptr<FontAtlas> getOrBuildAtlas(const Font& font) {
+    const Font* key = &font;
     auto it = m_fontAtlases.find(key);
     if (it != m_fontAtlases.end()) {
       return it->second;
@@ -301,8 +292,8 @@ private:
     return atlas;
   }
 
-  void drawTexturedQuad(const Texture &texture, const Rect &sourceRect,
-                        const Transform2D &transform, const Color &tint) {
+  void drawTexturedQuad(const Texture& texture, const Rect& sourceRect,
+                        const Transform2D& transform, const Color& tint) {
     const auto handle = reinterpret_cast<uintptr_t>(texture.getNativeHandle());
     if (handle > static_cast<uintptr_t>(std::numeric_limits<GLuint>::max())) {
       return;
@@ -318,13 +309,10 @@ private:
 
     const f32 u0 = sourceRect.x / static_cast<f32>(texture.getWidth());
     const f32 v0 = sourceRect.y / static_cast<f32>(texture.getHeight());
-    const f32 u1 = (sourceRect.x + sourceRect.width) /
-                   static_cast<f32>(texture.getWidth());
-    const f32 v1 = (sourceRect.y + sourceRect.height) /
-                   static_cast<f32>(texture.getHeight());
+    const f32 u1 = (sourceRect.x + sourceRect.width) / static_cast<f32>(texture.getWidth());
+    const f32 v1 = (sourceRect.y + sourceRect.height) / static_cast<f32>(texture.getHeight());
 
-    glColor4f(tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f,
-              tint.a / 255.0f);
+    glColor4f(tint.r / 255.0f, tint.g / 255.0f, tint.b / 255.0f, tint.a / 255.0f);
 
     glBegin(GL_QUADS);
     glTexCoord2f(u0, v0);
@@ -343,11 +331,11 @@ private:
     glPopMatrix();
   }
 
-  SDL_Window *m_window = nullptr;
+  SDL_Window* m_window = nullptr;
   SDL_GLContext m_glContext = nullptr;
   i32 m_width = 0;
   i32 m_height = 0;
-  std::unordered_map<const Font *, std::shared_ptr<FontAtlas>> m_fontAtlases;
+  std::unordered_map<const Font*, std::shared_ptr<FontAtlas>> m_fontAtlases;
 };
 #endif // NOVELMIND_HAS_SDL2 && NOVELMIND_HAS_OPENGL
 

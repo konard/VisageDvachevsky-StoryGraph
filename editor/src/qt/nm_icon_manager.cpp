@@ -6,7 +6,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMIconManager &NMIconManager::instance() {
+NMIconManager& NMIconManager::instance() {
   static NMIconManager instance;
   return instance;
 }
@@ -256,12 +256,10 @@ void NMIconManager::initializeIcons() {
   // Total icons mapped: 158
 }
 
-QIcon NMIconManager::getIcon(const QString &iconName, int size,
-                             const QColor &color) {
+QIcon NMIconManager::getIcon(const QString& iconName, int size, const QColor& color) {
   QColor iconColor = color.isValid() ? color : m_defaultColor;
 
-  QString cacheKey =
-      QString("%1_%2_%3").arg(iconName).arg(size).arg(iconColor.name());
+  QString cacheKey = QString("%1_%2_%3").arg(iconName).arg(size).arg(iconColor.name());
 
   if (m_iconCache.contains(cacheKey)) {
     return m_iconCache[cacheKey];
@@ -274,8 +272,7 @@ QIcon NMIconManager::getIcon(const QString &iconName, int size,
   return icon;
 }
 
-QPixmap NMIconManager::getPixmap(const QString &iconName, int size,
-                                 const QColor &color) {
+QPixmap NMIconManager::getPixmap(const QString& iconName, int size, const QColor& color) {
   QString svgData = getSvgData(iconName);
   if (svgData.isEmpty()) {
     // Return empty pixmap if icon not found
@@ -286,16 +283,18 @@ QPixmap NMIconManager::getPixmap(const QString &iconName, int size,
   return renderSvg(svgData, size, iconColor);
 }
 
-void NMIconManager::clearCache() { m_iconCache.clear(); }
+void NMIconManager::clearCache() {
+  m_iconCache.clear();
+}
 
-void NMIconManager::setDefaultColor(const QColor &color) {
+void NMIconManager::setDefaultColor(const QColor& color) {
   if (m_defaultColor != color) {
     m_defaultColor = color;
     clearCache(); // Clear cache when color changes
   }
 }
 
-QString NMIconManager::getSvgData(const QString &iconName) {
+QString NMIconManager::getSvgData(const QString& iconName) {
   // First, try to load from resource file (Lucide icons)
   if (m_iconFilePaths.contains(iconName)) {
     QString resourcePath = m_iconFilePaths[iconName];
@@ -309,7 +308,7 @@ QString NMIconManager::getSvgData(const QString &iconName) {
   return m_iconSvgData.value(iconName, QString());
 }
 
-QString NMIconManager::loadSvgFromResource(const QString &resourcePath) {
+QString NMIconManager::loadSvgFromResource(const QString& resourcePath) {
   QFile file(resourcePath);
   if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
     return QString();
@@ -321,21 +320,17 @@ QString NMIconManager::loadSvgFromResource(const QString &resourcePath) {
   return svgData;
 }
 
-QPixmap NMIconManager::renderSvg(const QString &svgData, int size,
-                                 const QColor &color) {
+QPixmap NMIconManager::renderSvg(const QString& svgData, int size, const QColor& color) {
   // For Lucide icons, we need to modify the SVG to set the stroke color
   QString coloredSvg = svgData;
 
   // Replace stroke and fill attributes with the requested color
   // Lucide icons use 'currentColor' or explicit stroke colors
   coloredSvg.replace("currentColor", color.name());
-  coloredSvg.replace("stroke=\"#000\"",
-                     QString("stroke=\"%1\"").arg(color.name()));
-  coloredSvg.replace("stroke=\"#000000\"",
-                     QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke=\"#000\"", QString("stroke=\"%1\"").arg(color.name()));
+  coloredSvg.replace("stroke=\"#000000\"", QString("stroke=\"%1\"").arg(color.name()));
   coloredSvg.replace("stroke='#000'", QString("stroke='%1'").arg(color.name()));
-  coloredSvg.replace("stroke='#000000'",
-                     QString("stroke='%1'").arg(color.name()));
+  coloredSvg.replace("stroke='#000000'", QString("stroke='%1'").arg(color.name()));
 
   // Also handle the old %COLOR% placeholder for backward compatibility
   coloredSvg.replace("%COLOR%", color.name());

@@ -14,20 +14,20 @@ class NMScriptDocPanel final : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMScriptDocPanel(QWidget *parent = nullptr);
+  explicit NMScriptDocPanel(QWidget* parent = nullptr);
   ~NMScriptDocPanel() override = default;
 
   void onInitialize() override;
   void onUpdate(double deltaTime) override;
 
 public slots:
-  void setDocHtml(const QString &html);
+  void setDocHtml(const QString& html);
 
 private:
   void setupContent();
 
-  QWidget *m_contentWidget = nullptr;
-  QTextBrowser *m_browser = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QTextBrowser* m_browser = nullptr;
   QString m_emptyHtml;
 };
 

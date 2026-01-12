@@ -16,15 +16,14 @@ void ensureQtApp() {
   if (!QApplication::instance()) {
     static int argc = 1;
     static char arg0[] = "integration_tests";
-    static char *argv[] = {arg0, nullptr};
+    static char* argv[] = {arg0, nullptr};
     new QApplication(argc, argv);
   }
 }
 
 } // namespace
 
-TEST_CASE("Asset Browser shows imported files with uppercase extensions",
-          "[asset_browser]") {
+TEST_CASE("Asset Browser shows imported files with uppercase extensions", "[asset_browser]") {
   ensureQtApp();
 
   QTemporaryDir tempDir;
@@ -40,15 +39,14 @@ TEST_CASE("Asset Browser shows imported files with uppercase extensions",
   panel.setRootPath(tempDir.path());
   panel.refresh();
 
-  auto *listView = panel.findChild<QListView *>("AssetBrowserListView");
+  auto* listView = panel.findChild<QListView*>("AssetBrowserListView");
   REQUIRE(listView != nullptr);
-  auto *model = listView->model();
+  auto* model = listView->model();
   REQUIRE(model != nullptr);
 
   QElapsedTimer timer;
   timer.start();
-  while (model->rowCount(listView->rootIndex()) == 0 &&
-         timer.elapsed() < 2000) {
+  while (model->rowCount(listView->rootIndex()) == 0 && timer.elapsed() < 2000) {
     QCoreApplication::processEvents();
   }
 

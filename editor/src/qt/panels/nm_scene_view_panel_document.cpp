@@ -15,14 +15,15 @@
 
 namespace NovelMind::editor::qt {
 
-bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
+bool NMSceneViewPanel::loadSceneDocument(const QString& sceneId) {
   if (!m_scene || sceneId.isEmpty()) {
     return false;
   }
 
   if (!m_currentSceneId.isEmpty() && m_currentSceneId != sceneId) {
     if (!m_suppressSceneSave) {
-      saveSceneDocument();
+      // Issue #521: Flush any pending debounced saves before loading new scene
+      m_saveDebouncer.flush();
     }
   }
 
@@ -36,8 +37,8 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
     m_infoOverlay->setSceneInfo(sceneId);
   }
 
-  const QString scenesRoot = QString::fromStdString(
-      ProjectManager::instance().getFolderPath(ProjectFolder::Scenes));
+  const QString scenesRoot =
+      QString::fromStdString(ProjectManager::instance().getFolderPath(ProjectFolder::Scenes));
   if (scenesRoot.isEmpty()) {
     m_isLoadingScene = false;
     return false;
@@ -46,10 +47,9 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
   QDir().mkpath(scenesRoot);
 
   const QString scenePath = QDir(scenesRoot).filePath(sceneId + ".nmscene");
-  const auto result =
-      ::NovelMind::editor::loadSceneDocument(scenePath.toStdString());
+  const auto result = ::NovelMind::editor::loadSceneDocument(scenePath.toStdString());
 
-  for (auto *obj : m_scene->sceneObjects()) {
+  for (auto* obj : m_scene->sceneObjects()) {
     if (!obj) {
       continue;
     }
@@ -57,8 +57,8 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
   }
 
   if (result.isOk()) {
-    const auto &doc = result.value();
-    for (const auto &item : doc.objects) {
+    const auto& doc = result.value();
+    for (const auto& item : doc.objects) {
       NMSceneObjectType type = NMSceneObjectType::UI;
       if (item.type == "Background") {
         type = NMSceneObjectType::Background;
@@ -69,7 +69,7 @@ bool NMSceneViewPanel::loadSceneDocument(const QString &sceneId) {
       }
 
       const QString id = QString::fromStdString(item.id);
-      auto *obj = new NMSceneObject(id, type);
+      auto* obj = new NMSceneObject(id, type);
       obj->setName(QString::fromStdString(item.name));
       obj->setPos(QPointF(item.x, item.y));
       obj->setRotation(item.rotation);
@@ -111,8 +111,8 @@ bool NMSceneViewPanel::saveSceneDocument() {
     return false;
   }
 
-  const QString scenesRoot = QString::fromStdString(
-      ProjectManager::instance().getFolderPath(ProjectFolder::Scenes));
+  const QString scenesRoot =
+      QString::fromStdString(ProjectManager::instance().getFolderPath(ProjectFolder::Scenes));
   if (scenesRoot.isEmpty()) {
     return false;
   }
@@ -122,7 +122,7 @@ bool NMSceneViewPanel::saveSceneDocument() {
 
   const auto objects = m_scene->sceneObjects();
   doc.objects.reserve(static_cast<size_t>(objects.size()));
-  for (const auto *obj : objects) {
+  for (const auto* obj : objects) {
     if (!obj || obj->id().startsWith("runtime_")) {
       continue;
     }
@@ -159,10 +159,8 @@ bool NMSceneViewPanel::saveSceneDocument() {
     doc.objects.push_back(std::move(item));
   }
 
-  const QString scenePath =
-      QDir(scenesRoot).filePath(m_currentSceneId + ".nmscene");
-  const auto result =
-      ::NovelMind::editor::saveSceneDocument(doc, scenePath.toStdString());
+  const QString scenePath = QDir(scenesRoot).filePath(m_currentSceneId + ".nmscene");
+  const auto result = ::NovelMind::editor::saveSceneDocument(doc, scenePath.toStdString());
 
   // Emit SceneDocumentModifiedEvent to notify other panels (Issue #223)
   if (result.isOk()) {
@@ -175,34 +173,31 @@ bool NMSceneViewPanel::saveSceneDocument() {
   return result.isOk();
 }
 
-QString NMSceneViewPanel::normalizeAssetPath(const QString &assetPath) const {
+QString NMSceneViewPanel::normalizeAssetPath(const QString& assetPath) const {
   QString normalized = assetPath;
   if (!assetPath.isEmpty()) {
     QFileInfo info(assetPath);
     if (info.isAbsolute()) {
-      auto &pm = ProjectManager::instance();
+      auto& pm = ProjectManager::instance();
       if (pm.isPathInProject(assetPath.toStdString())) {
-        normalized =
-            QString::fromStdString(pm.toRelativePath(assetPath.toStdString()));
+        normalized = QString::fromStdString(pm.toRelativePath(assetPath.toStdString()));
       }
     }
   }
   return normalized;
 }
 
-NMSceneObjectType
-NMSceneViewPanel::guessObjectTypeForAsset(const QString &assetPath) const {
+NMSceneObjectType NMSceneViewPanel::guessObjectTypeForAsset(const QString& assetPath) const {
   const QString lower = assetPath.toLower();
-  if (lower.contains("/background") || lower.contains("/bg/") ||
-      lower.contains("background")) {
+  if (lower.contains("/background") || lower.contains("/bg/") || lower.contains("background")) {
     return NMSceneObjectType::Background;
   }
 
   QString absPath = assetPath;
   QFileInfo info(assetPath);
   if (!info.isAbsolute()) {
-    absPath = QString::fromStdString(
-        ProjectManager::instance().toAbsolutePath(assetPath.toStdString()));
+    absPath =
+        QString::fromStdString(ProjectManager::instance().toAbsolutePath(assetPath.toStdString()));
   }
 
   QImageReader reader(absPath);
@@ -210,8 +205,7 @@ NMSceneViewPanel::guessObjectTypeForAsset(const QString &assetPath) const {
   if (size.isValid()) {
     const qreal aspect = size.height() == 0
                              ? 1.0
-                             : static_cast<qreal>(size.width()) /
-                                   static_cast<qreal>(size.height());
+                             : static_cast<qreal>(size.width()) / static_cast<qreal>(size.height());
     if (size.width() >= 1024 || aspect >= 1.4) {
       return NMSceneObjectType::Background;
     }
@@ -220,15 +214,14 @@ NMSceneViewPanel::guessObjectTypeForAsset(const QString &assetPath) const {
   return NMSceneObjectType::Character;
 }
 
-QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
-                                             NMSceneObjectType type) {
+QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString& hint, NMSceneObjectType type) {
   if (hint.isEmpty()) {
     return QPixmap();
   }
 
   if (m_assetsRoot.isEmpty()) {
-    m_assetsRoot = QString::fromStdString(
-        ProjectManager::instance().getFolderPath(ProjectFolder::Assets));
+    m_assetsRoot =
+        QString::fromStdString(ProjectManager::instance().getFolderPath(ProjectFolder::Assets));
   }
 
   if (m_textureCache.contains(hint)) {
@@ -243,8 +236,8 @@ QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
     candidates << hintInfo.absoluteFilePath();
   } else {
     if (ProjectManager::instance().hasOpenProject()) {
-      const QString abs = QString::fromStdString(
-          ProjectManager::instance().toAbsolutePath(hint.toStdString()));
+      const QString abs =
+          QString::fromStdString(ProjectManager::instance().toAbsolutePath(hint.toStdString()));
       candidates << abs;
     }
     candidates << hint;
@@ -258,7 +251,7 @@ QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
     candidates << (m_assetsRoot + "/" + trimmed);
   }
 
-  for (const auto &path : candidates) {
+  for (const auto& path : candidates) {
     if (!path.isEmpty() && QFileInfo::exists(path)) {
       QPixmap pix(path);
       if (!pix.isNull()) {
@@ -269,10 +262,10 @@ QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
   }
 
   QStringList exts = {"", ".png", ".jpg", ".jpeg"};
-  QStringList prefixes = {m_assetsRoot + "/", m_assetsRoot + "/Images/",
-                          m_assetsRoot + "/images/", QString()};
-  for (const auto &prefix : prefixes) {
-    for (const auto &ext : exts) {
+  QStringList prefixes = {m_assetsRoot + "/", m_assetsRoot + "/Images/", m_assetsRoot + "/images/",
+                          QString()};
+  for (const auto& prefix : prefixes) {
+    for (const auto& ext : exts) {
       const QString path = prefix + baseName + ext;
       if (!path.isEmpty() && QFileInfo::exists(path)) {
         QPixmap pix(path);
@@ -284,17 +277,15 @@ QPixmap NMSceneViewPanel::loadPixmapForAsset(const QString &hint,
     }
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
-  QSize sz = (type == NMSceneObjectType::Background) ? QSize(1280, 720)
-                                                     : QSize(400, 600);
+  const auto& palette = NMStyleManager::instance().palette();
+  QSize sz = (type == NMSceneObjectType::Background) ? QSize(1280, 720) : QSize(400, 600);
   QImage img(sz, QImage::Format_ARGB32_Premultiplied);
   if (img.isNull()) {
     QPixmap fallback(1, 1);
     fallback.fill(Qt::transparent);
     return fallback;
   }
-  QColor fill = (type == NMSceneObjectType::Background) ? palette.bgMedium
-                                                        : palette.bgLight;
+  QColor fill = (type == NMSceneObjectType::Background) ? palette.bgMedium : palette.bgLight;
   img.fill(fill);
   QPainter p(&img);
   if (!p.isActive()) {

@@ -3,14 +3,14 @@
 #include "NovelMind/resource/resource_manager.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
-#include <cstring>
+#include <bit>
 
 namespace NovelMind::scripting {
 
 ScriptRuntime::ScriptRuntime() = default;
 ScriptRuntime::~ScriptRuntime() = default;
 
-Result<void> ScriptRuntime::load(const CompiledScript &script) {
+Result<void> ScriptRuntime::load(const CompiledScript& script) {
   m_script = script;
 
   auto result = m_vm.load(script.instructions, script.stringTable);
@@ -34,11 +34,11 @@ Result<void> ScriptRuntime::load(const CompiledScript &script) {
   return Result<void>::ok();
 }
 
-void ScriptRuntime::setSceneManager(scene::SceneManager *manager) {
+void ScriptRuntime::setSceneManager(scene::SceneManager* manager) {
   m_sceneManager = manager;
 }
 
-void ScriptRuntime::setDialogueBox(Scene::DialogueBox *dialogueBox) {
+void ScriptRuntime::setDialogueBox(Scene::DialogueBox* dialogueBox) {
   m_dialogueBox = dialogueBox;
   // Pass resource manager to dialogue box if both are set
   if (m_dialogueBox && m_resources) {
@@ -46,7 +46,7 @@ void ScriptRuntime::setDialogueBox(Scene::DialogueBox *dialogueBox) {
   }
 }
 
-void ScriptRuntime::setResourceManager(resource::ResourceManager *resources) {
+void ScriptRuntime::setResourceManager(resource::ResourceManager* resources) {
   m_resources = resources;
   // Pass resource manager to dialogue box if both are set
   if (m_dialogueBox && m_resources) {
@@ -54,23 +54,25 @@ void ScriptRuntime::setResourceManager(resource::ResourceManager *resources) {
   }
 }
 
-void ScriptRuntime::setChoiceMenu(Scene::ChoiceMenu *choiceMenu) {
+void ScriptRuntime::setChoiceMenu(Scene::ChoiceMenu* choiceMenu) {
   m_choiceMenu = choiceMenu;
 }
 
-void ScriptRuntime::setAudioManager(audio::AudioManager *manager) {
+void ScriptRuntime::setAudioManager(audio::AudioManager* manager) {
   m_audioManager = manager;
 }
 
-void ScriptRuntime::setAnimationManager(scene::AnimationManager *manager) {
+void ScriptRuntime::setAnimationManager(scene::AnimationManager* manager) {
   m_animationManager = manager;
 }
 
-void ScriptRuntime::setConfig(const RuntimeConfig &config) {
+void ScriptRuntime::setConfig(const RuntimeConfig& config) {
   m_config = config;
 }
 
-const RuntimeConfig &ScriptRuntime::getConfig() const { return m_config; }
+const RuntimeConfig& ScriptRuntime::getConfig() const {
+  return m_config;
+}
 
 void ScriptRuntime::start() {
   if (m_script.sceneEntryPoints.empty()) {
@@ -83,7 +85,7 @@ void ScriptRuntime::start() {
   gotoScene(it->first);
 }
 
-Result<void> ScriptRuntime::gotoScene(const std::string &sceneName) {
+Result<void> ScriptRuntime::gotoScene(const std::string& sceneName) {
   auto it = m_script.sceneEntryPoints.find(sceneName);
   if (it == m_script.sceneEntryPoints.end()) {
     return Result<void>::error("Scene not found: " + sceneName);
@@ -203,8 +205,7 @@ void ScriptRuntime::selectChoice(i32 index) {
       m_vm.signalChoice(index);
       m_state = RuntimeState::Running;
 
-      fireEvent(ScriptEventType::ChoiceSelected,
-                m_currentChoices[static_cast<size_t>(index)],
+      fireEvent(ScriptEventType::ChoiceSelected, m_currentChoices[static_cast<size_t>(index)],
                 Value{static_cast<i32>(index)});
 
       if (m_choiceMenu) {
@@ -235,7 +236,9 @@ void ScriptRuntime::stop() {
   m_vm.reset();
 }
 
-RuntimeState ScriptRuntime::getState() const { return m_state; }
+RuntimeState ScriptRuntime::getState() const {
+  return m_state;
+}
 
 bool ScriptRuntime::isWaitingForInput() const {
   return m_state == RuntimeState::WaitingInput;
@@ -249,45 +252,45 @@ bool ScriptRuntime::isComplete() const {
   return m_state == RuntimeState::Halted;
 }
 
-const std::string &ScriptRuntime::getCurrentScene() const {
+const std::string& ScriptRuntime::getCurrentScene() const {
   return m_currentScene;
 }
 
-const std::string &ScriptRuntime::getCurrentBackground() const {
+const std::string& ScriptRuntime::getCurrentBackground() const {
   return m_currentBackground;
 }
 
-const std::vector<std::string> &ScriptRuntime::getVisibleCharacters() const {
+const std::vector<std::string>& ScriptRuntime::getVisibleCharacters() const {
   return m_visibleCharacters;
 }
 
-const std::vector<std::string> &ScriptRuntime::getCurrentChoices() const {
+const std::vector<std::string>& ScriptRuntime::getCurrentChoices() const {
   return m_currentChoices;
 }
 
-const std::string &ScriptRuntime::getCurrentSpeaker() const {
+const std::string& ScriptRuntime::getCurrentSpeaker() const {
   return m_currentSpeaker;
 }
 
-const std::string &ScriptRuntime::getCurrentDialogue() const {
+const std::string& ScriptRuntime::getCurrentDialogue() const {
   return m_currentDialogue;
 }
 
-void ScriptRuntime::setVariable(const std::string &name, Value value) {
+void ScriptRuntime::setVariable(const std::string& name, Value value) {
   m_vm.setVariable(name, value);
   fireEvent(ScriptEventType::VariableChanged, name, value);
 }
 
-Value ScriptRuntime::getVariable(const std::string &name) const {
+Value ScriptRuntime::getVariable(const std::string& name) const {
   return m_vm.getVariable(name);
 }
 
-void ScriptRuntime::setFlag(const std::string &name, bool value) {
+void ScriptRuntime::setFlag(const std::string& name, bool value) {
   m_vm.setFlag(name, value);
   fireEvent(ScriptEventType::FlagChanged, name, Value{value});
 }
 
-bool ScriptRuntime::getFlag(const std::string &name) const {
+bool ScriptRuntime::getFlag(const std::string& name) const {
   return m_vm.getFlag(name);
 }
 
@@ -299,9 +302,13 @@ std::unordered_map<std::string, bool> ScriptRuntime::getAllFlags() const {
   return m_vm.getAllFlags();
 }
 
-void ScriptRuntime::setSkipMode(bool enabled) { m_skipMode = enabled; }
+void ScriptRuntime::setSkipMode(bool enabled) {
+  m_skipMode = enabled;
+}
 
-bool ScriptRuntime::isSkipMode() const { return m_skipMode; }
+bool ScriptRuntime::isSkipMode() const {
+  return m_skipMode;
+}
 
 RuntimeSaveState ScriptRuntime::saveState() const {
   RuntimeSaveState state;
@@ -321,13 +328,13 @@ RuntimeSaveState ScriptRuntime::saveState() const {
   return state;
 }
 
-Result<void> ScriptRuntime::loadState(const RuntimeSaveState &state) {
+Result<void> ScriptRuntime::loadState(const RuntimeSaveState& state) {
   // Load variables back to VM
-  for (const auto &[name, value] : state.variables) {
+  for (const auto& [name, value] : state.variables) {
     m_vm.setVariable(name, value);
   }
 
-  for (const auto &[name, value] : state.flags) {
+  for (const auto& [name, value] : state.flags) {
     m_vm.setFlag(name, value);
   }
 
@@ -361,11 +368,13 @@ void ScriptRuntime::setEventCallback(EventCallback callback) {
   m_eventCallback = std::move(callback);
 }
 
-VirtualMachine &ScriptRuntime::getVM() { return m_vm; }
+VirtualMachine& ScriptRuntime::getVM() {
+  return m_vm;
+}
 
 // VM callback handlers
 
-void ScriptRuntime::onShowBackground(const std::vector<Value> &args) {
+void ScriptRuntime::onShowBackground(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
@@ -381,7 +390,7 @@ void ScriptRuntime::onShowBackground(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::BackgroundChanged, bgName);
 }
 
-void ScriptRuntime::onShowCharacter(const std::vector<Value> &args) {
+void ScriptRuntime::onShowCharacter(const std::vector<Value>& args) {
   if (args.size() < 2) {
     return;
   }
@@ -391,8 +400,8 @@ void ScriptRuntime::onShowCharacter(const std::vector<Value> &args) {
   Scene::CharacterPosition position = parsePosition(posCode);
   (void)position; // Will be used when scene manager integration is implemented
 
-  if (std::find(m_visibleCharacters.begin(), m_visibleCharacters.end(),
-                charId) == m_visibleCharacters.end()) {
+  if (std::find(m_visibleCharacters.begin(), m_visibleCharacters.end(), charId) ==
+      m_visibleCharacters.end()) {
     m_visibleCharacters.push_back(charId);
   }
 
@@ -410,15 +419,15 @@ void ScriptRuntime::onShowCharacter(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::CharacterShow, charId, Value{posCode});
 }
 
-void ScriptRuntime::onHideCharacter(const std::vector<Value> &args) {
+void ScriptRuntime::onHideCharacter(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
 
   std::string charId = asString(args[0]);
-  m_visibleCharacters.erase(std::remove(m_visibleCharacters.begin(),
-                                        m_visibleCharacters.end(), charId),
-                            m_visibleCharacters.end());
+  m_visibleCharacters.erase(
+      std::remove(m_visibleCharacters.begin(), m_visibleCharacters.end(), charId),
+      m_visibleCharacters.end());
 
   if (m_sceneManager) {
     // m_sceneManager->hideCharacter(charId);
@@ -427,7 +436,7 @@ void ScriptRuntime::onHideCharacter(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::CharacterHide, charId);
 }
 
-void ScriptRuntime::onSay(const std::vector<Value> &args) {
+void ScriptRuntime::onSay(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
@@ -468,7 +477,7 @@ void ScriptRuntime::onSay(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::DialogueStart, speaker, Value{text});
 }
 
-void ScriptRuntime::onChoice(const std::vector<Value> &args) {
+void ScriptRuntime::onChoice(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
@@ -493,7 +502,7 @@ void ScriptRuntime::onChoice(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::ChoiceStart);
 }
 
-void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
+void ScriptRuntime::onGotoScene(const std::vector<Value>& args) {
   if (args.empty()) {
     NOVELMIND_LOG_WARN("GOTO_SCENE called with no arguments");
     return;
@@ -504,7 +513,7 @@ void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
     sceneName = std::get<std::string>(args[0]);
   } else {
     u32 entryPoint = static_cast<u32>(asInt(args[0]));
-    for (const auto &pair : m_script.sceneEntryPoints) {
+    for (const auto& pair : m_script.sceneEntryPoints) {
       if (pair.second == entryPoint) {
         sceneName = pair.first;
         break;
@@ -523,8 +532,7 @@ void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
         m_state = RuntimeState::Running;
         return;
       }
-      NOVELMIND_LOG_ERROR("GOTO_SCENE: Invalid entry point " +
-                          std::to_string(entryPoint));
+      NOVELMIND_LOG_ERROR("GOTO_SCENE: Invalid entry point " + std::to_string(entryPoint));
       return;
     }
   }
@@ -537,21 +545,20 @@ void ScriptRuntime::onGotoScene(const std::vector<Value> &args) {
   gotoScene(sceneName);
 }
 
-void ScriptRuntime::onWait(const std::vector<Value> &args) {
+void ScriptRuntime::onWait(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
 
-  // Duration is stored as raw bits
+  // Duration is stored as raw bits, deserialize using bit_cast
   u32 durBits = static_cast<u32>(asInt(args[0]));
-  f32 duration;
-  std::memcpy(&duration, &durBits, sizeof(f32));
+  f32 duration = std::bit_cast<f32>(durBits);
 
   m_waitTimer = duration;
   m_state = RuntimeState::WaitingTimer;
 }
 
-void ScriptRuntime::onPlaySound(const std::vector<Value> &args) {
+void ScriptRuntime::onPlaySound(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
@@ -565,7 +572,7 @@ void ScriptRuntime::onPlaySound(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::SoundPlay, soundId);
 }
 
-void ScriptRuntime::onPlayMusic(const std::vector<Value> &args) {
+void ScriptRuntime::onPlayMusic(const std::vector<Value>& args) {
   if (args.empty()) {
     return;
   }
@@ -579,12 +586,12 @@ void ScriptRuntime::onPlayMusic(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::MusicStart, musicId);
 }
 
-void ScriptRuntime::onStopMusic(const std::vector<Value> &args) {
+void ScriptRuntime::onStopMusic(const std::vector<Value>& args) {
   f32 fadeOut = 0.0f;
 
   if (!args.empty()) {
     u32 durBits = static_cast<u32>(asInt(args[0]));
-    std::memcpy(&fadeOut, &durBits, sizeof(f32));
+    fadeOut = std::bit_cast<f32>(durBits);
   }
 
   if (m_audioManager) {
@@ -594,15 +601,14 @@ void ScriptRuntime::onStopMusic(const std::vector<Value> &args) {
   fireEvent(ScriptEventType::MusicStop);
 }
 
-void ScriptRuntime::onTransition(const std::vector<Value> &args) {
+void ScriptRuntime::onTransition(const std::vector<Value>& args) {
   if (args.size() < 2) {
     return;
   }
 
   std::string type = asString(args[0]);
   u32 durBits = static_cast<u32>(asInt(args[1]));
-  f32 duration;
-  std::memcpy(&duration, &durBits, sizeof(f32));
+  f32 duration = std::bit_cast<f32>(durBits);
 
   m_activeTransition = createTransition(type, duration);
   if (m_activeTransition) {
@@ -612,8 +618,9 @@ void ScriptRuntime::onTransition(const std::vector<Value> &args) {
   }
 }
 
-void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
-  // Args layout: [0]=charId, [1]=posCode, [2]=customX (if custom), [3]=customY (if custom), [N-1]=duration
+void ScriptRuntime::onMoveCharacter(const std::vector<Value>& args) {
+  // Args layout: [0]=charId, [1]=posCode, [2]=customX (if custom), [3]=customY (if custom),
+  // [N-1]=duration
   if (args.size() < 3) {
     NOVELMIND_LOG_WARN("MOVE_CHARACTER called with insufficient arguments");
     m_state = RuntimeState::Running;
@@ -640,11 +647,11 @@ void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
     durationIdx = 4;
   }
 
-  // Extract duration from raw bits
+  // Extract duration from raw bits using bit_cast
   f32 duration = 0.5f;
   if (durationIdx < args.size()) {
     u32 durBits = static_cast<u32>(asInt(args[durationIdx]));
-    std::memcpy(&duration, &durBits, sizeof(f32));
+    duration = std::bit_cast<f32>(durBits);
   }
 
   // Verify character is visible
@@ -663,9 +670,8 @@ void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
     fireEvent(ScriptEventType::CharacterMove, charId, Value{posCode});
     m_state = RuntimeState::WaitingAnimation;
 
-    NOVELMIND_LOG_INFO("Moving character '" + charId + "' to position " +
-                       std::to_string(posCode) + " over " +
-                       std::to_string(duration) + " seconds");
+    NOVELMIND_LOG_INFO("Moving character '" + charId + "' to position " + std::to_string(posCode) +
+                       " over " + std::to_string(duration) + " seconds");
   } else {
     // No animation manager, just fire event and continue
     fireEvent(ScriptEventType::CharacterMove, charId, Value{posCode});
@@ -681,43 +687,35 @@ void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
 
 void ScriptRuntime::registerCallbacks() {
   m_vm.registerCallback(OpCode::SHOW_BACKGROUND,
-                        [this](const auto &args) { onShowBackground(args); });
+                        [this](const auto& args) { onShowBackground(args); });
 
   m_vm.registerCallback(OpCode::SHOW_CHARACTER,
-                        [this](const auto &args) { onShowCharacter(args); });
+                        [this](const auto& args) { onShowCharacter(args); });
 
   m_vm.registerCallback(OpCode::HIDE_CHARACTER,
-                        [this](const auto &args) { onHideCharacter(args); });
+                        [this](const auto& args) { onHideCharacter(args); });
 
-  m_vm.registerCallback(OpCode::SAY, [this](const auto &args) { onSay(args); });
+  m_vm.registerCallback(OpCode::SAY, [this](const auto& args) { onSay(args); });
 
-  m_vm.registerCallback(OpCode::CHOICE,
-                        [this](const auto &args) { onChoice(args); });
+  m_vm.registerCallback(OpCode::CHOICE, [this](const auto& args) { onChoice(args); });
 
-  m_vm.registerCallback(OpCode::GOTO_SCENE,
-                        [this](const auto &args) { onGotoScene(args); });
+  m_vm.registerCallback(OpCode::GOTO_SCENE, [this](const auto& args) { onGotoScene(args); });
 
-  m_vm.registerCallback(OpCode::WAIT,
-                        [this](const auto &args) { onWait(args); });
+  m_vm.registerCallback(OpCode::WAIT, [this](const auto& args) { onWait(args); });
 
-  m_vm.registerCallback(OpCode::PLAY_SOUND,
-                        [this](const auto &args) { onPlaySound(args); });
+  m_vm.registerCallback(OpCode::PLAY_SOUND, [this](const auto& args) { onPlaySound(args); });
 
-  m_vm.registerCallback(OpCode::PLAY_MUSIC,
-                        [this](const auto &args) { onPlayMusic(args); });
+  m_vm.registerCallback(OpCode::PLAY_MUSIC, [this](const auto& args) { onPlayMusic(args); });
 
-  m_vm.registerCallback(OpCode::STOP_MUSIC,
-                        [this](const auto &args) { onStopMusic(args); });
+  m_vm.registerCallback(OpCode::STOP_MUSIC, [this](const auto& args) { onStopMusic(args); });
 
-  m_vm.registerCallback(OpCode::TRANSITION,
-                        [this](const auto &args) { onTransition(args); });
+  m_vm.registerCallback(OpCode::TRANSITION, [this](const auto& args) { onTransition(args); });
 
   m_vm.registerCallback(OpCode::MOVE_CHARACTER,
-                        [this](const auto &args) { onMoveCharacter(args); });
+                        [this](const auto& args) { onMoveCharacter(args); });
 }
 
-void ScriptRuntime::fireEvent(ScriptEventType type, const std::string &name,
-                              const Value &value) {
+void ScriptRuntime::fireEvent(ScriptEventType type, const std::string& name, const Value& value) {
   if (m_eventCallback) {
     ScriptEvent event;
     event.type = type;
@@ -764,8 +762,7 @@ void ScriptRuntime::updateDialogue(f64 deltaTime) {
   if (m_dialogueActive && m_dialogueBox) {
     m_dialogueBox->update(deltaTime);
 
-    if (m_dialogueBox->isTypewriterComplete() &&
-        !m_dialogueBox->isWaitingForInput()) {
+    if (m_dialogueBox->isTypewriterComplete() && !m_dialogueBox->isWaitingForInput()) {
       fireEvent(ScriptEventType::DialogueComplete);
 
       // Handle auto-advance
@@ -789,25 +786,21 @@ Scene::CharacterPosition ScriptRuntime::parsePosition(i32 posCode) {
   }
 }
 
-std::unique_ptr<Scene::ITransition>
-ScriptRuntime::createTransition(const std::string &type, f32 /*duration*/) {
+std::unique_ptr<Scene::ITransition> ScriptRuntime::createTransition(const std::string& type,
+                                                                    f32 /*duration*/) {
   std::unique_ptr<Scene::ITransition> transition;
 
   if (type == "fade") {
-    transition =
-        std::make_unique<Scene::FadeTransition>(renderer::Color::Black, true);
+    transition = std::make_unique<Scene::FadeTransition>(renderer::Color::Black, true);
   } else if (type == "slide") {
-    transition = std::make_unique<Scene::SlideTransition>(
-        Scene::SlideTransition::Direction::Left);
+    transition = std::make_unique<Scene::SlideTransition>(Scene::SlideTransition::Direction::Left);
   } else if (type == "dissolve") {
     transition = std::make_unique<Scene::DissolveTransition>();
   } else if (type == "fadethrough") {
-    transition =
-        std::make_unique<Scene::FadeThroughTransition>(renderer::Color::Black);
+    transition = std::make_unique<Scene::FadeThroughTransition>(renderer::Color::Black);
   } else {
     // Default to fade
-    transition =
-        std::make_unique<Scene::FadeTransition>(renderer::Color::Black, true);
+    transition = std::make_unique<Scene::FadeTransition>(renderer::Color::Black, true);
   }
 
   return transition;

@@ -16,7 +16,7 @@ namespace NovelMind::renderer {
 
 CameraPath::CameraPath() {}
 
-void CameraPath::addPoint(const CameraPathPoint &point) {
+void CameraPath::addPoint(const CameraPathPoint& point) {
   m_points.push_back(point);
 }
 
@@ -26,13 +26,15 @@ void CameraPath::removePoint(size_t index) {
   }
 }
 
-void CameraPath::updatePoint(size_t index, const CameraPathPoint &point) {
+void CameraPath::updatePoint(size_t index, const CameraPathPoint& point) {
   if (index < m_points.size()) {
     m_points[index] = point;
   }
 }
 
-void CameraPath::clear() { m_points.clear(); }
+void CameraPath::clear() {
+  m_points.clear();
+}
 
 Vec2 CameraPath::evaluatePosition(f32 t) const {
   // Defensive check: need at least 2 points for interpolation
@@ -60,12 +62,11 @@ Vec2 CameraPath::evaluatePosition(f32 t) const {
     index = m_points.size() - 2;
   }
 
-  f32 localT =
-      (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  f32 localT = (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
   localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
-  const auto &p0 = m_points[index];
-  const auto &p1 = m_points[index + 1];
+  const auto& p0 = m_points[index];
+  const auto& p1 = m_points[index + 1];
 
   // Apply easing
   localT = scene::ease(p1.easing, localT);
@@ -97,12 +98,11 @@ f32 CameraPath::evaluateZoom(f32 t) const {
     index = m_points.size() - 2;
   }
 
-  f32 localT =
-      (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  f32 localT = (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
   localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
-  const auto &p0 = m_points[index];
-  const auto &p1 = m_points[index + 1];
+  const auto& p0 = m_points[index];
+  const auto& p1 = m_points[index + 1];
 
   localT = scene::ease(p1.easing, localT);
 
@@ -132,12 +132,11 @@ f32 CameraPath::evaluateRotation(f32 t) const {
     index = m_points.size() - 2;
   }
 
-  f32 localT =
-      (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
+  f32 localT = (t - static_cast<f32>(index) * segmentDuration) / segmentDuration;
   localT = std::clamp(localT, 0.0f, 1.0f); // Safety clamp
 
-  const auto &p0 = m_points[index];
-  const auto &p1 = m_points[index + 1];
+  const auto& p0 = m_points[index];
+  const auto& p1 = m_points[index + 1];
 
   localT = scene::ease(p1.easing, localT);
 
@@ -156,7 +155,9 @@ void Camera2D::setPosition(f32 x, f32 y) {
   applyBounds();
 }
 
-void Camera2D::setPosition(const Vec2 &pos) { setPosition(pos.x, pos.y); }
+void Camera2D::setPosition(const Vec2& pos) {
+  setPosition(pos.x, pos.y);
+}
 
 void Camera2D::move(f32 dx, f32 dy) {
   setPosition(m_position.x + dx, m_position.y + dy);
@@ -171,7 +172,9 @@ void Camera2D::moveTo(f32 x, f32 y, f32 duration, scene::EaseType easing) {
   m_isTransitioning = true;
 }
 
-void Camera2D::setZoom(f32 zoom) { m_zoom = std::max(0.01f, zoom); }
+void Camera2D::setZoom(f32 zoom) {
+  m_zoom = std::max(0.01f, zoom);
+}
 
 void Camera2D::zoomTo(f32 zoom, f32 duration, scene::EaseType easing) {
   m_startZoom = m_zoom;
@@ -182,8 +185,7 @@ void Camera2D::zoomTo(f32 zoom, f32 duration, scene::EaseType easing) {
   m_isTransitioning = true;
 }
 
-void Camera2D::zoomAt(f32 zoom, f32 x, f32 y, f32 duration,
-                      scene::EaseType easing) {
+void Camera2D::zoomAt(f32 zoom, f32 x, f32 y, f32 duration, scene::EaseType easing) {
   // Calculate position to keep point (x, y) at the same screen position
   f32 currentZoom = m_zoom;
   f32 dx = (x - m_position.x) * (1.0f - currentZoom / zoom);
@@ -199,7 +201,9 @@ void Camera2D::zoomAt(f32 zoom, f32 x, f32 y, f32 duration,
   m_isTransitioning = true;
 }
 
-void Camera2D::setRotation(f32 angle) { m_rotation = angle; }
+void Camera2D::setRotation(f32 angle) {
+  m_rotation = angle;
+}
 
 void Camera2D::rotateTo(f32 angle, f32 duration, scene::EaseType easing) {
   m_startRotation = m_rotation;
@@ -228,14 +232,16 @@ void Camera2D::setViewportSize(f32 width, f32 height) {
   m_viewportSize = {width, height};
 }
 
-void Camera2D::setBounds(const CameraBounds &bounds) {
+void Camera2D::setBounds(const CameraBounds& bounds) {
   m_bounds = bounds;
   applyBounds();
 }
 
-void Camera2D::clearBounds() { m_bounds.enabled = false; }
+void Camera2D::clearBounds() {
+  m_bounds.enabled = false;
+}
 
-void Camera2D::shake(const CameraShake &shake) {
+void Camera2D::shake(const CameraShake& shake) {
   m_currentShake = shake;
   m_shakeElapsed = 0.0f;
   m_shakeActive = true;
@@ -268,41 +274,42 @@ void Camera2D::stopShake() {
   m_trauma = 0.0f;
 }
 
-void Camera2D::followPath(const CameraPath &path) {
+void Camera2D::followPath(const CameraPath& path) {
   m_currentPath = path;
   m_pathElapsed = 0.0f;
   m_pathActive = true;
 }
 
-void Camera2D::stopPath() { m_pathActive = false; }
+void Camera2D::stopPath() {
+  m_pathActive = false;
+}
 
-void Camera2D::setTarget(const CameraTarget &target) {
+void Camera2D::setTarget(const CameraTarget& target) {
   m_target = target;
   m_hasTarget = true;
 }
 
-void Camera2D::clearTarget() { m_hasTarget = false; }
+void Camera2D::clearTarget() {
+  m_hasTarget = false;
+}
 
 void Camera2D::setTargetResolver(TargetResolver resolver) {
   m_targetResolver = std::move(resolver);
 }
 
-void Camera2D::addParallaxLayer(const ParallaxLayer &layer) {
+void Camera2D::addParallaxLayer(const ParallaxLayer& layer) {
   m_parallaxLayers.push_back(layer);
 }
 
-void Camera2D::removeParallaxLayer(const std::string &layerId) {
-  m_parallaxLayers.erase(std::remove_if(m_parallaxLayers.begin(),
-                                        m_parallaxLayers.end(),
-                                        [&layerId](const ParallaxLayer &l) {
-                                          return l.id == layerId;
-                                        }),
-                         m_parallaxLayers.end());
+void Camera2D::removeParallaxLayer(const std::string& layerId) {
+  m_parallaxLayers.erase(
+      std::remove_if(m_parallaxLayers.begin(), m_parallaxLayers.end(),
+                     [&layerId](const ParallaxLayer& l) { return l.id == layerId; }),
+      m_parallaxLayers.end());
 }
 
-void Camera2D::updateParallaxLayer(const std::string &layerId,
-                                   const ParallaxLayer &layer) {
-  for (auto &l : m_parallaxLayers) {
+void Camera2D::updateParallaxLayer(const std::string& layerId, const ParallaxLayer& layer) {
+  for (auto& l : m_parallaxLayers) {
     if (l.id == layerId) {
       l = layer;
       return;
@@ -310,9 +317,8 @@ void Camera2D::updateParallaxLayer(const std::string &layerId,
   }
 }
 
-const ParallaxLayer *
-Camera2D::getParallaxLayer(const std::string &layerId) const {
-  for (const auto &l : m_parallaxLayers) {
+const ParallaxLayer* Camera2D::getParallaxLayer(const std::string& layerId) const {
+  for (const auto& l : m_parallaxLayers) {
     if (l.id == layerId) {
       return &l;
     }
@@ -324,8 +330,8 @@ std::vector<ParallaxLayer> Camera2D::getParallaxLayers() const {
   return m_parallaxLayers;
 }
 
-Vec2 Camera2D::getParallaxOffset(const std::string &layerId) const {
-  const auto *layer = getParallaxLayer(layerId);
+Vec2 Camera2D::getParallaxOffset(const std::string& layerId) const {
+  const auto* layer = getParallaxLayer(layerId);
   if (!layer)
     return {0.0f, 0.0f};
   return getParallaxOffset(layer->depth);
@@ -370,8 +376,7 @@ Rect Camera2D::getViewBounds() const {
   f32 halfWidth = m_viewportSize.x / (2.0f * m_zoom);
   f32 halfHeight = m_viewportSize.y / (2.0f * m_zoom);
 
-  return {m_position.x - halfWidth, m_position.y - halfHeight, halfWidth * 2.0f,
-          halfHeight * 2.0f};
+  return {m_position.x - halfWidth, m_position.y - halfHeight, halfWidth * 2.0f, halfHeight * 2.0f};
 }
 
 Vec2 Camera2D::screenToWorld(f32 screenX, f32 screenY) const {
@@ -386,7 +391,7 @@ Vec2 Camera2D::worldToScreen(f32 worldX, f32 worldY) const {
   return {screenX, screenY};
 }
 
-bool Camera2D::isVisible(const Rect &bounds) const {
+bool Camera2D::isVisible(const Rect& bounds) const {
   return isVisible(bounds.x, bounds.y, bounds.width, bounds.height);
 }
 
@@ -409,10 +414,8 @@ void Camera2D::updateTransitions(f64 deltaTime) {
   f32 t = std::min(1.0f, m_transitionElapsed / m_transitionDuration);
   f32 easedT = scene::ease(m_transitionEasing, t);
 
-  m_position.x =
-      m_startPosition.x + (m_targetPosition.x - m_startPosition.x) * easedT;
-  m_position.y =
-      m_startPosition.y + (m_targetPosition.y - m_startPosition.y) * easedT;
+  m_position.x = m_startPosition.x + (m_targetPosition.x - m_startPosition.x) * easedT;
+  m_position.y = m_startPosition.y + (m_targetPosition.y - m_startPosition.y) * easedT;
   m_zoom = m_startZoom + (m_targetZoom - m_startZoom) * easedT;
   m_rotation = m_startRotation + (m_targetRotation - m_startRotation) * easedT;
 
@@ -432,8 +435,7 @@ void Camera2D::updateShake(f64 deltaTime) {
 
   if (m_currentShake.useTrauma) {
     // Decay trauma over time
-    m_trauma = std::max(0.0f, m_trauma - static_cast<f32>(deltaTime) *
-                                             m_currentShake.damping);
+    m_trauma = std::max(0.0f, m_trauma - static_cast<f32>(deltaTime) * m_currentShake.damping);
     if (m_trauma <= 0.0f) {
       m_shakeActive = false;
     }
@@ -445,8 +447,7 @@ void Camera2D::updateShake(f64 deltaTime) {
 
   // Update phase for smooth noise-like shake
   m_shakePhaseX += static_cast<f32>(deltaTime) * m_currentShake.frequency;
-  m_shakePhaseY +=
-      static_cast<f32>(deltaTime) * m_currentShake.frequency * 1.3f;
+  m_shakePhaseY += static_cast<f32>(deltaTime) * m_currentShake.frequency * 1.3f;
 }
 
 void Camera2D::updatePath(f64 deltaTime) {
@@ -481,15 +482,12 @@ void Camera2D::updateTarget(f64 deltaTime) {
     return;
   }
 
-  Vec2 desired = {targetPos->x + m_target.offset.x,
-                  targetPos->y + m_target.offset.y};
+  Vec2 desired = {targetPos->x + m_target.offset.x, targetPos->y + m_target.offset.y};
 
   // Estimate velocity for lookahead
   if (deltaTime > 0.0) {
-    m_targetVelocity.x =
-        (targetPos->x - m_targetLastPosition.x) / static_cast<f32>(deltaTime);
-    m_targetVelocity.y =
-        (targetPos->y - m_targetLastPosition.y) / static_cast<f32>(deltaTime);
+    m_targetVelocity.x = (targetPos->x - m_targetLastPosition.x) / static_cast<f32>(deltaTime);
+    m_targetVelocity.y = (targetPos->y - m_targetLastPosition.y) / static_cast<f32>(deltaTime);
   }
 
   desired.x += m_targetVelocity.x * m_target.lookaheadX;
@@ -576,18 +574,17 @@ CameraManager::CameraManager() {
   setActiveCamera("main");
 }
 
-void CameraManager::addCamera(const std::string &name,
-                              std::unique_ptr<Camera2D> camera) {
+void CameraManager::addCamera(const std::string& name, std::unique_ptr<Camera2D> camera) {
   m_cameras[name] = std::move(camera);
 }
 
-void CameraManager::removeCamera(const std::string &name) {
+void CameraManager::removeCamera(const std::string& name) {
   if (name == m_activeCameraName)
     return; // Can't remove active camera
   m_cameras.erase(name);
 }
 
-Camera2D *CameraManager::getCamera(const std::string &name) {
+Camera2D* CameraManager::getCamera(const std::string& name) {
   auto it = m_cameras.find(name);
   if (it != m_cameras.end()) {
     return it->second.get();
@@ -598,24 +595,24 @@ Camera2D *CameraManager::getCamera(const std::string &name) {
 std::vector<std::string> CameraManager::getCameraNames() const {
   std::vector<std::string> names;
   names.reserve(m_cameras.size());
-  for (const auto &[name, camera] : m_cameras) {
+  for (const auto& [name, camera] : m_cameras) {
     names.push_back(name);
   }
   return names;
 }
 
-void CameraManager::setActiveCamera(const std::string &name) {
+void CameraManager::setActiveCamera(const std::string& name) {
   if (m_cameras.find(name) != m_cameras.end()) {
     m_activeCameraName = name;
   }
 }
 
-Camera2D *CameraManager::getActiveCamera() {
+Camera2D* CameraManager::getActiveCamera() {
   return getCamera(m_activeCameraName);
 }
 
-void CameraManager::transitionToCamera(const std::string &cameraName,
-                                       f32 duration, scene::EaseType easing) {
+void CameraManager::transitionToCamera(const std::string& cameraName, f32 duration,
+                                       scene::EaseType easing) {
   if (m_cameras.find(cameraName) == m_cameras.end())
     return;
   if (cameraName == m_activeCameraName)
@@ -631,7 +628,7 @@ void CameraManager::transitionToCamera(const std::string &cameraName,
 
 void CameraManager::update(f64 deltaTime) {
   // Update all cameras
-  for (auto &[name, camera] : m_cameras) {
+  for (auto& [name, camera] : m_cameras) {
     camera->update(deltaTime);
   }
 
@@ -727,25 +724,24 @@ CameraShake createHeartbeatShake() {
   return s;
 }
 
-void applySlowPan(Camera2D &camera, f32 targetX, f32 targetY) {
+void applySlowPan(Camera2D& camera, f32 targetX, f32 targetY) {
   camera.moveTo(targetX, targetY, 3.0f, scene::EaseType::EaseInOutQuad);
 }
 
-void applyCinematicPan(Camera2D &camera, f32 targetX, f32 targetY) {
+void applyCinematicPan(Camera2D& camera, f32 targetX, f32 targetY) {
   camera.moveTo(targetX, targetY, 2.0f, scene::EaseType::EaseOutCubic);
 }
 
-void applyDramaticZoom(Camera2D &camera, f32 targetZoom) {
+void applyDramaticZoom(Camera2D& camera, f32 targetZoom) {
   camera.zoomTo(targetZoom, 1.5f, scene::EaseType::EaseOutQuad);
 }
 
-void applyCloseUp(Camera2D &camera, f32 x, f32 y) {
+void applyCloseUp(Camera2D& camera, f32 x, f32 y) {
   camera.transitionTo(x, y, 1.5f, 0.0f, 1.0f, scene::EaseType::EaseOutCubic);
 }
 
-void applyEstablishingShot(Camera2D &camera) {
-  camera.transitionTo(0.0f, 0.0f, 0.8f, 0.0f, 2.0f,
-                      scene::EaseType::EaseInOutQuad);
+void applyEstablishingShot(Camera2D& camera) {
+  camera.transitionTo(0.0f, 0.0f, 0.8f, 0.0f, 2.0f, scene::EaseType::EaseInOutQuad);
 }
 
 std::vector<ParallaxLayer> createSimpleParallax() {

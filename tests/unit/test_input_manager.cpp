@@ -191,7 +191,7 @@ TEST_CASE("InputManager - Text input", "[input][text]") {
   InputManager input;
 
   SECTION("Initial text input is empty") {
-    const std::string &text = input.getTextInput();
+    const std::string& text = input.getTextInput();
     CHECK(text.empty());
   }
 
@@ -205,7 +205,7 @@ TEST_CASE("InputManager - Text input", "[input][text]") {
 
   SECTION("Clear text input") {
     input.clearTextInput();
-    const std::string &text = input.getTextInput();
+    const std::string& text = input.getTextInput();
     CHECK(text.empty());
   }
 

@@ -29,7 +29,7 @@ class NMPlayToolbarPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMPlayToolbarPanel(QWidget *parent = nullptr);
+  explicit NMPlayToolbarPanel(QWidget* parent = nullptr);
   ~NMPlayToolbarPanel() override = default;
 
   void onInitialize() override;
@@ -46,37 +46,37 @@ public slots:
 
 private slots:
   void onPlayModeChanged(NMPlayModeController::PlayMode mode);
-  void onCurrentNodeChanged(const QString &nodeId);
-  void onBreakpointHit(const QString &nodeId);
+  void onCurrentNodeChanged(const QString& nodeId);
+  void onBreakpointHit(const QString& nodeId);
   void onSourceModeChanged(int index);
 
 private:
   void setupUI();
   void updateButtonStates();
   void updateStatusLabel();
-  void showTransientStatus(const QString &text, const QString &color);
+  void showTransientStatus(const QString& text, const QString& color);
   /// Updates source indicator UI without emitting signals or modifying project
   /// settings
   void updateSourceIndicator(int index);
 
   // UI Elements
-  class NMScrollableToolBar *m_scrollableToolBar = nullptr;
-  QPushButton *m_playButton = nullptr;
-  QPushButton *m_pauseButton = nullptr;
-  QPushButton *m_stopButton = nullptr;
-  QPushButton *m_stepButton = nullptr;
-  QPushButton *m_skipButton = nullptr;
-  QPushButton *m_saveButton = nullptr;
-  QPushButton *m_loadButton = nullptr;
-  QPushButton *m_autoSaveButton = nullptr;
-  QPushButton *m_autoLoadButton = nullptr;
-  QSpinBox *m_slotSpin = nullptr;
-  QLabel *m_statusLabel = nullptr;
+  class NMScrollableToolBar* m_scrollableToolBar = nullptr;
+  QPushButton* m_playButton = nullptr;
+  QPushButton* m_pauseButton = nullptr;
+  QPushButton* m_stopButton = nullptr;
+  QPushButton* m_stepButton = nullptr;
+  QPushButton* m_skipButton = nullptr;
+  QPushButton* m_saveButton = nullptr;
+  QPushButton* m_loadButton = nullptr;
+  QPushButton* m_autoSaveButton = nullptr;
+  QPushButton* m_autoLoadButton = nullptr;
+  QSpinBox* m_slotSpin = nullptr;
+  QLabel* m_statusLabel = nullptr;
   QTimer m_statusTimer;
 
   // Playback source controls (issue #82)
-  QComboBox *m_sourceCombo = nullptr;
-  QLabel *m_sourceIndicator = nullptr;
+  QComboBox* m_sourceCombo = nullptr;
+  QLabel* m_sourceIndicator = nullptr;
 
   // State
   NMPlayModeController::PlayMode m_currentMode = NMPlayModeController::Stopped;

@@ -17,7 +17,9 @@
 #include <any>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -56,22 +58,21 @@ enum class SettingScope : u8 {
 /**
  * @brief Polymorphic setting value
  */
-using SettingValue =
-    std::variant<bool, i32, f32, std::string,
-                 std::vector<std::string> // For enum options or paths
-                 >;
+using SettingValue = std::variant<bool, i32, f32, std::string,
+                                  std::vector<std::string> // For enum options or paths
+                                  >;
 
 /**
  * @brief Validation function for a setting
  * @return empty string if valid, error message if invalid
  */
-using SettingValidator = std::function<std::string(const SettingValue &)>;
+using SettingValidator = std::function<std::string(const SettingValue&)>;
 
 /**
  * @brief Callback when a setting changes
  */
 using SettingChangeCallback =
-    std::function<void(const std::string &key, const SettingValue &newValue)>;
+    std::function<void(const std::string& key, const SettingValue& newValue)>;
 
 // ============================================================================
 // Setting Definition
@@ -121,67 +122,61 @@ public:
   ~NMSettingsRegistry() = default;
 
   // Non-copyable (singleton-like usage)
-  NMSettingsRegistry(const NMSettingsRegistry &) = delete;
-  NMSettingsRegistry &operator=(const NMSettingsRegistry &) = delete;
+  NMSettingsRegistry(const NMSettingsRegistry&) = delete;
+  NMSettingsRegistry& operator=(const NMSettingsRegistry&) = delete;
 
   /**
    * @brief Register a setting definition
    */
-  void registerSetting(const SettingDefinition &def);
+  void registerSetting(const SettingDefinition& def);
 
   /**
    * @brief Unregister a setting
    */
-  void unregisterSetting(const std::string &key);
+  void unregisterSetting(const std::string& key);
 
   /**
    * @brief Get setting definition
    */
-  [[nodiscard]] std::optional<SettingDefinition>
-  getDefinition(const std::string &key) const;
+  [[nodiscard]] std::optional<SettingDefinition> getDefinition(const std::string& key) const;
 
   /**
    * @brief Get all setting definitions
    */
-  [[nodiscard]] const std::unordered_map<std::string, SettingDefinition> &
-  getAllDefinitions() const;
+  [[nodiscard]] const std::unordered_map<std::string, SettingDefinition>& getAllDefinitions() const;
 
   /**
    * @brief Get settings by category
    */
-  [[nodiscard]] std::vector<SettingDefinition>
-  getByCategory(const std::string &category) const;
+  [[nodiscard]] std::vector<SettingDefinition> getByCategory(const std::string& category) const;
 
   /**
    * @brief Get settings by scope
    */
-  [[nodiscard]] std::vector<SettingDefinition>
-  getByScope(SettingScope scope) const;
+  [[nodiscard]] std::vector<SettingDefinition> getByScope(SettingScope scope) const;
 
   /**
    * @brief Search settings (by name, description, tags)
    */
-  [[nodiscard]] std::vector<SettingDefinition>
-  search(const std::string &query) const;
+  [[nodiscard]] std::vector<SettingDefinition> search(const std::string& query) const;
 
   // ========== Value Management ==========
 
   /**
    * @brief Get current value of a setting
    */
-  [[nodiscard]] std::optional<SettingValue>
-  getValue(const std::string &key) const;
+  [[nodiscard]] std::optional<SettingValue> getValue(const std::string& key) const;
 
   /**
    * @brief Set value of a setting
    * @return error message if validation fails, empty string on success
    */
-  std::string setValue(const std::string &key, const SettingValue &value);
+  std::string setValue(const std::string& key, const SettingValue& value);
 
   /**
    * @brief Reset setting to default value
    */
-  void resetToDefault(const std::string &key);
+  void resetToDefault(const std::string& key);
 
   /**
    * @brief Reset all settings to defaults
@@ -191,12 +186,11 @@ public:
   /**
    * @brief Reset all settings in a category to defaults
    */
-  void resetCategoryToDefaults(const std::string &category);
+  void resetCategoryToDefaults(const std::string& category);
 
   // ========== Type-safe Getters ==========
 
-  template <typename T>
-  [[nodiscard]] std::optional<T> getValueAs(const std::string &key) const {
+  template <typename T> [[nodiscard]] std::optional<T> getValueAs(const std::string& key) const {
     auto value = getValue(key);
     if (!value)
       return std::nullopt;
@@ -208,13 +202,11 @@ public:
     }
   }
 
-  [[nodiscard]] bool getBool(const std::string &key,
-                             bool defaultVal = false) const;
-  [[nodiscard]] i32 getInt(const std::string &key, i32 defaultVal = 0) const;
-  [[nodiscard]] f32 getFloat(const std::string &key,
-                             f32 defaultVal = 0.0f) const;
-  [[nodiscard]] std::string getString(const std::string &key,
-                                      const std::string &defaultVal = "") const;
+  [[nodiscard]] bool getBool(const std::string& key, bool defaultVal = false) const;
+  [[nodiscard]] i32 getInt(const std::string& key, i32 defaultVal = 0) const;
+  [[nodiscard]] f32 getFloat(const std::string& key, f32 defaultVal = 0.0f) const;
+  [[nodiscard]] std::string getString(const std::string& key,
+                                      const std::string& defaultVal = "") const;
 
   // ========== Change Tracking ==========
 
@@ -226,7 +218,7 @@ public:
   /**
    * @brief Check if a specific setting has been modified
    */
-  [[nodiscard]] bool isModified(const std::string &key) const;
+  [[nodiscard]] bool isModified(const std::string& key) const;
 
   /**
    * @brief Get list of all modified settings
@@ -246,35 +238,34 @@ public:
   /**
    * @brief Register a callback for when a setting changes
    */
-  void registerChangeCallback(const std::string &key,
-                              SettingChangeCallback callback);
+  void registerChangeCallback(const std::string& key, SettingChangeCallback callback);
 
   /**
    * @brief Unregister a change callback
    */
-  void unregisterChangeCallback(const std::string &key);
+  void unregisterChangeCallback(const std::string& key);
 
   // ========== Persistence ==========
 
   /**
    * @brief Load user preferences from JSON file
    */
-  Result<void> loadUserSettings(const std::string &path);
+  Result<void> loadUserSettings(const std::string& path);
 
   /**
    * @brief Save user preferences to JSON file
    */
-  Result<void> saveUserSettings(const std::string &path);
+  Result<void> saveUserSettings(const std::string& path);
 
   /**
    * @brief Load project settings from JSON file
    */
-  Result<void> loadProjectSettings(const std::string &path);
+  Result<void> loadProjectSettings(const std::string& path);
 
   /**
    * @brief Save project settings to JSON file
    */
-  Result<void> saveProjectSettings(const std::string &path);
+  Result<void> saveProjectSettings(const std::string& path);
 
   /**
    * @brief Get settings schema version
@@ -299,13 +290,12 @@ public:
   void registerProjectDefaults();
 
 private:
-  std::string validateValue(const std::string &key,
-                            const SettingValue &value) const;
+  std::string validateValue(const std::string& key, const SettingValue& value) const;
 
-  Result<void> loadFromJson(const std::string &path, SettingScope scope);
-  Result<void> saveToJson(const std::string &path, SettingScope scope) const;
+  Result<void> loadFromJson(const std::string& path, SettingScope scope);
+  Result<void> saveToJson(const std::string& path, SettingScope scope) const;
 
-  void notifyChange(const std::string &key, const SettingValue &newValue);
+  void notifyChange(const std::string& key, const SettingValue& newValue);
 
   // Setting definitions (key -> definition)
   std::unordered_map<std::string, SettingDefinition> m_definitions;
@@ -317,39 +307,17 @@ private:
   std::unordered_map<std::string, SettingValue> m_originalValues;
 
   // Change callbacks (key -> callback)
-  std::unordered_map<std::string, std::vector<SettingChangeCallback>>
-      m_changeCallbacks;
+  std::unordered_map<std::string, std::vector<SettingChangeCallback>> m_changeCallbacks;
 
   bool m_isDirty = false;
   i32 m_schemaVersion = 1;
 
   std::string m_userSettingsPath;
   std::string m_projectSettingsPath;
+
+  // Thread synchronization
+  // Using shared_mutex to allow concurrent reads but exclusive writes
+  mutable std::shared_mutex m_mutex;
 };
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * @brief Convert SettingValue to string (for display)
- */
-std::string settingValueToString(const SettingValue &value);
-
-/**
- * @brief Convert string to SettingValue (for parsing)
- */
-std::optional<SettingValue> stringToSettingValue(const std::string &str,
-                                                 SettingType type);
-
-/**
- * @brief Get display name for SettingType
- */
-const char *settingTypeToString(SettingType type);
-
-/**
- * @brief Get display name for SettingScope
- */
-const char *settingScopeToString(SettingScope scope);
 
 } // namespace NovelMind::editor

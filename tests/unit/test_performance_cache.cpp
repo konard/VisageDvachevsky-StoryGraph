@@ -21,14 +21,14 @@ void ensureQtApp() {
   if (!QApplication::instance()) {
     static int argc = 1;
     static char arg0[] = "unit_tests";
-    static char *argv[] = {arg0, nullptr};
+    static char* argv[] = {arg0, nullptr};
     new QApplication(argc, argv);
   }
 }
 
 // Create a test image file
-QString createTestImage(const QString &dir, const QString &name,
-                        int width = 100, int height = 100) {
+QString createTestImage(const QString& dir, const QString& name, int width = 100,
+                        int height = 100) {
   QString path = dir + "/" + name;
   QImage image(width, height, QImage::Format_RGB32);
   image.fill(Qt::red);
@@ -236,8 +236,7 @@ TEST_CASE("LazyThumbnailLoader cache operations", "[cache][asset]") {
   SECTION("Cancel clears pending requests") {
     // Request many thumbnails
     for (int i = 0; i < 10; ++i) {
-      QString path =
-          createTestImage(tempDir.path(), QString("test%1.png").arg(i));
+      QString path = createTestImage(tempDir.path(), QString("test%1.png").arg(i));
       loader.requestThumbnail(path, QSize(80, 80));
     }
 
@@ -323,7 +322,7 @@ TEST_CASE("LazyThumbnailLoader safe shutdown", "[cache][asset]") {
 TEST_CASE("PerformanceMetrics timing", "[metrics]") {
   ensureQtApp();
 
-  auto &metrics = PerformanceMetrics::instance();
+  auto& metrics = PerformanceMetrics::instance();
   metrics.reset();
   metrics.setEnabled(true);
 
@@ -363,7 +362,7 @@ TEST_CASE("PerformanceMetrics timing", "[metrics]") {
 TEST_CASE("ScopedTimer records timing", "[metrics]") {
   ensureQtApp();
 
-  auto &metrics = PerformanceMetrics::instance();
+  auto& metrics = PerformanceMetrics::instance();
   metrics.reset();
   metrics.setEnabled(true);
 

@@ -98,10 +98,9 @@ struct VoiceCoverageStats {
 struct VoiceLineFilter {
   std::string characterFilter; // Filter by character (empty = all)
   std::string sceneFilter;     // Filter by scene (empty = all)
-  VoiceBindingStatus statusFilter =
-      VoiceBindingStatus::Unbound; // Status filter
-  bool showAllStatuses = true;     // If true, ignore statusFilter
-  std::string searchText;          // Text search in dialogue
+  VoiceBindingStatus statusFilter = VoiceBindingStatus::Unbound; // Status filter
+  bool showAllStatuses = true;                                   // If true, ignore statusFilter
+  std::string searchText;                                        // Text search in dialogue
 };
 
 /**
@@ -116,10 +115,10 @@ enum class VoiceTableFormat : u8 {
 /**
  * @brief Callback types for voice manager events
  */
-using OnVoiceBindingChanged = std::function<void(const std::string &lineId,
-                                                 const std::string &voiceFile)>;
+using OnVoiceBindingChanged =
+    std::function<void(const std::string& lineId, const std::string& voiceFile)>;
 using OnAutoMappingComplete = std::function<void(u32 mapped, u32 failed)>;
-using OnVoicePreviewStart = std::function<void(const std::string &lineId)>;
+using OnVoicePreviewStart = std::function<void(const std::string& lineId)>;
 using OnVoicePreviewStop = std::function<void()>;
 
 /**
@@ -158,12 +157,12 @@ using OnVoicePreviewStop = std::function<void()>;
  */
 class VoiceManager {
 public:
-  explicit VoiceManager(audio::AudioManager *audioManager);
+  explicit VoiceManager(audio::AudioManager* audioManager);
   ~VoiceManager();
 
   // Non-copyable
-  VoiceManager(const VoiceManager &) = delete;
-  VoiceManager &operator=(const VoiceManager &) = delete;
+  VoiceManager(const VoiceManager&) = delete;
+  VoiceManager& operator=(const VoiceManager&) = delete;
 
   // =========================================================================
   // Project Loading
@@ -174,7 +173,7 @@ public:
    * @param projectPath Path to the project directory
    * @return Success or error
    */
-  Result<void> loadProject(const std::string &projectPath);
+  Result<void> loadProject(const std::string& projectPath);
 
   /**
    * @brief Refresh voice files from disk
@@ -198,37 +197,34 @@ public:
   /**
    * @brief Get all dialogue lines
    */
-  [[nodiscard]] const std::vector<DialogueLine> &getAllLines() const {
-    return m_dialogueLines;
-  }
+  [[nodiscard]] const std::vector<DialogueLine>& getAllLines() const { return m_dialogueLines; }
 
   /**
    * @brief Get dialogue lines with filter
    */
-  [[nodiscard]] std::vector<const DialogueLine *>
-  getFilteredLines(const VoiceLineFilter &filter) const;
+  [[nodiscard]] std::vector<const DialogueLine*>
+  getFilteredLines(const VoiceLineFilter& filter) const;
 
   /**
    * @brief Get unbound dialogue lines
    */
-  [[nodiscard]] std::vector<const DialogueLine *> getUnboundLines() const;
+  [[nodiscard]] std::vector<const DialogueLine*> getUnboundLines() const;
 
   /**
    * @brief Get dialogue line by ID
    */
-  [[nodiscard]] const DialogueLine *getLine(const std::string &lineId) const;
+  [[nodiscard]] const DialogueLine* getLine(const std::string& lineId) const;
 
   /**
    * @brief Get lines for a specific character
    */
-  [[nodiscard]] std::vector<const DialogueLine *>
-  getLinesForCharacter(const std::string &characterId) const;
+  [[nodiscard]] std::vector<const DialogueLine*>
+  getLinesForCharacter(const std::string& characterId) const;
 
   /**
    * @brief Get lines for a specific scene
    */
-  [[nodiscard]] std::vector<const DialogueLine *>
-  getLinesForScene(const std::string &sceneId) const;
+  [[nodiscard]] std::vector<const DialogueLine*> getLinesForScene(const std::string& sceneId) const;
 
   // =========================================================================
   // Voice Files
@@ -237,21 +233,17 @@ public:
   /**
    * @brief Get all voice files
    */
-  [[nodiscard]] const std::vector<VoiceFileEntry> &getVoiceFiles() const {
-    return m_voiceFiles;
-  }
+  [[nodiscard]] const std::vector<VoiceFileEntry>& getVoiceFiles() const { return m_voiceFiles; }
 
   /**
    * @brief Get unbound voice files
    */
-  [[nodiscard]] std::vector<const VoiceFileEntry *>
-  getUnboundVoiceFiles() const;
+  [[nodiscard]] std::vector<const VoiceFileEntry*> getUnboundVoiceFiles() const;
 
   /**
    * @brief Get voice file by path
    */
-  [[nodiscard]] const VoiceFileEntry *
-  getVoiceFile(const std::string &path) const;
+  [[nodiscard]] const VoiceFileEntry* getVoiceFile(const std::string& path) const;
 
   // =========================================================================
   // Voice Binding
@@ -263,14 +255,13 @@ public:
    * @param voicePath Path to voice file
    * @return Success or error
    */
-  Result<void> bindVoice(const std::string &lineId,
-                         const std::string &voicePath);
+  Result<void> bindVoice(const std::string& lineId, const std::string& voicePath);
 
   /**
    * @brief Unbind voice from a dialogue line
    * @param lineId Dialogue line ID
    */
-  void unbindVoice(const std::string &lineId);
+  void unbindVoice(const std::string& lineId);
 
   /**
    * @brief Clear all voice bindings
@@ -284,20 +275,19 @@ public:
   /**
    * @brief Get configured mapping patterns
    */
-  [[nodiscard]] const std::vector<VoiceMappingPattern> &
-  getMappingPatterns() const {
+  [[nodiscard]] const std::vector<VoiceMappingPattern>& getMappingPatterns() const {
     return m_mappingPatterns;
   }
 
   /**
    * @brief Add a mapping pattern
    */
-  void addMappingPattern(const VoiceMappingPattern &pattern);
+  void addMappingPattern(const VoiceMappingPattern& pattern);
 
   /**
    * @brief Remove a mapping pattern
    */
-  void removeMappingPattern(const std::string &name);
+  void removeMappingPattern(const std::string& name);
 
   /**
    * @brief Set default mapping patterns
@@ -314,8 +304,7 @@ public:
    * @brief Preview auto-mapping without applying
    * @return Map of line ID to suggested voice file
    */
-  [[nodiscard]] std::unordered_map<std::string, std::string>
-  previewAutoMapping() const;
+  [[nodiscard]] std::unordered_map<std::string, std::string> previewAutoMapping() const;
 
   // =========================================================================
   // Voice Preview
@@ -325,13 +314,13 @@ public:
    * @brief Preview a voice line
    * @param lineId Dialogue line ID to preview
    */
-  void previewVoice(const std::string &lineId);
+  void previewVoice(const std::string& lineId);
 
   /**
    * @brief Preview a voice file directly
    * @param voicePath Path to voice file
    */
-  void previewVoiceFile(const std::string &voicePath);
+  void previewVoiceFile(const std::string& voicePath);
 
   /**
    * @brief Stop voice preview
@@ -346,9 +335,7 @@ public:
   /**
    * @brief Get currently previewing line ID
    */
-  [[nodiscard]] const std::string &getPreviewingLineId() const {
-    return m_previewingLineId;
-  }
+  [[nodiscard]] const std::string& getPreviewingLineId() const { return m_previewingLineId; }
 
   // =========================================================================
   // Statistics
@@ -379,8 +366,7 @@ public:
    * @param format Export format
    * @return Success or error
    */
-  Result<void> exportVoiceTable(const std::string &outputPath,
-                                VoiceTableFormat format) const;
+  Result<void> exportVoiceTable(const std::string& outputPath, VoiceTableFormat format) const;
 
   /**
    * @brief Import voice assignments from file
@@ -388,8 +374,7 @@ public:
    * @param format Import format
    * @return Success or error
    */
-  Result<void> importVoiceTable(const std::string &inputPath,
-                                VoiceTableFormat format);
+  Result<void> importVoiceTable(const std::string& inputPath, VoiceTableFormat format);
 
   /**
    * @brief Export unbound lines for recording
@@ -397,8 +382,7 @@ public:
    * @param format Export format
    * @return Success or error
    */
-  Result<void> exportUnboundLines(const std::string &outputPath,
-                                  VoiceTableFormat format) const;
+  Result<void> exportUnboundLines(const std::string& outputPath, VoiceTableFormat format) const;
 
   // =========================================================================
   // Save/Load
@@ -425,30 +409,28 @@ public:
 
 private:
   // Internal helpers
-  void scanVoiceDirectory(const std::string &path);
-  void parseDialogueFromScript(const std::string &scriptPath);
-  bool matchPattern(const std::string &filename,
-                    const VoiceMappingPattern &pattern,
-                    std::string &outCharacter, std::string &outLineId) const;
-  f32 getAudioDuration(const std::string &path) const;
-  void fireBindingChanged(const std::string &lineId,
-                          const std::string &voiceFile);
+  void scanVoiceDirectory(const std::string& path);
+  void parseDialogueFromScript(const std::string& scriptPath);
+  bool matchPattern(const std::string& filename, const VoiceMappingPattern& pattern,
+                    std::string& outCharacter, std::string& outLineId) const;
+  f32 getAudioDuration(const std::string& path) const;
+  void fireBindingChanged(const std::string& lineId, const std::string& voiceFile);
 
   // Export helpers
-  Result<void> exportCSV(const std::string &path,
-                         const std::vector<const DialogueLine *> &lines) const;
-  Result<void> exportJSON(const std::string &path,
-                          const std::vector<const DialogueLine *> &lines) const;
-  Result<void> exportTSV(const std::string &path,
-                         const std::vector<const DialogueLine *> &lines) const;
+  Result<void> exportCSV(const std::string& path,
+                         const std::vector<const DialogueLine*>& lines) const;
+  Result<void> exportJSON(const std::string& path,
+                          const std::vector<const DialogueLine*>& lines) const;
+  Result<void> exportTSV(const std::string& path,
+                         const std::vector<const DialogueLine*>& lines) const;
 
   // Import helpers
-  Result<void> importCSV(const std::string &path);
-  Result<void> importJSON(const std::string &path);
-  Result<void> importTSV(const std::string &path);
+  Result<void> importCSV(const std::string& path);
+  Result<void> importJSON(const std::string& path);
+  Result<void> importTSV(const std::string& path);
 
   // Audio manager (not owned)
-  audio::AudioManager *m_audioManager = nullptr;
+  audio::AudioManager* m_audioManager = nullptr;
 
   // Project state
   std::string m_projectPath;

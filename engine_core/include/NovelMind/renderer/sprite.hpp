@@ -15,17 +15,17 @@ public:
   ~Sprite() = default;
 
   void setTexture(std::shared_ptr<Texture> texture);
-  [[nodiscard]] const Texture *getTexture() const;
+  [[nodiscard]] const Texture* getTexture() const;
 
-  void setSourceRect(const Rect &rect);
-  [[nodiscard]] const Rect &getSourceRect() const;
+  void setSourceRect(const Rect& rect);
+  [[nodiscard]] const Rect& getSourceRect() const;
 
-  void setTransform(const Transform2D &transform);
-  [[nodiscard]] const Transform2D &getTransform() const;
-  [[nodiscard]] Transform2D &getTransform();
+  void setTransform(const Transform2D& transform);
+  [[nodiscard]] const Transform2D& getTransform() const;
+  [[nodiscard]] Transform2D& getTransform();
 
-  void setColor(const Color &color);
-  [[nodiscard]] const Color &getColor() const;
+  void setColor(const Color& color);
+  [[nodiscard]] const Color& getColor() const;
 
   void setVisible(bool visible);
   [[nodiscard]] bool isVisible() const;

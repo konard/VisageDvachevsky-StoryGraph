@@ -4,40 +4,44 @@
 
 namespace NovelMind::Scene {
 
-DialogueBox::DialogueBox(const std::string &id)
-    : scene::SceneObject(id), m_style(), m_bounds{0.0f, 0.0f, 800.0f, 200.0f},
-      m_speakerName(), m_speakerColor(renderer::Color::White), m_text(),
-      m_visibleCharacters(0), m_typewriterTimer(0.0f),
-      m_typewriterComplete(true), m_showWaitIndicator(false),
-      m_waitIndicatorTimer(0.0f), m_waitIndicatorVisible(false),
-      m_autoAdvance(false), m_autoAdvanceDelay(2.0f), m_autoAdvanceTimer(0.0f),
-      m_onComplete(nullptr) {}
+DialogueBox::DialogueBox(const std::string& id)
+    : scene::SceneObject(id), m_style(), m_bounds{0.0f, 0.0f, 800.0f, 200.0f}, m_speakerName(),
+      m_speakerColor(renderer::Color::White), m_text(), m_visibleCharacters(0),
+      m_typewriterTimer(0.0f), m_typewriterComplete(true), m_showWaitIndicator(false),
+      m_waitIndicatorTimer(0.0f), m_waitIndicatorVisible(false), m_autoAdvance(false),
+      m_autoAdvanceDelay(2.0f), m_autoAdvanceTimer(0.0f), m_onComplete(nullptr) {}
 
 DialogueBox::~DialogueBox() = default;
 
-void DialogueBox::setResourceManager(resource::ResourceManager *resources) {
+void DialogueBox::setResourceManager(resource::ResourceManager* resources) {
   m_resources = resources;
 }
 
-void DialogueBox::setStyle(const DialogueBoxStyle &style) { m_style = style; }
+void DialogueBox::setStyle(const DialogueBoxStyle& style) {
+  m_style = style;
+}
 
-const DialogueBoxStyle &DialogueBox::getStyle() const { return m_style; }
+const DialogueBoxStyle& DialogueBox::getStyle() const {
+  return m_style;
+}
 
 void DialogueBox::setBounds(f32 x, f32 y, f32 width, f32 height) {
   m_bounds = renderer::Rect{x, y, width, height};
 }
 
-renderer::Rect DialogueBox::getBounds() const { return m_bounds; }
+renderer::Rect DialogueBox::getBounds() const {
+  return m_bounds;
+}
 
-void DialogueBox::setSpeakerName(const std::string &name) {
+void DialogueBox::setSpeakerName(const std::string& name) {
   m_speakerName = name;
 }
 
-void DialogueBox::setSpeakerColor(const renderer::Color &color) {
+void DialogueBox::setSpeakerColor(const renderer::Color& color) {
   m_speakerColor = color;
 }
 
-void DialogueBox::setText(const std::string &text, bool immediate) {
+void DialogueBox::setText(const std::string& text, bool immediate) {
   m_text = text;
   m_waitIndicatorVisible = false;
   m_autoAdvanceTimer = 0.0f;
@@ -58,7 +62,9 @@ void DialogueBox::setText(const std::string &text, bool immediate) {
   }
 }
 
-const std::string &DialogueBox::getText() const { return m_text; }
+const std::string& DialogueBox::getText() const {
+  return m_text;
+}
 
 std::string DialogueBox::getVisibleText() const {
   if (m_visibleCharacters >= m_text.size()) {
@@ -67,7 +73,9 @@ std::string DialogueBox::getVisibleText() const {
   return m_text.substr(0, m_visibleCharacters);
 }
 
-bool DialogueBox::isComplete() const { return m_typewriterComplete; }
+bool DialogueBox::isComplete() const {
+  return m_typewriterComplete;
+}
 
 void DialogueBox::skipAnimation() {
   if (!m_typewriterComplete) {
@@ -107,7 +115,9 @@ void DialogueBox::setAutoAdvance(bool enabled, f32 delay) {
   m_autoAdvanceDelay = delay;
 }
 
-bool DialogueBox::isAutoAdvanceEnabled() const { return m_autoAdvance; }
+bool DialogueBox::isAutoAdvanceEnabled() const {
+  return m_autoAdvance;
+}
 
 void DialogueBox::setTypewriterSpeed(f32 charsPerSecond) {
   m_style.typewriterSpeed = charsPerSecond;
@@ -120,15 +130,21 @@ void DialogueBox::startTypewriter() {
   m_showWaitIndicator = false;
 }
 
-bool DialogueBox::isTypewriterComplete() const { return m_typewriterComplete; }
+bool DialogueBox::isTypewriterComplete() const {
+  return m_typewriterComplete;
+}
 
 bool DialogueBox::isWaitingForInput() const {
   return m_typewriterComplete && m_showWaitIndicator;
 }
 
-void DialogueBox::show() { m_visible = true; }
+void DialogueBox::show() {
+  m_visible = true;
+}
 
-void DialogueBox::hide() { m_visible = false; }
+void DialogueBox::hide() {
+  m_visible = false;
+}
 
 void DialogueBox::update(f64 deltaTime) {
   SceneObject::update(deltaTime);
@@ -152,8 +168,7 @@ void DialogueBox::updateTypewriter(f64 deltaTime) {
   f32 charsPerSecond = m_style.typewriterSpeed;
   f32 charInterval = 1.0f / charsPerSecond;
 
-  while (m_typewriterTimer >= charInterval &&
-         m_visibleCharacters < m_text.size()) {
+  while (m_typewriterTimer >= charInterval && m_visibleCharacters < m_text.size()) {
     m_typewriterTimer -= charInterval;
     ++m_visibleCharacters;
 
@@ -188,11 +203,10 @@ void DialogueBox::updateWaitIndicator(f64 deltaTime) {
 
   // Blink at 2 Hz
   const f32 blinkInterval = 0.5f;
-  m_waitIndicatorVisible =
-      (static_cast<int>(m_waitIndicatorTimer / blinkInterval) % 2) == 0;
+  m_waitIndicatorVisible = (static_cast<int>(m_waitIndicatorTimer / blinkInterval) % 2) == 0;
 }
 
-void DialogueBox::render(renderer::IRenderer &renderer) {
+void DialogueBox::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -220,30 +234,26 @@ void DialogueBox::render(renderer::IRenderer &renderer) {
 
     // Draw speaker name if present
     if (!m_speakerName.empty()) {
-      auto speakerFontResult =
-          m_resources->loadFont(kDefaultFontId, kSpeakerFontSize);
+      auto speakerFontResult = m_resources->loadFont(kDefaultFontId, kSpeakerFontSize);
       if (speakerFontResult.isOk()) {
         renderer::Color speakerColor = m_speakerColor;
         if (speakerColor == renderer::Color::White) {
           speakerColor = m_style.nameColor;
         }
         speakerColor.a = static_cast<u8>(speakerColor.a * m_alpha);
-        renderer.drawText(*speakerFontResult.value(), m_speakerName, textX,
-                          textY, speakerColor);
+        renderer.drawText(*speakerFontResult.value(), m_speakerName, textX, textY, speakerColor);
         textY += static_cast<f32>(kSpeakerFontSize) + m_style.namePaddingBottom;
       }
     }
 
     // Draw dialogue text (with typewriter effect)
     if (!m_text.empty()) {
-      auto textFontResult =
-          m_resources->loadFont(kDefaultFontId, kDefaultFontSize);
+      auto textFontResult = m_resources->loadFont(kDefaultFontId, kDefaultFontSize);
       if (textFontResult.isOk()) {
         std::string visibleText = getVisibleText();
         renderer::Color textColor = m_style.textColor;
         textColor.a = static_cast<u8>(textColor.a * m_alpha);
-        renderer.drawText(*textFontResult.value(), visibleText, textX, textY,
-                          textColor);
+        renderer.drawText(*textFontResult.value(), visibleText, textX, textY, textColor);
       }
     }
   }
@@ -251,10 +261,10 @@ void DialogueBox::render(renderer::IRenderer &renderer) {
   // Draw wait indicator (simple rectangle for now)
   if (m_waitIndicatorVisible) {
     f32 indicatorSize = 12.0f;
-    renderer::Rect indicatorRect{
-        m_bounds.x + m_bounds.width - m_style.paddingRight - indicatorSize,
-        m_bounds.y + m_bounds.height - m_style.paddingBottom - indicatorSize,
-        indicatorSize, indicatorSize};
+    renderer::Rect indicatorRect{m_bounds.x + m_bounds.width - m_style.paddingRight - indicatorSize,
+                                 m_bounds.y + m_bounds.height - m_style.paddingBottom -
+                                     indicatorSize,
+                                 indicatorSize, indicatorSize};
     renderer::Color indicatorColor = m_style.textColor;
     indicatorColor.a = static_cast<u8>(indicatorColor.a * m_alpha);
     renderer.fillRect(indicatorRect, indicatorColor);

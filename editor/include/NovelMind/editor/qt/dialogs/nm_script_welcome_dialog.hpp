@@ -45,7 +45,7 @@ public:
    * @brief Construct the Script Editor welcome dialog
    * @param parent Parent widget
    */
-  explicit NMScriptWelcomeDialog(QWidget *parent = nullptr);
+  explicit NMScriptWelcomeDialog(QWidget* parent = nullptr);
 
   /**
    * @brief Destructor
@@ -78,7 +78,7 @@ signals:
    * @brief Emitted when user requests to open a sample script
    * @param sampleId ID of the sample script (e.g., "basic", "choices", "advanced")
    */
-  void openSampleRequested(const QString &sampleId);
+  void openSampleRequested(const QString& sampleId);
 
 public slots:
   /**
@@ -89,7 +89,7 @@ public slots:
 private slots:
   void onTakeTourClicked();
   void onQuickStartClicked();
-  void onSampleClicked(const QString &sampleId);
+  void onSampleClicked(const QString& sampleId);
   void onKeyboardShortcutsClicked();
 
 private:
@@ -98,22 +98,21 @@ private:
   void setupMainContent();
   void setupFooter();
   void styleDialog();
-  QWidget *createFeatureCard(const QString &icon, const QString &title,
-                              const QString &description,
-                              const QString &shortcut = QString());
-  QWidget *createSampleCard(const QString &title, const QString &description,
-                            const QString &sampleId);
-  QWidget *createShortcutRow(const QString &action, const QString &shortcut);
+  QWidget* createFeatureCard(const QString& icon, const QString& title, const QString& description,
+                             const QString& shortcut = QString());
+  QWidget* createSampleCard(const QString& title, const QString& description,
+                            const QString& sampleId);
+  QWidget* createShortcutRow(const QString& action, const QString& shortcut);
 
   // UI Components
-  QWidget *m_headerWidget = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QScrollArea *m_scrollArea = nullptr;
-  QWidget *m_footerWidget = nullptr;
-  QCheckBox *m_skipCheckbox = nullptr;
-  QPushButton *m_takeTourBtn = nullptr;
-  QPushButton *m_quickStartBtn = nullptr;
-  QPushButton *m_closeBtn = nullptr;
+  QWidget* m_headerWidget = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QScrollArea* m_scrollArea = nullptr;
+  QWidget* m_footerWidget = nullptr;
+  QCheckBox* m_skipCheckbox = nullptr;
+  QPushButton* m_takeTourBtn = nullptr;
+  QPushButton* m_quickStartBtn = nullptr;
+  QPushButton* m_closeBtn = nullptr;
 
   // State
   bool m_skipInFuture = false;

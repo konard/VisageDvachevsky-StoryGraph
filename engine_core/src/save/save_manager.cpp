@@ -31,16 +31,14 @@ constexpr u32 kMaxVariableCount = 100000;
 struct BufferWriter {
   std::vector<u8> data;
 
-  void writeBytes(const void *src, size_t size) {
-    const auto *ptr = reinterpret_cast<const u8 *>(src);
+  void writeBytes(const void* src, size_t size) {
+    const auto* ptr = reinterpret_cast<const u8*>(src);
     data.insert(data.end(), ptr, ptr + size);
   }
 
-  template <typename T> void writePod(const T &value) {
-    writeBytes(&value, sizeof(T));
-  }
+  template <typename T> void writePod(const T& value) { writeBytes(&value, sizeof(T)); }
 
-  void writeString(const std::string &str) {
+  void writeString(const std::string& str) {
     u32 len = static_cast<u32>(str.size());
     writePod(len);
     if (len > 0) {
@@ -50,11 +48,11 @@ struct BufferWriter {
 };
 
 struct BufferReader {
-  const u8 *data = nullptr;
+  const u8* data = nullptr;
   size_t size = 0;
   size_t offset = 0;
 
-  bool readBytes(void *dst, size_t count) {
+  bool readBytes(void* dst, size_t count) {
     if (offset + count > size) {
       return false;
     }
@@ -63,11 +61,9 @@ struct BufferReader {
     return true;
   }
 
-  template <typename T> bool readPod(T &value) {
-    return readBytes(&value, sizeof(T));
-  }
+  template <typename T> bool readPod(T& value) { return readBytes(&value, sizeof(T)); }
 
-  bool readString(std::string &out, u32 maxLen) {
+  bool readString(std::string& out, u32 maxLen) {
     u32 len = 0;
     if (!readPod(len) || len > maxLen) {
       return false;
@@ -75,18 +71,17 @@ struct BufferReader {
     if (offset + len > size) {
       return false;
     }
-    out.assign(reinterpret_cast<const char *>(data + offset), len);
+    out.assign(reinterpret_cast<const char*>(data + offset), len);
     offset += len;
     return true;
   }
 };
 
 u64 nowTimestamp() {
-  return static_cast<u64>(
-      std::chrono::system_clock::now().time_since_epoch().count());
+  return static_cast<u64>(std::chrono::system_clock::now().time_since_epoch().count());
 }
 
-Result<std::vector<u8>> compressData(const std::vector<u8> &input) {
+Result<std::vector<u8>> compressData(const std::vector<u8>& input) {
 #if defined(NOVELMIND_HAS_ZLIB)
   if (input.empty()) {
     return Result<std::vector<u8>>::ok({});
@@ -94,8 +89,8 @@ Result<std::vector<u8>> compressData(const std::vector<u8> &input) {
 
   uLongf destLen = compressBound(static_cast<uLong>(input.size()));
   std::vector<u8> out(destLen);
-  int res = compress2(out.data(), &destLen, input.data(),
-                      static_cast<uLong>(input.size()), Z_BEST_SPEED);
+  int res =
+      compress2(out.data(), &destLen, input.data(), static_cast<uLong>(input.size()), Z_BEST_SPEED);
   if (res != Z_OK) {
     return Result<std::vector<u8>>::error("Compression failed");
   }
@@ -107,13 +102,11 @@ Result<std::vector<u8>> compressData(const std::vector<u8> &input) {
 #endif
 }
 
-Result<std::vector<u8>> decompressData(const std::vector<u8> &input,
-                                       size_t rawSize) {
+Result<std::vector<u8>> decompressData(const std::vector<u8>& input, size_t rawSize) {
 #if defined(NOVELMIND_HAS_ZLIB)
   std::vector<u8> out(rawSize);
   uLongf destLen = static_cast<uLongf>(rawSize);
-  int res = uncompress(out.data(), &destLen, input.data(),
-                       static_cast<uLong>(input.size()));
+  int res = uncompress(out.data(), &destLen, input.data(), static_cast<uLong>(input.size()));
   if (res != Z_OK) {
     return Result<std::vector<u8>>::error("Decompression failed");
   }
@@ -132,8 +125,7 @@ struct EncryptedPayload {
   std::array<u8, 16> tag{};
 };
 
-Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
-                                     const std::vector<u8> &key) {
+Result<EncryptedPayload> encryptData(const std::vector<u8>& input, const std::vector<u8>& key) {
 #if defined(NOVELMIND_HAS_OPENSSL)
   if (key.size() != 32) {
     return Result<EncryptedPayload>::error("Invalid encryption key size");
@@ -144,7 +136,7 @@ Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
     return Result<EncryptedPayload>::error("Failed to generate IV");
   }
 
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
   if (!ctx) {
     return Result<EncryptedPayload>::error("Failed to create cipher context");
   }
@@ -152,24 +144,22 @@ Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
   int len = 0;
   out.data.resize(input.size());
 
-  if (EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) !=
-      1) {
+  if (EVP_EncryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<EncryptedPayload>::error("Encrypt init failed");
   }
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                          static_cast<int>(out.iv.size()), nullptr) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(out.iv.size()), nullptr) !=
+      1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<EncryptedPayload>::error("Encrypt IV setup failed");
   }
-  if (EVP_EncryptInit_ex(ctx, nullptr, nullptr, key.data(), out.iv.data()) !=
-      1) {
+  if (EVP_EncryptInit_ex(ctx, nullptr, nullptr, key.data(), out.iv.data()) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<EncryptedPayload>::error("Encrypt key setup failed");
   }
 
-  if (EVP_EncryptUpdate(ctx, out.data.data(), &len, input.data(),
-                        static_cast<int>(input.size())) != 1) {
+  if (EVP_EncryptUpdate(ctx, out.data.data(), &len, input.data(), static_cast<int>(input.size())) !=
+      1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<EncryptedPayload>::error("Encrypt update failed");
   }
@@ -182,8 +172,7 @@ Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
   total += len;
   out.data.resize(static_cast<size_t>(total));
 
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG,
-                          static_cast<int>(out.tag.size()),
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, static_cast<int>(out.tag.size()),
                           out.tag.data()) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<EncryptedPayload>::error("Encrypt tag failed");
@@ -198,16 +187,14 @@ Result<EncryptedPayload> encryptData(const std::vector<u8> &input,
 #endif
 }
 
-Result<std::vector<u8>> decryptData(const std::vector<u8> &input,
-                                    const std::vector<u8> &key,
-                                    const std::array<u8, 12> &iv,
-                                    const std::array<u8, 16> &tag) {
+Result<std::vector<u8>> decryptData(const std::vector<u8>& input, const std::vector<u8>& key,
+                                    const std::array<u8, 12>& iv, const std::array<u8, 16>& tag) {
 #if defined(NOVELMIND_HAS_OPENSSL)
   if (key.size() != 32) {
     return Result<std::vector<u8>>::error("Invalid encryption key size");
   }
 
-  EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+  EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
   if (!ctx) {
     return Result<std::vector<u8>>::error("Failed to create cipher context");
   }
@@ -215,13 +202,11 @@ Result<std::vector<u8>> decryptData(const std::vector<u8> &input,
   std::vector<u8> out(input.size());
   int len = 0;
 
-  if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) !=
-      1) {
+  if (EVP_DecryptInit_ex(ctx, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Decrypt init failed");
   }
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN,
-                          static_cast<int>(iv.size()), nullptr) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(iv.size()), nullptr) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Decrypt IV setup failed");
   }
@@ -230,16 +215,14 @@ Result<std::vector<u8>> decryptData(const std::vector<u8> &input,
     return Result<std::vector<u8>>::error("Decrypt key setup failed");
   }
 
-  if (EVP_DecryptUpdate(ctx, out.data(), &len, input.data(),
-                        static_cast<int>(input.size())) != 1) {
+  if (EVP_DecryptUpdate(ctx, out.data(), &len, input.data(), static_cast<int>(input.size())) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Decrypt update failed");
   }
   int total = len;
 
-  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG,
-                          static_cast<int>(tag.size()),
-                          const_cast<u8 *>(tag.data())) != 1) {
+  if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, static_cast<int>(tag.size()),
+                          const_cast<u8*>(tag.data())) != 1) {
     EVP_CIPHER_CTX_free(ctx);
     return Result<std::vector<u8>>::error("Decrypt tag setup failed");
   }
@@ -267,7 +250,7 @@ SaveManager::SaveManager() : m_savePath("./saves/") {}
 
 SaveManager::~SaveManager() = default;
 
-Result<void> SaveManager::save(i32 slot, const SaveData &data) {
+Result<void> SaveManager::save(i32 slot, const SaveData& data) {
   if (slot < 0 || slot >= MAX_SLOTS) {
     return Result<void>::error("Invalid save slot");
   }
@@ -319,22 +302,30 @@ std::optional<SaveMetadata> SaveManager::getSlotMetadata(i32 slot) const {
   return readMetadata(getSlotFilename(slot));
 }
 
-i32 SaveManager::getMaxSlots() const { return MAX_SLOTS; }
+i32 SaveManager::getMaxSlots() const {
+  return MAX_SLOTS;
+}
 
-void SaveManager::setSavePath(const std::string &path) {
+void SaveManager::setSavePath(const std::string& path) {
   m_savePath = path;
   if (!m_savePath.empty() && m_savePath.back() != '/') {
     m_savePath += '/';
   }
 }
 
-const std::string &SaveManager::getSavePath() const { return m_savePath; }
+const std::string& SaveManager::getSavePath() const {
+  return m_savePath;
+}
 
-void SaveManager::setConfig(const SaveConfig &config) { m_config = config; }
+void SaveManager::setConfig(const SaveConfig& config) {
+  m_config = config;
+}
 
-const SaveConfig &SaveManager::getConfig() const { return m_config; }
+const SaveConfig& SaveManager::getConfig() const {
+  return m_config;
+}
 
-Result<void> SaveManager::saveAuto(const SaveData &data) {
+Result<void> SaveManager::saveAuto(const SaveData& data) {
   return saveToFile(getAutoSaveFilename(), data);
 }
 
@@ -355,10 +346,10 @@ std::string SaveManager::getAutoSaveFilename() const {
   return m_savePath + "autosave.nmsav";
 }
 
-u32 SaveManager::calculateChecksum(const SaveData &data) {
+u32 SaveManager::calculateChecksum(const SaveData& data) {
   u32 checksum = 0;
 
-  auto hashString = [&checksum](const std::string &str) {
+  auto hashString = [&checksum](const std::string& str) {
     for (char c : str) {
       checksum = checksum * 31 + static_cast<u32>(c);
     }
@@ -373,22 +364,22 @@ u32 SaveManager::calculateChecksum(const SaveData &data) {
   hashString(data.sceneId);
   hashString(data.nodeId);
 
-  for (const auto &[name, value] : data.intVariables) {
+  for (const auto& [name, value] : data.intVariables) {
     hashString(name);
     checksum = checksum * 31 + static_cast<u32>(value);
   }
 
-  for (const auto &[name, value] : data.floatVariables) {
+  for (const auto& [name, value] : data.floatVariables) {
     hashString(name);
     hashFloat(value);
   }
 
-  for (const auto &[name, value] : data.flags) {
+  for (const auto& [name, value] : data.flags) {
     hashString(name);
     checksum = checksum * 31 + (value ? 1 : 0);
   }
 
-  for (const auto &[name, value] : data.stringVariables) {
+  for (const auto& [name, value] : data.stringVariables) {
     hashString(name);
     hashString(value);
   }
@@ -403,8 +394,7 @@ u32 SaveManager::calculateChecksum(const SaveData &data) {
   return checksum;
 }
 
-Result<void> SaveManager::saveToFile(const std::string &filename,
-                                     SaveData data) {
+Result<void> SaveManager::saveToFile(const std::string& filename, SaveData data) {
   data.timestamp = nowTimestamp();
   data.checksum = calculateChecksum(data);
 
@@ -414,21 +404,21 @@ Result<void> SaveManager::saveToFile(const std::string &filename,
 
   u32 intCount = static_cast<u32>(data.intVariables.size());
   writer.writePod(intCount);
-  for (const auto &[name, value] : data.intVariables) {
+  for (const auto& [name, value] : data.intVariables) {
     writer.writeString(name);
     writer.writePod(value);
   }
 
   u32 floatCount = static_cast<u32>(data.floatVariables.size());
   writer.writePod(floatCount);
-  for (const auto &[name, value] : data.floatVariables) {
+  for (const auto& [name, value] : data.floatVariables) {
     writer.writeString(name);
     writer.writePod(value);
   }
 
   u32 flagCount = static_cast<u32>(data.flags.size());
   writer.writePod(flagCount);
-  for (const auto &[name, value] : data.flags) {
+  for (const auto& [name, value] : data.flags) {
     writer.writeString(name);
     u8 bval = value ? 1 : 0;
     writer.writePod(bval);
@@ -436,7 +426,7 @@ Result<void> SaveManager::saveToFile(const std::string &filename,
 
   u32 strCount = static_cast<u32>(data.stringVariables.size());
   writer.writePod(strCount);
-  for (const auto &[name, value] : data.stringVariables) {
+  for (const auto& [name, value] : data.stringVariables) {
     writer.writeString(name);
     writer.writeString(value);
   }
@@ -485,26 +475,21 @@ Result<void> SaveManager::saveToFile(const std::string &filename,
   u32 thumbHeight = static_cast<u32>(std::max(0, data.thumbnailHeight));
   u32 thumbStored = static_cast<u32>(data.thumbnailData.size());
 
-  file.write(reinterpret_cast<const char *>(&kMagic), sizeof(kMagic));
-  file.write(reinterpret_cast<const char *>(&kVersionCurrent),
-             sizeof(kVersionCurrent));
-  file.write(reinterpret_cast<const char *>(&flags), sizeof(flags));
-  file.write(reinterpret_cast<const char *>(&payloadSize), sizeof(payloadSize));
-  file.write(reinterpret_cast<const char *>(&rawSize), sizeof(rawSize));
-  file.write(reinterpret_cast<const char *>(&data.timestamp),
-             sizeof(data.timestamp));
-  file.write(reinterpret_cast<const char *>(&data.checksum),
-             sizeof(data.checksum));
-  file.write(reinterpret_cast<const char *>(&thumbWidth), sizeof(thumbWidth));
-  file.write(reinterpret_cast<const char *>(&thumbHeight), sizeof(thumbHeight));
-  file.write(reinterpret_cast<const char *>(&thumbStored), sizeof(thumbStored));
-  file.write(reinterpret_cast<const char *>(iv.data()),
-             static_cast<std::streamsize>(iv.size()));
-  file.write(reinterpret_cast<const char *>(tag.data()),
-             static_cast<std::streamsize>(tag.size()));
+  file.write(reinterpret_cast<const char*>(&kMagic), sizeof(kMagic));
+  file.write(reinterpret_cast<const char*>(&kVersionCurrent), sizeof(kVersionCurrent));
+  file.write(reinterpret_cast<const char*>(&flags), sizeof(flags));
+  file.write(reinterpret_cast<const char*>(&payloadSize), sizeof(payloadSize));
+  file.write(reinterpret_cast<const char*>(&rawSize), sizeof(rawSize));
+  file.write(reinterpret_cast<const char*>(&data.timestamp), sizeof(data.timestamp));
+  file.write(reinterpret_cast<const char*>(&data.checksum), sizeof(data.checksum));
+  file.write(reinterpret_cast<const char*>(&thumbWidth), sizeof(thumbWidth));
+  file.write(reinterpret_cast<const char*>(&thumbHeight), sizeof(thumbHeight));
+  file.write(reinterpret_cast<const char*>(&thumbStored), sizeof(thumbStored));
+  file.write(reinterpret_cast<const char*>(iv.data()), static_cast<std::streamsize>(iv.size()));
+  file.write(reinterpret_cast<const char*>(tag.data()), static_cast<std::streamsize>(tag.size()));
 
   if (!payload.empty()) {
-    file.write(reinterpret_cast<const char *>(payload.data()),
+    file.write(reinterpret_cast<const char*>(payload.data()),
                static_cast<std::streamsize>(payload.size()));
   }
 
@@ -516,7 +501,7 @@ Result<void> SaveManager::saveToFile(const std::string &filename,
   return Result<void>::ok();
 }
 
-Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
+Result<SaveData> SaveManager::loadFromFile(const std::string& filename) {
   std::ifstream file(filename, std::ios::binary);
   if (!file.is_open()) {
     return Result<SaveData>::error("Save file not found: " + filename);
@@ -524,8 +509,8 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
   u32 magic = 0;
   u16 version = 0;
-  file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-  file.read(reinterpret_cast<char *>(&version), sizeof(version));
+  file.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+  file.read(reinterpret_cast<char*>(&version), sizeof(version));
   if (!file) {
     return Result<SaveData>::error("Failed to read save file header");
   }
@@ -540,7 +525,7 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
     auto readString = [&file](u32 maxLen) -> std::pair<std::string, bool> {
       u32 len = 0;
-      file.read(reinterpret_cast<char *>(&len), sizeof(len));
+      file.read(reinterpret_cast<char*>(&len), sizeof(len));
       if (!file || len > maxLen) {
         return {"", false};
       }
@@ -554,87 +539,79 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
     auto [sceneId, sceneOk] = readString(kMaxStringLength);
     if (!sceneOk) {
-      return Result<SaveData>::error(
-          "Invalid or corrupted scene ID in save file");
+      return Result<SaveData>::error("Invalid or corrupted scene ID in save file");
     }
     data.sceneId = std::move(sceneId);
 
     auto [nodeId, nodeOk] = readString(kMaxStringLength);
     if (!nodeOk) {
-      return Result<SaveData>::error(
-          "Invalid or corrupted node ID in save file");
+      return Result<SaveData>::error("Invalid or corrupted node ID in save file");
     }
     data.nodeId = std::move(nodeId);
 
     u32 intCount = 0;
-    file.read(reinterpret_cast<char *>(&intCount), sizeof(intCount));
+    file.read(reinterpret_cast<char*>(&intCount), sizeof(intCount));
     if (!file || intCount > kMaxVariableCount) {
       return Result<SaveData>::error("Invalid or corrupted int variable count");
     }
     for (u32 i = 0; i < intCount; ++i) {
       auto [name, nameOk] = readString(kMaxStringLength);
       if (!nameOk) {
-        return Result<SaveData>::error("Invalid int variable name at index " +
-                                       std::to_string(i));
+        return Result<SaveData>::error("Invalid int variable name at index " + std::to_string(i));
       }
       i32 value = 0;
-      file.read(reinterpret_cast<char *>(&value), sizeof(value));
+      file.read(reinterpret_cast<char*>(&value), sizeof(value));
       if (!file) {
-        return Result<SaveData>::error(
-            "Failed to read int variable value at index " + std::to_string(i));
+        return Result<SaveData>::error("Failed to read int variable value at index " +
+                                       std::to_string(i));
       }
       data.intVariables[name] = value;
     }
 
     u32 flagCount = 0;
-    file.read(reinterpret_cast<char *>(&flagCount), sizeof(flagCount));
+    file.read(reinterpret_cast<char*>(&flagCount), sizeof(flagCount));
     if (!file || flagCount > kMaxVariableCount) {
       return Result<SaveData>::error("Invalid or corrupted flag count");
     }
     for (u32 i = 0; i < flagCount; ++i) {
       auto [name, nameOk] = readString(kMaxStringLength);
       if (!nameOk) {
-        return Result<SaveData>::error("Invalid flag name at index " +
-                                       std::to_string(i));
+        return Result<SaveData>::error("Invalid flag name at index " + std::to_string(i));
       }
       u8 bval = 0;
-      file.read(reinterpret_cast<char *>(&bval), sizeof(bval));
+      file.read(reinterpret_cast<char*>(&bval), sizeof(bval));
       if (!file) {
-        return Result<SaveData>::error("Failed to read flag value at index " +
-                                       std::to_string(i));
+        return Result<SaveData>::error("Failed to read flag value at index " + std::to_string(i));
       }
       data.flags[name] = bval != 0;
     }
 
     u32 strCount = 0;
-    file.read(reinterpret_cast<char *>(&strCount), sizeof(strCount));
+    file.read(reinterpret_cast<char*>(&strCount), sizeof(strCount));
     if (!file || strCount > kMaxVariableCount) {
-      return Result<SaveData>::error(
-          "Invalid or corrupted string variable count");
+      return Result<SaveData>::error("Invalid or corrupted string variable count");
     }
     for (u32 i = 0; i < strCount; ++i) {
       auto [name, nameOk] = readString(kMaxStringLength);
       if (!nameOk) {
-        return Result<SaveData>::error(
-            "Invalid string variable name at index " + std::to_string(i));
+        return Result<SaveData>::error("Invalid string variable name at index " +
+                                       std::to_string(i));
       }
       auto [value, valueOk] = readString(kMaxStringLength);
       if (!valueOk) {
-        return Result<SaveData>::error(
-            "Invalid string variable value at index " + std::to_string(i));
+        return Result<SaveData>::error("Invalid string variable value at index " +
+                                       std::to_string(i));
       }
       data.stringVariables[name] = value;
     }
 
-    file.read(reinterpret_cast<char *>(&data.timestamp),
-              sizeof(data.timestamp));
+    file.read(reinterpret_cast<char*>(&data.timestamp), sizeof(data.timestamp));
     if (!file) {
       return Result<SaveData>::error("Failed to read timestamp");
     }
 
     u32 storedChecksum = 0;
-    file.read(reinterpret_cast<char *>(&storedChecksum),
-              sizeof(storedChecksum));
+    file.read(reinterpret_cast<char*>(&storedChecksum), sizeof(storedChecksum));
     if (!file) {
       return Result<SaveData>::error("Failed to read checksum");
     }
@@ -642,12 +619,10 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
     u32 calculatedChecksum = calculateChecksum(data);
     if (calculatedChecksum != storedChecksum) {
-      NOVELMIND_LOG_ERROR(
-          "Save file checksum mismatch in file " + filename +
-          " (stored: " + std::to_string(storedChecksum) +
-          ", calculated: " + std::to_string(calculatedChecksum) + ")");
-      return Result<SaveData>::error(
-          "Save file is corrupted (checksum mismatch)");
+      NOVELMIND_LOG_ERROR("Save file checksum mismatch in file " + filename +
+                          " (stored: " + std::to_string(storedChecksum) +
+                          ", calculated: " + std::to_string(calculatedChecksum) + ")");
+      return Result<SaveData>::error("Save file is corrupted (checksum mismatch)");
     }
 
     return Result<SaveData>::ok(std::move(data));
@@ -666,21 +641,19 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   u32 thumbHeight = 0;
   u32 thumbSize = 0;
 
-  file.read(reinterpret_cast<char *>(&flags), sizeof(flags));
-  file.read(reinterpret_cast<char *>(&payloadSize), sizeof(payloadSize));
-  file.read(reinterpret_cast<char *>(&rawSize), sizeof(rawSize));
-  file.read(reinterpret_cast<char *>(&timestamp), sizeof(timestamp));
-  file.read(reinterpret_cast<char *>(&checksum), sizeof(checksum));
-  file.read(reinterpret_cast<char *>(&thumbWidth), sizeof(thumbWidth));
-  file.read(reinterpret_cast<char *>(&thumbHeight), sizeof(thumbHeight));
-  file.read(reinterpret_cast<char *>(&thumbSize), sizeof(thumbSize));
+  file.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+  file.read(reinterpret_cast<char*>(&payloadSize), sizeof(payloadSize));
+  file.read(reinterpret_cast<char*>(&rawSize), sizeof(rawSize));
+  file.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
+  file.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
+  file.read(reinterpret_cast<char*>(&thumbWidth), sizeof(thumbWidth));
+  file.read(reinterpret_cast<char*>(&thumbHeight), sizeof(thumbHeight));
+  file.read(reinterpret_cast<char*>(&thumbSize), sizeof(thumbSize));
 
   std::array<u8, 12> iv{};
   std::array<u8, 16> tag{};
-  file.read(reinterpret_cast<char *>(iv.data()),
-            static_cast<std::streamsize>(iv.size()));
-  file.read(reinterpret_cast<char *>(tag.data()),
-            static_cast<std::streamsize>(tag.size()));
+  file.read(reinterpret_cast<char*>(iv.data()), static_cast<std::streamsize>(iv.size()));
+  file.read(reinterpret_cast<char*>(tag.data()), static_cast<std::streamsize>(tag.size()));
 
   if (!file) {
     return Result<SaveData>::error("Failed to read save file header");
@@ -688,7 +661,7 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
 
   std::vector<u8> payload(payloadSize);
   if (payloadSize > 0) {
-    file.read(reinterpret_cast<char *>(payload.data()),
+    file.read(reinterpret_cast<char*>(payload.data()),
               static_cast<std::streamsize>(payload.size()));
   }
   if (!file) {
@@ -730,13 +703,12 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   for (u32 i = 0; i < intCount; ++i) {
     std::string name;
     if (!reader.readString(name, kMaxStringLength)) {
-      return Result<SaveData>::error("Invalid int variable name at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Invalid int variable name at index " + std::to_string(i));
     }
     i32 value = 0;
     if (!reader.readPod(value)) {
-      return Result<SaveData>::error(
-          "Failed to read int variable value at index " + std::to_string(i));
+      return Result<SaveData>::error("Failed to read int variable value at index " +
+                                     std::to_string(i));
     }
     data.intVariables[name] = value;
   }
@@ -748,13 +720,12 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   for (u32 i = 0; i < floatCount; ++i) {
     std::string name;
     if (!reader.readString(name, kMaxStringLength)) {
-      return Result<SaveData>::error("Invalid float variable name at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Invalid float variable name at index " + std::to_string(i));
     }
     f32 value = 0.0f;
     if (!reader.readPod(value)) {
-      return Result<SaveData>::error(
-          "Failed to read float variable value at index " + std::to_string(i));
+      return Result<SaveData>::error("Failed to read float variable value at index " +
+                                     std::to_string(i));
     }
     data.floatVariables[name] = value;
   }
@@ -766,13 +737,11 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   for (u32 i = 0; i < flagCount; ++i) {
     std::string name;
     if (!reader.readString(name, kMaxStringLength)) {
-      return Result<SaveData>::error("Invalid flag name at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Invalid flag name at index " + std::to_string(i));
     }
     u8 bval = 0;
     if (!reader.readPod(bval)) {
-      return Result<SaveData>::error("Failed to read flag value at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Failed to read flag value at index " + std::to_string(i));
     }
     data.flags[name] = bval != 0;
   }
@@ -784,13 +753,11 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   for (u32 i = 0; i < strCount; ++i) {
     std::string name;
     if (!reader.readString(name, kMaxStringLength)) {
-      return Result<SaveData>::error("Invalid string variable name at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Invalid string variable name at index " + std::to_string(i));
     }
     std::string value;
     if (!reader.readString(value, kMaxStringLength)) {
-      return Result<SaveData>::error("Invalid string variable value at index " +
-                                     std::to_string(i));
+      return Result<SaveData>::error("Invalid string variable value at index " + std::to_string(i));
     }
     data.stringVariables[name] = value;
   }
@@ -818,17 +785,14 @@ Result<SaveData> SaveManager::loadFromFile(const std::string &filename) {
   if (calculatedChecksum != checksum) {
     NOVELMIND_LOG_ERROR("Save file checksum mismatch in file " + filename +
                         " (stored: " + std::to_string(checksum) +
-                        ", calculated: " + std::to_string(calculatedChecksum) +
-                        ")");
-    return Result<SaveData>::error(
-        "Save file is corrupted (checksum mismatch)");
+                        ", calculated: " + std::to_string(calculatedChecksum) + ")");
+    return Result<SaveData>::error("Save file is corrupted (checksum mismatch)");
   }
 
   return Result<SaveData>::ok(std::move(data));
 }
 
-std::optional<SaveMetadata>
-SaveManager::readMetadata(const std::string &filename) const {
+std::optional<SaveMetadata> SaveManager::readMetadata(const std::string& filename) const {
   std::ifstream file(filename, std::ios::binary);
   if (!file.is_open()) {
     return std::nullopt;
@@ -836,8 +800,8 @@ SaveManager::readMetadata(const std::string &filename) const {
 
   u32 magic = 0;
   u16 version = 0;
-  file.read(reinterpret_cast<char *>(&magic), sizeof(magic));
-  file.read(reinterpret_cast<char *>(&version), sizeof(version));
+  file.read(reinterpret_cast<char*>(&magic), sizeof(magic));
+  file.read(reinterpret_cast<char*>(&version), sizeof(version));
   if (!file || magic != kMagic) {
     return std::nullopt;
   }
@@ -846,7 +810,7 @@ SaveManager::readMetadata(const std::string &filename) const {
   if (version == kVersionLegacy) {
     auto readString = [&file](u32 maxLen) -> bool {
       u32 len = 0;
-      file.read(reinterpret_cast<char *>(&len), sizeof(len));
+      file.read(reinterpret_cast<char*>(&len), sizeof(len));
       if (!file || len > maxLen) {
         return false;
       }
@@ -862,7 +826,7 @@ SaveManager::readMetadata(const std::string &filename) const {
     }
 
     u32 intCount = 0;
-    file.read(reinterpret_cast<char *>(&intCount), sizeof(intCount));
+    file.read(reinterpret_cast<char*>(&intCount), sizeof(intCount));
     if (!file || intCount > kMaxVariableCount) {
       return std::nullopt;
     }
@@ -874,7 +838,7 @@ SaveManager::readMetadata(const std::string &filename) const {
     }
 
     u32 flagCount = 0;
-    file.read(reinterpret_cast<char *>(&flagCount), sizeof(flagCount));
+    file.read(reinterpret_cast<char*>(&flagCount), sizeof(flagCount));
     if (!file || flagCount > kMaxVariableCount) {
       return std::nullopt;
     }
@@ -886,7 +850,7 @@ SaveManager::readMetadata(const std::string &filename) const {
     }
 
     u32 strCount = 0;
-    file.read(reinterpret_cast<char *>(&strCount), sizeof(strCount));
+    file.read(reinterpret_cast<char*>(&strCount), sizeof(strCount));
     if (!file || strCount > kMaxVariableCount) {
       return std::nullopt;
     }
@@ -900,7 +864,7 @@ SaveManager::readMetadata(const std::string &filename) const {
     }
 
     u64 timestamp = 0;
-    file.read(reinterpret_cast<char *>(&timestamp), sizeof(timestamp));
+    file.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
     if (!file) {
       return std::nullopt;
     }
@@ -921,14 +885,14 @@ SaveManager::readMetadata(const std::string &filename) const {
   u32 thumbHeight = 0;
   u32 thumbSize = 0;
 
-  file.read(reinterpret_cast<char *>(&flags), sizeof(flags));
-  file.read(reinterpret_cast<char *>(&payloadSize), sizeof(payloadSize));
-  file.read(reinterpret_cast<char *>(&rawSize), sizeof(rawSize));
-  file.read(reinterpret_cast<char *>(&timestamp), sizeof(timestamp));
-  file.read(reinterpret_cast<char *>(&checksum), sizeof(checksum));
-  file.read(reinterpret_cast<char *>(&thumbWidth), sizeof(thumbWidth));
-  file.read(reinterpret_cast<char *>(&thumbHeight), sizeof(thumbHeight));
-  file.read(reinterpret_cast<char *>(&thumbSize), sizeof(thumbSize));
+  file.read(reinterpret_cast<char*>(&flags), sizeof(flags));
+  file.read(reinterpret_cast<char*>(&payloadSize), sizeof(payloadSize));
+  file.read(reinterpret_cast<char*>(&rawSize), sizeof(rawSize));
+  file.read(reinterpret_cast<char*>(&timestamp), sizeof(timestamp));
+  file.read(reinterpret_cast<char*>(&checksum), sizeof(checksum));
+  file.read(reinterpret_cast<char*>(&thumbWidth), sizeof(thumbWidth));
+  file.read(reinterpret_cast<char*>(&thumbHeight), sizeof(thumbHeight));
+  file.read(reinterpret_cast<char*>(&thumbSize), sizeof(thumbSize));
 
   if (!file) {
     return std::nullopt;

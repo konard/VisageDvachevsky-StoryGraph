@@ -104,13 +104,10 @@ struct Diagnostic {
   bool acknowledged = false;
 
   [[nodiscard]] bool isError() const {
-    return severity == DiagnosticSeverity::Error ||
-           severity == DiagnosticSeverity::Fatal;
+    return severity == DiagnosticSeverity::Error || severity == DiagnosticSeverity::Fatal;
   }
 
-  [[nodiscard]] bool isWarning() const {
-    return severity == DiagnosticSeverity::Warning;
-  }
+  [[nodiscard]] bool isWarning() const { return severity == DiagnosticSeverity::Warning; }
 };
 
 /**
@@ -142,11 +139,11 @@ class IDiagnosticListener {
 public:
   virtual ~IDiagnosticListener() = default;
 
-  virtual void onDiagnosticAdded(const Diagnostic & /*diagnostic*/) {}
+  virtual void onDiagnosticAdded(const Diagnostic& /*diagnostic*/) {}
   virtual void onDiagnosticRemoved(u64 /*id*/) {}
   virtual void onDiagnosticsCleared(DiagnosticCategory /*category*/) {}
   virtual void onAllDiagnosticsCleared() {}
-  virtual void onSummaryChanged(const DiagnosticSummary & /*summary*/) {}
+  virtual void onSummaryChanged(const DiagnosticSummary& /*summary*/) {}
 };
 
 /**
@@ -165,13 +162,13 @@ public:
   ~ErrorReporter();
 
   // Prevent copying
-  ErrorReporter(const ErrorReporter &) = delete;
-  ErrorReporter &operator=(const ErrorReporter &) = delete;
+  ErrorReporter(const ErrorReporter&) = delete;
+  ErrorReporter& operator=(const ErrorReporter&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static ErrorReporter &instance();
+  static ErrorReporter& instance();
 
   // =========================================================================
   // Reporting
@@ -181,59 +178,51 @@ public:
    * @brief Report a diagnostic
    * @return Diagnostic ID
    */
-  u64 report(const Diagnostic &diagnostic);
+  u64 report(const Diagnostic& diagnostic);
 
   /**
    * @brief Report an error
    */
-  u64 reportError(const std::string &message,
-                  const SourceLocation &location = {},
+  u64 reportError(const std::string& message, const SourceLocation& location = {},
                   DiagnosticCategory category = DiagnosticCategory::General);
 
   /**
    * @brief Report a warning
    */
-  u64 reportWarning(const std::string &message,
-                    const SourceLocation &location = {},
+  u64 reportWarning(const std::string& message, const SourceLocation& location = {},
                     DiagnosticCategory category = DiagnosticCategory::General);
 
   /**
    * @brief Report info
    */
-  u64 reportInfo(const std::string &message,
-                 const SourceLocation &location = {},
+  u64 reportInfo(const std::string& message, const SourceLocation& location = {},
                  DiagnosticCategory category = DiagnosticCategory::General);
 
   /**
    * @brief Report script compilation error
    */
-  u64 reportScriptError(const std::string &file, u32 line, u32 column,
-                        const std::string &message,
-                        const std::string &code = "");
+  u64 reportScriptError(const std::string& file, u32 line, u32 column, const std::string& message,
+                        const std::string& code = "");
 
   /**
    * @brief Report missing asset
    */
-  u64 reportMissingAsset(const std::string &assetPath,
-                         const std::string &referencedBy = "");
+  u64 reportMissingAsset(const std::string& assetPath, const std::string& referencedBy = "");
 
   /**
    * @brief Report missing voice file
    */
-  u64 reportMissingVoice(const std::string &lineId,
-                         const std::string &expectedPath);
+  u64 reportMissingVoice(const std::string& lineId, const std::string& expectedPath);
 
   /**
    * @brief Report graph validation error
    */
-  u64 reportGraphError(const std::string &message,
-                       const std::string &nodeInfo = "");
+  u64 reportGraphError(const std::string& message, const std::string& nodeInfo = "");
 
   /**
    * @brief Report runtime error
    */
-  u64 reportRuntimeError(const std::string &message,
-                         const std::string &stackTrace = "");
+  u64 reportRuntimeError(const std::string& message, const std::string& stackTrace = "");
 
   // =========================================================================
   // Querying
@@ -247,8 +236,7 @@ public:
   /**
    * @brief Get diagnostics with filter
    */
-  [[nodiscard]] std::vector<Diagnostic>
-  getDiagnostics(const DiagnosticFilter &filter) const;
+  [[nodiscard]] std::vector<Diagnostic> getDiagnostics(const DiagnosticFilter& filter) const;
 
   /**
    * @brief Get diagnostic by ID
@@ -258,14 +246,12 @@ public:
   /**
    * @brief Get diagnostics for file
    */
-  [[nodiscard]] std::vector<Diagnostic>
-  getDiagnosticsForFile(const std::string &file) const;
+  [[nodiscard]] std::vector<Diagnostic> getDiagnosticsForFile(const std::string& file) const;
 
   /**
    * @brief Get diagnostics by category
    */
-  [[nodiscard]] std::vector<Diagnostic>
-  getDiagnosticsByCategory(DiagnosticCategory category) const;
+  [[nodiscard]] std::vector<Diagnostic> getDiagnosticsByCategory(DiagnosticCategory category) const;
 
   /**
    * @brief Get summary
@@ -333,7 +319,7 @@ public:
   /**
    * @brief Callback type for navigation
    */
-  using NavigationCallback = std::function<void(const SourceLocation &)>;
+  using NavigationCallback = std::function<void(const SourceLocation&)>;
 
   /**
    * @brief Set navigation callback
@@ -348,7 +334,7 @@ public:
   /**
    * @brief Navigate to location
    */
-  void navigateTo(const SourceLocation &location);
+  void navigateTo(const SourceLocation& location);
 
   // =========================================================================
   // Quick Fixes
@@ -368,8 +354,8 @@ public:
   // Listeners
   // =========================================================================
 
-  void addListener(IDiagnosticListener *listener);
-  void removeListener(IDiagnosticListener *listener);
+  void addListener(IDiagnosticListener* listener);
+  void removeListener(IDiagnosticListener* listener);
 
   // =========================================================================
   // Batch Operations
@@ -386,7 +372,7 @@ public:
   void endBatch();
 
 private:
-  void notifyDiagnosticAdded(const Diagnostic &diagnostic);
+  void notifyDiagnosticAdded(const Diagnostic& diagnostic);
   void notifyDiagnosticRemoved(u64 id);
   void notifyCategoryCleared(DiagnosticCategory category);
   void notifyAllCleared();
@@ -397,7 +383,7 @@ private:
   u64 m_nextId = 1;
   size_t m_maxDiagnostics = 1000;
 
-  std::vector<IDiagnosticListener *> m_listeners;
+  std::vector<IDiagnosticListener*> m_listeners;
   NavigationCallback m_navigationCallback;
 
   bool m_inBatch = false;
@@ -411,30 +397,30 @@ private:
 /**
  * @brief Severity to string conversion
  */
-[[nodiscard]] const char *severityToString(DiagnosticSeverity severity);
+[[nodiscard]] const char* severityToString(DiagnosticSeverity severity);
 
 /**
  * @brief Category to string conversion
  */
-[[nodiscard]] const char *categoryToString(DiagnosticCategory category);
+[[nodiscard]] const char* categoryToString(DiagnosticCategory category);
 
 /**
  * @brief RAII helper for batch diagnostics
  */
 class DiagnosticBatch {
 public:
-  explicit DiagnosticBatch(ErrorReporter *reporter = nullptr)
+  explicit DiagnosticBatch(ErrorReporter* reporter = nullptr)
       : m_reporter(reporter ? reporter : &ErrorReporter::instance()) {
     m_reporter->beginBatch();
   }
 
   ~DiagnosticBatch() { m_reporter->endBatch(); }
 
-  DiagnosticBatch(const DiagnosticBatch &) = delete;
-  DiagnosticBatch &operator=(const DiagnosticBatch &) = delete;
+  DiagnosticBatch(const DiagnosticBatch&) = delete;
+  DiagnosticBatch& operator=(const DiagnosticBatch&) = delete;
 
 private:
-  ErrorReporter *m_reporter;
+  ErrorReporter* m_reporter;
 };
 
 } // namespace NovelMind::editor

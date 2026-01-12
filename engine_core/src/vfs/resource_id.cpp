@@ -5,7 +5,7 @@ namespace NovelMind::VFS {
 
 namespace {
 
-u64 fnv1aHash(const std::string &str) {
+u64 fnv1aHash(const std::string& str) {
   constexpr u64 FNV_PRIME = 0x100000001b3ULL;
   constexpr u64 FNV_OFFSET = 0xcbf29ce484222325ULL;
 
@@ -17,11 +17,10 @@ u64 fnv1aHash(const std::string &str) {
   return hash;
 }
 
-std::string toLower(const std::string &str) {
+std::string toLower(const std::string& str) {
   std::string result = str;
-  std::transform(
-      result.begin(), result.end(), result.begin(),
-      [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  std::transform(result.begin(), result.end(), result.begin(),
+                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
   return result;
 }
 
@@ -32,26 +31,27 @@ ResourceId::ResourceId(std::string id) : m_id(std::move(id)) {
   computeHash();
 }
 
-ResourceId::ResourceId(std::string id, ResourceType type)
-    : m_id(std::move(id)), m_type(type) {
+ResourceId::ResourceId(std::string id, ResourceType type) : m_id(std::move(id)), m_type(type) {
   computeHash();
 }
 
-bool ResourceId::operator==(const ResourceId &other) const {
+bool ResourceId::operator==(const ResourceId& other) const {
   return m_hash == other.m_hash && m_id == other.m_id;
 }
 
-bool ResourceId::operator!=(const ResourceId &other) const {
+bool ResourceId::operator!=(const ResourceId& other) const {
   return !(*this == other);
 }
 
-bool ResourceId::operator<(const ResourceId &other) const {
+bool ResourceId::operator<(const ResourceId& other) const {
   return m_id < other.m_id;
 }
 
-void ResourceId::computeHash() { m_hash = fnv1aHash(m_id); }
+void ResourceId::computeHash() {
+  m_hash = fnv1aHash(m_id);
+}
 
-ResourceType ResourceId::typeFromExtension(const std::string &path) {
+ResourceType ResourceId::typeFromExtension(const std::string& path) {
   const auto dotPos = path.rfind('.');
   if (dotPos == std::string::npos) {
     return ResourceType::Unknown;
@@ -59,8 +59,7 @@ ResourceType ResourceId::typeFromExtension(const std::string &path) {
 
   const std::string ext = toLower(path.substr(dotPos + 1));
 
-  if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" ||
-      ext == "tga") {
+  if (ext == "png" || ext == "jpg" || ext == "jpeg" || ext == "bmp" || ext == "tga") {
     return ResourceType::Texture;
   }
   if (ext == "wav" || ext == "ogg" || ext == "mp3" || ext == "flac") {

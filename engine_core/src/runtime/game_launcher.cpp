@@ -43,7 +43,7 @@ GameLauncher::~GameLauncher() {
   }
 }
 
-Result<void> GameLauncher::initialize(int argc, char *argv[]) {
+Result<void> GameLauncher::initialize(int argc, char* argv[]) {
   m_options = parseArgs(argc, argv);
 
   if (m_options.help) {
@@ -70,15 +70,13 @@ Result<void> GameLauncher::initialize(int argc, char *argv[]) {
   return initialize(basePath, m_options);
 }
 
-Result<void> GameLauncher::initialize(const std::string &basePath,
-                                      const LaunchOptions &options) {
+Result<void> GameLauncher::initialize(const std::string& basePath, const LaunchOptions& options) {
   setState(LauncherState::Initializing);
   m_basePath = basePath;
   m_options = options;
 
   // Normalize path
-  if (!m_basePath.empty() && m_basePath.back() != '/' &&
-      m_basePath.back() != '\\') {
+  if (!m_basePath.empty() && m_basePath.back() != '/' && m_basePath.back() != '\\') {
     m_basePath += '/';
   }
 
@@ -133,8 +131,7 @@ Result<void> GameLauncher::initialize(const std::string &basePath,
 
   result = initializeScriptRuntime();
   if (result.isError()) {
-    setError("INIT_SCRIPT", "Failed to initialize script runtime",
-             result.error(),
+    setError("INIT_SCRIPT", "Failed to initialize script runtime", result.error(),
              "Check that compiled scripts are present in the packs");
     return result;
   }
@@ -163,7 +160,7 @@ i32 GameLauncher::run() {
 
   try {
     mainLoop();
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     setError("RUNTIME", "Runtime error", e.what());
     logError("Runtime exception: " + std::string(e.what()));
     return 1;
@@ -175,11 +172,15 @@ i32 GameLauncher::run() {
   return 0;
 }
 
-void GameLauncher::quit() { m_running = false; }
+void GameLauncher::quit() {
+  m_running = false;
+}
 
-bool GameLauncher::isRunning() const { return m_running; }
+bool GameLauncher::isRunning() const {
+  return m_running;
+}
 
-void GameLauncher::showError(const LauncherError &error) {
+void GameLauncher::showError(const LauncherError& error) {
   m_lastError = error;
 
   // Log the error
@@ -196,36 +197,38 @@ void GameLauncher::showError(const LauncherError &error) {
   }
 }
 
-void GameLauncher::showError(const std::string &error) {
+void GameLauncher::showError(const std::string& error) {
   LauncherError err;
   err.code = "ERROR";
   err.message = error;
   showError(err);
 }
 
-ConfigManager *GameLauncher::getConfigManager() {
+ConfigManager* GameLauncher::getConfigManager() {
   return m_configManager.get();
 }
 
-GameSettings *GameLauncher::getGameSettings() { return m_gameSettings.get(); }
+GameSettings* GameLauncher::getGameSettings() {
+  return m_gameSettings.get();
+}
 
-vfs::MultiPackManager *GameLauncher::getPackManager() {
+vfs::MultiPackManager* GameLauncher::getPackManager() {
   return m_packManager.get();
 }
 
-scripting::ScriptRuntime *GameLauncher::getScriptRuntime() {
+scripting::ScriptRuntime* GameLauncher::getScriptRuntime() {
   return m_scriptRuntime.get();
 }
 
-localization::LocalizationManager *GameLauncher::getLocalizationManager() {
+localization::LocalizationManager* GameLauncher::getLocalizationManager() {
   return m_localizationManager.get();
 }
 
-input::InputManager *GameLauncher::getInputManager() {
+input::InputManager* GameLauncher::getInputManager() {
   return m_inputManager.get();
 }
 
-const RuntimeConfig &GameLauncher::getConfig() const {
+const RuntimeConfig& GameLauncher::getConfig() const {
   static RuntimeConfig defaultConfig;
   if (m_configManager) {
     return m_configManager->getConfig();
@@ -242,14 +245,13 @@ void GameLauncher::setOnStateChanged(OnLauncherStateChanged callback) {
 }
 
 void GameLauncher::printVersion() {
-  std::cout << "NovelMind Game Launcher version " << NOVELMIND_VERSION_MAJOR
-            << "." << NOVELMIND_VERSION_MINOR << "." << NOVELMIND_VERSION_PATCH
-            << "\n";
+  std::cout << "NovelMind Game Launcher version " << NOVELMIND_VERSION_MAJOR << "."
+            << NOVELMIND_VERSION_MINOR << "." << NOVELMIND_VERSION_PATCH << "\n";
   std::cout << "A modern visual novel engine\n";
   std::cout << "Copyright (c) 2024 NovelMind Team\n";
 }
 
-void GameLauncher::printHelp(const char *programName) {
+void GameLauncher::printHelp(const char* programName) {
   std::cout << "Usage: " << programName << " [options]\n\n";
   std::cout << "NovelMind Game Launcher - Play visual novels.\n\n";
   std::cout << "Options:\n";
@@ -283,7 +285,7 @@ std::string GameLauncher::getExecutableDirectory() {
   }
 }
 
-LaunchOptions GameLauncher::parseArgs(int argc, char *argv[]) {
+LaunchOptions GameLauncher::parseArgs(int argc, char* argv[]) {
   LaunchOptions opts;
 
   for (int i = 1; i < argc; ++i) {
@@ -312,7 +314,7 @@ LaunchOptions GameLauncher::parseArgs(int argc, char *argv[]) {
 }
 
 Result<void> GameLauncher::initializeLogging() {
-  auto &logger = core::Logger::instance();
+  auto& logger = core::Logger::instance();
 
   // Set log level based on options
   if (m_options.verbose) {
@@ -327,17 +329,15 @@ Result<void> GameLauncher::initializeLogging() {
   std::string logsDir = m_basePath + "logs/";
   try {
     fs::create_directories(logsDir);
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to create logs dir: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to create logs dir: ") + e.what());
   }
 
   // Set output file
   auto now = std::chrono::system_clock::now();
   auto time = std::chrono::system_clock::to_time_t(now);
   char timeStr[64];
-  std::strftime(timeStr, sizeof(timeStr), "%Y%m%d_%H%M%S",
-                std::localtime(&time));
+  std::strftime(timeStr, sizeof(timeStr), "%Y%m%d_%H%M%S", std::localtime(&time));
 
   std::string logFile = logsDir + "game_" + timeStr + ".log";
   logger.setOutputFile(logFile);
@@ -375,8 +375,8 @@ Result<void> GameLauncher::initializeConfig() {
     return result;
   }
 
-  logInfo("Configuration loaded: " + m_configManager->getConfig().game.name +
-          " v" + m_configManager->getConfig().game.version);
+  logInfo("Configuration loaded: " + m_configManager->getConfig().game.name + " v" +
+          m_configManager->getConfig().game.version);
 
   return Result<void>::ok();
 }
@@ -390,7 +390,7 @@ Result<void> GameLauncher::initializeDirectories() {
 }
 
 Result<void> GameLauncher::initializePacks() {
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
   std::string packsDir = m_basePath + config.packs.directory + "/";
   std::string indexPath = packsDir + config.packs.indexFile;
 
@@ -410,8 +410,7 @@ Result<void> GameLauncher::initializePacks() {
   if (config.packs.encrypted) {
     auto keyResult = m_packManager->configureKeysFromEnvironment();
     if (keyResult.isError()) {
-      logError("Failed to configure encryption keys from environment: " +
-               keyResult.error());
+      logError("Failed to configure encryption keys from environment: " + keyResult.error());
       logError("Required environment variables: NOVELMIND_PACK_AES_KEY_HEX, "
                "NOVELMIND_PACK_AES_KEY_FILE, or NOVELMIND_PACK_PUBLIC_KEY");
       return keyResult;
@@ -441,7 +440,7 @@ Result<void> GameLauncher::initializePacks() {
 }
 
 Result<void> GameLauncher::loadPacksIndex() {
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
   std::string packsDir = m_basePath + config.packs.directory + "/";
   std::string indexPath = packsDir + config.packs.indexFile;
 
@@ -481,8 +480,7 @@ Result<void> GameLauncher::loadPacksIndex() {
     return Result<void>::error("Invalid packs_index.json format");
   }
 
-  std::string packsArray =
-      indexContent.substr(arrayStart, arrayEnd - arrayStart + 1);
+  std::string packsArray = indexContent.substr(arrayStart, arrayEnd - arrayStart + 1);
 
   // Parse each pack entry
   size_t pos = 0;
@@ -524,8 +522,7 @@ Result<void> GameLauncher::loadPacksIndex() {
     size_t priorityStart = entry.find("\"priority\"");
     i32 priority = 0;
     if (priorityStart != std::string::npos) {
-      size_t valueStart =
-          entry.find_first_of("-0123456789", priorityStart + 10);
+      size_t valueStart = entry.find_first_of("-0123456789", priorityStart + 10);
       if (valueStart != std::string::npos) {
         try {
           priority = std::stoi(entry.substr(valueStart));
@@ -556,10 +553,10 @@ Result<void> GameLauncher::loadPacksIndex() {
                   ", priority=" + std::to_string(priority) + ")");
           loadedPacks++;
         } else {
-          for (const auto &error : loadResult.errors) {
+          for (const auto& error : loadResult.errors) {
             logError("Pack load error [" + packPath + "]: " + error);
           }
-          for (const auto &missing : loadResult.missingDependencies) {
+          for (const auto& missing : loadResult.missingDependencies) {
             logWarning("Missing dependency for " + packPath + ": " + missing);
           }
         }
@@ -579,7 +576,7 @@ Result<void> GameLauncher::initializeWindow() {
   // In a full implementation, this would create the game window
   // using the settings from config
 
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
   logInfo("Window: " + std::to_string(config.window.width) + "x" +
           std::to_string(config.window.height) +
           (config.window.fullscreen ? " (fullscreen)" : " (windowed)"));
@@ -591,17 +588,15 @@ Result<void> GameLauncher::initializeAudio() {
   // In a full implementation, this would initialize the audio system
   // with volume settings from config
 
-  const auto &config = m_configManager->getConfig();
-  logInfo("Audio: Master=" +
-          std::to_string(static_cast<int>(config.audio.master * 100)) +
-          "%, Music=" +
-          std::to_string(static_cast<int>(config.audio.music * 100)) + "%");
+  const auto& config = m_configManager->getConfig();
+  logInfo("Audio: Master=" + std::to_string(static_cast<int>(config.audio.master * 100)) +
+          "%, Music=" + std::to_string(static_cast<int>(config.audio.music * 100)) + "%");
 
   return Result<void>::ok();
 }
 
 Result<void> GameLauncher::initializeLocalization() {
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
 
   // Initialize localization manager
   m_localizationManager = std::make_unique<localization::LocalizationManager>();
@@ -613,12 +608,11 @@ Result<void> GameLauncher::initializeLocalization() {
       localization::LocaleId::fromString(config.localization.currentLocale));
 
   // Register available locales
-  for (const auto &locale : config.localization.availableLocales) {
+  for (const auto& locale : config.localization.availableLocales) {
     localization::LocaleConfig locConfig;
     locConfig.displayName = locale;
     locConfig.nativeName = locale;
-    m_localizationManager->registerLocale(
-        localization::LocaleId::fromString(locale), locConfig);
+    m_localizationManager->registerLocale(localization::LocaleId::fromString(locale), locConfig);
   }
 
   // Load localization files from packs
@@ -627,22 +621,18 @@ Result<void> GameLauncher::initializeLocalization() {
   // localized strings
   if (m_packManager && m_packManager->getPackCount() > 0) {
     // Load current locale
-    std::string currentLocaleFile =
-        "locales/" + config.localization.currentLocale + ".json";
+    std::string currentLocaleFile = "locales/" + config.localization.currentLocale + ".json";
     logInfo("Loading localization from VFS path: " + currentLocaleFile);
 
     if (m_packManager->exists(currentLocaleFile)) {
       auto resourceData = m_packManager->readResource(currentLocaleFile);
       if (resourceData.isOk()) {
-        std::string jsonContent(resourceData.value().begin(),
-                                resourceData.value().end());
+        std::string jsonContent(resourceData.value().begin(), resourceData.value().end());
         auto loadResult = m_localizationManager->loadStringsFromMemory(
-            localization::LocaleId::fromString(
-                config.localization.currentLocale),
-            jsonContent, localization::LocalizationFormat::JSON);
+            localization::LocaleId::fromString(config.localization.currentLocale), jsonContent,
+            localization::LocalizationFormat::JSON);
         if (loadResult.isError()) {
-          logWarning("Failed to load localization from pack: " +
-                     loadResult.error());
+          logWarning("Failed to load localization from pack: " + loadResult.error());
         } else {
           logInfo("Loaded localization from pack: " + currentLocaleFile);
         }
@@ -653,19 +643,15 @@ Result<void> GameLauncher::initializeLocalization() {
     }
 
     // Also load fallback (default) locale if different from current
-    if (config.localization.defaultLocale !=
-        config.localization.currentLocale) {
-      std::string defaultLocaleFile =
-          "locales/" + config.localization.defaultLocale + ".json";
+    if (config.localization.defaultLocale != config.localization.currentLocale) {
+      std::string defaultLocaleFile = "locales/" + config.localization.defaultLocale + ".json";
       if (m_packManager->exists(defaultLocaleFile)) {
         auto resourceData = m_packManager->readResource(defaultLocaleFile);
         if (resourceData.isOk()) {
-          std::string jsonContent(resourceData.value().begin(),
-                                  resourceData.value().end());
+          std::string jsonContent(resourceData.value().begin(), resourceData.value().end());
           m_localizationManager->loadStringsFromMemory(
-              localization::LocaleId::fromString(
-                  config.localization.defaultLocale),
-              jsonContent, localization::LocalizationFormat::JSON);
+              localization::LocaleId::fromString(config.localization.defaultLocale), jsonContent,
+              localization::LocalizationFormat::JSON);
           logInfo("Loaded fallback localization: " + defaultLocaleFile);
         }
       }
@@ -674,31 +660,28 @@ Result<void> GameLauncher::initializeLocalization() {
 
   // Set callback to handle language changes from settings
   // When language changes, reload localization from the new locale file
-  m_localizationManager->setOnLanguageChanged(
-      [this](const localization::LocaleId &newLocale) {
-        logInfo("Language changed to: " + newLocale.toString());
+  m_localizationManager->setOnLanguageChanged([this](const localization::LocaleId& newLocale) {
+    logInfo("Language changed to: " + newLocale.toString());
 
-        // Update config
-        if (m_configManager) {
-          m_configManager->setLocale(newLocale.toString());
-        }
+    // Update config
+    if (m_configManager) {
+      m_configManager->setLocale(newLocale.toString());
+    }
 
-        // Reload localization from new locale file
-        if (m_packManager && m_packManager->getPackCount() > 0) {
-          std::string localeFile = "locales/" + newLocale.toString() + ".json";
-          if (m_packManager->exists(localeFile)) {
-            auto resourceData = m_packManager->readResource(localeFile);
-            if (resourceData.isOk()) {
-              std::string jsonContent(resourceData.value().begin(),
-                                      resourceData.value().end());
-              m_localizationManager->loadStringsFromMemory(
-                  newLocale, jsonContent,
-                  localization::LocalizationFormat::JSON);
-              logInfo("Reloaded localization for: " + localeFile);
-            }
-          }
+    // Reload localization from new locale file
+    if (m_packManager && m_packManager->getPackCount() > 0) {
+      std::string localeFile = "locales/" + newLocale.toString() + ".json";
+      if (m_packManager->exists(localeFile)) {
+        auto resourceData = m_packManager->readResource(localeFile);
+        if (resourceData.isOk()) {
+          std::string jsonContent(resourceData.value().begin(), resourceData.value().end());
+          m_localizationManager->loadStringsFromMemory(newLocale, jsonContent,
+                                                       localization::LocalizationFormat::JSON);
+          logInfo("Reloaded localization for: " + localeFile);
         }
-      });
+      }
+    }
+  });
 
   logInfo("Localization initialized: " + config.localization.currentLocale);
   return Result<void>::ok();
@@ -724,25 +707,24 @@ Result<void> GameLauncher::applyInputBindings() {
     return Result<void>::error("Input or config manager not initialized");
   }
 
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
 
   // Log the configured bindings for debugging
-  for (const auto &[action, binding] : config.input.bindings) {
+  for (const auto& [action, binding] : config.input.bindings) {
     std::string actionName = inputActionToString(action);
     std::string keys;
-    for (const auto &key : binding.keys) {
+    for (const auto& key : binding.keys) {
       if (!keys.empty())
         keys += ", ";
       keys += key;
     }
     std::string mouse;
-    for (const auto &btn : binding.mouseButtons) {
+    for (const auto& btn : binding.mouseButtons) {
       if (!mouse.empty())
         mouse += ", ";
       mouse += btn;
     }
-    logInfo("Input binding [" + actionName + "]: keys=[" + keys + "], mouse=[" +
-            mouse + "]");
+    logInfo("Input binding [" + actionName + "]: keys=[" + keys + "], mouse=[" + mouse + "]");
   }
 
   // Input bindings are stored in RuntimeConfig and used by the runtime
@@ -753,23 +735,21 @@ Result<void> GameLauncher::applyInputBindings() {
 }
 
 Result<void> GameLauncher::initializeSaveSystem() {
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
   std::string savesDir = m_basePath + config.saves.saveDirectory + "/";
 
   try {
     fs::create_directories(savesDir);
     logInfo("Save directory: " + savesDir);
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to create saves dir: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to create saves dir: ") + e.what());
   }
 }
 
 Result<void> GameLauncher::initializeScriptRuntime() {
-  const auto &config = m_configManager->getConfig();
-  std::string startScene =
-      m_options.sceneOverride.empty() ? "main" : m_options.sceneOverride;
+  const auto& config = m_configManager->getConfig();
+  std::string startScene = m_options.sceneOverride.empty() ? "main" : m_options.sceneOverride;
 
   // Initialize script runtime
   m_scriptRuntime = std::make_unique<scripting::ScriptRuntime>();
@@ -778,8 +758,7 @@ Result<void> GameLauncher::initializeScriptRuntime() {
   scripting::RuntimeConfig scriptConfig;
   scriptConfig.defaultTextSpeed = static_cast<f32>(config.text.speed);
   scriptConfig.autoAdvanceEnabled = config.text.autoAdvance;
-  scriptConfig.autoAdvanceDelay =
-      static_cast<f32>(config.text.autoAdvanceMs) / 1000.0f;
+  scriptConfig.autoAdvanceDelay = static_cast<f32>(config.text.autoAdvanceMs) / 1000.0f;
   m_scriptRuntime->setConfig(scriptConfig);
 
   // Load compiled scripts from packs
@@ -807,15 +786,13 @@ Result<void> GameLauncher::loadCompiledScripts() {
   const std::string scriptResource = "scripts/compiled_scripts.bin";
 
   if (!m_packManager->exists(scriptResource)) {
-    return Result<void>::error("No compiled scripts found in packs (" +
-                               scriptResource + ")");
+    return Result<void>::error("No compiled scripts found in packs (" + scriptResource + ")");
   }
 
   // Read the compiled script data
   auto resourceData = m_packManager->readResource(scriptResource);
   if (resourceData.isError()) {
-    return Result<void>::error("Failed to read compiled scripts: " +
-                               resourceData.error());
+    return Result<void>::error("Failed to read compiled scripts: " + resourceData.error());
   }
 
   logInfo("Found compiled scripts: " + scriptResource + " (" +
@@ -826,10 +803,8 @@ Result<void> GameLauncher::loadCompiledScripts() {
   // m_scriptRuntime->load(deserializedScript);
 
   // Count resources of type Script
-  auto scriptResources =
-      m_packManager->listResources(vfs::ResourceType::Script);
-  logInfo("Found " + std::to_string(scriptResources.size()) +
-          " script resource(s) in packs");
+  auto scriptResources = m_packManager->listResources(vfs::ResourceType::Script);
+  logInfo("Found " + std::to_string(scriptResources.size()) + " script resource(s) in packs");
 
   return Result<void>::ok();
 }
@@ -845,19 +820,12 @@ void GameLauncher::mainLoop() {
   // For this implementation, we'll run a simplified demo loop
   // In a full implementation, this would integrate with the Application class
 
-  std::cout
-      << "\n╔════════════════════════════════════════════════════════════╗\n";
+  std::cout << "\n╔════════════════════════════════════════════════════════════╗\n";
   std::cout << "║           " << m_configManager->getConfig().game.name;
-  std::cout << std::string(49 - m_configManager->getConfig().game.name.length(),
-                           ' ')
-            << "║\n";
-  std::cout << "║           Version "
-            << m_configManager->getConfig().game.version;
-  std::cout << std::string(
-                   41 - m_configManager->getConfig().game.version.length(), ' ')
-            << "║\n";
-  std::cout
-      << "╚════════════════════════════════════════════════════════════╝\n\n";
+  std::cout << std::string(49 - m_configManager->getConfig().game.name.length(), ' ') << "║\n";
+  std::cout << "║           Version " << m_configManager->getConfig().game.version;
+  std::cout << std::string(41 - m_configManager->getConfig().game.version.length(), ' ') << "║\n";
+  std::cout << "╚════════════════════════════════════════════════════════════╝\n\n";
 
   std::cout << "Game launcher is running.\n";
   std::cout << "Configuration loaded from: " << m_basePath << "config/\n";
@@ -867,16 +835,13 @@ void GameLauncher::mainLoop() {
             << m_configManager->getConfig().logging.logDirectory << "/\n\n";
 
   std::cout << "Current Settings:\n";
-  std::cout << "  Resolution: " << m_configManager->getConfig().window.width
-            << "x" << m_configManager->getConfig().window.height << "\n";
-  std::cout << "  Fullscreen: "
-            << (m_configManager->getConfig().window.fullscreen ? "Yes" : "No")
+  std::cout << "  Resolution: " << m_configManager->getConfig().window.width << "x"
+            << m_configManager->getConfig().window.height << "\n";
+  std::cout << "  Fullscreen: " << (m_configManager->getConfig().window.fullscreen ? "Yes" : "No")
             << "\n";
-  std::cout << "  Language: "
-            << m_configManager->getConfig().localization.currentLocale << "\n";
+  std::cout << "  Language: " << m_configManager->getConfig().localization.currentLocale << "\n";
   std::cout << "  Master Volume: "
-            << static_cast<int>(m_configManager->getConfig().audio.master * 100)
-            << "%\n\n";
+            << static_cast<int>(m_configManager->getConfig().audio.master * 100) << "%\n\n";
 
   std::cout << "Press Enter to exit...\n";
   std::cin.get();
@@ -940,16 +905,16 @@ bool GameLauncher::isActionTriggered(InputAction action) const {
     return false;
   }
 
-  const auto &bindings = m_configManager->getConfig().input.bindings;
+  const auto& bindings = m_configManager->getConfig().input.bindings;
   auto it = bindings.find(action);
   if (it == bindings.end()) {
     return false;
   }
 
-  const auto &binding = it->second;
+  const auto& binding = it->second;
 
   // Check keyboard keys
-  for (const auto &keyName : binding.keys) {
+  for (const auto& keyName : binding.keys) {
     input::Key key = stringToKey(keyName);
     if (key != input::Key::Unknown && m_inputManager->isKeyPressed(key)) {
       return true;
@@ -957,7 +922,7 @@ bool GameLauncher::isActionTriggered(InputAction action) const {
   }
 
   // Check mouse buttons
-  for (const auto &buttonName : binding.mouseButtons) {
+  for (const auto& buttonName : binding.mouseButtons) {
     input::MouseButton button = stringToMouseButton(buttonName);
     if (m_inputManager->isMouseButtonPressed(button)) {
       return true;
@@ -967,7 +932,7 @@ bool GameLauncher::isActionTriggered(InputAction action) const {
   return false;
 }
 
-input::Key GameLauncher::stringToKey(const std::string &keyName) const {
+input::Key GameLauncher::stringToKey(const std::string& keyName) const {
   // Map common key names to Key enum
   if (keyName == "Space")
     return input::Key::Space;
@@ -1004,16 +969,13 @@ input::Key GameLauncher::stringToKey(const std::string &keyName) const {
   if (keyName.length() == 1) {
     char c = keyName[0];
     if (c >= 'A' && c <= 'Z') {
-      return static_cast<input::Key>(static_cast<int>(input::Key::A) +
-                                     (c - 'A'));
+      return static_cast<input::Key>(static_cast<int>(input::Key::A) + (c - 'A'));
     }
     if (c >= 'a' && c <= 'z') {
-      return static_cast<input::Key>(static_cast<int>(input::Key::A) +
-                                     (c - 'a'));
+      return static_cast<input::Key>(static_cast<int>(input::Key::A) + (c - 'a'));
     }
     if (c >= '0' && c <= '9') {
-      return static_cast<input::Key>(static_cast<int>(input::Key::Num0) +
-                                     (c - '0'));
+      return static_cast<input::Key>(static_cast<int>(input::Key::Num0) + (c - '0'));
     }
   }
 
@@ -1026,8 +988,7 @@ input::Key GameLauncher::stringToKey(const std::string &keyName) const {
       return input::Key::Unknown;
     }
     if (num >= 1 && num <= 12) {
-      return static_cast<input::Key>(static_cast<int>(input::Key::F1) +
-                                     (num - 1));
+      return static_cast<input::Key>(static_cast<int>(input::Key::F1) + (num - 1));
     }
   }
 
@@ -1041,8 +1002,7 @@ input::Key GameLauncher::stringToKey(const std::string &keyName) const {
   return input::Key::Unknown;
 }
 
-input::MouseButton
-GameLauncher::stringToMouseButton(const std::string &buttonName) const {
+input::MouseButton GameLauncher::stringToMouseButton(const std::string& buttonName) const {
   if (buttonName == "Left")
     return input::MouseButton::Left;
   if (buttonName == "Right")
@@ -1063,9 +1023,8 @@ void GameLauncher::setState(LauncherState state) {
   }
 }
 
-void GameLauncher::setError(const std::string &code, const std::string &message,
-                            const std::string &details,
-                            const std::string &suggestion) {
+void GameLauncher::setError(const std::string& code, const std::string& message,
+                            const std::string& details, const std::string& suggestion) {
   m_lastError.code = code;
   m_lastError.message = message;
   m_lastError.details = details;
@@ -1073,15 +1032,15 @@ void GameLauncher::setError(const std::string &code, const std::string &message,
   setState(LauncherState::Error);
 }
 
-void GameLauncher::logInfo(const std::string &message) {
+void GameLauncher::logInfo(const std::string& message) {
   NOVELMIND_LOG_INFO("[Launcher] " + message);
 }
 
-void GameLauncher::logWarning(const std::string &message) {
+void GameLauncher::logWarning(const std::string& message) {
   NOVELMIND_LOG_WARN("[Launcher] " + message);
 }
 
-void GameLauncher::logError(const std::string &message) {
+void GameLauncher::logError(const std::string& message) {
   NOVELMIND_LOG_ERROR("[Launcher] " + message);
 }
 

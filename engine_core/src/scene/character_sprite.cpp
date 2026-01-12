@@ -3,59 +3,55 @@
 
 namespace NovelMind::Scene {
 
-CharacterSprite::CharacterSprite(const std::string &id,
-                                 const std::string &characterId)
+CharacterSprite::CharacterSprite(const std::string& id, const std::string& characterId)
     : scene::SceneObject(id), m_characterId(characterId), m_displayName(),
-      m_nameColor(renderer::Color::White), m_currentExpression("default"),
-      m_flipped(false), m_anchorX(0.5f), m_anchorY(1.0f), m_moving(false),
-      m_moveStartX(0.0f), m_moveStartY(0.0f), m_moveTargetX(0.0f),
-      m_moveTargetY(0.0f), m_moveDuration(0.0f), m_moveElapsed(0.0f) {}
+      m_nameColor(renderer::Color::White), m_currentExpression("default"), m_flipped(false),
+      m_anchorX(0.5f), m_anchorY(1.0f), m_moving(false), m_moveStartX(0.0f), m_moveStartY(0.0f),
+      m_moveTargetX(0.0f), m_moveTargetY(0.0f), m_moveDuration(0.0f), m_moveElapsed(0.0f) {}
 
 CharacterSprite::~CharacterSprite() = default;
 
-void CharacterSprite::setDisplayName(const std::string &name) {
+void CharacterSprite::setDisplayName(const std::string& name) {
   m_displayName = name;
 }
 
-const std::string &CharacterSprite::getDisplayName() const {
+const std::string& CharacterSprite::getDisplayName() const {
   return m_displayName;
 }
 
-void CharacterSprite::setCharacterId(const std::string &characterId) {
+void CharacterSprite::setCharacterId(const std::string& characterId) {
   m_characterId = characterId;
 }
 
-const std::string &CharacterSprite::getCharacterId() const {
+const std::string& CharacterSprite::getCharacterId() const {
   return m_characterId;
 }
 
-void CharacterSprite::setNameColor(const renderer::Color &color) {
+void CharacterSprite::setNameColor(const renderer::Color& color) {
   m_nameColor = color;
 }
 
-const renderer::Color &CharacterSprite::getNameColor() const {
+const renderer::Color& CharacterSprite::getNameColor() const {
   return m_nameColor;
 }
 
-void CharacterSprite::addExpression(
-    const std::string &expressionId,
-    std::shared_ptr<renderer::Texture> texture) {
+void CharacterSprite::addExpression(const std::string& expressionId,
+                                    std::shared_ptr<renderer::Texture> texture) {
   m_expressions[expressionId] = std::move(texture);
 }
 
-void CharacterSprite::setExpression(const std::string &expressionId,
-                                    bool /*immediate*/) {
+void CharacterSprite::setExpression(const std::string& expressionId, bool /*immediate*/) {
   if (m_expressions.find(expressionId) != m_expressions.end()) {
     m_currentExpression = expressionId;
   }
 }
 
-const std::string &CharacterSprite::getCurrentExpression() const {
+const std::string& CharacterSprite::getCurrentExpression() const {
   return m_currentExpression;
 }
 
-void CharacterSprite::setPresetPosition(CharacterPosition position,
-                                        f32 screenWidth, f32 screenHeight) {
+void CharacterSprite::setPresetPosition(CharacterPosition position, f32 screenWidth,
+                                        f32 screenHeight) {
   f32 x = 0.0f;
   f32 y = screenHeight;
 
@@ -77,9 +73,13 @@ void CharacterSprite::setPresetPosition(CharacterPosition position,
   setPosition(x, y);
 }
 
-void CharacterSprite::setFlipped(bool flipped) { m_flipped = flipped; }
+void CharacterSprite::setFlipped(bool flipped) {
+  m_flipped = flipped;
+}
 
-bool CharacterSprite::isFlipped() const { return m_flipped; }
+bool CharacterSprite::isFlipped() const {
+  return m_flipped;
+}
 
 void CharacterSprite::setAnchor(f32 anchorX, f32 anchorY) {
   m_anchorX = anchorX;
@@ -96,7 +96,9 @@ void CharacterSprite::moveTo(f32 targetX, f32 targetY, f32 duration) {
   m_moveElapsed = 0.0f;
 }
 
-bool CharacterSprite::isMoving() const { return m_moving; }
+bool CharacterSprite::isMoving() const {
+  return m_moving;
+}
 
 void CharacterSprite::update(f64 deltaTime) {
   SceneObject::update(deltaTime);
@@ -122,7 +124,7 @@ void CharacterSprite::update(f64 deltaTime) {
   }
 }
 
-void CharacterSprite::render(renderer::IRenderer &renderer) {
+void CharacterSprite::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -137,7 +139,7 @@ void CharacterSprite::render(renderer::IRenderer &renderer) {
     }
   }
 
-  const auto &texture = it->second;
+  const auto& texture = it->second;
 
   // Calculate actual position based on anchor
   f32 texWidth = static_cast<f32>(texture->getWidth());

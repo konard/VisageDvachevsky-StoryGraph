@@ -104,11 +104,11 @@ struct PropertyTrack {
  */
 class TimelineClip {
 public:
-  TimelineClip(const std::string &id, const std::string &name);
+  TimelineClip(const std::string& id, const std::string& name);
   virtual ~TimelineClip() = default;
 
-  [[nodiscard]] const std::string &getId() const { return m_id; }
-  [[nodiscard]] const std::string &getName() const { return m_name; }
+  [[nodiscard]] const std::string& getId() const { return m_id; }
+  [[nodiscard]] const std::string& getName() const { return m_name; }
 
   // Timing
   void setStartTime(f64 time) { m_startTime = time; }
@@ -128,23 +128,19 @@ public:
   [[nodiscard]] f64 getTimeScale() const { return m_timeScale; }
 
   // Property tracks
-  void addPropertyTrack(const PropertyTrack &track);
-  [[nodiscard]] PropertyTrack *
-  getPropertyTrack(const std::string &propertyName);
-  [[nodiscard]] const std::vector<PropertyTrack> &getPropertyTracks() const {
+  void addPropertyTrack(const PropertyTrack& track);
+  [[nodiscard]] PropertyTrack* getPropertyTrack(const std::string& propertyName);
+  [[nodiscard]] const std::vector<PropertyTrack>& getPropertyTracks() const {
     return m_propertyTracks;
   }
 
   // Keyframe operations
-  Result<void> addKeyframe(const std::string &propertyName,
-                           const Keyframe &keyframe);
-  Result<void> removeKeyframe(const std::string &propertyName, f64 time);
-  Result<void> moveKeyframe(const std::string &propertyName, f64 oldTime,
-                            f64 newTime);
+  Result<void> addKeyframe(const std::string& propertyName, const Keyframe& keyframe);
+  Result<void> removeKeyframe(const std::string& propertyName, f64 time);
+  Result<void> moveKeyframe(const std::string& propertyName, f64 oldTime, f64 newTime);
 
   // Evaluation
-  template <typename T>
-  T evaluate(const std::string &propertyName, f64 time) const;
+  template <typename T> T evaluate(const std::string& propertyName, f64 time) const;
 
   // State
   void setMuted(bool muted) { m_muted = muted; }
@@ -157,8 +153,8 @@ public:
   void setSelected(bool selected) { m_selected = selected; }
   [[nodiscard]] bool isSelected() const { return m_selected; }
 
-  void setColor(const renderer::Color &color) { m_color = color; }
-  [[nodiscard]] const renderer::Color &getColor() const { return m_color; }
+  void setColor(const renderer::Color& color) { m_color = color; }
+  [[nodiscard]] const renderer::Color& getColor() const { return m_color; }
 
 protected:
   std::string m_id;
@@ -183,14 +179,12 @@ protected:
  */
 class CharacterClip : public TimelineClip {
 public:
-  CharacterClip(const std::string &id, const std::string &characterId);
+  CharacterClip(const std::string& id, const std::string& characterId);
 
-  [[nodiscard]] const std::string &getCharacterId() const {
-    return m_characterId;
-  }
+  [[nodiscard]] const std::string& getCharacterId() const { return m_characterId; }
 
   // Preset animations
-  void setExpression(const std::string &expression, f64 time);
+  void setExpression(const std::string& expression, f64 time);
   void addPositionKeyframe(f64 time, f32 x, f32 y);
   void addOpacityKeyframe(f64 time, f32 opacity);
   void addScaleKeyframe(f64 time, f32 scaleX, f32 scaleY);
@@ -204,23 +198,19 @@ private:
  */
 class DialogueClip : public TimelineClip {
 public:
-  DialogueClip(const std::string &id);
+  DialogueClip(const std::string& id);
 
-  void setSpeaker(const std::string &speakerId) { m_speakerId = speakerId; }
-  [[nodiscard]] const std::string &getSpeaker() const { return m_speakerId; }
+  void setSpeaker(const std::string& speakerId) { m_speakerId = speakerId; }
+  [[nodiscard]] const std::string& getSpeaker() const { return m_speakerId; }
 
-  void setText(const std::string &text) { m_text = text; }
-  [[nodiscard]] const std::string &getText() const { return m_text; }
+  void setText(const std::string& text) { m_text = text; }
+  [[nodiscard]] const std::string& getText() const { return m_text; }
 
-  void setLocalizationKey(const std::string &key) { m_localizationKey = key; }
-  [[nodiscard]] const std::string &getLocalizationKey() const {
-    return m_localizationKey;
-  }
+  void setLocalizationKey(const std::string& key) { m_localizationKey = key; }
+  [[nodiscard]] const std::string& getLocalizationKey() const { return m_localizationKey; }
 
   // Typewriter settings
-  void setTypewriterSpeed(f32 charsPerSecond) {
-    m_typewriterSpeed = charsPerSecond;
-  }
+  void setTypewriterSpeed(f32 charsPerSecond) { m_typewriterSpeed = charsPerSecond; }
   [[nodiscard]] f32 getTypewriterSpeed() const { return m_typewriterSpeed; }
 
 private:
@@ -237,12 +227,12 @@ class AudioClip : public TimelineClip {
 public:
   enum class AudioType : u8 { Voice, BGM, SFX, Ambient };
 
-  AudioClip(const std::string &id, AudioType type);
+  AudioClip(const std::string& id, AudioType type);
 
   [[nodiscard]] AudioType getAudioType() const { return m_audioType; }
 
-  void setAudioFile(const std::string &path) { m_audioFile = path; }
-  [[nodiscard]] const std::string &getAudioFile() const { return m_audioFile; }
+  void setAudioFile(const std::string& path) { m_audioFile = path; }
+  [[nodiscard]] const std::string& getAudioFile() const { return m_audioFile; }
 
   void setVolume(f32 volume) { m_volume = volume; }
   [[nodiscard]] f32 getVolume() const { return m_volume; }
@@ -271,7 +261,7 @@ private:
  */
 class CameraClip : public TimelineClip {
 public:
-  CameraClip(const std::string &id);
+  CameraClip(const std::string& id);
 
   void addPositionKeyframe(f64 time, f32 x, f32 y);
   void addZoomKeyframe(f64 time, f32 zoom);
@@ -286,26 +276,24 @@ public:
  */
 class TimelineTrack {
 public:
-  TimelineTrack(const std::string &id, const std::string &name, TrackType type);
+  TimelineTrack(const std::string& id, const std::string& name, TrackType type);
   virtual ~TimelineTrack() = default;
 
-  [[nodiscard]] const std::string &getId() const { return m_id; }
-  [[nodiscard]] const std::string &getName() const { return m_name; }
+  [[nodiscard]] const std::string& getId() const { return m_id; }
+  [[nodiscard]] const std::string& getName() const { return m_name; }
   [[nodiscard]] TrackType getType() const { return m_type; }
 
   // Clips
   void addClip(std::unique_ptr<TimelineClip> clip);
-  void removeClip(const std::string &clipId);
-  [[nodiscard]] TimelineClip *getClip(const std::string &clipId);
-  [[nodiscard]] const std::vector<std::unique_ptr<TimelineClip>> &
-  getClips() const {
+  void removeClip(const std::string& clipId);
+  [[nodiscard]] TimelineClip* getClip(const std::string& clipId);
+  [[nodiscard]] const std::vector<std::unique_ptr<TimelineClip>>& getClips() const {
     return m_clips;
   }
 
   // Find clip at time
-  [[nodiscard]] TimelineClip *getClipAtTime(f64 time);
-  [[nodiscard]] std::vector<TimelineClip *> getClipsInRange(f64 startTime,
-                                                            f64 endTime);
+  [[nodiscard]] TimelineClip* getClipAtTime(f64 time);
+  [[nodiscard]] std::vector<TimelineClip*> getClipsInRange(f64 startTime, f64 endTime);
 
   // Track state
   void setMuted(bool muted) { m_muted = muted; }
@@ -324,17 +312,16 @@ public:
   void setHeight(f32 height) { m_height = height; }
   [[nodiscard]] f32 getHeight() const { return m_height; }
 
-  void setColor(const renderer::Color &color) { m_color = color; }
-  [[nodiscard]] const renderer::Color &getColor() const { return m_color; }
+  void setColor(const renderer::Color& color) { m_color = color; }
+  [[nodiscard]] const renderer::Color& getColor() const { return m_color; }
 
   // Target binding (e.g., which character this track controls)
-  void setTargetId(const std::string &targetId) { m_targetId = targetId; }
-  [[nodiscard]] const std::string &getTargetId() const { return m_targetId; }
+  void setTargetId(const std::string& targetId) { m_targetId = targetId; }
+  [[nodiscard]] const std::string& getTargetId() const { return m_targetId; }
 
   // Child tracks (for group tracks)
   void addChildTrack(std::unique_ptr<TimelineTrack> track);
-  [[nodiscard]] const std::vector<std::unique_ptr<TimelineTrack>> &
-  getChildTracks() const {
+  [[nodiscard]] const std::vector<std::unique_ptr<TimelineTrack>>& getChildTracks() const {
     return m_childTracks;
   }
 
@@ -361,11 +348,11 @@ protected:
  */
 class Timeline {
 public:
-  Timeline(const std::string &name);
+  Timeline(const std::string& name);
   ~Timeline() = default;
 
-  [[nodiscard]] const std::string &getName() const { return m_name; }
-  void setName(const std::string &name) { m_name = name; }
+  [[nodiscard]] const std::string& getName() const { return m_name; }
+  void setName(const std::string& name) { m_name = name; }
 
   // Duration
   [[nodiscard]] f64 getDuration() const { return m_duration; }
@@ -377,11 +364,10 @@ public:
 
   // Tracks
   void addTrack(std::unique_ptr<TimelineTrack> track);
-  void removeTrack(const std::string &trackId);
-  void moveTrack(const std::string &trackId, size_t newIndex);
-  [[nodiscard]] TimelineTrack *getTrack(const std::string &trackId);
-  [[nodiscard]] const std::vector<std::unique_ptr<TimelineTrack>> &
-  getTracks() const {
+  void removeTrack(const std::string& trackId);
+  void moveTrack(const std::string& trackId, size_t newIndex);
+  [[nodiscard]] TimelineTrack* getTrack(const std::string& trackId);
+  [[nodiscard]] const std::vector<std::unique_ptr<TimelineTrack>>& getTracks() const {
     return m_tracks;
   }
 
@@ -391,15 +377,13 @@ public:
     std::string name;
     renderer::Color color;
   };
-  void addMarker(const Marker &marker);
+  void addMarker(const Marker& marker);
   void removeMarker(f64 time);
-  [[nodiscard]] const std::vector<Marker> &getMarkers() const {
-    return m_markers;
-  }
+  [[nodiscard]] const std::vector<Marker>& getMarkers() const { return m_markers; }
 
   // Serialization
-  Result<void> save(const std::string &path);
-  static Result<std::unique_ptr<Timeline>> load(const std::string &path);
+  Result<void> save(const std::string& path);
+  static Result<std::unique_ptr<Timeline>> load(const std::string& path);
 
 private:
   std::string m_name;
@@ -420,7 +404,7 @@ public:
   TimelinePlayback();
   ~TimelinePlayback() = default;
 
-  void setTimeline(Timeline *timeline);
+  void setTimeline(Timeline* timeline);
 
   // Playback control
   void play();
@@ -435,7 +419,7 @@ public:
   void seekToFrame(i64 frame);
   [[nodiscard]] i64 getCurrentFrame() const;
 
-  void seekToMarker(const std::string &markerName);
+  void seekToMarker(const std::string& markerName);
   void seekToNextMarker();
   void seekToPreviousMarker();
 
@@ -454,19 +438,14 @@ public:
   void update(f64 deltaTime);
 
   // Callbacks
-  void setOnTimeChanged(std::function<void(f64)> callback) {
-    m_onTimeChanged = callback;
-  }
-  void setOnStateChanged(std::function<void(State)> callback) {
-    m_onStateChanged = callback;
-  }
-  void
-  setOnMarkerReached(std::function<void(const Timeline::Marker &)> callback) {
+  void setOnTimeChanged(std::function<void(f64)> callback) { m_onTimeChanged = callback; }
+  void setOnStateChanged(std::function<void(State)> callback) { m_onStateChanged = callback; }
+  void setOnMarkerReached(std::function<void(const Timeline::Marker&)> callback) {
     m_onMarkerReached = callback;
   }
 
 private:
-  Timeline *m_timeline = nullptr;
+  Timeline* m_timeline = nullptr;
   State m_state = State::Stopped;
   f64 m_currentTime = 0.0;
   f64 m_playbackRate = 1.0;
@@ -477,7 +456,7 @@ private:
 
   std::function<void(f64)> m_onTimeChanged;
   std::function<void(State)> m_onStateChanged;
-  std::function<void(const Timeline::Marker &)> m_onMarkerReached;
+  std::function<void(const Timeline::Marker&)> m_onMarkerReached;
 };
 
 /**
@@ -493,23 +472,21 @@ public:
   void onResize(i32 width, i32 height);
 
   // Timeline management
-  void setTimeline(Timeline *timeline);
-  [[nodiscard]] Timeline *getTimeline() const { return m_timeline; }
+  void setTimeline(Timeline* timeline);
+  [[nodiscard]] Timeline* getTimeline() const { return m_timeline; }
 
   void newTimeline();
-  Result<void> openTimeline(const std::string &path);
-  Result<void> saveTimeline(const std::string &path);
+  Result<void> openTimeline(const std::string& path);
+  Result<void> saveTimeline(const std::string& path);
 
   // Playback
-  [[nodiscard]] TimelinePlayback *getPlayback() { return &m_playback; }
+  [[nodiscard]] TimelinePlayback* getPlayback() { return &m_playback; }
 
   // Selection
-  void selectClip(const std::string &clipId);
-  void selectTrack(const std::string &trackId);
+  void selectClip(const std::string& clipId);
+  void selectTrack(const std::string& trackId);
   void clearSelection();
-  [[nodiscard]] const std::vector<std::string> &getSelectedClips() const {
-    return m_selectedClips;
-  }
+  [[nodiscard]] const std::vector<std::string>& getSelectedClips() const { return m_selectedClips; }
 
   // View settings
   void setZoom(f64 zoom) { m_zoom = zoom; }
@@ -531,7 +508,7 @@ public:
   void setGridSize(f64 size) { m_gridSize = size; }
 
   // Callbacks
-  void setOnClipSelected(std::function<void(TimelineClip *)> callback);
+  void setOnClipSelected(std::function<void(TimelineClip*)> callback);
   void setOnTimelineModified(std::function<void()> callback);
 
 private:
@@ -548,7 +525,7 @@ private:
   f64 screenToTime(f32 screenX) const;
   f32 timeToScreen(f64 time) const;
 
-  Timeline *m_timeline = nullptr;
+  Timeline* m_timeline = nullptr;
   TimelinePlayback m_playback;
 
   // View state
@@ -576,7 +553,7 @@ private:
   bool isVisible() const { return m_visible; }
 
   // Callbacks
-  std::function<void(TimelineClip *)> m_onClipSelected;
+  std::function<void(TimelineClip*)> m_onClipSelected;
   std::function<void()> m_onTimelineModified;
 };
 

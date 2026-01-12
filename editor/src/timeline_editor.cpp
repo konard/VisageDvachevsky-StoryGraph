@@ -14,15 +14,15 @@ namespace NovelMind::editor {
 // TimelineClip Implementation
 // =============================================================================
 
-TimelineClip::TimelineClip(const std::string &id, const std::string &name)
+TimelineClip::TimelineClip(const std::string& id, const std::string& name)
     : m_id(id), m_name(name) {}
 
-void TimelineClip::addPropertyTrack(const PropertyTrack &track) {
+void TimelineClip::addPropertyTrack(const PropertyTrack& track) {
   m_propertyTracks.push_back(track);
 }
 
-PropertyTrack *TimelineClip::getPropertyTrack(const std::string &propertyName) {
-  for (auto &track : m_propertyTracks) {
+PropertyTrack* TimelineClip::getPropertyTrack(const std::string& propertyName) {
+  for (auto& track : m_propertyTracks) {
     if (track.propertyName == propertyName) {
       return &track;
     }
@@ -30,57 +30,49 @@ PropertyTrack *TimelineClip::getPropertyTrack(const std::string &propertyName) {
   return nullptr;
 }
 
-Result<void> TimelineClip::addKeyframe(const std::string &propertyName,
-                                       const Keyframe &keyframe) {
-  auto *track = getPropertyTrack(propertyName);
+Result<void> TimelineClip::addKeyframe(const std::string& propertyName, const Keyframe& keyframe) {
+  auto* track = getPropertyTrack(propertyName);
   if (!track) {
     return Result<void>::error("Property track not found: " + propertyName);
   }
 
   // Insert keyframe in sorted order
-  auto it = std::lower_bound(
-      track->keyframes.begin(), track->keyframes.end(), keyframe,
-      [](const Keyframe &a, const Keyframe &b) { return a.time < b.time; });
+  auto it = std::lower_bound(track->keyframes.begin(), track->keyframes.end(), keyframe,
+                             [](const Keyframe& a, const Keyframe& b) { return a.time < b.time; });
 
   track->keyframes.insert(it, keyframe);
   return Result<void>::ok();
 }
 
-Result<void> TimelineClip::removeKeyframe(const std::string &propertyName,
-                                          f64 time) {
-  auto *track = getPropertyTrack(propertyName);
+Result<void> TimelineClip::removeKeyframe(const std::string& propertyName, f64 time) {
+  auto* track = getPropertyTrack(propertyName);
   if (!track) {
     return Result<void>::error("Property track not found: " + propertyName);
   }
 
-  auto it = std::find_if(
-      track->keyframes.begin(), track->keyframes.end(),
-      [time](const Keyframe &k) { return std::abs(k.time - time) < 0.0001; });
+  auto it = std::find_if(track->keyframes.begin(), track->keyframes.end(),
+                         [time](const Keyframe& k) { return std::abs(k.time - time) < 0.0001; });
 
   if (it != track->keyframes.end()) {
     track->keyframes.erase(it);
     return Result<void>::ok();
   }
 
-  return Result<void>::error("Keyframe not found at time: " +
-                             std::to_string(time));
+  return Result<void>::error("Keyframe not found at time: " + std::to_string(time));
 }
 
-Result<void> TimelineClip::moveKeyframe(const std::string &propertyName,
-                                        f64 oldTime, f64 newTime) {
-  auto *track = getPropertyTrack(propertyName);
+Result<void> TimelineClip::moveKeyframe(const std::string& propertyName, f64 oldTime, f64 newTime) {
+  auto* track = getPropertyTrack(propertyName);
   if (!track) {
     return Result<void>::error("Property track not found: " + propertyName);
   }
 
-  auto it = std::find_if(track->keyframes.begin(), track->keyframes.end(),
-                         [oldTime](const Keyframe &k) {
-                           return std::abs(k.time - oldTime) < 0.0001;
-                         });
+  auto it =
+      std::find_if(track->keyframes.begin(), track->keyframes.end(),
+                   [oldTime](const Keyframe& k) { return std::abs(k.time - oldTime) < 0.0001; });
 
   if (it == track->keyframes.end()) {
-    return Result<void>::error("Keyframe not found at time: " +
-                               std::to_string(oldTime));
+    return Result<void>::error("Keyframe not found at time: " + std::to_string(oldTime));
   }
 
   Keyframe keyframe = *it;
@@ -89,9 +81,9 @@ Result<void> TimelineClip::moveKeyframe(const std::string &propertyName,
   keyframe.time = newTime;
 
   // Re-insert in sorted order
-  auto insertIt = std::lower_bound(
-      track->keyframes.begin(), track->keyframes.end(), keyframe,
-      [](const Keyframe &a, const Keyframe &b) { return a.time < b.time; });
+  auto insertIt =
+      std::lower_bound(track->keyframes.begin(), track->keyframes.end(), keyframe,
+                       [](const Keyframe& a, const Keyframe& b) { return a.time < b.time; });
 
   track->keyframes.insert(insertIt, keyframe);
   return Result<void>::ok();
@@ -101,8 +93,7 @@ Result<void> TimelineClip::moveKeyframe(const std::string &propertyName,
 // CharacterClip Implementation
 // =============================================================================
 
-CharacterClip::CharacterClip(const std::string &id,
-                             const std::string &characterId)
+CharacterClip::CharacterClip(const std::string& id, const std::string& characterId)
     : TimelineClip(id, characterId), m_characterId(characterId) {
   // Setup default property tracks
   PropertyTrack posXTrack;
@@ -141,14 +132,14 @@ CharacterClip::CharacterClip(const std::string &id,
   addPropertyTrack(scaleYTrack);
 }
 
-void CharacterClip::setExpression(const std::string &expression, f64 time) {
+void CharacterClip::setExpression(const std::string& expression, f64 time) {
   // Expression changes are stored as string keyframes
   Keyframe kf;
   kf.time = time;
   kf.value = expression;
   kf.interpolation = KeyframeInterpolation::Constant;
 
-  auto *track = getPropertyTrack("expression");
+  auto* track = getPropertyTrack("expression");
   if (!track) {
     PropertyTrack exprTrack;
     exprTrack.propertyName = "expression";
@@ -197,21 +188,20 @@ void CharacterClip::addScaleKeyframe(f64 time, f32 scaleX, f32 scaleY) {
 // DialogueClip Implementation
 // =============================================================================
 
-DialogueClip::DialogueClip(const std::string &id)
-    : TimelineClip(id, "Dialogue") {}
+DialogueClip::DialogueClip(const std::string& id) : TimelineClip(id, "Dialogue") {}
 
 // =============================================================================
 // AudioClip Implementation
 // =============================================================================
 
-AudioClip::AudioClip(const std::string &id, AudioType type)
+AudioClip::AudioClip(const std::string& id, AudioType type)
     : TimelineClip(id, "Audio"), m_audioType(type) {}
 
 // =============================================================================
 // CameraClip Implementation
 // =============================================================================
 
-CameraClip::CameraClip(const std::string &id) : TimelineClip(id, "Camera") {
+CameraClip::CameraClip(const std::string& id) : TimelineClip(id, "Camera") {
   // Setup camera property tracks
   PropertyTrack posXTrack;
   posXTrack.propertyName = "position.x";
@@ -265,7 +255,7 @@ void CameraClip::addRotationKeyframe(f64 time, f32 angle) {
 }
 
 void CameraClip::setShake(f64 startTime, f64 duration, f32 intensity) {
-  PropertyTrack *track = getPropertyTrack("shake.intensity");
+  PropertyTrack* track = getPropertyTrack("shake.intensity");
   if (!track) {
     PropertyTrack shakeTrack;
     shakeTrack.propertyName = "shake.intensity";
@@ -297,25 +287,23 @@ void CameraClip::setShake(f64 startTime, f64 duration, f32 intensity) {
 // TimelineTrack Implementation
 // =============================================================================
 
-TimelineTrack::TimelineTrack(const std::string &id, const std::string &name,
-                             TrackType type)
+TimelineTrack::TimelineTrack(const std::string& id, const std::string& name, TrackType type)
     : m_id(id), m_name(name), m_type(type) {}
 
 void TimelineTrack::addClip(std::unique_ptr<TimelineClip> clip) {
   m_clips.push_back(std::move(clip));
 }
 
-void TimelineTrack::removeClip(const std::string &clipId) {
-  m_clips.erase(
-      std::remove_if(m_clips.begin(), m_clips.end(),
-                     [&clipId](const std::unique_ptr<TimelineClip> &clip) {
-                       return clip->getId() == clipId;
-                     }),
-      m_clips.end());
+void TimelineTrack::removeClip(const std::string& clipId) {
+  m_clips.erase(std::remove_if(m_clips.begin(), m_clips.end(),
+                               [&clipId](const std::unique_ptr<TimelineClip>& clip) {
+                                 return clip->getId() == clipId;
+                               }),
+                m_clips.end());
 }
 
-TimelineClip *TimelineTrack::getClip(const std::string &clipId) {
-  for (auto &clip : m_clips) {
+TimelineClip* TimelineTrack::getClip(const std::string& clipId) {
+  for (auto& clip : m_clips) {
     if (clip->getId() == clipId) {
       return clip.get();
     }
@@ -323,8 +311,8 @@ TimelineClip *TimelineTrack::getClip(const std::string &clipId) {
   return nullptr;
 }
 
-TimelineClip *TimelineTrack::getClipAtTime(f64 time) {
-  for (auto &clip : m_clips) {
+TimelineClip* TimelineTrack::getClipAtTime(f64 time) {
+  for (auto& clip : m_clips) {
     if (time >= clip->getStartTime() && time < clip->getEndTime()) {
       return clip.get();
     }
@@ -332,10 +320,9 @@ TimelineClip *TimelineTrack::getClipAtTime(f64 time) {
   return nullptr;
 }
 
-std::vector<TimelineClip *> TimelineTrack::getClipsInRange(f64 startTime,
-                                                           f64 endTime) {
-  std::vector<TimelineClip *> result;
-  for (auto &clip : m_clips) {
+std::vector<TimelineClip*> TimelineTrack::getClipsInRange(f64 startTime, f64 endTime) {
+  std::vector<TimelineClip*> result;
+  for (auto& clip : m_clips) {
     if (clip->getEndTime() > startTime && clip->getStartTime() < endTime) {
       result.push_back(clip.get());
     }
@@ -351,27 +338,25 @@ void TimelineTrack::addChildTrack(std::unique_ptr<TimelineTrack> track) {
 // Timeline Implementation
 // =============================================================================
 
-Timeline::Timeline(const std::string &name) : m_name(name) {}
+Timeline::Timeline(const std::string& name) : m_name(name) {}
 
 void Timeline::addTrack(std::unique_ptr<TimelineTrack> track) {
   m_tracks.push_back(std::move(track));
 }
 
-void Timeline::removeTrack(const std::string &trackId) {
-  m_tracks.erase(
-      std::remove_if(m_tracks.begin(), m_tracks.end(),
-                     [&trackId](const std::unique_ptr<TimelineTrack> &track) {
-                       return track->getId() == trackId;
-                     }),
-      m_tracks.end());
+void Timeline::removeTrack(const std::string& trackId) {
+  m_tracks.erase(std::remove_if(m_tracks.begin(), m_tracks.end(),
+                                [&trackId](const std::unique_ptr<TimelineTrack>& track) {
+                                  return track->getId() == trackId;
+                                }),
+                 m_tracks.end());
 }
 
-void Timeline::moveTrack(const std::string &trackId, size_t newIndex) {
-  auto it =
-      std::find_if(m_tracks.begin(), m_tracks.end(),
-                   [&trackId](const std::unique_ptr<TimelineTrack> &track) {
-                     return track->getId() == trackId;
-                   });
+void Timeline::moveTrack(const std::string& trackId, size_t newIndex) {
+  auto it = std::find_if(m_tracks.begin(), m_tracks.end(),
+                         [&trackId](const std::unique_ptr<TimelineTrack>& track) {
+                           return track->getId() == trackId;
+                         });
 
   if (it != m_tracks.end() && newIndex < m_tracks.size()) {
     auto track = std::move(*it);
@@ -382,8 +367,8 @@ void Timeline::moveTrack(const std::string &trackId, size_t newIndex) {
   }
 }
 
-TimelineTrack *Timeline::getTrack(const std::string &trackId) {
-  for (auto &track : m_tracks) {
+TimelineTrack* Timeline::getTrack(const std::string& trackId) {
+  for (auto& track : m_tracks) {
     if (track->getId() == trackId) {
       return track.get();
     }
@@ -391,32 +376,29 @@ TimelineTrack *Timeline::getTrack(const std::string &trackId) {
   return nullptr;
 }
 
-void Timeline::addMarker(const Marker &marker) {
-  auto it = std::lower_bound(
-      m_markers.begin(), m_markers.end(), marker,
-      [](const Marker &a, const Marker &b) { return a.time < b.time; });
+void Timeline::addMarker(const Marker& marker) {
+  auto it = std::lower_bound(m_markers.begin(), m_markers.end(), marker,
+                             [](const Marker& a, const Marker& b) { return a.time < b.time; });
   m_markers.insert(it, marker);
 }
 
 void Timeline::removeMarker(f64 time) {
-  m_markers.erase(std::remove_if(m_markers.begin(), m_markers.end(),
-                                 [time](const Marker &m) {
-                                   return std::abs(m.time - time) < 0.0001;
-                                 }),
-                  m_markers.end());
+  m_markers.erase(
+      std::remove_if(m_markers.begin(), m_markers.end(),
+                     [time](const Marker& m) { return std::abs(m.time - time) < 0.0001; }),
+      m_markers.end());
 }
 
-Result<void> Timeline::save(const std::string &path) {
+Result<void> Timeline::save(const std::string& path) {
   // Serialization implementation would go here
   (void)path;
   return Result<void>::ok();
 }
 
-Result<std::unique_ptr<Timeline>> Timeline::load(const std::string &path) {
+Result<std::unique_ptr<Timeline>> Timeline::load(const std::string& path) {
   // Deserialization implementation would go here
   (void)path;
-  return Result<std::unique_ptr<Timeline>>::ok(
-      std::make_unique<Timeline>("Loaded"));
+  return Result<std::unique_ptr<Timeline>>::ok(std::make_unique<Timeline>("Loaded"));
 }
 
 // =============================================================================
@@ -425,7 +407,7 @@ Result<std::unique_ptr<Timeline>> Timeline::load(const std::string &path) {
 
 TimelinePlayback::TimelinePlayback() {}
 
-void TimelinePlayback::setTimeline(Timeline *timeline) {
+void TimelinePlayback::setTimeline(Timeline* timeline) {
   m_timeline = timeline;
   stop();
 }
@@ -462,7 +444,9 @@ void TimelinePlayback::stop() {
   }
 }
 
-void TimelinePlayback::setPlaybackRate(f64 rate) { m_playbackRate = rate; }
+void TimelinePlayback::setPlaybackRate(f64 rate) {
+  m_playbackRate = rate;
+}
 
 void TimelinePlayback::setCurrentTime(f64 time) {
   if (!m_timeline)
@@ -489,11 +473,11 @@ i64 TimelinePlayback::getCurrentFrame() const {
   return static_cast<i64>(m_currentTime * m_timeline->getFrameRate());
 }
 
-void TimelinePlayback::seekToMarker(const std::string &markerName) {
+void TimelinePlayback::seekToMarker(const std::string& markerName) {
   if (!m_timeline)
     return;
 
-  for (const auto &marker : m_timeline->getMarkers()) {
+  for (const auto& marker : m_timeline->getMarkers()) {
     if (marker.name == markerName) {
       setCurrentTime(marker.time);
       return;
@@ -505,7 +489,7 @@ void TimelinePlayback::seekToNextMarker() {
   if (!m_timeline)
     return;
 
-  for (const auto &marker : m_timeline->getMarkers()) {
+  for (const auto& marker : m_timeline->getMarkers()) {
     if (marker.time > m_currentTime + 0.001) {
       setCurrentTime(marker.time);
       return;
@@ -517,7 +501,7 @@ void TimelinePlayback::seekToPreviousMarker() {
   if (!m_timeline)
     return;
 
-  const auto &markers = m_timeline->getMarkers();
+  const auto& markers = m_timeline->getMarkers();
   for (auto it = markers.rbegin(); it != markers.rend(); ++it) {
     if (it->time < m_currentTime - 0.001) {
       setCurrentTime(it->time);
@@ -532,7 +516,9 @@ void TimelinePlayback::setLoopRange(f64 start, f64 end) {
   m_hasLoopRange = true;
 }
 
-void TimelinePlayback::clearLoopRange() { m_hasLoopRange = false; }
+void TimelinePlayback::clearLoopRange() {
+  m_hasLoopRange = false;
+}
 
 void TimelinePlayback::update(f64 deltaTime) {
   if (m_state != State::Playing || !m_timeline)
@@ -547,8 +533,7 @@ void TimelinePlayback::update(f64 deltaTime) {
 
   if (m_currentTime >= endTime) {
     if (m_loop) {
-      m_currentTime =
-          startTime + std::fmod(m_currentTime - startTime, endTime - startTime);
+      m_currentTime = startTime + std::fmod(m_currentTime - startTime, endTime - startTime);
     } else {
       m_currentTime = endTime;
       stop();
@@ -557,7 +542,7 @@ void TimelinePlayback::update(f64 deltaTime) {
 
   // Check for markers
   if (m_onMarkerReached) {
-    for (const auto &marker : m_timeline->getMarkers()) {
+    for (const auto& marker : m_timeline->getMarkers()) {
       if (marker.time > oldTime && marker.time <= m_currentTime) {
         m_onMarkerReached(marker);
       }
@@ -595,7 +580,7 @@ void TimelineEditor::onResize(i32 width, i32 height) {
   (void)height;
 }
 
-void TimelineEditor::setTimeline(Timeline *timeline) {
+void TimelineEditor::setTimeline(Timeline* timeline) {
   m_timeline = timeline;
   m_playback.setTimeline(timeline);
   m_selectedClips.clear();
@@ -606,7 +591,7 @@ void TimelineEditor::newTimeline() {
   // Create new timeline (owned externally)
 }
 
-Result<void> TimelineEditor::openTimeline(const std::string &path) {
+Result<void> TimelineEditor::openTimeline(const std::string& path) {
   auto result = Timeline::load(path);
   if (result.isError()) {
     return Result<void>::error(result.error());
@@ -615,22 +600,21 @@ Result<void> TimelineEditor::openTimeline(const std::string &path) {
   return Result<void>::ok();
 }
 
-Result<void> TimelineEditor::saveTimeline(const std::string &path) {
+Result<void> TimelineEditor::saveTimeline(const std::string& path) {
   if (!m_timeline) {
     return Result<void>::error("No timeline to save");
   }
   return m_timeline->save(path);
 }
 
-void TimelineEditor::selectClip(const std::string &clipId) {
-  if (std::find(m_selectedClips.begin(), m_selectedClips.end(), clipId) ==
-      m_selectedClips.end()) {
+void TimelineEditor::selectClip(const std::string& clipId) {
+  if (std::find(m_selectedClips.begin(), m_selectedClips.end(), clipId) == m_selectedClips.end()) {
     m_selectedClips.push_back(clipId);
   }
 
   if (m_onClipSelected && m_timeline) {
-    for (const auto &track : m_timeline->getTracks()) {
-      if (auto *clip = track->getClip(clipId)) {
+    for (const auto& track : m_timeline->getTracks()) {
+      if (auto* clip = track->getClip(clipId)) {
         m_onClipSelected(clip);
         break;
       }
@@ -638,7 +622,7 @@ void TimelineEditor::selectClip(const std::string &clipId) {
   }
 }
 
-void TimelineEditor::selectTrack(const std::string &trackId) {
+void TimelineEditor::selectTrack(const std::string& trackId) {
   m_selectedTrack = trackId;
 }
 
@@ -661,8 +645,7 @@ void TimelineEditor::frameSelection() {
   // Focus on selected clips
 }
 
-void TimelineEditor::setOnClipSelected(
-    std::function<void(TimelineClip *)> callback) {
+void TimelineEditor::setOnClipSelected(std::function<void(TimelineClip*)> callback) {
   m_onClipSelected = std::move(callback);
 }
 
@@ -690,8 +673,8 @@ void TimelineEditor::renderTrackContents() {
     return;
 
   // Render each track's clips
-  for (const auto &track : m_timeline->getTracks()) {
-    for (const auto &clip : track->getClips()) {
+  for (const auto& track : m_timeline->getTracks()) {
+    for (const auto& clip : track->getClips()) {
       // Clip rendering implementation
       (void)clip;
     }
@@ -710,7 +693,9 @@ void TimelineEditor::renderCurveEditor() {
   // Curve editor sub-panel rendering
 }
 
-void TimelineEditor::handleInput() { handleDragDrop(); }
+void TimelineEditor::handleInput() {
+  handleDragDrop();
+}
 
 void TimelineEditor::handleDragDrop() {
   // Drag and drop implementation

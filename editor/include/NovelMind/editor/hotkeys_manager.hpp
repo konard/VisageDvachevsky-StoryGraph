@@ -174,11 +174,11 @@ struct Shortcut {
   Shortcut(KeyCode k) : key(k), modifiers(Modifiers::None) {}
   Shortcut(KeyCode k, Modifiers m) : key(k), modifiers(m) {}
 
-  bool operator==(const Shortcut &other) const {
+  bool operator==(const Shortcut& other) const {
     return key == other.key && modifiers == other.modifiers;
   }
 
-  bool operator!=(const Shortcut &other) const { return !(*this == other); }
+  bool operator!=(const Shortcut& other) const { return !(*this == other); }
 
   [[nodiscard]] bool isValid() const { return key != KeyCode::Unknown; }
 
@@ -190,14 +190,14 @@ struct Shortcut {
   /**
    * @brief Parse from string (e.g., "Ctrl+S", "F5", "Ctrl+Shift+Z")
    */
-  static Shortcut fromString(const std::string &str);
+  static Shortcut fromString(const std::string& str);
 };
 
 /**
  * @brief Hash function for Shortcut
  */
 struct ShortcutHash {
-  size_t operator()(const Shortcut &s) const {
+  size_t operator()(const Shortcut& s) const {
     return std::hash<i32>{}(static_cast<i32>(s.key)) ^
            (std::hash<u8>{}(static_cast<u8>(s.modifiers)) << 16);
   }
@@ -234,6 +234,8 @@ enum class ShortcutCategory : u8 {
   Navigation,
   Tools,
   Window,
+  Script,
+  Build,
   Debug,
   Custom
 };
@@ -304,13 +306,13 @@ public:
   ~HotkeysManager();
 
   // Prevent copying
-  HotkeysManager(const HotkeysManager &) = delete;
-  HotkeysManager &operator=(const HotkeysManager &) = delete;
+  HotkeysManager(const HotkeysManager&) = delete;
+  HotkeysManager& operator=(const HotkeysManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static HotkeysManager &instance();
+  static HotkeysManager& instance();
 
   // =========================================================================
   // Command Registration
@@ -319,33 +321,32 @@ public:
   /**
    * @brief Register a shortcut command
    */
-  void registerCommand(const ShortcutCommand &command);
+  void registerCommand(const ShortcutCommand& command);
 
   /**
    * @brief Unregister a command
    */
-  void unregisterCommand(const std::string &commandId);
+  void unregisterCommand(const std::string& commandId);
 
   /**
    * @brief Check if command exists
    */
-  [[nodiscard]] bool hasCommand(const std::string &commandId) const;
+  [[nodiscard]] bool hasCommand(const std::string& commandId) const;
 
   /**
    * @brief Get command by ID
    */
-  [[nodiscard]] const ShortcutCommand *
-  getCommand(const std::string &commandId) const;
+  [[nodiscard]] const ShortcutCommand* getCommand(const std::string& commandId) const;
 
   /**
    * @brief Get all commands
    */
-  [[nodiscard]] std::vector<const ShortcutCommand *> getAllCommands() const;
+  [[nodiscard]] std::vector<const ShortcutCommand*> getAllCommands() const;
 
   /**
    * @brief Get commands in a category
    */
-  [[nodiscard]] std::vector<const ShortcutCommand *>
+  [[nodiscard]] std::vector<const ShortcutCommand*>
   getCommandsInCategory(ShortcutCategory category) const;
 
   // =========================================================================
@@ -355,29 +356,29 @@ public:
   /**
    * @brief Set custom binding for a command
    */
-  void setCustomBinding(const std::string &commandId, const Shortcut &binding);
+  void setCustomBinding(const std::string& commandId, const Shortcut& binding);
 
   /**
    * @brief Clear custom binding (revert to default)
    */
-  void clearCustomBinding(const std::string &commandId);
+  void clearCustomBinding(const std::string& commandId);
 
   /**
    * @brief Get effective binding for a command
    */
-  [[nodiscard]] Shortcut getBinding(const std::string &commandId) const;
+  [[nodiscard]] Shortcut getBinding(const std::string& commandId) const;
 
   /**
    * @brief Get command ID bound to a key (if any)
    */
-  [[nodiscard]] std::optional<std::string>
-  getCommandForBinding(const Shortcut &binding, ShortcutContext context) const;
+  [[nodiscard]] std::optional<std::string> getCommandForBinding(const Shortcut& binding,
+                                                                ShortcutContext context) const;
 
   /**
    * @brief Check for binding conflicts
    */
-  [[nodiscard]] std::vector<std::string>
-  getConflicts(const std::string &commandId, const Shortcut &binding) const;
+  [[nodiscard]] std::vector<std::string> getConflicts(const std::string& commandId,
+                                                      const Shortcut& binding) const;
 
   /**
    * @brief Reset all bindings to defaults
@@ -396,9 +397,7 @@ public:
   /**
    * @brief Get current context
    */
-  [[nodiscard]] ShortcutContext getCurrentContext() const {
-    return m_currentContext;
-  }
+  [[nodiscard]] ShortcutContext getCurrentContext() const { return m_currentContext; }
 
   /**
    * @brief Handle a key event
@@ -416,7 +415,7 @@ public:
   /**
    * @brief Execute a command by ID
    */
-  bool executeCommand(const std::string &commandId);
+  bool executeCommand(const std::string& commandId);
 
   // =========================================================================
   // Persistence
@@ -425,12 +424,12 @@ public:
   /**
    * @brief Save custom bindings to file
    */
-  Result<void> saveBindings(const std::string &filepath);
+  Result<void> saveBindings(const std::string& filepath);
 
   /**
    * @brief Load custom bindings from file
    */
-  Result<void> loadBindings(const std::string &filepath);
+  Result<void> loadBindings(const std::string& filepath);
 
   // =========================================================================
   // Built-in Commands Registration
@@ -474,8 +473,7 @@ private:
 
   // Quick lookup: binding -> command ID (per context)
   std::unordered_map<Shortcut, std::string, ShortcutHash> m_globalBindings;
-  std::unordered_map<ShortcutContext,
-                     std::unordered_map<Shortcut, std::string, ShortcutHash>>
+  std::unordered_map<ShortcutContext, std::unordered_map<Shortcut, std::string, ShortcutHash>>
       m_contextBindings;
   bool m_bindingMapDirty = true;
 
@@ -492,86 +490,101 @@ private:
 
 namespace Commands {
 // File
-constexpr const char *FileNew = "file.new";
-constexpr const char *FileOpen = "file.open";
-constexpr const char *FileSave = "file.save";
-constexpr const char *FileSaveAs = "file.save_as";
-constexpr const char *FileSaveAll = "file.save_all";
-constexpr const char *FileClose = "file.close";
-constexpr const char *FileExport = "file.export";
-constexpr const char *FileQuit = "file.quit";
+constexpr const char* FileNew = "file.new";
+constexpr const char* FileOpen = "file.open";
+constexpr const char* FileSave = "file.save";
+constexpr const char* FileSaveAs = "file.save_as";
+constexpr const char* FileSaveAll = "file.save_all";
+constexpr const char* FileClose = "file.close";
+constexpr const char* FileExport = "file.export";
+constexpr const char* FileQuit = "file.quit";
 
 // Edit
-constexpr const char *EditUndo = "edit.undo";
-constexpr const char *EditRedo = "edit.redo";
-constexpr const char *EditCut = "edit.cut";
-constexpr const char *EditCopy = "edit.copy";
-constexpr const char *EditPaste = "edit.paste";
-constexpr const char *EditDelete = "edit.delete";
-constexpr const char *EditDuplicate = "edit.duplicate";
-constexpr const char *EditSelectAll = "edit.select_all";
-constexpr const char *EditFind = "edit.find";
-constexpr const char *EditFindReplace = "edit.find_replace";
-constexpr const char *EditRename = "edit.rename";
+constexpr const char* EditUndo = "edit.undo";
+constexpr const char* EditRedo = "edit.redo";
+constexpr const char* EditCut = "edit.cut";
+constexpr const char* EditCopy = "edit.copy";
+constexpr const char* EditPaste = "edit.paste";
+constexpr const char* EditDelete = "edit.delete";
+constexpr const char* EditDuplicate = "edit.duplicate";
+constexpr const char* EditSelectAll = "edit.select_all";
+constexpr const char* EditFind = "edit.find";
+constexpr const char* EditFindReplace = "edit.find_replace";
+constexpr const char* EditRename = "edit.rename";
 
 // View
-constexpr const char *ViewZoomIn = "view.zoom_in";
-constexpr const char *ViewZoomOut = "view.zoom_out";
-constexpr const char *ViewZoomFit = "view.zoom_fit";
-constexpr const char *ViewZoomReset = "view.zoom_reset";
-constexpr const char *ViewFullscreen = "view.fullscreen";
-constexpr const char *ViewGrid = "view.grid";
-constexpr const char *ViewSnapping = "view.snapping";
+constexpr const char* ViewZoomIn = "view.zoom_in";
+constexpr const char* ViewZoomOut = "view.zoom_out";
+constexpr const char* ViewZoomFit = "view.zoom_fit";
+constexpr const char* ViewZoomReset = "view.zoom_reset";
+constexpr const char* ViewFullscreen = "view.fullscreen";
+constexpr const char* ViewGrid = "view.grid";
+constexpr const char* ViewSnapping = "view.snapping";
 
 // Selection
-constexpr const char *SelectionClear = "selection.clear";
-constexpr const char *SelectionInvert = "selection.invert";
-constexpr const char *SelectionFocus = "selection.focus";
-constexpr const char *SelectionParent = "selection.parent";
-constexpr const char *SelectionChildren = "selection.children";
+constexpr const char* SelectionClear = "selection.clear";
+constexpr const char* SelectionInvert = "selection.invert";
+constexpr const char* SelectionFocus = "selection.focus";
+constexpr const char* SelectionParent = "selection.parent";
+constexpr const char* SelectionChildren = "selection.children";
 
 // Transform
-constexpr const char *TransformMove = "transform.move";
-constexpr const char *TransformRotate = "transform.rotate";
-constexpr const char *TransformScale = "transform.scale";
-constexpr const char *TransformReset = "transform.reset";
+constexpr const char* TransformMove = "transform.move";
+constexpr const char* TransformRotate = "transform.rotate";
+constexpr const char* TransformScale = "transform.scale";
+constexpr const char* TransformReset = "transform.reset";
 
 // Playback
-constexpr const char *PlaybackPlay = "playback.play";
-constexpr const char *PlaybackPause = "playback.pause";
-constexpr const char *PlaybackStop = "playback.stop";
-constexpr const char *PlaybackStepForward = "playback.step_forward";
-constexpr const char *PlaybackStepBackward = "playback.step_backward";
-constexpr const char *PlaybackToggle = "playback.toggle";
+constexpr const char* PlaybackPlay = "playback.play";
+constexpr const char* PlaybackPause = "playback.pause";
+constexpr const char* PlaybackStop = "playback.stop";
+constexpr const char* PlaybackStepForward = "playback.step_forward";
+constexpr const char* PlaybackStepBackward = "playback.step_backward";
+constexpr const char* PlaybackToggle = "playback.toggle";
 
 // Navigation
-constexpr const char *NavGoToStart = "nav.go_to_start";
-constexpr const char *NavGoToEnd = "nav.go_to_end";
-constexpr const char *NavGoToSelection = "nav.go_to_selection";
-constexpr const char *NavGoBack = "nav.go_back";
-constexpr const char *NavGoForward = "nav.go_forward";
+constexpr const char* NavGoToStart = "nav.go_to_start";
+constexpr const char* NavGoToEnd = "nav.go_to_end";
+constexpr const char* NavGoToSelection = "nav.go_to_selection";
+constexpr const char* NavGoBack = "nav.go_back";
+constexpr const char* NavGoForward = "nav.go_forward";
 
 // Window/Panels
-constexpr const char *WindowSceneView = "window.scene_view";
-constexpr const char *WindowStoryGraph = "window.story_graph";
-constexpr const char *WindowTimeline = "window.timeline";
-constexpr const char *WindowInspector = "window.inspector";
-constexpr const char *WindowHierarchy = "window.hierarchy";
-constexpr const char *WindowAssetBrowser = "window.asset_browser";
-constexpr const char *WindowConsole = "window.console";
-constexpr const char *WindowVoiceManager = "window.voice_manager";
-constexpr const char *WindowLocalization = "window.localization";
-constexpr const char *WindowCurveEditor = "window.curve_editor";
-constexpr const char *WindowBuildSettings = "window.build_settings";
-constexpr const char *WindowSettings = "window.settings";
-constexpr const char *WindowSwitchPanel = "window.switch_panel";
+constexpr const char* WindowSceneView = "window.scene_view";
+constexpr const char* WindowStoryGraph = "window.story_graph";
+constexpr const char* WindowTimeline = "window.timeline";
+constexpr const char* WindowInspector = "window.inspector";
+constexpr const char* WindowHierarchy = "window.hierarchy";
+constexpr const char* WindowAssetBrowser = "window.asset_browser";
+constexpr const char* WindowConsole = "window.console";
+constexpr const char* WindowVoiceManager = "window.voice_manager";
+constexpr const char* WindowLocalization = "window.localization";
+constexpr const char* WindowCurveEditor = "window.curve_editor";
+constexpr const char* WindowBuildSettings = "window.build_settings";
+constexpr const char* WindowSettings = "window.settings";
+constexpr const char* WindowSwitchPanel = "window.switch_panel";
 
 // Debug
-constexpr const char *DebugToggleBreakpoint = "debug.toggle_breakpoint";
-constexpr const char *DebugContinue = "debug.continue";
-constexpr const char *DebugStepOver = "debug.step_over";
-constexpr const char *DebugStepInto = "debug.step_into";
-constexpr const char *DebugStepOut = "debug.step_out";
+constexpr const char* DebugToggleBreakpoint = "debug.toggle_breakpoint";
+constexpr const char* DebugContinue = "debug.continue";
+constexpr const char* DebugStepOver = "debug.step_over";
+constexpr const char* DebugStepInto = "debug.step_into";
+constexpr const char* DebugStepOut = "debug.step_out";
+
+// Script Operations
+constexpr const char* ScriptFormat = "script.format";
+constexpr const char* ScriptGoToDefinition = "script.go_to_definition";
+constexpr const char* ScriptFindReferences = "script.find_references";
+constexpr const char* ScriptShowOutline = "script.show_outline";
+constexpr const char* ScriptToggleComment = "script.toggle_comment";
+constexpr const char* ScriptRun = "script.run";
+constexpr const char* ScriptCompile = "script.compile";
+
+// Build Operations
+constexpr const char* BuildProject = "build.project";
+constexpr const char* BuildRun = "build.run";
+constexpr const char* BuildClean = "build.clean";
+constexpr const char* BuildSettings = "build.settings";
 } // namespace Commands
 
 } // namespace NovelMind::editor

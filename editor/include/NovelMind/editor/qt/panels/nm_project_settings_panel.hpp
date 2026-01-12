@@ -42,7 +42,7 @@ class NMProjectSettingsPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMProjectSettingsPanel(QWidget *parent = nullptr);
+  explicit NMProjectSettingsPanel(QWidget* parent = nullptr);
   ~NMProjectSettingsPanel() override;
 
   void onInitialize() override;
@@ -69,62 +69,61 @@ private slots:
 
 private:
   void setupUI();
-  void setupWorkflowTab(QWidget *parent);
-  void setupDisplayTab(QWidget *parent);
-  void setupTextTab(QWidget *parent);
-  void setupLocalizationTab(QWidget *parent);
-  void setupBuildProfilesTab(QWidget *parent);
+  void setupWorkflowTab(QWidget* parent);
+  void setupDisplayTab(QWidget* parent);
+  void setupTextTab(QWidget* parent);
+  void setupLocalizationTab(QWidget* parent);
+  void setupBuildProfilesTab(QWidget* parent);
   void connectSignals();
   void updateApplyButton();
   void updateWorkflowDescription();
 
-  QTabWidget *m_tabWidget = nullptr;
+  QTabWidget* m_tabWidget = nullptr;
 
   // Workflow settings (Scene Node development approach) - using radio buttons
-  QRadioButton *m_scriptModeRadio = nullptr;  // Code-First (Script mode)
-  QRadioButton *m_graphModeRadio = nullptr;   // Visual-First (Graph mode)
-  QRadioButton *m_mixedModeRadio = nullptr;   // Hybrid (Mixed mode)
-  QButtonGroup *m_workflowButtonGroup = nullptr;
-  QCheckBox *m_allowMixedWorkflows =
-      nullptr;                             // Allow per-scene workflow override
-  QLabel *m_workflowDescription = nullptr; // Description of selected workflow
-  QLabel *m_workflowWarningLabel = nullptr; // Warning about mode switching
+  QRadioButton* m_scriptModeRadio = nullptr; // Code-First (Script mode)
+  QRadioButton* m_graphModeRadio = nullptr;  // Visual-First (Graph mode)
+  QRadioButton* m_mixedModeRadio = nullptr;  // Hybrid (Mixed mode)
+  QButtonGroup* m_workflowButtonGroup = nullptr;
+  QCheckBox* m_allowMixedWorkflows = nullptr; // Allow per-scene workflow override
+  QLabel* m_workflowDescription = nullptr;    // Description of selected workflow
+  QLabel* m_workflowWarningLabel = nullptr;   // Warning about mode switching
 
   // Display settings
-  QComboBox *m_resolutionCombo = nullptr;
-  QSpinBox *m_safeAreaTop = nullptr;
-  QSpinBox *m_safeAreaBottom = nullptr;
-  QSpinBox *m_safeAreaLeft = nullptr;
-  QSpinBox *m_safeAreaRight = nullptr;
-  QCheckBox *m_fullscreenDefault = nullptr;
-  QCheckBox *m_allowWindowResize = nullptr;
-  QComboBox *m_aspectRatioMode = nullptr;
+  QComboBox* m_resolutionCombo = nullptr;
+  QSpinBox* m_safeAreaTop = nullptr;
+  QSpinBox* m_safeAreaBottom = nullptr;
+  QSpinBox* m_safeAreaLeft = nullptr;
+  QSpinBox* m_safeAreaRight = nullptr;
+  QCheckBox* m_fullscreenDefault = nullptr;
+  QCheckBox* m_allowWindowResize = nullptr;
+  QComboBox* m_aspectRatioMode = nullptr;
 
   // Text/Dialogue settings
-  QComboBox *m_fontThemeCombo = nullptr;
-  QSlider *m_textSpeedSlider = nullptr;
-  QLabel *m_textSpeedLabel = nullptr;
-  QSpinBox *m_autoAdvanceDelay = nullptr;
-  QCheckBox *m_enableTypewriter = nullptr;
-  QSpinBox *m_historyLength = nullptr;
-  QCheckBox *m_enableSkip = nullptr;
-  QCheckBox *m_skipOnlyRead = nullptr;
+  QComboBox* m_fontThemeCombo = nullptr;
+  QSlider* m_textSpeedSlider = nullptr;
+  QLabel* m_textSpeedLabel = nullptr;
+  QSpinBox* m_autoAdvanceDelay = nullptr;
+  QCheckBox* m_enableTypewriter = nullptr;
+  QSpinBox* m_historyLength = nullptr;
+  QCheckBox* m_enableSkip = nullptr;
+  QCheckBox* m_skipOnlyRead = nullptr;
 
   // Localization settings
-  QComboBox *m_defaultLocaleCombo = nullptr;
-  QLineEdit *m_availableLocales = nullptr;
-  QComboBox *m_fallbackLocaleCombo = nullptr;
-  QCheckBox *m_showLanguageSelector = nullptr;
+  QComboBox* m_defaultLocaleCombo = nullptr;
+  QLineEdit* m_availableLocales = nullptr;
+  QComboBox* m_fallbackLocaleCombo = nullptr;
+  QCheckBox* m_showLanguageSelector = nullptr;
 
   // Build profiles
-  QComboBox *m_buildProfileCombo = nullptr;
-  QLineEdit *m_profileName = nullptr;
-  QPushButton *m_addProfileBtn = nullptr;
-  QPushButton *m_removeProfileBtn = nullptr;
+  QComboBox* m_buildProfileCombo = nullptr;
+  QLineEdit* m_profileName = nullptr;
+  QPushButton* m_addProfileBtn = nullptr;
+  QPushButton* m_removeProfileBtn = nullptr;
 
   // Control buttons
-  QPushButton *m_applyButton = nullptr;
-  QPushButton *m_revertButton = nullptr;
+  QPushButton* m_applyButton = nullptr;
+  QPushButton* m_revertButton = nullptr;
 
   bool m_hasUnsavedChanges = false;
 };

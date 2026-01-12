@@ -62,7 +62,7 @@ TEST_CASE("IRNode - Dialogue node with voice properties", "[voice][integration][
 
   // Create a dialogue node
   NodeId dialogueId = graph.createNode(IRNodeType::Dialogue);
-  IRNode *dialogueNode = graph.getNode(dialogueId);
+  IRNode* dialogueNode = graph.getNode(dialogueId);
 
   REQUIRE(dialogueNode != nullptr);
   REQUIRE(dialogueNode->getType() == IRNodeType::Dialogue);
@@ -93,14 +93,14 @@ TEST_CASE("IRGraph - Multiple dialogue nodes with voice", "[voice][integration][
 
   // Create first dialogue with voice
   NodeId dialogue1 = graph.createNode(IRNodeType::Dialogue);
-  IRNode *node1 = graph.getNode(dialogue1);
+  IRNode* node1 = graph.getNode(dialogue1);
   node1->setProperty("text", std::string("Welcome!"));
   node1->setProperty("speaker", std::string("Alice"));
   node1->setProperty("voice_file", std::string("voice/alice/welcome.ogg"));
 
   // Create second dialogue with voice
   NodeId dialogue2 = graph.createNode(IRNodeType::Dialogue);
-  IRNode *node2 = graph.getNode(dialogue2);
+  IRNode* node2 = graph.getNode(dialogue2);
   node2->setProperty("text", std::string("Thank you!"));
   node2->setProperty("speaker", std::string("Bob"));
   node2->setProperty("voice_file", std::string("voice/bob/thanks.ogg"));
@@ -124,7 +124,8 @@ TEST_CASE("IRGraph - Multiple dialogue nodes with voice", "[voice][integration][
 }
 
 // Tests for Issue #341: Voice Integration may fail when components are null
-TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with no components", "[voice][integration][qt][issue-341]") {
+TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with no components",
+          "[voice][integration][qt][issue-341]") {
   using namespace NovelMind::editor::qt;
 
   // Create Qt integration without any components
@@ -134,7 +135,8 @@ TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with no components"
   REQUIRE_FALSE(integration.getUnavailabilityReason().isEmpty());
 }
 
-TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with graph panel only", "[voice][integration][qt][issue-341]") {
+TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with graph panel only",
+          "[voice][integration][qt][issue-341]") {
   using namespace NovelMind::editor::qt;
 
   // Note: We can't easily create a NMStoryGraphPanel in unit tests without QApplication
@@ -149,7 +151,8 @@ TEST_CASE("NMStoryGraphVoiceIntegration - Availability check with graph panel on
   SUCCEED("Test documents expected behavior");
 }
 
-TEST_CASE("NMStoryGraphVoiceIntegration - Unavailability reason messages", "[voice][integration][qt][issue-341]") {
+TEST_CASE("NMStoryGraphVoiceIntegration - Unavailability reason messages",
+          "[voice][integration][qt][issue-341]") {
   using namespace NovelMind::editor::qt;
 
   NMStoryGraphVoiceIntegration integration(nullptr, nullptr);

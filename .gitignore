@@ -1,5 +1,7 @@
 # Build directories
 build/
+build_*/
+build-*/
 out/
 cmake-build-*/
 bin/
@@ -28,6 +30,11 @@ lib/
 *.exe
 *.out
 *.app
+
+# Experiment binaries (executables without extensions)
+experiments/test_*
+!experiments/test_*.cpp
+!experiments/test_*.h
 
 # IDE and editor files
 .vscode/

@@ -80,7 +80,7 @@ public:
   /**
    * @brief Get the singleton instance
    */
-  static NMUndoManager &instance();
+  static NMUndoManager& instance();
 
   /**
    * @brief Initialize the undo manager
@@ -95,13 +95,13 @@ public:
   /**
    * @brief Get the underlying QUndoStack
    */
-  [[nodiscard]] QUndoStack *undoStack() const { return m_undoStack.get(); }
+  [[nodiscard]] QUndoStack* undoStack() const { return m_undoStack.get(); }
 
   /**
    * @brief Push a command onto the undo stack
    * @param command The command to push (takes ownership)
    */
-  void pushCommand(QUndoCommand *command);
+  void pushCommand(QUndoCommand* command);
 
   /**
    * @brief Check if undo is available
@@ -127,7 +127,7 @@ public:
    * @brief Begin a macro (group of commands)
    * @param text Description of the macro
    */
-  void beginMacro(const QString &text);
+  void beginMacro(const QString& text);
 
   /**
    * @brief End the current macro
@@ -175,8 +175,8 @@ signals:
   /**
    * @brief Emitted when undo/redo text changes
    */
-  void undoTextChanged(const QString &text);
-  void redoTextChanged(const QString &text);
+  void undoTextChanged(const QString& text);
+  void redoTextChanged(const QString& text);
 
   /**
    * @brief Emitted when clean state changes
@@ -192,8 +192,8 @@ private:
   NMUndoManager();
   ~NMUndoManager() override;
 
-  NMUndoManager(const NMUndoManager &) = delete;
-  NMUndoManager &operator=(const NMUndoManager &) = delete;
+  NMUndoManager(const NMUndoManager&) = delete;
+  NMUndoManager& operator=(const NMUndoManager&) = delete;
 
   std::unique_ptr<QUndoStack> m_undoStack;
   bool m_initialized = false;
@@ -208,18 +208,17 @@ private:
  */
 class PropertyChangeCommand : public QUndoCommand {
 public:
-  using ApplyFn = std::function<void(const PropertyValue &, bool isUndo)>;
+  using ApplyFn = std::function<void(const PropertyValue&, bool isUndo)>;
 
-  PropertyChangeCommand(const QString &objectName, const QString &propertyName,
-                        const PropertyValue &oldValue,
-                        const PropertyValue &newValue, ApplyFn apply,
-                        QUndoCommand *parent = nullptr);
+  PropertyChangeCommand(const QString& objectName, const QString& propertyName,
+                        const PropertyValue& oldValue, const PropertyValue& newValue, ApplyFn apply,
+                        QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
 
 private:
-  void applyValue(const PropertyValue &value, bool isUndo);
+  void applyValue(const PropertyValue& value, bool isUndo);
 
   ApplyFn m_apply;
   QString m_objectName;
@@ -233,8 +232,8 @@ private:
  */
 class AddObjectCommand : public QUndoCommand {
 public:
-  AddObjectCommand(NMSceneViewPanel *panel, SceneObjectSnapshot snapshot,
-                   QUndoCommand *parent = nullptr);
+  AddObjectCommand(NMSceneViewPanel* panel, SceneObjectSnapshot snapshot,
+                   QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -250,8 +249,8 @@ private:
  */
 class DeleteObjectCommand : public QUndoCommand {
 public:
-  DeleteObjectCommand(NMSceneViewPanel *panel, SceneObjectSnapshot snapshot,
-                      QUndoCommand *parent = nullptr);
+  DeleteObjectCommand(NMSceneViewPanel* panel, SceneObjectSnapshot snapshot,
+                      QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -266,16 +265,15 @@ private:
  */
 class TransformObjectCommand : public QUndoCommand {
 public:
-  TransformObjectCommand(NMSceneViewPanel *panel, const QString &objectId,
-                         const QPointF &oldPosition, const QPointF &newPosition,
-                         qreal oldRotation = 0.0, qreal newRotation = 0.0,
-                         qreal oldScaleX = 1.0, qreal newScaleX = 1.0,
-                         qreal oldScaleY = 1.0, qreal newScaleY = 1.0,
-                         QUndoCommand *parent = nullptr);
+  TransformObjectCommand(NMSceneViewPanel* panel, const QString& objectId,
+                         const QPointF& oldPosition, const QPointF& newPosition,
+                         qreal oldRotation = 0.0, qreal newRotation = 0.0, qreal oldScaleX = 1.0,
+                         qreal newScaleX = 1.0, qreal oldScaleY = 1.0, qreal newScaleY = 1.0,
+                         QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 1; } // For command merging
 
 private:
@@ -296,10 +294,8 @@ private:
  */
 class ToggleObjectVisibilityCommand : public QUndoCommand {
 public:
-  ToggleObjectVisibilityCommand(NMSceneViewPanel *panel,
-                                const QString &objectId, bool oldVisible,
-                                bool newVisible,
-                                QUndoCommand *parent = nullptr);
+  ToggleObjectVisibilityCommand(NMSceneViewPanel* panel, const QString& objectId, bool oldVisible,
+                                bool newVisible, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -316,9 +312,8 @@ private:
  */
 class ToggleObjectLockedCommand : public QUndoCommand {
 public:
-  ToggleObjectLockedCommand(NMSceneViewPanel *panel, const QString &objectId,
-                            bool oldLocked, bool newLocked,
-                            QUndoCommand *parent = nullptr);
+  ToggleObjectLockedCommand(NMSceneViewPanel* panel, const QString& objectId, bool oldLocked,
+                            bool newLocked, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -335,13 +330,13 @@ private:
  */
 class ReparentObjectCommand : public QUndoCommand {
 public:
-  ReparentObjectCommand(NMSceneViewPanel *panel, const QString &objectId,
-                        const QString &oldParentId, const QString &newParentId,
-                        QUndoCommand *parent = nullptr);
+  ReparentObjectCommand(NMSceneViewPanel* panel, const QString& objectId,
+                        const QString& oldParentId, const QString& newParentId,
+                        QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 5; } // Unique ID for command merging
 
 private:
@@ -356,10 +351,8 @@ private:
  */
 class CreateGraphNodeCommand : public QUndoCommand {
 public:
-  CreateGraphNodeCommand(NMStoryGraphScene *scene, const QString &nodeType,
-                         const QPointF &position,
-                         const QString &title = QString(),
-                         QUndoCommand *parent = nullptr);
+  CreateGraphNodeCommand(NMStoryGraphScene* scene, const QString& nodeType, const QPointF& position,
+                         const QString& title = QString(), QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -375,8 +368,7 @@ private:
  */
 class DeleteGraphNodeCommand : public QUndoCommand {
 public:
-  DeleteGraphNodeCommand(NMStoryGraphScene *scene, uint64_t nodeId,
-                         QUndoCommand *parent = nullptr);
+  DeleteGraphNodeCommand(NMStoryGraphScene* scene, uint64_t nodeId, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -393,9 +385,8 @@ private:
  */
 class ConnectGraphNodesCommand : public QUndoCommand {
 public:
-  ConnectGraphNodesCommand(NMStoryGraphScene *scene, uint64_t sourceNodeId,
-                           uint64_t targetNodeId,
-                           QUndoCommand *parent = nullptr);
+  ConnectGraphNodesCommand(NMStoryGraphScene* scene, uint64_t sourceNodeId, uint64_t targetNodeId,
+                           QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -411,9 +402,8 @@ private:
  */
 class DisconnectGraphNodesCommand : public QUndoCommand {
 public:
-  DisconnectGraphNodesCommand(NMStoryGraphScene *scene, uint64_t sourceNodeId,
-                              uint64_t targetNodeId,
-                              QUndoCommand *parent = nullptr);
+  DisconnectGraphNodesCommand(NMStoryGraphScene* scene, uint64_t sourceNodeId,
+                              uint64_t targetNodeId, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -429,13 +419,12 @@ private:
  */
 class MoveGraphNodesCommand : public QUndoCommand {
 public:
-  MoveGraphNodesCommand(NMStoryGraphScene *scene,
-                        const QVector<GraphNodeMove> &moves,
-                        QUndoCommand *parent = nullptr);
+  MoveGraphNodesCommand(NMStoryGraphScene* scene, const QVector<GraphNodeMove>& moves,
+                        QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 2; }
 
 private:
@@ -468,13 +457,12 @@ struct KeyframeSnapshot {
  */
 class TimelineKeyframeMoveCommand : public QUndoCommand {
 public:
-  TimelineKeyframeMoveCommand(NMTimelinePanel *panel, const QString &trackName,
-                              int oldFrame, int newFrame,
-                              QUndoCommand *parent = nullptr);
+  TimelineKeyframeMoveCommand(NMTimelinePanel* panel, const QString& trackName, int oldFrame,
+                              int newFrame, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 3; }
 
 private:
@@ -489,9 +477,8 @@ private:
  */
 class AddKeyframeCommand : public QUndoCommand {
 public:
-  AddKeyframeCommand(NMTimelinePanel *panel, const QString &trackName,
-                     const KeyframeSnapshot &snapshot,
-                     QUndoCommand *parent = nullptr);
+  AddKeyframeCommand(NMTimelinePanel* panel, const QString& trackName,
+                     const KeyframeSnapshot& snapshot, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -507,9 +494,8 @@ private:
  */
 class DeleteKeyframeCommand : public QUndoCommand {
 public:
-  DeleteKeyframeCommand(NMTimelinePanel *panel, const QString &trackName,
-                        const KeyframeSnapshot &snapshot,
-                        QUndoCommand *parent = nullptr);
+  DeleteKeyframeCommand(NMTimelinePanel* panel, const QString& trackName,
+                        const KeyframeSnapshot& snapshot, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -525,9 +511,8 @@ private:
  */
 class ChangeKeyframeEasingCommand : public QUndoCommand {
 public:
-  ChangeKeyframeEasingCommand(NMTimelinePanel *panel, const QString &trackName,
-                              int frame, int oldEasing, int newEasing,
-                              QUndoCommand *parent = nullptr);
+  ChangeKeyframeEasingCommand(NMTimelinePanel* panel, const QString& trackName, int frame,
+                              int oldEasing, int newEasing, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -549,9 +534,8 @@ private:
  */
 class AddLocalizationKeyCommand : public QUndoCommand {
 public:
-  AddLocalizationKeyCommand(NMLocalizationPanel *panel, const QString &key,
-                            const QString &defaultValue,
-                            QUndoCommand *parent = nullptr);
+  AddLocalizationKeyCommand(NMLocalizationPanel* panel, const QString& key,
+                            const QString& defaultValue, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -568,9 +552,9 @@ private:
  */
 class DeleteLocalizationKeyCommand : public QUndoCommand {
 public:
-  DeleteLocalizationKeyCommand(NMLocalizationPanel *panel, const QString &key,
-                               const QHash<QString, QString> &translations,
-                               QUndoCommand *parent = nullptr);
+  DeleteLocalizationKeyCommand(NMLocalizationPanel* panel, const QString& key,
+                               const QHash<QString, QString>& translations,
+                               QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -590,14 +574,13 @@ private:
  */
 class ChangeTranslationCommand : public QUndoCommand {
 public:
-  ChangeTranslationCommand(NMLocalizationPanel *panel, const QString &key,
-                           const QString &locale, const QString &oldValue,
-                           const QString &newValue,
-                           QUndoCommand *parent = nullptr);
+  ChangeTranslationCommand(NMLocalizationPanel* panel, const QString& key, const QString& locale,
+                           const QString& oldValue, const QString& newValue,
+                           QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 6; } // Unique ID for command merging
 
 private:
@@ -631,9 +614,8 @@ struct CurvePointSnapshot {
  */
 class AddCurvePointCommand : public QUndoCommand {
 public:
-  AddCurvePointCommand(NMCurveEditorPanel *panel, CurvePointId pointId,
-                       qreal time, qreal value, int interpolation = 0,
-                       QUndoCommand *parent = nullptr);
+  AddCurvePointCommand(NMCurveEditorPanel* panel, CurvePointId pointId, qreal time, qreal value,
+                       int interpolation = 0, QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -649,9 +631,8 @@ private:
  */
 class DeleteCurvePointCommand : public QUndoCommand {
 public:
-  DeleteCurvePointCommand(NMCurveEditorPanel *panel,
-                          const CurvePointSnapshot &snapshot,
-                          QUndoCommand *parent = nullptr);
+  DeleteCurvePointCommand(NMCurveEditorPanel* panel, const CurvePointSnapshot& snapshot,
+                          QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -666,13 +647,13 @@ private:
  */
 class MoveCurvePointCommand : public QUndoCommand {
 public:
-  MoveCurvePointCommand(NMCurveEditorPanel *panel, CurvePointId pointId,
-                        qreal oldTime, qreal oldValue, qreal newTime,
-                        qreal newValue, QUndoCommand *parent = nullptr);
+  MoveCurvePointCommand(NMCurveEditorPanel* panel, CurvePointId pointId, qreal oldTime,
+                        qreal oldValue, qreal newTime, qreal newValue,
+                        QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
-  bool mergeWith(const QUndoCommand *other) override;
+  bool mergeWith(const QUndoCommand* other) override;
   int id() const override { return 4; }
 
 private:
@@ -689,9 +670,8 @@ private:
  */
 class CurveEditCommand : public QUndoCommand {
 public:
-  CurveEditCommand(NMCurveEditorPanel *panel,
-                   const QString &description = "Edit Curve",
-                   QUndoCommand *parent = nullptr);
+  CurveEditCommand(NMCurveEditorPanel* panel, const QString& description = "Edit Curve",
+                   QUndoCommand* parent = nullptr);
 
   void undo() override;
   void redo() override;
@@ -699,8 +679,8 @@ public:
   /**
    * @brief Add a point modification to the batch
    */
-  void addPointChange(CurvePointId pointId, qreal oldTime, qreal oldValue,
-                      qreal newTime, qreal newValue);
+  void addPointChange(CurvePointId pointId, qreal oldTime, qreal oldValue, qreal newTime,
+                      qreal newValue);
 
 private:
   QPointer<NMCurveEditorPanel> m_panel;

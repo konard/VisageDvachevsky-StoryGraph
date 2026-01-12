@@ -44,13 +44,13 @@ public:
    * @param registry Pointer to the scene registry (required)
    * @param parent Parent widget
    */
-  explicit NMSceneIdPicker(SceneRegistry *registry, QWidget *parent = nullptr);
+  explicit NMSceneIdPicker(SceneRegistry* registry, QWidget* parent = nullptr);
 
   /**
    * @brief Set the current scene ID
    * @param sceneId Scene ID to select
    */
-  void setSceneId(const QString &sceneId);
+  void setSceneId(const QString& sceneId);
 
   /**
    * @brief Get the currently selected scene ID
@@ -74,7 +74,7 @@ signals:
    * @brief Emitted when the scene ID changes
    * @param sceneId New scene ID
    */
-  void sceneIdChanged(const QString &sceneId);
+  void sceneIdChanged(const QString& sceneId);
 
   /**
    * @brief Emitted when "Create New Scene" is clicked
@@ -85,13 +85,13 @@ signals:
    * @brief Emitted when "Edit Scene" is clicked
    * @param sceneId Scene ID to edit
    */
-  void editSceneRequested(const QString &sceneId);
+  void editSceneRequested(const QString& sceneId);
 
   /**
    * @brief Emitted when "Show in Story Graph" is clicked
    * @param sceneId Scene ID to locate
    */
-  void locateSceneRequested(const QString &sceneId);
+  void locateSceneRequested(const QString& sceneId);
 
 private slots:
   void onSceneSelectionChanged(int index);
@@ -104,25 +104,25 @@ private:
   void setupUI();
   void updateThumbnail();
   void updateValidationState();
-  QString getDisplayName(const QString &sceneId) const;
+  QString getDisplayName(const QString& sceneId) const;
 
-  SceneRegistry *m_registry;
+  SceneRegistry* m_registry;
   QString m_currentSceneId;
 
   // UI Components
-  QComboBox *m_sceneCombo;
-  QLabel *m_thumbnailLabel;
-  QLabel *m_sceneInfoLabel;
-  QLabel *m_validationIcon;
-  QPushButton *m_createButton;
-  QPushButton *m_editButton;
-  QPushButton *m_locateButton;
+  QComboBox* m_sceneCombo;
+  QLabel* m_thumbnailLabel;
+  QLabel* m_sceneInfoLabel;
+  QLabel* m_validationIcon;
+  QPushButton* m_createButton;
+  QPushButton* m_editButton;
+  QPushButton* m_locateButton;
 
   // Layout
-  QVBoxLayout *m_mainLayout;
-  QHBoxLayout *m_comboLayout;
-  QHBoxLayout *m_previewLayout;
-  QHBoxLayout *m_actionsLayout;
+  QVBoxLayout* m_mainLayout;
+  QHBoxLayout* m_comboLayout;
+  QHBoxLayout* m_previewLayout;
+  QHBoxLayout* m_actionsLayout;
 
   // State
   bool m_readOnly = false;

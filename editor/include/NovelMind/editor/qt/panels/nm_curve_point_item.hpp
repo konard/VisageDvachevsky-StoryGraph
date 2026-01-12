@@ -43,8 +43,8 @@ public:
    * @param parent Parent graphics item
    */
   explicit NMCurvePointItem(CurvePointId pointId, qreal time, qreal value,
-                            const QColor &color = QColor("#0078d4"),
-                            QGraphicsItem *parent = nullptr);
+                            const QColor& color = QColor("#0078d4"),
+                            QGraphicsItem* parent = nullptr);
 
   /**
    * @brief Get the bounding rectangle
@@ -54,8 +54,8 @@ public:
   /**
    * @brief Paint the point
    */
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget = nullptr) override;
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+             QWidget* widget = nullptr) override;
 
   /**
    * @brief Get point ID
@@ -85,9 +85,8 @@ public:
    * @param normalizedToScene Converts (time, value) to scene coordinates
    * @param sceneToNormalized Converts scene coordinates to (time, value)
    */
-  void
-  setCoordinateConverter(std::function<QPointF(qreal, qreal)> normalizedToScene,
-                         std::function<QPointF(QPointF)> sceneToNormalized) {
+  void setCoordinateConverter(std::function<QPointF(qreal, qreal)> normalizedToScene,
+                              std::function<QPointF(QPointF)> sceneToNormalized) {
     m_normalizedToScene = normalizedToScene;
     m_sceneToNormalized = sceneToNormalized;
   }
@@ -100,7 +99,7 @@ public:
   /**
    * @brief Set point color
    */
-  void setColor(const QColor &color);
+  void setColor(const QColor& color);
 
   /**
    * @brief Set point radius
@@ -136,12 +135,12 @@ signals:
   void doubleClicked(CurvePointId pointId);
 
 protected:
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
-  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
   CurvePointId m_pointId;

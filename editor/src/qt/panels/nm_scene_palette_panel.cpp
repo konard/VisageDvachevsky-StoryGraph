@@ -17,13 +17,13 @@ namespace NovelMind::editor::qt {
 // NMAssetDropArea
 // ============================================================================
 
-NMAssetDropArea::NMAssetDropArea(QWidget *parent) : QFrame(parent) {
+NMAssetDropArea::NMAssetDropArea(QWidget* parent) : QFrame(parent) {
   setObjectName("ScenePaletteDropArea");
   setAcceptDrops(true);
   setFrameShape(QFrame::StyledPanel);
   setMinimumHeight(110);
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(10, 10, 10, 10);
   layout->setSpacing(6);
 
@@ -33,13 +33,13 @@ NMAssetDropArea::NMAssetDropArea(QWidget *parent) : QFrame(parent) {
   layout->addWidget(m_label);
 }
 
-void NMAssetDropArea::setHintText(const QString &text) {
+void NMAssetDropArea::setHintText(const QString& text) {
   if (m_label) {
     m_label->setText(text);
   }
 }
 
-void NMAssetDropArea::dragEnterEvent(QDragEnterEvent *event) {
+void NMAssetDropArea::dragEnterEvent(QDragEnterEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
     return;
@@ -47,7 +47,7 @@ void NMAssetDropArea::dragEnterEvent(QDragEnterEvent *event) {
   QFrame::dragEnterEvent(event);
 }
 
-void NMAssetDropArea::dragMoveEvent(QDragMoveEvent *event) {
+void NMAssetDropArea::dragMoveEvent(QDragMoveEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     event->acceptProposedAction();
     return;
@@ -55,11 +55,11 @@ void NMAssetDropArea::dragMoveEvent(QDragMoveEvent *event) {
   QFrame::dragMoveEvent(event);
 }
 
-void NMAssetDropArea::dropEvent(QDropEvent *event) {
+void NMAssetDropArea::dropEvent(QDropEvent* event) {
   if (event->mimeData() && event->mimeData()->hasUrls()) {
     QStringList paths;
     const QList<QUrl> urls = event->mimeData()->urls();
-    for (const QUrl &url : urls) {
+    for (const QUrl& url : urls) {
       if (url.isLocalFile()) {
         paths.append(url.toLocalFile());
       }
@@ -77,7 +77,7 @@ void NMAssetDropArea::dropEvent(QDropEvent *event) {
 // NMScenePalettePanel
 // ============================================================================
 
-NMScenePalettePanel::NMScenePalettePanel(QWidget *parent)
+NMScenePalettePanel::NMScenePalettePanel(QWidget* parent)
     : NMDockPanel(tr("Scene Palette"), parent) {
   setPanelId("ScenePalette");
   setupContent();
@@ -91,35 +91,31 @@ void NMScenePalettePanel::onUpdate(double /*deltaTime*/) {}
 
 void NMScenePalettePanel::setupContent() {
   m_contentWidget = new QWidget(this);
-  auto *layout = new QVBoxLayout(m_contentWidget);
+  auto* layout = new QVBoxLayout(m_contentWidget);
   layout->setContentsMargins(10, 10, 10, 10);
   layout->setSpacing(10);
 
-  auto *title = new QLabel(tr("Create"), m_contentWidget);
+  auto* title = new QLabel(tr("Create"), m_contentWidget);
   layout->addWidget(title);
 
-  auto *grid = new QGridLayout();
+  auto* grid = new QGridLayout();
   grid->setSpacing(6);
 
-  auto &iconMgr = NMIconManager::instance();
-  const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
-  auto makeButton = [&](const QString &label, const QString &iconName,
-                        NMSceneObjectType type, int row, int col) {
-    auto *btn = new QToolButton(m_contentWidget);
+  auto& iconMgr = NMIconManager::instance();
+  const auto& buttonSizes = NMStyleManager::instance().buttonSizes();
+  auto makeButton = [&](const QString& label, const QString& iconName, NMSceneObjectType type,
+                        int row, int col) {
+    auto* btn = new QToolButton(m_contentWidget);
     btn->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
     btn->setIcon(iconMgr.getIcon(iconName, 24));
     btn->setText(label);
-    btn->setMinimumSize(buttonSizes.paletteButtonWidth,
-                        buttonSizes.paletteButton);
-    connect(btn, &QToolButton::clicked, this,
-            [this, type]() { emit createObjectRequested(type); });
+    btn->setMinimumSize(buttonSizes.paletteButtonWidth, buttonSizes.paletteButton);
+    connect(btn, &QToolButton::clicked, this, [this, type]() { emit createObjectRequested(type); });
     grid->addWidget(btn, row, col);
   };
 
-  makeButton(tr("Background"), "object-background",
-             NMSceneObjectType::Background, 0, 0);
-  makeButton(tr("Character"), "object-character", NMSceneObjectType::Character,
-             0, 1);
+  makeButton(tr("Background"), "object-background", NMSceneObjectType::Background, 0, 0);
+  makeButton(tr("Character"), "object-character", NMSceneObjectType::Character, 0, 1);
   makeButton(tr("UI"), "object-ui", NMSceneObjectType::UI, 1, 0);
   makeButton(tr("Effect"), "object-effect", NMSceneObjectType::Effect, 1, 1);
 
@@ -128,12 +124,12 @@ void NMScenePalettePanel::setupContent() {
   m_dropModeLabel = new QLabel(tr("Drop mode: Auto"), m_contentWidget);
   layout->addWidget(m_dropModeLabel);
 
-  auto *dropModeRow = new QHBoxLayout();
+  auto* dropModeRow = new QHBoxLayout();
   m_dropModeGroup = new QButtonGroup(this);
   m_dropModeGroup->setExclusive(true);
 
-  auto makeDropMode = [&](const QString &label, int id) {
-    auto *btn = new QPushButton(label, m_contentWidget);
+  auto makeDropMode = [&](const QString& label, int id) {
+    auto* btn = new QPushButton(label, m_contentWidget);
     btn->setCheckable(true);
     if (id == -1) {
       btn->setChecked(true);
@@ -149,13 +145,11 @@ void NMScenePalettePanel::setupContent() {
   makeDropMode(tr("FX"), static_cast<int>(NMSceneObjectType::Effect));
 
   layout->addLayout(dropModeRow);
-  connect(m_dropModeGroup, &QButtonGroup::idClicked, this,
-          &NMScenePalettePanel::onDropModeChanged);
+  connect(m_dropModeGroup, &QButtonGroup::idClicked, this, &NMScenePalettePanel::onDropModeChanged);
 
   m_dropArea = new NMAssetDropArea(m_contentWidget);
   layout->addWidget(m_dropArea);
-  connect(m_dropArea, &NMAssetDropArea::assetsDropped, this,
-          &NMScenePalettePanel::onAssetsDropped);
+  connect(m_dropArea, &NMAssetDropArea::assetsDropped, this, &NMScenePalettePanel::onAssetsDropped);
 
   setContentWidget(m_contentWidget);
 }
@@ -190,7 +184,7 @@ void NMScenePalettePanel::onDropModeChanged(int id) {
   }
 }
 
-void NMScenePalettePanel::onAssetsDropped(const QStringList &paths) {
+void NMScenePalettePanel::onAssetsDropped(const QStringList& paths) {
   emit assetsDropped(paths, currentDropType());
 }
 

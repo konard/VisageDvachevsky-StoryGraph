@@ -22,14 +22,14 @@ namespace NovelMind::editor::qt {
  * @brief Result of a fuzzy match operation
  */
 struct FuzzyMatchResult {
-  bool matched = false;           ///< Whether the pattern matched
-  int score = 0;                  ///< Match quality score (higher is better)
-  QVector<int> matchedIndices;    ///< Character indices that matched
+  bool matched = false;        ///< Whether the pattern matched
+  int score = 0;               ///< Match quality score (higher is better)
+  QVector<int> matchedIndices; ///< Character indices that matched
 
   /**
    * @brief Comparison operator for sorting by score
    */
-  bool operator<(const FuzzyMatchResult &other) const {
+  bool operator<(const FuzzyMatchResult& other) const {
     return score > other.score; // Higher scores come first
   }
 };
@@ -55,7 +55,7 @@ public:
    * @param text Text to search in
    * @return Match result with score and matched character positions
    */
-  static FuzzyMatchResult match(const QString &pattern, const QString &text);
+  static FuzzyMatchResult match(const QString& pattern, const QString& text);
 
   /**
    * @brief Check if pattern matches text (simple boolean check)
@@ -64,7 +64,7 @@ public:
    * @param text Text to search in
    * @return true if pattern matches
    */
-  static bool matches(const QString &pattern, const QString &text);
+  static bool matches(const QString& pattern, const QString& text);
 
   /**
    * @brief Calculate match score for sorting
@@ -75,7 +75,7 @@ public:
    * @param text Text to search in
    * @return Match score (0 if no match)
    */
-  static int calculateScore(const QString &pattern, const QString &text);
+  static int calculateScore(const QString& pattern, const QString& text);
 
 private:
   /**
@@ -91,7 +91,7 @@ private:
    * @param index Index of character to check
    * @return true if at word boundary
    */
-  static bool isWordBoundary(const QString &text, int index);
+  static bool isWordBoundary(const QString& text, int index);
 
   /**
    * @brief Calculate bonus points for matching at a specific position
@@ -101,8 +101,7 @@ private:
    * @param isConsecutive Whether this match follows the previous match
    * @return Bonus points
    */
-  static int getPositionBonus(const QString &text, int index,
-                              bool isConsecutive);
+  static int getPositionBonus(const QString& text, int index, bool isConsecutive);
 };
 
 } // namespace NovelMind::editor::qt

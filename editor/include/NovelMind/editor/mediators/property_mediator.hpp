@@ -41,13 +41,10 @@ public:
   /**
    * @brief Construct the property mediator
    */
-  PropertyMediator(qt::NMSceneViewPanel *sceneView,
-                   qt::NMInspectorPanel *inspector,
-                   qt::NMStoryGraphPanel *storyGraph,
-                   qt::NMCurveEditorPanel *curveEditor,
-                   qt::NMScriptEditorPanel *scriptEditor,
-                   qt::NMScriptDocPanel *scriptDoc,
-                   QObject *parent = nullptr);
+  PropertyMediator(qt::NMSceneViewPanel* sceneView, qt::NMInspectorPanel* inspector,
+                   qt::NMStoryGraphPanel* storyGraph, qt::NMCurveEditorPanel* curveEditor,
+                   qt::NMScriptEditorPanel* scriptEditor, qt::NMScriptDocPanel* scriptDoc,
+                   QObject* parent = nullptr);
 
   ~PropertyMediator() override;
 
@@ -62,27 +59,25 @@ public:
   void shutdown();
 
 private:
-  void onInspectorPropertyChanged(const events::InspectorPropertyChangedEvent &event);
-  void onSceneObjectPositionChanged(const events::SceneObjectPositionChangedEvent &event);
-  void onSceneObjectTransformFinished(const events::SceneObjectTransformFinishedEvent &event);
-  void onUpdateInspectorProperty(const events::UpdateInspectorPropertyEvent &event);
-  void onOpenCurveEditorRequested(const events::OpenCurveEditorRequestedEvent &event);
-  void onCurveChanged(const events::CurveChangedEvent &event);
-  void onScriptDocHtmlChanged(const events::ScriptDocHtmlChangedEvent &event);
+  void onInspectorPropertyChanged(const events::InspectorPropertyChangedEvent& event);
+  void onSceneObjectPositionChanged(const events::SceneObjectPositionChangedEvent& event);
+  void onSceneObjectTransformFinished(const events::SceneObjectTransformFinishedEvent& event);
+  void onUpdateInspectorProperty(const events::UpdateInspectorPropertyEvent& event);
+  void onOpenCurveEditorRequested(const events::OpenCurveEditorRequestedEvent& event);
+  void onCurveChanged(const events::CurveChangedEvent& event);
+  void onScriptDocHtmlChanged(const events::ScriptDocHtmlChangedEvent& event);
 
-  void applyPropertyToSceneObject(const QString &objectId,
-                                  const QString &propertyName,
-                                  const QString &value);
-  void applyPropertyToStoryGraphNode(const QString &nodeId,
-                                     const QString &propertyName,
-                                     const QString &value);
+  void applyPropertyToSceneObject(const QString& objectId, const QString& propertyName,
+                                  const QString& value);
+  void applyPropertyToStoryGraphNode(const QString& nodeId, const QString& propertyName,
+                                     const QString& value);
 
-  qt::NMSceneViewPanel *m_sceneView = nullptr;
-  qt::NMInspectorPanel *m_inspector = nullptr;
-  qt::NMStoryGraphPanel *m_storyGraph = nullptr;
-  qt::NMCurveEditorPanel *m_curveEditor = nullptr;
-  qt::NMScriptEditorPanel *m_scriptEditor = nullptr;
-  qt::NMScriptDocPanel *m_scriptDoc = nullptr;
+  qt::NMSceneViewPanel* m_sceneView = nullptr;
+  qt::NMInspectorPanel* m_inspector = nullptr;
+  qt::NMStoryGraphPanel* m_storyGraph = nullptr;
+  qt::NMCurveEditorPanel* m_curveEditor = nullptr;
+  qt::NMScriptEditorPanel* m_scriptEditor = nullptr;
+  qt::NMScriptDocPanel* m_scriptDoc = nullptr;
 
   std::vector<EventSubscription> m_subscriptions;
   bool m_processingProperty = false; // Prevent feedback loops

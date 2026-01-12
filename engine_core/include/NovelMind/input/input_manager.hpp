@@ -95,7 +95,7 @@ public:
 
   void startTextInput();
   void stopTextInput();
-  [[nodiscard]] const std::string &getTextInput() const;
+  [[nodiscard]] const std::string& getTextInput() const;
   void clearTextInput();
 
 private:

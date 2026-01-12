@@ -14,7 +14,9 @@
 #include "NovelMind/core/types.hpp"
 #include "NovelMind/renderer/color.hpp"
 #include <functional>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -92,17 +94,17 @@ public:
   /**
    * @brief Initialize with editor reference
    */
-  void initialize(EditorApp *editor);
+  void initialize(EditorApp* editor);
 
   /**
    * @brief Save current layout
    */
-  Result<void> saveLayout(const std::string &name);
+  Result<void> saveLayout(const std::string& name);
 
   /**
    * @brief Load a saved layout
    */
-  Result<void> loadLayout(const std::string &name);
+  Result<void> loadLayout(const std::string& name);
 
   /**
    * @brief Apply a preset layout
@@ -122,31 +124,34 @@ public:
   /**
    * @brief Delete a saved layout
    */
-  void deleteLayout(const std::string &name);
+  void deleteLayout(const std::string& name);
 
   /**
    * @brief Export layout to file
    */
-  Result<void> exportLayout(const std::string &path);
+  Result<void> exportLayout(const std::string& path);
 
   /**
    * @brief Import layout from file
    */
-  Result<void> importLayout(const std::string &path);
+  Result<void> importLayout(const std::string& path);
 
   /**
    * @brief Set layouts directory
    */
-  void setLayoutsPath(const std::string &path);
+  void setLayoutsPath(const std::string& path);
 
 private:
   EditorLayout createPresetLayout(LayoutPreset preset);
-  void applyLayout(const EditorLayout &layout);
+  void applyLayout(const EditorLayout& layout);
   EditorLayout captureCurrentLayout();
 
-  EditorApp *m_editor = nullptr;
+  EditorApp* m_editor = nullptr;
   std::string m_layoutsPath;
   std::unordered_map<std::string, EditorLayout> m_savedLayouts;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -179,12 +184,12 @@ struct KeyBinding {
   i32 keyCode = 0; // Platform-specific key code
   KeyModifier modifiers = KeyModifier::None;
 
-  bool operator==(const KeyBinding &other) const {
+  bool operator==(const KeyBinding& other) const {
     return keyCode == other.keyCode && modifiers == other.modifiers;
   }
 
   [[nodiscard]] std::string toString() const;
-  static KeyBinding fromString(const std::string &str);
+  static KeyBinding fromString(const std::string& str);
 };
 
 /**
@@ -231,22 +236,22 @@ public:
   /**
    * @brief Register a hotkey action
    */
-  void registerAction(const HotkeyAction &action, HotkeyCallback callback);
+  void registerAction(const HotkeyAction& action, HotkeyCallback callback);
 
   /**
    * @brief Unregister an action
    */
-  void unregisterAction(const std::string &actionId);
+  void unregisterAction(const std::string& actionId);
 
   /**
    * @brief Set hotkey binding for an action
    */
-  void setBinding(const std::string &actionId, const KeyBinding &binding);
+  void setBinding(const std::string& actionId, const KeyBinding& binding);
 
   /**
    * @brief Reset to default binding
    */
-  void resetToDefault(const std::string &actionId);
+  void resetToDefault(const std::string& actionId);
 
   /**
    * @brief Reset all to defaults
@@ -256,20 +261,17 @@ public:
   /**
    * @brief Get action by ID
    */
-  [[nodiscard]] std::optional<HotkeyAction>
-  getAction(const std::string &actionId) const;
+  [[nodiscard]] std::optional<HotkeyAction> getAction(const std::string& actionId) const;
 
   /**
    * @brief Get all actions in a category
    */
-  [[nodiscard]] std::vector<HotkeyAction>
-  getActionsByCategory(ActionCategory category) const;
+  [[nodiscard]] std::vector<HotkeyAction> getActionsByCategory(ActionCategory category) const;
 
   /**
    * @brief Get all actions
    */
-  [[nodiscard]] const std::unordered_map<std::string, HotkeyAction> &
-  getAllActions() const;
+  [[nodiscard]] const std::unordered_map<std::string, HotkeyAction>& getAllActions() const;
 
   /**
    * @brief Handle key press event
@@ -280,27 +282,29 @@ public:
   /**
    * @brief Check for binding conflicts
    */
-  [[nodiscard]] std::vector<std::string>
-  getConflicts(const KeyBinding &binding) const;
+  [[nodiscard]] std::vector<std::string> getConflicts(const KeyBinding& binding) const;
 
   /**
    * @brief Save hotkey configuration
    */
-  Result<void> save(const std::string &path);
+  Result<void> save(const std::string& path);
 
   /**
    * @brief Load hotkey configuration
    */
-  Result<void> load(const std::string &path);
+  Result<void> load(const std::string& path);
 
   /**
    * @brief Register default editor hotkeys
    */
-  void registerDefaultHotkeys(EditorApp *editor);
+  void registerDefaultHotkeys(EditorApp* editor);
 
 private:
   std::unordered_map<std::string, HotkeyAction> m_actions;
   std::unordered_map<std::string, HotkeyCallback> m_callbacks;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -438,8 +442,8 @@ struct Theme {
   ThemeFonts fonts;
   ThemeMetrics metrics;
 
-  [[nodiscard]] const renderer::Color &getColor(ThemeColor color) const;
-  void setColor(ThemeColor color, const renderer::Color &value);
+  [[nodiscard]] const renderer::Color& getColor(ThemeColor color) const;
+  void setColor(ThemeColor color, const renderer::Color& value);
 };
 
 /**
@@ -453,17 +457,17 @@ public:
   /**
    * @brief Apply a theme
    */
-  void applyTheme(const std::string &themeName);
+  void applyTheme(const std::string& themeName);
 
   /**
    * @brief Get current theme
    */
-  [[nodiscard]] const Theme &getCurrentTheme() const;
+  [[nodiscard]] const Theme& getCurrentTheme() const;
 
   /**
    * @brief Get theme by name
    */
-  [[nodiscard]] std::optional<Theme> getTheme(const std::string &name) const;
+  [[nodiscard]] std::optional<Theme> getTheme(const std::string& name) const;
 
   /**
    * @brief Get list of available themes
@@ -473,38 +477,37 @@ public:
   /**
    * @brief Register a custom theme
    */
-  void registerTheme(const Theme &theme);
+  void registerTheme(const Theme& theme);
 
   /**
    * @brief Unregister a theme
    */
-  void unregisterTheme(const std::string &name);
+  void unregisterTheme(const std::string& name);
 
   /**
    * @brief Export theme to file
    */
-  Result<void> exportTheme(const std::string &themeName,
-                           const std::string &path);
+  Result<void> exportTheme(const std::string& themeName, const std::string& path);
 
   /**
    * @brief Import theme from file
    */
-  Result<void> importTheme(const std::string &path);
+  Result<void> importTheme(const std::string& path);
 
   /**
    * @brief Get color from current theme
    */
-  [[nodiscard]] const renderer::Color &getColor(ThemeColor color) const;
+  [[nodiscard]] const renderer::Color& getColor(ThemeColor color) const;
 
   /**
    * @brief Get current font settings
    */
-  [[nodiscard]] const ThemeFonts &getFonts() const;
+  [[nodiscard]] const ThemeFonts& getFonts() const;
 
   /**
    * @brief Get current metrics
    */
-  [[nodiscard]] const ThemeMetrics &getMetrics() const;
+  [[nodiscard]] const ThemeMetrics& getMetrics() const;
 
   /**
    * @brief Create default light theme
@@ -522,6 +525,9 @@ private:
   std::unordered_map<std::string, Theme> m_themes;
   std::string m_currentThemeName;
   Theme m_currentTheme;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 // ============================================================================
@@ -538,10 +544,10 @@ struct EditorPreferences {
   bool showTooltips = true;
 
   // Dock Panel Title Bars (Issue #293)
-  i32 titleBarHeight = 22;         // Height in pixels (18-32)
-  bool compactTitleBars = true;    // Use compact mode
-  bool autoHideTitleBars = false;  // Auto-hide when maximized
-  bool showPanelIcons = true;      // Show icons in title bars
+  i32 titleBarHeight = 22;        // Height in pixels (18-32)
+  bool compactTitleBars = true;   // Use compact mode
+  bool autoHideTitleBars = false; // Auto-hide when maximized
+  bool showPanelIcons = true;     // Show icons in title bars
 
   // Layout
   std::string defaultLayout = "default";
@@ -586,18 +592,18 @@ public:
   /**
    * @brief Load preferences from disk
    */
-  Result<void> load(const std::string &path);
+  Result<void> load(const std::string& path);
 
   /**
    * @brief Save preferences to disk
    */
-  Result<void> save(const std::string &path);
+  Result<void> save(const std::string& path);
 
   /**
    * @brief Get current preferences
    */
-  [[nodiscard]] EditorPreferences &get();
-  [[nodiscard]] const EditorPreferences &get() const;
+  [[nodiscard]] EditorPreferences& get();
+  [[nodiscard]] const EditorPreferences& get() const;
 
   /**
    * @brief Reset to defaults
@@ -607,16 +613,19 @@ public:
   /**
    * @brief Add a recent project
    */
-  void addRecentProject(const std::string &path);
+  void addRecentProject(const std::string& path);
 
   /**
    * @brief Get recent projects
    */
-  [[nodiscard]] const std::vector<std::string> &getRecentProjects() const;
+  [[nodiscard]] const std::vector<std::string>& getRecentProjects() const;
 
 private:
   EditorPreferences m_prefs;
   std::string m_prefsPath;
+
+  // Thread synchronization for concurrent access protection
+  mutable std::shared_mutex m_mutex;
 };
 
 } // namespace NovelMind::editor

@@ -3,30 +3,36 @@
 
 namespace NovelMind::Scene {
 
-ChoiceMenu::ChoiceMenu(const std::string &id)
+ChoiceMenu::ChoiceMenu(const std::string& id)
     : scene::SceneObject(id), m_style(), m_bounds{0.0f, 0.0f, 400.0f, 300.0f},
       m_highlightedIndex(-1), m_selectedIndex(-1), m_onSelect(nullptr) {}
 
 ChoiceMenu::~ChoiceMenu() = default;
 
-void ChoiceMenu::setStyle(const ChoiceMenuStyle &style) { m_style = style; }
+void ChoiceMenu::setStyle(const ChoiceMenuStyle& style) {
+  m_style = style;
+}
 
-const ChoiceMenuStyle &ChoiceMenu::getStyle() const { return m_style; }
+const ChoiceMenuStyle& ChoiceMenu::getStyle() const {
+  return m_style;
+}
 
 void ChoiceMenu::setBounds(f32 x, f32 y, f32 width, f32 height) {
   m_bounds = renderer::Rect{x, y, width, height};
 }
 
-renderer::Rect ChoiceMenu::getBounds() const { return m_bounds; }
+renderer::Rect ChoiceMenu::getBounds() const {
+  return m_bounds;
+}
 
-void ChoiceMenu::setOptions(const std::vector<ChoiceOption> &options) {
+void ChoiceMenu::setOptions(const std::vector<ChoiceOption>& options) {
   m_options = options;
   m_optionHighlight.resize(options.size(), 0.0f);
   m_highlightedIndex = getFirstEnabledIndex();
   m_selectedIndex = -1;
 }
 
-void ChoiceMenu::addOption(const std::string &text, bool enabled) {
+void ChoiceMenu::addOption(const std::string& text, bool enabled) {
   ChoiceOption option;
   option.text = text;
   option.enabled = enabled;
@@ -46,9 +52,11 @@ void ChoiceMenu::clearOptions() {
   m_selectedIndex = -1;
 }
 
-size_t ChoiceMenu::getOptionCount() const { return m_options.size(); }
+size_t ChoiceMenu::getOptionCount() const {
+  return m_options.size();
+}
 
-const ChoiceOption &ChoiceMenu::getOption(size_t index) const {
+const ChoiceOption& ChoiceMenu::getOption(size_t index) const {
   return m_options[index];
 }
 
@@ -76,7 +84,9 @@ void ChoiceMenu::setHighlightedIndex(i32 index) {
   }
 }
 
-i32 ChoiceMenu::getHighlightedIndex() const { return m_highlightedIndex; }
+i32 ChoiceMenu::getHighlightedIndex() const {
+  return m_highlightedIndex;
+}
 
 void ChoiceMenu::highlightPrevious() {
   m_highlightedIndex = getNextEnabledIndex(m_highlightedIndex, -1);
@@ -130,7 +140,9 @@ void ChoiceMenu::setOnSelect(SelectionCallback callback) {
   m_onSelect = std::move(callback);
 }
 
-i32 ChoiceMenu::getSelectedIndex() const { return m_selectedIndex; }
+i32 ChoiceMenu::getSelectedIndex() const {
+  return m_selectedIndex;
+}
 
 void ChoiceMenu::resetSelection() {
   m_selectedIndex = -1;
@@ -145,7 +157,7 @@ void ChoiceMenu::update(f64 deltaTime) {
 
   for (size_t i = 0; i < m_optionHighlight.size(); ++i) {
     f32 target = (static_cast<i32>(i) == m_highlightedIndex) ? 1.0f : 0.0f;
-    f32 &current = m_optionHighlight[i];
+    f32& current = m_optionHighlight[i];
 
     if (current < target) {
       current = std::min(current + dt * m_style.hoverTransitionSpeed, target);
@@ -155,7 +167,7 @@ void ChoiceMenu::update(f64 deltaTime) {
   }
 }
 
-void ChoiceMenu::render(renderer::IRenderer &renderer) {
+void ChoiceMenu::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_options.empty()) {
     return;
   }
@@ -186,15 +198,14 @@ void ChoiceMenu::render(renderer::IRenderer &renderer) {
   f32 currentY = menuY + m_style.paddingTop;
 
   for (size_t i = 0; i < m_options.size(); ++i) {
-    const auto &option = m_options[i];
+    const auto& option = m_options[i];
 
     if (!option.visible) {
       continue;
     }
 
     renderer::Rect optionRect{m_bounds.x + m_style.paddingLeft, currentY,
-                              m_bounds.width - m_style.paddingLeft -
-                                  m_style.paddingRight,
+                              m_bounds.width - m_style.paddingLeft - m_style.paddingRight,
                               m_style.optionHeight};
 
     // Determine background color based on state
@@ -217,13 +228,11 @@ void ChoiceMenu::render(renderer::IRenderer &renderer) {
     }
 
     // Draw text color indicator (actual text rendering needs font support)
-    renderer::Color textColor =
-        option.enabled ? m_style.textColor : m_style.disabledColor;
+    renderer::Color textColor = option.enabled ? m_style.textColor : m_style.disabledColor;
     textColor.a = static_cast<u8>(textColor.a * m_alpha);
 
     // For now, draw a small indicator bar
-    renderer::Rect indicatorRect{optionRect.x + 5.0f,
-                                 optionRect.y + optionRect.height * 0.3f, 4.0f,
+    renderer::Rect indicatorRect{optionRect.x + 5.0f, optionRect.y + optionRect.height * 0.3f, 4.0f,
                                  optionRect.height * 0.4f};
     renderer.fillRect(indicatorRect, textColor);
 
@@ -235,7 +244,7 @@ f32 ChoiceMenu::calculateMenuHeight() const {
   f32 height = m_style.paddingTop + m_style.paddingBottom;
 
   size_t visibleCount = 0;
-  for (const auto &option : m_options) {
+  for (const auto& option : m_options) {
     if (option.visible) {
       ++visibleCount;
     }
@@ -265,8 +274,7 @@ renderer::Rect ChoiceMenu::getOptionRect(size_t index) const {
 
     if (i == index) {
       return renderer::Rect{m_bounds.x + m_style.paddingLeft, currentY,
-                            m_bounds.width - m_style.paddingLeft -
-                                m_style.paddingRight,
+                            m_bounds.width - m_style.paddingLeft - m_style.paddingRight,
                             m_style.optionHeight};
     }
 

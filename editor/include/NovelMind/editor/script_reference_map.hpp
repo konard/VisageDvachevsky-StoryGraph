@@ -206,9 +206,8 @@ public:
   virtual ~IReferenceMapListener() = default;
 
   virtual void onAnalysisStarted() = 0;
-  virtual void onAnalysisProgress(const std::string &currentTask,
-                                  f32 progress) = 0;
-  virtual void onAnalysisCompleted(const ReferenceMap &map) = 0;
+  virtual void onAnalysisProgress(const std::string& currentTask, f32 progress) = 0;
+  virtual void onAnalysisCompleted(const ReferenceMap& map) = 0;
 };
 
 /**
@@ -228,12 +227,12 @@ public:
   /**
    * @brief Set project path
    */
-  void setProjectPath(const std::string &projectPath);
+  void setProjectPath(const std::string& projectPath);
 
   /**
    * @brief Set configuration
    */
-  void setConfig(const ReferenceMapConfig &config);
+  void setConfig(const ReferenceMapConfig& config);
 
   /**
    * @brief Analyze the project and generate reference map
@@ -243,9 +242,7 @@ public:
   /**
    * @brief Get cached reference map
    */
-  [[nodiscard]] const ReferenceMap &getReferenceMap() const {
-    return m_referenceMap;
-  }
+  [[nodiscard]] const ReferenceMap& getReferenceMap() const { return m_referenceMap; }
 
   /**
    * @brief Check if cache is valid
@@ -260,61 +257,57 @@ public:
   /**
    * @brief Add listener
    */
-  void addListener(IReferenceMapListener *listener);
+  void addListener(IReferenceMapListener* listener);
 
   /**
    * @brief Remove listener
    */
-  void removeListener(IReferenceMapListener *listener);
+  void removeListener(IReferenceMapListener* listener);
 
   // Query methods
 
   /**
    * @brief Get all references to a scene
    */
-  [[nodiscard]] std::vector<ScriptReference>
-  getReferencesToScene(const std::string &sceneId) const;
+  [[nodiscard]] std::vector<ScriptReference> getReferencesToScene(const std::string& sceneId) const;
 
   /**
    * @brief Get all references from a scene
    */
   [[nodiscard]] std::vector<ScriptReference>
-  getReferencesFromScene(const std::string &sceneId) const;
+  getReferencesFromScene(const std::string& sceneId) const;
 
   /**
    * @brief Get all uses of a variable
    */
-  [[nodiscard]] const VariableUsage *
-  getVariableUsage(const std::string &variableName) const;
+  [[nodiscard]] const VariableUsage* getVariableUsage(const std::string& variableName) const;
 
   /**
    * @brief Get all scenes that can reach a target scene
    */
-  [[nodiscard]] std::vector<std::string>
-  getScenesReaching(const std::string &targetSceneId) const;
+  [[nodiscard]] std::vector<std::string> getScenesReaching(const std::string& targetSceneId) const;
 
   /**
    * @brief Get all scenes reachable from a source scene
    */
   [[nodiscard]] std::vector<std::string>
-  getScenesReachableFrom(const std::string &sourceSceneId) const;
+  getScenesReachableFrom(const std::string& sourceSceneId) const;
 
   /**
    * @brief Get shortest path between two scenes
    */
-  [[nodiscard]] std::vector<std::string>
-  getShortestPath(const std::string &from, const std::string &to) const;
+  [[nodiscard]] std::vector<std::string> getShortestPath(const std::string& from,
+                                                         const std::string& to) const;
 
   /**
    * @brief Get all paths to endings
    */
-  [[nodiscard]] std::vector<StoryPath>
-  getPathsToEnding(const std::string &endingId) const;
+  [[nodiscard]] std::vector<StoryPath> getPathsToEnding(const std::string& endingId) const;
 
   /**
    * @brief Get call depth of a scene
    */
-  [[nodiscard]] i32 getCallDepth(const std::string &sceneId) const;
+  [[nodiscard]] i32 getCallDepth(const std::string& sceneId) const;
 
 private:
   void parseScriptFiles();
@@ -326,7 +319,7 @@ private:
   void detectUnreachable();
   void layoutCallGraph();
 
-  void reportProgress(const std::string &task, f32 progress);
+  void reportProgress(const std::string& task, f32 progress);
 
   std::string m_projectPath;
   ReferenceMapConfig m_config;
@@ -335,7 +328,7 @@ private:
   bool m_cacheValid = false;
   u64 m_lastAnalysisTime = 0;
 
-  std::vector<IReferenceMapListener *> m_listeners;
+  std::vector<IReferenceMapListener*> m_listeners;
 };
 
 /**
@@ -354,7 +347,7 @@ public:
   /**
    * @brief Set reference map to visualize
    */
-  void setReferenceMap(const ReferenceMap *map);
+  void setReferenceMap(const ReferenceMap* map);
 
   /**
    * @brief Export call graph as DOT (Graphviz) format
@@ -364,7 +357,7 @@ public:
   /**
    * @brief Export call graph as SVG
    */
-  Result<void> exportCallGraphSVG(const std::string &outputPath) const;
+  Result<void> exportCallGraphSVG(const std::string& outputPath) const;
 
   /**
    * @brief Export story flow as Mermaid diagram
@@ -379,38 +372,36 @@ public:
   /**
    * @brief Export complete analysis report as HTML
    */
-  Result<void> exportAnalysisReport(const std::string &outputPath) const;
+  Result<void> exportAnalysisReport(const std::string& outputPath) const;
 
   // Rendering for editor integration
 
   /**
    * @brief Render call graph overlay for StoryGraph panel
    */
-  void renderCallGraphOverlay(renderer::IRenderer *renderer, f32 viewX,
-                              f32 viewY, f32 zoom);
+  void renderCallGraphOverlay(renderer::IRenderer* renderer, f32 viewX, f32 viewY, f32 zoom);
 
   /**
    * @brief Render variable usage highlighting
    */
-  void renderVariableHighlights(renderer::IRenderer *renderer,
-                                const std::string &variableName);
+  void renderVariableHighlights(renderer::IRenderer* renderer, const std::string& variableName);
 
   // Filtering
 
   /**
    * @brief Set filter for visualization
    */
-  void setFilter(const std::string &filter);
+  void setFilter(const std::string& filter);
 
   /**
    * @brief Show only paths to a specific node
    */
-  void showPathsTo(const std::string &nodeId);
+  void showPathsTo(const std::string& nodeId);
 
   /**
    * @brief Show only paths from a specific node
    */
-  void showPathsFrom(const std::string &nodeId);
+  void showPathsFrom(const std::string& nodeId);
 
   /**
    * @brief Reset filters
@@ -418,7 +409,7 @@ public:
   void resetFilters();
 
 private:
-  const ReferenceMap *m_map = nullptr;
+  const ReferenceMap* m_map = nullptr;
 
   std::string m_currentFilter;
   std::string m_pathsToNode;
@@ -441,11 +432,11 @@ public:
   void render();
   void onResize(i32 width, i32 height);
 
-  void setAnalyzer(ScriptReferenceAnalyzer *analyzer);
+  void setAnalyzer(ScriptReferenceAnalyzer* analyzer);
 
   // Actions
   void refreshAnalysis();
-  void exportReport(const std::string &path);
+  void exportReport(const std::string& path);
 
   // View modes
   enum class ViewMode : u8 { CallGraph, VariableUsage, StoryPaths, Statistics };
@@ -453,13 +444,12 @@ public:
   [[nodiscard]] ViewMode getViewMode() const { return m_viewMode; }
 
   // Selection
-  void selectNode(const std::string &nodeId);
-  void selectVariable(const std::string &variableName);
+  void selectNode(const std::string& nodeId);
+  void selectVariable(const std::string& variableName);
 
   // Callbacks
-  void setOnNodeSelected(std::function<void(const std::string &)> callback);
-  void
-  setOnNavigateToSource(std::function<void(const std::string &, i32)> callback);
+  void setOnNodeSelected(std::function<void(const std::string&)> callback);
+  void setOnNavigateToSource(std::function<void(const std::string&, i32)> callback);
 
 private:
   void renderCallGraphView();
@@ -469,7 +459,7 @@ private:
   void renderToolbar();
   void renderDetailsPanel();
 
-  ScriptReferenceAnalyzer *m_analyzer = nullptr;
+  ScriptReferenceAnalyzer* m_analyzer = nullptr;
   ReferenceMapVisualizer m_visualizer;
 
   ViewMode m_viewMode = ViewMode::CallGraph;
@@ -484,8 +474,8 @@ private:
   f32 m_viewZoom = 1.0f;
 
   // Callbacks
-  std::function<void(const std::string &)> m_onNodeSelected;
-  std::function<void(const std::string &, i32)> m_onNavigateToSource;
+  std::function<void(const std::string&)> m_onNodeSelected;
+  std::function<void(const std::string&, i32)> m_onNavigateToSource;
 };
 
 } // namespace NovelMind::editor

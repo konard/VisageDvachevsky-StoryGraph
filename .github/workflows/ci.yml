@@ -155,9 +155,9 @@ jobs:
 
     - name: Check formatting
       run: |
-        find engine_core -name '*.cpp' -o -name '*.hpp' | \
+        find engine_core editor compiler runtime tests -name '*.cpp' -o -name '*.hpp' | \
           xargs clang-format-14 --dry-run --Werror || \
-          echo "::warning::Code formatting issues found. Run clang-format to fix."
+          echo "::error::Code formatting issues found. Run clang-format to fix."
 
   static-analysis:
     runs-on: ubuntu-latest
@@ -201,11 +201,32 @@ jobs:
 
     - name: Run clang-tidy
       run: |
-        clang-tidy-15 -p build \
-          $(find engine_core/src compiler/src runtime/src -name "*.cpp" 2>/dev/null | head -20) \
-          --checks='-*,bugprone-*,modernize-*,performance-*,readability-*' \
-          --warnings-as-errors=bugprone-* \
-          2>&1 | tee clang-tidy.log || true
+        # Determine which files to check
+        if [ "${{ github.event_name }}" = "pull_request" ]; then
+          # For PRs, only check changed .cpp files
+          CHANGED_FILES=$(git diff --name-only --diff-filter=d origin/${{ github.base_ref }}...HEAD | grep -E '\.(cpp|hpp)$' || true)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No C++ files changed in this PR, skipping clang-tidy"
+            exit 0
+          fi
+          echo "Checking changed files in PR:"
+          echo "$CHANGED_FILES"
+          FILES_TO_CHECK="$CHANGED_FILES"
+        else
+          # For main branch, check all source files
+          FILES_TO_CHECK=$(find engine_core/src compiler/src runtime/src editor/src -name "*.cpp" 2>/dev/null)
+          echo "Checking all source files ($(echo "$FILES_TO_CHECK" | wc -l) files)"
+        fi
+
+        # Run clang-tidy on the selected files
+        if [ -n "$FILES_TO_CHECK" ]; then
+          echo "$FILES_TO_CHECK" | xargs -r clang-tidy-15 -p build \
+            --checks='-*,bugprone-*,modernize-*,performance-*,readability-*' \
+            --warnings-as-errors=bugprone-* \
+            2>&1 | tee clang-tidy.log || true
+        else
+          echo "No files to check"
+        fi
 
     - name: Upload clang-tidy log
       if: always()
@@ -222,10 +243,19 @@ jobs:
         sanitizer:
           - name: asan
             cmake_flag: NOVELMIND_ENABLE_ASAN
+            compiler: clang
           - name: tsan
             cmake_flag: NOVELMIND_ENABLE_TSAN
+            compiler: clang
           - name: ubsan
             cmake_flag: NOVELMIND_ENABLE_UBSAN
+            compiler: clang
+          - name: lsan
+            cmake_flag: NOVELMIND_ENABLE_LSAN
+            compiler: clang
+          - name: msan
+            cmake_flag: NOVELMIND_ENABLE_MSAN
+            compiler: clang
 
     steps:
     - uses: actions/checkout@v4
@@ -236,6 +266,9 @@ jobs:
         sudo apt-get install -y cmake ninja-build libsdl2-dev
 
     - name: Configure CMake with ${{ matrix.sanitizer.name }}
+      env:
+        CC: ${{ matrix.sanitizer.compiler }}
+        CXX: ${{ matrix.sanitizer.compiler }}++
       run: |
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Debug \
@@ -248,7 +281,9 @@ jobs:
     - name: Run tests with ${{ matrix.sanitizer.name }}
       run: |
         cd build
-        ctest --output-on-failure --timeout 300
+        # Exclude AudioManager tests - they require audio hardware which causes
+        # memory leaks in ALSA/SDL when hardware is unavailable in CI
+        ctest --output-on-failure --timeout 300 -E "AudioManager"
 
   coverage:
     runs-on: ubuntu-latest
@@ -289,6 +324,7 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
+          --exclude-directories '_deps' \
           --print-summary \
           --xml coverage.xml \
           --html coverage.html
@@ -309,18 +345,24 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
-          --json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_valid']*100:.1f}\")")
+          --exclude-directories '_deps' \
+          --json-summary | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_total']*100:.1f}\" if data['line_total'] > 0 else '0.0')")
         echo "Current line coverage: ${COVERAGE}%"
-        # Set minimum threshold (currently informational, not blocking)
-        THRESHOLD=25.0
+        # Phase 0: Set threshold to current coverage level (27%)
+        # Phase 1: Increase to 35% (requires additional tests)
+        # Phase 2: Increase to 40% (after test additions)
+        # Phase 3: Target 50%
+        THRESHOLD=27.0
         if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-          echo "::warning::Coverage ${COVERAGE}% is below target ${THRESHOLD}%"
+          echo "::error::Coverage ${COVERAGE}% is below minimum threshold ${THRESHOLD}%"
+          echo "Please add tests to increase coverage before merging."
+          exit 1
         else
-          echo "Coverage ${COVERAGE}% meets target ${THRESHOLD}%"
+          echo "✓ Coverage ${COVERAGE}% meets minimum threshold ${THRESHOLD}%"
         fi
-        lcov --capture --directory . --output-file coverage.info
-        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info
-        lcov --list coverage.info
+        lcov --capture --directory . --output-file coverage.info --ignore-errors negative,gcov,source
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info --ignore-errors negative,source
+        lcov --list coverage.info --ignore-errors negative,source
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4

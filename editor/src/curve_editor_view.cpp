@@ -47,7 +47,7 @@ void CurveEditor::onResize(i32 width, i32 height) {
   m_height = height;
 }
 
-void CurveEditor::setCurve(AnimationCurve *curve) {
+void CurveEditor::setCurve(AnimationCurve* curve) {
   m_curve = curve;
   m_selectedPoints.clear();
 }
@@ -63,7 +63,9 @@ void CurveEditor::selectPoint(size_t index) {
   }
 }
 
-void CurveEditor::deselectAll() { m_selectedPoints.clear(); }
+void CurveEditor::deselectAll() {
+  m_selectedPoints.clear();
+}
 
 void CurveEditor::setZoom(f32 zoom) {
   m_zoom = std::clamp(zoom, m_config.minZoom, m_config.maxZoom);
@@ -80,21 +82,27 @@ void CurveEditor::fitToView() {
   m_panY = 0.0f;
 }
 
-void CurveEditor::resetView() { fitToView(); }
+void CurveEditor::resetView() {
+  fitToView();
+}
 
-void CurveEditor::setConfig(const CurveEditorConfig &config) {
+void CurveEditor::setConfig(const CurveEditorConfig& config) {
   m_config = config;
 }
 
-void CurveEditor::showPresetsPanel() { m_showPresetsPanel = true; }
+void CurveEditor::showPresetsPanel() {
+  m_showPresetsPanel = true;
+}
 
-void CurveEditor::hidePresetsPanel() { m_showPresetsPanel = false; }
+void CurveEditor::hidePresetsPanel() {
+  m_showPresetsPanel = false;
+}
 
-void CurveEditor::applyPreset(const std::string &presetId) {
+void CurveEditor::applyPreset(const std::string& presetId) {
   if (!m_library || !m_curve)
     return;
 
-  const auto *preset = m_library->getCurve(presetId);
+  const auto* preset = m_library->getCurve(presetId);
   if (preset) {
     *m_curve = *preset;
     if (m_onCurveModified) {
@@ -103,8 +111,7 @@ void CurveEditor::applyPreset(const std::string &presetId) {
   }
 }
 
-void CurveEditor::setOnCurveModified(
-    std::function<void(const AnimationCurve &)> callback) {
+void CurveEditor::setOnCurveModified(std::function<void(const AnimationCurve&)> callback) {
   m_onCurveModified = std::move(callback);
 }
 
@@ -167,16 +174,13 @@ void CurveEditor::handleZoom() {
 
 renderer::Vec2 CurveEditor::curveToScreen(f32 t, f32 v) const {
   f32 x = (t - m_panX) * m_zoom * static_cast<f32>(m_width);
-  f32 y = static_cast<f32>(m_height) -
-          (v - m_panY) * m_zoom * static_cast<f32>(m_height);
+  f32 y = static_cast<f32>(m_height) - (v - m_panY) * m_zoom * static_cast<f32>(m_height);
   return {x, y};
 }
 
 renderer::Vec2 CurveEditor::screenToCurve(f32 x, f32 y) const {
   f32 t = x / (m_zoom * static_cast<f32>(m_width)) + m_panX;
-  f32 v =
-      (static_cast<f32>(m_height) - y) / (m_zoom * static_cast<f32>(m_height)) +
-      m_panY;
+  f32 v = (static_cast<f32>(m_height) - y) / (m_zoom * static_cast<f32>(m_height)) + m_panY;
   return {t, v};
 }
 
@@ -184,7 +188,7 @@ i32 CurveEditor::hitTestPoint(f32 x, f32 y) const {
   if (!m_curve)
     return -1;
 
-  const auto &points = m_curve->getPoints();
+  const auto& points = m_curve->getPoints();
   for (size_t i = 0; i < points.size(); ++i) {
     renderer::Vec2 screenPos = curveToScreen(points[i].time, points[i].value);
     f32 dx = x - screenPos.x;
@@ -196,7 +200,7 @@ i32 CurveEditor::hitTestPoint(f32 x, f32 y) const {
   return -1;
 }
 
-i32 CurveEditor::hitTestHandle(f32 x, f32 y, bool &isInHandle) const {
+i32 CurveEditor::hitTestHandle(f32 x, f32 y, bool& isInHandle) const {
   (void)x;
   (void)y;
   isInHandle = false;
@@ -255,8 +259,7 @@ void CurveEditor::updatePointPosition(size_t index, f32 t, f32 v) {
   }
 }
 
-void CurveEditor::updateHandlePosition(size_t index, bool isInHandle, f32 dx,
-                                       f32 dy) {
+void CurveEditor::updateHandlePosition(size_t index, bool isInHandle, f32 dx, f32 dy) {
   if (!m_curve)
     return;
 
@@ -284,10 +287,9 @@ void CurveEditor::updateHandlePosition(size_t index, bool isInHandle, f32 dx,
 // InlineCurveWidget Implementation
 // =============================================================================
 
-InlineCurveWidget::InlineCurveWidget(f32 width, f32 height)
-    : m_width(width), m_height(height) {}
+InlineCurveWidget::InlineCurveWidget(f32 width, f32 height) : m_width(width), m_height(height) {}
 
-void InlineCurveWidget::setCurve(const AnimationCurve &curve) {
+void InlineCurveWidget::setCurve(const AnimationCurve& curve) {
   m_curve = curve;
 }
 
@@ -296,9 +298,11 @@ void InlineCurveWidget::setSize(f32 width, f32 height) {
   m_height = height;
 }
 
-void InlineCurveWidget::update(f64 deltaTime) { (void)deltaTime; }
+void InlineCurveWidget::update(f64 deltaTime) {
+  (void)deltaTime;
+}
 
-void InlineCurveWidget::render(renderer::IRenderer *renderer, f32 x, f32 y) {
+void InlineCurveWidget::render(renderer::IRenderer* renderer, f32 x, f32 y) {
   (void)renderer;
   (void)x;
   (void)y;
@@ -324,8 +328,7 @@ void InlineCurveWidget::handleRelease() {
   m_selectedPoint = -1;
 }
 
-void InlineCurveWidget::setOnCurveChanged(
-    std::function<void(const AnimationCurve &)> callback) {
+void InlineCurveWidget::setOnCurveChanged(std::function<void(const AnimationCurve&)> callback) {
   m_onCurveChanged = std::move(callback);
 }
 

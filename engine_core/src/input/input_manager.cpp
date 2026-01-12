@@ -169,7 +169,7 @@ void InputManager::update() {
 
 #ifdef NOVELMIND_HAS_SDL2
   SDL_PumpEvents();
-  const Uint8 *keys = SDL_GetKeyboardState(nullptr);
+  const Uint8* keys = SDL_GetKeyboardState(nullptr);
 
   for (size_t i = 0; i < kKeyCount; ++i) {
     SDL_Scancode scancode = toScancode(static_cast<Key>(i));
@@ -198,8 +198,7 @@ void InputManager::update() {
 
   if (m_textInputActive) {
     SDL_Event event;
-    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_TEXTINPUT,
-                          SDL_TEXTINPUT) > 0) {
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_TEXTINPUT, SDL_TEXTINPUT) > 0) {
       m_textInput += event.text.text;
     }
   }
@@ -236,9 +235,13 @@ bool InputManager::isMouseButtonReleased(MouseButton button) const {
   return index < kMouseCount ? m_mouseReleased[index] : false;
 }
 
-i32 InputManager::getMouseX() const { return m_mouseX; }
+i32 InputManager::getMouseX() const {
+  return m_mouseX;
+}
 
-i32 InputManager::getMouseY() const { return m_mouseY; }
+i32 InputManager::getMouseY() const {
+  return m_mouseY;
+}
 
 void InputManager::startTextInput() {
   m_textInputActive = true;
@@ -255,8 +258,12 @@ void InputManager::stopTextInput() {
 #endif
 }
 
-const std::string &InputManager::getTextInput() const { return m_textInput; }
+const std::string& InputManager::getTextInput() const {
+  return m_textInput;
+}
 
-void InputManager::clearTextInput() { m_textInput.clear(); }
+void InputManager::clearTextInput() {
+  m_textInput.clear();
+}
 
 } // namespace NovelMind::input

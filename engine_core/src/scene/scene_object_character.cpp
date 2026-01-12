@@ -13,34 +13,34 @@ namespace NovelMind::scene {
 // CharacterObject Implementation
 // ============================================================================
 
-CharacterObject::CharacterObject(const std::string &id,
-                                 const std::string &characterId)
-    : SceneObjectBase(id, SceneObjectType::Character),
-      m_characterId(characterId) {}
+CharacterObject::CharacterObject(const std::string& id, const std::string& characterId)
+    : SceneObjectBase(id, SceneObjectType::Character), m_characterId(characterId) {}
 
-void CharacterObject::setCharacterId(const std::string &characterId) {
+void CharacterObject::setCharacterId(const std::string& characterId) {
   m_characterId = characterId;
 }
 
-void CharacterObject::setDisplayName(const std::string &name) {
+void CharacterObject::setDisplayName(const std::string& name) {
   m_displayName = name;
 }
 
-void CharacterObject::setExpression(const std::string &expression) {
+void CharacterObject::setExpression(const std::string& expression) {
   std::string oldValue = m_expression;
   m_expression = expression;
   notifyPropertyChanged("expression", oldValue, expression);
 }
 
-void CharacterObject::setPose(const std::string &pose) {
+void CharacterObject::setPose(const std::string& pose) {
   std::string oldValue = m_pose;
   m_pose = pose;
   notifyPropertyChanged("pose", oldValue, pose);
 }
 
-void CharacterObject::setSlotPosition(Position pos) { m_slotPosition = pos; }
+void CharacterObject::setSlotPosition(Position pos) {
+  m_slotPosition = pos;
+}
 
-void CharacterObject::setNameColor(const renderer::Color &color) {
+void CharacterObject::setNameColor(const renderer::Color& color) {
   m_nameColor = color;
 }
 
@@ -48,7 +48,7 @@ void CharacterObject::setHighlighted(bool highlighted) {
   m_highlighted = highlighted;
 }
 
-void CharacterObject::render(renderer::IRenderer &renderer) {
+void CharacterObject::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_alpha <= 0.0f) {
     return;
   }
@@ -57,8 +57,7 @@ void CharacterObject::render(renderer::IRenderer &renderer) {
     return;
   }
 
-  std::string textureId =
-      detail::getTextProperty(*this, "textureId", m_characterId);
+  std::string textureId = detail::getTextProperty(*this, "textureId", m_characterId);
   if (textureId.empty()) {
     return;
   }
@@ -68,7 +67,7 @@ void CharacterObject::render(renderer::IRenderer &renderer) {
     return;
   }
 
-  const auto &texture = *texResult.value();
+  const auto& texture = *texResult.value();
   if (!texture.isValid()) {
     return;
   }
@@ -102,13 +101,12 @@ SceneObjectState CharacterObject::saveState() const {
   state.properties["displayName"] = m_displayName;
   state.properties["expression"] = m_expression;
   state.properties["pose"] = m_pose;
-  state.properties["slotPosition"] =
-      std::to_string(static_cast<int>(m_slotPosition));
+  state.properties["slotPosition"] = std::to_string(static_cast<int>(m_slotPosition));
   state.properties["highlighted"] = m_highlighted ? "true" : "false";
   return state;
 }
 
-void CharacterObject::loadState(const SceneObjectState &state) {
+void CharacterObject::loadState(const SceneObjectState& state) {
   SceneObjectBase::loadState(state);
 
   auto it = state.properties.find("characterId");
@@ -138,8 +136,7 @@ void CharacterObject::loadState(const SceneObjectState &state) {
   }
 }
 
-void CharacterObject::animateToSlot(Position slot, f32 duration,
-                                    EaseType easing) {
+void CharacterObject::animateToSlot(Position slot, f32 duration, EaseType easing) {
   // Calculate target position based on slot
   f32 targetX = 0.0f;
   switch (slot) {

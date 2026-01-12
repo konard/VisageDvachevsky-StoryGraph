@@ -23,7 +23,7 @@ namespace NovelMind::editor::qt {
 // NMHierarchyTree
 // ============================================================================
 
-NMHierarchyTree::NMHierarchyTree(QWidget *parent) : QTreeWidget(parent) {
+NMHierarchyTree::NMHierarchyTree(QWidget* parent) : QTreeWidget(parent) {
   setColumnCount(3);
   setHeaderLabels({tr("Name"), tr("V"), tr("L")});
   setHeaderHidden(false);
@@ -35,10 +35,8 @@ NMHierarchyTree::NMHierarchyTree(QWidget *parent) : QTreeWidget(parent) {
   setAnimated(true);
   setIndentation(16);
 
-  connect(this, &QTreeWidget::itemDoubleClicked, this,
-          &NMHierarchyTree::onItemDoubleClicked);
-  connect(this, &QTreeWidget::itemChanged, this,
-          &NMHierarchyTree::onItemChanged);
+  connect(this, &QTreeWidget::itemDoubleClicked, this, &NMHierarchyTree::onItemDoubleClicked);
+  connect(this, &QTreeWidget::itemChanged, this, &NMHierarchyTree::onItemChanged);
 
   if (header()) {
     header()->setSectionResizeMode(0, QHeaderView::Stretch);
@@ -47,7 +45,7 @@ NMHierarchyTree::NMHierarchyTree(QWidget *parent) : QTreeWidget(parent) {
   }
 }
 
-void NMHierarchyTree::setScene(NMSceneGraphicsScene *scene) {
+void NMHierarchyTree::setScene(NMSceneGraphicsScene* scene) {
   m_scene = scene;
   refresh();
 }
@@ -62,8 +60,7 @@ void NMHierarchyTree::setScene(NMSceneGraphicsScene *scene) {
 void NMHierarchyTree::refresh() {
   QString previouslySelected;
   if (!selectedItems().isEmpty()) {
-    previouslySelected =
-        selectedItems().first()->data(0, Qt::UserRole).toString();
+    previouslySelected = selectedItems().first()->data(0, Qt::UserRole).toString();
   }
 
   QSignalBlocker blocker(this);
@@ -76,23 +73,22 @@ void NMHierarchyTree::refresh() {
     return;
   }
 
-  auto *rootItem = new QTreeWidgetItem(this);
+  auto* rootItem = new QTreeWidgetItem(this);
   rootItem->setText(0, "Scene Objects");
   rootItem->setExpanded(true);
 
-  QTreeWidgetItem *bgLayer = nullptr;
-  QTreeWidgetItem *charLayer = nullptr;
-  QTreeWidgetItem *uiLayer = nullptr;
-  QTreeWidgetItem *effectLayer = nullptr;
+  QTreeWidgetItem* bgLayer = nullptr;
+  QTreeWidgetItem* charLayer = nullptr;
+  QTreeWidgetItem* uiLayer = nullptr;
+  QTreeWidgetItem* effectLayer = nullptr;
 
   const auto objects = m_scene->sceneObjects();
-  QList<NMSceneObject *> sorted = objects;
-  std::sort(sorted.begin(), sorted.end(),
-            [](const NMSceneObject *a, const NMSceneObject *b) {
-              return a->zValue() < b->zValue();
-            });
+  QList<NMSceneObject*> sorted = objects;
+  std::sort(sorted.begin(), sorted.end(), [](const NMSceneObject* a, const NMSceneObject* b) {
+    return a->zValue() < b->zValue();
+  });
 
-  for (NMSceneObject *object : sorted) {
+  for (NMSceneObject* object : sorted) {
     if (!object) {
       continue;
     }
@@ -102,7 +98,7 @@ void NMHierarchyTree::refresh() {
       continue;
     }
 
-    QTreeWidgetItem *parentItem = rootItem;
+    QTreeWidgetItem* parentItem = rootItem;
     switch (object->objectType()) {
     case NMSceneObjectType::Background:
       if (!bgLayer) {
@@ -138,7 +134,7 @@ void NMHierarchyTree::refresh() {
       break;
     }
 
-    auto *item = new QTreeWidgetItem(parentItem);
+    auto* item = new QTreeWidgetItem(parentItem);
     item->setText(0, object->name().isEmpty() ? object->id() : object->name());
     item->setData(0, Qt::UserRole, object->id());
     item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
@@ -153,8 +149,7 @@ void NMHierarchyTree::refresh() {
       QFont font = item->font(0);
       font.setItalic(true);
       item->setFont(0, font);
-      item->setForeground(0,
-                          NMStyleManager::instance().palette().accentPrimary);
+      item->setForeground(0, NMStyleManager::instance().palette().accentPrimary);
       item->setToolTip(0, tr("Runtime preview object (read-only)"));
       item->setFlags(item->flags() & ~Qt::ItemIsUserCheckable);
     }
@@ -162,7 +157,7 @@ void NMHierarchyTree::refresh() {
 
   if (!previouslySelected.isEmpty()) {
     // PERF-2: Use O(1) lookup from map instead of O(n) iterator
-    QTreeWidgetItem *prevItem = m_objectToItemMap.value(previouslySelected);
+    QTreeWidgetItem* prevItem = m_objectToItemMap.value(previouslySelected);
     if (prevItem) {
       setCurrentItem(prevItem);
       prevItem->setSelected(true);
@@ -181,18 +176,18 @@ void NMHierarchyTree::refresh() {
  *
  * @param objectId ID of the object to update
  */
-void NMHierarchyTree::updateObjectItem(const QString &objectId) {
+void NMHierarchyTree::updateObjectItem(const QString& objectId) {
   if (!m_scene || objectId.isEmpty()) {
     return;
   }
 
   // PERF-2: O(1) lookup using hash map
-  QTreeWidgetItem *item = m_objectToItemMap.value(objectId);
+  QTreeWidgetItem* item = m_objectToItemMap.value(objectId);
   if (!item) {
     return; // Object not in tree (filtered out or doesn't exist)
   }
 
-  NMSceneObject *object = m_scene->findSceneObject(objectId);
+  NMSceneObject* object = m_scene->findSceneObject(objectId);
   if (!object) {
     // Object was deleted - remove from map and tree
     m_objectToItemMap.remove(objectId);
@@ -204,22 +199,19 @@ void NMHierarchyTree::updateObjectItem(const QString &objectId) {
   QSignalBlocker blocker(this);
 
   // Update name if changed
-  const QString displayName =
-      object->name().isEmpty() ? object->id() : object->name();
+  const QString displayName = object->name().isEmpty() ? object->id() : object->name();
   if (item->text(0) != displayName) {
     item->setText(0, displayName);
   }
 
   // Update visibility if changed
-  const Qt::CheckState expectedVisible =
-      object->isVisible() ? Qt::Checked : Qt::Unchecked;
+  const Qt::CheckState expectedVisible = object->isVisible() ? Qt::Checked : Qt::Unchecked;
   if (item->checkState(1) != expectedVisible) {
     item->setCheckState(1, expectedVisible);
   }
 
   // Update lock state if changed
-  const Qt::CheckState expectedLocked =
-      object->isLocked() ? Qt::Checked : Qt::Unchecked;
+  const Qt::CheckState expectedLocked = object->isLocked() ? Qt::Checked : Qt::Unchecked;
   if (item->checkState(2) != expectedLocked) {
     item->setCheckState(2, expectedLocked);
   }
@@ -234,12 +226,11 @@ void NMHierarchyTree::updateObjectItem(const QString &objectId) {
  * @param objectId ID of the object
  * @return Tree item or nullptr if not found
  */
-QTreeWidgetItem *
-NMHierarchyTree::findTreeItemForObject(const QString &objectId) const {
+QTreeWidgetItem* NMHierarchyTree::findTreeItemForObject(const QString& objectId) const {
   return m_objectToItemMap.value(objectId, nullptr);
 }
 
-void NMHierarchyTree::setFilterText(const QString &text) {
+void NMHierarchyTree::setFilterText(const QString& text) {
   m_filterText = text;
   refresh();
 }
@@ -249,12 +240,12 @@ void NMHierarchyTree::setTypeFilter(int typeIndex) {
   refresh();
 }
 
-void NMHierarchyTree::setTagFilter(const QString &tag) {
+void NMHierarchyTree::setTagFilter(const QString& tag) {
   m_tagFilter = tag;
   refresh();
 }
 
-bool NMHierarchyTree::passesFilters(NMSceneObject *obj) const {
+bool NMHierarchyTree::passesFilters(NMSceneObject* obj) const {
   if (!obj) {
     return false;
   }
@@ -284,11 +275,11 @@ bool NMHierarchyTree::passesFilters(NMSceneObject *obj) const {
   return true;
 }
 
-void NMHierarchyTree::selectionChanged(const QItemSelection &selected,
-                                       const QItemSelection &deselected) {
+void NMHierarchyTree::selectionChanged(const QItemSelection& selected,
+                                       const QItemSelection& deselected) {
   QTreeWidget::selectionChanged(selected, deselected);
 
-  QList<QTreeWidgetItem *> selectedItems = this->selectedItems();
+  QList<QTreeWidgetItem*> selectedItems = this->selectedItems();
   if (!selectedItems.isEmpty()) {
     QString objectId = selectedItems.first()->data(0, Qt::UserRole).toString();
     if (!objectId.isEmpty()) {
@@ -297,8 +288,7 @@ void NMHierarchyTree::selectionChanged(const QItemSelection &selected,
   }
 }
 
-void NMHierarchyTree::onItemDoubleClicked(QTreeWidgetItem *item,
-                                          int /*column*/) {
+void NMHierarchyTree::onItemDoubleClicked(QTreeWidgetItem* item, int /*column*/) {
   if (item) {
     QString objectId = item->data(0, Qt::UserRole).toString();
     if (!objectId.isEmpty()) {
@@ -307,7 +297,7 @@ void NMHierarchyTree::onItemDoubleClicked(QTreeWidgetItem *item,
   }
 }
 
-void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
+void NMHierarchyTree::onItemChanged(QTreeWidgetItem* item, int column) {
   if (!m_scene || !item) {
     return;
   }
@@ -325,7 +315,7 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
 
   if (column == 1) {
     const bool newVisible = (item->checkState(1) == Qt::Checked);
-    auto *obj = m_scene->findSceneObject(objectId);
+    auto* obj = m_scene->findSceneObject(objectId);
     if (!obj) {
       return;
     }
@@ -336,8 +326,8 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
 
     // Use undo command if scene view panel is available
     if (m_sceneViewPanel) {
-      auto *cmd = new ToggleObjectVisibilityCommand(m_sceneViewPanel, objectId,
-                                                    oldVisible, newVisible);
+      auto* cmd =
+          new ToggleObjectVisibilityCommand(m_sceneViewPanel, objectId, oldVisible, newVisible);
       NMUndoManager::instance().pushCommand(cmd);
     } else {
       m_scene->setObjectVisible(objectId, newVisible);
@@ -347,7 +337,7 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
 
   if (column == 2) {
     const bool newLocked = (item->checkState(2) == Qt::Checked);
-    auto *obj = m_scene->findSceneObject(objectId);
+    auto* obj = m_scene->findSceneObject(objectId);
     if (!obj) {
       return;
     }
@@ -358,8 +348,7 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
 
     // Use undo command if scene view panel is available
     if (m_sceneViewPanel) {
-      auto *cmd = new ToggleObjectLockedCommand(m_sceneViewPanel, objectId,
-                                                oldLocked, newLocked);
+      auto* cmd = new ToggleObjectLockedCommand(m_sceneViewPanel, objectId, oldLocked, newLocked);
       NMUndoManager::instance().pushCommand(cmd);
     } else {
       m_scene->setObjectLocked(objectId, newLocked);
@@ -368,13 +357,13 @@ void NMHierarchyTree::onItemChanged(QTreeWidgetItem *item, int column) {
   }
 }
 
-void NMHierarchyTree::dragEnterEvent(QDragEnterEvent *event) {
+void NMHierarchyTree::dragEnterEvent(QDragEnterEvent* event) {
   QTreeWidget::dragEnterEvent(event);
 }
 
-void NMHierarchyTree::dragMoveEvent(QDragMoveEvent *event) {
-  QTreeWidgetItem *dropItem = itemAt(event->position().toPoint());
-  QTreeWidgetItem *dragItem = currentItem();
+void NMHierarchyTree::dragMoveEvent(QDragMoveEvent* event) {
+  QTreeWidgetItem* dropItem = itemAt(event->position().toPoint());
+  QTreeWidgetItem* dragItem = currentItem();
 
   if (!dragItem || !dropItem || !canDropOn(dragItem, dropItem)) {
     event->ignore();
@@ -384,9 +373,9 @@ void NMHierarchyTree::dragMoveEvent(QDragMoveEvent *event) {
   QTreeWidget::dragMoveEvent(event);
 }
 
-void NMHierarchyTree::dropEvent(QDropEvent *event) {
-  QTreeWidgetItem *dragItem = currentItem();
-  QTreeWidgetItem *dropItem = itemAt(event->position().toPoint());
+void NMHierarchyTree::dropEvent(QDropEvent* event) {
+  QTreeWidgetItem* dragItem = currentItem();
+  QTreeWidgetItem* dropItem = itemAt(event->position().toPoint());
 
   if (!dragItem || !dropItem || !m_scene || !m_sceneViewPanel) {
     event->ignore();
@@ -402,15 +391,14 @@ void NMHierarchyTree::dropEvent(QDropEvent *event) {
   }
 
   // Get old parent before reparenting
-  auto *dragObj = m_scene->findSceneObject(dragObjectId);
+  auto* dragObj = m_scene->findSceneObject(dragObjectId);
   const QString oldParentId = dragObj ? dragObj->parentObjectId() : QString();
 
   // Determine new parent: if dropping on a layer, new parent is empty
   const QString newParentId = isLayerItem(dropItem) ? QString() : dropObjectId;
 
   // Create undo command for reparenting
-  auto *cmd = new ReparentObjectCommand(m_sceneViewPanel, dragObjectId,
-                                        oldParentId, newParentId);
+  auto* cmd = new ReparentObjectCommand(m_sceneViewPanel, dragObjectId, oldParentId, newParentId);
   NMUndoManager::instance().pushCommand(cmd);
 
   // Prevent default drop behavior since we handle it via undo command
@@ -421,24 +409,23 @@ void NMHierarchyTree::dropEvent(QDropEvent *event) {
   refresh();
 }
 
-QString NMHierarchyTree::getObjectId(QTreeWidgetItem *item) const {
+QString NMHierarchyTree::getObjectId(QTreeWidgetItem* item) const {
   if (!item) {
     return QString();
   }
   return item->data(0, Qt::UserRole).toString();
 }
 
-bool NMHierarchyTree::isLayerItem(QTreeWidgetItem *item) const {
+bool NMHierarchyTree::isLayerItem(QTreeWidgetItem* item) const {
   if (!item) {
     return false;
   }
   const QString text = item->text(0);
-  return text == "Scene Objects" || text == "Backgrounds" ||
-         text == "Characters" || text == "UI" || text == "Effects";
+  return text == "Scene Objects" || text == "Backgrounds" || text == "Characters" || text == "UI" ||
+         text == "Effects";
 }
 
-bool NMHierarchyTree::canDropOn(QTreeWidgetItem *dragItem,
-                                QTreeWidgetItem *dropItem) const {
+bool NMHierarchyTree::canDropOn(QTreeWidgetItem* dragItem, QTreeWidgetItem* dropItem) const {
   if (!dragItem || !dropItem || !m_scene) {
     return false;
   }
@@ -467,7 +454,7 @@ bool NMHierarchyTree::canDropOn(QTreeWidgetItem *dragItem,
       if (checkId == dragId) {
         return false; // Would create a cycle
       }
-      auto *checkObj = m_scene->findSceneObject(checkId);
+      auto* checkObj = m_scene->findSceneObject(checkId);
       if (!checkObj) {
         break;
       }
@@ -478,8 +465,8 @@ bool NMHierarchyTree::canDropOn(QTreeWidgetItem *dragItem,
   return true;
 }
 
-void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
-  QTreeWidgetItem *item = itemAt(event->pos());
+void NMHierarchyTree::contextMenuEvent(QContextMenuEvent* event) {
+  QTreeWidgetItem* item = itemAt(event->pos());
 
   QMenu contextMenu(this);
 
@@ -494,7 +481,7 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   const bool canEdit = hasValidSelection && !isRuntime;
 
   // Duplicate action
-  QAction *duplicateAction = contextMenu.addAction(tr("Duplicate"));
+  QAction* duplicateAction = contextMenu.addAction(tr("Duplicate"));
   duplicateAction->setEnabled(canEdit && m_sceneViewPanel);
   duplicateAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_D));
   connect(duplicateAction, &QAction::triggered, this, [this, objectId]() {
@@ -505,22 +492,21 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   });
 
   // Rename action
-  QAction *renameAction = contextMenu.addAction(tr("Rename"));
+  QAction* renameAction = contextMenu.addAction(tr("Rename"));
   renameAction->setEnabled(canEdit);
   renameAction->setShortcut(QKeySequence(Qt::Key_F2));
   connect(renameAction, &QAction::triggered, this, [this, objectId]() {
     if (!m_scene) {
       return;
     }
-    auto *obj = m_scene->findSceneObject(objectId);
+    auto* obj = m_scene->findSceneObject(objectId);
     if (!obj) {
       return;
     }
 
     bool ok = false;
-    QString newName =
-        QInputDialog::getText(this, tr("Rename Object"), tr("New name:"),
-                              QLineEdit::Normal, obj->name(), &ok);
+    QString newName = QInputDialog::getText(this, tr("Rename Object"), tr("New name:"),
+                                            QLineEdit::Normal, obj->name(), &ok);
     if (ok && !newName.isEmpty()) {
       obj->setName(newName);
       refresh();
@@ -530,14 +516,14 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   contextMenu.addSeparator();
 
   // Delete action
-  QAction *deleteAction = contextMenu.addAction(tr("Delete"));
+  QAction* deleteAction = contextMenu.addAction(tr("Delete"));
   deleteAction->setEnabled(canEdit && m_sceneViewPanel);
   deleteAction->setShortcut(QKeySequence::Delete);
   connect(deleteAction, &QAction::triggered, this, [this, objectId]() {
     if (m_sceneViewPanel) {
-      QMessageBox::StandardButton reply = QMessageBox::question(
-          this, tr("Delete Object"), tr("Delete '%1'?").arg(objectId),
-          QMessageBox::Yes | QMessageBox::No);
+      QMessageBox::StandardButton reply =
+          QMessageBox::question(this, tr("Delete Object"), tr("Delete '%1'?").arg(objectId),
+                                QMessageBox::Yes | QMessageBox::No);
       if (reply == QMessageBox::Yes) {
         m_sceneViewPanel->deleteObject(objectId);
         refresh();
@@ -548,14 +534,14 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   contextMenu.addSeparator();
 
   // Toggle visibility
-  QAction *visibilityAction = contextMenu.addAction(tr("Toggle Visibility"));
+  QAction* visibilityAction = contextMenu.addAction(tr("Toggle Visibility"));
   visibilityAction->setEnabled(canEdit);
   visibilityAction->setShortcut(QKeySequence(Qt::Key_H));
   connect(visibilityAction, &QAction::triggered, this, [this, objectId]() {
     if (!m_scene) {
       return;
     }
-    auto *obj = m_scene->findSceneObject(objectId);
+    auto* obj = m_scene->findSceneObject(objectId);
     if (obj) {
       m_scene->setObjectVisible(objectId, !obj->isVisible());
       refresh();
@@ -563,13 +549,13 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   });
 
   // Toggle lock
-  QAction *lockAction = contextMenu.addAction(tr("Toggle Lock"));
+  QAction* lockAction = contextMenu.addAction(tr("Toggle Lock"));
   lockAction->setEnabled(canEdit);
   connect(lockAction, &QAction::triggered, this, [this, objectId]() {
     if (!m_scene) {
       return;
     }
-    auto *obj = m_scene->findSceneObject(objectId);
+    auto* obj = m_scene->findSceneObject(objectId);
     if (obj) {
       m_scene->setObjectLocked(objectId, !obj->isLocked());
       refresh();
@@ -579,13 +565,13 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   contextMenu.addSeparator();
 
   // Isolate action (hide all others)
-  QAction *isolateAction = contextMenu.addAction(tr("Isolate"));
+  QAction* isolateAction = contextMenu.addAction(tr("Isolate"));
   isolateAction->setEnabled(canEdit);
   connect(isolateAction, &QAction::triggered, this, [this, objectId]() {
     if (!m_scene) {
       return;
     }
-    for (auto *obj : m_scene->sceneObjects()) {
+    for (auto* obj : m_scene->sceneObjects()) {
       if (obj) {
         m_scene->setObjectVisible(obj->id(), obj->id() == objectId);
       }
@@ -594,13 +580,13 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   });
 
   // Show all action
-  QAction *showAllAction = contextMenu.addAction(tr("Show All"));
+  QAction* showAllAction = contextMenu.addAction(tr("Show All"));
   showAllAction->setEnabled(m_scene != nullptr);
   connect(showAllAction, &QAction::triggered, this, [this]() {
     if (!m_scene) {
       return;
     }
-    for (auto *obj : m_scene->sceneObjects()) {
+    for (auto* obj : m_scene->sceneObjects()) {
       if (obj && !obj->id().startsWith("runtime_")) {
         m_scene->setObjectVisible(obj->id(), true);
       }
@@ -611,7 +597,7 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
   contextMenu.addSeparator();
 
   // Frame selected (zoom to object)
-  QAction *frameAction = contextMenu.addAction(tr("Frame Selected"));
+  QAction* frameAction = contextMenu.addAction(tr("Frame Selected"));
   frameAction->setEnabled(canEdit && m_sceneViewPanel);
   frameAction->setShortcut(QKeySequence(Qt::Key_F));
   connect(frameAction, &QAction::triggered, this, [this, objectId]() {
@@ -619,7 +605,7 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
       // Select the object first
       m_sceneViewPanel->selectObjectById(objectId);
       // Center the view on the selected object
-      auto *obj = m_scene->findSceneObject(objectId);
+      auto* obj = m_scene->findSceneObject(objectId);
       if (obj && m_sceneViewPanel->graphicsView()) {
         m_sceneViewPanel->graphicsView()->centerOn(obj);
       }
@@ -633,8 +619,7 @@ void NMHierarchyTree::contextMenuEvent(QContextMenuEvent *event) {
 // NMHierarchyPanel
 // ============================================================================
 
-NMHierarchyPanel::NMHierarchyPanel(QWidget *parent)
-    : NMDockPanel(tr("Hierarchy"), parent) {
+NMHierarchyPanel::NMHierarchyPanel(QWidget* parent) : NMDockPanel(tr("Hierarchy"), parent) {
   setPanelId("Hierarchy");
 
   // Hierarchy needs width for tree item names and icons, height to show tree
@@ -646,7 +631,9 @@ NMHierarchyPanel::NMHierarchyPanel(QWidget *parent)
 
 NMHierarchyPanel::~NMHierarchyPanel() = default;
 
-void NMHierarchyPanel::onInitialize() { refresh(); }
+void NMHierarchyPanel::onInitialize() {
+  refresh();
+}
 
 void NMHierarchyPanel::onUpdate(double /*deltaTime*/) {
   // No continuous update needed
@@ -667,26 +654,26 @@ void NMHierarchyPanel::refresh() {
  *
  * @param objectId ID of the object to update
  */
-void NMHierarchyPanel::updateObject(const QString &objectId) {
+void NMHierarchyPanel::updateObject(const QString& objectId) {
   if (m_tree) {
     m_tree->updateObjectItem(objectId);
   }
 }
 
-void NMHierarchyPanel::setScene(NMSceneGraphicsScene *scene) {
+void NMHierarchyPanel::setScene(NMSceneGraphicsScene* scene) {
   if (m_tree) {
     m_tree->setScene(scene);
   }
 }
 
-void NMHierarchyPanel::setSceneViewPanel(NMSceneViewPanel *panel) {
+void NMHierarchyPanel::setSceneViewPanel(NMSceneViewPanel* panel) {
   m_sceneViewPanel = panel;
   if (m_tree) {
     m_tree->setSceneViewPanel(panel);
   }
 }
 
-void NMHierarchyPanel::selectObject(const QString &objectId) {
+void NMHierarchyPanel::selectObject(const QString& objectId) {
   if (!m_tree)
     return;
 
@@ -698,13 +685,12 @@ void NMHierarchyPanel::selectObject(const QString &objectId) {
   }
 
   const auto selected = m_tree->selectedItems();
-  if (!selected.isEmpty() &&
-      selected.first()->data(0, Qt::UserRole).toString() == objectId) {
+  if (!selected.isEmpty() && selected.first()->data(0, Qt::UserRole).toString() == objectId) {
     return;
   }
 
   // PERF-2: Use O(1) lookup instead of O(n) iterator
-  QTreeWidgetItem *item = m_tree->findTreeItemForObject(objectId);
+  QTreeWidgetItem* item = m_tree->findTreeItemForObject(objectId);
   if (item) {
     m_tree->clearSelection();
     item->setSelected(true);
@@ -723,8 +709,7 @@ void NMHierarchyPanel::setupToolBar() {
   m_searchEdit->setPlaceholderText(tr("Filter by name..."));
   m_searchEdit->setMaximumWidth(150);
   m_toolBar->addWidget(m_searchEdit);
-  connect(m_searchEdit, &QLineEdit::textChanged, this,
-          &NMHierarchyPanel::onFilterTextChanged);
+  connect(m_searchEdit, &QLineEdit::textChanged, this, &NMHierarchyPanel::onFilterTextChanged);
 
   m_toolBar->addSeparator();
 
@@ -738,8 +723,7 @@ void NMHierarchyPanel::setupToolBar() {
   m_typeFilterCombo->addItem(tr("Effect"));
   m_typeFilterCombo->setMaximumWidth(120);
   m_toolBar->addWidget(m_typeFilterCombo);
-  connect(m_typeFilterCombo,
-          QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+  connect(m_typeFilterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           &NMHierarchyPanel::onTypeFilterChanged);
 
   m_toolBar->addSeparator();
@@ -750,65 +734,56 @@ void NMHierarchyPanel::setupToolBar() {
   m_tagFilterEdit->setPlaceholderText(tr("Filter by tag..."));
   m_tagFilterEdit->setMaximumWidth(120);
   m_toolBar->addWidget(m_tagFilterEdit);
-  connect(m_tagFilterEdit, &QLineEdit::textChanged, this,
-          &NMHierarchyPanel::onTagFilterChanged);
+  connect(m_tagFilterEdit, &QLineEdit::textChanged, this, &NMHierarchyPanel::onTagFilterChanged);
 
   m_toolBar->addSeparator();
 
-  QAction *actionRefresh = m_toolBar->addAction(tr("Refresh"));
+  QAction* actionRefresh = m_toolBar->addAction(tr("Refresh"));
   actionRefresh->setToolTip(tr("Refresh Hierarchy"));
-  connect(actionRefresh, &QAction::triggered, this,
-          &NMHierarchyPanel::onRefresh);
+  connect(actionRefresh, &QAction::triggered, this, &NMHierarchyPanel::onRefresh);
 
   m_toolBar->addSeparator();
 
-  QAction *actionExpandAll = m_toolBar->addAction(tr("Expand All"));
+  QAction* actionExpandAll = m_toolBar->addAction(tr("Expand All"));
   actionExpandAll->setToolTip(tr("Expand All Items"));
-  connect(actionExpandAll, &QAction::triggered, this,
-          &NMHierarchyPanel::onExpandAll);
+  connect(actionExpandAll, &QAction::triggered, this, &NMHierarchyPanel::onExpandAll);
 
-  QAction *actionCollapseAll = m_toolBar->addAction(tr("Collapse All"));
+  QAction* actionCollapseAll = m_toolBar->addAction(tr("Collapse All"));
   actionCollapseAll->setToolTip(tr("Collapse All Items"));
-  connect(actionCollapseAll, &QAction::triggered, this,
-          &NMHierarchyPanel::onCollapseAll);
+  connect(actionCollapseAll, &QAction::triggered, this, &NMHierarchyPanel::onCollapseAll);
 
   m_toolBar->addSeparator();
 
-  QAction *actionBringForward = m_toolBar->addAction(tr("Up"));
+  QAction* actionBringForward = m_toolBar->addAction(tr("Up"));
   actionBringForward->setToolTip(tr("Move selected object forward"));
-  connect(actionBringForward, &QAction::triggered, this,
-          &NMHierarchyPanel::onBringForward);
+  connect(actionBringForward, &QAction::triggered, this, &NMHierarchyPanel::onBringForward);
 
-  QAction *actionSendBackward = m_toolBar->addAction(tr("Down"));
+  QAction* actionSendBackward = m_toolBar->addAction(tr("Down"));
   actionSendBackward->setToolTip(tr("Move selected object backward"));
-  connect(actionSendBackward, &QAction::triggered, this,
-          &NMHierarchyPanel::onSendBackward);
+  connect(actionSendBackward, &QAction::triggered, this, &NMHierarchyPanel::onSendBackward);
 
-  QAction *actionBringToFront = m_toolBar->addAction(tr("Front"));
+  QAction* actionBringToFront = m_toolBar->addAction(tr("Front"));
   actionBringToFront->setToolTip(tr("Bring selected object to front"));
-  connect(actionBringToFront, &QAction::triggered, this,
-          &NMHierarchyPanel::onBringToFront);
+  connect(actionBringToFront, &QAction::triggered, this, &NMHierarchyPanel::onBringToFront);
 
-  QAction *actionSendToBack = m_toolBar->addAction(tr("Back"));
+  QAction* actionSendToBack = m_toolBar->addAction(tr("Back"));
   actionSendToBack->setToolTip(tr("Send selected object to back"));
-  connect(actionSendToBack, &QAction::triggered, this,
-          &NMHierarchyPanel::onSendToBack);
+  connect(actionSendToBack, &QAction::triggered, this, &NMHierarchyPanel::onSendToBack);
 
-  if (auto *layout = qobject_cast<QVBoxLayout *>(m_contentWidget->layout())) {
+  if (auto* layout = qobject_cast<QVBoxLayout*>(m_contentWidget->layout())) {
     layout->insertWidget(0, m_toolBar);
   }
 }
 
 void NMHierarchyPanel::setupContent() {
   m_contentWidget = new QWidget(this);
-  auto *layout = new QVBoxLayout(m_contentWidget);
+  auto* layout = new QVBoxLayout(m_contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
   m_tree = new NMHierarchyTree(m_contentWidget);
 
-  connect(m_tree, &NMHierarchyTree::itemSelected, this,
-          &NMHierarchyPanel::objectSelected);
+  connect(m_tree, &NMHierarchyTree::itemSelected, this, &NMHierarchyPanel::objectSelected);
   connect(m_tree, &NMHierarchyTree::itemDoubleClicked, this,
           &NMHierarchyPanel::objectDoubleClicked);
 
@@ -817,7 +792,9 @@ void NMHierarchyPanel::setupContent() {
   setContentWidget(m_contentWidget);
 }
 
-void NMHierarchyPanel::onRefresh() { refresh(); }
+void NMHierarchyPanel::onRefresh() {
+  refresh();
+}
 
 void NMHierarchyPanel::onExpandAll() {
   if (m_tree) {
@@ -831,19 +808,27 @@ void NMHierarchyPanel::onCollapseAll() {
   }
 }
 
-void NMHierarchyPanel::onBringForward() { adjustSelectedZ(1); }
+void NMHierarchyPanel::onBringForward() {
+  adjustSelectedZ(1);
+}
 
-void NMHierarchyPanel::onSendBackward() { adjustSelectedZ(-1); }
+void NMHierarchyPanel::onSendBackward() {
+  adjustSelectedZ(-1);
+}
 
-void NMHierarchyPanel::onBringToFront() { adjustSelectedZ(2); }
+void NMHierarchyPanel::onBringToFront() {
+  adjustSelectedZ(2);
+}
 
-void NMHierarchyPanel::onSendToBack() { adjustSelectedZ(-2); }
+void NMHierarchyPanel::onSendToBack() {
+  adjustSelectedZ(-2);
+}
 
 void NMHierarchyPanel::adjustSelectedZ(int mode) {
   if (!m_tree) {
     return;
   }
-  auto *scene = m_tree->scene();
+  auto* scene = m_tree->scene();
   if (!scene) {
     return;
   }
@@ -858,7 +843,7 @@ void NMHierarchyPanel::adjustSelectedZ(int mode) {
     return;
   }
 
-  auto *obj = scene->findSceneObject(objectId);
+  auto* obj = scene->findSceneObject(objectId);
   if (!obj) {
     return;
   }
@@ -867,7 +852,7 @@ void NMHierarchyPanel::adjustSelectedZ(int mode) {
   qreal newZ = oldZ;
   qreal minZ = oldZ;
   qreal maxZ = oldZ;
-  for (auto *other : scene->sceneObjects()) {
+  for (auto* other : scene->sceneObjects()) {
     if (!other) {
       continue;
     }
@@ -904,7 +889,7 @@ void NMHierarchyPanel::adjustSelectedZ(int mode) {
   refresh();
 }
 
-void NMHierarchyPanel::onFilterTextChanged(const QString &text) {
+void NMHierarchyPanel::onFilterTextChanged(const QString& text) {
   if (m_tree) {
     m_tree->setFilterText(text);
   }
@@ -917,7 +902,7 @@ void NMHierarchyPanel::onTypeFilterChanged(int index) {
   }
 }
 
-void NMHierarchyPanel::onTagFilterChanged(const QString &tag) {
+void NMHierarchyPanel::onTagFilterChanged(const QString& tag) {
   if (m_tree) {
     m_tree->setTagFilter(tag);
   }

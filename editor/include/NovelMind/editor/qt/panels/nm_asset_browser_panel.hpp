@@ -19,19 +19,20 @@
 
 #include "NovelMind/editor/qt/lazy_thumbnail_loader.hpp"
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_categorizer.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_preview.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_scanner.hpp"
+#include "NovelMind/editor/qt/panels/asset_browser_thumbnails.hpp"
 #include <QAction>
 #include <QCache>
 #include <QComboBox>
-#include <QDateTime>
 #include <QFileIconProvider>
 #include <QFileSystemModel>
-#include <QFrame>
 #include <QHash>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
 #include <QPointer>
-#include <QRunnable>
 #include <QSortFilterProxyModel>
 #include <QSplitter>
 #include <QThreadPool>
@@ -41,33 +42,6 @@
 #include <memory>
 
 namespace NovelMind::editor::qt {
-
-/**
- * @brief Cached thumbnail entry with metadata for invalidation
- */
-struct ThumbnailCacheEntry {
-  QPixmap pixmap;
-  QDateTime lastModified;
-  qint64 fileSize = 0;
-};
-
-/**
- * @brief Asset metadata from database
- */
-struct AssetMetadata {
-  QString id;          // Stable unique ID
-  QString type;        // Asset type (image, audio, font, script, etc.)
-  QString path;        // Relative path
-  qint64 size = 0;     // File size in bytes
-  QString format;      // File format
-  QDateTime modified;  // Last modified time
-  int width = 0;       // For images: width
-  int height = 0;      // For images: height
-  double duration = 0; // For audio: duration in seconds
-  int sampleRate = 0;  // For audio: sample rate
-  int channels = 0;    // For audio: number of channels
-  QStringList usages;  // Where this asset is used
-};
 
 /**
  * @brief View mode for asset list
@@ -81,7 +55,7 @@ class NMAssetBrowserPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMAssetBrowserPanel(QWidget *parent = nullptr);
+  explicit NMAssetBrowserPanel(QWidget* parent = nullptr);
   ~NMAssetBrowserPanel() override;
 
   void onInitialize() override;
@@ -90,7 +64,7 @@ public:
   /**
    * @brief Set the root path for the asset browser
    */
-  void setRootPath(const QString &path);
+  void setRootPath(const QString& path);
 
   /**
    * @brief Get the currently selected asset path
@@ -103,7 +77,7 @@ public:
   void refresh();
 
 protected:
-  bool eventFilter(QObject *watched, QEvent *event) override;
+  bool eventFilter(QObject* watched, QEvent* event) override;
 
   /**
    * @brief Set the view mode (grid/list)
@@ -114,32 +88,32 @@ protected:
   /**
    * @brief Get asset metadata
    */
-  [[nodiscard]] AssetMetadata getAssetMetadata(const QString &path) const;
+  [[nodiscard]] AssetMetadata getAssetMetadata(const QString& path) const;
 
   /**
    * @brief Rename an asset (maintains stable ID)
    */
-  bool renameAsset(const QString &oldPath, const QString &newName);
+  bool renameAsset(const QString& oldPath, const QString& newName);
 
   /**
    * @brief Delete an asset
    */
-  bool deleteAsset(const QString &path);
+  bool deleteAsset(const QString& path);
 
   /**
    * @brief Duplicate an asset
    */
-  QString duplicateAsset(const QString &path);
+  QString duplicateAsset(const QString& path);
 
   /**
    * @brief Reimport an asset
    */
-  bool reimportAsset(const QString &path);
+  bool reimportAsset(const QString& path);
 
   /**
    * @brief Show asset in system file explorer
    */
-  void showInExplorer(const QString &path);
+  void showInExplorer(const QString& path);
 
   /**
    * @brief Navigate selection history
@@ -148,21 +122,20 @@ protected:
   void navigateForward();
 
 signals:
-  void assetSelected(const QString &path);
-  void assetDoubleClicked(const QString &path);
-  void assetContextMenu(const QString &path, const QPoint &globalPos);
-  void assetRenamed(const QString &oldPath, const QString &newPath);
-  void assetDeleted(const QString &path);
-  void assetDuplicated(const QString &originalPath, const QString &newPath);
+  void assetSelected(const QString& path);
+  void assetDoubleClicked(const QString& path);
+  void assetContextMenu(const QString& path, const QPoint& globalPos);
+  void assetRenamed(const QString& oldPath, const QString& newPath);
+  void assetDeleted(const QString& path);
+  void assetDuplicated(const QString& originalPath, const QString& newPath);
 
 private slots:
-  void onTreeClicked(const QModelIndex &index);
-  void onListDoubleClicked(const QModelIndex &index);
-  void onListContextMenu(const QPoint &pos);
+  void onTreeClicked(const QModelIndex& index);
+  void onListDoubleClicked(const QModelIndex& index);
+  void onListContextMenu(const QPoint& pos);
   void onImportAssets();
-  void onListSelectionChanged(const QModelIndex &current,
-                              const QModelIndex &previous);
-  void onFilterTextChanged(const QString &text);
+  void onListSelectionChanged(const QModelIndex& current, const QModelIndex& previous);
+  void onFilterTextChanged(const QString& text);
   void onTypeFilterChanged(int index);
   void onViewModeChanged(int index);
   void onRenameAction();
@@ -172,7 +145,7 @@ private slots:
   void onShowInExplorerAction();
   void onCopyPathAction();
   void onCopyIdAction();
-  void onThumbnailReady(const QString &path, const QPixmap &pixmap);
+  void onThumbnailReady(const QString& path, const QPixmap& pixmap);
 
 private:
   void setupToolBar();
@@ -180,50 +153,41 @@ private:
   void applyFilters();
   void setPreviewVisible(bool visible);
   void updateThumbnailSize(int size);
-  void updatePreview(const QString &path);
+  void updatePreview(const QString& path);
   void clearPreview();
-  void importFiles(const QStringList &files, bool interactive);
-  QString importDestinationForExtension(const QString &extension) const;
-  QString generateUniquePath(const QString &directory,
-                             const QString &fileName) const;
+  void importFiles(const QStringList& files, bool interactive);
   void scheduleVisibleThumbnails();
   void cancelPendingThumbnails();
 
 public: // Used by NMAssetIconProvider
-  QPixmap generateAudioWaveform(const QString &path, const QSize &size) const;
-  bool isThumbnailValid(const QString &path,
-                        const ThumbnailCacheEntry &entry) const;
+  QPixmap generateAudioWaveform(const QString& path, const QSize& size) const;
+  bool isThumbnailValid(const QString& path, const ThumbnailCacheEntry& entry) const;
 
   // PERF-3: Request async thumbnail loading (for use by NMAssetIconProvider)
-  void requestAsyncThumbnail(const QString &path, const QSize &size,
-                             int priority = 5);
+  void requestAsyncThumbnail(const QString& path, const QSize& size, int priority = 5);
 
   // Thumbnail cache with LRU eviction (max size in KB)
   QCache<QString, ThumbnailCacheEntry> m_thumbnailCache;
 
 private:
-  QSplitter *m_splitter = nullptr;
-  QTreeView *m_treeView = nullptr;
-  QListView *m_listView = nullptr;
-  QWidget *m_listPane = nullptr;
-  QFrame *m_previewFrame = nullptr;
-  QLabel *m_previewImage = nullptr;
-  QLabel *m_previewName = nullptr;
-  QLabel *m_previewMeta = nullptr;
-  QFileSystemModel *m_treeModel = nullptr;
-  QFileSystemModel *m_listModel = nullptr;
-  QSortFilterProxyModel *m_filterProxy = nullptr;
-  QFileIconProvider *m_iconProvider = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  QLineEdit *m_filterEdit = nullptr;
-  QComboBox *m_typeFilter = nullptr;
-  QAction *m_togglePreviewAction = nullptr;
-  QComboBox *m_thumbSizeCombo = nullptr;
+  QSplitter* m_splitter = nullptr;
+  QTreeView* m_treeView = nullptr;
+  QListView* m_listView = nullptr;
+  QWidget* m_listPane = nullptr;
+  NMAssetPreviewFrame* m_previewFrame = nullptr;
+  QFileSystemModel* m_treeModel = nullptr;
+  QFileSystemModel* m_listModel = nullptr;
+  QSortFilterProxyModel* m_filterProxy = nullptr;
+  QFileIconProvider* m_iconProvider = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QLineEdit* m_filterEdit = nullptr;
+  QComboBox* m_typeFilter = nullptr;
+  QAction* m_togglePreviewAction = nullptr;
+  QComboBox* m_thumbSizeCombo = nullptr;
 
   QString m_rootPath;
   QString m_currentPath;
-  QString m_previewPath;
   int m_thumbSize = 80;
   bool m_previewVisible = true;
   AssetViewMode m_viewMode = AssetViewMode::Grid;
@@ -236,24 +200,24 @@ private:
   int m_historyIndex = -1;
 
   // Context menu actions
-  QAction *m_renameAction = nullptr;
-  QAction *m_deleteAction = nullptr;
-  QAction *m_duplicateAction = nullptr;
-  QAction *m_reimportAction = nullptr;
-  QAction *m_showInExplorerAction = nullptr;
-  QAction *m_copyPathAction = nullptr;
-  QAction *m_copyIdAction = nullptr;
+  QAction* m_renameAction = nullptr;
+  QAction* m_deleteAction = nullptr;
+  QAction* m_duplicateAction = nullptr;
+  QAction* m_reimportAction = nullptr;
+  QAction* m_showInExplorerAction = nullptr;
+  QAction* m_copyPathAction = nullptr;
+  QAction* m_copyIdAction = nullptr;
 
   // View mode toggle
-  QComboBox *m_viewModeCombo = nullptr;
-  QAction *m_backAction = nullptr;
-  QAction *m_forwardAction = nullptr;
+  QComboBox* m_viewModeCombo = nullptr;
+  QAction* m_backAction = nullptr;
+  QAction* m_forwardAction = nullptr;
 
   // Undo stack for asset operations
-  QUndoStack *m_undoStack = nullptr;
+  QUndoStack* m_undoStack = nullptr;
 
   // Audio waveform display
-  QLabel *m_waveformLabel = nullptr;
+  QLabel* m_waveformLabel = nullptr;
 
   // Thread pool for background thumbnail loading (legacy - kept for
   // compatibility)
@@ -267,10 +231,10 @@ private:
 
   // Visible items tracking for prioritizing thumbnail loading
   QSet<QString> m_visiblePaths;
-  QTimer *m_visibilityUpdateTimer = nullptr;
+  QTimer* m_visibilityUpdateTimer = nullptr;
 
   void updateVisibleItems();
-  void onLazyThumbnailReady(const QString &path, const QPixmap &pixmap);
+  void onLazyThumbnailReady(const QString& path, const QPixmap& pixmap);
 };
 
 } // namespace NovelMind::editor::qt

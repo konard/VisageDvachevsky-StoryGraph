@@ -118,8 +118,7 @@ struct ActiveHint {
 class NMHelpOverlay : public QWidget {
   Q_OBJECT
 
-  Q_PROPERTY(
-      qreal spotlightOpacity READ spotlightOpacity WRITE setSpotlightOpacity)
+  Q_PROPERTY(qreal spotlightOpacity READ spotlightOpacity WRITE setSpotlightOpacity)
   Q_PROPERTY(qreal calloutOpacity READ calloutOpacity WRITE setCalloutOpacity)
 
 public:
@@ -127,7 +126,7 @@ public:
    * @brief Construct the overlay
    * @param parent Parent widget (usually the main window)
    */
-  explicit NMHelpOverlay(QWidget *parent = nullptr);
+  explicit NMHelpOverlay(QWidget* parent = nullptr);
   ~NMHelpOverlay() override;
 
   // ========================================================================
@@ -137,24 +136,22 @@ public:
   /**
    * @brief Show a tutorial step
    */
-  void showTutorialStep(const std::string &stepId, const std::string &title,
-                        const std::string &content, const std::string &anchorId,
-                        HintType hintType, CalloutPosition position,
-                        int currentStep, int totalSteps, bool showBack,
+  void showTutorialStep(const std::string& stepId, const std::string& title,
+                        const std::string& content, const std::string& anchorId, HintType hintType,
+                        CalloutPosition position, int currentStep, int totalSteps, bool showBack,
                         bool showSkip, bool showDontShowAgain);
 
   /**
    * @brief Show a contextual hint
    */
-  void showHint(const std::string &hintId, const std::string &content,
-                const std::string &anchorId, HintType hintType,
-                CalloutPosition position, bool autoHide = false,
+  void showHint(const std::string& hintId, const std::string& content, const std::string& anchorId,
+                HintType hintType, CalloutPosition position, bool autoHide = false,
                 int autoHideMs = 5000);
 
   /**
    * @brief Hide a specific hint/step
    */
-  void hideHint(const std::string &hintId);
+  void hideHint(const std::string& hintId);
 
   /**
    * @brief Hide all hints and steps
@@ -169,7 +166,7 @@ public:
   /**
    * @brief Check if a specific hint is visible
    */
-  [[nodiscard]] bool isHintVisible(const std::string &hintId) const;
+  [[nodiscard]] bool isHintVisible(const std::string& hintId) const;
 
   // ========================================================================
   // Style Configuration
@@ -178,12 +175,12 @@ public:
   /**
    * @brief Set the overlay style
    */
-  void setStyle(const OverlayStyle &style);
+  void setStyle(const OverlayStyle& style);
 
   /**
    * @brief Get the current style
    */
-  [[nodiscard]] const OverlayStyle &style() const { return m_style; }
+  [[nodiscard]] const OverlayStyle& style() const { return m_style; }
 
   /**
    * @brief Set spotlight opacity (for animations)
@@ -226,33 +223,30 @@ signals:
   /**
    * @brief Hint auto-hide timer expired
    */
-  void hintAutoHidden(const QString &hintId);
+  void hintAutoHidden(const QString& hintId);
 
 protected:
   // Qt event overrides
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
-  bool event(QEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void mouseReleaseEvent(QMouseEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  bool event(QEvent* event) override;
 
 private:
   // Painting helpers
-  void paintSpotlight(QPainter &painter, const QRect &targetRect);
-  void paintCallout(QPainter &painter, const ActiveHint &hint);
-  void paintTooltip(QPainter &painter, const ActiveHint &hint);
-  void paintButtons(QPainter &painter, const ActiveHint &hint,
-                    QRect &buttonArea);
-  void paintStepIndicator(QPainter &painter, const ActiveHint &hint,
-                          const QRect &area);
+  void paintSpotlight(QPainter& painter, const QRect& targetRect);
+  void paintCallout(QPainter& painter, const ActiveHint& hint);
+  void paintTooltip(QPainter& painter, const ActiveHint& hint);
+  void paintButtons(QPainter& painter, const ActiveHint& hint, QRect& buttonArea);
+  void paintStepIndicator(QPainter& painter, const ActiveHint& hint, const QRect& area);
 
   // Layout calculation
-  QRect calculateCalloutRect(const QRect &targetRect, const QSize &contentSize,
+  QRect calculateCalloutRect(const QRect& targetRect, const QSize& contentSize,
                              CalloutPosition position);
-  CalloutPosition determineAutoPosition(const QRect &targetRect,
-                                        const QSize &contentSize);
-  QSize calculateContentSize(const ActiveHint &hint);
+  CalloutPosition determineAutoPosition(const QRect& targetRect, const QSize& contentSize);
+  QSize calculateContentSize(const ActiveHint& hint);
 
   // Button hit testing
   struct ButtonRects {
@@ -273,8 +267,8 @@ private:
   void animateOut(std::function<void()> onComplete);
 
   // Auto-hide timer
-  void startAutoHideTimer(const std::string &hintId, int ms);
-  void cancelAutoHideTimer(const std::string &hintId);
+  void startAutoHideTimer(const std::string& hintId, int ms);
+  void cancelAutoHideTimer(const std::string& hintId);
 
   // State
   std::vector<ActiveHint> m_activeHints;
@@ -292,7 +286,7 @@ private:
   bool m_dontShowAgainChecked = false;
 
   // Position update timer
-  QTimer *m_positionUpdateTimer = nullptr;
+  QTimer* m_positionUpdateTimer = nullptr;
 };
 
 } // namespace NovelMind::editor::guided_learning

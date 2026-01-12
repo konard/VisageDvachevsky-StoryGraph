@@ -18,24 +18,24 @@ namespace NovelMind::scene {
 // DialogueUIObject Implementation
 // ============================================================================
 
-DialogueUIObject::DialogueUIObject(const std::string &id)
+DialogueUIObject::DialogueUIObject(const std::string& id)
     : SceneObjectBase(id, SceneObjectType::DialogueUI) {}
 
-void DialogueUIObject::setSpeaker(const std::string &speaker) {
+void DialogueUIObject::setSpeaker(const std::string& speaker) {
   m_speaker = speaker;
 }
 
-void DialogueUIObject::setText(const std::string &text) {
+void DialogueUIObject::setText(const std::string& text) {
   m_text = text;
   m_typewriterProgress = 0.0f;
   m_typewriterComplete = !m_typewriterEnabled;
 }
 
-void DialogueUIObject::setSpeakerColor(const renderer::Color &color) {
+void DialogueUIObject::setSpeakerColor(const renderer::Color& color) {
   m_speakerColor = color;
 }
 
-void DialogueUIObject::setBackgroundTextureId(const std::string &textureId) {
+void DialogueUIObject::setBackgroundTextureId(const std::string& textureId) {
   m_backgroundTextureId = textureId;
 }
 
@@ -69,7 +69,7 @@ void DialogueUIObject::update(f64 deltaTime) {
   }
 }
 
-void DialogueUIObject::render(renderer::IRenderer &renderer) {
+void DialogueUIObject::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_alpha <= 0.0f) {
     return;
   }
@@ -79,25 +79,20 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
   }
 
   const bool rtl = detail::parseBool(
-      getProperty("rtl"),
-      m_localization ? m_localization->isCurrentLocaleRightToLeft() : false);
-  renderer::TextAlign align =
-      rtl ? renderer::TextAlign::Right : renderer::TextAlign::Left;
+      getProperty("rtl"), m_localization ? m_localization->isCurrentLocaleRightToLeft() : false);
+  renderer::TextAlign align = rtl ? renderer::TextAlign::Right : renderer::TextAlign::Left;
 
-  const float width =
-      detail::parseFloat(getProperty("width"), detail::kDefaultDialogueWidth);
-  const float height =
-      detail::parseFloat(getProperty("height"), detail::kDefaultDialogueHeight);
-  const float padding = detail::parseFloat(getProperty("padding"),
-                                           detail::kDefaultDialoguePadding);
+  const float width = detail::parseFloat(getProperty("width"), detail::kDefaultDialogueWidth);
+  const float height = detail::parseFloat(getProperty("height"), detail::kDefaultDialogueHeight);
+  const float padding = detail::parseFloat(getProperty("padding"), detail::kDefaultDialoguePadding);
 
-  renderer::Rect rect{m_transform.x - width * m_anchorX,
-                      m_transform.y - height * m_anchorY, width, height};
+  renderer::Rect rect{m_transform.x - width * m_anchorX, m_transform.y - height * m_anchorY, width,
+                      height};
 
   if (!m_backgroundTextureId.empty()) {
     auto texResult = m_resources->loadTexture(m_backgroundTextureId);
     if (texResult.isOk() && texResult.value()->isValid()) {
-      const auto &texture = *texResult.value();
+      const auto& texture = *texResult.value();
       renderer::Transform2D transform{};
       transform.x = rect.x;
       transform.y = rect.y;
@@ -115,18 +110,15 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
     renderer.fillRect(rect, bg);
   }
 
-  std::string fontId =
-      detail::getTextProperty(*this, "fontId", detail::defaultFontPath());
-  i32 fontSize =
-      static_cast<i32>(detail::parseFloat(getProperty("fontSize"), 18.0f));
+  std::string fontId = detail::getTextProperty(*this, "fontId", detail::defaultFontPath());
+  i32 fontSize = static_cast<i32>(detail::parseFloat(getProperty("fontSize"), 18.0f));
   if (!fontId.empty()) {
     auto fontResult = m_resources->loadFont(fontId, fontSize);
     if (fontResult.isOk()) {
-      auto atlasResult =
-          m_resources->loadFontAtlas(fontId, fontSize,
-                                     " !\"#$%&'()*+,-./0123456789:;<=>?"
-                                     "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
-                                     "`abcdefghijklmnopqrstuvwxyz{|}~");
+      auto atlasResult = m_resources->loadFontAtlas(fontId, fontSize,
+                                                    " !\"#$%&'()*+,-./0123456789:;<=>?"
+                                                    "@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_"
+                                                    "`abcdefghijklmnopqrstuvwxyz{|}~");
       if (atlasResult.isOk()) {
         renderer::TextLayoutEngine layout;
         layout.setFont(fontResult.value());
@@ -141,14 +133,14 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
 
         std::string visible = m_text;
         if (m_typewriterEnabled) {
-          size_t count = static_cast<size_t>(
-              std::min(m_typewriterProgress, static_cast<f32>(m_text.size())));
+          size_t count =
+              static_cast<size_t>(std::min(m_typewriterProgress, static_cast<f32>(m_text.size())));
           visible = m_text.substr(0, count);
         }
 
         renderer::TextLayout textLayout = layout.layout(visible);
         f32 y = rect.y + padding + static_cast<f32>(fontSize);
-        for (const auto &line : textLayout.lines) {
+        for (const auto& line : textLayout.lines) {
           f32 x = rect.x + padding;
           if (align == renderer::TextAlign::Center) {
             x = rect.x + (rect.width - line.width) * 0.5f;
@@ -157,24 +149,21 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
           }
 
           if (!rtl) {
-            for (const auto &segment : line.segments) {
+            for (const auto& segment : line.segments) {
               if (segment.isCommand()) {
                 continue;
               }
-              renderer.drawText(*fontResult.value(), segment.text, x, y,
-                                segment.style.color);
+              renderer.drawText(*fontResult.value(), segment.text, x, y, segment.style.color);
               x += layout.measureText(segment.text).first;
             }
           } else {
-            for (auto it = line.segments.rbegin(); it != line.segments.rend();
-                 ++it) {
+            for (auto it = line.segments.rbegin(); it != line.segments.rend(); ++it) {
               if (it->isCommand()) {
                 continue;
               }
               const f32 segWidth = layout.measureText(it->text).first;
               x -= segWidth;
-              renderer.drawText(*fontResult.value(), it->text, x, y,
-                                it->style.color);
+              renderer.drawText(*fontResult.value(), it->text, x, y, it->style.color);
             }
           }
           y += line.height;
@@ -184,10 +173,9 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
   }
 
   if (!m_speaker.empty()) {
-    std::string speakerFontId =
-        detail::getTextProperty(*this, "speakerFontId", fontId);
-    i32 speakerFontSize = static_cast<i32>(detail::parseFloat(
-        getProperty("speakerFontSize"), static_cast<float>(fontSize + 2)));
+    std::string speakerFontId = detail::getTextProperty(*this, "speakerFontId", fontId);
+    i32 speakerFontSize = static_cast<i32>(
+        detail::parseFloat(getProperty("speakerFontSize"), static_cast<float>(fontSize + 2)));
     if (!speakerFontId.empty()) {
       auto fontResult = m_resources->loadFont(speakerFontId, speakerFontSize);
       if (fontResult.isOk()) {
@@ -201,8 +189,8 @@ void DialogueUIObject::render(renderer::IRenderer &renderer) {
           f32 speakerWidth = speakerLayout.measureText(m_speaker).first;
           speakerX = rect.x + rect.width - padding - speakerWidth;
         }
-        renderer.drawText(*fontResult.value(), m_speaker, speakerX,
-                          rect.y + padding, m_speakerColor);
+        renderer.drawText(*fontResult.value(), m_speaker, speakerX, rect.y + padding,
+                          m_speakerColor);
       }
     }
   }
@@ -213,13 +201,12 @@ SceneObjectState DialogueUIObject::saveState() const {
   state.properties["speaker"] = m_speaker;
   state.properties["text"] = m_text;
   state.properties["backgroundTextureId"] = m_backgroundTextureId;
-  state.properties["typewriterEnabled"] =
-      m_typewriterEnabled ? "true" : "false";
+  state.properties["typewriterEnabled"] = m_typewriterEnabled ? "true" : "false";
   state.properties["typewriterSpeed"] = std::to_string(m_typewriterSpeed);
   return state;
 }
 
-void DialogueUIObject::loadState(const SceneObjectState &state) {
+void DialogueUIObject::loadState(const SceneObjectState& state) {
   SceneObjectBase::loadState(state);
 
   auto it = state.properties.find("speaker");

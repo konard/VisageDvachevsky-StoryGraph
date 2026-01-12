@@ -41,8 +41,7 @@ namespace NovelMind::scripting {
  * @param s2 Second string
  * @return The edit distance between the two strings
  */
-[[nodiscard]] inline size_t levenshteinDistance(const std::string &s1,
-                                                const std::string &s2) {
+[[nodiscard]] inline size_t levenshteinDistance(const std::string& s1, const std::string& s2) {
   const size_t m = s1.size();
   const size_t n = s2.size();
 
@@ -89,16 +88,14 @@ namespace NovelMind::scripting {
  * @return Vector of similar strings, sorted by edit distance
  */
 [[nodiscard]] inline std::vector<std::string>
-findSimilarStrings(const std::string &name,
-                   const std::vector<std::string> &candidates,
+findSimilarStrings(const std::string& name, const std::vector<std::string>& candidates,
                    size_t maxDistance = 2, size_t maxResults = 3) {
   std::vector<std::pair<size_t, std::string>> matches;
 
-  for (const auto &candidate : candidates) {
+  for (const auto& candidate : candidates) {
     // Skip if lengths differ too much (early optimization)
-    size_t lenDiff = (name.size() > candidate.size())
-                         ? (name.size() - candidate.size())
-                         : (candidate.size() - name.size());
+    size_t lenDiff = (name.size() > candidate.size()) ? (name.size() - candidate.size())
+                                                      : (candidate.size() - name.size());
     if (lenDiff > maxDistance)
       continue;
 
@@ -110,7 +107,7 @@ findSimilarStrings(const std::string &name,
 
   // Sort by distance (closest first)
   std::sort(matches.begin(), matches.end(),
-            [](const auto &a, const auto &b) { return a.first < b.first; });
+            [](const auto& a, const auto& b) { return a.first < b.first; });
 
   // Extract strings up to maxResults
   std::vector<std::string> result;
@@ -138,9 +135,8 @@ findSimilarStrings(const std::string &name,
  * 2)
  * @return Formatted string with source context and caret indicator
  */
-[[nodiscard]] inline std::string extractSourceContext(const std::string &source,
-                                                      u32 line, u32 column,
-                                                      u32 contextLines = 2) {
+[[nodiscard]] inline std::string extractSourceContext(const std::string& source, u32 line,
+                                                      u32 column, u32 contextLines = 2) {
   if (source.empty() || line == 0)
     return "";
 
@@ -160,8 +156,7 @@ findSimilarStrings(const std::string &name,
   // Calculate line number width for formatting
   u32 startLine = (line > contextLines) ? (line - contextLines) : 1;
   u32 endLine = std::min(static_cast<u32>(lines.size()), line + contextLines);
-  size_t lineNumWidth =
-      std::to_string(endLine).size(); // Width for line numbers
+  size_t lineNumWidth = std::to_string(endLine).size(); // Width for line numbers
 
   // Show context lines before error
   for (u32 i = startLine; i <= endLine; ++i) {
@@ -214,8 +209,7 @@ findSimilarStrings(const std::string &name,
 /**
  * @brief Base URL for error documentation
  */
-constexpr const char *ERROR_DOCS_BASE_URL =
-    "https://docs.novelmind.dev/errors/";
+constexpr const char* ERROR_DOCS_BASE_URL = "https://docs.novelmind.dev/errors/";
 
 // =============================================================================
 // Error Severity
@@ -234,7 +228,7 @@ enum class Severity : u8 {
 /**
  * @brief Get the severity string
  */
-[[nodiscard]] inline const char *severityToString(Severity sev) {
+[[nodiscard]] inline const char* severityToString(Severity sev) {
   switch (sev) {
   case Severity::Hint:
     return "hint";
@@ -401,7 +395,7 @@ struct ScriptError {
   /**
    * @brief Add file path to this error
    */
-  ScriptError &withFilePath(std::string path) {
+  ScriptError& withFilePath(std::string path) {
     filePath = std::move(path);
     return *this;
   }
@@ -409,7 +403,7 @@ struct ScriptError {
   /**
    * @brief Add related information to this error
    */
-  ScriptError &withRelated(SourceLocation loc, std::string msg) {
+  ScriptError& withRelated(SourceLocation loc, std::string msg) {
     relatedInfo.emplace_back(loc, std::move(msg));
     return *this;
   }
@@ -417,7 +411,7 @@ struct ScriptError {
   /**
    * @brief Add a suggestion for fixing this error
    */
-  ScriptError &withSuggestion(std::string suggestion) {
+  ScriptError& withSuggestion(std::string suggestion) {
     suggestions.push_back(std::move(suggestion));
     return *this;
   }
@@ -425,7 +419,7 @@ struct ScriptError {
   /**
    * @brief Add source text context (full source code)
    */
-  ScriptError &withSource(std::string src) {
+  ScriptError& withSource(std::string src) {
     source = std::move(src);
     return *this;
   }
@@ -504,16 +498,14 @@ struct ScriptError {
     // Source context
     if (source.has_value() && !source.value().empty()) {
       ss << "\n";
-      ss << extractSourceContext(source.value(), span.start.line,
-                                 span.start.column);
+      ss << extractSourceContext(source.value(), span.start.line, span.start.column);
     }
 
     // Related information
-    for (const auto &related : relatedInfo) {
+    for (const auto& related : relatedInfo) {
       ss << "\n";
       ss << "  note: " << related.message;
-      ss << " (at line " << related.location.line << ":"
-         << related.location.column << ")";
+      ss << " (at line " << related.location.line << ":" << related.location.column << ")";
     }
 
     // Suggestions
@@ -543,26 +535,24 @@ class ErrorList {
 public:
   void add(ScriptError error) { m_errors.push_back(std::move(error)); }
 
-  void addError(ErrorCode code, const std::string &message,
-                SourceLocation loc) {
+  void addError(ErrorCode code, const std::string& message, SourceLocation loc) {
     m_errors.emplace_back(code, Severity::Error, message, loc);
   }
 
-  void addWarning(ErrorCode code, const std::string &message,
-                  SourceLocation loc) {
+  void addWarning(ErrorCode code, const std::string& message, SourceLocation loc) {
     m_errors.emplace_back(code, Severity::Warning, message, loc);
   }
 
-  void addInfo(ErrorCode code, const std::string &message, SourceLocation loc) {
+  void addInfo(ErrorCode code, const std::string& message, SourceLocation loc) {
     m_errors.emplace_back(code, Severity::Info, message, loc);
   }
 
-  void addHint(ErrorCode code, const std::string &message, SourceLocation loc) {
+  void addHint(ErrorCode code, const std::string& message, SourceLocation loc) {
     m_errors.emplace_back(code, Severity::Hint, message, loc);
   }
 
   [[nodiscard]] bool hasErrors() const {
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isError()) {
         return true;
       }
@@ -571,7 +561,7 @@ public:
   }
 
   [[nodiscard]] bool hasWarnings() const {
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isWarning()) {
         return true;
       }
@@ -581,7 +571,7 @@ public:
 
   [[nodiscard]] size_t errorCount() const {
     size_t count = 0;
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isError()) {
         ++count;
       }
@@ -591,7 +581,7 @@ public:
 
   [[nodiscard]] size_t warningCount() const {
     size_t count = 0;
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isWarning()) {
         ++count;
       }
@@ -599,11 +589,11 @@ public:
     return count;
   }
 
-  [[nodiscard]] const std::vector<ScriptError> &all() const { return m_errors; }
+  [[nodiscard]] const std::vector<ScriptError>& all() const { return m_errors; }
 
   [[nodiscard]] std::vector<ScriptError> errors() const {
     std::vector<ScriptError> result;
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isError()) {
         result.push_back(e);
       }
@@ -613,7 +603,7 @@ public:
 
   [[nodiscard]] std::vector<ScriptError> warnings() const {
     std::vector<ScriptError> result;
-    for (const auto &e : m_errors) {
+    for (const auto& e : m_errors) {
       if (e.isWarning()) {
         result.push_back(e);
       }
@@ -634,7 +624,7 @@ private:
 /**
  * @brief Get human-readable description for an error code
  */
-[[nodiscard]] inline const char *errorCodeDescription(ErrorCode code) {
+[[nodiscard]] inline const char* errorCodeDescription(ErrorCode code) {
   switch (code) {
   // Lexer errors
   case ErrorCode::UnexpectedCharacter:

@@ -13,8 +13,7 @@ namespace NovelMind::editor::qt {
 
 using guided_learning::ScopedAnchorRegistration;
 
-NMDockPanel::NMDockPanel(const QString &title, QWidget *parent)
-    : QDockWidget(title, parent) {
+NMDockPanel::NMDockPanel(const QString& title, QWidget* parent) : QDockWidget(title, parent) {
   // Set default dock widget features
   setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable |
               QDockWidget::DockWidgetFloatable);
@@ -41,7 +40,7 @@ NMDockPanel::~NMDockPanel() {
   onShutdown();
 }
 
-void NMDockPanel::setPanelId(const QString &id) {
+void NMDockPanel::setPanelId(const QString& id) {
   m_panelId = id;
 
   // Register this panel with the guided learning anchor registry.
@@ -49,23 +48,22 @@ void NMDockPanel::setPanelId(const QString &id) {
   if (!id.isEmpty()) {
     std::string anchorId = id.toStdString() + ".panel";
     std::string description = windowTitle().toStdString() + " panel";
-    m_panelAnchor = std::make_unique<ScopedAnchorRegistration>(
-        anchorId, this, description, id.toStdString());
+    m_panelAnchor =
+        std::make_unique<ScopedAnchorRegistration>(anchorId, this, description, id.toStdString());
   }
 }
 
-void NMDockPanel::registerAnchor(const std::string &elementId, QWidget *widget,
-                                 const std::string &description) {
+void NMDockPanel::registerAnchor(const std::string& elementId, QWidget* widget,
+                                 const std::string& description) {
   if (m_panelId.isEmpty() || !widget) {
     return;
   }
 
   std::string anchorId = m_panelId.toStdString() + "." + elementId;
-  std::string desc =
-      description.empty() ? (elementId + " element") : description;
+  std::string desc = description.empty() ? (elementId + " element") : description;
 
-  m_elementAnchors.push_back(std::make_unique<ScopedAnchorRegistration>(
-      anchorId, widget, desc, m_panelId.toStdString()));
+  m_elementAnchors.push_back(
+      std::make_unique<ScopedAnchorRegistration>(anchorId, widget, desc, m_panelId.toStdString()));
 }
 
 void NMDockPanel::onUpdate(double /*deltaTime*/) {
@@ -95,12 +93,12 @@ void NMDockPanel::onResize(int /*width*/, int /*height*/) {
   // Default implementation does nothing
 }
 
-void NMDockPanel::setContentWidget(QWidget *widget) {
+void NMDockPanel::setContentWidget(QWidget* widget) {
   m_contentWidget = widget;
   setWidget(widget);
 }
 
-void NMDockPanel::focusInEvent(QFocusEvent *event) {
+void NMDockPanel::focusInEvent(QFocusEvent* event) {
   QDockWidget::focusInEvent(event);
   onFocusGained();
   emit focusGained();
@@ -121,7 +119,7 @@ void NMDockPanel::focusInEvent(QFocusEvent *event) {
   }
 }
 
-void NMDockPanel::focusOutEvent(QFocusEvent *event) {
+void NMDockPanel::focusOutEvent(QFocusEvent* event) {
   QDockWidget::focusOutEvent(event);
   onFocusLost();
   emit focusLost();
@@ -141,12 +139,12 @@ void NMDockPanel::focusOutEvent(QFocusEvent *event) {
   }
 }
 
-void NMDockPanel::resizeEvent(QResizeEvent *event) {
+void NMDockPanel::resizeEvent(QResizeEvent* event) {
   QDockWidget::resizeEvent(event);
   onResize(event->size().width(), event->size().height());
 }
 
-void NMDockPanel::showEvent(QShowEvent *event) {
+void NMDockPanel::showEvent(QShowEvent* event) {
   // INVARIANT: Prevent re-entrance to avoid nested initialization
   if (m_inShowEvent) {
     return;
@@ -167,7 +165,7 @@ void NMDockPanel::setMinimumPanelSize(int width, int height) {
   setMinimumPanelSize(QSize(width, height));
 }
 
-void NMDockPanel::setMinimumPanelSize(const QSize &size) {
+void NMDockPanel::setMinimumPanelSize(const QSize& size) {
   // Set minimum size on the dock widget itself
   setMinimumSize(size);
 
@@ -196,42 +194,37 @@ void NMDockPanel::connectTitleBarSignals() {
   }
 
   // Float button
-  connect(m_customTitleBar, &NMDockTitleBar::floatClicked, this, [this]() {
-    setFloating(!isFloating());
-  });
+  connect(m_customTitleBar, &NMDockTitleBar::floatClicked, this,
+          [this]() { setFloating(!isFloating()); });
 
   // Close button
-  connect(m_customTitleBar, &NMDockTitleBar::closeClicked, this,
-          &QDockWidget::close);
+  connect(m_customTitleBar, &NMDockTitleBar::closeClicked, this, &QDockWidget::close);
 
   // Pin button - prevent panel from being moved/floated
-  connect(m_customTitleBar, &NMDockTitleBar::pinClicked, this,
-          [this](bool pinned) {
-            if (pinned) {
-              // Disable moving and floating when pinned
-              setFeatures(QDockWidget::DockWidgetClosable);
-            } else {
-              // Restore normal features
-              setFeatures(QDockWidget::DockWidgetClosable |
-                          QDockWidget::DockWidgetMovable |
-                          QDockWidget::DockWidgetFloatable);
-            }
-          });
+  connect(m_customTitleBar, &NMDockTitleBar::pinClicked, this, [this](bool pinned) {
+    if (pinned) {
+      // Disable moving and floating when pinned
+      setFeatures(QDockWidget::DockWidgetClosable);
+    } else {
+      // Restore normal features
+      setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable |
+                  QDockWidget::DockWidgetFloatable);
+    }
+  });
 
   // Minimize button - collapse to title bar only
-  connect(m_customTitleBar, &NMDockTitleBar::minimizeClicked, this,
-          [this](bool minimized) {
-            if (m_contentWidget) {
-              m_contentWidget->setVisible(!minimized);
-            }
-          });
+  connect(m_customTitleBar, &NMDockTitleBar::minimizeClicked, this, [this](bool minimized) {
+    if (m_contentWidget) {
+      m_contentWidget->setVisible(!minimized);
+    }
+  });
 
   // Double-click title bar to toggle float
   connect(m_customTitleBar, &NMDockTitleBar::titleDoubleClicked, this,
           [this]() { setFloating(!isFloating()); });
 }
 
-void NMDockPanel::setPanelIcon(const QIcon &icon) {
+void NMDockPanel::setPanelIcon(const QIcon& icon) {
   if (m_customTitleBar) {
     m_customTitleBar->setIcon(icon);
   }

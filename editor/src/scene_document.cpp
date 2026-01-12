@@ -9,22 +9,23 @@ namespace NovelMind::editor {
 
 namespace {
 
-std::string toStdString(const QString &value) { return value.toStdString(); }
+std::string toStdString(const QString& value) {
+  return value.toStdString();
+}
 
-QString toQString(const std::string &value) {
+QString toQString(const std::string& value) {
   return QString::fromStdString(value);
 }
 
 } // namespace
 
-Result<SceneDocument> loadSceneDocument(const std::string &path) {
+Result<SceneDocument> loadSceneDocument(const std::string& path) {
   QFile file(QString::fromStdString(path));
   if (!file.exists()) {
     return Result<SceneDocument>::error("Scene document not found: " + path);
   }
   if (!file.open(QIODevice::ReadOnly)) {
-    return Result<SceneDocument>::error("Failed to open scene document: " +
-                                        path);
+    return Result<SceneDocument>::error("Failed to open scene document: " + path);
   }
 
   const QByteArray data = file.readAll();
@@ -42,7 +43,7 @@ Result<SceneDocument> loadSceneDocument(const std::string &path) {
 
   const QJsonArray objects = root.value("objects").toArray();
   scene.objects.reserve(static_cast<size_t>(objects.size()));
-  for (const auto &value : objects) {
+  for (const auto& value : objects) {
     const QJsonObject obj = value.toObject();
     SceneDocumentObject item;
     item.id = toStdString(obj.value("id").toString());
@@ -59,8 +60,7 @@ Result<SceneDocument> loadSceneDocument(const std::string &path) {
 
     const QJsonObject props = obj.value("properties").toObject();
     for (auto it = props.begin(); it != props.end(); ++it) {
-      item.properties.emplace(toStdString(it.key()),
-                              toStdString(it.value().toString()));
+      item.properties.emplace(toStdString(it.key()), toStdString(it.value().toString()));
     }
     scene.objects.push_back(std::move(item));
   }
@@ -68,13 +68,12 @@ Result<SceneDocument> loadSceneDocument(const std::string &path) {
   return Result<SceneDocument>::ok(std::move(scene));
 }
 
-Result<void> saveSceneDocument(const SceneDocument &doc,
-                               const std::string &path) {
+Result<void> saveSceneDocument(const SceneDocument& doc, const std::string& path) {
   QJsonObject root;
   root.insert("sceneId", toQString(doc.sceneId));
 
   QJsonArray objects;
-  for (const auto &item : doc.objects) {
+  for (const auto& item : doc.objects) {
     QJsonObject obj;
     obj.insert("id", toQString(item.id));
     obj.insert("name", toQString(item.name));
@@ -89,7 +88,7 @@ Result<void> saveSceneDocument(const SceneDocument &doc,
     obj.insert("zOrder", item.zOrder);
 
     QJsonObject props;
-    for (const auto &kv : item.properties) {
+    for (const auto& kv : item.properties) {
       props.insert(toQString(kv.first), toQString(kv.second));
     }
     obj.insert("properties", props);

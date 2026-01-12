@@ -16,8 +16,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMScriptWelcomeDialog::NMScriptWelcomeDialog(QWidget *parent)
-    : QDialog(parent) {
+NMScriptWelcomeDialog::NMScriptWelcomeDialog(QWidget* parent) : QDialog(parent) {
   setWindowTitle(tr("Welcome to NM Script Editor"));
   setMinimumSize(DIALOG_WIDTH, DIALOG_HEIGHT);
   resize(DIALOG_WIDTH, DIALOG_HEIGHT);
@@ -29,7 +28,7 @@ NMScriptWelcomeDialog::NMScriptWelcomeDialog(QWidget *parent)
 NMScriptWelcomeDialog::~NMScriptWelcomeDialog() = default;
 
 void NMScriptWelcomeDialog::setupUI() {
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
@@ -45,12 +44,12 @@ void NMScriptWelcomeDialog::setupUI() {
 void NMScriptWelcomeDialog::setupHeader() {
   m_headerWidget = new QWidget(this);
   m_headerWidget->setObjectName("ScriptWelcomeHeader");
-  auto *headerLayout = new QVBoxLayout(m_headerWidget);
+  auto* headerLayout = new QVBoxLayout(m_headerWidget);
   headerLayout->setContentsMargins(32, 24, 32, 24);
   headerLayout->setSpacing(8);
 
   // Title
-  auto *titleLabel = new QLabel(tr("Welcome to NM Script Editor!"), m_headerWidget);
+  auto* titleLabel = new QLabel(tr("Welcome to NM Script Editor!"), m_headerWidget);
   titleLabel->setObjectName("ScriptWelcomeTitle");
   QFont titleFont = titleLabel->font();
   titleFont.setPointSize(20);
@@ -58,9 +57,8 @@ void NMScriptWelcomeDialog::setupHeader() {
   titleLabel->setFont(titleFont);
 
   // Subtitle
-  auto *subtitleLabel = new QLabel(
-      tr("Discover powerful IDE features to write your visual novel scripts"),
-      m_headerWidget);
+  auto* subtitleLabel = new QLabel(
+      tr("Discover powerful IDE features to write your visual novel scripts"), m_headerWidget);
   subtitleLabel->setObjectName("ScriptWelcomeSubtitle");
   subtitleLabel->setWordWrap(true);
 
@@ -75,12 +73,12 @@ void NMScriptWelcomeDialog::setupMainContent() {
   m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
   m_contentWidget = new QWidget();
-  auto *contentLayout = new QVBoxLayout(m_contentWidget);
+  auto* contentLayout = new QVBoxLayout(m_contentWidget);
   contentLayout->setContentsMargins(32, 24, 32, 24);
   contentLayout->setSpacing(24);
 
   // Section 1: Quick Actions
-  auto *actionsLabel = new QLabel(tr("Quick Actions"), m_contentWidget);
+  auto* actionsLabel = new QLabel(tr("Quick Actions"), m_contentWidget);
   actionsLabel->setObjectName("SectionTitle");
   QFont sectionFont = actionsLabel->font();
   sectionFont.setPointSize(14);
@@ -88,7 +86,7 @@ void NMScriptWelcomeDialog::setupMainContent() {
   actionsLabel->setFont(sectionFont);
   contentLayout->addWidget(actionsLabel);
 
-  auto *actionsRow = new QHBoxLayout();
+  auto* actionsRow = new QHBoxLayout();
   actionsRow->setSpacing(16);
 
   auto& iconMgr = NMIconManager::instance();
@@ -98,8 +96,7 @@ void NMScriptWelcomeDialog::setupMainContent() {
   m_takeTourBtn->setObjectName("PrimaryActionButton");
   m_takeTourBtn->setMinimumHeight(48);
   m_takeTourBtn->setToolTip(tr("Interactive tour of Script Editor features"));
-  connect(m_takeTourBtn, &QPushButton::clicked, this,
-          &NMScriptWelcomeDialog::onTakeTourClicked);
+  connect(m_takeTourBtn, &QPushButton::clicked, this, &NMScriptWelcomeDialog::onTakeTourClicked);
 
   m_quickStartBtn = new QPushButton(tr("View Quick Start Guide"), m_contentWidget);
   m_quickStartBtn->setIcon(iconMgr.getIcon("help", 16));
@@ -109,7 +106,7 @@ void NMScriptWelcomeDialog::setupMainContent() {
   connect(m_quickStartBtn, &QPushButton::clicked, this,
           &NMScriptWelcomeDialog::onQuickStartClicked);
 
-  auto *shortcutsBtn = new QPushButton(tr("Keyboard Shortcuts"), m_contentWidget);
+  auto* shortcutsBtn = new QPushButton(tr("Keyboard Shortcuts"), m_contentWidget);
   shortcutsBtn->setIcon(iconMgr.getIcon("settings", 16));
   shortcutsBtn->setObjectName("SecondaryActionButton");
   shortcutsBtn->setMinimumHeight(48);
@@ -123,12 +120,12 @@ void NMScriptWelcomeDialog::setupMainContent() {
   contentLayout->addLayout(actionsRow);
 
   // Section 2: Key Features
-  auto *featuresLabel = new QLabel(tr("Key Features"), m_contentWidget);
+  auto* featuresLabel = new QLabel(tr("Key Features"), m_contentWidget);
   featuresLabel->setObjectName("SectionTitle");
   featuresLabel->setFont(sectionFont);
   contentLayout->addWidget(featuresLabel);
 
-  auto *featuresGrid = new QGridLayout();
+  auto* featuresGrid = new QGridLayout();
   featuresGrid->setSpacing(16);
 
   // Feature cards in a 2-column grid
@@ -176,32 +173,28 @@ void NMScriptWelcomeDialog::setupMainContent() {
 
   featuresGrid->addWidget(
       createFeatureCard("🔤", tr("Bracket Matching"),
-                        tr("Matching brackets are auto-highlighted as you type."),
-                        tr("Automatic")),
+                        tr("Matching brackets are auto-highlighted as you type."), tr("Automatic")),
       3, 1);
 
   contentLayout->addLayout(featuresGrid);
 
   // Section 3: Sample Scripts
-  auto *samplesLabel = new QLabel(tr("Try Sample Scripts"), m_contentWidget);
+  auto* samplesLabel = new QLabel(tr("Try Sample Scripts"), m_contentWidget);
   samplesLabel->setObjectName("SectionTitle");
   samplesLabel->setFont(sectionFont);
   contentLayout->addWidget(samplesLabel);
 
-  auto *samplesRow = new QHBoxLayout();
+  auto* samplesRow = new QHBoxLayout();
   samplesRow->setSpacing(16);
 
   samplesRow->addWidget(createSampleCard(
-      tr("Basic Scene"),
-      tr("Simple dialogue with characters. Perfect for beginners."), "basic"));
+      tr("Basic Scene"), tr("Simple dialogue with characters. Perfect for beginners."), "basic"));
 
   samplesRow->addWidget(createSampleCard(
-      tr("Choice System"),
-      tr("Branching dialogue with player choices and flags."), "choices"));
+      tr("Choice System"), tr("Branching dialogue with player choices and flags."), "choices"));
 
   samplesRow->addWidget(createSampleCard(
-      tr("Advanced Features"),
-      tr("Variables, conditionals, transitions, and more."), "advanced"));
+      tr("Advanced Features"), tr("Variables, conditionals, transitions, and more."), "advanced"));
 
   contentLayout->addLayout(samplesRow);
 
@@ -213,12 +206,11 @@ void NMScriptWelcomeDialog::setupMainContent() {
 void NMScriptWelcomeDialog::setupFooter() {
   m_footerWidget = new QWidget(this);
   m_footerWidget->setObjectName("ScriptWelcomeFooter");
-  auto *footerLayout = new QHBoxLayout(m_footerWidget);
+  auto* footerLayout = new QHBoxLayout(m_footerWidget);
   footerLayout->setContentsMargins(24, 12, 24, 12);
 
   m_skipCheckbox = new QCheckBox(tr("Don't show this again"), m_footerWidget);
-  connect(m_skipCheckbox, &QCheckBox::toggled,
-          [this](bool checked) { m_skipInFuture = checked; });
+  connect(m_skipCheckbox, &QCheckBox::toggled, [this](bool checked) { m_skipInFuture = checked; });
 
   m_closeBtn = new QPushButton(tr("Close"), m_footerWidget);
   m_closeBtn->setIcon(NMIconManager::instance().getIcon("file-close", 16));
@@ -230,28 +222,27 @@ void NMScriptWelcomeDialog::setupFooter() {
   footerLayout->addWidget(m_closeBtn);
 }
 
-QWidget *NMScriptWelcomeDialog::createFeatureCard(const QString &icon,
-                                                   const QString &title,
-                                                   const QString &description,
-                                                   const QString &shortcut) {
-  auto *card = new QFrame(m_contentWidget);
+QWidget* NMScriptWelcomeDialog::createFeatureCard(const QString& icon, const QString& title,
+                                                  const QString& description,
+                                                  const QString& shortcut) {
+  auto* card = new QFrame(m_contentWidget);
   card->setObjectName("FeatureCard");
   card->setFrameShape(QFrame::StyledPanel);
 
-  auto *cardLayout = new QVBoxLayout(card);
+  auto* cardLayout = new QVBoxLayout(card);
   cardLayout->setContentsMargins(16, 16, 16, 16);
   cardLayout->setSpacing(8);
 
   // Icon and title row
-  auto *headerRow = new QHBoxLayout();
+  auto* headerRow = new QHBoxLayout();
   headerRow->setSpacing(8);
 
-  auto *iconLabel = new QLabel(icon, card);
+  auto* iconLabel = new QLabel(icon, card);
   QFont iconFont = iconLabel->font();
   iconFont.setPointSize(18);
   iconLabel->setFont(iconFont);
 
-  auto *titleLabel = new QLabel(title, card);
+  auto* titleLabel = new QLabel(title, card);
   titleLabel->setObjectName("FeatureTitle");
   QFont titleFont = titleLabel->font();
   titleFont.setBold(true);
@@ -263,19 +254,19 @@ QWidget *NMScriptWelcomeDialog::createFeatureCard(const QString &icon,
   headerRow->addStretch();
 
   // Description
-  auto *descLabel = new QLabel(description, card);
+  auto* descLabel = new QLabel(description, card);
   descLabel->setObjectName("FeatureDescription");
   descLabel->setWordWrap(true);
 
   // Shortcut (if provided)
-  QWidget *shortcutWidget = nullptr;
+  QWidget* shortcutWidget = nullptr;
   if (!shortcut.isEmpty()) {
     shortcutWidget = new QWidget(card);
-    auto *shortcutLayout = new QHBoxLayout(shortcutWidget);
+    auto* shortcutLayout = new QHBoxLayout(shortcutWidget);
     shortcutLayout->setContentsMargins(0, 0, 0, 0);
     shortcutLayout->setSpacing(4);
 
-    auto *shortcutLabel = new QLabel(shortcut, shortcutWidget);
+    auto* shortcutLabel = new QLabel(shortcut, shortcutWidget);
     shortcutLabel->setObjectName("ShortcutLabel");
     QFont monoFont("Courier New");
     monoFont.setPointSize(9);
@@ -294,26 +285,25 @@ QWidget *NMScriptWelcomeDialog::createFeatureCard(const QString &icon,
   return card;
 }
 
-QWidget *NMScriptWelcomeDialog::createSampleCard(const QString &title,
-                                                  const QString &description,
-                                                  const QString &sampleId) {
-  auto *card = new QFrame(m_contentWidget);
+QWidget* NMScriptWelcomeDialog::createSampleCard(const QString& title, const QString& description,
+                                                 const QString& sampleId) {
+  auto* card = new QFrame(m_contentWidget);
   card->setObjectName("SampleCard");
   card->setFrameShape(QFrame::StyledPanel);
   card->setCursor(Qt::PointingHandCursor);
 
-  auto *cardLayout = new QVBoxLayout(card);
+  auto* cardLayout = new QVBoxLayout(card);
   cardLayout->setContentsMargins(16, 16, 16, 16);
   cardLayout->setSpacing(8);
 
   // Icon
-  auto *iconLabel = new QLabel("📄", card);
+  auto* iconLabel = new QLabel("📄", card);
   QFont iconFont = iconLabel->font();
   iconFont.setPointSize(24);
   iconLabel->setFont(iconFont);
 
   // Title
-  auto *titleLabel = new QLabel(title, card);
+  auto* titleLabel = new QLabel(title, card);
   titleLabel->setObjectName("SampleTitle");
   QFont titleFont = titleLabel->font();
   titleFont.setBold(true);
@@ -321,16 +311,15 @@ QWidget *NMScriptWelcomeDialog::createSampleCard(const QString &title,
   titleLabel->setFont(titleFont);
 
   // Description
-  auto *descLabel = new QLabel(description, card);
+  auto* descLabel = new QLabel(description, card);
   descLabel->setObjectName("SampleDescription");
   descLabel->setWordWrap(true);
 
   // Open button
-  auto *openBtn = new QPushButton(tr("Open Sample"), card);
+  auto* openBtn = new QPushButton(tr("Open Sample"), card);
   openBtn->setIcon(NMIconManager::instance().getIcon("file-open", 16));
   openBtn->setObjectName("SampleOpenButton");
-  connect(openBtn, &QPushButton::clicked, this,
-          [this, sampleId]() { onSampleClicked(sampleId); });
+  connect(openBtn, &QPushButton::clicked, this, [this, sampleId]() { onSampleClicked(sampleId); });
 
   cardLayout->addWidget(iconLabel, 0, Qt::AlignCenter);
   cardLayout->addWidget(titleLabel);
@@ -341,15 +330,14 @@ QWidget *NMScriptWelcomeDialog::createSampleCard(const QString &title,
   return card;
 }
 
-QWidget *NMScriptWelcomeDialog::createShortcutRow(const QString &action,
-                                                    const QString &shortcut) {
-  auto *row = new QWidget(m_contentWidget);
-  auto *layout = new QHBoxLayout(row);
+QWidget* NMScriptWelcomeDialog::createShortcutRow(const QString& action, const QString& shortcut) {
+  auto* row = new QWidget(m_contentWidget);
+  auto* layout = new QHBoxLayout(row);
   layout->setContentsMargins(8, 4, 8, 4);
   layout->setSpacing(16);
 
-  auto *actionLabel = new QLabel(action, row);
-  auto *shortcutLabel = new QLabel(shortcut, row);
+  auto* actionLabel = new QLabel(action, row);
+  auto* shortcutLabel = new QLabel(shortcut, row);
   shortcutLabel->setObjectName("ShortcutText");
   QFont monoFont("Courier New");
   monoFont.setBold(true);
@@ -364,27 +352,27 @@ QWidget *NMScriptWelcomeDialog::createShortcutRow(const QString &action,
 
 void NMScriptWelcomeDialog::showKeyboardShortcuts() {
   // Create a modal dialog showing all keyboard shortcuts
-  auto *dialog = new QDialog(this);
+  auto* dialog = new QDialog(this);
   dialog->setWindowTitle(tr("Keyboard Shortcuts"));
   dialog->setMinimumSize(500, 600);
 
-  auto *layout = new QVBoxLayout(dialog);
+  auto* layout = new QVBoxLayout(dialog);
   layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(16);
 
-  auto *titleLabel = new QLabel(tr("Script Editor Keyboard Shortcuts"), dialog);
+  auto* titleLabel = new QLabel(tr("Script Editor Keyboard Shortcuts"), dialog);
   QFont titleFont = titleLabel->font();
   titleFont.setPointSize(14);
   titleFont.setBold(true);
   titleLabel->setFont(titleFont);
   layout->addWidget(titleLabel);
 
-  auto *scrollArea = new QScrollArea(dialog);
+  auto* scrollArea = new QScrollArea(dialog);
   scrollArea->setWidgetResizable(true);
   scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
-  auto *scrollContent = new QWidget();
-  auto *scrollLayout = new QVBoxLayout(scrollContent);
+  auto* scrollContent = new QWidget();
+  auto* scrollLayout = new QVBoxLayout(scrollContent);
   scrollLayout->setSpacing(2);
 
   // Add shortcut rows
@@ -407,7 +395,7 @@ void NMScriptWelcomeDialog::showKeyboardShortcuts() {
       {tr("Toggle Line Comment"), "Ctrl+/"},
   };
 
-  for (const auto &[action, shortcut] : shortcuts) {
+  for (const auto& [action, shortcut] : shortcuts) {
     scrollLayout->addWidget(createShortcutRow(action, shortcut));
   }
 
@@ -415,7 +403,7 @@ void NMScriptWelcomeDialog::showKeyboardShortcuts() {
   scrollArea->setWidget(scrollContent);
   layout->addWidget(scrollArea);
 
-  auto *closeBtn = new QPushButton(tr("Close"), dialog);
+  auto* closeBtn = new QPushButton(tr("Close"), dialog);
   connect(closeBtn, &QPushButton::clicked, dialog, &QDialog::accept);
   layout->addWidget(closeBtn);
 
@@ -431,12 +419,11 @@ void NMScriptWelcomeDialog::onTakeTourClicked() {
 void NMScriptWelcomeDialog::onQuickStartClicked() {
   emit viewQuickStartRequested();
   // Open documentation URL
-  QDesktopServices::openUrl(
-      QUrl("https://github.com/VisageDvachevsky/StoryGraph/blob/main/docs/"
-           "SCENE_STORY_GRAPH_PIPELINE.md"));
+  QDesktopServices::openUrl(QUrl("https://github.com/VisageDvachevsky/StoryGraph/blob/main/docs/"
+                                 "SCENE_STORY_GRAPH_PIPELINE.md"));
 }
 
-void NMScriptWelcomeDialog::onSampleClicked(const QString &sampleId) {
+void NMScriptWelcomeDialog::onSampleClicked(const QString& sampleId) {
   m_selectedSample = sampleId;
   emit openSampleRequested(sampleId);
   accept();
@@ -447,7 +434,7 @@ void NMScriptWelcomeDialog::onKeyboardShortcutsClicked() {
 }
 
 void NMScriptWelcomeDialog::styleDialog() {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Apply comprehensive stylesheet for the dialog
   setStyleSheet(QString(R"(
@@ -645,18 +632,18 @@ void NMScriptWelcomeDialog::styleDialog() {
       font-weight: bold;
     }
   )")
-                    .arg(palette.bgDark.name())       // %1 - background
-                    .arg(palette.bgMedium.name())     // %2 - header top
-                    .arg(palette.bgLight.name())      // %3 - header bottom
-                    .arg(palette.borderLight.name())  // %4 - borders
-                    .arg(palette.textPrimary.name())  // %5 - primary text
-                    .arg(palette.textSecondary.name()) // %6 - secondary text
-                    .arg(palette.bgMedium.name())     // %7 - card background
-                    .arg(palette.borderDefault.name()) // %8 - card border
-                    .arg(palette.bgLight.name())      // %9 - hover bg
-                    .arg(palette.accentPrimary.name()) // %10 - accent (buttons)
-                    .arg(palette.accentHover.name()) // %11 - shortcut text
-                    .arg(palette.bgDark.name())       // %12 - shortcut bg
+                    .arg(palette.bgDark.name())                     // %1 - background
+                    .arg(palette.bgMedium.name())                   // %2 - header top
+                    .arg(palette.bgLight.name())                    // %3 - header bottom
+                    .arg(palette.borderLight.name())                // %4 - borders
+                    .arg(palette.textPrimary.name())                // %5 - primary text
+                    .arg(palette.textSecondary.name())              // %6 - secondary text
+                    .arg(palette.bgMedium.name())                   // %7 - card background
+                    .arg(palette.borderDefault.name())              // %8 - card border
+                    .arg(palette.bgLight.name())                    // %9 - hover bg
+                    .arg(palette.accentPrimary.name())              // %10 - accent (buttons)
+                    .arg(palette.accentHover.name())                // %11 - shortcut text
+                    .arg(palette.bgDark.name())                     // %12 - shortcut bg
                     .arg(palette.accentPrimary.lighter(110).name()) // %13 - button hover
                     .arg(palette.accentPrimary.darker(110).name())  // %14 - button pressed
   );

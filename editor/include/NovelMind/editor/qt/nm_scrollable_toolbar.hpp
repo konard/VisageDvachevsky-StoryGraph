@@ -41,25 +41,25 @@ public:
    * @brief Construct a scrollable toolbar container
    * @param parent Parent widget
    */
-  explicit NMScrollableToolBar(QWidget *parent = nullptr);
+  explicit NMScrollableToolBar(QWidget* parent = nullptr);
 
   /**
    * @brief Get the embedded toolbar for adding actions/widgets
    * @return Pointer to the internal QToolBar
    */
-  [[nodiscard]] QToolBar *toolbar() const { return m_toolbar; }
+  [[nodiscard]] QToolBar* toolbar() const { return m_toolbar; }
 
   /**
    * @brief Set the object name for the internal toolbar
    * @param name Object name for styling
    */
-  void setToolBarObjectName(const QString &name);
+  void setToolBarObjectName(const QString& name);
 
   /**
    * @brief Set the icon size for toolbar buttons
    * @param size Icon size
    */
-  void setIconSize(const QSize &size);
+  void setIconSize(const QSize& size);
 
   /**
    * @brief Check if scrolling is currently needed
@@ -75,13 +75,13 @@ signals:
   void scrollVisibilityChanged(bool visible);
 
 protected:
-  void resizeEvent(QResizeEvent *event) override;
+  void resizeEvent(QResizeEvent* event) override;
 
 private:
   void updateScrollIndicators();
 
-  QScrollArea *m_scrollArea = nullptr;
-  QToolBar *m_toolbar = nullptr;
+  QScrollArea* m_scrollArea = nullptr;
+  QToolBar* m_toolbar = nullptr;
   bool m_scrollNeeded = false;
 };
 
@@ -100,19 +100,19 @@ public:
    * @param title Panel title shown in the header
    * @param parent Parent widget
    */
-  explicit NMCollapsiblePanel(const QString &title, QWidget *parent = nullptr);
+  explicit NMCollapsiblePanel(const QString& title, QWidget* parent = nullptr);
 
   /**
    * @brief Set the content widget
    * @param widget Content widget to show/hide
    */
-  void setContentWidget(QWidget *widget);
+  void setContentWidget(QWidget* widget);
 
   /**
    * @brief Get the content widget
    * @return Content widget or nullptr
    */
-  [[nodiscard]] QWidget *contentWidget() const { return m_contentWidget; }
+  [[nodiscard]] QWidget* contentWidget() const { return m_contentWidget; }
 
   /**
    * @brief Check if panel is collapsed
@@ -141,10 +141,10 @@ signals:
 private:
   void updateVisibility();
 
-  QWidget *m_headerWidget = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QWidget *m_contentContainer = nullptr;
-  QPushButton *m_toggleButton = nullptr;
+  QWidget* m_headerWidget = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QWidget* m_contentContainer = nullptr;
+  QPushButton* m_toggleButton = nullptr;
   bool m_collapsed = false;
 };
 
@@ -162,22 +162,22 @@ public:
    * @brief Construct a scrollable content container
    * @param parent Parent widget
    */
-  explicit NMScrollableContent(QWidget *parent = nullptr);
+  explicit NMScrollableContent(QWidget* parent = nullptr);
 
   /**
    * @brief Set the content widget
    * @param widget Content widget to scroll
    */
-  void setContentWidget(QWidget *widget);
+  void setContentWidget(QWidget* widget);
 
   /**
    * @brief Get the scroll area
    * @return Pointer to the internal QScrollArea
    */
-  [[nodiscard]] QScrollArea *scrollArea() const { return m_scrollArea; }
+  [[nodiscard]] QScrollArea* scrollArea() const { return m_scrollArea; }
 
 private:
-  QScrollArea *m_scrollArea = nullptr;
+  QScrollArea* m_scrollArea = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

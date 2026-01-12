@@ -34,7 +34,7 @@
 namespace NovelMind::editor::qt {
 
 void NMMainWindow::setupPanels() {
-  auto &iconMgr = NMIconManager::instance();
+  auto& iconMgr = NMIconManager::instance();
 
   // Create all panels with their respective icons
   m_sceneViewPanel = new NMSceneViewPanel(this);
@@ -47,8 +47,7 @@ void NMMainWindow::setupPanels() {
 
   m_sceneDialogueGraphPanel = new NMSceneDialogueGraphPanel(this);
   m_sceneDialogueGraphPanel->setObjectName("SceneDialogueGraphPanel");
-  m_sceneDialogueGraphPanel->setWindowIcon(
-      iconMgr.getIcon("node-dialogue", 16));
+  m_sceneDialogueGraphPanel->setWindowIcon(iconMgr.getIcon("node-dialogue", 16));
 
   m_inspectorPanel = new NMInspectorPanel(this);
   m_inspectorPanel->setObjectName("InspectorPanel");
@@ -154,26 +153,27 @@ void NMMainWindow::setupPanels() {
 
   // Connect Project Settings <-> Play Toolbar bidirectional sync (issue #125)
   // When Project Settings changes workflow mode, update Play Toolbar
-  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged,
-          m_playToolbarPanel, &NMPlayToolbarPanel::setSourceMode);
+  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged, m_playToolbarPanel,
+          &NMPlayToolbarPanel::setSourceMode);
   // When Play Toolbar changes workflow mode, update Project Settings
   connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
           m_projectSettingsPanel, &NMProjectSettingsPanel::setWorkflowMode);
 
   // Issue #327: Connect workflow mode changes to main window for panel visibility control
-  // Both Project Settings and Play Toolbar can change the mode, both should trigger visibility update
-  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged,
-          this, &NMMainWindow::onWorkflowModeChanged);
-  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged,
-          this, &NMMainWindow::onWorkflowModeChanged);
+  // Both Project Settings and Play Toolbar can change the mode, both should trigger visibility
+  // update
+  connect(m_projectSettingsPanel, &NMProjectSettingsPanel::workflowModeChanged, this,
+          &NMMainWindow::onWorkflowModeChanged);
+  connect(m_playToolbarPanel, &NMPlayToolbarPanel::playbackSourceModeChanged, this,
+          &NMMainWindow::onWorkflowModeChanged);
 
   // Add panels to the main window
   addDockWidget(Qt::LeftDockWidgetArea, m_scenePalettePanel);
   addDockWidget(Qt::LeftDockWidgetArea, m_hierarchyPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_inspectorPanel);
-  addDockWidget(Qt::RightDockWidgetArea, m_debugOverlayPanel); // Phase 5
+  addDockWidget(Qt::RightDockWidgetArea, m_debugOverlayPanel);           // Phase 5
   addDockWidget(Qt::RightDockWidgetArea, m_scriptRuntimeInspectorPanel); // Issue #244
-  addDockWidget(Qt::RightDockWidgetArea, m_scriptInspectorPanel); // Issue #235
+  addDockWidget(Qt::RightDockWidgetArea, m_scriptInspectorPanel);        // Issue #235
   addDockWidget(Qt::RightDockWidgetArea, m_voiceManagerPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_voiceStudioPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_audioMixerPanel);
@@ -188,7 +188,7 @@ void NMMainWindow::setupPanels() {
   addDockWidget(Qt::BottomDockWidgetArea, m_diagnosticsPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_scriptDocPanel);
   addDockWidget(Qt::RightDockWidgetArea, m_projectSettingsPanel); // Issue #125
-  addDockWidget(Qt::TopDockWidgetArea, m_playToolbarPanel); // Phase 5
+  addDockWidget(Qt::TopDockWidgetArea, m_playToolbarPanel);       // Phase 5
 
   // Central area: Scene View and Story Graph as tabs
   setCentralWidget(nullptr);
@@ -209,7 +209,7 @@ void NMMainWindow::setupPanels() {
   // Tab the right panels
   tabifyDockWidget(m_inspectorPanel, m_debugOverlayPanel);
   tabifyDockWidget(m_inspectorPanel, m_scriptRuntimeInspectorPanel); // Issue #244
-  tabifyDockWidget(m_inspectorPanel, m_scriptInspectorPanel); // Issue #235
+  tabifyDockWidget(m_inspectorPanel, m_scriptInspectorPanel);        // Issue #235
   tabifyDockWidget(m_inspectorPanel, m_voiceManagerPanel);
   tabifyDockWidget(m_inspectorPanel, m_voiceStudioPanel);
   tabifyDockWidget(m_inspectorPanel, m_audioMixerPanel);
@@ -235,13 +235,12 @@ void NMMainWindow::configureDocking() {
                  QMainWindow::GroupedDragging | QMainWindow::AnimatedDocks);
   setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 
-  const auto configureDock = [this](QDockWidget *dock) {
+  const auto configureDock = [this](QDockWidget* dock) {
     if (!dock) {
       return;
     }
     dock->setAllowedAreas(Qt::AllDockWidgetAreas);
-    const auto features = QDockWidget::DockWidgetClosable |
-                          QDockWidget::DockWidgetMovable |
+    const auto features = QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable |
                           QDockWidget::DockWidgetFloatable;
     dock->setFeatures(features);
     dock->installEventFilter(this);
@@ -276,14 +275,14 @@ void NMMainWindow::configureDocking() {
   applyTabbedDockMode(m_tabbedDockOnly);
 }
 
-void NMMainWindow::addDockContextActions(QDockWidget *dock) {
+void NMMainWindow::addDockContextActions(QDockWidget* dock) {
   if (!dock) {
     return;
   }
   dock->setContextMenuPolicy(Qt::ActionsContextMenu);
 
-  auto addMove = [this, dock](const QString &label, Qt::DockWidgetArea area) {
-    QAction *action = new QAction(label, dock);
+  auto addMove = [this, dock](const QString& label, Qt::DockWidgetArea area) {
+    QAction* action = new QAction(label, dock);
     connect(action, &QAction::triggered, this, [this, dock, area]() {
       addDockWidget(area, dock);
       dock->show();
@@ -298,7 +297,7 @@ void NMMainWindow::addDockContextActions(QDockWidget *dock) {
   addMove(tr("Move to Top"), Qt::TopDockWidgetArea);
   addMove(tr("Move to Bottom"), Qt::BottomDockWidgetArea);
 
-  QAction *floatAction = new QAction(tr("Toggle Floating"), dock);
+  QAction* floatAction = new QAction(tr("Toggle Floating"), dock);
   connect(floatAction, &QAction::triggered, dock, [dock]() {
     dock->setFloating(!dock->isFloating());
     dock->raise();
@@ -306,7 +305,7 @@ void NMMainWindow::addDockContextActions(QDockWidget *dock) {
   dock->addAction(floatAction);
 }
 
-void NMMainWindow::togglePanel(NMDockPanel *panel) {
+void NMMainWindow::togglePanel(NMDockPanel* panel) {
   if (panel) {
     panel->setVisible(!panel->isVisible());
   }

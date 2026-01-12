@@ -10,10 +10,10 @@ namespace NovelMind::scene {
 
 class SceneObject {
 public:
-  explicit SceneObject(const std::string &id);
+  explicit SceneObject(const std::string& id);
   virtual ~SceneObject() = default;
 
-  [[nodiscard]] const std::string &getId() const;
+  [[nodiscard]] const std::string& getId() const;
 
   void setPosition(f32 x, f32 y);
   void setScale(f32 scaleX, f32 scaleY);
@@ -21,13 +21,13 @@ public:
   void setAlpha(f32 alpha);
   void setVisible(bool visible);
 
-  [[nodiscard]] const renderer::Transform2D &getTransform() const;
-  [[nodiscard]] renderer::Transform2D &getTransform();
+  [[nodiscard]] const renderer::Transform2D& getTransform() const;
+  [[nodiscard]] renderer::Transform2D& getTransform();
   [[nodiscard]] f32 getAlpha() const;
   [[nodiscard]] bool isVisible() const;
 
   virtual void update(f64 deltaTime);
-  virtual void render(renderer::IRenderer &renderer) = 0;
+  virtual void render(renderer::IRenderer& renderer) = 0;
 
 protected:
   std::string m_id;

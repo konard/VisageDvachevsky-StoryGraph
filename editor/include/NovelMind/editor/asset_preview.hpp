@@ -29,16 +29,7 @@ namespace NovelMind::editor {
 /**
  * @brief Asset type enumeration
  */
-enum class AssetPreviewType : u8 {
-  Unknown = 0,
-  Image,
-  Audio,
-  Font,
-  Video,
-  Script,
-  Scene,
-  Data
-};
+enum class AssetPreviewType : u8 { Unknown = 0, Image, Audio, Font, Video, Script, Scene, Data };
 
 /**
  * @brief Thumbnail data structure
@@ -91,9 +82,7 @@ struct AssetPreview {
   std::string format;
   std::unordered_map<std::string, std::string> metadata;
 
-  [[nodiscard]] bool isValid() const {
-    return type != AssetPreviewType::Unknown;
-  }
+  [[nodiscard]] bool isValid() const { return type != AssetPreviewType::Unknown; }
 };
 
 /**
@@ -106,8 +95,8 @@ struct PreviewRequest {
   u32 waveformSamples = 200; // Number of samples for waveform
   bool forceRefresh = false;
 
-  std::function<void(const AssetPreview &)> onComplete;
-  std::function<void(const std::string &)> onError;
+  std::function<void(const AssetPreview&)> onComplete;
+  std::function<void(const std::string&)> onError;
 };
 
 /**
@@ -135,13 +124,13 @@ public:
   ~AssetPreviewManager();
 
   // Prevent copying
-  AssetPreviewManager(const AssetPreviewManager &) = delete;
-  AssetPreviewManager &operator=(const AssetPreviewManager &) = delete;
+  AssetPreviewManager(const AssetPreviewManager&) = delete;
+  AssetPreviewManager& operator=(const AssetPreviewManager&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static AssetPreviewManager &instance();
+  static AssetPreviewManager& instance();
 
   // =========================================================================
   // Preview Generation
@@ -150,36 +139,35 @@ public:
   /**
    * @brief Get preview for an asset (sync, may use cache)
    */
-  [[nodiscard]] AssetPreview getPreview(const std::string &assetPath,
-                                        u32 thumbnailSize = 128);
+  [[nodiscard]] AssetPreview getPreview(const std::string& assetPath, u32 thumbnailSize = 128);
 
   /**
    * @brief Request preview generation (async)
    */
-  void requestPreview(const PreviewRequest &request);
+  void requestPreview(const PreviewRequest& request);
 
   /**
    * @brief Generate thumbnail for an image file
    */
-  [[nodiscard]] Result<ThumbnailData>
-  generateImageThumbnail(const std::string &imagePath, u32 width, u32 height);
+  [[nodiscard]] Result<ThumbnailData> generateImageThumbnail(const std::string& imagePath,
+                                                             u32 width, u32 height);
 
   /**
    * @brief Generate waveform preview for audio file
    */
-  [[nodiscard]] Result<WaveformData>
-  generateAudioWaveform(const std::string &audioPath, u32 sampleCount);
+  [[nodiscard]] Result<WaveformData> generateAudioWaveform(const std::string& audioPath,
+                                                           u32 sampleCount);
 
   /**
    * @brief Generate preview for font file
    */
-  [[nodiscard]] Result<FontPreviewData>
-  generateFontPreview(const std::string &fontPath, u32 thumbnailSize);
+  [[nodiscard]] Result<FontPreviewData> generateFontPreview(const std::string& fontPath,
+                                                            u32 thumbnailSize);
 
   /**
    * @brief Get asset type from file extension
    */
-  [[nodiscard]] static AssetPreviewType getAssetType(const std::string &path);
+  [[nodiscard]] static AssetPreviewType getAssetType(const std::string& path);
 
   // =========================================================================
   // Cache Management
@@ -188,12 +176,12 @@ public:
   /**
    * @brief Check if preview is cached and valid
    */
-  [[nodiscard]] bool hasCachedPreview(const std::string &assetPath) const;
+  [[nodiscard]] bool hasCachedPreview(const std::string& assetPath) const;
 
   /**
    * @brief Invalidate cache for an asset
    */
-  void invalidateCache(const std::string &assetPath);
+  void invalidateCache(const std::string& assetPath);
 
   /**
    * @brief Invalidate all cached previews
@@ -247,20 +235,20 @@ public:
   /**
    * @brief Set font preview sample text
    */
-  void setFontSampleText(const std::string &text);
+  void setFontSampleText(const std::string& text);
 
   /**
    * @brief Get font preview sample text
    */
-  [[nodiscard]] const std::string &getFontSampleText() const;
+  [[nodiscard]] const std::string& getFontSampleText() const;
 
 private:
   // Internal methods
-  AssetPreview generatePreview(const std::string &assetPath, u32 thumbnailSize);
-  void addToCache(const std::string &path, const AssetPreview &preview);
+  AssetPreview generatePreview(const std::string& assetPath, u32 thumbnailSize);
+  void addToCache(const std::string& path, const AssetPreview& preview);
   void evictLRU();
   void evictLRULocked(); // Assumes m_cacheMutex is already locked
-  size_t estimatePreviewSize(const AssetPreview &preview) const;
+  size_t estimatePreviewSize(const AssetPreview& preview) const;
 
   // Cache (protected by m_cacheMutex for thread-safe access)
   mutable std::shared_mutex m_cacheMutex;
@@ -276,8 +264,7 @@ private:
 
   // Configuration
   u32 m_defaultThumbnailSize = 128;
-  std::string m_fontSampleText =
-      "The quick brown fox jumps over the lazy dog. 0123456789";
+  std::string m_fontSampleText = "The quick brown fox jumps over the lazy dog. 0123456789";
 };
 
 } // namespace NovelMind::editor

@@ -18,10 +18,10 @@ namespace NovelMind::scene {
 // ChoiceUIObject Implementation
 // ============================================================================
 
-ChoiceUIObject::ChoiceUIObject(const std::string &id)
+ChoiceUIObject::ChoiceUIObject(const std::string& id)
     : SceneObjectBase(id, SceneObjectType::ChoiceUI) {}
 
-void ChoiceUIObject::setChoices(const std::vector<ChoiceOption> &choices) {
+void ChoiceUIObject::setChoices(const std::vector<ChoiceOption>& choices) {
   m_choices = choices;
   m_selectedIndex = 0;
 }
@@ -44,10 +44,8 @@ void ChoiceUIObject::selectNext() {
 
   i32 start = m_selectedIndex;
   do {
-    m_selectedIndex =
-        (m_selectedIndex + 1) % static_cast<i32>(m_choices.size());
-  } while (!m_choices[static_cast<size_t>(m_selectedIndex)].enabled &&
-           m_selectedIndex != start);
+    m_selectedIndex = (m_selectedIndex + 1) % static_cast<i32>(m_choices.size());
+  } while (!m_choices[static_cast<size_t>(m_selectedIndex)].enabled && m_selectedIndex != start);
 }
 
 void ChoiceUIObject::selectPrevious() {
@@ -57,17 +55,14 @@ void ChoiceUIObject::selectPrevious() {
 
   i32 start = m_selectedIndex;
   do {
-    m_selectedIndex =
-        (m_selectedIndex - 1 + static_cast<i32>(m_choices.size())) %
-        static_cast<i32>(m_choices.size());
-  } while (!m_choices[static_cast<size_t>(m_selectedIndex)].enabled &&
-           m_selectedIndex != start);
+    m_selectedIndex = (m_selectedIndex - 1 + static_cast<i32>(m_choices.size())) %
+                      static_cast<i32>(m_choices.size());
+  } while (!m_choices[static_cast<size_t>(m_selectedIndex)].enabled && m_selectedIndex != start);
 }
 
 bool ChoiceUIObject::confirm() {
-  if (m_selectedIndex >= 0 &&
-      m_selectedIndex < static_cast<i32>(m_choices.size())) {
-    const auto &choice = m_choices[static_cast<size_t>(m_selectedIndex)];
+  if (m_selectedIndex >= 0 && m_selectedIndex < static_cast<i32>(m_choices.size())) {
+    const auto& choice = m_choices[static_cast<size_t>(m_selectedIndex)];
     if (choice.enabled && m_onSelect) {
       m_onSelect(m_selectedIndex, choice.id);
       return true;
@@ -76,12 +71,11 @@ bool ChoiceUIObject::confirm() {
   return false;
 }
 
-void ChoiceUIObject::setOnSelect(
-    std::function<void(i32, const std::string &)> callback) {
+void ChoiceUIObject::setOnSelect(std::function<void(i32, const std::string&)> callback) {
   m_onSelect = std::move(callback);
 }
 
-void ChoiceUIObject::render(renderer::IRenderer &renderer) {
+void ChoiceUIObject::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_alpha <= 0.0f) {
     return;
   }
@@ -91,27 +85,21 @@ void ChoiceUIObject::render(renderer::IRenderer &renderer) {
   }
 
   const bool rtl = detail::parseBool(
-      getProperty("rtl"),
-      m_localization ? m_localization->isCurrentLocaleRightToLeft() : false);
+      getProperty("rtl"), m_localization ? m_localization->isCurrentLocaleRightToLeft() : false);
 
-  const float width =
-      detail::parseFloat(getProperty("width"), detail::kDefaultChoiceWidth);
-  const float height =
-      detail::parseFloat(getProperty("height"), detail::kDefaultChoiceHeight);
-  const float padding =
-      detail::parseFloat(getProperty("padding"), detail::kDefaultChoicePadding);
+  const float width = detail::parseFloat(getProperty("width"), detail::kDefaultChoiceWidth);
+  const float height = detail::parseFloat(getProperty("height"), detail::kDefaultChoiceHeight);
+  const float padding = detail::parseFloat(getProperty("padding"), detail::kDefaultChoicePadding);
 
-  renderer::Rect rect{m_transform.x - width * m_anchorX,
-                      m_transform.y - height * m_anchorY, width, height};
+  renderer::Rect rect{m_transform.x - width * m_anchorX, m_transform.y - height * m_anchorY, width,
+                      height};
 
   renderer::Color bg = renderer::Color(20, 20, 20, 200);
   bg.a = static_cast<u8>(bg.a * m_alpha);
   renderer.fillRect(rect, bg);
 
-  std::string fontId =
-      detail::getTextProperty(*this, "fontId", detail::defaultFontPath());
-  i32 fontSize =
-      static_cast<i32>(detail::parseFloat(getProperty("fontSize"), 18.0f));
+  std::string fontId = detail::getTextProperty(*this, "fontId", detail::defaultFontPath());
+  i32 fontSize = static_cast<i32>(detail::parseFloat(getProperty("fontSize"), 18.0f));
   if (fontId.empty()) {
     return;
   }
@@ -123,13 +111,12 @@ void ChoiceUIObject::render(renderer::IRenderer &renderer) {
 
   float y = rect.y + padding;
   for (size_t i = 0; i < m_choices.size(); ++i) {
-    const auto &choice = m_choices[i];
+    const auto& choice = m_choices[i];
     if (!choice.visible) {
       continue;
     }
-    renderer::Color color = choice.enabled
-                                ? renderer::Color::White
-                                : renderer::Color(140, 140, 140, 255);
+    renderer::Color color =
+        choice.enabled ? renderer::Color::White : renderer::Color(140, 140, 140, 255);
     if (static_cast<i32>(i) == m_selectedIndex) {
       color = renderer::Color(255, 220, 80, 255);
     }
@@ -155,16 +142,14 @@ SceneObjectState ChoiceUIObject::saveState() const {
     std::string prefix = "choice" + std::to_string(i) + "_";
     state.properties[prefix + "id"] = m_choices[i].id;
     state.properties[prefix + "text"] = m_choices[i].text;
-    state.properties[prefix + "enabled"] =
-        m_choices[i].enabled ? "true" : "false";
-    state.properties[prefix + "visible"] =
-        m_choices[i].visible ? "true" : "false";
+    state.properties[prefix + "enabled"] = m_choices[i].enabled ? "true" : "false";
+    state.properties[prefix + "visible"] = m_choices[i].visible ? "true" : "false";
   }
   state.properties["selectedIndex"] = std::to_string(m_selectedIndex);
   return state;
 }
 
-void ChoiceUIObject::loadState(const SceneObjectState &state) {
+void ChoiceUIObject::loadState(const SceneObjectState& state) {
   SceneObjectBase::loadState(state);
 
   m_choices.clear();

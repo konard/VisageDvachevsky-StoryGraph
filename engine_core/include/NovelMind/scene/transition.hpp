@@ -60,7 +60,7 @@ public:
    * @brief Render the transition effect
    * @param renderer The renderer to use
    */
-  virtual void render(renderer::IRenderer &renderer) = 0;
+  virtual void render(renderer::IRenderer& renderer) = 0;
 
   /**
    * @brief Check if the transition is complete
@@ -96,14 +96,13 @@ public:
    * @param fadeColor The color to fade through
    * @param fadeOut If true, fade out; if false, fade in
    */
-  explicit FadeTransition(
-      const renderer::Color &fadeColor = renderer::Color::Black,
-      bool fadeOut = true);
+  explicit FadeTransition(const renderer::Color& fadeColor = renderer::Color::Black,
+                          bool fadeOut = true);
   ~FadeTransition() override;
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -113,7 +112,7 @@ public:
   /**
    * @brief Set the fade color
    */
-  void setFadeColor(const renderer::Color &color);
+  void setFadeColor(const renderer::Color& color);
 
   /**
    * @brief Set whether this is a fade out or fade in
@@ -140,13 +139,12 @@ private:
  */
 class FadeThroughTransition : public ITransition {
 public:
-  explicit FadeThroughTransition(
-      const renderer::Color &fadeColor = renderer::Color::Black);
+  explicit FadeThroughTransition(const renderer::Color& fadeColor = renderer::Color::Black);
   ~FadeThroughTransition() override;
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -189,7 +187,7 @@ public:
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -232,7 +230,7 @@ public:
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -260,14 +258,13 @@ class WipeTransition : public ITransition {
 public:
   enum class Direction { LeftToRight, RightToLeft, TopToBottom, BottomToTop };
 
-  explicit WipeTransition(
-      const renderer::Color &maskColor = renderer::Color::Black,
-      Direction direction = Direction::LeftToRight);
+  explicit WipeTransition(const renderer::Color& maskColor = renderer::Color::Black,
+                          Direction direction = Direction::LeftToRight);
   ~WipeTransition() override;
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -291,14 +288,13 @@ private:
  */
 class ZoomTransition : public ITransition {
 public:
-  explicit ZoomTransition(
-      const renderer::Color &maskColor = renderer::Color::Black,
-      bool zoomIn = true);
+  explicit ZoomTransition(const renderer::Color& maskColor = renderer::Color::Black,
+                          bool zoomIn = true);
   ~ZoomTransition() override;
 
   void start(f32 duration) override;
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
   [[nodiscard]] bool isComplete() const override;
   [[nodiscard]] f32 getProgress() const override;
@@ -321,17 +317,16 @@ private:
  * @brief Factory function to create transitions
  */
 std::unique_ptr<ITransition>
-createTransition(TransitionType type,
-                 const renderer::Color &color = renderer::Color::Black);
+createTransition(TransitionType type, const renderer::Color& color = renderer::Color::Black);
 
 /**
  * @brief Parse transition type from string
  */
-TransitionType parseTransitionType(const std::string &name);
+TransitionType parseTransitionType(const std::string& name);
 
 /**
  * @brief Get transition type name as string
  */
-const char *transitionTypeName(TransitionType type);
+const char* transitionTypeName(TransitionType type);
 
 } // namespace NovelMind::Scene

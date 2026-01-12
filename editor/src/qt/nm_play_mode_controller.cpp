@@ -12,17 +12,16 @@
 
 namespace NovelMind::editor::qt {
 
-NMPlayModeController &NMPlayModeController::instance() {
+NMPlayModeController& NMPlayModeController::instance() {
   static NMPlayModeController instance;
   return instance;
 }
 
-NMPlayModeController::NMPlayModeController(QObject *parent)
+NMPlayModeController::NMPlayModeController(QObject* parent)
     : QObject(parent), m_runtimeTimer(new QTimer(this)) {
   m_runtimeTimer->setTimerType(Qt::PreciseTimer);
   m_runtimeTimer->setInterval(0);
-  connect(m_runtimeTimer, &QTimer::timeout, this,
-          &NMPlayModeController::simulateStep);
+  connect(m_runtimeTimer, &QTimer::timeout, this, &NMPlayModeController::simulateStep);
 
   // Wire runtime callbacks
   m_runtimeHost.setOnStateChanged([this](EditorRuntimeState state) {
@@ -54,32 +53,30 @@ NMPlayModeController::NMPlayModeController(QObject *parent)
     }
   });
 
-  m_runtimeHost.setOnSceneChanged([this](const std::string &sceneId) {
+  m_runtimeHost.setOnSceneChanged([this](const std::string& sceneId) {
     m_currentNodeId = QString::fromStdString(sceneId);
     emit currentNodeChanged(m_currentNodeId);
   });
 
-  m_runtimeHost.setOnDialogueChanged(
-      [this](const std::string &speaker, const std::string &text) {
-        m_currentSpeaker = QString::fromStdString(speaker);
-        m_currentDialogue = QString::fromStdString(text);
-        emit dialogueLineChanged(m_currentSpeaker, m_currentDialogue);
-      });
+  m_runtimeHost.setOnDialogueChanged([this](const std::string& speaker, const std::string& text) {
+    m_currentSpeaker = QString::fromStdString(speaker);
+    m_currentDialogue = QString::fromStdString(text);
+    emit dialogueLineChanged(m_currentSpeaker, m_currentDialogue);
+  });
 
-  m_runtimeHost.setOnChoicesChanged(
-      [this](const std::vector<std::string> &choices) {
-        QStringList list;
-        for (const auto &c : choices) {
-          list << QString::fromStdString(c);
-        }
-        m_currentChoices = list;
-        m_waitingForChoice = !m_currentChoices.isEmpty();
-        emit choicesChanged(m_currentChoices);
-      });
+  m_runtimeHost.setOnChoicesChanged([this](const std::vector<std::string>& choices) {
+    QStringList list;
+    for (const auto& c : choices) {
+      list << QString::fromStdString(c);
+    }
+    m_currentChoices = list;
+    m_waitingForChoice = !m_currentChoices.isEmpty();
+    emit choicesChanged(m_currentChoices);
+  });
 
   m_runtimeHost.setOnVariableChanged(
-      [this](const std::string &name, const scripting::Value &value) {
-        auto toVariant = [](const scripting::Value &v) -> QVariant {
+      [this](const std::string& name, const scripting::Value& value) {
+        auto toVariant = [](const scripting::Value& v) -> QVariant {
           if (std::holds_alternative<i32>(v)) {
             return QVariant::fromValue(std::get<i32>(v));
           }
@@ -99,7 +96,7 @@ NMPlayModeController::NMPlayModeController(QObject *parent)
         emit variablesChanged(m_variables);
       });
 
-  m_runtimeHost.setOnRuntimeError([this](const std::string &err) {
+  m_runtimeHost.setOnRuntimeError([this](const std::string& err) {
     qWarning() << "[Runtime] Error:" << QString::fromStdString(err);
     m_playMode = Stopped;
     emit playModeChanged(m_playMode);
@@ -127,17 +124,15 @@ void NMPlayModeController::play() {
       qWarning() << "[PlayMode] CRITICAL: Runtime initialization failed. Check project state.";
 
       // Show user-friendly error dialog
-      QMessageBox::critical(
-          nullptr,
-          "Play Mode Error",
-          "Failed to initialize runtime. Please ensure a project is open.");
+      QMessageBox::critical(nullptr, "Play Mode Error",
+                            "Failed to initialize runtime. Please ensure a project is open.");
       return;
     }
     qDebug() << "[PlayMode] Runtime loaded successfully, calling play()...";
     auto result = m_runtimeHost.play();
     if (result.isError()) {
       qCritical() << "[PlayMode] Failed to start runtime:"
-                 << QString::fromStdString(result.error());
+                  << QString::fromStdString(result.error());
       qCritical() << "[PlayMode] PLAYBACK FAILED - See error above for details";
 
       // Show user-friendly error dialog with details
@@ -147,31 +142,31 @@ void NMPlayModeController::play() {
       // Enhance error message for common issues
       if (errorMsg.contains("story graph not available") ||
           errorMsg.contains("Story graph file not found")) {
-        detailedMsg =
-            "<b>Story Graph Not Found</b><br><br>"
-            "The playback mode is set to 'Graph' but no story graph is available.<br><br>"
-            "<b>Possible solutions:</b><br>"
-            "1. Create story graph nodes in the Story Graph panel<br>"
-            "2. Switch playback mode to 'Script' in the Play Toolbar<br>"
-            "3. Add .nms script files to the Scripts folder<br><br>"
-            "<small>Technical details: " + errorMsg + "</small>";
+        detailedMsg = "<b>Story Graph Not Found</b><br><br>"
+                      "The playback mode is set to 'Graph' but no story graph is available.<br><br>"
+                      "<b>Possible solutions:</b><br>"
+                      "1. Create story graph nodes in the Story Graph panel<br>"
+                      "2. Switch playback mode to 'Script' in the Play Toolbar<br>"
+                      "3. Add .nms script files to the Scripts folder<br><br>"
+                      "<small>Technical details: " +
+                      errorMsg + "</small>";
       } else if (errorMsg.contains("No content found")) {
-        detailedMsg =
-            "<b>No Content Available</b><br><br>"
-            "Neither story graph nor script files were found.<br><br>"
-            "<b>To fix this:</b><br>"
-            "• Add .nms script files to the Scripts folder, OR<br>"
-            "• Create story graph nodes in the Story Graph panel<br><br>"
-            "<small>Technical details: " + errorMsg + "</small>";
+        detailedMsg = "<b>No Content Available</b><br><br>"
+                      "Neither story graph nor script files were found.<br><br>"
+                      "<b>To fix this:</b><br>"
+                      "• Add .nms script files to the Scripts folder, OR<br>"
+                      "• Create story graph nodes in the Story Graph panel<br><br>"
+                      "<small>Technical details: " +
+                      errorMsg + "</small>";
       } else if (errorMsg.contains("No scenes found")) {
-        detailedMsg =
-            "<b>No Scenes Available</b><br><br>"
-            "The project was loaded but no scenes were found to play.<br><br>"
-            "<b>To fix this:</b><br>"
-            "• Ensure your scripts contain 'scene' definitions<br>"
-            "• Create scene nodes in the Story Graph<br>"
-            "• Check that script files are in the Scripts folder<br><br>"
-            "<small>Technical details: " + errorMsg + "</small>";
+        detailedMsg = "<b>No Scenes Available</b><br><br>"
+                      "The project was loaded but no scenes were found to play.<br><br>"
+                      "<b>To fix this:</b><br>"
+                      "• Ensure your scripts contain 'scene' definitions<br>"
+                      "• Create scene nodes in the Story Graph<br>"
+                      "• Check that script files are in the Scripts folder<br><br>"
+                      "<small>Technical details: " +
+                      errorMsg + "</small>";
       }
 
       QMessageBox msgBox;
@@ -267,10 +262,8 @@ void NMPlayModeController::shutdown() {
   }
 }
 
-bool NMPlayModeController::loadProject(const QString &projectPath,
-                                       const QString &scriptsPath,
-                                       const QString &assetsPath,
-                                       const QString &startScene) {
+bool NMPlayModeController::loadProject(const QString& projectPath, const QString& scriptsPath,
+                                       const QString& assetsPath, const QString& startScene) {
   qDebug() << "[PlayMode] === LOADING PROJECT ===";
   qDebug() << "[PlayMode] Project path:" << projectPath;
   qDebug() << "[PlayMode] Scripts path:" << scriptsPath;
@@ -313,7 +306,7 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
 
   if (result.isError()) {
     qCritical() << "[PlayMode] Failed to load project for runtime:"
-               << QString::fromStdString(result.error());
+                << QString::fromStdString(result.error());
     qCritical() << "[PlayMode] This usually means compilation failed or files are missing";
     emit compilationFailed(QString::fromStdString(result.error()));
     m_runtimeLoaded = false;
@@ -326,8 +319,7 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
 
   m_runtimeLoaded = true;
   m_lastSnapshot = m_runtimeHost.getSceneSnapshot();
-  m_totalSteps =
-      static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
+  m_totalSteps = static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
   qDebug() << "[PlayMode] Total scenes available:" << m_totalSteps;
   emit sceneSnapshotUpdated();
   emit projectLoaded(projectPath);
@@ -335,46 +327,41 @@ bool NMPlayModeController::loadProject(const QString &projectPath,
 }
 
 bool NMPlayModeController::loadCurrentProject() {
-  auto &pm = NovelMind::editor::ProjectManager::instance();
+  auto& pm = NovelMind::editor::ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     qWarning() << "[PlayMode] No open project to load";
     return false;
   }
 
-  return loadProject(QString::fromStdString(pm.getProjectPath()),
-                     QString::fromStdString(pm.getFolderPath(
-                         NovelMind::editor::ProjectFolder::Scripts)),
-                     QString::fromStdString(pm.getFolderPath(
-                         NovelMind::editor::ProjectFolder::Assets)),
-                     QString::fromStdString(pm.getStartScene()));
+  return loadProject(
+      QString::fromStdString(pm.getProjectPath()),
+      QString::fromStdString(pm.getFolderPath(NovelMind::editor::ProjectFolder::Scripts)),
+      QString::fromStdString(pm.getFolderPath(NovelMind::editor::ProjectFolder::Assets)),
+      QString::fromStdString(pm.getStartScene()));
 }
 
 bool NMPlayModeController::ensureRuntimeLoaded() {
-  auto &pm = NovelMind::editor::ProjectManager::instance();
+  auto& pm = NovelMind::editor::ProjectManager::instance();
   if (!pm.hasOpenProject()) {
     return false;
   }
 
-  const auto &proj = m_runtimeHost.getProject();
+  const auto& proj = m_runtimeHost.getProject();
   const std::string projectPath = pm.getProjectPath();
-  const std::string scriptsPath =
-      pm.getFolderPath(NovelMind::editor::ProjectFolder::Scripts);
-  const std::string assetsPath =
-      pm.getFolderPath(NovelMind::editor::ProjectFolder::Assets);
+  const std::string scriptsPath = pm.getFolderPath(NovelMind::editor::ProjectFolder::Scripts);
+  const std::string assetsPath = pm.getFolderPath(NovelMind::editor::ProjectFolder::Assets);
   const std::string startScene = pm.getStartScene();
 
   const bool needsReload = !m_runtimeLoaded || proj.path != projectPath ||
-                           proj.scriptsPath != scriptsPath ||
-                           proj.assetsPath != assetsPath ||
+                           proj.scriptsPath != scriptsPath || proj.assetsPath != assetsPath ||
                            proj.startScene != startScene;
 
   if (!needsReload) {
     return true;
   }
 
-  return loadProject(
-      QString::fromStdString(projectPath), QString::fromStdString(scriptsPath),
-      QString::fromStdString(assetsPath), QString::fromStdString(startScene));
+  return loadProject(QString::fromStdString(projectPath), QString::fromStdString(scriptsPath),
+                     QString::fromStdString(assetsPath), QString::fromStdString(startScene));
 }
 
 void NMPlayModeController::stepForward() {
@@ -459,8 +446,7 @@ bool NMPlayModeController::saveSlot(int slot) {
   }
   auto result = m_runtimeHost.saveGame(slot);
   if (result.isError()) {
-    qWarning() << "[PlayMode] Save failed:"
-               << QString::fromStdString(result.error());
+    qWarning() << "[PlayMode] Save failed:" << QString::fromStdString(result.error());
     return false;
   }
   return true;
@@ -477,8 +463,7 @@ bool NMPlayModeController::loadSlot(int slot) {
 
   auto result = m_runtimeHost.loadGame(slot);
   if (result.isError()) {
-    qWarning() << "[PlayMode] Load failed:"
-               << QString::fromStdString(result.error());
+    qWarning() << "[PlayMode] Load failed:" << QString::fromStdString(result.error());
     return false;
   }
   refreshRuntimeCache();
@@ -491,8 +476,7 @@ bool NMPlayModeController::saveAuto() {
   }
   auto result = m_runtimeHost.saveAuto();
   if (result.isError()) {
-    qWarning() << "[PlayMode] Auto-save failed:"
-               << QString::fromStdString(result.error());
+    qWarning() << "[PlayMode] Auto-save failed:" << QString::fromStdString(result.error());
     return false;
   }
   return true;
@@ -511,8 +495,7 @@ bool NMPlayModeController::loadAuto() {
   }
   auto result = m_runtimeHost.loadAuto();
   if (result.isError()) {
-    qWarning() << "[PlayMode] Auto-load failed:"
-               << QString::fromStdString(result.error());
+    qWarning() << "[PlayMode] Auto-load failed:" << QString::fromStdString(result.error());
     return false;
   }
   refreshRuntimeCache();
@@ -523,7 +506,7 @@ bool NMPlayModeController::hasAutoSave() const {
   return m_runtimeHost.autoSaveExists();
 }
 
-scripting::ScriptRuntime *NMPlayModeController::getScriptRuntime() {
+scripting::ScriptRuntime* NMPlayModeController::getScriptRuntime() {
   return m_runtimeHost.getScriptRuntime();
 }
 
@@ -536,21 +519,17 @@ void NMPlayModeController::refreshRuntimeCache() {
 
   auto vars = m_runtimeHost.getVariables();
   QVariantMap varMap;
-  for (const auto &pair : vars) {
-    const auto &name = pair.first;
-    const auto &value = pair.second;
+  for (const auto& pair : vars) {
+    const auto& name = pair.first;
+    const auto& value = pair.second;
     if (std::holds_alternative<i32>(value)) {
-      varMap[QString::fromStdString(name)] =
-          QVariant::fromValue(std::get<i32>(value));
+      varMap[QString::fromStdString(name)] = QVariant::fromValue(std::get<i32>(value));
     } else if (std::holds_alternative<f32>(value)) {
-      varMap[QString::fromStdString(name)] =
-          QVariant::fromValue(std::get<f32>(value));
+      varMap[QString::fromStdString(name)] = QVariant::fromValue(std::get<f32>(value));
     } else if (std::holds_alternative<bool>(value)) {
-      varMap[QString::fromStdString(name)] =
-          QVariant::fromValue(std::get<bool>(value));
+      varMap[QString::fromStdString(name)] = QVariant::fromValue(std::get<bool>(value));
     } else if (std::holds_alternative<std::string>(value)) {
-      varMap[QString::fromStdString(name)] =
-          QString::fromStdString(std::get<std::string>(value));
+      varMap[QString::fromStdString(name)] = QString::fromStdString(std::get<std::string>(value));
     }
   }
   m_variables = varMap;
@@ -558,9 +537,8 @@ void NMPlayModeController::refreshRuntimeCache() {
 
   auto flags = m_runtimeHost.getFlags();
   QVariantMap flagMap;
-  for (const auto &pair : flags) {
-    flagMap[QString::fromStdString(pair.first)] =
-        QVariant::fromValue(pair.second);
+  for (const auto& pair : flags) {
+    flagMap[QString::fromStdString(pair.first)] = QVariant::fromValue(pair.second);
   }
   m_flags = flagMap;
   emit flagsChanged(m_flags);
@@ -570,7 +548,7 @@ void NMPlayModeController::refreshRuntimeCache() {
   emit dialogueLineChanged(m_currentSpeaker, m_currentDialogue);
 
   m_currentChoices.clear();
-  for (const auto &choice : m_lastSnapshot.choiceOptions) {
+  for (const auto& choice : m_lastSnapshot.choiceOptions) {
     m_currentChoices << QString::fromStdString(choice);
   }
   m_waitingForChoice = !m_currentChoices.isEmpty();
@@ -579,7 +557,7 @@ void NMPlayModeController::refreshRuntimeCache() {
 
 // === Breakpoint Management ===
 
-void NMPlayModeController::toggleBreakpoint(const QString &nodeId) {
+void NMPlayModeController::toggleBreakpoint(const QString& nodeId) {
   if (m_breakpoints.contains(nodeId)) {
     m_breakpoints.remove(nodeId);
     qDebug() << "[Breakpoint] Removed from" << nodeId;
@@ -590,7 +568,7 @@ void NMPlayModeController::toggleBreakpoint(const QString &nodeId) {
   emit breakpointsChanged();
 }
 
-void NMPlayModeController::setBreakpoint(const QString &nodeId, bool enabled) {
+void NMPlayModeController::setBreakpoint(const QString& nodeId, bool enabled) {
   if (enabled) {
     m_breakpoints.insert(nodeId);
   } else {
@@ -599,7 +577,7 @@ void NMPlayModeController::setBreakpoint(const QString &nodeId, bool enabled) {
   emit breakpointsChanged();
 }
 
-bool NMPlayModeController::hasBreakpoint(const QString &nodeId) const {
+bool NMPlayModeController::hasBreakpoint(const QString& nodeId) const {
   return m_breakpoints.contains(nodeId);
 }
 
@@ -611,8 +589,7 @@ void NMPlayModeController::clearAllBreakpoints() {
 
 // === Source-Level Breakpoints (file:line) ===
 
-void NMPlayModeController::toggleSourceBreakpoint(const QString &filePath,
-                                                  int line) {
+void NMPlayModeController::toggleSourceBreakpoint(const QString& filePath, int line) {
   if (hasSourceBreakpoint(filePath, line)) {
     m_sourceBreakpoints[filePath].remove(line);
     if (m_sourceBreakpoints[filePath].isEmpty()) {
@@ -626,8 +603,7 @@ void NMPlayModeController::toggleSourceBreakpoint(const QString &filePath,
   emit sourceBreakpointsChanged();
 }
 
-void NMPlayModeController::setSourceBreakpoint(const QString &filePath, int line,
-                                               bool enabled) {
+void NMPlayModeController::setSourceBreakpoint(const QString& filePath, int line, bool enabled) {
   if (enabled) {
     m_sourceBreakpoints[filePath].insert(line);
   } else {
@@ -639,8 +615,7 @@ void NMPlayModeController::setSourceBreakpoint(const QString &filePath, int line
   emit sourceBreakpointsChanged();
 }
 
-bool NMPlayModeController::hasSourceBreakpoint(const QString &filePath,
-                                               int line) const {
+bool NMPlayModeController::hasSourceBreakpoint(const QString& filePath, int line) const {
   auto it = m_sourceBreakpoints.find(filePath);
   if (it != m_sourceBreakpoints.end()) {
     return it->contains(line);
@@ -648,8 +623,7 @@ bool NMPlayModeController::hasSourceBreakpoint(const QString &filePath,
   return false;
 }
 
-QSet<int>
-NMPlayModeController::sourceBreakpointsForFile(const QString &filePath) const {
+QSet<int> NMPlayModeController::sourceBreakpointsForFile(const QString& filePath) const {
   auto it = m_sourceBreakpoints.find(filePath);
   if (it != m_sourceBreakpoints.end()) {
     return *it;
@@ -657,12 +631,10 @@ NMPlayModeController::sourceBreakpointsForFile(const QString &filePath) const {
   return {};
 }
 
-QList<NMPlayModeController::SourceBreakpoint>
-NMPlayModeController::allSourceBreakpoints() const {
+QList<NMPlayModeController::SourceBreakpoint> NMPlayModeController::allSourceBreakpoints() const {
   QList<SourceBreakpoint> result;
-  for (auto it = m_sourceBreakpoints.constBegin();
-       it != m_sourceBreakpoints.constEnd(); ++it) {
-    const QString &filePath = it.key();
+  for (auto it = m_sourceBreakpoints.constBegin(); it != m_sourceBreakpoints.constEnd(); ++it) {
+    const QString& filePath = it.key();
     for (int line : it.value()) {
       SourceBreakpoint bp;
       bp.filePath = filePath;
@@ -680,8 +652,7 @@ void NMPlayModeController::clearAllSourceBreakpoints() {
   qDebug() << "[SourceBreakpoint] Cleared all source breakpoints";
 }
 
-void NMPlayModeController::clearSourceBreakpointsForFile(
-    const QString &filePath) {
+void NMPlayModeController::clearSourceBreakpointsForFile(const QString& filePath) {
   m_sourceBreakpoints.remove(filePath);
   emit sourceBreakpointsChanged();
   qDebug() << "[SourceBreakpoint] Cleared breakpoints for" << filePath;
@@ -689,8 +660,7 @@ void NMPlayModeController::clearSourceBreakpointsForFile(
 
 // === Variable Inspection ===
 
-void NMPlayModeController::setVariable(const QString &name,
-                                       const QVariant &value) {
+void NMPlayModeController::setVariable(const QString& name, const QVariant& value) {
   if (m_playMode != Paused) {
     qWarning() << "[PlayMode] Cannot set variable while not paused";
     return;
@@ -718,7 +688,7 @@ void NMPlayModeController::setVariable(const QString &name,
   // Refresh from runtime to keep UI consistent
   const auto vars = m_runtimeHost.getVariables();
   QVariantMap varMap;
-  for (const auto &[n, val] : vars) {
+  for (const auto& [n, val] : vars) {
     QVariant qv;
     if (std::holds_alternative<i32>(val)) {
       qv = std::get<i32>(val);
@@ -737,7 +707,7 @@ void NMPlayModeController::setVariable(const QString &name,
   // Update flags from runtime
   const auto flags = m_runtimeHost.getFlags();
   QVariantMap flagMap;
-  for (const auto &[flagName, flagValue] : flags) {
+  for (const auto& [flagName, flagValue] : flags) {
     flagMap[QString::fromStdString(flagName)] = flagValue;
   }
   m_flags = flagMap;
@@ -747,14 +717,13 @@ void NMPlayModeController::setVariable(const QString &name,
 
 // === Persistence ===
 
-void NMPlayModeController::loadBreakpoints(const QString &projectPath) {
-  QSettings settings(projectPath + "/.novelmind/breakpoints.ini",
-                     QSettings::IniFormat);
+void NMPlayModeController::loadBreakpoints(const QString& projectPath) {
+  QSettings settings(projectPath + "/.novelmind/breakpoints.ini", QSettings::IniFormat);
   settings.beginGroup("Breakpoints");
 
   m_breakpoints.clear();
   const QStringList keys = settings.childKeys();
-  for (const QString &key : keys) {
+  for (const QString& key : keys) {
     if (settings.value(key).toBool()) {
       m_breakpoints.insert(key);
     }
@@ -762,23 +731,20 @@ void NMPlayModeController::loadBreakpoints(const QString &projectPath) {
 
   settings.endGroup();
   emit breakpointsChanged();
-  qDebug() << "[Breakpoint] Loaded" << m_breakpoints.size()
-           << "breakpoints from project";
+  qDebug() << "[Breakpoint] Loaded" << m_breakpoints.size() << "breakpoints from project";
 }
 
-void NMPlayModeController::saveBreakpoints(const QString &projectPath) {
-  QSettings settings(projectPath + "/.novelmind/breakpoints.ini",
-                     QSettings::IniFormat);
+void NMPlayModeController::saveBreakpoints(const QString& projectPath) {
+  QSettings settings(projectPath + "/.novelmind/breakpoints.ini", QSettings::IniFormat);
   settings.beginGroup("Breakpoints");
 
   settings.remove(""); // Clear all existing
-  for (const QString &nodeId : m_breakpoints) {
+  for (const QString& nodeId : m_breakpoints) {
     settings.setValue(nodeId, true);
   }
 
   settings.endGroup();
-  qDebug() << "[Breakpoint] Saved" << m_breakpoints.size()
-           << "breakpoints to project";
+  qDebug() << "[Breakpoint] Saved" << m_breakpoints.size() << "breakpoints to project";
 }
 
 // === Mock Runtime (Phase 5.0) ===
@@ -802,7 +768,7 @@ void NMPlayModeController::simulateStep() {
   // Update variables from runtime
   const auto vars = m_runtimeHost.getVariables();
   QVariantMap varMap;
-  for (const auto &[name, value] : vars) {
+  for (const auto& [name, value] : vars) {
     QVariant v;
     if (std::holds_alternative<i32>(value)) {
       v = std::get<i32>(value);
@@ -822,7 +788,7 @@ void NMPlayModeController::simulateStep() {
   const auto stack = m_runtimeHost.getScriptCallStack();
   QStringList stackList;
   QVariantList framesList;
-  for (const auto &frame : stack.frames) {
+  for (const auto& frame : stack.frames) {
     QString entry = QString("%1 (IP=%2)")
                         .arg(QString::fromStdString(frame.sceneName))
                         .arg(frame.instructionPointer);
@@ -846,10 +812,9 @@ void NMPlayModeController::simulateStep() {
   emit stackFramesChanged(m_stackFrames);
 
   // Dialogue/choice wait states
-  m_waitingForChoice =
-      m_lastSnapshot.choiceMenuVisible || !m_lastSnapshot.choiceOptions.empty();
+  m_waitingForChoice = m_lastSnapshot.choiceMenuVisible || !m_lastSnapshot.choiceOptions.empty();
   m_currentChoices.clear();
-  for (const auto &opt : m_lastSnapshot.choiceOptions) {
+  for (const auto& opt : m_lastSnapshot.choiceOptions) {
     m_currentChoices << QString::fromStdString(opt);
   }
 
@@ -861,14 +826,12 @@ void NMPlayModeController::simulateStep() {
   // Emit lightweight execution marker for debug overlay
   m_lastStepIndex++;
   if (m_totalSteps <= 0) {
-    m_totalSteps =
-        static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
+    m_totalSteps = static_cast<int>(std::max<size_t>(1, m_runtimeHost.getScenes().size()));
   }
   if (m_currentInstruction.isEmpty() && !m_currentNodeId.isEmpty()) {
     m_currentInstruction = QString("Scene: %1").arg(m_currentNodeId);
   }
-  emit executionStepChanged(m_lastStepIndex, totalSteps(),
-                            m_currentInstruction);
+  emit executionStepChanged(m_lastStepIndex, totalSteps(), m_currentInstruction);
 }
 
 void NMPlayModeController::checkBreakpoint() {
@@ -883,7 +846,7 @@ void NMPlayModeController::checkBreakpoint() {
 }
 
 void NMPlayModeController::captureCurrentState() {
-  auto *scriptRuntime = m_runtimeHost.getScriptRuntime();
+  auto* scriptRuntime = m_runtimeHost.getScriptRuntime();
   if (!scriptRuntime) {
     return;
   }
@@ -899,13 +862,11 @@ void NMPlayModeController::captureCurrentState() {
     m_stateHistory.pop_front();
   }
 
-  qDebug() << "[PlayMode] Captured state (history size:" << m_stateHistory.size()
-           << ")";
+  qDebug() << "[PlayMode] Captured state (history size:" << m_stateHistory.size() << ")";
 }
 
-void NMPlayModeController::restoreState(
-    const scripting::RuntimeSaveState &state) {
-  auto *scriptRuntime = m_runtimeHost.getScriptRuntime();
+void NMPlayModeController::restoreState(const scripting::RuntimeSaveState& state) {
+  auto* scriptRuntime = m_runtimeHost.getScriptRuntime();
   if (!scriptRuntime) {
     qWarning() << "[PlayMode] Cannot restore state: script runtime not available";
     return;
@@ -914,8 +875,7 @@ void NMPlayModeController::restoreState(
   // Restore the state to the script runtime
   auto result = scriptRuntime->loadState(state);
   if (result.isError()) {
-    qWarning() << "[PlayMode] Failed to restore state:"
-               << QString::fromStdString(result.error());
+    qWarning() << "[PlayMode] Failed to restore state:" << QString::fromStdString(result.error());
     return;
   }
 

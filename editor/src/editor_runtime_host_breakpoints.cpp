@@ -9,9 +9,9 @@ namespace NovelMind::editor {
 // Breakpoints
 // ============================================================================
 
-void EditorRuntimeHost::addBreakpoint(const Breakpoint &breakpoint) {
+void EditorRuntimeHost::addBreakpoint(const Breakpoint& breakpoint) {
   // Check if breakpoint already exists
-  for (auto &bp : m_breakpoints) {
+  for (auto& bp : m_breakpoints) {
     if (bp.scriptPath == breakpoint.scriptPath && bp.line == breakpoint.line) {
       bp = breakpoint;
       return;
@@ -20,19 +20,17 @@ void EditorRuntimeHost::addBreakpoint(const Breakpoint &breakpoint) {
   m_breakpoints.push_back(breakpoint);
 }
 
-void EditorRuntimeHost::removeBreakpoint(const std::string &scriptPath,
-                                         u32 line) {
+void EditorRuntimeHost::removeBreakpoint(const std::string& scriptPath, u32 line) {
   m_breakpoints.erase(std::remove_if(m_breakpoints.begin(), m_breakpoints.end(),
-                                     [&](const Breakpoint &bp) {
-                                       return bp.scriptPath == scriptPath &&
-                                              bp.line == line;
+                                     [&](const Breakpoint& bp) {
+                                       return bp.scriptPath == scriptPath && bp.line == line;
                                      }),
                       m_breakpoints.end());
 }
 
-void EditorRuntimeHost::setBreakpointEnabled(const std::string &scriptPath,
-                                             u32 line, bool enabled) {
-  for (auto &bp : m_breakpoints) {
+void EditorRuntimeHost::setBreakpointEnabled(const std::string& scriptPath, u32 line,
+                                             bool enabled) {
+  for (auto& bp : m_breakpoints) {
     if (bp.scriptPath == scriptPath && bp.line == line) {
       bp.enabled = enabled;
       return;
@@ -40,11 +38,13 @@ void EditorRuntimeHost::setBreakpointEnabled(const std::string &scriptPath,
   }
 }
 
-const std::vector<Breakpoint> &EditorRuntimeHost::getBreakpoints() const {
+const std::vector<Breakpoint>& EditorRuntimeHost::getBreakpoints() const {
   return m_breakpoints;
 }
 
-void EditorRuntimeHost::clearBreakpoints() { m_breakpoints.clear(); }
+void EditorRuntimeHost::clearBreakpoints() {
+  m_breakpoints.clear();
+}
 
 // ============================================================================
 // Callbacks
@@ -82,11 +82,11 @@ void EditorRuntimeHost::setOnChoicesChanged(OnChoicesChanged callback) {
 // Scene Graph Access
 // ============================================================================
 
-scene::SceneGraph *EditorRuntimeHost::getSceneGraph() {
+scene::SceneGraph* EditorRuntimeHost::getSceneGraph() {
   return m_sceneGraph.get();
 }
 
-scripting::ScriptRuntime *EditorRuntimeHost::getScriptRuntime() {
+scripting::ScriptRuntime* EditorRuntimeHost::getScriptRuntime() {
   return m_scriptRuntime.get();
 }
 

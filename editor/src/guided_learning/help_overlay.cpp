@@ -16,7 +16,7 @@
 
 namespace NovelMind::editor::guided_learning {
 
-NMHelpOverlay::NMHelpOverlay(QWidget *parent)
+NMHelpOverlay::NMHelpOverlay(QWidget* parent)
     : QWidget(parent), m_spotlightOpacity(1.0), m_calloutOpacity(1.0) {
   setObjectName("NMHelpOverlay");
 
@@ -36,8 +36,7 @@ NMHelpOverlay::NMHelpOverlay(QWidget *parent)
   // Position update timer for tracking anchor movement
   m_positionUpdateTimer = new QTimer(this);
   m_positionUpdateTimer->setInterval(100); // 10 FPS update
-  connect(m_positionUpdateTimer, &QTimer::timeout, this,
-          &NMHelpOverlay::updateHintPositions);
+  connect(m_positionUpdateTimer, &QTimer::timeout, this, &NMHelpOverlay::updateHintPositions);
 
   hide();
 }
@@ -47,16 +46,15 @@ NMHelpOverlay::~NMHelpOverlay() {
   m_autoHideTimers.clear();
 }
 
-void NMHelpOverlay::showTutorialStep(
-    const std::string &stepId, const std::string &title,
-    const std::string &content, const std::string &anchorId, HintType hintType,
-    CalloutPosition position, int currentStep, int totalSteps, bool showBack,
-    bool showSkip, bool showDontShowAgain) {
+void NMHelpOverlay::showTutorialStep(const std::string& stepId, const std::string& title,
+                                     const std::string& content, const std::string& anchorId,
+                                     HintType hintType, CalloutPosition position, int currentStep,
+                                     int totalSteps, bool showBack, bool showSkip,
+                                     bool showDontShowAgain) {
   // Get anchor rect
   auto anchorRect = NMAnchorRegistry::instance().getAnchorRect(anchorId);
   if (!anchorRect) {
-    qWarning() << "Anchor not found for step:"
-               << QString::fromStdString(stepId);
+    qWarning() << "Anchor not found for step:" << QString::fromStdString(stepId);
     return;
   }
 
@@ -84,14 +82,12 @@ void NMHelpOverlay::showTutorialStep(
     position = determineAutoPosition(hint.targetRect, contentSize);
     hint.position = position;
   }
-  hint.calloutRect =
-      calculateCalloutRect(hint.targetRect, contentSize, position);
+  hint.calloutRect = calculateCalloutRect(hint.targetRect, contentSize, position);
 
   // Remove any existing hint with the same ID
-  m_activeHints.erase(
-      std::remove_if(m_activeHints.begin(), m_activeHints.end(),
-                     [&](const ActiveHint &h) { return h.id == stepId; }),
-      m_activeHints.end());
+  m_activeHints.erase(std::remove_if(m_activeHints.begin(), m_activeHints.end(),
+                                     [&](const ActiveHint& h) { return h.id == stepId; }),
+                      m_activeHints.end());
 
   m_activeHints.push_back(hint);
 
@@ -111,16 +107,13 @@ void NMHelpOverlay::showTutorialStep(
   m_positionUpdateTimer->start();
 }
 
-void NMHelpOverlay::showHint(const std::string &hintId,
-                             const std::string &content,
-                             const std::string &anchorId, HintType hintType,
-                             CalloutPosition position, bool autoHide,
-                             int autoHideMs) {
+void NMHelpOverlay::showHint(const std::string& hintId, const std::string& content,
+                             const std::string& anchorId, HintType hintType,
+                             CalloutPosition position, bool autoHide, int autoHideMs) {
   // Get anchor rect
   auto anchorRect = NMAnchorRegistry::instance().getAnchorRect(anchorId);
   if (!anchorRect) {
-    qWarning() << "Anchor not found for hint:"
-               << QString::fromStdString(hintId);
+    qWarning() << "Anchor not found for hint:" << QString::fromStdString(hintId);
     return;
   }
 
@@ -146,14 +139,12 @@ void NMHelpOverlay::showHint(const std::string &hintId,
     position = determineAutoPosition(hint.targetRect, contentSize);
     hint.position = position;
   }
-  hint.calloutRect =
-      calculateCalloutRect(hint.targetRect, contentSize, position);
+  hint.calloutRect = calculateCalloutRect(hint.targetRect, contentSize, position);
 
   // Remove any existing hint with the same ID
-  m_activeHints.erase(
-      std::remove_if(m_activeHints.begin(), m_activeHints.end(),
-                     [&](const ActiveHint &h) { return h.id == hintId; }),
-      m_activeHints.end());
+  m_activeHints.erase(std::remove_if(m_activeHints.begin(), m_activeHints.end(),
+                                     [&](const ActiveHint& h) { return h.id == hintId; }),
+                      m_activeHints.end());
 
   m_activeHints.push_back(hint);
 
@@ -182,13 +173,12 @@ void NMHelpOverlay::showHint(const std::string &hintId,
   m_positionUpdateTimer->start();
 }
 
-void NMHelpOverlay::hideHint(const std::string &hintId) {
+void NMHelpOverlay::hideHint(const std::string& hintId) {
   cancelAutoHideTimer(hintId);
 
-  m_activeHints.erase(
-      std::remove_if(m_activeHints.begin(), m_activeHints.end(),
-                     [&](const ActiveHint &h) { return h.id == hintId; }),
-      m_activeHints.end());
+  m_activeHints.erase(std::remove_if(m_activeHints.begin(), m_activeHints.end(),
+                                     [&](const ActiveHint& h) { return h.id == hintId; }),
+                      m_activeHints.end());
 
   if (m_activeHints.empty()) {
     hide();
@@ -200,7 +190,7 @@ void NMHelpOverlay::hideHint(const std::string &hintId) {
 }
 
 void NMHelpOverlay::hideAll() {
-  for (const auto &hint : m_activeHints) {
+  for (const auto& hint : m_activeHints) {
     cancelAutoHideTimer(hint.id);
   }
   m_activeHints.clear();
@@ -209,14 +199,16 @@ void NMHelpOverlay::hideAll() {
   m_positionUpdateTimer->stop();
 }
 
-bool NMHelpOverlay::hasVisibleHints() const { return !m_activeHints.empty(); }
-
-bool NMHelpOverlay::isHintVisible(const std::string &hintId) const {
-  return std::any_of(m_activeHints.begin(), m_activeHints.end(),
-                     [&](const ActiveHint &h) { return h.id == hintId; });
+bool NMHelpOverlay::hasVisibleHints() const {
+  return !m_activeHints.empty();
 }
 
-void NMHelpOverlay::setStyle(const OverlayStyle &style) {
+bool NMHelpOverlay::isHintVisible(const std::string& hintId) const {
+  return std::any_of(m_activeHints.begin(), m_activeHints.end(),
+                     [&](const ActiveHint& h) { return h.id == hintId; });
+}
+
+void NMHelpOverlay::setStyle(const OverlayStyle& style) {
   m_style = style;
   update();
 }
@@ -231,7 +223,7 @@ void NMHelpOverlay::setCalloutOpacity(qreal opacity) {
   update();
 }
 
-void NMHelpOverlay::paintEvent(QPaintEvent *event) {
+void NMHelpOverlay::paintEvent(QPaintEvent* event) {
   Q_UNUSED(event);
 
   if (m_activeHints.empty())
@@ -243,14 +235,13 @@ void NMHelpOverlay::paintEvent(QPaintEvent *event) {
   // Paint spotlight for the first hint (typically tutorial step)
   if (!m_activeHints.empty() && m_activeHints[0].type == HintType::Spotlight) {
     paintSpotlight(painter, m_activeHints[0].targetRect);
-  } else if (!m_activeHints.empty() &&
-             m_activeHints[0].type == HintType::Callout) {
+  } else if (!m_activeHints.empty() && m_activeHints[0].type == HintType::Callout) {
     // For callouts, also show a subtle spotlight
     paintSpotlight(painter, m_activeHints[0].targetRect);
   }
 
   // Paint all callouts/tooltips
-  for (const auto &hint : m_activeHints) {
+  for (const auto& hint : m_activeHints) {
     if (hint.type == HintType::Tooltip) {
       paintTooltip(painter, hint);
     } else {
@@ -259,15 +250,14 @@ void NMHelpOverlay::paintEvent(QPaintEvent *event) {
   }
 }
 
-void NMHelpOverlay::paintSpotlight(QPainter &painter, const QRect &targetRect) {
+void NMHelpOverlay::paintSpotlight(QPainter& painter, const QRect& targetRect) {
   // Create a path that covers the entire widget except the target
   QPainterPath path;
   path.addRect(rect());
 
   // Create rounded rect for the target area
-  QRect spotlightRect =
-      targetRect.adjusted(-m_style.spotlightPadding, -m_style.spotlightPadding,
-                          m_style.spotlightPadding, m_style.spotlightPadding);
+  QRect spotlightRect = targetRect.adjusted(-m_style.spotlightPadding, -m_style.spotlightPadding,
+                                            m_style.spotlightPadding, m_style.spotlightPadding);
 
   QPainterPath targetPath;
   targetPath.addRoundedRect(spotlightRect, m_style.spotlightCornerRadius,
@@ -288,8 +278,8 @@ void NMHelpOverlay::paintSpotlight(QPainter &painter, const QRect &targetRect) {
                           m_style.spotlightCornerRadius);
 }
 
-void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
-  const QRect &calloutRect = hint.calloutRect;
+void NMHelpOverlay::paintCallout(QPainter& painter, const ActiveHint& hint) {
+  const QRect& calloutRect = hint.calloutRect;
 
   // Save painter state
   painter.save();
@@ -297,8 +287,7 @@ void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
 
   // Draw callout background
   QPainterPath bgPath;
-  bgPath.addRoundedRect(calloutRect, m_style.calloutCornerRadius,
-                        m_style.calloutCornerRadius);
+  bgPath.addRoundedRect(calloutRect, m_style.calloutCornerRadius, m_style.calloutCornerRadius);
 
   painter.fillPath(bgPath, m_style.calloutBackground);
   painter.setPen(QPen(m_style.calloutBorder, 1));
@@ -316,8 +305,7 @@ void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
   case CalloutPosition::BottomLeft:
   case CalloutPosition::BottomRight:
     arrowTip = QPoint(targetRect.center().x(), targetRect.bottom());
-    arrowPolygon << QPoint(arrowTip.x() - arrowSize, calloutRect.top())
-                 << arrowTip
+    arrowPolygon << QPoint(arrowTip.x() - arrowSize, calloutRect.top()) << arrowTip
                  << QPoint(arrowTip.x() + arrowSize, calloutRect.top());
     break;
 
@@ -325,22 +313,19 @@ void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
   case CalloutPosition::TopLeft:
   case CalloutPosition::TopRight:
     arrowTip = QPoint(targetRect.center().x(), targetRect.top());
-    arrowPolygon << QPoint(arrowTip.x() - arrowSize, calloutRect.bottom())
-                 << arrowTip
+    arrowPolygon << QPoint(arrowTip.x() - arrowSize, calloutRect.bottom()) << arrowTip
                  << QPoint(arrowTip.x() + arrowSize, calloutRect.bottom());
     break;
 
   case CalloutPosition::Left:
     arrowTip = QPoint(targetRect.left(), targetRect.center().y());
-    arrowPolygon << QPoint(calloutRect.right(), arrowTip.y() - arrowSize)
-                 << arrowTip
+    arrowPolygon << QPoint(calloutRect.right(), arrowTip.y() - arrowSize) << arrowTip
                  << QPoint(calloutRect.right(), arrowTip.y() + arrowSize);
     break;
 
   case CalloutPosition::Right:
     arrowTip = QPoint(targetRect.right(), targetRect.center().y());
-    arrowPolygon << QPoint(calloutRect.left(), arrowTip.y() - arrowSize)
-                 << arrowTip
+    arrowPolygon << QPoint(calloutRect.left(), arrowTip.y() - arrowSize) << arrowTip
                  << QPoint(calloutRect.left(), arrowTip.y() + arrowSize);
     break;
 
@@ -377,8 +362,7 @@ void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
   painter.setPen(m_style.calloutText);
 
   QRect contentRect(calloutRect.left() + padding, y, contentWidth,
-                    calloutRect.height() - (y - calloutRect.top()) - padding -
-                        40);
+                    calloutRect.height() - (y - calloutRect.top()) - padding - 40);
   QRect boundingRect;
   painter.drawText(contentRect, Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap,
                    QString::fromStdString(hint.content), &boundingRect);
@@ -389,23 +373,22 @@ void NMHelpOverlay::paintCallout(QPainter &painter, const ActiveHint &hint) {
     painter.setFont(m_style.contentFont);
     painter.setPen(QColor(150, 150, 150));
 
-    QString stepText =
-        QString("Step %1 of %2").arg(hint.currentStep + 1).arg(hint.totalSteps);
+    QString stepText = QString("Step %1 of %2").arg(hint.currentStep + 1).arg(hint.totalSteps);
     QRect stepRect(calloutRect.left() + padding, y, contentWidth, 20);
     painter.drawText(stepRect, Qt::AlignLeft | Qt::AlignVCenter, stepText);
     y += 24;
   }
 
   // Buttons
-  QRect buttonArea(calloutRect.left() + padding,
-                   calloutRect.bottom() - padding - 28, contentWidth, 28);
+  QRect buttonArea(calloutRect.left() + padding, calloutRect.bottom() - padding - 28, contentWidth,
+                   28);
   paintButtons(painter, hint, buttonArea);
 
   painter.restore();
 }
 
-void NMHelpOverlay::paintTooltip(QPainter &painter, const ActiveHint &hint) {
-  const QRect &calloutRect = hint.calloutRect;
+void NMHelpOverlay::paintTooltip(QPainter& painter, const ActiveHint& hint) {
+  const QRect& calloutRect = hint.calloutRect;
 
   painter.save();
   painter.setOpacity(m_calloutOpacity);
@@ -420,20 +403,17 @@ void NMHelpOverlay::paintTooltip(QPainter &painter, const ActiveHint &hint) {
 
   // Draw content
   int padding = m_style.tooltipPadding;
-  QRect contentRect =
-      calloutRect.adjusted(padding, padding, -padding, -padding);
+  QRect contentRect = calloutRect.adjusted(padding, padding, -padding, -padding);
 
   painter.setFont(m_style.contentFont);
   painter.setPen(m_style.tooltipText);
-  painter.drawText(contentRect,
-                   Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap,
+  painter.drawText(contentRect, Qt::AlignLeft | Qt::AlignVCenter | Qt::TextWordWrap,
                    QString::fromStdString(hint.content));
 
   painter.restore();
 }
 
-void NMHelpOverlay::paintButtons(QPainter &painter, const ActiveHint &hint,
-                                 QRect &buttonArea) {
+void NMHelpOverlay::paintButtons(QPainter& painter, const ActiveHint& hint, QRect& buttonArea) {
   int buttonWidth = 70;
   int buttonHeight = 24;
   int buttonSpacing = 8;
@@ -448,14 +428,12 @@ void NMHelpOverlay::paintButtons(QPainter &painter, const ActiveHint &hint,
     QRect nextRect(x, y, buttonWidth, buttonHeight);
     m_buttonRects.nextButton = nextRect;
 
-    QColor bgColor = (m_hoveredButton == "next")
-                         ? m_style.buttonPrimaryBackgroundHover
-                         : m_style.buttonPrimaryBackground;
+    QColor bgColor = (m_hoveredButton == "next") ? m_style.buttonPrimaryBackgroundHover
+                                                 : m_style.buttonPrimaryBackground;
     painter.fillRect(nextRect, bgColor);
     painter.setFont(m_style.buttonFont);
     painter.setPen(m_style.buttonPrimaryText);
-    painter.drawText(nextRect, Qt::AlignCenter,
-                     QString::fromStdString(hint.nextButtonText));
+    painter.drawText(nextRect, Qt::AlignCenter, QString::fromStdString(hint.nextButtonText));
 
     x -= buttonWidth + buttonSpacing;
   }
@@ -465,8 +443,8 @@ void NMHelpOverlay::paintButtons(QPainter &painter, const ActiveHint &hint,
     QRect skipRect(x, y, buttonWidth, buttonHeight);
     m_buttonRects.skipButton = skipRect;
 
-    QColor bgColor = (m_hoveredButton == "skip") ? m_style.buttonBackgroundHover
-                                                 : m_style.buttonBackground;
+    QColor bgColor =
+        (m_hoveredButton == "skip") ? m_style.buttonBackgroundHover : m_style.buttonBackground;
     painter.fillRect(skipRect, bgColor);
     painter.setFont(m_style.buttonFont);
     painter.setPen(m_style.buttonText);
@@ -480,41 +458,36 @@ void NMHelpOverlay::paintButtons(QPainter &painter, const ActiveHint &hint,
     QRect backRect(x, y, buttonWidth, buttonHeight);
     m_buttonRects.backButton = backRect;
 
-    QColor bgColor = (m_hoveredButton == "back") ? m_style.buttonBackgroundHover
-                                                 : m_style.buttonBackground;
+    QColor bgColor =
+        (m_hoveredButton == "back") ? m_style.buttonBackgroundHover : m_style.buttonBackground;
     painter.fillRect(backRect, bgColor);
     painter.setFont(m_style.buttonFont);
     painter.setPen(m_style.buttonText);
-    painter.drawText(backRect, Qt::AlignCenter,
-                     QString::fromStdString(hint.backButtonText));
+    painter.drawText(backRect, Qt::AlignCenter, QString::fromStdString(hint.backButtonText));
   }
 
   // Close button (X in top right)
   if (hint.showCloseButton) {
-    QRect closeRect(buttonArea.right() - 20,
-                    buttonArea.top() - buttonArea.height() - 30, 20, 20);
+    QRect closeRect(buttonArea.right() - 20, buttonArea.top() - buttonArea.height() - 30, 20, 20);
     m_buttonRects.closeButton = closeRect;
 
     painter.setFont(m_style.buttonFont);
-    painter.setPen((m_hoveredButton == "close")
-                       ? m_style.buttonPrimaryBackground
-                       : m_style.buttonText);
+    painter.setPen((m_hoveredButton == "close") ? m_style.buttonPrimaryBackground
+                                                : m_style.buttonText);
     painter.drawText(closeRect, Qt::AlignCenter,
                      QString::fromUtf8("\u00D7")); // ×
   }
 }
 
-void NMHelpOverlay::paintStepIndicator(QPainter &painter,
-                                       const ActiveHint &hint,
-                                       const QRect &area) {
+void NMHelpOverlay::paintStepIndicator(QPainter& painter, const ActiveHint& hint,
+                                       const QRect& area) {
   Q_UNUSED(painter);
   Q_UNUSED(hint);
   Q_UNUSED(area);
   // Step indicator is now painted inline in paintCallout
 }
 
-QRect NMHelpOverlay::calculateCalloutRect(const QRect &targetRect,
-                                          const QSize &contentSize,
+QRect NMHelpOverlay::calculateCalloutRect(const QRect& targetRect, const QSize& contentSize,
                                           CalloutPosition position) {
   int margin = 16;
   int arrowOffset = m_style.calloutArrowSize + 4;
@@ -525,54 +498,47 @@ QRect NMHelpOverlay::calculateCalloutRect(const QRect &targetRect,
   switch (position) {
   case CalloutPosition::Top:
     calloutRect.moveBottomLeft(
-        QPoint(targetRect.center().x() - contentSize.width() / 2,
-               targetRect.top() - arrowOffset));
+        QPoint(targetRect.center().x() - contentSize.width() / 2, targetRect.top() - arrowOffset));
     break;
 
   case CalloutPosition::Bottom:
-    calloutRect.moveTopLeft(
-        QPoint(targetRect.center().x() - contentSize.width() / 2,
-               targetRect.bottom() + arrowOffset));
+    calloutRect.moveTopLeft(QPoint(targetRect.center().x() - contentSize.width() / 2,
+                                   targetRect.bottom() + arrowOffset));
     break;
 
   case CalloutPosition::Left:
-    calloutRect.moveTopRight(
-        QPoint(targetRect.left() - arrowOffset,
-               targetRect.center().y() - contentSize.height() / 2));
+    calloutRect.moveTopRight(QPoint(targetRect.left() - arrowOffset,
+                                    targetRect.center().y() - contentSize.height() / 2));
     break;
 
   case CalloutPosition::Right:
-    calloutRect.moveTopLeft(
-        QPoint(targetRect.right() + arrowOffset,
-               targetRect.center().y() - contentSize.height() / 2));
+    calloutRect.moveTopLeft(QPoint(targetRect.right() + arrowOffset,
+                                   targetRect.center().y() - contentSize.height() / 2));
     break;
 
   case CalloutPosition::TopLeft:
     calloutRect.moveBottomRight(
-        QPoint(targetRect.left() + contentSize.width() / 2,
-               targetRect.top() - arrowOffset));
+        QPoint(targetRect.left() + contentSize.width() / 2, targetRect.top() - arrowOffset));
     break;
 
   case CalloutPosition::TopRight:
     calloutRect.moveBottomLeft(
-        QPoint(targetRect.right() - contentSize.width() / 2,
-               targetRect.top() - arrowOffset));
+        QPoint(targetRect.right() - contentSize.width() / 2, targetRect.top() - arrowOffset));
     break;
 
   case CalloutPosition::BottomLeft:
-    calloutRect.moveTopRight(QPoint(targetRect.left() + contentSize.width() / 2,
-                                    targetRect.bottom() + arrowOffset));
+    calloutRect.moveTopRight(
+        QPoint(targetRect.left() + contentSize.width() / 2, targetRect.bottom() + arrowOffset));
     break;
 
   case CalloutPosition::BottomRight:
-    calloutRect.moveTopLeft(QPoint(targetRect.right() - contentSize.width() / 2,
-                                   targetRect.bottom() + arrowOffset));
+    calloutRect.moveTopLeft(
+        QPoint(targetRect.right() - contentSize.width() / 2, targetRect.bottom() + arrowOffset));
     break;
 
   default:
-    calloutRect.moveTopLeft(
-        QPoint(targetRect.right() + arrowOffset,
-               targetRect.center().y() - contentSize.height() / 2));
+    calloutRect.moveTopLeft(QPoint(targetRect.right() + arrowOffset,
+                                   targetRect.center().y() - contentSize.height() / 2));
     break;
   }
 
@@ -594,8 +560,8 @@ QRect NMHelpOverlay::calculateCalloutRect(const QRect &targetRect,
   return calloutRect;
 }
 
-CalloutPosition NMHelpOverlay::determineAutoPosition(const QRect &targetRect,
-                                                     const QSize &contentSize) {
+CalloutPosition NMHelpOverlay::determineAutoPosition(const QRect& targetRect,
+                                                     const QSize& contentSize) {
   QRect screenRect = this->rect();
 
   int spaceTop = targetRect.top();
@@ -633,12 +599,12 @@ CalloutPosition NMHelpOverlay::determineAutoPosition(const QRect &targetRect,
 
   // Sort by available space (descending)
   std::sort(options.begin(), options.end(),
-            [](const Option &a, const Option &b) { return a.space > b.space; });
+            [](const Option& a, const Option& b) { return a.space > b.space; });
 
   return options[0].pos;
 }
 
-QSize NMHelpOverlay::calculateContentSize(const ActiveHint &hint) {
+QSize NMHelpOverlay::calculateContentSize(const ActiveHint& hint) {
   int width = m_style.calloutMaxWidth;
   int padding = m_style.calloutPadding;
 
@@ -653,9 +619,9 @@ QSize NMHelpOverlay::calculateContentSize(const ActiveHint &hint) {
   }
 
   // Content
-  QRect contentBounds = contentMetrics.boundingRect(
-      QRect(0, 0, width - 2 * padding, 1000), Qt::TextWordWrap,
-      QString::fromStdString(hint.content));
+  QRect contentBounds =
+      contentMetrics.boundingRect(QRect(0, 0, width - 2 * padding, 1000), Qt::TextWordWrap,
+                                  QString::fromStdString(hint.content));
   height += contentBounds.height() + 16;
 
   // Step indicator
@@ -671,7 +637,7 @@ QSize NMHelpOverlay::calculateContentSize(const ActiveHint &hint) {
   return QSize(width, height);
 }
 
-void NMHelpOverlay::mousePressEvent(QMouseEvent *event) {
+void NMHelpOverlay::mousePressEvent(QMouseEvent* event) {
   // Only check button interactions if we have active hints
   if (!m_activeHints.empty()) {
     if (m_buttonRects.nextButton.contains(event->pos())) {
@@ -702,7 +668,7 @@ void NMHelpOverlay::mousePressEvent(QMouseEvent *event) {
   QWidget::mousePressEvent(event);
 }
 
-void NMHelpOverlay::mouseMoveEvent(QMouseEvent *event) {
+void NMHelpOverlay::mouseMoveEvent(QMouseEvent* event) {
   QString prevHovered;
   if (m_hoveredButton) {
     prevHovered = QString::fromStdString(*m_hoveredButton);
@@ -732,16 +698,16 @@ void NMHelpOverlay::mouseMoveEvent(QMouseEvent *event) {
   QWidget::mouseMoveEvent(event);
 }
 
-void NMHelpOverlay::mouseReleaseEvent(QMouseEvent *event) {
+void NMHelpOverlay::mouseReleaseEvent(QMouseEvent* event) {
   QWidget::mouseReleaseEvent(event);
 }
 
-void NMHelpOverlay::resizeEvent(QResizeEvent *event) {
+void NMHelpOverlay::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
   updateHintPositions();
 }
 
-bool NMHelpOverlay::event(QEvent *event) {
+bool NMHelpOverlay::event(QEvent* event) {
   if (event->type() == QEvent::ParentChange || event->type() == QEvent::Move) {
     updateHintPositions();
   }
@@ -769,15 +735,13 @@ void NMHelpOverlay::animateIn() {
   m_spotlightOpacity = 0.0;
   m_calloutOpacity = 0.0;
 
-  m_spotlightAnimation =
-      std::make_unique<QPropertyAnimation>(this, "spotlightOpacity");
+  m_spotlightAnimation = std::make_unique<QPropertyAnimation>(this, "spotlightOpacity");
   m_spotlightAnimation->setDuration(m_style.animationDurationMs);
   m_spotlightAnimation->setStartValue(0.0);
   m_spotlightAnimation->setEndValue(1.0);
   m_spotlightAnimation->start();
 
-  m_calloutAnimation =
-      std::make_unique<QPropertyAnimation>(this, "calloutOpacity");
+  m_calloutAnimation = std::make_unique<QPropertyAnimation>(this, "calloutOpacity");
   m_calloutAnimation->setDuration(m_style.animationDurationMs);
   m_calloutAnimation->setStartValue(0.0);
   m_calloutAnimation->setEndValue(1.0);
@@ -791,28 +755,25 @@ void NMHelpOverlay::animateOut(std::function<void()> onComplete) {
     return;
   }
 
-  m_spotlightAnimation =
-      std::make_unique<QPropertyAnimation>(this, "spotlightOpacity");
+  m_spotlightAnimation = std::make_unique<QPropertyAnimation>(this, "spotlightOpacity");
   m_spotlightAnimation->setDuration(m_style.animationDurationMs);
   m_spotlightAnimation->setStartValue(1.0);
   m_spotlightAnimation->setEndValue(0.0);
   m_spotlightAnimation->start();
 
-  m_calloutAnimation =
-      std::make_unique<QPropertyAnimation>(this, "calloutOpacity");
+  m_calloutAnimation = std::make_unique<QPropertyAnimation>(this, "calloutOpacity");
   m_calloutAnimation->setDuration(m_style.animationDurationMs);
   m_calloutAnimation->setStartValue(1.0);
   m_calloutAnimation->setEndValue(0.0);
 
   if (onComplete) {
-    connect(m_calloutAnimation.get(), &QPropertyAnimation::finished, this,
-            onComplete);
+    connect(m_calloutAnimation.get(), &QPropertyAnimation::finished, this, onComplete);
   }
 
   m_calloutAnimation->start();
 }
 
-void NMHelpOverlay::startAutoHideTimer(const std::string &hintId, int ms) {
+void NMHelpOverlay::startAutoHideTimer(const std::string& hintId, int ms) {
   cancelAutoHideTimer(hintId);
 
   auto timer = std::make_unique<QTimer>(this);
@@ -826,7 +787,7 @@ void NMHelpOverlay::startAutoHideTimer(const std::string &hintId, int ms) {
   m_autoHideTimers[hintId] = std::move(timer);
 }
 
-void NMHelpOverlay::cancelAutoHideTimer(const std::string &hintId) {
+void NMHelpOverlay::cancelAutoHideTimer(const std::string& hintId) {
   auto it = m_autoHideTimers.find(hintId);
   if (it != m_autoHideTimers.end()) {
     it->second->stop();

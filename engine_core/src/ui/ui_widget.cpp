@@ -13,11 +13,15 @@ namespace NovelMind::ui {
 // Widget Implementation
 // ============================================================================
 
-Widget::Widget(const std::string &id) : m_id(id) {}
+Widget::Widget(const std::string& id) : m_id(id) {}
 
-void Widget::setParent(Widget *parent) { m_parent = parent; }
+void Widget::setParent(Widget* parent) {
+  m_parent = parent;
+}
 
-void Widget::setBounds(const Rect &bounds) { m_bounds = bounds; }
+void Widget::setBounds(const Rect& bounds) {
+  m_bounds = bounds;
+}
 
 void Widget::setPosition(f32 x, f32 y) {
   m_bounds.x = x;
@@ -29,7 +33,7 @@ void Widget::setSize(f32 width, f32 height) {
   m_bounds.height = height;
 }
 
-void Widget::setConstraints(const SizeConstraints &constraints) {
+void Widget::setConstraints(const SizeConstraints& constraints) {
   m_constraints = constraints;
 }
 
@@ -38,30 +42,40 @@ void Widget::setAlignment(Alignment horizontal, Alignment vertical) {
   m_verticalAlign = vertical;
 }
 
-void Widget::setVisible(bool visible) { m_visible = visible; }
+void Widget::setVisible(bool visible) {
+  m_visible = visible;
+}
 
-void Widget::setEnabled(bool enabled) { m_enabled = enabled; }
+void Widget::setEnabled(bool enabled) {
+  m_enabled = enabled;
+}
 
-void Widget::setStyle(const Style &style) { m_style = style; }
+void Widget::setStyle(const Style& style) {
+  m_style = style;
+}
 
 void Widget::requestFocus() {
   // Request through parent or UIManager
   m_focused = true;
 }
 
-void Widget::releaseFocus() { m_focused = false; }
+void Widget::releaseFocus() {
+  m_focused = false;
+}
 
 void Widget::on(UIEventType type, EventHandler handler) {
   m_eventHandlers[type] = std::move(handler);
 }
 
-void Widget::off(UIEventType type) { m_eventHandlers.erase(type); }
+void Widget::off(UIEventType type) {
+  m_eventHandlers.erase(type);
+}
 
 void Widget::update(f64 /*deltaTime*/) {
   // Base implementation does nothing
 }
 
-void Widget::render(renderer::IRenderer &renderer) {
+void Widget::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -73,7 +87,7 @@ void Widget::layout() {
   // Base implementation does nothing
 }
 
-bool Widget::handleEvent(UIEvent &event) {
+bool Widget::handleEvent(UIEvent& event) {
   if (!m_visible || !m_enabled) {
     return false;
   }
@@ -97,9 +111,8 @@ bool Widget::handleEvent(UIEvent &event) {
 }
 
 Rect Widget::measure(f32 availableWidth, f32 availableHeight) {
-  f32 width = m_constraints.preferredWidth > 0
-                  ? m_constraints.preferredWidth
-                  : std::min(availableWidth, m_constraints.maxWidth);
+  f32 width = m_constraints.preferredWidth > 0 ? m_constraints.preferredWidth
+                                               : std::min(availableWidth, m_constraints.maxWidth);
   f32 height = m_constraints.preferredHeight > 0
                    ? m_constraints.preferredHeight
                    : std::min(availableHeight, m_constraints.maxHeight);
@@ -110,14 +123,14 @@ Rect Widget::measure(f32 availableWidth, f32 availableHeight) {
   return {0, 0, width, height};
 }
 
-void Widget::fireEvent(UIEvent &event) {
+void Widget::fireEvent(UIEvent& event) {
   auto it = m_eventHandlers.find(event.type);
   if (it != m_eventHandlers.end() && it->second) {
     it->second(event);
   }
 }
 
-void Widget::renderBackground(renderer::IRenderer &renderer) {
+void Widget::renderBackground(renderer::IRenderer& renderer) {
   renderer::Color bgColor = m_style.backgroundColor;
 
   if (!m_enabled) {
@@ -131,8 +144,7 @@ void Widget::renderBackground(renderer::IRenderer &renderer) {
   bgColor.a = static_cast<u8>(bgColor.a * m_style.opacity);
 
   if (bgColor.a > 0) {
-    renderer::Rect rect{m_bounds.x, m_bounds.y, m_bounds.width,
-                        m_bounds.height};
+    renderer::Rect rect{m_bounds.x, m_bounds.y, m_bounds.width, m_bounds.height};
     renderer.fillRect(rect, bgColor);
   }
 

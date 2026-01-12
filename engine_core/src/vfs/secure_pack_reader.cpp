@@ -16,7 +16,7 @@ void SecurePackFileSystem::setPublicKeyPath(const std::string &path) {
   m_publicKeyPath = path;
 }
 
-void SecurePackFileSystem::setDecryptionKey(const std::vector<u8> &key) {
+void SecurePackFileSystem::setDecryptionKey(const Core::SecureVector<u8> &key) {
   m_decryptionKey = key;
 }
 
@@ -67,6 +67,59 @@ Result<void> SecurePackFileSystem::mount(const std::string &packPath) {
   }
 
   return Result<void>::ok();
+}
+
+std::future<Result<void>> SecurePackFileSystem::mountAsync(
+    const std::string &packPath, ProgressCallback progressCallback) {
+  // Launch async task to mount secure pack in background thread
+  return std::async(std::launch::async,
+                    [this, packPath, progressCallback]() -> Result<void> {
+    // Report progress: Starting
+    if (progressCallback) {
+      progressCallback(0, 4, "Initializing secure pack reader");
+    }
+
+    unmountAll();
+    m_packPath = packPath;
+
+    // Report progress: Configuring reader
+    if (progressCallback) {
+      progressCallback(1, 4, "Configuring encryption/security");
+    }
+
+    auto configResult = configureReader();
+    if (configResult.isError()) {
+      return configResult;
+    }
+
+    // Report progress: Opening pack
+    if (progressCallback) {
+      progressCallback(2, 4, "Opening secure pack");
+    }
+
+    auto openResult = m_reader->openPack(packPath);
+    if (openResult.isError()) {
+      return openResult;
+    }
+
+    // Report progress: Validating encryption
+    if (progressCallback) {
+      progressCallback(3, 4, "Validating encryption keys");
+    }
+
+    if ((m_reader->packFlags() & PACK_FLAG_ENCRYPTED) != 0 &&
+        m_decryptionKey.empty()) {
+      m_reader->closePack();
+      return Result<void>::error("Encrypted pack requires decryption key");
+    }
+
+    // Report progress: Complete
+    if (progressCallback) {
+      progressCallback(4, 4, "Secure pack mounted successfully");
+    }
+
+    return Result<void>::ok();
+  });
 }
 
 void SecurePackFileSystem::unmount(const std::string &packPath) {

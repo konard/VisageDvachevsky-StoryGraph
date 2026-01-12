@@ -6,17 +6,17 @@
 
 namespace NovelMind::editor::qt {
 
-TimelineRenderCache::TimelineRenderCache(QObject *parent)
+TimelineRenderCache::TimelineRenderCache(QObject* parent)
     : TimelineRenderCache(TimelineRenderCacheConfig{}, parent) {}
 
-TimelineRenderCache::TimelineRenderCache(
-    const TimelineRenderCacheConfig &config, QObject *parent)
+TimelineRenderCache::TimelineRenderCache(const TimelineRenderCacheConfig& config, QObject* parent)
     : QObject(parent), m_config(config) {}
 
-TimelineRenderCache::~TimelineRenderCache() { clear(); }
+TimelineRenderCache::~TimelineRenderCache() {
+  clear();
+}
 
-QPixmap TimelineRenderCache::get(const RenderCacheKey &key,
-                                 uint64_t currentDataVersion) {
+QPixmap TimelineRenderCache::get(const RenderCacheKey& key, uint64_t currentDataVersion) {
   if (!m_config.enableCache) {
     m_missCount.fetch_add(1);
     return QPixmap();
@@ -34,7 +34,7 @@ QPixmap TimelineRenderCache::get(const RenderCacheKey &key,
     return QPixmap();
   }
 
-  auto &[lruIt, entry] = it->second;
+  auto& [lruIt, entry] = it->second;
 
   // Check if entry is still valid
   if (entry.dataVersion != currentDataVersion) {
@@ -58,7 +58,7 @@ QPixmap TimelineRenderCache::get(const RenderCacheKey &key,
   return entry.pixmap;
 }
 
-void TimelineRenderCache::put(const RenderCacheKey &key, const QPixmap &pixmap,
+void TimelineRenderCache::put(const RenderCacheKey& key, const QPixmap& pixmap,
                               uint64_t dataVersion) {
   if (!m_config.enableCache || pixmap.isNull()) {
     return;
@@ -102,8 +102,7 @@ void TimelineRenderCache::put(const RenderCacheKey &key, const QPixmap &pixmap,
   updateMemoryUsage(entrySize);
 }
 
-bool TimelineRenderCache::contains(const RenderCacheKey &key,
-                                   uint64_t currentDataVersion) const {
+bool TimelineRenderCache::contains(const RenderCacheKey& key, uint64_t currentDataVersion) const {
   if (!m_config.enableCache) {
     return false;
   }
@@ -143,7 +142,7 @@ void TimelineRenderCache::invalidateFrameRange(int startFrame, int endFrame) {
   // Find and remove all entries that overlap with the frame range
   auto it = m_cache.begin();
   while (it != m_cache.end()) {
-    const auto &key = it->first;
+    const auto& key = it->first;
     // Check if ranges overlap
     bool overlaps = !(key.endFrame < startFrame || key.startFrame > endFrame);
     if (overlaps) {
@@ -192,7 +191,7 @@ TimelineRenderCache::CacheStats TimelineRenderCache::getStats() const {
   return stats;
 }
 
-void TimelineRenderCache::setConfig(const TimelineRenderCacheConfig &config) {
+void TimelineRenderCache::setConfig(const TimelineRenderCacheConfig& config) {
   QMutexLocker locker(&m_mutex);
 
   m_config = config;
@@ -214,8 +213,7 @@ void TimelineRenderCache::setEnabled(bool enabled) {
 
 void TimelineRenderCache::evictIfNeeded(qint64 requiredSpace) {
   // Evict entries until we have enough space
-  while (m_currentMemoryBytes + requiredSpace > m_config.maxMemoryBytes &&
-         !m_lruList.empty()) {
+  while (m_currentMemoryBytes + requiredSpace > m_config.maxMemoryBytes && !m_lruList.empty()) {
     evictLRU();
   }
 }
@@ -226,7 +224,7 @@ void TimelineRenderCache::evictLRU() {
   }
 
   // Get least recently used key (back of list)
-  const RenderCacheKey &lruKey = m_lruList.back();
+  const RenderCacheKey& lruKey = m_lruList.back();
 
   auto it = m_cache.find(lruKey);
   if (it != m_cache.end()) {

@@ -31,10 +31,10 @@ public:
   Application();
   ~Application();
 
-  Application(const Application &) = delete;
-  Application &operator=(const Application &) = delete;
+  Application(const Application&) = delete;
+  Application& operator=(const Application&) = delete;
 
-  Result<void> initialize(const EngineConfig &config);
+  Result<void> initialize(const EngineConfig& config);
   void shutdown();
 
   void run();
@@ -44,16 +44,16 @@ public:
   [[nodiscard]] f64 getDeltaTime() const;
   [[nodiscard]] f64 getElapsedTime() const;
 
-  [[nodiscard]] platform::IWindow *getWindow();
-  [[nodiscard]] const platform::IWindow *getWindow() const;
-  [[nodiscard]] platform::IFileSystem *getFileSystem();
-  [[nodiscard]] renderer::IRenderer *getRenderer();
-  [[nodiscard]] resource::ResourceManager *getResources();
-  [[nodiscard]] scene::SceneGraph *getSceneGraph();
-  [[nodiscard]] input::InputManager *getInput();
-  [[nodiscard]] audio::AudioManager *getAudio();
-  [[nodiscard]] save::SaveManager *getSaveManager();
-  [[nodiscard]] localization::LocalizationManager *getLocalization();
+  [[nodiscard]] platform::IWindow* getWindow();
+  [[nodiscard]] const platform::IWindow* getWindow() const;
+  [[nodiscard]] platform::IFileSystem* getFileSystem();
+  [[nodiscard]] renderer::IRenderer* getRenderer();
+  [[nodiscard]] resource::ResourceManager* getResources();
+  [[nodiscard]] scene::SceneGraph* getSceneGraph();
+  [[nodiscard]] input::InputManager* getInput();
+  [[nodiscard]] audio::AudioManager* getAudio();
+  [[nodiscard]] save::SaveManager* getSaveManager();
+  [[nodiscard]] localization::LocalizationManager* getLocalization();
 
 protected:
   virtual void onInitialize();

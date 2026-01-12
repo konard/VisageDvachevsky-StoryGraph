@@ -6,8 +6,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
-    : NMDockPanel(tr("Scene View"), parent) {
+NMSceneViewPanel::NMSceneViewPanel(QWidget* parent) : NMDockPanel(tr("Scene View"), parent) {
   setPanelId("SceneView");
 
   // Scene View is a central panel that needs sufficient space for
@@ -18,7 +17,10 @@ NMSceneViewPanel::NMSceneViewPanel(QWidget *parent)
   setupToolBar();
 }
 
-NMSceneViewPanel::~NMSceneViewPanel() = default;
+NMSceneViewPanel::~NMSceneViewPanel() {
+  // Issue #521: Flush any pending debounced saves before destruction
+  m_saveDebouncer.flush();
+}
 
 void NMSceneViewPanel::onInitialize() {
   // Center the view on origin
@@ -27,7 +29,7 @@ void NMSceneViewPanel::onInitialize() {
   }
 
   // Connect to Play Mode Controller for runtime preview
-  auto &playController = NMPlayModeController::instance();
+  auto& playController = NMPlayModeController::instance();
   connect(&playController, &NMPlayModeController::currentNodeChanged, this,
           &NMSceneViewPanel::onPlayModeCurrentNodeChanged);
   connect(&playController, &NMPlayModeController::dialogueLineChanged, this,
@@ -37,24 +39,34 @@ void NMSceneViewPanel::onInitialize() {
   connect(&playController, &NMPlayModeController::playModeChanged, this,
           &NMSceneViewPanel::onPlayModeChanged);
   connect(&playController, &NMPlayModeController::sceneSnapshotUpdated, this,
-          [this, &playController]() {
-            applyRuntimeSnapshot(playController.lastSnapshot());
-          });
+          [this, &playController]() { applyRuntimeSnapshot(playController.lastSnapshot()); });
 
   qDebug() << "[SceneView] Connected to PlayModeController for runtime preview";
 
+  // Issue #521: Use debouncer to batch rapid changes and reduce event spam
   connect(this, &NMSceneViewPanel::sceneObjectsChanged, this, [this]() {
-    if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive &&
-        !m_suppressSceneSave) {
-      saveSceneDocument();
+    if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive && !m_suppressSceneSave) {
+      m_documentDirty = true;
+      m_saveDebouncer.trigger([this]() {
+        if (m_documentDirty) {
+          saveSceneDocument();
+          m_documentDirty = false;
+        }
+      });
     }
   });
   connect(this, &NMSceneViewPanel::objectTransformFinished, this,
-          [this](const QString &, const QPointF &, const QPointF &, qreal,
-                 qreal, qreal, qreal, qreal, qreal) {
-            if (!m_isLoadingScene && !m_runtimePreviewActive &&
-                !m_playModeActive && !m_suppressSceneSave) {
-              saveSceneDocument();
+          [this](const QString&, const QPointF&, const QPointF&, qreal, qreal, qreal, qreal, qreal,
+                 qreal) {
+            if (!m_isLoadingScene && !m_runtimePreviewActive && !m_playModeActive &&
+                !m_suppressSceneSave) {
+              m_documentDirty = true;
+              m_saveDebouncer.trigger([this]() {
+                if (m_documentDirty) {
+                  saveSceneDocument();
+                  m_documentDirty = false;
+                }
+              });
             }
           });
 }

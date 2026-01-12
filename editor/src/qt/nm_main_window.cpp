@@ -15,18 +15,19 @@
 
 namespace NovelMind::editor::qt {
 
-NMMainWindow::NMMainWindow(QWidget *parent) : QMainWindow(parent) {
+NMMainWindow::NMMainWindow(QWidget* parent) : QMainWindow(parent) {
   setWindowTitle("NovelMind Editor");
   setMinimumSize(1280, 720);
   resize(1920, 1080);
 
   // Enable docking with nesting and grouping
   setDockNestingEnabled(true);
-  setDockOptions(AnimatedDocks | AllowNestedDocks | AllowTabbedDocks |
-                 GroupedDragging);
+  setDockOptions(AnimatedDocks | AllowNestedDocks | AllowTabbedDocks | GroupedDragging);
 }
 
-NMMainWindow::~NMMainWindow() { shutdown(); }
+NMMainWindow::~NMMainWindow() {
+  shutdown();
+}
 
 bool NMMainWindow::initialize() {
   if (m_initialized)
@@ -39,18 +40,14 @@ bool NMMainWindow::initialize() {
 
   // Log registered settings count for debugging
   NOVELMIND_LOG_INFO("Registered " +
-                     std::to_string(m_settingsRegistry->getAllDefinitions().size()) +
-                     " settings");
+                     std::to_string(m_settingsRegistry->getAllDefinitions().size()) + " settings");
 
   // Load user settings
-  QString configPath =
-      QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+  QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
   QString userSettingsPath = configPath + "/NovelMind/editor_settings.json";
-  auto loadResult =
-      m_settingsRegistry->loadUserSettings(userSettingsPath.toStdString());
+  auto loadResult = m_settingsRegistry->loadUserSettings(userSettingsPath.toStdString());
   if (loadResult.isError()) {
-    NOVELMIND_LOG_WARN(std::string("Failed to load user settings: ") +
-                       loadResult.error());
+    NOVELMIND_LOG_WARN(std::string("Failed to load user settings: ") + loadResult.error());
   }
 
   // Initialize undo/redo system
@@ -85,9 +82,9 @@ bool NMMainWindow::initialize() {
 
     // Register the main window center anchor for tutorials that target
     // the overall window (e.g., welcome dialogs)
-    NMAnchorRegistry::instance().registerAnchor(
-        "main_window.center", centralWidget() ? centralWidget() : this,
-        "Main editor window center", "main_window");
+    NMAnchorRegistry::instance().registerAnchor("main_window.center",
+                                                centralWidget() ? centralWidget() : this,
+                                                "Main editor window center", "main_window");
 
     TutorialSubsystemConfig tutorialConfig;
     tutorialConfig.tutorialDefinitionsPath = ":/tutorials"; // Qt resources
@@ -96,12 +93,10 @@ bool NMMainWindow::initialize() {
     tutorialConfig.walkthroughsOnFirstRunByDefault = true;
     tutorialConfig.verboseLogging = false;
 
-    auto tutorialResult =
-        NMTutorialSubsystem::instance().initialize(this, tutorialConfig);
+    auto tutorialResult = NMTutorialSubsystem::instance().initialize(this, tutorialConfig);
     if (tutorialResult.isError()) {
-      NOVELMIND_LOG_WARN(
-          std::string("Failed to initialize tutorial subsystem: ") +
-          tutorialResult.error());
+      NOVELMIND_LOG_WARN(std::string("Failed to initialize tutorial subsystem: ") +
+                         tutorialResult.error());
     } else {
       NOVELMIND_LOG_INFO("Tutorial subsystem initialized successfully");
     }
@@ -128,14 +123,11 @@ void NMMainWindow::shutdown() {
 
   // Save user settings
   if (m_settingsRegistry) {
-    QString configPath =
-        QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
+    QString configPath = QStandardPaths::writableLocation(QStandardPaths::ConfigLocation);
     QString userSettingsPath = configPath + "/NovelMind/editor_settings.json";
-    auto saveResult =
-        m_settingsRegistry->saveUserSettings(userSettingsPath.toStdString());
+    auto saveResult = m_settingsRegistry->saveUserSettings(userSettingsPath.toStdString());
     if (saveResult.isError()) {
-      NOVELMIND_LOG_WARN(std::string("Failed to save user settings: ") +
-                         saveResult.error());
+      NOVELMIND_LOG_WARN(std::string("Failed to save user settings: ") + saveResult.error());
     }
   }
 
@@ -149,10 +141,9 @@ void NMMainWindow::shutdown() {
 void NMMainWindow::showSettingsDialog() {
   if (!m_settingsRegistry) {
     NOVELMIND_LOG_ERROR("Settings registry not initialized");
-    NMMessageDialog::showError(
-        this, tr("Settings Error"),
-        tr("The settings system failed to initialize. Please restart the "
-           "editor."));
+    NMMessageDialog::showError(this, tr("Settings Error"),
+                               tr("The settings system failed to initialize. Please restart the "
+                                  "editor."));
     return;
   }
 

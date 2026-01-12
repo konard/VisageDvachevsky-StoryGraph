@@ -13,7 +13,7 @@ namespace NovelMind::ui {
 // Container Implementation
 // ============================================================================
 
-Container::Container(const std::string &id) : Widget(id) {}
+Container::Container(const std::string& id) : Widget(id) {}
 
 void Container::addChild(std::shared_ptr<Widget> child) {
   if (child) {
@@ -22,31 +22,31 @@ void Container::addChild(std::shared_ptr<Widget> child) {
   }
 }
 
-void Container::removeChild(const std::string &id) {
-  m_children.erase(
-      std::remove_if(m_children.begin(), m_children.end(),
-                     [&id](const auto &child) { return child->getId() == id; }),
-      m_children.end());
+void Container::removeChild(const std::string& id) {
+  m_children.erase(std::remove_if(m_children.begin(), m_children.end(),
+                                  [&id](const auto& child) { return child->getId() == id; }),
+                   m_children.end());
 }
 
-void Container::removeChild(Widget *child) {
-  m_children.erase(
-      std::remove_if(m_children.begin(), m_children.end(),
-                     [child](const auto &c) { return c.get() == child; }),
-      m_children.end());
+void Container::removeChild(Widget* child) {
+  m_children.erase(std::remove_if(m_children.begin(), m_children.end(),
+                                  [child](const auto& c) { return c.get() == child; }),
+                   m_children.end());
 }
 
-void Container::clearChildren() { m_children.clear(); }
+void Container::clearChildren() {
+  m_children.clear();
+}
 
-Widget *Container::findChild(const std::string &id) {
-  for (auto &child : m_children) {
+Widget* Container::findChild(const std::string& id) {
+  for (auto& child : m_children) {
     if (child->getId() == id) {
       return child.get();
     }
 
     // Recursive search in containers
-    if (auto *container = dynamic_cast<Container *>(child.get())) {
-      if (auto *found = container->findChild(id)) {
+    if (auto* container = dynamic_cast<Container*>(child.get())) {
+      if (auto* found = container->findChild(id)) {
         return found;
       }
     }
@@ -57,30 +57,32 @@ Widget *Container::findChild(const std::string &id) {
 void Container::update(f64 deltaTime) {
   Widget::update(deltaTime);
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (child->isVisible()) {
       child->update(deltaTime);
     }
   }
 }
 
-void Container::render(renderer::IRenderer &renderer) {
+void Container::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
 
   Widget::render(renderer);
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (child->isVisible()) {
       child->render(renderer);
     }
   }
 }
 
-void Container::layout() { layoutChildren(); }
+void Container::layout() {
+  layoutChildren();
+}
 
-bool Container::handleEvent(UIEvent &event) {
+bool Container::handleEvent(UIEvent& event) {
   if (!m_visible || !m_enabled) {
     return false;
   }
@@ -99,7 +101,7 @@ Rect Container::measure(f32 availableWidth, f32 availableHeight) {
   f32 contentWidth = 0.0f;
   f32 contentHeight = 0.0f;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
@@ -136,14 +138,13 @@ void Container::layoutChildren() {
   f32 x = m_bounds.x + m_style.padding.left;
   f32 y = m_bounds.y + m_style.padding.top;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
 
-    Rect measured = child->measure(
-        m_bounds.width - m_style.padding.left - m_style.padding.right,
-        m_bounds.height - m_style.padding.top - m_style.padding.bottom);
+    Rect measured = child->measure(m_bounds.width - m_style.padding.left - m_style.padding.right,
+                                   m_bounds.height - m_style.padding.top - m_style.padding.bottom);
 
     child->setBounds({x, y, measured.width, measured.height});
     child->layout();
@@ -160,21 +161,19 @@ void Container::layoutChildren() {
 // HBox Implementation
 // ============================================================================
 
-HBox::HBox(const std::string &id) : Container(id) {
+HBox::HBox(const std::string& id) : Container(id) {
   m_layoutDirection = LayoutDirection::Horizontal;
 }
 
 void HBox::layoutChildren() {
-  f32 availableWidth =
-      m_bounds.width - m_style.padding.left - m_style.padding.right;
-  f32 availableHeight =
-      m_bounds.height - m_style.padding.top - m_style.padding.bottom;
+  f32 availableWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
+  f32 availableHeight = m_bounds.height - m_style.padding.top - m_style.padding.bottom;
 
   // Calculate total flex grow
   f32 totalFlexGrow = 0.0f;
   f32 fixedWidth = 0.0f;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
@@ -189,18 +188,16 @@ void HBox::layoutChildren() {
 
   // Account for spacing
   f32 spacing =
-      m_spacing *
-      static_cast<f32>(
-          std::count_if(m_children.begin(), m_children.end(),
-                        [](const auto &c) { return c->isVisible(); }) -
-          1);
+      m_spacing * static_cast<f32>(std::count_if(m_children.begin(), m_children.end(),
+                                                 [](const auto& c) { return c->isVisible(); }) -
+                                   1);
   f32 flexSpace = std::max(0.0f, availableWidth - fixedWidth - spacing);
 
   // Layout children
   f32 x = m_bounds.x + m_style.padding.left;
   f32 y = m_bounds.y + m_style.padding.top;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
@@ -244,21 +241,19 @@ void HBox::layoutChildren() {
 // VBox Implementation
 // ============================================================================
 
-VBox::VBox(const std::string &id) : Container(id) {
+VBox::VBox(const std::string& id) : Container(id) {
   m_layoutDirection = LayoutDirection::Vertical;
 }
 
 void VBox::layoutChildren() {
-  f32 availableWidth =
-      m_bounds.width - m_style.padding.left - m_style.padding.right;
-  f32 availableHeight =
-      m_bounds.height - m_style.padding.top - m_style.padding.bottom;
+  f32 availableWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
+  f32 availableHeight = m_bounds.height - m_style.padding.top - m_style.padding.bottom;
 
   // Calculate total flex grow
   f32 totalFlexGrow = 0.0f;
   f32 fixedHeight = 0.0f;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
@@ -273,18 +268,16 @@ void VBox::layoutChildren() {
 
   // Account for spacing
   f32 spacing =
-      m_spacing *
-      static_cast<f32>(
-          std::count_if(m_children.begin(), m_children.end(),
-                        [](const auto &c) { return c->isVisible(); }) -
-          1);
+      m_spacing * static_cast<f32>(std::count_if(m_children.begin(), m_children.end(),
+                                                 [](const auto& c) { return c->isVisible(); }) -
+                                   1);
   f32 flexSpace = std::max(0.0f, availableHeight - fixedHeight - spacing);
 
   // Layout children
   f32 x = m_bounds.x + m_style.padding.left;
   f32 y = m_bounds.y + m_style.padding.top;
 
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
@@ -328,27 +321,23 @@ void VBox::layoutChildren() {
 // Grid Implementation
 // ============================================================================
 
-Grid::Grid(const std::string &id) : Container(id) {}
+Grid::Grid(const std::string& id) : Container(id) {}
 
 void Grid::layoutChildren() {
   if (m_columns <= 0 || m_children.empty()) {
     return;
   }
 
-  f32 availableWidth =
-      m_bounds.width - m_style.padding.left - m_style.padding.right;
-  f32 availableHeight =
-      m_bounds.height - m_style.padding.top - m_style.padding.bottom;
+  f32 availableWidth = m_bounds.width - m_style.padding.left - m_style.padding.right;
+  f32 availableHeight = m_bounds.height - m_style.padding.top - m_style.padding.bottom;
 
-  f32 cellWidth =
-      (availableWidth - m_columnSpacing * static_cast<f32>(m_columns - 1)) /
-      static_cast<f32>(m_columns);
+  f32 cellWidth = (availableWidth - m_columnSpacing * static_cast<f32>(m_columns - 1)) /
+                  static_cast<f32>(m_columns);
 
   // Calculate row heights
   std::vector<f32> rowHeights;
-  size_t visibleCount = static_cast<size_t>(
-      std::count_if(m_children.begin(), m_children.end(),
-                    [](const auto &c) { return c->isVisible(); }));
+  size_t visibleCount = static_cast<size_t>(std::count_if(
+      m_children.begin(), m_children.end(), [](const auto& c) { return c->isVisible(); }));
   i32 rows = (static_cast<i32>(visibleCount) + m_columns - 1) / m_columns;
 
   for (i32 row = 0; row < rows; ++row) {
@@ -382,8 +371,7 @@ void Grid::layoutChildren() {
         break;
       }
 
-      m_children[idx]->setBounds(
-          {x, y, cellWidth, rowHeights[static_cast<size_t>(row)]});
+      m_children[idx]->setBounds({x, y, cellWidth, rowHeights[static_cast<size_t>(row)]});
       m_children[idx]->layout();
 
       x += cellWidth + m_columnSpacing;
@@ -398,7 +386,7 @@ void Grid::layoutChildren() {
 // ScrollPanel Implementation
 // ============================================================================
 
-ScrollPanel::ScrollPanel(const std::string &id) : Container(id) {}
+ScrollPanel::ScrollPanel(const std::string& id) : Container(id) {}
 
 void ScrollPanel::setScrollX(f32 x) {
   m_scrollX = std::max(0.0f, std::min(x, m_contentWidth - m_bounds.width));
@@ -408,7 +396,7 @@ void ScrollPanel::setScrollY(f32 y) {
   m_scrollY = std::max(0.0f, std::min(y, m_contentHeight - m_bounds.height));
 }
 
-void ScrollPanel::render(renderer::IRenderer &renderer) {
+void ScrollPanel::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -420,7 +408,7 @@ void ScrollPanel::render(renderer::IRenderer &renderer) {
   // The clip region would be set to m_bounds for content containment.
 
   // Render children with scroll offset
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (child->isVisible()) {
       // Temporarily offset child position
       Rect originalBounds = child->getBounds();
@@ -445,13 +433,12 @@ void ScrollPanel::render(renderer::IRenderer &renderer) {
 
     renderer::Color scrollbarColor{100, 100, 100, 200};
     renderer::Rect scrollbarRect{m_bounds.x + m_bounds.width - scrollbarWidth,
-                                 m_bounds.y + scrollbarY, scrollbarWidth,
-                                 scrollbarHeight};
+                                 m_bounds.y + scrollbarY, scrollbarWidth, scrollbarHeight};
     renderer.fillRect(scrollbarRect, scrollbarColor);
   }
 }
 
-bool ScrollPanel::handleEvent(UIEvent &event) {
+bool ScrollPanel::handleEvent(UIEvent& event) {
   if (event.type == UIEventType::Scroll) {
     if (m_verticalScroll) {
       setScrollY(m_scrollY - event.deltaY * 30.0f);
@@ -478,16 +465,14 @@ void ScrollPanel::layoutChildren() {
   m_contentWidth = 0.0f;
   m_contentHeight = 0.0f;
 
-  for (const auto &child : m_children) {
+  for (const auto& child : m_children) {
     if (!child->isVisible()) {
       continue;
     }
 
-    const Rect &bounds = child->getBounds();
-    m_contentWidth =
-        std::max(m_contentWidth, bounds.x + bounds.width - m_bounds.x);
-    m_contentHeight =
-        std::max(m_contentHeight, bounds.y + bounds.height - m_bounds.y);
+    const Rect& bounds = child->getBounds();
+    m_contentWidth = std::max(m_contentWidth, bounds.x + bounds.width - m_bounds.x);
+    m_contentHeight = std::max(m_contentHeight, bounds.y + bounds.height - m_bounds.y);
   }
 }
 
@@ -495,9 +480,9 @@ void ScrollPanel::layoutChildren() {
 // Panel Implementation
 // ============================================================================
 
-Panel::Panel(const std::string &id) : Container(id) {}
+Panel::Panel(const std::string& id) : Container(id) {}
 
-void Panel::render(renderer::IRenderer &renderer) {
+void Panel::render(renderer::IRenderer& renderer) {
   if (!m_visible) {
     return;
   }
@@ -506,7 +491,7 @@ void Panel::render(renderer::IRenderer &renderer) {
   Widget::render(renderer);
 
   // Render children
-  for (auto &child : m_children) {
+  for (auto& child : m_children) {
     if (child->isVisible()) {
       child->render(renderer);
     }

@@ -21,6 +21,7 @@
 #include "NovelMind/scene/scene_manager.hpp" // For LayerType enum
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -90,12 +91,10 @@ struct PropertyChange {
 class ISceneObserver {
 public:
   virtual ~ISceneObserver() = default;
-  virtual void onObjectAdded(const std::string &objectId,
-                             SceneObjectType type) = 0;
-  virtual void onObjectRemoved(const std::string &objectId) = 0;
-  virtual void onPropertyChanged(const PropertyChange &change) = 0;
-  virtual void onLayerChanged(const std::string &objectId,
-                              const std::string &newLayer) = 0;
+  virtual void onObjectAdded(const std::string& objectId, SceneObjectType type) = 0;
+  virtual void onObjectRemoved(const std::string& objectId) = 0;
+  virtual void onPropertyChanged(const PropertyChange& change) = 0;
+  virtual void onLayerChanged(const std::string& objectId, const std::string& newLayer) = 0;
 };
 
 /**
@@ -107,23 +106,24 @@ public:
  * - Z-ordering within layer
  * - Property system for serialization
  * - Animation support
+ * - Generation counter for thread-safe handle validation
  */
 class SceneObjectBase {
 public:
-  explicit SceneObjectBase(const std::string &id,
-                           SceneObjectType type = SceneObjectType::Base);
+  explicit SceneObjectBase(const std::string& id, SceneObjectType type = SceneObjectType::Base);
   virtual ~SceneObjectBase() = default;
 
   // Non-copyable, movable
-  SceneObjectBase(const SceneObjectBase &) = delete;
-  SceneObjectBase &operator=(const SceneObjectBase &) = delete;
-  SceneObjectBase(SceneObjectBase &&) = default;
-  SceneObjectBase &operator=(SceneObjectBase &&) = default;
+  SceneObjectBase(const SceneObjectBase&) = delete;
+  SceneObjectBase& operator=(const SceneObjectBase&) = delete;
+  SceneObjectBase(SceneObjectBase&&) = default;
+  SceneObjectBase& operator=(SceneObjectBase&&) = default;
 
   // Identity
-  [[nodiscard]] const std::string &getId() const { return m_id; }
+  [[nodiscard]] const std::string& getId() const { return m_id; }
   [[nodiscard]] SceneObjectType getType() const { return m_type; }
-  [[nodiscard]] const char *getTypeName() const;
+  [[nodiscard]] const char* getTypeName() const;
+  [[nodiscard]] u64 getGeneration() const { return m_generation; }
 
   // Transform
   void setPosition(f32 x, f32 y);
@@ -139,9 +139,7 @@ public:
   [[nodiscard]] f32 getRotation() const { return m_transform.rotation; }
   [[nodiscard]] f32 getAnchorX() const { return m_anchorX; }
   [[nodiscard]] f32 getAnchorY() const { return m_anchorY; }
-  [[nodiscard]] const renderer::Transform2D &getTransform() const {
-    return m_transform;
-  }
+  [[nodiscard]] const renderer::Transform2D& getTransform() const { return m_transform; }
 
   // Visibility
   void setVisible(bool visible);
@@ -154,58 +152,52 @@ public:
   [[nodiscard]] i32 getZOrder() const { return m_zOrder; }
 
   // Parent/child relationship
-  void setParent(SceneObjectBase *parent);
-  [[nodiscard]] SceneObjectBase *getParent() const { return m_parent; }
-  void addChild(std::unique_ptr<SceneObjectBase> child);
-  std::unique_ptr<SceneObjectBase> removeChild(const std::string &id);
-  [[nodiscard]] SceneObjectBase *findChild(const std::string &id);
-  [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>> &
-  getChildren() const {
+  void setParent(SceneObjectBase* parent);
+  [[nodiscard]] SceneObjectBase* getParent() const { return m_parent; }
+  bool addChild(std::unique_ptr<SceneObjectBase> child);
+  std::unique_ptr<SceneObjectBase> removeChild(const std::string& id);
+  [[nodiscard]] SceneObjectBase* findChild(const std::string& id);
+  [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>>& getChildren() const {
     return m_children;
   }
+  [[nodiscard]] int getDepth() const;
 
   /// Maximum depth for recursive scene graph traversal to prevent stack
   /// overflow
   static constexpr int MAX_SCENE_DEPTH = 100;
 
   // Tags for filtering
-  void addTag(const std::string &tag);
-  void removeTag(const std::string &tag);
-  [[nodiscard]] bool hasTag(const std::string &tag) const;
-  [[nodiscard]] const std::vector<std::string> &getTags() const {
-    return m_tags;
-  }
+  void addTag(const std::string& tag);
+  void removeTag(const std::string& tag);
+  [[nodiscard]] bool hasTag(const std::string& tag) const;
+  [[nodiscard]] const std::vector<std::string>& getTags() const { return m_tags; }
 
   // Property system (for serialization and editor)
-  void setProperty(const std::string &name, const std::string &value);
-  [[nodiscard]] std::optional<std::string>
-  getProperty(const std::string &name) const;
-  [[nodiscard]] const std::unordered_map<std::string, std::string> &
-  getProperties() const {
+  void setProperty(const std::string& name, const std::string& value);
+  [[nodiscard]] std::optional<std::string> getProperty(const std::string& name) const;
+  [[nodiscard]] const std::unordered_map<std::string, std::string>& getProperties() const {
     return m_properties;
   }
 
   // Lifecycle
   virtual void update(f64 deltaTime);
-  virtual void render(renderer::IRenderer &renderer) = 0;
+  void updateWithDepth(f64 deltaTime, int depth);
+  virtual void render(renderer::IRenderer& renderer) = 0;
+  void renderWithDepth(renderer::IRenderer& renderer, int depth);
 
   // Serialization
   [[nodiscard]] virtual SceneObjectState saveState() const;
-  virtual void loadState(const SceneObjectState &state);
+  virtual void loadState(const SceneObjectState& state);
 
   // Animation support
-  void animatePosition(f32 toX, f32 toY, f32 duration,
-                       EaseType easing = EaseType::Linear);
-  void animateAlpha(f32 toAlpha, f32 duration,
-                    EaseType easing = EaseType::Linear);
-  void animateScale(f32 toScaleX, f32 toScaleY, f32 duration,
-                    EaseType easing = EaseType::Linear);
+  void animatePosition(f32 toX, f32 toY, f32 duration, EaseType easing = EaseType::Linear);
+  void animateAlpha(f32 toAlpha, f32 duration, EaseType easing = EaseType::Linear);
+  void animateScale(f32 toScaleX, f32 toScaleY, f32 duration, EaseType easing = EaseType::Linear);
 
 protected:
   // Notify observers of property changes
-  void notifyPropertyChanged(const std::string &property,
-                             const std::string &oldValue,
-                             const std::string &newValue);
+  void notifyPropertyChanged(const std::string& property, const std::string& oldValue,
+                             const std::string& newValue);
 
   // Protected access for derived classes
   renderer::Transform2D m_transform;
@@ -213,18 +205,19 @@ protected:
   f32 m_anchorY = 0.5f;
   f32 m_alpha = 1.0f;
   bool m_visible = true;
-  resource::ResourceManager *m_resources = nullptr;
-  localization::LocalizationManager *m_localization = nullptr;
+  resource::ResourceManager* m_resources = nullptr;
+  localization::LocalizationManager* m_localization = nullptr;
 
 private:
   // Recursive helper with depth limit to prevent stack overflow
-  SceneObjectBase *findChildRecursive(const std::string &id, int depth);
+  SceneObjectBase* findChildRecursive(const std::string& id, int depth);
 
   std::string m_id;
   SceneObjectType m_type;
   i32 m_zOrder = 0;
+  u64 m_generation = 0; // Generation counter for thread-safe handle validation
 
-  SceneObjectBase *m_parent = nullptr;
+  SceneObjectBase* m_parent = nullptr;
   std::vector<std::unique_ptr<SceneObjectBase>> m_children;
   std::vector<std::string> m_tags;
   std::unordered_map<std::string, std::string> m_properties;
@@ -233,7 +226,7 @@ private:
   std::vector<std::unique_ptr<Tween>> m_animations;
 
   // Observer for change notifications (set by SceneGraph)
-  ISceneObserver *m_observer = nullptr;
+  ISceneObserver* m_observer = nullptr;
   friend class SceneGraph;
 };
 
@@ -242,17 +235,17 @@ private:
  */
 class BackgroundObject : public SceneObjectBase {
 public:
-  explicit BackgroundObject(const std::string &id);
+  explicit BackgroundObject(const std::string& id);
 
-  void setTextureId(const std::string &textureId);
-  [[nodiscard]] const std::string &getTextureId() const { return m_textureId; }
+  void setTextureId(const std::string& textureId);
+  [[nodiscard]] const std::string& getTextureId() const { return m_textureId; }
 
-  void setTint(const renderer::Color &color);
-  [[nodiscard]] const renderer::Color &getTint() const { return m_tint; }
+  void setTint(const renderer::Color& color);
+  [[nodiscard]] const renderer::Color& getTint() const { return m_tint; }
 
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] SceneObjectState saveState() const override;
-  void loadState(const SceneObjectState &state) override;
+  void loadState(const SceneObjectState& state) override;
 
 private:
   std::string m_textureId;
@@ -269,45 +262,35 @@ public:
    */
   enum class Position : u8 { Left, Center, Right, Custom };
 
-  explicit CharacterObject(const std::string &id,
-                           const std::string &characterId);
+  explicit CharacterObject(const std::string& id, const std::string& characterId);
 
-  void setCharacterId(const std::string &characterId);
-  [[nodiscard]] const std::string &getCharacterId() const {
-    return m_characterId;
-  }
+  void setCharacterId(const std::string& characterId);
+  [[nodiscard]] const std::string& getCharacterId() const { return m_characterId; }
 
-  void setDisplayName(const std::string &name);
-  [[nodiscard]] const std::string &getDisplayName() const {
-    return m_displayName;
-  }
+  void setDisplayName(const std::string& name);
+  [[nodiscard]] const std::string& getDisplayName() const { return m_displayName; }
 
-  void setExpression(const std::string &expression);
-  [[nodiscard]] const std::string &getExpression() const {
-    return m_expression;
-  }
+  void setExpression(const std::string& expression);
+  [[nodiscard]] const std::string& getExpression() const { return m_expression; }
 
-  void setPose(const std::string &pose);
-  [[nodiscard]] const std::string &getPose() const { return m_pose; }
+  void setPose(const std::string& pose);
+  [[nodiscard]] const std::string& getPose() const { return m_pose; }
 
   void setSlotPosition(Position pos);
   [[nodiscard]] Position getSlotPosition() const { return m_slotPosition; }
 
-  void setNameColor(const renderer::Color &color);
-  [[nodiscard]] const renderer::Color &getNameColor() const {
-    return m_nameColor;
-  }
+  void setNameColor(const renderer::Color& color);
+  [[nodiscard]] const renderer::Color& getNameColor() const { return m_nameColor; }
 
   void setHighlighted(bool highlighted);
   [[nodiscard]] bool isHighlighted() const { return m_highlighted; }
 
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] SceneObjectState saveState() const override;
-  void loadState(const SceneObjectState &state) override;
+  void loadState(const SceneObjectState& state) override;
 
   // Animation
-  void animateToSlot(Position slot, f32 duration,
-                     EaseType easing = EaseType::EaseOutQuad);
+  void animateToSlot(Position slot, f32 duration, EaseType easing = EaseType::EaseOutQuad);
 
 private:
   std::string m_characterId;
@@ -324,23 +307,19 @@ private:
  */
 class DialogueUIObject : public SceneObjectBase {
 public:
-  explicit DialogueUIObject(const std::string &id);
+  explicit DialogueUIObject(const std::string& id);
 
-  void setSpeaker(const std::string &speaker);
-  [[nodiscard]] const std::string &getSpeaker() const { return m_speaker; }
+  void setSpeaker(const std::string& speaker);
+  [[nodiscard]] const std::string& getSpeaker() const { return m_speaker; }
 
-  void setText(const std::string &text);
-  [[nodiscard]] const std::string &getText() const { return m_text; }
+  void setText(const std::string& text);
+  [[nodiscard]] const std::string& getText() const { return m_text; }
 
-  void setSpeakerColor(const renderer::Color &color);
-  [[nodiscard]] const renderer::Color &getSpeakerColor() const {
-    return m_speakerColor;
-  }
+  void setSpeakerColor(const renderer::Color& color);
+  [[nodiscard]] const renderer::Color& getSpeakerColor() const { return m_speakerColor; }
 
-  void setBackgroundTextureId(const std::string &textureId);
-  [[nodiscard]] const std::string &getBackgroundTextureId() const {
-    return m_backgroundTextureId;
-  }
+  void setBackgroundTextureId(const std::string& textureId);
+  [[nodiscard]] const std::string& getBackgroundTextureId() const { return m_backgroundTextureId; }
 
   // Typewriter effect
   void setTypewriterEnabled(bool enabled);
@@ -350,14 +329,12 @@ public:
 
   void startTypewriter();
   void skipTypewriter();
-  [[nodiscard]] bool isTypewriterComplete() const {
-    return m_typewriterComplete;
-  }
+  [[nodiscard]] bool isTypewriterComplete() const { return m_typewriterComplete; }
 
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] SceneObjectState saveState() const override;
-  void loadState(const SceneObjectState &state) override;
+  void loadState(const SceneObjectState& state) override;
 
 private:
   std::string m_speaker;
@@ -385,12 +362,10 @@ public:
     std::string condition;
   };
 
-  explicit ChoiceUIObject(const std::string &id);
+  explicit ChoiceUIObject(const std::string& id);
 
-  void setChoices(const std::vector<ChoiceOption> &choices);
-  [[nodiscard]] const std::vector<ChoiceOption> &getChoices() const {
-    return m_choices;
-  }
+  void setChoices(const std::vector<ChoiceOption>& choices);
+  [[nodiscard]] const std::vector<ChoiceOption>& getChoices() const { return m_choices; }
   void clearChoices();
 
   void setSelectedIndex(i32 index);
@@ -400,16 +375,16 @@ public:
   void selectPrevious();
   [[nodiscard]] bool confirm();
 
-  void setOnSelect(std::function<void(i32, const std::string &)> callback);
+  void setOnSelect(std::function<void(i32, const std::string&)> callback);
 
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] SceneObjectState saveState() const override;
-  void loadState(const SceneObjectState &state) override;
+  void loadState(const SceneObjectState& state) override;
 
 private:
   std::vector<ChoiceOption> m_choices;
   i32 m_selectedIndex = 0;
-  std::function<void(i32, const std::string &)> m_onSelect;
+  std::function<void(i32, const std::string&)> m_onSelect;
 };
 
 /**
@@ -419,13 +394,13 @@ class EffectOverlayObject : public SceneObjectBase {
 public:
   enum class EffectType : u8 { None, Fade, Flash, Shake, Rain, Snow, Custom };
 
-  explicit EffectOverlayObject(const std::string &id);
+  explicit EffectOverlayObject(const std::string& id);
 
   void setEffectType(EffectType type);
   [[nodiscard]] EffectType getEffectType() const { return m_effectType; }
 
-  void setColor(const renderer::Color &color);
-  [[nodiscard]] const renderer::Color &getColor() const { return m_color; }
+  void setColor(const renderer::Color& color);
+  [[nodiscard]] const renderer::Color& getColor() const { return m_color; }
 
   void setIntensity(f32 intensity);
   [[nodiscard]] f32 getIntensity() const { return m_intensity; }
@@ -435,9 +410,9 @@ public:
   [[nodiscard]] bool isEffectActive() const { return m_effectActive; }
 
   void update(f64 deltaTime) override;
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
   [[nodiscard]] SceneObjectState saveState() const override;
-  void loadState(const SceneObjectState &state) override;
+  void loadState(const SceneObjectState& state) override;
 
 private:
   EffectType m_effectType = EffectType::None;
@@ -457,20 +432,19 @@ private:
  */
 class Layer {
 public:
-  explicit Layer(const std::string &name, LayerType type);
+  explicit Layer(const std::string& name, LayerType type);
 
-  [[nodiscard]] const std::string &getName() const { return m_name; }
+  [[nodiscard]] const std::string& getName() const { return m_name; }
   [[nodiscard]] LayerType getType() const { return m_type; }
 
   void addObject(std::unique_ptr<SceneObjectBase> object);
-  std::unique_ptr<SceneObjectBase> removeObject(const std::string &id);
+  std::unique_ptr<SceneObjectBase> removeObject(const std::string& id);
   void clear();
 
   // Non-owning pointer; valid only until the next scene mutation.
-  [[nodiscard]] SceneObjectBase *findObject(const std::string &id);
-  [[nodiscard]] const SceneObjectBase *findObject(const std::string &id) const;
-  [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>> &
-  getObjects() const {
+  [[nodiscard]] SceneObjectBase* findObject(const std::string& id);
+  [[nodiscard]] const SceneObjectBase* findObject(const std::string& id) const;
+  [[nodiscard]] const std::vector<std::unique_ptr<SceneObjectBase>>& getObjects() const {
     return m_objects;
   }
 
@@ -483,7 +457,7 @@ public:
   void sortByZOrder();
 
   void update(f64 deltaTime);
-  void render(renderer::IRenderer &renderer);
+  void render(renderer::IRenderer& renderer);
 
 private:
   std::string m_name;
@@ -518,74 +492,70 @@ public:
   ~SceneGraph() override;
 
   // Scene management
-  void setSceneId(const std::string &id);
-  [[nodiscard]] const std::string &getSceneId() const { return m_sceneId; }
+  void setSceneId(const std::string& id);
+  [[nodiscard]] const std::string& getSceneId() const { return m_sceneId; }
   void clear();
 
   // Layer access
-  [[nodiscard]] Layer &getBackgroundLayer() { return m_backgroundLayer; }
-  [[nodiscard]] Layer &getCharacterLayer() { return m_characterLayer; }
-  [[nodiscard]] Layer &getUILayer() { return m_uiLayer; }
-  [[nodiscard]] Layer &getEffectLayer() { return m_effectLayer; }
-  [[nodiscard]] Layer &getLayer(LayerType type);
+  [[nodiscard]] Layer& getBackgroundLayer() { return m_backgroundLayer; }
+  [[nodiscard]] Layer& getCharacterLayer() { return m_characterLayer; }
+  [[nodiscard]] Layer& getUILayer() { return m_uiLayer; }
+  [[nodiscard]] Layer& getEffectLayer() { return m_effectLayer; }
+  [[nodiscard]] Layer& getLayer(LayerType type);
 
   // Object management
   void addToLayer(LayerType layer, std::unique_ptr<SceneObjectBase> object);
-  std::unique_ptr<SceneObjectBase> removeFromLayer(LayerType layer,
-                                                   const std::string &id);
-  [[nodiscard]] SceneObjectBase *findObject(const std::string &id);
-  [[nodiscard]] std::vector<SceneObjectBase *>
-  findObjectsByTag(const std::string &tag);
-  [[nodiscard]] std::vector<SceneObjectBase *>
-  findObjectsByType(SceneObjectType type);
+  std::unique_ptr<SceneObjectBase> removeFromLayer(LayerType layer, const std::string& id);
+  [[nodiscard]] SceneObjectBase* findObject(const std::string& id);
+  [[nodiscard]] std::vector<SceneObjectBase*> findObjectsByTag(const std::string& tag);
+  [[nodiscard]] std::vector<SceneObjectBase*> findObjectsByType(SceneObjectType type);
+
+  // Thread-safe object access for handles
+  // Returns nullptr if object not found or generation mismatch
+  [[nodiscard]] SceneObjectBase* findObjectWithGeneration(const std::string& id, u64 generation);
+
+  // Get mutex for external synchronization (for handle withObject methods)
+  std::mutex& getObjectMutex() { return m_objectMutex; }
 
   // Convenience methods for common operations
-  void showBackground(const std::string &textureId);
-  CharacterObject *showCharacter(const std::string &id,
-                                 const std::string &characterId,
+  void showBackground(const std::string& textureId);
+  CharacterObject* showCharacter(const std::string& id, const std::string& characterId,
                                  CharacterObject::Position position);
-  void hideCharacter(const std::string &id);
-  DialogueUIObject *showDialogue(const std::string &speaker,
-                                 const std::string &text);
+  void hideCharacter(const std::string& id);
+  DialogueUIObject* showDialogue(const std::string& speaker, const std::string& text);
   void hideDialogue();
-  ChoiceUIObject *
-  showChoices(const std::vector<ChoiceUIObject::ChoiceOption> &choices);
+  ChoiceUIObject* showChoices(const std::vector<ChoiceUIObject::ChoiceOption>& choices);
   void hideChoices();
 
   // Update and render
   void update(f64 deltaTime);
-  void render(renderer::IRenderer &renderer);
+  void render(renderer::IRenderer& renderer);
 
-  void setResourceManager(resource::ResourceManager *resources);
-  [[nodiscard]] resource::ResourceManager *getResourceManager() const {
-    return m_resources;
-  }
+  void setResourceManager(resource::ResourceManager* resources);
+  [[nodiscard]] resource::ResourceManager* getResourceManager() const { return m_resources; }
 
-  void setLocalizationManager(localization::LocalizationManager *localization);
-  [[nodiscard]] localization::LocalizationManager *
-  getLocalizationManager() const {
+  void setLocalizationManager(localization::LocalizationManager* localization);
+  [[nodiscard]] localization::LocalizationManager* getLocalizationManager() const {
     return m_localization;
   }
 
   // Serialization
   [[nodiscard]] SceneState saveState() const;
-  void loadState(const SceneState &state);
+  void loadState(const SceneState& state);
 
   // Observer management
-  void addObserver(ISceneObserver *observer);
-  void removeObserver(ISceneObserver *observer);
+  void addObserver(ISceneObserver* observer);
+  void removeObserver(ISceneObserver* observer);
 
   // ISceneObserver implementation (for internal use)
-  void onObjectAdded(const std::string &objectId,
-                     SceneObjectType type) override;
-  void onObjectRemoved(const std::string &objectId) override;
-  void onPropertyChanged(const PropertyChange &change) override;
-  void onLayerChanged(const std::string &objectId,
-                      const std::string &newLayer) override;
+  void onObjectAdded(const std::string& objectId, SceneObjectType type) override;
+  void onObjectRemoved(const std::string& objectId) override;
+  void onPropertyChanged(const PropertyChange& change) override;
+  void onLayerChanged(const std::string& objectId, const std::string& newLayer) override;
 
 private:
-  void notifyObservers(const std::function<void(ISceneObserver *)> &notify);
-  void registerObject(SceneObjectBase *obj);
+  void notifyObservers(const std::function<void(ISceneObserver*)>& notify);
+  void registerObject(SceneObjectBase* obj);
 
   std::string m_sceneId;
   Layer m_backgroundLayer;
@@ -593,9 +563,13 @@ private:
   Layer m_uiLayer;
   Layer m_effectLayer;
 
-  std::vector<ISceneObserver *> m_observers;
-  resource::ResourceManager *m_resources = nullptr;
-  localization::LocalizationManager *m_localization = nullptr;
+  std::vector<ISceneObserver*> m_observers;
+  resource::ResourceManager* m_resources = nullptr;
+  localization::LocalizationManager* m_localization = nullptr;
+
+  // Thread-safety: Protects access to scene objects via handles
+  // Used for TOCTOU-safe findObject operations and withObject callbacks
+  mutable std::mutex m_objectMutex;
 };
 
 } // namespace NovelMind::scene

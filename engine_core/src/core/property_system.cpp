@@ -15,22 +15,21 @@ namespace NovelMind {
 // TypeInfo
 // ============================================================================
 
-TypeInfo::TypeInfo(const std::string &typeName) : m_typeName(typeName) {}
+TypeInfo::TypeInfo(const std::string& typeName) : m_typeName(typeName) {}
 
 TypeInfo::~TypeInfo() = default;
 
 void TypeInfo::addProperty(std::unique_ptr<IPropertyAccessor> accessor) {
-  const auto &name = accessor->getMeta().name;
+  const auto& name = accessor->getMeta().name;
   m_propertyIndex[name] = m_properties.size();
   m_properties.push_back(std::move(accessor));
 }
 
-const std::vector<std::unique_ptr<IPropertyAccessor>> &
-TypeInfo::getProperties() const {
+const std::vector<std::unique_ptr<IPropertyAccessor>>& TypeInfo::getProperties() const {
   return m_properties;
 }
 
-const IPropertyAccessor *TypeInfo::findProperty(const std::string &name) const {
+const IPropertyAccessor* TypeInfo::findProperty(const std::string& name) const {
   auto it = m_propertyIndex.find(name);
   if (it != m_propertyIndex.end()) {
     return m_properties[it->second].get();
@@ -38,14 +37,13 @@ const IPropertyAccessor *TypeInfo::findProperty(const std::string &name) const {
   return nullptr;
 }
 
-std::vector<std::pair<std::string, std::vector<const IPropertyAccessor *>>>
+std::vector<std::pair<std::string, std::vector<const IPropertyAccessor*>>>
 TypeInfo::getPropertiesByCategory() const {
   // Collect properties by category
-  std::unordered_map<std::string, std::vector<const IPropertyAccessor *>>
-      categoryMap;
+  std::unordered_map<std::string, std::vector<const IPropertyAccessor*>> categoryMap;
 
-  for (const auto &prop : m_properties) {
-    const auto &meta = prop->getMeta();
+  for (const auto& prop : m_properties) {
+    const auto& meta = prop->getMeta();
     if (!hasFlag(meta.flags, PropertyFlags::Hidden)) {
       std::string category = meta.category.empty() ? "General" : meta.category;
       categoryMap[category].push_back(prop.get());
@@ -53,24 +51,23 @@ TypeInfo::getPropertiesByCategory() const {
   }
 
   // Sort properties within each category by order
-  for (auto &[cat, props] : categoryMap) {
+  for (auto& [cat, props] : categoryMap) {
     std::sort(props.begin(), props.end(),
-              [](const IPropertyAccessor *a, const IPropertyAccessor *b) {
+              [](const IPropertyAccessor* a, const IPropertyAccessor* b) {
                 return a->getMeta().order < b->getMeta().order;
               });
   }
 
   // Convert to vector and sort categories
-  std::vector<std::pair<std::string, std::vector<const IPropertyAccessor *>>>
-      result;
+  std::vector<std::pair<std::string, std::vector<const IPropertyAccessor*>>> result;
   result.reserve(categoryMap.size());
 
-  for (auto &[cat, props] : categoryMap) {
+  for (auto& [cat, props] : categoryMap) {
     result.emplace_back(cat, std::move(props));
   }
 
   // Sort categories (General first, then alphabetically)
-  std::sort(result.begin(), result.end(), [](const auto &a, const auto &b) {
+  std::sort(result.begin(), result.end(), [](const auto& a, const auto& b) {
     if (a.first == "General")
       return true;
     if (b.first == "General")
@@ -85,18 +82,16 @@ TypeInfo::getPropertiesByCategory() const {
 // PropertyRegistry
 // ============================================================================
 
-PropertyRegistry &PropertyRegistry::instance() {
+PropertyRegistry& PropertyRegistry::instance() {
   static PropertyRegistry registry;
   return registry;
 }
 
-void PropertyRegistry::registerType(const std::type_index &type,
-                                    std::unique_ptr<TypeInfo> info) {
+void PropertyRegistry::registerType(const std::type_index& type, std::unique_ptr<TypeInfo> info) {
   m_types[type] = std::move(info);
 }
 
-const TypeInfo *
-PropertyRegistry::getTypeInfo(const std::type_index &type) const {
+const TypeInfo* PropertyRegistry::getTypeInfo(const std::type_index& type) const {
   auto it = m_types.find(type);
   if (it != m_types.end()) {
     return it->second.get();
@@ -110,9 +105,9 @@ PropertyRegistry::getTypeInfo(const std::type_index &type) const {
 
 namespace PropertyUtils {
 
-std::string toString(const PropertyValue &value) {
+std::string toString(const PropertyValue& value) {
   return std::visit(
-      [](const auto &v) -> std::string {
+      [](const auto& v) -> std::string {
         using T = std::decay_t<decltype(v)>;
 
         if constexpr (std::is_same_v<T, std::nullptr_t>) {
@@ -143,8 +138,7 @@ std::string toString(const PropertyValue &value) {
           return oss.str();
         } else if constexpr (std::is_same_v<T, Color>) {
           std::ostringstream oss;
-          oss << "#" << std::hex << std::setfill('0') << std::setw(8)
-              << v.toHex(true);
+          oss << "#" << std::hex << std::setfill('0') << std::setw(8) << v.toHex(true);
           return oss.str();
         } else if constexpr (std::is_same_v<T, AssetRef>) {
           return v.path;
@@ -161,7 +155,7 @@ std::string toString(const PropertyValue &value) {
       value);
 }
 
-PropertyValue fromString(PropertyType type, const std::string &str) {
+PropertyValue fromString(PropertyType type, const std::string& str) {
   switch (type) {
   case PropertyType::Bool:
     return str == "true" || str == "1" || str == "yes";
@@ -256,7 +250,7 @@ PropertyValue fromString(PropertyType type, const std::string &str) {
   }
 }
 
-const char *getTypeName(PropertyType type) {
+const char* getTypeName(PropertyType type) {
   switch (type) {
   case PropertyType::None:
     return "None";
@@ -289,12 +283,11 @@ const char *getTypeName(PropertyType type) {
   }
 }
 
-bool validate(const PropertyValue &value, const PropertyMeta &meta,
-              std::string *error) {
+bool validate(const PropertyValue& value, const PropertyMeta& meta, std::string* error) {
   // Check required flag
   if (hasFlag(meta.flags, PropertyFlags::Required)) {
     bool empty = std::visit(
-        [](const auto &v) -> bool {
+        [](const auto& v) -> bool {
           using T = std::decay_t<decltype(v)>;
           if constexpr (std::is_same_v<T, std::nullptr_t>)
             return true;
@@ -321,7 +314,7 @@ bool validate(const PropertyValue &value, const PropertyMeta &meta,
   if (meta.range.hasMin || meta.range.hasMax) {
     f64 numValue = 0.0;
     bool isNumeric = std::visit(
-        [&numValue](const auto &v) -> bool {
+        [&numValue](const auto& v) -> bool {
           using T = std::decay_t<decltype(v)>;
           if constexpr (std::is_same_v<T, i32>) {
             numValue = static_cast<f64>(v);
@@ -360,9 +353,9 @@ bool validate(const PropertyValue &value, const PropertyMeta &meta,
 
   // Validate enum values
   if (meta.type == PropertyType::Enum && !meta.enumOptions.empty()) {
-    if (auto *ev = std::get_if<EnumValue>(&value)) {
+    if (auto* ev = std::get_if<EnumValue>(&value)) {
       bool found = false;
-      for (const auto &[val, name] : meta.enumOptions) {
+      for (const auto& [val, name] : meta.enumOptions) {
         if (ev->value == val) {
           found = true;
           break;
@@ -381,10 +374,9 @@ bool validate(const PropertyValue &value, const PropertyMeta &meta,
   return true;
 }
 
-PropertyValue clampToRange(const PropertyValue &value,
-                           const RangeConstraint &range) {
+PropertyValue clampToRange(const PropertyValue& value, const RangeConstraint& range) {
   return std::visit(
-      [&range](const auto &v) -> PropertyValue {
+      [&range](const auto& v) -> PropertyValue {
         using T = std::decay_t<decltype(v)>;
 
         if constexpr (std::is_same_v<T, i32>) {

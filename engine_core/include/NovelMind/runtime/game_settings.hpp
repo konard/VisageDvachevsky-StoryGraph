@@ -42,14 +42,7 @@ namespace NovelMind::runtime {
 /**
  * @brief Settings category
  */
-enum class SettingsCategory {
-  Video,
-  Audio,
-  Text,
-  Language,
-  Input,
-  Accessibility
-};
+enum class SettingsCategory { Video, Audio, Text, Language, Input, Accessibility };
 
 /**
  * @brief Setting item type
@@ -102,7 +95,7 @@ struct SettingsChangeEvent {
   SettingItem newValue;
 };
 
-using OnSettingsChanged = std::function<void(const SettingsChangeEvent &)>;
+using OnSettingsChanged = std::function<void(const SettingsChangeEvent&)>;
 using OnSettingsApplied = std::function<void()>;
 using OnSettingsReset = std::function<void()>;
 
@@ -129,12 +122,12 @@ using OnSettingsReset = std::function<void()>;
  */
 class GameSettings {
 public:
-  explicit GameSettings(ConfigManager *configManager);
+  explicit GameSettings(ConfigManager* configManager);
   ~GameSettings();
 
   // Non-copyable
-  GameSettings(const GameSettings &) = delete;
-  GameSettings &operator=(const GameSettings &) = delete;
+  GameSettings(const GameSettings&) = delete;
+  GameSettings& operator=(const GameSettings&) = delete;
 
   /**
    * @brief Initialize settings from current config
@@ -148,8 +141,7 @@ public:
   /**
    * @brief Get all items in a category
    */
-  [[nodiscard]] std::vector<SettingItem>
-  getItemsInCategory(SettingsCategory category) const;
+  [[nodiscard]] std::vector<SettingItem> getItemsInCategory(SettingsCategory category) const;
 
   /**
    * @brief Get all categories
@@ -168,12 +160,12 @@ public:
   /**
    * @brief Get a specific setting by ID
    */
-  [[nodiscard]] const SettingItem *getSetting(const std::string &id) const;
+  [[nodiscard]] const SettingItem* getSetting(const std::string& id) const;
 
   /**
    * @brief Get all settings
    */
-  [[nodiscard]] const std::vector<SettingItem> &getAllSettings() const;
+  [[nodiscard]] const std::vector<SettingItem>& getAllSettings() const;
 
   // =========================================================================
   // Setting Modification
@@ -182,32 +174,32 @@ public:
   /**
    * @brief Set a boolean setting value
    */
-  void setBoolValue(const std::string &id, bool value);
+  void setBoolValue(const std::string& id, bool value);
 
   /**
    * @brief Set a float setting value (for sliders)
    */
-  void setFloatValue(const std::string &id, f32 value);
+  void setFloatValue(const std::string& id, f32 value);
 
   /**
    * @brief Set an integer setting value
    */
-  void setIntValue(const std::string &id, i32 value);
+  void setIntValue(const std::string& id, i32 value);
 
   /**
    * @brief Set a string setting value
    */
-  void setStringValue(const std::string &id, const std::string &value);
+  void setStringValue(const std::string& id, const std::string& value);
 
   /**
    * @brief Set choice selection
    */
-  void setChoice(const std::string &id, i32 choiceIndex);
+  void setChoice(const std::string& id, i32 choiceIndex);
 
   /**
    * @brief Set key binding
    */
-  void setKeyBinding(const std::string &id, const InputBinding &binding);
+  void setKeyBinding(const std::string& id, const InputBinding& binding);
 
   // =========================================================================
   // Change Management
@@ -253,8 +245,7 @@ public:
   /**
    * @brief Get available resolutions
    */
-  [[nodiscard]] std::vector<std::pair<i32, i32>>
-  getAvailableResolutions() const;
+  [[nodiscard]] std::vector<std::pair<i32, i32>> getAvailableResolutions() const;
 
   /**
    * @brief Get available languages
@@ -290,14 +281,14 @@ private:
   /**
    * @brief Find setting index by ID
    */
-  [[nodiscard]] i32 findSettingIndex(const std::string &id) const;
+  [[nodiscard]] i32 findSettingIndex(const std::string& id) const;
 
   /**
    * @brief Notify setting changed
    */
-  void notifySettingChanged(const std::string &id, const SettingItem &oldValue);
+  void notifySettingChanged(const std::string& id, const SettingItem& oldValue);
 
-  ConfigManager *m_configManager;
+  ConfigManager* m_configManager;
   std::vector<SettingItem> m_settings;
   bool m_hasPendingChanges = false;
 

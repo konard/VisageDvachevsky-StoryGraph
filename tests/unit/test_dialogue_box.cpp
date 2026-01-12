@@ -112,7 +112,7 @@ TEST_CASE("DialogueBox - Style Configuration", "[scene][dialogue]") {
   DialogueBox box("test_dialogue");
 
   SECTION("Default style has proper name color") {
-    const auto &style = box.getStyle();
+    const auto& style = box.getStyle();
 
     // Name color should be set (golden color by default)
     REQUIRE(style.nameColor.r == 255);
@@ -128,7 +128,7 @@ TEST_CASE("DialogueBox - Style Configuration", "[scene][dialogue]") {
 
     box.setStyle(customStyle);
 
-    const auto &style = box.getStyle();
+    const auto& style = box.getStyle();
     REQUIRE(style.nameColor.r == 255);
     REQUIRE(style.nameColor.g == 0);
     REQUIRE(style.nameColor.b == 0);

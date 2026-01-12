@@ -6,14 +6,13 @@
 namespace NovelMind::editor {
 
 // Static instance
-std::unique_ptr<TimelinePlaybackEngine> TimelinePlaybackEngine::s_instance =
-    nullptr;
+std::unique_ptr<TimelinePlaybackEngine> TimelinePlaybackEngine::s_instance = nullptr;
 
 TimelinePlaybackEngine::TimelinePlaybackEngine() = default;
 
 TimelinePlaybackEngine::~TimelinePlaybackEngine() = default;
 
-TimelinePlaybackEngine &TimelinePlaybackEngine::instance() {
+TimelinePlaybackEngine& TimelinePlaybackEngine::instance() {
   if (!s_instance) {
     s_instance = std::make_unique<TimelinePlaybackEngine>();
   }
@@ -31,7 +30,7 @@ void TimelinePlaybackEngine::play() {
   play(config);
 }
 
-void TimelinePlaybackEngine::play(const PlaybackConfig &config) {
+void TimelinePlaybackEngine::play(const PlaybackConfig& config) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_speed = config.speed;
@@ -143,9 +142,13 @@ void TimelinePlaybackEngine::stepBackward() {
   seekTo(m_currentTime - frameTime);
 }
 
-void TimelinePlaybackEngine::jumpToStart() { seekTo(0.0); }
+void TimelinePlaybackEngine::jumpToStart() {
+  seekTo(0.0);
+}
 
-void TimelinePlaybackEngine::jumpToEnd() { seekTo(m_duration); }
+void TimelinePlaybackEngine::jumpToEnd() {
+  seekTo(m_duration);
+}
 
 void TimelinePlaybackEngine::beginScrubbing() {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -284,7 +287,7 @@ f64 TimelinePlaybackEngine::getFrameRate() const {
 // Track Management
 // ============================================================================
 
-void TimelinePlaybackEngine::registerTrack(const std::string &trackId) {
+void TimelinePlaybackEngine::registerTrack(const std::string& trackId) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (m_tracks.find(trackId) == m_tracks.end()) {
@@ -294,13 +297,13 @@ void TimelinePlaybackEngine::registerTrack(const std::string &trackId) {
   }
 }
 
-void TimelinePlaybackEngine::unregisterTrack(const std::string &trackId) {
+void TimelinePlaybackEngine::unregisterTrack(const std::string& trackId) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_tracks.erase(trackId);
 }
 
 std::optional<TrackPlaybackState>
-TimelinePlaybackEngine::getTrackState(const std::string &trackId) const {
+TimelinePlaybackEngine::getTrackState(const std::string& trackId) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_tracks.find(trackId);
@@ -310,8 +313,7 @@ TimelinePlaybackEngine::getTrackState(const std::string &trackId) const {
   return std::nullopt;
 }
 
-void TimelinePlaybackEngine::setTrackEnabled(const std::string &trackId,
-                                             bool enabled) {
+void TimelinePlaybackEngine::setTrackEnabled(const std::string& trackId, bool enabled) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_tracks.find(trackId);
@@ -321,8 +323,7 @@ void TimelinePlaybackEngine::setTrackEnabled(const std::string &trackId,
   }
 }
 
-void TimelinePlaybackEngine::setTrackSolo(const std::string &trackId,
-                                          bool solo) {
+void TimelinePlaybackEngine::setTrackSolo(const std::string& trackId, bool solo) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_tracks.find(trackId);
@@ -332,8 +333,7 @@ void TimelinePlaybackEngine::setTrackSolo(const std::string &trackId,
   }
 }
 
-void TimelinePlaybackEngine::setTrackMuted(const std::string &trackId,
-                                           bool muted) {
+void TimelinePlaybackEngine::setTrackMuted(const std::string& trackId, bool muted) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_tracks.find(trackId);
@@ -346,7 +346,7 @@ void TimelinePlaybackEngine::setTrackMuted(const std::string &trackId,
 void TimelinePlaybackEngine::clearAllSolo() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (auto &pair : m_tracks) {
+  for (auto& pair : m_tracks) {
     pair.second.solo = false;
   }
 }
@@ -355,9 +355,7 @@ void TimelinePlaybackEngine::clearAllSolo() {
 // Event Scheduling
 // ============================================================================
 
-std::string
-TimelinePlaybackEngine::scheduleEvent(f64 time,
-                                      TimelineEventCallback callback) {
+std::string TimelinePlaybackEngine::scheduleEvent(f64 time, TimelineEventCallback callback) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   ScheduledEvent event;
@@ -371,9 +369,8 @@ TimelinePlaybackEngine::scheduleEvent(f64 time,
   return m_scheduledEvents.back().id;
 }
 
-std::string
-TimelinePlaybackEngine::scheduleRepeatingEvent(f64 startTime, f64 interval,
-                                               TimelineEventCallback callback) {
+std::string TimelinePlaybackEngine::scheduleRepeatingEvent(f64 startTime, f64 interval,
+                                                           TimelineEventCallback callback) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   ScheduledEvent event;
@@ -388,46 +385,43 @@ TimelinePlaybackEngine::scheduleRepeatingEvent(f64 startTime, f64 interval,
   return m_scheduledEvents.back().id;
 }
 
-void TimelinePlaybackEngine::cancelEvent(const std::string &eventId) {
+void TimelinePlaybackEngine::cancelEvent(const std::string& eventId) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_scheduledEvents.erase(std::remove_if(m_scheduledEvents.begin(),
-                                         m_scheduledEvents.end(),
-                                         [&eventId](const ScheduledEvent &e) {
-                                           return e.id == eventId;
-                                         }),
-                          m_scheduledEvents.end());
+  m_scheduledEvents.erase(
+      std::remove_if(m_scheduledEvents.begin(), m_scheduledEvents.end(),
+                     [&eventId](const ScheduledEvent& e) { return e.id == eventId; }),
+      m_scheduledEvents.end());
 }
 
-void TimelinePlaybackEngine::addMarker(const std::string &markerId, f64 time) {
+void TimelinePlaybackEngine::addMarker(const std::string& markerId, f64 time) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_markers[markerId] = clampTime(time);
 }
 
-void TimelinePlaybackEngine::removeMarker(const std::string &markerId) {
+void TimelinePlaybackEngine::removeMarker(const std::string& markerId) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_markers.erase(markerId);
 }
 
-std::vector<std::pair<std::string, f64>>
-TimelinePlaybackEngine::getMarkers() const {
+std::vector<std::pair<std::string, f64>> TimelinePlaybackEngine::getMarkers() const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   std::vector<std::pair<std::string, f64>> result;
   result.reserve(m_markers.size());
 
-  for (const auto &pair : m_markers) {
+  for (const auto& pair : m_markers) {
     result.emplace_back(pair.first, pair.second);
   }
 
   // Sort by time
   std::sort(result.begin(), result.end(),
-            [](const auto &a, const auto &b) { return a.second < b.second; });
+            [](const auto& a, const auto& b) { return a.second < b.second; });
 
   return result;
 }
 
-void TimelinePlaybackEngine::jumpToMarker(const std::string &markerId) {
+void TimelinePlaybackEngine::jumpToMarker(const std::string& markerId) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   auto it = m_markers.find(markerId);
@@ -459,7 +453,7 @@ void TimelinePlaybackEngine::update(f64 deltaTime) {
   processScheduledEvents(oldTime, m_currentTime);
 
   // Check for markers
-  for (const auto &marker : m_markers) {
+  for (const auto& marker : m_markers) {
     bool crossed = false;
     if (m_direction == PlaybackDirection::Forward) {
       crossed = oldTime < marker.second && m_currentTime >= marker.second;
@@ -477,7 +471,7 @@ void TimelinePlaybackEngine::update(f64 deltaTime) {
         m_eventCallback(event);
       }
 
-      for (auto *listener : m_listeners) {
+      for (auto* listener : m_listeners) {
         listener->onMarkerReached(marker.first, marker.second);
       }
     }
@@ -490,8 +484,8 @@ void TimelinePlaybackEngine::evaluate() {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   // Evaluate all tracks at current time
-  for (const auto &trackPair : m_tracks) {
-    const auto &track = trackPair.second;
+  for (const auto& trackPair : m_tracks) {
+    const auto& track = trackPair.second;
 
     // Skip disabled, muted tracks (unless solo is active elsewhere)
     if (!track.enabled || track.muted) {
@@ -500,7 +494,7 @@ void TimelinePlaybackEngine::evaluate() {
 
     // Check for solo
     bool hasSolo = false;
-    for (const auto &t : m_tracks) {
+    for (const auto& t : m_tracks) {
       if (t.second.solo) {
         hasSolo = true;
         break;
@@ -525,29 +519,27 @@ void TimelinePlaybackEngine::setEventCallback(TimelineEventCallback callback) {
   m_eventCallback = std::move(callback);
 }
 
-void TimelinePlaybackEngine::addListener(IPlaybackListener *listener) {
+void TimelinePlaybackEngine::addListener(IPlaybackListener* listener) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void TimelinePlaybackEngine::removeListener(IPlaybackListener *listener) {
+void TimelinePlaybackEngine::removeListener(IPlaybackListener* listener) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  m_listeners.erase(
-      std::remove(m_listeners.begin(), m_listeners.end(), listener),
-      m_listeners.end());
+  m_listeners.erase(std::remove(m_listeners.begin(), m_listeners.end(), listener),
+                    m_listeners.end());
 }
 
 // ============================================================================
 // Snapshot/Restore
 // ============================================================================
 
-TimelinePlaybackEngine::PlaybackSnapshot
-TimelinePlaybackEngine::getSnapshot() const {
+TimelinePlaybackEngine::PlaybackSnapshot TimelinePlaybackEngine::getSnapshot() const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   PlaybackSnapshot snapshot;
@@ -560,8 +552,7 @@ TimelinePlaybackEngine::getSnapshot() const {
   return snapshot;
 }
 
-void TimelinePlaybackEngine::restoreFromSnapshot(
-    const PlaybackSnapshot &snapshot) {
+void TimelinePlaybackEngine::restoreFromSnapshot(const PlaybackSnapshot& snapshot) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_currentTime = snapshot.time;
@@ -579,10 +570,10 @@ void TimelinePlaybackEngine::restoreFromSnapshot(
 // ============================================================================
 
 void TimelinePlaybackEngine::processScheduledEvents(f64 fromTime, f64 toTime) {
-  std::vector<ScheduledEvent *> toTrigger;
+  std::vector<ScheduledEvent*> toTrigger;
 
   // Find events in time range
-  for (auto &event : m_scheduledEvents) {
+  for (auto& event : m_scheduledEvents) {
     bool inRange = false;
 
     if (m_direction == PlaybackDirection::Forward) {
@@ -597,7 +588,7 @@ void TimelinePlaybackEngine::processScheduledEvents(f64 fromTime, f64 toTime) {
   }
 
   // Trigger events
-  for (auto *event : toTrigger) {
+  for (auto* event : toTrigger) {
     if (event->callback) {
       TimelineEvent te;
       te.type = TimelineEventType::KeyframeReached;
@@ -616,35 +607,33 @@ void TimelinePlaybackEngine::processScheduledEvents(f64 fromTime, f64 toTime) {
   }
 
   // Remove non-repeating events that have triggered
-  m_scheduledEvents.erase(
-      std::remove_if(m_scheduledEvents.begin(), m_scheduledEvents.end(),
-                     [fromTime, toTime, this](const ScheduledEvent &e) {
-                       if (e.repeating) {
-                         return false;
-                       }
-                       if (m_direction == PlaybackDirection::Forward) {
-                         return e.time > fromTime && e.time <= toTime;
-                       }
-                       return e.time < fromTime && e.time >= toTime;
-                     }),
-      m_scheduledEvents.end());
+  m_scheduledEvents.erase(std::remove_if(m_scheduledEvents.begin(), m_scheduledEvents.end(),
+                                         [fromTime, toTime, this](const ScheduledEvent& e) {
+                                           if (e.repeating) {
+                                             return false;
+                                           }
+                                           if (m_direction == PlaybackDirection::Forward) {
+                                             return e.time > fromTime && e.time <= toTime;
+                                           }
+                                           return e.time < fromTime && e.time >= toTime;
+                                         }),
+                          m_scheduledEvents.end());
 }
 
 void TimelinePlaybackEngine::notifyStateChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onPlaybackStateChanged(m_state);
   }
 }
 
 void TimelinePlaybackEngine::notifyTimeChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     listener->onTimeChanged(m_currentTime, m_duration);
   }
 }
 
-void TimelinePlaybackEngine::notifyTrackStateChanged(
-    const std::string &trackId) {
-  for (auto *listener : m_listeners) {
+void TimelinePlaybackEngine::notifyTrackStateChanged(const std::string& trackId) {
+  for (auto* listener : m_listeners) {
     listener->onTrackStateChanged(trackId);
   }
 }
@@ -664,8 +653,7 @@ void TimelinePlaybackEngine::handleLoopBoundary() {
 
     case LoopMode::Loop:
     case LoopMode::LoopRange:
-      m_currentTime =
-          loopStart + std::fmod(m_currentTime - loopEnd, loopEnd - loopStart);
+      m_currentTime = loopStart + std::fmod(m_currentTime - loopEnd, loopEnd - loopStart);
       loopOccurred = true;
       break;
 
@@ -675,8 +663,7 @@ void TimelinePlaybackEngine::handleLoopBoundary() {
       loopOccurred = true;
       break;
     }
-  } else if (m_direction == PlaybackDirection::Backward &&
-             m_currentTime <= loopStart) {
+  } else if (m_direction == PlaybackDirection::Backward && m_currentTime <= loopStart) {
     switch (m_loopMode) {
     case LoopMode::None:
       m_currentTime = loopStart;
@@ -685,8 +672,7 @@ void TimelinePlaybackEngine::handleLoopBoundary() {
 
     case LoopMode::Loop:
     case LoopMode::LoopRange:
-      m_currentTime =
-          loopEnd - std::fmod(loopStart - m_currentTime, loopEnd - loopStart);
+      m_currentTime = loopEnd - std::fmod(loopStart - m_currentTime, loopEnd - loopStart);
       loopOccurred = true;
       break;
 
@@ -709,7 +695,7 @@ void TimelinePlaybackEngine::handleLoopBoundary() {
       m_eventCallback(event);
     }
 
-    for (auto *listener : m_listeners) {
+    for (auto* listener : m_listeners) {
       listener->onLoopCompleted(m_loopCount);
     }
   }

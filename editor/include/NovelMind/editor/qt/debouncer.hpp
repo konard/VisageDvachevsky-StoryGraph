@@ -42,11 +42,12 @@ public:
    * @param delayMs Delay in milliseconds before callback is executed
    * @param parent Parent QObject
    */
-  explicit Debouncer(int delayMs = 300, QObject *parent = nullptr)
-      : QObject(parent), m_delayMs(delayMs) {
-    m_timer.setSingleShot(true);
-    connect(&m_timer, &QTimer::timeout, this, &Debouncer::onTimeout);
-  }
+  explicit Debouncer(int delayMs = 300, QObject* parent = nullptr);
+
+  /**
+   * @brief Virtual destructor
+   */
+  ~Debouncer() override;
 
   /**
    * @brief Trigger the debouncer with a callback
@@ -104,13 +105,7 @@ signals:
   void triggered();
 
 private slots:
-  void onTimeout() {
-    if (m_pendingCallback) {
-      emit triggered();
-      m_pendingCallback();
-      m_pendingCallback = nullptr;
-    }
-  }
+  void onTimeout();
 
 private:
   QTimer m_timer;
@@ -128,8 +123,8 @@ class PropertyDebouncer : public Debouncer {
   Q_OBJECT
 
 public:
-  explicit PropertyDebouncer(int delayMs = 300, QObject *parent = nullptr)
-      : Debouncer(delayMs, parent) {}
+  explicit PropertyDebouncer(int delayMs = 300, QObject* parent = nullptr);
+  ~PropertyDebouncer() override;
 
   /**
    * @brief Trigger a property change with debouncing
@@ -138,9 +133,8 @@ public:
    * @param newValue New value for the property
    * @param callback Callback to execute with the final value
    */
-  void triggerPropertyChange(const QString &propertyName,
-                             const QString &newValue,
-                             std::function<void(const QString &, const QString &)> callback) {
+  void triggerPropertyChange(const QString& propertyName, const QString& newValue,
+                             std::function<void(const QString&, const QString&)> callback) {
     m_lastPropertyName = propertyName;
     m_lastValue = newValue;
     m_propertyCallback = std::move(callback);
@@ -167,7 +161,7 @@ public:
 private:
   QString m_lastPropertyName;
   QString m_lastValue;
-  std::function<void(const QString &, const QString &)> m_propertyCallback;
+  std::function<void(const QString&, const QString&)> m_propertyCallback;
 };
 
 } // namespace NovelMind::editor::qt

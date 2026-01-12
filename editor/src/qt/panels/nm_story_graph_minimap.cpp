@@ -9,16 +9,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMStoryGraphMinimap::NMStoryGraphMinimap(QWidget *parent)
-    : QGraphicsView(parent) {
+NMStoryGraphMinimap::NMStoryGraphMinimap(QWidget* parent) : QGraphicsView(parent) {
   setupView();
 
   // Setup update timer for deferred updates
   m_updateTimer = new QTimer(this);
   m_updateTimer->setSingleShot(true);
   m_updateTimer->setInterval(UPDATE_DELAY_MS);
-  connect(m_updateTimer, &QTimer::timeout, this,
-          &NMStoryGraphMinimap::performDeferredUpdate);
+  connect(m_updateTimer, &QTimer::timeout, this, &NMStoryGraphMinimap::performDeferredUpdate);
 }
 
 NMStoryGraphMinimap::~NMStoryGraphMinimap() = default;
@@ -40,18 +38,18 @@ void NMStoryGraphMinimap::setupView() {
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 }
 
-void NMStoryGraphMinimap::setMainView(NMStoryGraphView *mainView) {
+void NMStoryGraphMinimap::setMainView(NMStoryGraphView* mainView) {
   // Disconnect old view - only disconnect the specific connections we made
   if (m_mainView) {
     disconnect(m_mainView, &QGraphicsView::rubberBandChanged, this,
                &NMStoryGraphMinimap::onMainViewTransformed);
     if (m_mainView->horizontalScrollBar()) {
-      disconnect(m_mainView->horizontalScrollBar(), &QScrollBar::valueChanged,
-                 this, &NMStoryGraphMinimap::onMainViewTransformed);
+      disconnect(m_mainView->horizontalScrollBar(), &QScrollBar::valueChanged, this,
+                 &NMStoryGraphMinimap::onMainViewTransformed);
     }
     if (m_mainView->verticalScrollBar()) {
-      disconnect(m_mainView->verticalScrollBar(), &QScrollBar::valueChanged,
-                 this, &NMStoryGraphMinimap::onMainViewTransformed);
+      disconnect(m_mainView->verticalScrollBar(), &QScrollBar::valueChanged, this,
+                 &NMStoryGraphMinimap::onMainViewTransformed);
     }
   }
 
@@ -71,7 +69,7 @@ void NMStoryGraphMinimap::setMainView(NMStoryGraphView *mainView) {
   }
 }
 
-void NMStoryGraphMinimap::setGraphScene(NMStoryGraphScene *scene) {
+void NMStoryGraphMinimap::setGraphScene(NMStoryGraphScene* scene) {
   // Disconnect old scene - only disconnect the specific connections we made
   if (m_graphScene) {
     disconnect(m_graphScene, &NMStoryGraphScene::nodeAdded, this,
@@ -135,7 +133,9 @@ void NMStoryGraphMinimap::onSceneChanged() {
   }
 }
 
-void NMStoryGraphMinimap::performDeferredUpdate() { updateMinimap(); }
+void NMStoryGraphMinimap::performDeferredUpdate() {
+  updateMinimap();
+}
 
 void NMStoryGraphMinimap::fitGraphInView() {
   if (!m_graphScene || m_graphScene->nodes().isEmpty()) {
@@ -144,7 +144,7 @@ void NMStoryGraphMinimap::fitGraphInView() {
 
   // Calculate bounding rect of all nodes
   QRectF graphBounds;
-  for (auto *node : m_graphScene->nodes()) {
+  for (auto* node : m_graphScene->nodes()) {
     if (graphBounds.isNull()) {
       graphBounds = node->sceneBoundingRect();
     } else {
@@ -166,20 +166,20 @@ QRectF NMStoryGraphMinimap::getViewportRectInScene() const {
 
   // Get the visible rect in the main view's scene coordinates
   QPointF topLeft = m_mainView->mapToScene(0, 0);
-  QPointF bottomRight = m_mainView->mapToScene(
-      m_mainView->viewport()->width(), m_mainView->viewport()->height());
+  QPointF bottomRight =
+      m_mainView->mapToScene(m_mainView->viewport()->width(), m_mainView->viewport()->height());
 
   return QRectF(topLeft, bottomRight);
 }
 
-void NMStoryGraphMinimap::navigateToScenePos(const QPointF &scenePos) {
+void NMStoryGraphMinimap::navigateToScenePos(const QPointF& scenePos) {
   if (m_mainView) {
     m_mainView->centerOn(scenePos);
     emit navigationRequested(scenePos);
   }
 }
 
-void NMStoryGraphMinimap::mousePressEvent(QMouseEvent *event) {
+void NMStoryGraphMinimap::mousePressEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     QPointF scenePos = mapToScene(event->pos());
     QRectF viewportRect = getViewportRectInScene();
@@ -200,15 +200,14 @@ void NMStoryGraphMinimap::mousePressEvent(QMouseEvent *event) {
   QGraphicsView::mousePressEvent(event);
 }
 
-void NMStoryGraphMinimap::mouseMoveEvent(QMouseEvent *event) {
+void NMStoryGraphMinimap::mouseMoveEvent(QMouseEvent* event) {
   if (m_isDraggingViewport && (event->buttons() & Qt::LeftButton)) {
     QPointF scenePos = mapToScene(event->pos());
     QPointF delta = scenePos - m_lastMousePos;
 
     if (m_mainView) {
       // Move the main view's center by the delta
-      QPointF currentCenter =
-          m_mainView->mapToScene(m_mainView->viewport()->rect().center());
+      QPointF currentCenter = m_mainView->mapToScene(m_mainView->viewport()->rect().center());
       m_mainView->centerOn(currentCenter + delta);
     }
 
@@ -220,7 +219,7 @@ void NMStoryGraphMinimap::mouseMoveEvent(QMouseEvent *event) {
   QGraphicsView::mouseMoveEvent(event);
 }
 
-void NMStoryGraphMinimap::mouseReleaseEvent(QMouseEvent *event) {
+void NMStoryGraphMinimap::mouseReleaseEvent(QMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_isDraggingViewport = false;
     event->accept();
@@ -230,15 +229,14 @@ void NMStoryGraphMinimap::mouseReleaseEvent(QMouseEvent *event) {
   QGraphicsView::mouseReleaseEvent(event);
 }
 
-void NMStoryGraphMinimap::drawForeground(QPainter *painter,
-                                         const QRectF &rect) {
+void NMStoryGraphMinimap::drawForeground(QPainter* painter, const QRectF& rect) {
   Q_UNUSED(rect);
 
   if (!m_mainView || !m_graphScene) {
     return;
   }
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
 
   // Draw viewport rectangle
   QRectF viewportRect = getViewportRectInScene();
@@ -257,13 +255,13 @@ void NMStoryGraphMinimap::drawForeground(QPainter *painter,
   }
 }
 
-void NMStoryGraphMinimap::resizeEvent(QResizeEvent *event) {
+void NMStoryGraphMinimap::resizeEvent(QResizeEvent* event) {
   QGraphicsView::resizeEvent(event);
   // Refit the graph when minimap is resized
   fitGraphInView();
 }
 
-void NMStoryGraphMinimap::hideEvent(QHideEvent *event) {
+void NMStoryGraphMinimap::hideEvent(QHideEvent* event) {
   // Issue #172 fix: Reset drag state when widget is hidden to prevent stale
   // state if closed during a viewport drag operation.
   m_isDraggingViewport = false;

@@ -23,8 +23,7 @@ TEST_CASE("PlaybackSourceMode enum values", "[playback_source][issue_82]") {
   }
 }
 
-TEST_CASE("ProjectMetadata default playback source mode",
-          "[playback_source][issue_82]") {
+TEST_CASE("ProjectMetadata default playback source mode", "[playback_source][issue_82]") {
   ProjectMetadata meta;
 
   SECTION("Default value is Script mode") {
@@ -44,8 +43,7 @@ TEST_CASE("ProjectMetadata default playback source mode",
   }
 }
 
-TEST_CASE("PlaybackSourceMode round-trip conversion",
-          "[playback_source][issue_82]") {
+TEST_CASE("PlaybackSourceMode round-trip conversion", "[playback_source][issue_82]") {
   // Test that enum values can be safely converted to/from integers
   // This is important for serialization/deserialization
 
@@ -72,8 +70,7 @@ TEST_CASE("PlaybackSourceMode round-trip conversion",
 // Tests for Issue #94: Content source priority during playback
 // ============================================================================
 
-TEST_CASE("PlaybackSourceMode determines content source priority",
-          "[playback_source][issue_94]") {
+TEST_CASE("PlaybackSourceMode determines content source priority", "[playback_source][issue_94]") {
   SECTION("Script mode uses only NMScript files") {
     // In Script mode, only .nms files should be used for playback
     // Story Graph visual data is ignored
@@ -103,8 +100,7 @@ TEST_CASE("PlaybackSourceMode determines content source priority",
   }
 }
 
-TEST_CASE("PlaybackSourceMode affects entry scene selection",
-          "[playback_source][issue_94]") {
+TEST_CASE("PlaybackSourceMode affects entry scene selection", "[playback_source][issue_94]") {
   SECTION("Graph mode can override entry scene") {
     // When in Graph mode, the entry scene from story_graph.json
     // should take priority over project metadata startScene

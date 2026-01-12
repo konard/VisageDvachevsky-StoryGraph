@@ -12,36 +12,38 @@ using namespace NovelMind::scene;
 // Mock window for renderer initialization
 class MockWindow : public platform::IWindow {
 public:
-  Result<void> create(const std::string &, i32, i32, u32) override { return Result<void>(); }
+  Result<void> create(const platform::WindowConfig&) override { return Result<void>(); }
   void destroy() override {}
-  void pollEvents() override {}
-  bool shouldClose() const override { return false; }
-  void swapBuffers() override {}
-  void *getNativeHandle() override { return nullptr; }
+  void setTitle(const std::string&) override {}
+  void setSize(i32, i32) override {}
+  void setFullscreen(bool) override {}
   i32 getWidth() const override { return 800; }
   i32 getHeight() const override { return 600; }
+  bool isFullscreen() const override { return false; }
+  bool shouldClose() const override { return false; }
+  void pollEvents() override {}
+  void swapBuffers() override {}
+  void* getNativeHandle() const override { return nullptr; }
 };
 
 // Mock renderer for testing
 class MockRenderer : public renderer::IRenderer {
 public:
-  Result<void> initialize(platform::IWindow &) override { return Result<void>(); }
+  Result<void> initialize(platform::IWindow&) override { return Result<void>(); }
   void shutdown() override {}
   void beginFrame() override {}
   void endFrame() override {}
-  void clear(const renderer::Color &color) override {
-    (void)color;
-  }
+  void clear(const renderer::Color& color) override { (void)color; }
   void setBlendMode(renderer::BlendMode) override {}
-  void drawSprite(const renderer::Texture &, const renderer::Transform2D &,
-                  const renderer::Color &) override {}
-  void drawSprite(const renderer::Texture &, const renderer::Rect &,
-                  const renderer::Transform2D &, const renderer::Color &) override {}
-  void drawRect(const renderer::Rect &, const renderer::Color &) override {}
-  void fillRect(const renderer::Rect &, const renderer::Color &) override {}
-  void drawText(const renderer::Font &, const std::string &, f32, f32,
-                const renderer::Color &) override {}
-  void setFade(f32, const renderer::Color &) override {}
+  void drawSprite(const renderer::Texture&, const renderer::Transform2D&,
+                  const renderer::Color&) override {}
+  void drawSprite(const renderer::Texture&, const renderer::Rect&, const renderer::Transform2D&,
+                  const renderer::Color&) override {}
+  void drawRect(const renderer::Rect&, const renderer::Color&) override {}
+  void fillRect(const renderer::Rect&, const renderer::Color&) override {}
+  void drawText(const renderer::Font&, const std::string&, f32, f32,
+                const renderer::Color&) override {}
+  void setFade(f32, const renderer::Color&) override {}
   i32 getWidth() const override { return 800; }
   i32 getHeight() const override { return 600; }
 };
@@ -69,30 +71,30 @@ TEST_CASE("SceneGraph - Layer access", "[scene_graph][layer]") {
   SceneGraph graph;
 
   SECTION("Access background layer") {
-    Layer &bgLayer = graph.getBackgroundLayer();
+    Layer& bgLayer = graph.getBackgroundLayer();
     CHECK(bgLayer.getType() == LayerType::Background);
   }
 
   SECTION("Access character layer") {
-    Layer &charLayer = graph.getCharacterLayer();
+    Layer& charLayer = graph.getCharacterLayer();
     CHECK(charLayer.getType() == LayerType::Characters);
   }
 
   SECTION("Access UI layer") {
-    Layer &uiLayer = graph.getUILayer();
+    Layer& uiLayer = graph.getUILayer();
     CHECK(uiLayer.getType() == LayerType::UI);
   }
 
   SECTION("Access effect layer") {
-    Layer &effectLayer = graph.getEffectLayer();
+    Layer& effectLayer = graph.getEffectLayer();
     CHECK(effectLayer.getType() == LayerType::Effects);
   }
 
   SECTION("Access layer by type") {
-    Layer &layer1 = graph.getLayer(LayerType::Background);
-    Layer &layer2 = graph.getLayer(LayerType::Characters);
-    Layer &layer3 = graph.getLayer(LayerType::UI);
-    Layer &layer4 = graph.getLayer(LayerType::Effects);
+    Layer& layer1 = graph.getLayer(LayerType::Background);
+    Layer& layer2 = graph.getLayer(LayerType::Characters);
+    Layer& layer3 = graph.getLayer(LayerType::UI);
+    Layer& layer4 = graph.getLayer(LayerType::Effects);
 
     CHECK(layer1.getType() == LayerType::Background);
     CHECK(layer2.getType() == LayerType::Characters);
@@ -110,10 +112,10 @@ TEST_CASE("SceneGraph - Object management", "[scene_graph][objects]") {
 
     graph.addToLayer(LayerType::Background, std::move(bg));
 
-    auto *found = graph.findObject("bg1");
+    auto* found = graph.findObject("bg1");
     CHECK(found != nullptr);
     if (found) {
-      auto *bgObj = dynamic_cast<BackgroundObject *>(found);
+      auto* bgObj = dynamic_cast<BackgroundObject*>(found);
       CHECK(bgObj != nullptr);
       if (bgObj) {
         CHECK(bgObj->getTextureId() == "test_bg.png");
@@ -128,12 +130,12 @@ TEST_CASE("SceneGraph - Object management", "[scene_graph][objects]") {
     auto removed = graph.removeFromLayer(LayerType::Background, "bg1");
     CHECK(removed != nullptr);
 
-    auto *found = graph.findObject("bg1");
+    auto* found = graph.findObject("bg1");
     CHECK(found == nullptr);
   }
 
   SECTION("Find non-existent object returns nullptr") {
-    auto *found = graph.findObject("nonexistent");
+    auto* found = graph.findObject("nonexistent");
     CHECK(found == nullptr);
   }
 }
@@ -147,14 +149,13 @@ TEST_CASE("SceneGraph - Convenience methods", "[scene_graph][convenience]") {
   }
 
   SECTION("Show character") {
-    auto *character = graph.showCharacter("hero", "hero_sprite",
-                                          CharacterObject::Position::Center);
+    auto* character = graph.showCharacter("hero", "hero_sprite", CharacterObject::Position::Center);
     // May return null if not fully initialized
     (void)character;
   }
 
   SECTION("Show dialogue") {
-    auto *dialogue = graph.showDialogue("Hero", "Hello, world!");
+    auto* dialogue = graph.showDialogue("Hero", "Hello, world!");
     // May return null if not fully initialized
     (void)dialogue;
   }
@@ -289,7 +290,7 @@ TEST_CASE("SceneObjectBase - Property system", "[scene_graph][property]") {
     obj.setProperty("prop2", "value2");
     obj.setProperty("prop3", "value3");
 
-    const auto &props = obj.getProperties();
+    const auto& props = obj.getProperties();
     CHECK(props.size() == 3);
     CHECK(props.at("prop1") == "value1");
     CHECK(props.at("prop2") == "value2");
@@ -395,7 +396,7 @@ TEST_CASE("BackgroundObject - Properties", "[scene_graph][background]") {
     NovelMind::renderer::Color tint{255, 128, 64, 200};
     bg.setTint(tint);
 
-    const auto &storedTint = bg.getTint();
+    const auto& storedTint = bg.getTint();
     CHECK(storedTint.r == 255);
     CHECK(storedTint.g == 128);
     CHECK(storedTint.b == 64);
@@ -437,18 +438,16 @@ TEST_CASE("ChoiceUIObject - Choice management", "[scene_graph][choice]") {
   ChoiceUIObject choice("choice1");
 
   SECTION("Set and get choices") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""},
-        {"opt2", "Option 2", true, true, ""},
-        {"opt3", "Option 3", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""},
+                                                         {"opt2", "Option 2", true, true, ""},
+                                                         {"opt3", "Option 3", true, true, ""}};
 
     choice.setChoices(choices);
     CHECK(choice.getChoices().size() == 3);
   }
 
   SECTION("Clear choices") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""}};
     choice.setChoices(choices);
     CHECK(choice.getChoices().size() == 1);
 
@@ -457,9 +456,8 @@ TEST_CASE("ChoiceUIObject - Choice management", "[scene_graph][choice]") {
   }
 
   SECTION("Selection") {
-    std::vector<ChoiceUIObject::ChoiceOption> choices = {
-        {"opt1", "Option 1", true, true, ""},
-        {"opt2", "Option 2", true, true, ""}};
+    std::vector<ChoiceUIObject::ChoiceOption> choices = {{"opt1", "Option 1", true, true, ""},
+                                                         {"opt2", "Option 2", true, true, ""}};
     choice.setChoices(choices);
 
     choice.setSelectedIndex(1);
@@ -503,5 +501,160 @@ TEST_CASE("SceneObjectHandle - Validity tracking", "[scene_graph][handle]") {
 
     handle.reset();
     CHECK(handle.isValid() == false);
+  }
+}
+
+// ============================================================================
+// Scene Graph Depth Limit Tests (Issue #548 - P2)
+// ============================================================================
+
+TEST_CASE("SceneGraph - Depth limit enforcement", "[scene_graph][depth][bug]") {
+  SECTION("addChild respects maximum depth limit") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a chain approaching the limit
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < SceneObjectBase::MAX_SCENE_DEPTH - 1; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      bool added = current->addChild(std::move(child));
+      CHECK(added == true);
+      current = childPtr;
+    }
+
+    // This should fail as we're at the limit
+    auto tooDeep = std::make_unique<BackgroundObject>("too_deep");
+    bool added = current->addChild(std::move(tooDeep));
+    CHECK(added == false);
+  }
+
+  SECTION("getDepth returns correct depth") {
+    auto root = std::make_unique<BackgroundObject>("root");
+    CHECK(root->getDepth() == 0);
+
+    auto child1 = std::make_unique<BackgroundObject>("child1");
+    SceneObjectBase* child1Ptr = child1.get();
+    root->addChild(std::move(child1));
+    CHECK(child1Ptr->getDepth() == 1);
+
+    auto child2 = std::make_unique<BackgroundObject>("child2");
+    SceneObjectBase* child2Ptr = child2.get();
+    child1Ptr->addChild(std::move(child2));
+    CHECK(child2Ptr->getDepth() == 2);
+
+    auto child3 = std::make_unique<BackgroundObject>("child3");
+    SceneObjectBase* child3Ptr = child3.get();
+    child2Ptr->addChild(std::move(child3));
+    CHECK(child3Ptr->getDepth() == 3);
+  }
+
+  SECTION("findChild handles deep hierarchies") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a reasonable depth hierarchy
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < 10; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Should be able to find the deepest child
+    auto* found = root->findChild("child_9");
+    CHECK(found != nullptr);
+    if (found) {
+      CHECK(found->getId() == "child_9");
+    }
+  }
+
+  SECTION("update with depth limit prevents stack overflow") {
+    MockRenderer renderer;
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a very deep hierarchy
+    SceneObjectBase* current = root.get();
+    for (int i = 0; i < 50; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Should not crash
+    root->update(0.016);
+    // Render will call pure virtual, so we skip it for BackgroundObject in this test
+  }
+
+  SECTION("Maximum depth constant is reasonable") {
+    // Verify the constant is set to a reasonable value
+    CHECK(SceneObjectBase::MAX_SCENE_DEPTH == 100);
+  }
+}
+
+TEST_CASE("SceneGraph - Depth warning during save", "[scene_graph][depth][warning]") {
+  SECTION("saveState warns when approaching depth limit") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Build a chain to 80% of the limit (should trigger warning)
+    SceneObjectBase* current = root.get();
+    constexpr int depthFor80Percent = (SceneObjectBase::MAX_SCENE_DEPTH * 80) / 100;
+
+    for (int i = 0; i < depthFor80Percent; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      SceneObjectBase* childPtr = child.get();
+      current->addChild(std::move(child));
+      current = childPtr;
+    }
+
+    // Saving state of the deepest object should generate a warning
+    // (We can't easily test log output, but we verify it doesn't crash)
+    SceneObjectState state = current->saveState();
+    CHECK(state.id.find("child_") != std::string::npos);
+  }
+}
+
+TEST_CASE("SceneGraph - Stress test with complex hierarchy", "[scene_graph][depth][stress]") {
+  SECTION("Wide and shallow hierarchy") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Add 50 children at depth 1
+    for (int i = 0; i < 50; ++i) {
+      auto child = std::make_unique<BackgroundObject>("child_" + std::to_string(i));
+      root->addChild(std::move(child));
+    }
+
+    CHECK(root->getChildren().size() == 50);
+
+    // All children should be at depth 1
+    for (const auto& child : root->getChildren()) {
+      CHECK(child->getDepth() == 1);
+    }
+  }
+
+  SECTION("Balanced tree structure") {
+    auto root = std::make_unique<BackgroundObject>("root");
+
+    // Create a binary tree structure with 4 levels
+    std::vector<SceneObjectBase*> currentLevel = {root.get()};
+
+    for (int level = 0; level < 4; ++level) {
+      std::vector<SceneObjectBase*> nextLevel;
+      for (auto* parent : currentLevel) {
+        for (int i = 0; i < 2; ++i) {
+          auto child = std::make_unique<BackgroundObject>("L" + std::to_string(level) + "_" +
+                                                          std::to_string(i));
+          SceneObjectBase* childPtr = child.get();
+          parent->addChild(std::move(child));
+          nextLevel.push_back(childPtr);
+        }
+      }
+      currentLevel = nextLevel;
+    }
+
+    // Verify the leaves are at the correct depth
+    for (auto* leaf : currentLevel) {
+      CHECK(leaf->getDepth() == 4);
+    }
   }
 }

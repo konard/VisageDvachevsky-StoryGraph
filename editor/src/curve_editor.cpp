@@ -16,8 +16,7 @@ namespace NovelMind::editor {
 // =============================================================================
 
 AnimationCurve::AnimationCurve()
-    : m_id(std::to_string(reinterpret_cast<uintptr_t>(this))),
-      m_name("Unnamed Curve") {
+    : m_id(std::to_string(reinterpret_cast<uintptr_t>(this))), m_name("Unnamed Curve") {
   // Add default start and end points
   CurvePoint start;
   start.time = 0.0f;
@@ -30,7 +29,7 @@ AnimationCurve::AnimationCurve()
   m_points.push_back(end);
 }
 
-AnimationCurve::AnimationCurve(const std::string &name)
+AnimationCurve::AnimationCurve(const std::string& name)
     : m_id(std::to_string(reinterpret_cast<uintptr_t>(this))), m_name(name) {
   CurvePoint start;
   start.time = 0.0f;
@@ -43,11 +42,11 @@ AnimationCurve::AnimationCurve(const std::string &name)
   m_points.push_back(end);
 }
 
-void AnimationCurve::addPoint(const CurvePoint &point) {
+void AnimationCurve::addPoint(const CurvePoint& point) {
   // Insert in sorted order by time
-  auto it = std::lower_bound(
-      m_points.begin(), m_points.end(), point,
-      [](const CurvePoint &a, const CurvePoint &b) { return a.time < b.time; });
+  auto it =
+      std::lower_bound(m_points.begin(), m_points.end(), point,
+                       [](const CurvePoint& a, const CurvePoint& b) { return a.time < b.time; });
   m_points.insert(it, point);
 }
 
@@ -57,14 +56,12 @@ void AnimationCurve::removePoint(size_t index) {
   }
 }
 
-void AnimationCurve::updatePoint(size_t index, const CurvePoint &point) {
+void AnimationCurve::updatePoint(size_t index, const CurvePoint& point) {
   if (index < m_points.size()) {
     m_points[index] = point;
     // Re-sort if necessary
     std::sort(m_points.begin(), m_points.end(),
-              [](const CurvePoint &a, const CurvePoint &b) {
-                return a.time < b.time;
-              });
+              [](const CurvePoint& a, const CurvePoint& b) { return a.time < b.time; });
   }
 }
 
@@ -84,8 +81,8 @@ f32 AnimationCurve::evaluate(f32 t) const {
     return m_points.back().value;
   }
 
-  const auto &p0 = m_points[static_cast<size_t>(segIndex)];
-  const auto &p1 = m_points[static_cast<size_t>(segIndex + 1)];
+  const auto& p0 = m_points[static_cast<size_t>(segIndex)];
+  const auto& p1 = m_points[static_cast<size_t>(segIndex + 1)];
 
   // Calculate local t for this segment
   f32 segmentLength = p1.time - p0.time;
@@ -656,22 +653,21 @@ bool AnimationCurve::isValid() const {
 
 void AnimationCurve::normalize() {
   // Sort by time
-  std::sort(
-      m_points.begin(), m_points.end(),
-      [](const CurvePoint &a, const CurvePoint &b) { return a.time < b.time; });
+  std::sort(m_points.begin(), m_points.end(),
+            [](const CurvePoint& a, const CurvePoint& b) { return a.time < b.time; });
 
   // Clamp values
-  for (auto &point : m_points) {
+  for (auto& point : m_points) {
     point.time = std::clamp(point.time, 0.0f, 1.0f);
   }
 }
 
-Result<void> AnimationCurve::save(const std::string &path) const {
+Result<void> AnimationCurve::save(const std::string& path) const {
   (void)path;
   return Result<void>::ok();
 }
 
-Result<AnimationCurve> AnimationCurve::load(const std::string &path) {
+Result<AnimationCurve> AnimationCurve::load(const std::string& path) {
   (void)path;
   return Result<AnimationCurve>::ok(AnimationCurve());
 }
@@ -680,7 +676,7 @@ std::string AnimationCurve::toJson() const {
   std::ostringstream json;
   json << "{\"name\":\"" << m_name << "\",\"points\":[";
   for (size_t i = 0; i < m_points.size(); ++i) {
-    const auto &p = m_points[i];
+    const auto& p = m_points[i];
     if (i > 0)
       json << ",";
     json << "{\"t\":" << p.time << ",\"v\":" << p.value << "}";
@@ -689,13 +685,12 @@ std::string AnimationCurve::toJson() const {
   return json.str();
 }
 
-Result<AnimationCurve> AnimationCurve::fromJson(const std::string &json) {
+Result<AnimationCurve> AnimationCurve::fromJson(const std::string& json) {
   (void)json;
   return Result<AnimationCurve>::ok(AnimationCurve());
 }
 
-f32 AnimationCurve::evaluateBezierSegment(const CurvePoint &p0,
-                                          const CurvePoint &p1,
+f32 AnimationCurve::evaluateBezierSegment(const CurvePoint& p0, const CurvePoint& p1,
                                           f32 localT) const {
   // Cubic bezier interpolation
   f32 t2 = localT * localT;
@@ -710,8 +705,7 @@ f32 AnimationCurve::evaluateBezierSegment(const CurvePoint &p0,
   f32 cp2 = p1.value + p1.inHandleY;
   f32 cp3 = p1.value;
 
-  return mt3 * cp0 + 3.0f * mt2 * localT * cp1 + 3.0f * mt * t2 * cp2 +
-         t3 * cp3;
+  return mt3 * cp0 + 3.0f * mt2 * localT * cp1 + 3.0f * mt * t2 * cp2 + t3 * cp3;
 }
 
 i32 AnimationCurve::findSegment(f32 t) const {

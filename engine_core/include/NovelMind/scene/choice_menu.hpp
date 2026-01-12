@@ -71,18 +71,18 @@ public:
    * @brief Create a choice menu
    * @param id Unique identifier
    */
-  explicit ChoiceMenu(const std::string &id);
+  explicit ChoiceMenu(const std::string& id);
   ~ChoiceMenu() override;
 
   /**
    * @brief Set the menu style
    */
-  void setStyle(const ChoiceMenuStyle &style);
+  void setStyle(const ChoiceMenuStyle& style);
 
   /**
    * @brief Get the current style
    */
-  [[nodiscard]] const ChoiceMenuStyle &getStyle() const;
+  [[nodiscard]] const ChoiceMenuStyle& getStyle() const;
 
   /**
    * @brief Set the bounding area for the menu
@@ -97,12 +97,12 @@ public:
   /**
    * @brief Set the choice options
    */
-  void setOptions(const std::vector<ChoiceOption> &options);
+  void setOptions(const std::vector<ChoiceOption>& options);
 
   /**
    * @brief Add a choice option
    */
-  void addOption(const std::string &text, bool enabled = true);
+  void addOption(const std::string& text, bool enabled = true);
 
   /**
    * @brief Clear all options
@@ -117,7 +117,7 @@ public:
   /**
    * @brief Get an option by index
    */
-  [[nodiscard]] const ChoiceOption &getOption(size_t index) const;
+  [[nodiscard]] const ChoiceOption& getOption(size_t index) const;
 
   /**
    * @brief Enable or disable an option
@@ -190,7 +190,7 @@ public:
   /**
    * @brief Render the choice menu
    */
-  void render(renderer::IRenderer &renderer) override;
+  void render(renderer::IRenderer& renderer) override;
 
 private:
   [[nodiscard]] f32 calculateMenuHeight() const;

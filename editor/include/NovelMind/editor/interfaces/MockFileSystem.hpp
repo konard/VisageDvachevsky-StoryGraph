@@ -37,21 +37,21 @@ public:
   // IFileSystem Implementation
   // =========================================================================
 
-  [[nodiscard]] bool fileExists(const std::string &path) const override {
+  [[nodiscard]] bool fileExists(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     return m_files.find(normalized) != m_files.end();
   }
 
-  [[nodiscard]] bool directoryExists(const std::string &path) const override {
+  [[nodiscard]] bool directoryExists(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     return m_directories.find(normalized) != m_directories.end();
   }
 
-  [[nodiscard]] bool pathExists(const std::string &path) const override {
+  [[nodiscard]] bool pathExists(const std::string& path) const override {
     return fileExists(path) || directoryExists(path);
   }
 
-  [[nodiscard]] std::string readFile(const std::string &path) const override {
+  [[nodiscard]] std::string readFile(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     auto it = m_files.find(normalized);
     if (it != m_files.end()) {
@@ -60,27 +60,24 @@ public:
     return "";
   }
 
-  [[nodiscard]] std::vector<u8>
-  readBinaryFile(const std::string &path) const override {
+  [[nodiscard]] std::vector<u8> readBinaryFile(const std::string& path) const override {
     std::string content = readFile(path);
     return std::vector<u8>(content.begin(), content.end());
   }
 
-  bool writeFile(const std::string &path, const std::string &content) override {
+  bool writeFile(const std::string& path, const std::string& content) override {
     std::string normalized = normalizePath(path);
     m_files[normalized] = content;
-    m_fileInfo[normalized] = {static_cast<u64>(content.size()),
-                              ++m_currentTimestamp};
+    m_fileInfo[normalized] = {static_cast<u64>(content.size()), ++m_currentTimestamp};
     m_writeCount++;
     return true;
   }
 
-  bool writeBinaryFile(const std::string &path,
-                       const std::vector<u8> &data) override {
+  bool writeBinaryFile(const std::string& path, const std::vector<u8>& data) override {
     return writeFile(path, std::string(data.begin(), data.end()));
   }
 
-  bool deleteFile(const std::string &path) override {
+  bool deleteFile(const std::string& path) override {
     std::string normalized = normalizePath(path);
     auto it = m_files.find(normalized);
     if (it != m_files.end()) {
@@ -92,7 +89,7 @@ public:
     return false;
   }
 
-  bool copyFile(const std::string &src, const std::string &dest) override {
+  bool copyFile(const std::string& src, const std::string& dest) override {
     std::string srcNorm = normalizePath(src);
     std::string destNorm = normalizePath(dest);
 
@@ -102,27 +99,26 @@ public:
     }
 
     m_files[destNorm] = it->second;
-    m_fileInfo[destNorm] = {static_cast<u64>(it->second.size()),
-                            ++m_currentTimestamp};
+    m_fileInfo[destNorm] = {static_cast<u64>(it->second.size()), ++m_currentTimestamp};
     m_copyCount++;
     return true;
   }
 
-  bool moveFile(const std::string &src, const std::string &dest) override {
+  bool moveFile(const std::string& src, const std::string& dest) override {
     if (copyFile(src, dest)) {
       return deleteFile(src);
     }
     return false;
   }
 
-  bool createDirectory(const std::string &path) override {
+  bool createDirectory(const std::string& path) override {
     std::string normalized = normalizePath(path);
     m_directories.insert(normalized);
     m_createDirCount++;
     return true;
   }
 
-  bool createDirectories(const std::string &path) override {
+  bool createDirectories(const std::string& path) override {
     std::string normalized = normalizePath(path);
 
     // Create all parent directories
@@ -141,8 +137,7 @@ public:
     return true;
   }
 
-  bool deleteDirectory(const std::string &path,
-                       bool recursive = false) override {
+  bool deleteDirectory(const std::string& path, bool recursive = false) override {
     std::string normalized = normalizePath(path);
 
     if (m_directories.find(normalized) == m_directories.end()) {
@@ -152,23 +147,23 @@ public:
     if (recursive) {
       // Delete all files and subdirectories
       std::vector<std::string> toDelete;
-      for (const auto &file : m_files) {
+      for (const auto& file : m_files) {
         if (file.first.find(normalized) == 0) {
           toDelete.push_back(file.first);
         }
       }
-      for (const auto &f : toDelete) {
+      for (const auto& f : toDelete) {
         m_files.erase(f);
         m_fileInfo.erase(f);
       }
 
       std::vector<std::string> dirsToDelete;
-      for (const auto &dir : m_directories) {
+      for (const auto& dir : m_directories) {
         if (dir.find(normalized) == 0) {
           dirsToDelete.push_back(dir);
         }
       }
-      for (const auto &d : dirsToDelete) {
+      for (const auto& d : dirsToDelete) {
         m_directories.erase(d);
       }
     } else {
@@ -179,13 +174,12 @@ public:
     return true;
   }
 
-  [[nodiscard]] std::vector<std::string>
-  listFiles(const std::string &directory,
-            const std::string &filter = "*") const override {
+  [[nodiscard]] std::vector<std::string> listFiles(const std::string& directory,
+                                                   const std::string& filter = "*") const override {
     std::string normalized = normalizePath(directory);
     std::vector<std::string> result;
 
-    for (const auto &file : m_files) {
+    for (const auto& file : m_files) {
       std::string parent = getParentDirectory(file.first);
       if (parent == normalized) {
         if (filter == "*" || matchesFilter(file.first, filter)) {
@@ -197,11 +191,11 @@ public:
   }
 
   [[nodiscard]] std::vector<std::string>
-  listDirectories(const std::string &directory) const override {
+  listDirectories(const std::string& directory) const override {
     std::string normalized = normalizePath(directory);
     std::vector<std::string> result;
 
-    for (const auto &dir : m_directories) {
+    for (const auto& dir : m_directories) {
       std::string parent = getParentDirectory(dir);
       if (parent == normalized && dir != normalized) {
         result.push_back(dir);
@@ -211,12 +205,11 @@ public:
   }
 
   [[nodiscard]] std::vector<std::string>
-  listFilesRecursive(const std::string &directory,
-                     const std::string &filter = "*") const override {
+  listFilesRecursive(const std::string& directory, const std::string& filter = "*") const override {
     std::string normalized = normalizePath(directory);
     std::vector<std::string> result;
 
-    for (const auto &file : m_files) {
+    for (const auto& file : m_files) {
       if (file.first.find(normalized) == 0) {
         if (filter == "*" || matchesFilter(file.first, filter)) {
           result.push_back(file.first);
@@ -226,7 +219,7 @@ public:
     return result;
   }
 
-  [[nodiscard]] FileInfo getFileInfo(const std::string &path) const override {
+  [[nodiscard]] FileInfo getFileInfo(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     FileInfo info;
     info.path = normalized;
@@ -244,7 +237,7 @@ public:
     return info;
   }
 
-  [[nodiscard]] u64 getFileSize(const std::string &path) const override {
+  [[nodiscard]] u64 getFileSize(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     auto it = m_files.find(normalized);
     if (it != m_files.end()) {
@@ -253,7 +246,7 @@ public:
     return 0;
   }
 
-  [[nodiscard]] u64 getLastModified(const std::string &path) const override {
+  [[nodiscard]] u64 getLastModified(const std::string& path) const override {
     std::string normalized = normalizePath(path);
     auto it = m_fileInfo.find(normalized);
     if (it != m_fileInfo.end()) {
@@ -262,7 +255,7 @@ public:
     return 0;
   }
 
-  [[nodiscard]] std::string getFileName(const std::string &path) const override {
+  [[nodiscard]] std::string getFileName(const std::string& path) const override {
     size_t pos = path.find_last_of("/\\");
     if (pos != std::string::npos) {
       return path.substr(pos + 1);
@@ -270,7 +263,7 @@ public:
     return path;
   }
 
-  [[nodiscard]] std::string getBaseName(const std::string &path) const override {
+  [[nodiscard]] std::string getBaseName(const std::string& path) const override {
     std::string name = getFileName(path);
     size_t pos = name.find_last_of('.');
     if (pos != std::string::npos && pos > 0) {
@@ -279,7 +272,7 @@ public:
     return name;
   }
 
-  [[nodiscard]] std::string getExtension(const std::string &path) const override {
+  [[nodiscard]] std::string getExtension(const std::string& path) const override {
     std::string name = getFileName(path);
     size_t pos = name.find_last_of('.');
     if (pos != std::string::npos) {
@@ -288,8 +281,7 @@ public:
     return "";
   }
 
-  [[nodiscard]] std::string
-  getParentDirectory(const std::string &path) const override {
+  [[nodiscard]] std::string getParentDirectory(const std::string& path) const override {
     size_t pos = path.find_last_of("/\\");
     if (pos != std::string::npos) {
       return path.substr(0, pos);
@@ -297,10 +289,10 @@ public:
     return "";
   }
 
-  [[nodiscard]] std::string normalizePath(const std::string &path) const override {
+  [[nodiscard]] std::string normalizePath(const std::string& path) const override {
     // Simple normalization: convert backslashes to forward slashes
     std::string result = path;
-    for (char &c : result) {
+    for (char& c : result) {
       if (c == '\\') {
         c = '/';
       }
@@ -312,8 +304,8 @@ public:
     return result;
   }
 
-  [[nodiscard]] std::string
-  joinPath(const std::string &base, const std::string &component) const override {
+  [[nodiscard]] std::string joinPath(const std::string& base,
+                                     const std::string& component) const override {
     if (base.empty()) {
       return component;
     }
@@ -338,11 +330,10 @@ public:
    * @param path File path
    * @param content File content
    */
-  void addMockFile(const std::string &path, const std::string &content) {
+  void addMockFile(const std::string& path, const std::string& content) {
     std::string normalized = normalizePath(path);
     m_files[normalized] = content;
-    m_fileInfo[normalized] = {static_cast<u64>(content.size()),
-                              ++m_currentTimestamp};
+    m_fileInfo[normalized] = {static_cast<u64>(content.size()), ++m_currentTimestamp};
 
     // Ensure parent directories exist
     std::string parent = getParentDirectory(normalized);
@@ -356,7 +347,7 @@ public:
    * @brief Add a mock directory
    * @param path Directory path
    */
-  void addMockDirectory(const std::string &path) {
+  void addMockDirectory(const std::string& path) {
     std::string normalized = normalizePath(path);
     m_directories.insert(normalized);
 
@@ -406,17 +397,13 @@ public:
    * @brief Get all files in the mock file system
    * @return Map of path to content
    */
-  [[nodiscard]] const std::map<std::string, std::string> &getFiles() const {
-    return m_files;
-  }
+  [[nodiscard]] const std::map<std::string, std::string>& getFiles() const { return m_files; }
 
   /**
    * @brief Get all directories in the mock file system
    * @return Set of directory paths
    */
-  [[nodiscard]] const std::set<std::string> &getDirectories() const {
-    return m_directories;
-  }
+  [[nodiscard]] const std::set<std::string>& getDirectories() const { return m_directories; }
 
   /**
    * @brief Reset all files, directories, and counters
@@ -439,7 +426,7 @@ private:
     u64 lastModified = 0;
   };
 
-  bool matchesFilter(const std::string &path, const std::string &filter) const {
+  bool matchesFilter(const std::string& path, const std::string& filter) const {
     // Simple wildcard matching
     if (filter == "*") {
       return true;
@@ -451,8 +438,7 @@ private:
     // Handle *.ext pattern
     if (filter.front() == '*') {
       std::string ext = filter.substr(1);
-      return path.size() >= ext.size() &&
-             path.substr(path.size() - ext.size()) == ext;
+      return path.size() >= ext.size() && path.substr(path.size() - ext.size()) == ext;
     }
 
     return path.find(filter) != std::string::npos;

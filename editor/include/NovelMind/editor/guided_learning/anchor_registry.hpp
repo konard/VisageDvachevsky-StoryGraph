@@ -59,7 +59,7 @@ public:
   /**
    * @brief Get singleton instance
    */
-  static NMAnchorRegistry &instance();
+  static NMAnchorRegistry& instance();
 
   /**
    * @brief Register an anchor point
@@ -68,9 +68,8 @@ public:
    * @param description Human-readable description
    * @param panelId Parent panel ID
    */
-  void registerAnchor(const std::string &id, QWidget *widget,
-                      const std::string &description = "",
-                      const std::string &panelId = "");
+  void registerAnchor(const std::string& id, QWidget* widget, const std::string& description = "",
+                      const std::string& panelId = "");
 
   /**
    * @brief Register an anchor with custom rect provider
@@ -80,49 +79,45 @@ public:
    * @param description Human-readable description
    * @param panelId Parent panel ID
    */
-  void registerAnchor(const std::string &id,
-                      std::function<QRect()> rectProvider,
-                      std::function<bool()> visibilityProvider,
-                      const std::string &description = "",
-                      const std::string &panelId = "");
+  void registerAnchor(const std::string& id, std::function<QRect()> rectProvider,
+                      std::function<bool()> visibilityProvider, const std::string& description = "",
+                      const std::string& panelId = "");
 
   /**
    * @brief Unregister an anchor
    */
-  void unregisterAnchor(const std::string &id);
+  void unregisterAnchor(const std::string& id);
 
   /**
    * @brief Unregister all anchors for a panel
    */
-  void unregisterPanelAnchors(const std::string &panelId);
+  void unregisterPanelAnchors(const std::string& panelId);
 
   /**
    * @brief Check if an anchor exists
    */
-  [[nodiscard]] bool hasAnchor(const std::string &id) const;
+  [[nodiscard]] bool hasAnchor(const std::string& id) const;
 
   /**
    * @brief Get anchor info
    */
-  [[nodiscard]] std::optional<AnchorInfo>
-  getAnchor(const std::string &id) const;
+  [[nodiscard]] std::optional<AnchorInfo> getAnchor(const std::string& id) const;
 
   /**
    * @brief Get global rect for an anchor
    * Returns nullopt if anchor doesn't exist or widget was destroyed
    */
-  [[nodiscard]] std::optional<QRect> getAnchorRect(const std::string &id) const;
+  [[nodiscard]] std::optional<QRect> getAnchorRect(const std::string& id) const;
 
   /**
    * @brief Check if anchor is currently visible
    */
-  [[nodiscard]] bool isAnchorVisible(const std::string &id) const;
+  [[nodiscard]] bool isAnchorVisible(const std::string& id) const;
 
   /**
    * @brief Get all anchor IDs for a panel
    */
-  [[nodiscard]] std::vector<std::string>
-  getAnchorsForPanel(const std::string &panelId) const;
+  [[nodiscard]] std::vector<std::string> getAnchorsForPanel(const std::string& panelId) const;
 
   /**
    * @brief Get all registered anchor IDs
@@ -138,30 +133,30 @@ signals:
   /**
    * @brief Emitted when an anchor is registered
    */
-  void anchorRegistered(const QString &anchorId);
+  void anchorRegistered(const QString& anchorId);
 
   /**
    * @brief Emitted when an anchor is unregistered
    */
-  void anchorUnregistered(const QString &anchorId);
+  void anchorUnregistered(const QString& anchorId);
 
   /**
    * @brief Emitted when an anchor becomes visible
    */
-  void anchorBecameVisible(const QString &anchorId);
+  void anchorBecameVisible(const QString& anchorId);
 
   /**
    * @brief Emitted when an anchor becomes hidden
    */
-  void anchorBecameHidden(const QString &anchorId);
+  void anchorBecameHidden(const QString& anchorId);
 
 private:
   NMAnchorRegistry();
   ~NMAnchorRegistry() override = default;
 
   // Non-copyable
-  NMAnchorRegistry(const NMAnchorRegistry &) = delete;
-  NMAnchorRegistry &operator=(const NMAnchorRegistry &) = delete;
+  NMAnchorRegistry(const NMAnchorRegistry&) = delete;
+  NMAnchorRegistry& operator=(const NMAnchorRegistry&) = delete;
 
   // Clean up destroyed widgets
   void cleanupDestroyedWidgets();
@@ -177,20 +172,17 @@ private:
  */
 class ScopedAnchorRegistration {
 public:
-  ScopedAnchorRegistration(const std::string &anchorId, QWidget *widget,
-                           const std::string &description = "",
-                           const std::string &panelId = "");
+  ScopedAnchorRegistration(const std::string& anchorId, QWidget* widget,
+                           const std::string& description = "", const std::string& panelId = "");
 
   ~ScopedAnchorRegistration();
 
   // Move-only
-  ScopedAnchorRegistration(ScopedAnchorRegistration &&other) noexcept;
-  ScopedAnchorRegistration &
-  operator=(ScopedAnchorRegistration &&other) noexcept;
+  ScopedAnchorRegistration(ScopedAnchorRegistration&& other) noexcept;
+  ScopedAnchorRegistration& operator=(ScopedAnchorRegistration&& other) noexcept;
 
-  ScopedAnchorRegistration(const ScopedAnchorRegistration &) = delete;
-  ScopedAnchorRegistration &
-  operator=(const ScopedAnchorRegistration &) = delete;
+  ScopedAnchorRegistration(const ScopedAnchorRegistration&) = delete;
+  ScopedAnchorRegistration& operator=(const ScopedAnchorRegistration&) = delete;
 
 private:
   std::string m_anchorId;
@@ -202,13 +194,13 @@ private:
  *
  * Usage: NM_REGISTER_ANCHOR(myButton, "panel.myButton", "My Button", "myPanel")
  */
-#define NM_REGISTER_ANCHOR(widget, id, description, panelId)                   \
+#define NM_REGISTER_ANCHOR(widget, id, description, panelId)                                       \
   NMAnchorRegistry::instance().registerAnchor(id, widget, description, panelId)
 
 /**
  * @brief Convenience macro for creating scoped anchor registration
  */
-#define NM_SCOPED_ANCHOR(varName, widget, id, description, panelId)            \
+#define NM_SCOPED_ANCHOR(varName, widget, id, description, panelId)                                \
   ScopedAnchorRegistration varName(id, widget, description, panelId)
 
 } // namespace NovelMind::editor::guided_learning

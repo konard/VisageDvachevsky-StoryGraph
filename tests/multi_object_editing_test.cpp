@@ -20,13 +20,13 @@ using namespace NovelMind::editor;
 using namespace NovelMind::scene;
 
 // Test macro
-#define TEST_ASSERT(condition, message)                                        \
-  do {                                                                         \
-    if (!(condition)) {                                                        \
-      std::cerr << "ASSERTION FAILED: " << message << "\n";                    \
-      std::cerr << "  at " << __FILE__ << ":" << __LINE__ << "\n";            \
-      return false;                                                            \
-    }                                                                          \
+#define TEST_ASSERT(condition, message)                                                            \
+  do {                                                                                             \
+    if (!(condition)) {                                                                            \
+      std::cerr << "ASSERTION FAILED: " << message << "\n";                                        \
+      std::cerr << "  at " << __FILE__ << ":" << __LINE__ << "\n";                                 \
+      return false;                                                                                \
+    }                                                                                              \
   } while (0)
 
 bool testMultipleValuesMarker() {
@@ -41,8 +41,7 @@ bool testMultipleValuesMarker() {
   // Test toString
   PropertyValue value = mv1;
   std::string str = PropertyUtils::toString(value);
-  TEST_ASSERT(str == "<multiple values>",
-              "MultipleValues should display as '<multiple values>'");
+  TEST_ASSERT(str == "<multiple values>", "MultipleValues should display as '<multiple values>'");
 
   std::cout << "  ✓ MultipleValues marker works correctly\n";
   return true;
@@ -76,10 +75,8 @@ bool testCommonPropertyIdentification() {
   InspectorBindingManager inspector;
 
   std::vector<std::string> objectIds = {"char1", "char2", "char3"};
-  std::vector<void *> objects = {
-      static_cast<void *>(char1.get()),
-      static_cast<void *>(char2.get()),
-      static_cast<void *>(char3.get())};
+  std::vector<void*> objects = {static_cast<void*>(char1.get()), static_cast<void*>(char2.get()),
+                                static_cast<void*>(char3.get())};
 
   inspector.inspectSceneObjects(objectIds, objects);
 
@@ -91,13 +88,13 @@ bool testCommonPropertyIdentification() {
   TEST_ASSERT(!properties.empty(), "Should have common properties");
 
   // Verify common properties exist (all CharacterObjects have these)
-  const auto *displayNameProp = inspector.getProperty("displayName");
+  const auto* displayNameProp = inspector.getProperty("displayName");
   TEST_ASSERT(displayNameProp != nullptr, "displayName property should exist");
 
-  const auto *expressionProp = inspector.getProperty("expression");
+  const auto* expressionProp = inspector.getProperty("expression");
   TEST_ASSERT(expressionProp != nullptr, "expression property should exist");
 
-  const auto *xProp = inspector.getProperty("x");
+  const auto* xProp = inspector.getProperty("x");
   TEST_ASSERT(xProp != nullptr, "x property should exist");
 
   std::cout << "  ✓ Common properties identified correctly\n";
@@ -125,9 +122,7 @@ bool testMultipleValuesDetection() {
   InspectorBindingManager inspector;
 
   std::vector<std::string> objectIds = {"char1", "char2"};
-  std::vector<void *> objects = {
-      static_cast<void *>(char1.get()),
-      static_cast<void *>(char2.get())};
+  std::vector<void*> objects = {static_cast<void*>(char1.get()), static_cast<void*>(char2.get())};
 
   inspector.inspectSceneObjects(objectIds, objects);
 
@@ -138,15 +133,12 @@ bool testMultipleValuesDetection() {
 
   // Check expression - should show the common value
   PropertyValue expressionValue = inspector.getPropertyValue("expression");
-  TEST_ASSERT(std::holds_alternative<std::string>(expressionValue),
-              "expression should be string");
-  TEST_ASSERT(std::get<std::string>(expressionValue) == "happy",
-              "expression should be 'happy'");
+  TEST_ASSERT(std::holds_alternative<std::string>(expressionValue), "expression should be string");
+  TEST_ASSERT(std::get<std::string>(expressionValue) == "happy", "expression should be 'happy'");
 
   // Check x - should show multiple values
   PropertyValue xValue = inspector.getPropertyValue("x");
-  TEST_ASSERT(std::holds_alternative<MultipleValues>(xValue),
-              "x should be MultipleValues");
+  TEST_ASSERT(std::holds_alternative<MultipleValues>(xValue), "x should be MultipleValues");
 
   // Check y - should show common value
   PropertyValue yValue = inspector.getPropertyValue("y");
@@ -178,10 +170,8 @@ bool testBatchPropertyUpdate() {
   InspectorBindingManager inspector;
 
   std::vector<std::string> objectIds = {"char1", "char2", "char3"};
-  std::vector<void *> objects = {
-      static_cast<void *>(char1.get()),
-      static_cast<void *>(char2.get()),
-      static_cast<void *>(char3.get())};
+  std::vector<void*> objects = {static_cast<void*>(char1.get()), static_cast<void*>(char2.get()),
+                                static_cast<void*>(char3.get())};
 
   inspector.inspectSceneObjects(objectIds, objects);
 
@@ -190,19 +180,15 @@ bool testBatchPropertyUpdate() {
   TEST_ASSERT(!error.has_value(), "Property update should succeed");
 
   // Verify all objects were updated
-  TEST_ASSERT(char1->getExpression() == "angry",
-              "char1 expression should be 'angry'");
-  TEST_ASSERT(char2->getExpression() == "angry",
-              "char2 expression should be 'angry'");
-  TEST_ASSERT(char3->getExpression() == "angry",
-              "char3 expression should be 'angry'");
+  TEST_ASSERT(char1->getExpression() == "angry", "char1 expression should be 'angry'");
+  TEST_ASSERT(char2->getExpression() == "angry", "char2 expression should be 'angry'");
+  TEST_ASSERT(char3->getExpression() == "angry", "char3 expression should be 'angry'");
 
   // Now all values are the same, should not show MultipleValues
   PropertyValue expressionValue = inspector.getPropertyValue("expression");
   TEST_ASSERT(std::holds_alternative<std::string>(expressionValue),
               "expression should be string after batch update");
-  TEST_ASSERT(std::get<std::string>(expressionValue) == "angry",
-              "expression should be 'angry'");
+  TEST_ASSERT(std::get<std::string>(expressionValue) == "angry", "expression should be 'angry'");
 
   std::cout << "  ✓ Batch property updates work correctly\n";
   return true;
@@ -225,9 +211,7 @@ bool testNumericPropertyUpdate() {
   InspectorBindingManager inspector;
 
   std::vector<std::string> objectIds = {"char1", "char2"};
-  std::vector<void *> objects = {
-      static_cast<void *>(char1.get()),
-      static_cast<void *>(char2.get())};
+  std::vector<void*> objects = {static_cast<void*>(char1.get()), static_cast<void*>(char2.get())};
 
   inspector.inspectSceneObjects(objectIds, objects);
 
@@ -262,24 +246,22 @@ bool testEfficiencyNoN2() {
   const size_t numObjects = 100;
   std::vector<std::unique_ptr<CharacterObject>> characters;
   std::vector<std::string> objectIds;
-  std::vector<void *> objects;
+  std::vector<void*> objects;
 
   for (size_t i = 0; i < numObjects; ++i) {
     std::string id = "char" + std::to_string(i);
     characters.push_back(std::make_unique<CharacterObject>(id, "character"));
     characters.back()->setDisplayName("Character " + std::to_string(i));
-    characters.back()->setPosition(
-        static_cast<f32>(i * 10), static_cast<f32>(i * 20));
+    characters.back()->setPosition(static_cast<f32>(i * 10), static_cast<f32>(i * 20));
 
     objectIds.push_back(id);
-    objects.push_back(static_cast<void *>(characters.back().get()));
+    objects.push_back(static_cast<void*>(characters.back().get()));
   }
 
   InspectorBindingManager inspector;
   inspector.inspectSceneObjects(objectIds, objects);
 
-  TEST_ASSERT(inspector.getTargetCount() == numObjects,
-              "Should have all objects as targets");
+  TEST_ASSERT(inspector.getTargetCount() == numObjects, "Should have all objects as targets");
 
   // Getting property value should be O(n), not O(n^2)
   // This test just verifies it doesn't crash or hang with many objects
@@ -292,12 +274,9 @@ bool testEfficiencyNoN2() {
   TEST_ASSERT(!error.has_value(), "Batch update should succeed");
 
   // Verify a few objects were updated
-  TEST_ASSERT(characters[0]->getExpression() == "neutral",
-              "First object should be updated");
-  TEST_ASSERT(characters[50]->getExpression() == "neutral",
-              "Middle object should be updated");
-  TEST_ASSERT(characters[99]->getExpression() == "neutral",
-              "Last object should be updated");
+  TEST_ASSERT(characters[0]->getExpression() == "neutral", "First object should be updated");
+  TEST_ASSERT(characters[50]->getExpression() == "neutral", "Middle object should be updated");
+  TEST_ASSERT(characters[99]->getExpression() == "neutral", "Last object should be updated");
 
   std::cout << "  ✓ Selection traversal is efficient (no N^2 detected)\n";
   return true;
@@ -317,21 +296,18 @@ bool testSingleToMultiModeSwitch() {
   InspectorBindingManager inspector;
 
   // Start with single object
-  inspector.inspectSceneObject("char1", static_cast<void *>(char1.get()));
+  inspector.inspectSceneObject("char1", static_cast<void*>(char1.get()));
   TEST_ASSERT(!inspector.isMultiEdit(), "Should be in single-edit mode");
   TEST_ASSERT(inspector.getTargetCount() == 1, "Should have 1 target");
 
   PropertyValue displayNameValue = inspector.getPropertyValue("displayName");
   TEST_ASSERT(std::holds_alternative<std::string>(displayNameValue),
               "displayName should be string in single mode");
-  TEST_ASSERT(std::get<std::string>(displayNameValue) == "Alice",
-              "displayName should be 'Alice'");
+  TEST_ASSERT(std::get<std::string>(displayNameValue) == "Alice", "displayName should be 'Alice'");
 
   // Switch to multi-edit
   std::vector<std::string> objectIds = {"char1", "char2"};
-  std::vector<void *> objects = {
-      static_cast<void *>(char1.get()),
-      static_cast<void *>(char2.get())};
+  std::vector<void*> objects = {static_cast<void*>(char1.get()), static_cast<void*>(char2.get())};
 
   inspector.inspectSceneObjects(objectIds, objects);
   TEST_ASSERT(inspector.isMultiEdit(), "Should be in multi-edit mode");
@@ -342,15 +318,14 @@ bool testSingleToMultiModeSwitch() {
               "displayName should be MultipleValues in multi mode");
 
   // Switch back to single
-  inspector.inspectSceneObject("char2", static_cast<void *>(char2.get()));
+  inspector.inspectSceneObject("char2", static_cast<void*>(char2.get()));
   TEST_ASSERT(!inspector.isMultiEdit(), "Should be back in single-edit mode");
   TEST_ASSERT(inspector.getTargetCount() == 1, "Should have 1 target");
 
   displayNameValue = inspector.getPropertyValue("displayName");
   TEST_ASSERT(std::holds_alternative<std::string>(displayNameValue),
               "displayName should be string after switching back");
-  TEST_ASSERT(std::get<std::string>(displayNameValue) == "Bob",
-              "displayName should be 'Bob'");
+  TEST_ASSERT(std::get<std::string>(displayNameValue) == "Bob", "displayName should be 'Bob'");
 
   std::cout << "  ✓ Mode switching works correctly\n";
   return true;
@@ -362,7 +337,7 @@ int main() {
   int passed = 0;
   int total = 0;
 
-  auto runTest = [&](bool (*test)(), const char *name) {
+  auto runTest = [&](bool (*test)(), const char* name) {
     total++;
     std::cout << "\n[" << total << "] " << name << "\n";
     if (test()) {

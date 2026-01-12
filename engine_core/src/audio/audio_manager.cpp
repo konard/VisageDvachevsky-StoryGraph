@@ -1,4 +1,5 @@
 #include "NovelMind/audio/audio_manager.hpp"
+#include "NovelMind/core/logger.hpp"
 #include "miniaudio/miniaudio.h"
 #include <algorithm>
 #include <cmath>
@@ -86,9 +87,17 @@ void AudioSource::update(f64 deltaTime) {
         m_state = PlaybackState::Playing;
       }
     } else {
-      f32 t = m_fadeTimer / m_fadeDuration;
-      m_volume =
-          m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      // Protect against division by zero
+      if (m_fadeDuration > 0.0f) {
+        f32 t = m_fadeTimer / m_fadeDuration;
+        m_volume =
+            m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      } else {
+        // Invalid fade duration - complete fade immediately
+        NOVELMIND_LOG_WARN("AudioSource: Invalid fade duration ({}), completing fade immediately", m_fadeDuration);
+        m_volume = m_fadeTargetVolume;
+        m_state = PlaybackState::Playing;
+      }
     }
   }
 
@@ -237,15 +246,18 @@ void AudioManager::update(f64 deltaTime) {
   }
 
   // Update master fade
-  if (m_masterFadeDuration > 0.0f) {
-    m_masterFadeTimer += static_cast<f32>(deltaTime);
-    if (m_masterFadeTimer >= m_masterFadeDuration) {
-      m_masterFadeVolume = m_masterFadeTarget;
-      m_masterFadeDuration = 0.0f;
-    } else {
-      f32 t = m_masterFadeTimer / m_masterFadeDuration;
-      m_masterFadeVolume = m_masterFadeStartVolume +
-                           (m_masterFadeTarget - m_masterFadeStartVolume) * t;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    if (m_masterFadeDuration > 0.0f) {
+      m_masterFadeTimer += static_cast<f32>(deltaTime);
+      if (m_masterFadeTimer >= m_masterFadeDuration) {
+        m_masterFadeVolume = m_masterFadeTarget;
+        m_masterFadeDuration = 0.0f;
+      } else {
+        f32 t = m_masterFadeTimer / m_masterFadeDuration;
+        m_masterFadeVolume = m_masterFadeStartVolume +
+                             (m_masterFadeTarget - m_masterFadeStartVolume) * t;
+      }
     }
   }
 
@@ -281,12 +293,17 @@ void AudioManager::update(f64 deltaTime) {
   }
 
   // Check voice playback status
-  if (m_voicePlaying) {
-    auto *voiceSource = getSource(m_currentVoiceHandle);
+  if (m_voicePlaying.load(std::memory_order_acquire)) {
+    AudioHandle voiceHandle;
+    {
+      std::lock_guard<std::mutex> lock(m_stateMutex);
+      voiceHandle = m_currentVoiceHandle;
+    }
+    auto *voiceSource = getSource(voiceHandle);
     if (!voiceSource || !voiceSource->isPlaying()) {
-      m_voicePlaying = false;
-      m_targetDuckLevel = 1.0f;
-      fireEvent(AudioEvent::Type::Stopped, m_currentVoiceHandle, "voice");
+      m_voicePlaying.store(false, std::memory_order_release);
+      m_targetDuckLevel.store(1.0f, std::memory_order_release);
+      fireEvent(AudioEvent::Type::Stopped, voiceHandle, "voice");
     }
   }
 }
@@ -297,10 +314,23 @@ AudioHandle AudioManager::playSound(const std::string &id,
     return {};
   }
 
-  // Check source limit (need unique lock for potential modification)
+  // Fix for Issue #558: Check source limit and create source atomically
+  //
+  // BEFORE (had TOCTOU race):
+  //   1. Lock, check limit, remove low-priority source if needed, unlock
+  //   2. Call createSource() which locks again and adds the new source
+  //   Problem: Another thread could add sources between steps 1 and 2
+  //
+  // AFTER (atomic operation):
+  //   1. Lock once, check limit, remove if needed, create and add source
+  //   2. No window for other threads to interfere
+  //
+  // This ensures the maximum sound limit is never exceeded even under
+  // heavy concurrent load from multiple threads.
+  AudioHandle handle;
   {
     std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
-    if (m_sources.size() >= m_maxSounds) {
+    if (m_sources.size() >= m_maxSounds.load(std::memory_order_relaxed)) {
       // Find and remove lowest priority sound
       auto lowest = std::min_element(m_sources.begin(), m_sources.end(),
                                      [](const auto &a, const auto &b) {
@@ -313,9 +343,15 @@ AudioHandle AudioManager::playSound(const std::string &id,
         return {}; // Can't play
       }
     }
+
+    // Create source inside the lock to ensure atomicity with the limit check
+    handle = createSourceLocked(id, config.channel);
   }
 
-  AudioHandle handle = createSource(id, config.channel);
+  // Early return if source creation failed
+  if (!handle.isValid()) {
+    return {};
+  }
   auto *source = getSource(handle);
   if (!source) {
     return {};
@@ -387,8 +423,11 @@ AudioHandle AudioManager::playMusic(const std::string &id,
   }
 
   // Stop current music
-  if (m_currentMusicHandle.isValid()) {
-    stopMusic(0.0f);
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    if (m_currentMusicHandle.isValid()) {
+      stopMusic(0.0f);
+    }
   }
 
   AudioHandle handle = createSource(id, AudioChannel::Music);
@@ -416,8 +455,11 @@ AudioHandle AudioManager::playMusic(const std::string &id,
     source->play();
   }
 
-  m_currentMusicHandle = handle;
-  m_currentMusicId = id;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_currentMusicHandle = handle;
+    m_currentMusicId = id;
+  }
 
   fireEvent(AudioEvent::Type::Started, handle, id);
   return handle;
@@ -430,10 +472,13 @@ AudioHandle AudioManager::crossfadeMusic(const std::string &id, f32 duration,
   }
 
   // Fade out current music
-  if (m_currentMusicHandle.isValid()) {
-    auto *current = getSource(m_currentMusicHandle);
-    if (current) {
-      current->fadeOut(duration, true);
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    if (m_currentMusicHandle.isValid()) {
+      auto *current = getSource(m_currentMusicHandle);
+      if (current) {
+        current->fadeOut(duration, true);
+      }
     }
   }
 
@@ -444,6 +489,7 @@ AudioHandle AudioManager::crossfadeMusic(const std::string &id, f32 duration,
 }
 
 void AudioManager::stopMusic(f32 fadeDuration) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   if (!m_currentMusicHandle.isValid()) {
     return;
   }
@@ -464,6 +510,7 @@ void AudioManager::stopMusic(f32 fadeDuration) {
 }
 
 void AudioManager::pauseMusic() {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   auto *source = getSource(m_currentMusicHandle);
   if (source) {
     source->pause();
@@ -472,6 +519,7 @@ void AudioManager::pauseMusic() {
 }
 
 void AudioManager::resumeMusic() {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   auto *source = getSource(m_currentMusicHandle);
   if (source) {
     source->play();
@@ -481,11 +529,12 @@ void AudioManager::resumeMusic() {
 }
 
 bool AudioManager::isMusicPlaying() const {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   if (!m_currentMusicHandle.isValid()) {
     return false;
   }
 
-  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
+  std::shared_lock<std::shared_mutex> sourceLock(m_sourcesMutex);
   for (const auto &source : m_sources) {
     if (source && source->handle.id == m_currentMusicHandle.id) {
       return source->isPlaying();
@@ -495,13 +544,20 @@ bool AudioManager::isMusicPlaying() const {
 }
 
 const std::string &AudioManager::getCurrentMusicId() const {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   return m_currentMusicId;
 }
 
 f32 AudioManager::getMusicPosition() const {
-  std::shared_lock<std::shared_mutex> lock(m_sourcesMutex);
+  AudioHandle handle;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    handle = m_currentMusicHandle;
+  }
+
+  std::shared_lock<std::shared_mutex> sourceLock(m_sourcesMutex);
   for (const auto &source : m_sources) {
-    if (source && source->handle.id == m_currentMusicHandle.id) {
+    if (source && source->handle.id == handle.id) {
       return source->getPlaybackPosition();
     }
   }
@@ -509,6 +565,7 @@ f32 AudioManager::getMusicPosition() const {
 }
 
 void AudioManager::seekMusic(f32 position) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   auto *source = getSource(m_currentMusicHandle);
   if (!source || !source->m_soundReady || !source->m_sound) {
     return;
@@ -522,9 +579,20 @@ void AudioManager::seekMusic(f32 position) {
     return;
   }
 
+  // Clamp position to valid range
+  f32 clampedPosition = position;
+  if (source->m_duration > 0.0f) {
+    clampedPosition = std::max(0.0f, std::min(position, source->m_duration));
+  } else {
+    clampedPosition = std::max(0.0f, position);
+  }
+
   ma_uint64 targetFrames =
-      static_cast<ma_uint64>(position * static_cast<f32>(sampleRate));
+      static_cast<ma_uint64>(clampedPosition * static_cast<f32>(sampleRate));
   ma_sound_seek_to_pcm_frame(source->m_sound.get(), targetFrames);
+
+  // Update the source's position to match the seek
+  source->m_position = clampedPosition;
 }
 
 AudioHandle AudioManager::playVoice(const std::string &id,
@@ -534,8 +602,11 @@ AudioHandle AudioManager::playVoice(const std::string &id,
   }
 
   // Stop current voice
-  if (m_currentVoiceHandle.isValid()) {
-    stopVoice(0.0f);
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    if (m_currentVoiceHandle.isValid()) {
+      stopVoice(0.0f);
+    }
   }
 
   AudioHandle handle = createSource(id, AudioChannel::Voice);
@@ -548,14 +619,31 @@ AudioHandle AudioManager::playVoice(const std::string &id,
   source->setLoop(false);
   source->play();
 
-  m_currentVoiceHandle = handle;
-  m_voicePlaying = true;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_currentVoiceHandle = handle;
+  }
+  m_voicePlaying.store(true, std::memory_order_release);
 
-  // Apply ducking
-  if (config.duckMusic && m_autoDuckingEnabled) {
-    m_duckVolume = config.duckAmount;
-    m_duckFadeDuration = config.duckFadeDuration;
-    m_targetDuckLevel = m_duckVolume;
+  // Apply ducking with validation
+  if (config.duckMusic && m_autoDuckingEnabled.load(std::memory_order_relaxed)) {
+    // Validate and clamp duck parameters to prevent division by zero
+    constexpr f32 MIN_FADE_DURATION = 0.001f;
+    f32 duckAmount = std::max(0.0f, std::min(1.0f, config.duckAmount));
+    f32 duckFadeDuration = config.duckFadeDuration;
+
+    if (duckFadeDuration < 0.0f) {
+      NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration in VoiceConfig ({}), using 0", duckFadeDuration);
+      duckFadeDuration = 0.0f;
+    } else if (duckFadeDuration > 0.0f && duckFadeDuration < MIN_FADE_DURATION) {
+      NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small in VoiceConfig ({}), clamping to minimum ({})",
+                         duckFadeDuration, MIN_FADE_DURATION);
+      duckFadeDuration = MIN_FADE_DURATION;
+    }
+
+    m_duckVolume.store(duckAmount, std::memory_order_relaxed);
+    m_duckFadeDuration.store(duckFadeDuration, std::memory_order_relaxed);
+    m_targetDuckLevel.store(duckAmount, std::memory_order_release);
   }
 
   fireEvent(AudioEvent::Type::Started, handle, id);
@@ -563,6 +651,7 @@ AudioHandle AudioManager::playVoice(const std::string &id,
 }
 
 void AudioManager::stopVoice(f32 fadeDuration) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   if (!m_currentVoiceHandle.isValid()) {
     return;
   }
@@ -576,20 +665,24 @@ void AudioManager::stopVoice(f32 fadeDuration) {
     }
   }
 
-  m_voicePlaying = false;
-  m_targetDuckLevel = 1.0f;
+  m_voicePlaying.store(false, std::memory_order_release);
+  m_targetDuckLevel.store(1.0f, std::memory_order_release);
   m_currentVoiceHandle.invalidate();
 }
 
-bool AudioManager::isVoicePlaying() const { return m_voicePlaying; }
+bool AudioManager::isVoicePlaying() const {
+  return m_voicePlaying.load(std::memory_order_acquire);
+}
 
 void AudioManager::skipVoice() { stopVoice(0.0f); }
 
 void AudioManager::setChannelVolume(AudioChannel channel, f32 volume) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   m_channelVolumes[channel] = std::max(0.0f, std::min(1.0f, volume));
 }
 
 f32 AudioManager::getChannelVolume(AudioChannel channel) const {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   auto it = m_channelVolumes.find(channel);
   return (it != m_channelVolumes.end()) ? it->second : 1.0f;
 }
@@ -603,19 +696,26 @@ f32 AudioManager::getMasterVolume() const {
 }
 
 void AudioManager::setChannelMuted(AudioChannel channel, bool muted) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   m_channelMuted[channel] = muted;
 }
 
 bool AudioManager::isChannelMuted(AudioChannel channel) const {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   auto it = m_channelMuted.find(channel);
   return (it != m_channelMuted.end()) ? it->second : false;
 }
 
-void AudioManager::muteAll() { m_allMuted = true; }
+void AudioManager::muteAll() {
+  m_allMuted.store(true, std::memory_order_release);
+}
 
-void AudioManager::unmuteAll() { m_allMuted = false; }
+void AudioManager::unmuteAll() {
+  m_allMuted.store(false, std::memory_order_release);
+}
 
 void AudioManager::fadeAllTo(f32 targetVolume, f32 duration) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   m_masterFadeTarget = std::max(0.0f, std::min(1.0f, targetVolume));
   m_masterFadeStartVolume = m_masterFadeVolume;
   m_masterFadeDuration = duration;
@@ -654,10 +754,13 @@ void AudioManager::stopAll(f32 fadeDuration) {
     }
   }
 
-  m_currentMusicHandle.invalidate();
-  m_currentMusicId.clear();
-  m_currentVoiceHandle.invalidate();
-  m_voicePlaying = false;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    m_currentMusicHandle.invalidate();
+    m_currentMusicId.clear();
+    m_currentVoiceHandle.invalidate();
+  }
+  m_voicePlaying.store(false, std::memory_order_release);
 }
 
 AudioSource *AudioManager::getSource(AudioHandle handle) {
@@ -707,36 +810,75 @@ size_t AudioManager::getActiveSourceCount() const {
 }
 
 void AudioManager::setEventCallback(AudioCallback callback) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   m_eventCallback = std::move(callback);
 }
 
 void AudioManager::setDataProvider(DataProvider provider) {
+  std::lock_guard<std::mutex> lock(m_stateMutex);
   m_dataProvider = std::move(provider);
 }
 
-void AudioManager::setMaxSounds(size_t max) { m_maxSounds = max; }
+void AudioManager::setMaxSounds(size_t max) {
+  m_maxSounds.store(max, std::memory_order_relaxed);
+}
 
 void AudioManager::setAutoDuckingEnabled(bool enabled) {
-  m_autoDuckingEnabled = enabled;
+  m_autoDuckingEnabled.store(enabled, std::memory_order_relaxed);
   if (!enabled) {
-    m_targetDuckLevel = 1.0f;
+    m_targetDuckLevel.store(1.0f, std::memory_order_release);
   }
 }
 
 void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
-  m_duckVolume = std::max(0.0f, std::min(1.0f, duckVolume));
-  m_duckFadeDuration = std::max(0.0f, fadeDuration);
+  // Clamp duck volume to valid range [0, 1]
+  f32 clampedDuckVolume = std::max(0.0f, std::min(1.0f, duckVolume));
+
+  // Validate and clamp fade duration - must be positive or zero
+  // Use minimum threshold to prevent division by zero
+  constexpr f32 MIN_FADE_DURATION = 0.001f;
+  f32 clampedFadeDuration = fadeDuration;
+
+  if (fadeDuration < 0.0f) {
+    NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration ({}), clamping to 0", fadeDuration);
+    clampedFadeDuration = 0.0f;
+  } else if (fadeDuration > 0.0f && fadeDuration < MIN_FADE_DURATION) {
+    NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small ({}), clamping to minimum ({})",
+                       fadeDuration, MIN_FADE_DURATION);
+    clampedFadeDuration = MIN_FADE_DURATION;
+  }
+
+  m_duckVolume.store(clampedDuckVolume, std::memory_order_relaxed);
+  m_duckFadeDuration.store(clampedFadeDuration, std::memory_order_relaxed);
 }
 
-AudioHandle AudioManager::createSource(const std::string &trackId,
-                                       AudioChannel channel) {
+AudioHandle AudioManager::createSourceLocked(const std::string &trackId,
+                                             AudioChannel channel) {
+  // IMPORTANT: Caller must hold m_sourcesMutex (unique_lock)
+  // This function is thread-safe only when called with the lock held
+
   if (!m_engineInitialized || !m_engine) {
     return {};
   }
   auto source = std::make_unique<AudioSource>();
 
   AudioHandle handle;
-  handle.id = m_nextHandleId++;
+  // Generate handle ID with overflow detection
+  // Lower 24 bits: index counter (0-16,777,215)
+  // Upper 8 bits: generation counter (0-255)
+  constexpr u32 MAX_INDEX = 0x00FFFFFF; // 16,777,215
+  u32 index = m_nextHandleIndex.fetch_add(1, std::memory_order_relaxed);
+
+  // Check for index overflow
+  if (index > MAX_INDEX) {
+    // Overflow detected: increment generation and reset index
+    m_handleGeneration.fetch_add(1, std::memory_order_relaxed);
+    index = 1; // Start from 1 to avoid ID 0
+    m_nextHandleIndex.store(2, std::memory_order_relaxed);
+  }
+
+  u8 generation = m_handleGeneration.load(std::memory_order_relaxed);
+  handle.id = AudioHandle::makeHandleId(generation, index);
   handle.valid = true;
 
   source->handle = handle;
@@ -751,8 +893,13 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   }
 
   bool loaded = false;
-  if (m_dataProvider) {
-    auto dataResult = m_dataProvider(trackId);
+  DataProvider provider;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    provider = m_dataProvider;
+  }
+  if (provider) {
+    auto dataResult = provider(trackId);
     if (dataResult.isOk() && !dataResult.value().empty()) {
       source->m_memoryData = std::move(dataResult.value());
       auto decoder = std::make_unique<ma_decoder>();
@@ -795,11 +942,15 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   ma_sound_get_length_in_seconds(source->m_sound.get(), &lengthSeconds);
   source->m_duration = lengthSeconds;
 
-  {
-    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
-    m_sources.push_back(std::move(source));
-  }
+  // Add source to the vector - lock is already held by caller
+  m_sources.push_back(std::move(source));
   return handle;
+}
+
+AudioHandle AudioManager::createSource(const std::string &trackId,
+                                       AudioChannel channel) {
+  std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+  return createSourceLocked(trackId, channel);
 }
 
 void AudioManager::releaseSource(AudioHandle handle) {
@@ -820,45 +971,61 @@ void AudioManager::releaseSource(AudioHandle handle) {
 
 void AudioManager::fireEvent(AudioEvent::Type type, AudioHandle handle,
                              const std::string &trackId) {
-  if (m_eventCallback) {
+  AudioCallback callback;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    callback = m_eventCallback;
+  }
+  if (callback) {
     AudioEvent event;
     event.type = type;
     event.handle = handle;
     event.trackId = trackId;
-    m_eventCallback(event);
+    callback(event);
   }
 }
 
 void AudioManager::updateDucking(f64 deltaTime) {
-  if (std::abs(m_currentDuckLevel - m_targetDuckLevel) < 0.001f) {
-    m_currentDuckLevel = m_targetDuckLevel;
+  f32 currentLevel = m_currentDuckLevel.load(std::memory_order_relaxed);
+  f32 targetLevel = m_targetDuckLevel.load(std::memory_order_acquire);
+
+  if (std::abs(currentLevel - targetLevel) < 0.001f) {
+    m_currentDuckLevel.store(targetLevel, std::memory_order_release);
     return;
   }
 
-  f32 speed = m_duckFadeDuration > 0.0f ? 1.0f / m_duckFadeDuration : 10.0f;
-  if (m_currentDuckLevel < m_targetDuckLevel) {
-    m_currentDuckLevel =
-        std::min(m_targetDuckLevel,
-                 m_currentDuckLevel + static_cast<f32>(deltaTime) * speed);
+  f32 fadeDuration = m_duckFadeDuration.load(std::memory_order_relaxed);
+  f32 speed = fadeDuration > 0.0f ? 1.0f / fadeDuration : 10.0f;
+  f32 newLevel;
+  if (currentLevel < targetLevel) {
+    newLevel = std::min(targetLevel,
+                        currentLevel + static_cast<f32>(deltaTime) * speed);
   } else {
-    m_currentDuckLevel =
-        std::max(m_targetDuckLevel,
-                 m_currentDuckLevel - static_cast<f32>(deltaTime) * speed);
+    newLevel = std::max(targetLevel,
+                        currentLevel - static_cast<f32>(deltaTime) * speed);
   }
+  m_currentDuckLevel.store(newLevel, std::memory_order_release);
 }
 
 f32 AudioManager::calculateEffectiveVolume(const AudioSource &source) const {
-  if (m_allMuted || isChannelMuted(source.channel)) {
+  if (m_allMuted.load(std::memory_order_acquire) ||
+      isChannelMuted(source.channel)) {
     return 0.0f;
   }
 
   f32 volume = getChannelVolume(AudioChannel::Master);
   volume *= getChannelVolume(source.channel);
-  volume *= m_masterFadeVolume;
+
+  f32 masterFade;
+  {
+    std::lock_guard<std::mutex> lock(m_stateMutex);
+    masterFade = m_masterFadeVolume;
+  }
+  volume *= masterFade;
 
   // Apply ducking to music
   if (source.channel == AudioChannel::Music) {
-    volume *= m_currentDuckLevel;
+    volume *= m_currentDuckLevel.load(std::memory_order_acquire);
   }
 
   return volume;

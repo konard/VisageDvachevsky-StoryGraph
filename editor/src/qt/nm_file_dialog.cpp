@@ -33,7 +33,7 @@ struct FilterEntry {
   QStringList patterns;
 };
 
-QVector<FilterEntry> parseFilterEntries(const QString &filter) {
+QVector<FilterEntry> parseFilterEntries(const QString& filter) {
   QVector<FilterEntry> entries;
   const QString trimmed = filter.trimmed();
   if (trimmed.isEmpty()) {
@@ -41,7 +41,7 @@ QVector<FilterEntry> parseFilterEntries(const QString &filter) {
   }
 
   const QStringList parts = trimmed.split(";;", Qt::SkipEmptyParts);
-  for (const QString &part : parts) {
+  for (const QString& part : parts) {
     FilterEntry entry;
     entry.label = part.trimmed();
     const qsizetype start = entry.label.indexOf('(');
@@ -65,10 +65,9 @@ QVector<FilterEntry> parseFilterEntries(const QString &filter) {
 
 class NMFileFilterProxy final : public QSortFilterProxyModel {
 public:
-  explicit NMFileFilterProxy(QObject *parent = nullptr)
-      : QSortFilterProxyModel(parent) {}
+  explicit NMFileFilterProxy(QObject* parent = nullptr) : QSortFilterProxyModel(parent) {}
 
-  void setNameFilters(const QStringList &filters) {
+  void setNameFilters(const QStringList& filters) {
     m_filters = filters;
     invalidateFilter();
   }
@@ -79,9 +78,8 @@ public:
   }
 
 protected:
-  bool filterAcceptsRow(int sourceRow,
-                        const QModelIndex &sourceParent) const override {
-    auto *fsModel = qobject_cast<QFileSystemModel *>(sourceModel());
+  bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override {
+    auto* fsModel = qobject_cast<QFileSystemModel*>(sourceModel());
     if (!fsModel) {
       return true;
     }
@@ -115,8 +113,8 @@ private:
 
 } // namespace
 
-NMFileDialog::NMFileDialog(QWidget *parent, const QString &title, Mode mode,
-                           const QString &dir, const QString &filter)
+NMFileDialog::NMFileDialog(QWidget* parent, const QString& title, Mode mode, const QString& dir,
+                           const QString& filter)
     : QDialog(parent), m_mode(mode) {
   setWindowTitle(title);
   setModal(true);
@@ -132,11 +130,9 @@ NMFileDialog::NMFileDialog(QWidget *parent, const QString &title, Mode mode,
   if (m_mode == Mode::SelectDirectory) {
     m_fileModel->setFilter(QDir::AllDirs | QDir::NoDotAndDotDot | QDir::Drives);
   } else if (m_mode == Mode::SaveFile) {
-    m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot |
-                           QDir::Drives);
+    m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Drives);
   } else {
-    m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot |
-                           QDir::Drives);
+    m_fileModel->setFilter(QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot | QDir::Drives);
   }
   m_fileModel->setRootPath(QString());
 
@@ -152,11 +148,11 @@ NMFileDialog::NMFileDialog(QWidget *parent, const QString &title, Mode mode,
 }
 
 void NMFileDialog::buildUi() {
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(12, 12, 12, 12);
   mainLayout->setSpacing(10);
 
-  auto *pathLayout = new QHBoxLayout();
+  auto* pathLayout = new QHBoxLayout();
   pathLayout->setSpacing(6);
 
   auto& iconMgr = NMIconManager::instance();
@@ -193,7 +189,7 @@ void NMFileDialog::buildUi() {
   pathLayout->addWidget(m_pathEdit, 1);
   mainLayout->addLayout(pathLayout);
 
-  auto *splitter = new QSplitter(Qt::Horizontal, this);
+  auto* splitter = new QSplitter(Qt::Horizontal, this);
 
   m_treeView = new QTreeView(splitter);
   m_treeView->setModel(m_dirModel);
@@ -203,53 +199,48 @@ void NMFileDialog::buildUi() {
   }
   m_treeView->setAnimated(true);
   m_treeView->setIndentation(16);
-  connect(m_treeView, &QTreeView::clicked, this,
-          [this](const QModelIndex &idx) {
-            if (!idx.isValid()) {
-              return;
-            }
-            const QString path = m_dirModel->filePath(idx);
-            if (!path.isEmpty()) {
-              setDirectory(path);
-            }
-          });
+  connect(m_treeView, &QTreeView::clicked, this, [this](const QModelIndex& idx) {
+    if (!idx.isValid()) {
+      return;
+    }
+    const QString path = m_dirModel->filePath(idx);
+    if (!path.isEmpty()) {
+      setDirectory(path);
+    }
+  });
 
   m_listView = new QListView(splitter);
   m_listView->setModel(m_filterProxy);
-  m_listView->setSelectionMode(m_mode == Mode::OpenFiles
-                                   ? QAbstractItemView::ExtendedSelection
-                                   : QAbstractItemView::SingleSelection);
+  m_listView->setSelectionMode(m_mode == Mode::OpenFiles ? QAbstractItemView::ExtendedSelection
+                                                         : QAbstractItemView::SingleSelection);
   m_listView->setViewMode(QListView::ListMode);
   m_listView->setUniformItemSizes(true);
   m_listView->setAlternatingRowColors(true);
   m_listView->setSpacing(2);
 
-  connect(
-      m_listView, &QListView::doubleClicked, this,
-      [this](const QModelIndex &index) {
-        if (!index.isValid()) {
-          return;
-        }
-        const QModelIndex source =
-            static_cast<NMFileFilterProxy *>(m_filterProxy)->mapToSource(index);
-        const QString path = m_fileModel->filePath(source);
-        if (path.isEmpty()) {
-          return;
-        }
-        if (m_fileModel->isDir(source)) {
-          setDirectory(path);
-          return;
-        }
-        if (m_mode != Mode::SelectDirectory) {
-          m_selectedPaths = {path};
-          accept();
-        }
-      });
+  connect(m_listView, &QListView::doubleClicked, this, [this](const QModelIndex& index) {
+    if (!index.isValid()) {
+      return;
+    }
+    const QModelIndex source = static_cast<NMFileFilterProxy*>(m_filterProxy)->mapToSource(index);
+    const QString path = m_fileModel->filePath(source);
+    if (path.isEmpty()) {
+      return;
+    }
+    if (m_fileModel->isDir(source)) {
+      setDirectory(path);
+      return;
+    }
+    if (m_mode != Mode::SelectDirectory) {
+      m_selectedPaths = {path};
+      accept();
+    }
+  });
 
-  auto *previewWidget = new QFrame(splitter);
+  auto* previewWidget = new QFrame(splitter);
   previewWidget->setFrameShape(QFrame::StyledPanel);
   previewWidget->setMinimumWidth(200);
-  auto *previewLayout = new QVBoxLayout(previewWidget);
+  auto* previewLayout = new QVBoxLayout(previewWidget);
   previewLayout->setContentsMargins(10, 10, 10, 10);
   previewLayout->setSpacing(6);
 
@@ -288,19 +279,18 @@ void NMFileDialog::buildUi() {
 
   // Add filename edit for save mode
   if (m_mode == Mode::SaveFile) {
-    auto *filenameLayout = new QHBoxLayout();
+    auto* filenameLayout = new QHBoxLayout();
     filenameLayout->setSpacing(6);
-    auto *filenameLabel = new QLabel(tr("File name:"), this);
+    auto* filenameLabel = new QLabel(tr("File name:"), this);
     m_filenameEdit = new QLineEdit(this);
     m_filenameEdit->setPlaceholderText(tr("Enter file name"));
-    connect(m_filenameEdit, &QLineEdit::textChanged, this,
-            &NMFileDialog::updateAcceptState);
+    connect(m_filenameEdit, &QLineEdit::textChanged, this, &NMFileDialog::updateAcceptState);
     filenameLayout->addWidget(filenameLabel);
     filenameLayout->addWidget(m_filenameEdit, 1);
     mainLayout->addLayout(filenameLayout);
   }
 
-  auto *footerLayout = new QHBoxLayout();
+  auto* footerLayout = new QHBoxLayout();
   footerLayout->setSpacing(6);
 
   m_filterCombo = new QComboBox(this);
@@ -308,8 +298,8 @@ void NMFileDialog::buildUi() {
   if (m_mode == Mode::SelectDirectory) {
     m_filterCombo->setVisible(false);
   }
-  connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, [this](int) { applyFilter(m_filterCombo->currentText()); });
+  connect(m_filterCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          [this](int) { applyFilter(m_filterCombo->currentText()); });
 
   footerLayout->addWidget(m_filterCombo, 0, Qt::AlignLeft);
   footerLayout->addStretch();
@@ -325,8 +315,7 @@ void NMFileDialog::buildUi() {
   m_acceptButton = new QPushButton(acceptText, this);
   m_acceptButton->setIcon(NMIconManager::instance().getIcon("status-success", 16));
   m_acceptButton->setObjectName("NMPrimaryButton");
-  connect(m_acceptButton, &QPushButton::clicked, this,
-          &NMFileDialog::acceptSelection);
+  connect(m_acceptButton, &QPushButton::clicked, this, &NMFileDialog::acceptSelection);
 
   m_cancelButton = new QPushButton(tr("Cancel"), this);
   m_cancelButton->setIcon(NMIconManager::instance().getIcon("file-close", 16));
@@ -338,16 +327,15 @@ void NMFileDialog::buildUi() {
 
   mainLayout->addLayout(footerLayout);
 
-  if (auto *selectionModel = m_listView->selectionModel()) {
-    connect(selectionModel, &QItemSelectionModel::selectionChanged, this,
-            [this]() {
-              updateAcceptState();
-              updatePreview();
-            });
+  if (auto* selectionModel = m_listView->selectionModel()) {
+    connect(selectionModel, &QItemSelectionModel::selectionChanged, this, [this]() {
+      updateAcceptState();
+      updatePreview();
+    });
   }
 }
 
-void NMFileDialog::applyFilter(const QString &filterText) {
+void NMFileDialog::applyFilter(const QString& filterText) {
   QStringList patterns;
   if (m_filterCombo && m_filterCombo->count() > 0) {
     patterns = m_filterCombo->currentData().toStringList();
@@ -361,7 +349,7 @@ void NMFileDialog::applyFilter(const QString &filterText) {
         m_filterCombo->addItem(tr("All Files"), QStringList{"*"});
         patterns = QStringList{"*"};
       } else {
-        for (const auto &entry : entries) {
+        for (const auto& entry : entries) {
           m_filterCombo->addItem(entry.label, entry.patterns);
         }
       }
@@ -369,7 +357,7 @@ void NMFileDialog::applyFilter(const QString &filterText) {
   }
 
   if (m_filterProxy) {
-    auto *proxy = static_cast<NMFileFilterProxy *>(m_filterProxy);
+    auto* proxy = static_cast<NMFileFilterProxy*>(m_filterProxy);
     if (proxy) {
       proxy->setNameFilters(patterns);
     }
@@ -377,7 +365,7 @@ void NMFileDialog::applyFilter(const QString &filterText) {
   updateAcceptState();
 }
 
-void NMFileDialog::setDirectory(const QString &path) {
+void NMFileDialog::setDirectory(const QString& path) {
   QFileInfo info(path);
   if (!info.exists() || !info.isDir()) {
     return;
@@ -402,8 +390,7 @@ void NMFileDialog::setDirectory(const QString &path) {
     const QModelIndex rootIndex = m_fileModel->index(cleaned);
     if (rootIndex.isValid()) {
       const QModelIndex proxyIndex =
-          static_cast<NMFileFilterProxy *>(m_filterProxy)
-              ->mapFromSource(rootIndex);
+          static_cast<NMFileFilterProxy*>(m_filterProxy)->mapFromSource(rootIndex);
       m_listView->setRootIndex(proxyIndex);
     }
   }
@@ -419,9 +406,8 @@ QStringList NMFileDialog::selectedFilePaths() const {
   }
 
   const QModelIndexList selected = m_listView->selectionModel()->selectedRows();
-  for (const QModelIndex &index : selected) {
-    const QModelIndex source =
-        static_cast<NMFileFilterProxy *>(m_filterProxy)->mapToSource(index);
+  for (const QModelIndex& index : selected) {
+    const QModelIndex source = static_cast<NMFileFilterProxy*>(m_filterProxy)->mapToSource(index);
     if (!source.isValid()) {
       continue;
     }
@@ -439,9 +425,8 @@ QString NMFileDialog::selectedDirectoryPath() const {
   }
 
   const QModelIndexList selected = m_listView->selectionModel()->selectedRows();
-  for (const QModelIndex &index : selected) {
-    const QModelIndex source =
-        static_cast<NMFileFilterProxy *>(m_filterProxy)->mapToSource(index);
+  for (const QModelIndex& index : selected) {
+    const QModelIndex source = static_cast<NMFileFilterProxy*>(m_filterProxy)->mapToSource(index);
     if (!source.isValid()) {
       continue;
     }
@@ -463,13 +448,11 @@ void NMFileDialog::updateAcceptState() {
   }
 
   if (m_mode == Mode::SaveFile) {
-    const bool hasFilename =
-        m_filenameEdit && !m_filenameEdit->text().trimmed().isEmpty();
+    const bool hasFilename = m_filenameEdit && !m_filenameEdit->text().trimmed().isEmpty();
     m_acceptButton->setEnabled(hasFilename && !m_currentDir.isEmpty());
     if (m_selectionLabel) {
       if (hasFilename) {
-        m_selectionLabel->setText(
-            QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed()));
+        m_selectionLabel->setText(QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed()));
       } else {
         m_selectionLabel->setText(tr("Enter a file name"));
       }
@@ -514,8 +497,8 @@ void NMFileDialog::updatePreview() {
     return;
   }
 
-  const QModelIndex source = static_cast<NMFileFilterProxy *>(m_filterProxy)
-                                 ->mapToSource(selected.front());
+  const QModelIndex source =
+      static_cast<NMFileFilterProxy*>(m_filterProxy)->mapToSource(selected.front());
   if (!source.isValid()) {
     return;
   }
@@ -530,21 +513,19 @@ void NMFileDialog::updatePreview() {
 
   if (info.isDir()) {
     QFileIconProvider iconProvider;
-    m_previewImage->setPixmap(
-        iconProvider.icon(info).pixmap(m_previewImage->size()));
+    m_previewImage->setPixmap(iconProvider.icon(info).pixmap(m_previewImage->size()));
     m_previewMeta->setText(tr("Folder"));
     return;
   }
 
   const QString suffix = info.suffix().toLower();
-  if (suffix == "png" || suffix == "jpg" || suffix == "jpeg" ||
-      suffix == "bmp" || suffix == "gif") {
+  if (suffix == "png" || suffix == "jpg" || suffix == "jpeg" || suffix == "bmp" ||
+      suffix == "gif") {
     QImage image(path);
     if (!image.isNull()) {
       QPixmap pix = QPixmap::fromImage(image);
-      m_previewImage->setPixmap(pix.scaled(m_previewImage->size(),
-                                           Qt::KeepAspectRatio,
-                                           Qt::SmoothTransformation));
+      m_previewImage->setPixmap(
+          pix.scaled(m_previewImage->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
       m_previewMeta->setText(tr("%1 x %2 | %3 KB")
                                  .arg(image.width())
                                  .arg(image.height())
@@ -554,8 +535,7 @@ void NMFileDialog::updatePreview() {
   }
 
   QFileIconProvider iconProvider;
-  m_previewImage->setPixmap(
-      iconProvider.icon(info).pixmap(m_previewImage->size()));
+  m_previewImage->setPixmap(iconProvider.icon(info).pixmap(m_previewImage->size()));
   m_previewMeta->setText(tr("%1 KB").arg(static_cast<int>(info.size() / 1024)));
 }
 
@@ -573,8 +553,7 @@ void NMFileDialog::acceptSelection() {
     if (!m_filenameEdit || m_filenameEdit->text().trimmed().isEmpty()) {
       return;
     }
-    const QString fullPath =
-        QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed());
+    const QString fullPath = QDir(m_currentDir).filePath(m_filenameEdit->text().trimmed());
     m_selectedPaths = {fullPath};
     accept();
     return;
@@ -588,9 +567,8 @@ void NMFileDialog::acceptSelection() {
   accept();
 }
 
-QString NMFileDialog::getOpenFileName(QWidget *parent, const QString &title,
-                                      const QString &dir,
-                                      const QString &filter) {
+QString NMFileDialog::getOpenFileName(QWidget* parent, const QString& title, const QString& dir,
+                                      const QString& filter) {
   NMFileDialog dialog(parent, title, Mode::OpenFile, dir, filter);
   if (dialog.exec() == QDialog::Accepted) {
     const QStringList files = dialog.m_selectedPaths;
@@ -599,10 +577,8 @@ QString NMFileDialog::getOpenFileName(QWidget *parent, const QString &title,
   return QString();
 }
 
-QStringList NMFileDialog::getOpenFileNames(QWidget *parent,
-                                           const QString &title,
-                                           const QString &dir,
-                                           const QString &filter) {
+QStringList NMFileDialog::getOpenFileNames(QWidget* parent, const QString& title,
+                                           const QString& dir, const QString& filter) {
   NMFileDialog dialog(parent, title, Mode::OpenFiles, dir, filter);
   if (dialog.exec() == QDialog::Accepted) {
     return dialog.m_selectedPaths;
@@ -610,9 +586,8 @@ QStringList NMFileDialog::getOpenFileNames(QWidget *parent,
   return {};
 }
 
-QString NMFileDialog::getSaveFileName(QWidget *parent, const QString &title,
-                                      const QString &dir,
-                                      const QString &filter) {
+QString NMFileDialog::getSaveFileName(QWidget* parent, const QString& title, const QString& dir,
+                                      const QString& filter) {
   NMFileDialog dialog(parent, title, Mode::SaveFile, dir, filter);
   if (dialog.exec() == QDialog::Accepted) {
     const QStringList files = dialog.m_selectedPaths;
@@ -621,13 +596,11 @@ QString NMFileDialog::getSaveFileName(QWidget *parent, const QString &title,
   return QString();
 }
 
-QString NMFileDialog::getExistingDirectory(QWidget *parent,
-                                           const QString &title,
-                                           const QString &dir) {
+QString NMFileDialog::getExistingDirectory(QWidget* parent, const QString& title,
+                                           const QString& dir) {
   NMFileDialog dialog(parent, title, Mode::SelectDirectory, dir, QString());
   if (dialog.exec() == QDialog::Accepted) {
-    return dialog.m_selectedPaths.isEmpty() ? QString()
-                                            : dialog.m_selectedPaths.front();
+    return dialog.m_selectedPaths.isEmpty() ? QString() : dialog.m_selectedPaths.front();
   }
   return QString();
 }

@@ -61,13 +61,13 @@ class VUMeterWidget : public QWidget {
   Q_OBJECT
 
 public:
-  explicit VUMeterWidget(QWidget *parent = nullptr);
+  explicit VUMeterWidget(QWidget* parent = nullptr);
 
   void setLevel(float rmsDb, float peakDb, bool clipping);
   void reset();
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
 
 private:
   float m_rmsDb = -60.0f;
@@ -93,8 +93,7 @@ public:
    * @param audioPlayer Optional audio player for dependency injection
    *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
    */
-  explicit NMRecordingStudioPanel(QWidget *parent = nullptr,
-                                  IAudioPlayer *audioPlayer = nullptr);
+  explicit NMRecordingStudioPanel(QWidget* parent = nullptr, IAudioPlayer* audioPlayer = nullptr);
   ~NMRecordingStudioPanel() override;
 
   void onInitialize() override;
@@ -104,30 +103,28 @@ public:
   /**
    * @brief Set the voice manifest to work with
    */
-  void setManifest(audio::VoiceManifest *manifest);
+  void setManifest(audio::VoiceManifest* manifest);
 
   /**
    * @brief Set the current voice line to record
    */
-  void setCurrentLine(const std::string &lineId);
+  void setCurrentLine(const std::string& lineId);
 
   /**
    * @brief Get the current voice line ID
    */
-  [[nodiscard]] const std::string &getCurrentLineId() const {
-    return m_currentLineId;
-  }
+  [[nodiscard]] const std::string& getCurrentLineId() const { return m_currentLineId; }
 
 signals:
   /**
    * @brief Emitted when a recording is completed
    */
-  void recordingCompleted(const QString &lineId, const QString &filePath);
+  void recordingCompleted(const QString& lineId, const QString& filePath);
 
   /**
    * @brief Emitted when the active take changes
    */
-  void activeTakeChanged(const QString &lineId, int takeIndex);
+  void activeTakeChanged(const QString& lineId, int takeIndex);
 
   /**
    * @brief Emitted to request moving to the next line
@@ -152,15 +149,15 @@ private slots:
   void onDeleteTakeClicked();
   void onSetActiveClicked();
   void onSetActiveTakeClicked();
-  void onTakeDoubleClicked(QListWidgetItem *item);
-  void onTakesContextMenu(const QPoint &pos);
+  void onTakeDoubleClicked(QListWidgetItem* item);
+  void onTakesContextMenu(const QPoint& pos);
   void onInputVolumeChanged(int value);
 
   // Recorder callbacks
-  void onLevelUpdate(const audio::LevelMeter &level);
+  void onLevelUpdate(const audio::LevelMeter& level);
   void onRecordingStateChanged(int state);
-  void onRecordingComplete(const audio::RecordingResult &result);
-  void onRecordingError(const QString &error);
+  void onRecordingComplete(const audio::RecordingResult& result);
+  void onRecordingError(const QString& error);
 
 private:
   void setupUI();
@@ -181,56 +178,56 @@ private:
   void generateOutputPath();
 
   // UI elements
-  QWidget *m_contentWidget = nullptr;
+  QWidget* m_contentWidget = nullptr;
 
   // Device selection
-  QComboBox *m_inputDeviceCombo = nullptr;
-  QSlider *m_inputVolumeSlider = nullptr;
-  QLabel *m_inputVolumeLabel = nullptr;
+  QComboBox* m_inputDeviceCombo = nullptr;
+  QSlider* m_inputVolumeSlider = nullptr;
+  QLabel* m_inputVolumeLabel = nullptr;
 
   // Level meter
-  VUMeterWidget *m_vuMeter = nullptr;
-  QLabel *m_levelDbLabel = nullptr;
-  QLabel *m_clippingWarning = nullptr;
-  QLabel *m_levelStatusLabel = nullptr;  // "Good level", "Too quiet", etc.
+  VUMeterWidget* m_vuMeter = nullptr;
+  QLabel* m_levelDbLabel = nullptr;
+  QLabel* m_clippingWarning = nullptr;
+  QLabel* m_levelStatusLabel = nullptr; // "Good level", "Too quiet", etc.
 
   // Recording format selection
-  QComboBox *m_sampleRateCombo = nullptr;
-  QComboBox *m_bitDepthCombo = nullptr;
-  QComboBox *m_channelsCombo = nullptr;
+  QComboBox* m_sampleRateCombo = nullptr;
+  QComboBox* m_bitDepthCombo = nullptr;
+  QComboBox* m_channelsCombo = nullptr;
 
   // Recording controls
-  QPushButton *m_recordBtn = nullptr;
-  QPushButton *m_stopBtn = nullptr;
-  QPushButton *m_cancelBtn = nullptr;
-  QLabel *m_recordingTimeLabel = nullptr;
-  QProgressBar *m_recordingProgress = nullptr;
+  QPushButton* m_recordBtn = nullptr;
+  QPushButton* m_stopBtn = nullptr;
+  QPushButton* m_cancelBtn = nullptr;
+  QLabel* m_recordingTimeLabel = nullptr;
+  QProgressBar* m_recordingProgress = nullptr;
 
   // Line info
-  QLabel *m_lineIdLabel = nullptr;
-  QLabel *m_speakerLabel = nullptr;
-  QTextEdit *m_dialogueText = nullptr;
-  QLabel *m_notesLabel = nullptr;
+  QLabel* m_lineIdLabel = nullptr;
+  QLabel* m_speakerLabel = nullptr;
+  QTextEdit* m_dialogueText = nullptr;
+  QLabel* m_notesLabel = nullptr;
 
   // Take management
-  QLabel *m_takesHeaderLabel = nullptr;
-  QListWidget *m_takesList = nullptr;
-  QPushButton *m_playTakeBtn = nullptr;
-  QPushButton *m_deleteTakeBtn = nullptr;
-  QPushButton *m_setActiveBtn = nullptr;
-  QLineEdit *m_takeNotesEdit = nullptr;
+  QLabel* m_takesHeaderLabel = nullptr;
+  QListWidget* m_takesList = nullptr;
+  QPushButton* m_playTakeBtn = nullptr;
+  QPushButton* m_deleteTakeBtn = nullptr;
+  QPushButton* m_setActiveBtn = nullptr;
+  QLineEdit* m_takeNotesEdit = nullptr;
 
   // Navigation
-  QPushButton *m_prevLineBtn = nullptr;
-  QPushButton *m_nextLineBtn = nullptr;
-  QLabel *m_progressLabel = nullptr;
+  QPushButton* m_prevLineBtn = nullptr;
+  QPushButton* m_nextLineBtn = nullptr;
+  QLabel* m_progressLabel = nullptr;
 
   // Timer for recording time update
   QPointer<QTimer> m_updateTimer;
 
   // State
   std::unique_ptr<audio::AudioRecorder> m_recorder;
-  audio::VoiceManifest *m_manifest = nullptr;
+  audio::VoiceManifest* m_manifest = nullptr;
   std::string m_currentLineId;
   std::string m_currentLocale = "en";
   std::string m_outputPath;
@@ -239,11 +236,11 @@ private:
 
   // Playback - using IAudioPlayer interface (issue #150)
   std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
-  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
+  IAudioPlayer* m_audioPlayer = nullptr;            // Interface pointer
   bool m_isPlayingTake = false;
 
   // Level status tracking
-  bool m_clippingWarningShown = false;  // Prevents repeated beeps
+  bool m_clippingWarningShown = false; // Prevents repeated beeps
 };
 
 } // namespace NovelMind::editor::qt

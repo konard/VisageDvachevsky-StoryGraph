@@ -234,19 +234,19 @@ struct GuidedLearningProgress {
 /**
  * @brief Convert enum to string for serialization
  */
-const char *tutorialLevelToString(TutorialLevel level);
-const char *tutorialTriggerToString(TutorialTrigger trigger);
-const char *hintTypeToString(HintType type);
-const char *calloutPositionToString(CalloutPosition pos);
-const char *stepStateToString(StepState state);
-const char *tutorialStateToString(TutorialState state);
+const char* tutorialLevelToString(TutorialLevel level);
+const char* tutorialTriggerToString(TutorialTrigger trigger);
+const char* hintTypeToString(HintType type);
+const char* calloutPositionToString(CalloutPosition pos);
+const char* stepStateToString(StepState state);
+const char* tutorialStateToString(TutorialState state);
 
 /**
  * @brief Parse enum from string
  */
-std::optional<TutorialLevel> parseTutorialLevel(const std::string &str);
-std::optional<TutorialTrigger> parseTutorialTrigger(const std::string &str);
-std::optional<HintType> parseHintType(const std::string &str);
-std::optional<CalloutPosition> parseCalloutPosition(const std::string &str);
+std::optional<TutorialLevel> parseTutorialLevel(const std::string& str);
+std::optional<TutorialTrigger> parseTutorialTrigger(const std::string& str);
+std::optional<HintType> parseHintType(const std::string& str);
+std::optional<CalloutPosition> parseCalloutPosition(const std::string& str);
 
 } // namespace NovelMind::editor::guided_learning

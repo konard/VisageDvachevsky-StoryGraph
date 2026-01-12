@@ -6,50 +6,46 @@
 
 namespace NovelMind::editor::mediators {
 
-PlaybackMediator::PlaybackMediator(qt::NMSceneViewPanel *sceneView,
-                                   qt::NMTimelinePanel *timeline,
-                                   QObject *parent)
+PlaybackMediator::PlaybackMediator(qt::NMSceneViewPanel* sceneView, qt::NMTimelinePanel* timeline,
+                                   QObject* parent)
     : QObject(parent), m_sceneView(sceneView), m_timeline(timeline) {}
 
-PlaybackMediator::~PlaybackMediator() { shutdown(); }
+PlaybackMediator::~PlaybackMediator() {
+  shutdown();
+}
 
 void PlaybackMediator::initialize() {
-  auto &bus = EventBus::instance();
+  auto& bus = EventBus::instance();
 
   // Timeline frame changes
   m_subscriptions.push_back(bus.subscribe<events::TimelineFrameChangedEvent>(
-      [this](const events::TimelineFrameChangedEvent &event) {
-        onTimelineFrameChanged(event);
-      }));
+      [this](const events::TimelineFrameChangedEvent& event) { onTimelineFrameChanged(event); }));
 
   // Timeline playback state changes
-  m_subscriptions.push_back(
-      bus.subscribe<events::TimelinePlaybackStateChangedEvent>(
-          [this](const events::TimelinePlaybackStateChangedEvent &event) {
-            onTimelinePlaybackStateChanged(event);
-          }));
+  m_subscriptions.push_back(bus.subscribe<events::TimelinePlaybackStateChangedEvent>(
+      [this](const events::TimelinePlaybackStateChangedEvent& event) {
+        onTimelinePlaybackStateChanged(event);
+      }));
 
   // Animation preview mode
   m_subscriptions.push_back(bus.subscribe<events::SetAnimationPreviewModeEvent>(
-      [this](const events::SetAnimationPreviewModeEvent &event) {
+      [this](const events::SetAnimationPreviewModeEvent& event) {
         onSetAnimationPreviewMode(event);
       }));
 
-  qDebug() << "[PlaybackMediator] Initialized with"
-           << m_subscriptions.size() << "subscriptions";
+  qDebug() << "[PlaybackMediator] Initialized with" << m_subscriptions.size() << "subscriptions";
 }
 
 void PlaybackMediator::shutdown() {
-  auto &bus = EventBus::instance();
-  for (const auto &sub : m_subscriptions) {
+  auto& bus = EventBus::instance();
+  for (const auto& sub : m_subscriptions) {
     bus.unsubscribe(sub);
   }
   m_subscriptions.clear();
   qDebug() << "[PlaybackMediator] Shutdown complete";
 }
 
-void PlaybackMediator::onTimelineFrameChanged(
-    const events::TimelineFrameChangedEvent &event) {
+void PlaybackMediator::onTimelineFrameChanged(const events::TimelineFrameChangedEvent& event) {
   if (!m_sceneView || !m_sceneView->isAnimationPreviewMode()) {
     return;
   }
@@ -57,7 +53,7 @@ void PlaybackMediator::onTimelineFrameChanged(
   // Update scene view with the current frame
   // Animation adapter would apply interpolated values to scene objects
   // For now, we trigger a viewport update
-  if (auto *view = m_sceneView->graphicsView()) {
+  if (auto* view = m_sceneView->graphicsView()) {
     view->viewport()->update();
   }
 
@@ -65,7 +61,7 @@ void PlaybackMediator::onTimelineFrameChanged(
 }
 
 void PlaybackMediator::onTimelinePlaybackStateChanged(
-    const events::TimelinePlaybackStateChangedEvent &event) {
+    const events::TimelinePlaybackStateChangedEvent& event) {
   qDebug() << "[PlaybackMediator] Timeline playback state:"
            << (event.playing ? "playing" : "stopped");
 
@@ -82,7 +78,7 @@ void PlaybackMediator::onTimelinePlaybackStateChanged(
 }
 
 void PlaybackMediator::onSetAnimationPreviewMode(
-    const events::SetAnimationPreviewModeEvent &event) {
+    const events::SetAnimationPreviewModeEvent& event) {
   if (m_sceneView) {
     m_sceneView->setAnimationPreviewMode(event.enabled);
     qDebug() << "[PlaybackMediator] Animation preview mode:"

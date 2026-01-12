@@ -33,11 +33,11 @@ public:
   Q_ENUM(PlayMode)
 
   /// Get singleton instance
-  static NMPlayModeController &instance();
+  static NMPlayModeController& instance();
 
   /// Delete copy/move constructors
-  NMPlayModeController(const NMPlayModeController &) = delete;
-  NMPlayModeController &operator=(const NMPlayModeController &) = delete;
+  NMPlayModeController(const NMPlayModeController&) = delete;
+  NMPlayModeController& operator=(const NMPlayModeController&) = delete;
 
   // === Playback Control ===
 
@@ -63,10 +63,10 @@ public:
   void stepOut();
 
   /// Play from a specific node (useful for testing)
-  void playFromNode(const QString &nodeId);
+  void playFromNode(const QString& nodeId);
 
   /// Jump to a specific node without resetting state
-  void jumpToNode(const QString &nodeId);
+  void jumpToNode(const QString& nodeId);
 
   /// Select a choice while waiting
   void selectChoice(int index);
@@ -90,13 +90,11 @@ public:
   bool hasAutoSave() const;
 
   /// Get access to the script runtime (for advanced operations)
-  scripting::ScriptRuntime *getScriptRuntime();
+  scripting::ScriptRuntime* getScriptRuntime();
 
   /// Load a project into runtime
-  bool loadProject(const QString &projectPath,
-                   const QString &scriptsPath = QString(),
-                   const QString &assetsPath = QString(),
-                   const QString &startScene = QString());
+  bool loadProject(const QString& projectPath, const QString& scriptsPath = QString(),
+                   const QString& assetsPath = QString(), const QString& startScene = QString());
 
   /// Load current project from ProjectManager (if available)
   bool loadCurrentProject();
@@ -127,19 +125,19 @@ public:
   QString currentDialogue() const { return m_currentDialogue; }
   QStringList currentChoices() const { return m_currentChoices; }
   bool isWaitingForChoice() const { return m_waitingForChoice; }
-  const SceneSnapshot &lastSnapshot() const { return m_lastSnapshot; }
+  const SceneSnapshot& lastSnapshot() const { return m_lastSnapshot; }
   bool isRuntimeLoaded() const { return m_runtimeLoaded; }
 
   // === Breakpoint Management ===
 
   /// Toggle breakpoint on/off for a node
-  void toggleBreakpoint(const QString &nodeId);
+  void toggleBreakpoint(const QString& nodeId);
 
   /// Set breakpoint state explicitly
-  void setBreakpoint(const QString &nodeId, bool enabled);
+  void setBreakpoint(const QString& nodeId, bool enabled);
 
   /// Check if node has a breakpoint
-  bool hasBreakpoint(const QString &nodeId) const;
+  bool hasBreakpoint(const QString& nodeId) const;
 
   /// Get all breakpoint node IDs
   QSet<QString> breakpoints() const { return m_breakpoints; }
@@ -153,8 +151,8 @@ public:
    * @brief Represents a source-level breakpoint
    */
   struct SourceBreakpoint {
-    QString filePath;  ///< Absolute path to script file
-    int line = 0;      ///< Line number (1-based)
+    QString filePath; ///< Absolute path to script file
+    int line = 0;     ///< Line number (1-based)
     bool enabled = true;
     QString condition; ///< Optional conditional expression
   };
@@ -164,7 +162,7 @@ public:
    * @param filePath The script file path
    * @param line The line number (1-based)
    */
-  void toggleSourceBreakpoint(const QString &filePath, int line);
+  void toggleSourceBreakpoint(const QString& filePath, int line);
 
   /**
    * @brief Set a source-level breakpoint
@@ -172,7 +170,7 @@ public:
    * @param line The line number (1-based)
    * @param enabled Whether the breakpoint is enabled
    */
-  void setSourceBreakpoint(const QString &filePath, int line, bool enabled);
+  void setSourceBreakpoint(const QString& filePath, int line, bool enabled);
 
   /**
    * @brief Check if a source-level breakpoint exists
@@ -180,14 +178,14 @@ public:
    * @param line The line number (1-based)
    * @return true if breakpoint exists and is enabled
    */
-  bool hasSourceBreakpoint(const QString &filePath, int line) const;
+  bool hasSourceBreakpoint(const QString& filePath, int line) const;
 
   /**
    * @brief Get all source breakpoints for a file
    * @param filePath The script file path
    * @return Set of line numbers with breakpoints
    */
-  QSet<int> sourceBreakpointsForFile(const QString &filePath) const;
+  QSet<int> sourceBreakpointsForFile(const QString& filePath) const;
 
   /**
    * @brief Get all source breakpoints
@@ -203,7 +201,7 @@ public:
   /**
    * @brief Clear source-level breakpoints for a specific file
    */
-  void clearSourceBreakpointsForFile(const QString &filePath);
+  void clearSourceBreakpointsForFile(const QString& filePath);
 
   // === Variable Inspection ===
 
@@ -211,7 +209,7 @@ public:
   QVariantMap currentVariables() const { return m_variables; }
 
   /// Set a variable value (only works when paused)
-  void setVariable(const QString &name, const QVariant &value);
+  void setVariable(const QString& name, const QVariant& value);
 
   /// Get current call stack
   QStringList callStack() const { return m_callStack; }
@@ -227,49 +225,48 @@ signals:
   /// Emitted during compilation to report progress
   /// @param percent Progress percentage (0-100)
   /// @param stage Current compilation stage description
-  void compilationProgress(int percent, const QString &stage);
+  void compilationProgress(int percent, const QString& stage);
 
   /// Emitted when compilation completes successfully
   void compilationFinished();
 
   /// Emitted when compilation fails
   /// @param error Error message
-  void compilationFailed(const QString &error);
+  void compilationFailed(const QString& error);
 
   // === Playback Signals ===
 
   /// Emitted when play mode changes
   void playModeChanged(PlayMode mode);
-  void projectLoaded(const QString &projectPath);
+  void projectLoaded(const QString& projectPath);
 
   /// Emitted when a breakpoint is hit
-  void breakpointHit(const QString &nodeId);
+  void breakpointHit(const QString& nodeId);
 
   /// Emitted when execution reaches a new node
-  void currentNodeChanged(const QString &nodeId);
+  void currentNodeChanged(const QString& nodeId);
 
   /// Emitted when dialogue line changes
-  void dialogueLineChanged(const QString &speaker, const QString &text);
+  void dialogueLineChanged(const QString& speaker, const QString& text);
 
   /// Emitted when available choices change
-  void choicesChanged(const QStringList &choices);
+  void choicesChanged(const QStringList& choices);
 
   /// Emitted when a fresh scene snapshot is available
   void sceneSnapshotUpdated();
 
   /// Emitted when the execution step advances
-  void executionStepChanged(int stepIndex, int totalSteps,
-                            const QString &instruction);
+  void executionStepChanged(int stepIndex, int totalSteps, const QString& instruction);
 
   // === Data Signals ===
 
   /// Emitted when variables are updated
-  void variablesChanged(const QVariantMap &variables);
-  void flagsChanged(const QVariantMap &flags);
+  void variablesChanged(const QVariantMap& variables);
+  void flagsChanged(const QVariantMap& flags);
 
   /// Emitted when call stack changes
-  void callStackChanged(const QStringList &stack);
-  void stackFramesChanged(const QVariantList &frames);
+  void callStackChanged(const QStringList& stack);
+  void stackFramesChanged(const QVariantList& frames);
 
   // === Breakpoint Signals ===
 
@@ -280,17 +277,17 @@ signals:
   void sourceBreakpointsChanged();
 
   /// Emitted when a source-level breakpoint is hit
-  void sourceBreakpointHit(const QString &filePath, int line);
+  void sourceBreakpointHit(const QString& filePath, int line);
 
 public slots:
   /// Load breakpoints from project settings
-  void loadBreakpoints(const QString &projectPath);
+  void loadBreakpoints(const QString& projectPath);
 
   /// Save breakpoints to project settings
-  void saveBreakpoints(const QString &projectPath);
+  void saveBreakpoints(const QString& projectPath);
 
 private:
-  explicit NMPlayModeController(QObject *parent = nullptr);
+  explicit NMPlayModeController(QObject* parent = nullptr);
   ~NMPlayModeController() override = default;
 
   /// Simulate one execution step
@@ -309,7 +306,7 @@ private:
   void captureCurrentState();
 
   /// Restore state from history
-  void restoreState(const scripting::RuntimeSaveState &state);
+  void restoreState(const scripting::RuntimeSaveState& state);
 
   // === State ===
   PlayMode m_playMode = Stopped;
@@ -332,7 +329,7 @@ private:
 
   // Runtime host and ticking
   EditorRuntimeHost m_runtimeHost;
-  QTimer *m_runtimeTimer = nullptr;
+  QTimer* m_runtimeTimer = nullptr;
   QElapsedTimer m_deltaTimer;
 
   // State history for backward navigation

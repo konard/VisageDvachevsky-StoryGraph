@@ -15,10 +15,8 @@ namespace {
 
 // Standalone implementation of cycle detection for testing
 // (mirrors the logic from NMStoryGraphScene::wouldCreateCycle)
-bool wouldCreateCycle(
-    uint64_t fromNodeId,
-    uint64_t toNodeId,
-    const std::unordered_map<uint64_t, std::vector<uint64_t>> &adjacencyList) {
+bool wouldCreateCycle(uint64_t fromNodeId, uint64_t toNodeId,
+                      const std::unordered_map<uint64_t, std::vector<uint64_t>>& adjacencyList) {
   if (fromNodeId == toNodeId) {
     return true; // Self-loop
   }
@@ -58,9 +56,9 @@ bool wouldCreateCycle(
 }
 
 // Standalone implementation of Tarjan's algorithm for cycle detection
-std::vector<std::vector<uint64_t>> detectCycles(
-    const std::unordered_set<uint64_t> &allNodes,
-    const std::unordered_map<uint64_t, std::vector<uint64_t>> &adjacencyList) {
+std::vector<std::vector<uint64_t>>
+detectCycles(const std::unordered_set<uint64_t>& allNodes,
+             const std::unordered_map<uint64_t, std::vector<uint64_t>>& adjacencyList) {
   std::vector<std::vector<uint64_t>> cycles;
 
   // Tarjan's algorithm for strongly connected components
@@ -81,8 +79,8 @@ std::vector<std::vector<uint64_t>> detectCycles(
     if (it != adjacencyList.end()) {
       for (uint64_t w : it->second) {
         if (index.find(w) == index.end()) {
-        strongconnect(w);
-        lowlink[v] = std::min(lowlink[v], lowlink[w]);
+          strongconnect(w);
+          lowlink[v] = std::min(lowlink[v], lowlink[w]);
         } else if (onStack.find(w) != onStack.end()) {
           lowlink[v] = std::min(lowlink[v], index[w]);
         }
@@ -192,8 +190,7 @@ TEST_CASE("Story Graph - Complex cycle detection", "[story_graph][cycle]") {
   }
 }
 
-TEST_CASE("Story Graph - Tarjan's algorithm cycle detection",
-          "[story_graph][cycle]") {
+TEST_CASE("Story Graph - Tarjan's algorithm cycle detection", "[story_graph][cycle]") {
   SECTION("No cycles in DAG") {
     std::unordered_set<uint64_t> nodes = {1, 2, 3, 4};
     std::unordered_map<uint64_t, std::vector<uint64_t>> adj;
@@ -317,7 +314,7 @@ struct TestSceneNodeData {
 };
 
 // Validates that a scene node has required properties
-bool isValidSceneNode(const TestSceneNodeData &data) {
+bool isValidSceneNode(const TestSceneNodeData& data) {
   // Scene ID is required
   if (data.sceneId.empty()) {
     return false;
@@ -330,17 +327,17 @@ bool isValidSceneNode(const TestSceneNodeData &data) {
 }
 
 // Checks if scene node is configured for Visual-First workflow
-bool isVisualFirstScene(const TestSceneNodeData &data) {
+bool isVisualFirstScene(const TestSceneNodeData& data) {
   return data.hasEmbeddedDialogue && !data.embeddedDialogueNodes.empty();
 }
 
 // Checks if scene node is configured for Code-First workflow
-bool isCodeFirstScene(const TestSceneNodeData &data) {
+bool isCodeFirstScene(const TestSceneNodeData& data) {
   return !data.scriptPath.empty() && !data.hasEmbeddedDialogue;
 }
 
 // Checks if scene node is configured for Hybrid workflow
-bool isHybridScene(const TestSceneNodeData &data) {
+bool isHybridScene(const TestSceneNodeData& data) {
   return data.hasEmbeddedDialogue && !data.scriptPath.empty();
 }
 
@@ -458,11 +455,11 @@ TEST_CASE("Scene Node - Scene graph structure", "[story_graph][scene_node]") {
 
   // Scene 1 (Intro) -> Scene 2 (Cafe) -> Scene 3 (Choice)
   // Scene 3 branches to Scene 4 (Good ending) or Scene 5 (Bad ending)
-  sceneAdjacency[1] = {2};      // Intro -> Cafe
-  sceneAdjacency[2] = {3};      // Cafe -> Choice
-  sceneAdjacency[3] = {4, 5};   // Choice -> Good/Bad endings
-  sceneAdjacency[4] = {};       // Good ending (terminal)
-  sceneAdjacency[5] = {};       // Bad ending (terminal)
+  sceneAdjacency[1] = {2};    // Intro -> Cafe
+  sceneAdjacency[2] = {3};    // Cafe -> Choice
+  sceneAdjacency[3] = {4, 5}; // Choice -> Good/Bad endings
+  sceneAdjacency[4] = {};     // Good ending (terminal)
+  sceneAdjacency[5] = {};     // Bad ending (terminal)
 
   SECTION("Scene flow is acyclic") {
     std::unordered_set<uint64_t> allScenes = {1, 2, 3, 4, 5};
@@ -499,31 +496,24 @@ TEST_CASE("Scene Node - Scene graph structure", "[story_graph][scene_node]") {
 namespace {
 
 // Node type enumeration for testing
-enum class TestNodeType {
-  Scene,
-  Dialogue,
-  Condition,
-  Choice,
-  Event,
-  Unknown
-};
+enum class TestNodeType { Scene, Dialogue, Condition, Choice, Event, Unknown };
 
 // Helper function to determine if a node type should generate say statements
 // This mirrors the logic in nm_story_graph_scene.cpp and nm_story_graph_panel_handlers.cpp
 bool shouldGenerateSayStatement(TestNodeType nodeType) {
   switch (nodeType) {
   case TestNodeType::Scene:
-    return false;  // Scene nodes are "silent" containers
+    return false; // Scene nodes are "silent" containers
   case TestNodeType::Condition:
-    return false;  // Condition nodes only branch, they don't speak (Issue #76 fix)
+    return false; // Condition nodes only branch, they don't speak (Issue #76 fix)
   case TestNodeType::Dialogue:
-    return true;   // Dialogue nodes should have say statements
+    return true; // Dialogue nodes should have say statements
   case TestNodeType::Choice:
-    return true;   // Choice nodes can have prompt text
+    return true; // Choice nodes can have prompt text
   case TestNodeType::Event:
-    return true;   // Event nodes may have narrative text
+    return true; // Event nodes may have narrative text
   default:
-    return true;   // Default for unknown types
+    return true; // Default for unknown types
   }
 }
 
@@ -535,7 +525,7 @@ std::string getScriptContentComment(TestNodeType nodeType) {
   case TestNodeType::Condition:
     return "// Condition node - add branching logic here";
   default:
-    return "";  // No comment for dialogue types
+    return ""; // No comment for dialogue types
   }
 }
 
@@ -558,13 +548,13 @@ TEST_CASE("Condition Node - Silent branching behavior (Issue #76)",
   SECTION("Condition node script content comment") {
     auto comment = getScriptContentComment(TestNodeType::Condition);
     CHECK(comment == "// Condition node - add branching logic here");
-    CHECK(comment.find("say") == std::string::npos);  // No "say" in comment
+    CHECK(comment.find("say") == std::string::npos); // No "say" in comment
   }
 
   SECTION("Scene node script content comment") {
     auto comment = getScriptContentComment(TestNodeType::Scene);
     CHECK(comment == "// Scene node - add scene content here");
-    CHECK(comment.find("say") == std::string::npos);  // No "say" in comment
+    CHECK(comment.find("say") == std::string::npos); // No "say" in comment
   }
 }
 
@@ -629,8 +619,7 @@ namespace {
 /// Matches the same rules as the NMScript lexer for consistency.
 bool isUnicodeIdentifierStart(uint32_t codePoint) {
   // ASCII letters
-  if ((codePoint >= 'A' && codePoint <= 'Z') ||
-      (codePoint >= 'a' && codePoint <= 'z')) {
+  if ((codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z')) {
     return true;
   }
   // Latin Extended-A, Extended-B, Extended Additional
@@ -684,7 +673,7 @@ bool isUnicodeIdentifierPart(uint32_t codePoint) {
 
 // Validates if a speaker name is a valid NMScript identifier
 // (mirrors detail::isValidSpeakerIdentifier)
-bool isValidSpeakerIdentifier(const std::string &speaker) {
+bool isValidSpeakerIdentifier(const std::string& speaker) {
   if (speaker.empty()) {
     return false;
   }
@@ -711,27 +700,18 @@ bool isValidSpeakerIdentifier(const std::string &speaker) {
       charLen = 1;
     } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
       charLen = 2;
     } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
-                   << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
       charLen = 3;
     } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x07) << 18;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
-                   << 12;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 2]) & 0x3F)
-                   << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
       charLen = 4;
     } else {
       return false; // Invalid UTF-8
@@ -756,7 +736,7 @@ bool isValidSpeakerIdentifier(const std::string &speaker) {
 
 // Sanitizes a speaker name to be a valid NMScript identifier
 // (mirrors detail::sanitizeSpeakerIdentifier)
-std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
+std::string sanitizeSpeakerIdentifier(const std::string& speaker) {
   if (speaker.empty()) {
     return "Narrator";
   }
@@ -802,27 +782,18 @@ std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
       charLen = 1;
     } else if ((c & 0xE0) == 0xC0 && i + 1 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F);
       charLen = 2;
     } else if ((c & 0xF0) == 0xE0 && i + 2 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
-                   << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 6;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 2]) & 0x3F);
       charLen = 3;
     } else if ((c & 0xF8) == 0xF0 && i + 3 < speaker.size()) {
       codePoint = static_cast<uint32_t>(c & 0x07) << 18;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 1]) & 0x3F)
-                   << 12;
-      codePoint |= static_cast<uint32_t>(
-                       static_cast<unsigned char>(speaker[i + 2]) & 0x3F)
-                   << 6;
-      codePoint |= static_cast<uint32_t>(
-          static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 1]) & 0x3F) << 12;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 2]) & 0x3F) << 6;
+      codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(speaker[i + 3]) & 0x3F);
       charLen = 4;
     } else {
       // Invalid UTF-8, replace with underscore
@@ -880,8 +851,7 @@ std::string sanitizeSpeakerIdentifier(const std::string &speaker) {
 
 } // namespace
 
-TEST_CASE("Speaker Identifier - Validation (Issue #92)",
-          "[story_graph][speaker][identifier]") {
+TEST_CASE("Speaker Identifier - Validation (Issue #92)", "[story_graph][speaker][identifier]") {
   SECTION("Valid ASCII identifiers") {
     CHECK(isValidSpeakerIdentifier("Hero") == true);
     CHECK(isValidSpeakerIdentifier("Narrator") == true);
@@ -892,14 +862,14 @@ TEST_CASE("Speaker Identifier - Validation (Issue #92)",
 
   SECTION("Valid Unicode identifiers") {
     // Note: These are UTF-8 encoded strings
-    CHECK(isValidSpeakerIdentifier("hero") == true);   // ASCII baseline
-    CHECK(isValidSpeakerIdentifier("_test") == true);  // Underscore start
+    CHECK(isValidSpeakerIdentifier("hero") == true);  // ASCII baseline
+    CHECK(isValidSpeakerIdentifier("_test") == true); // Underscore start
   }
 
   SECTION("Invalid identifiers") {
     CHECK(isValidSpeakerIdentifier("") == false);
-    CHECK(isValidSpeakerIdentifier("123scene") == false);  // Starts with digit
-    CHECK(isValidSpeakerIdentifier("my-scene") == false);  // Contains hyphen
+    CHECK(isValidSpeakerIdentifier("123scene") == false);   // Starts with digit
+    CHECK(isValidSpeakerIdentifier("my-scene") == false);   // Contains hyphen
     CHECK(isValidSpeakerIdentifier("scene name") == false); // Contains space
     CHECK(isValidSpeakerIdentifier("test@user") == false);  // Contains @
   }
@@ -911,8 +881,7 @@ TEST_CASE("Speaker Identifier - Validation (Issue #92)",
   }
 }
 
-TEST_CASE("Speaker Identifier - Sanitization (Issue #92)",
-          "[story_graph][speaker][sanitize]") {
+TEST_CASE("Speaker Identifier - Sanitization (Issue #92)", "[story_graph][speaker][sanitize]") {
   SECTION("Empty input returns Narrator") {
     CHECK(sanitizeSpeakerIdentifier("") == "Narrator");
   }
@@ -964,11 +933,10 @@ struct TestGraphNode {
 
 // Finds all dialogue nodes reachable from a scene node before hitting another scene node
 // This is a standalone implementation for testing that mirrors the Qt implementation
-std::vector<uint64_t> findDialogueNodesInScene(
-    uint64_t sceneNodeId,
-    const std::unordered_map<uint64_t, TestGraphNode> &nodes,
-    const std::unordered_map<uint64_t, std::vector<uint64_t>> &adjacencyList) {
-
+std::vector<uint64_t>
+findDialogueNodesInScene(uint64_t sceneNodeId,
+                         const std::unordered_map<uint64_t, TestGraphNode>& nodes,
+                         const std::unordered_map<uint64_t, std::vector<uint64_t>>& adjacencyList) {
   std::vector<uint64_t> result;
 
   // Verify start node is a scene node
@@ -1019,11 +987,9 @@ std::vector<uint64_t> findDialogueNodesInScene(
 // Determine connection type for visual differentiation
 enum class TestConnectionType { SameScene, SceneTransition, CrossScene };
 
-TestConnectionType determineConnectionType(
-    uint64_t fromNodeId,
-    uint64_t toNodeId,
-    const std::unordered_map<uint64_t, TestGraphNode> &nodes) {
-
+TestConnectionType
+determineConnectionType(uint64_t fromNodeId, uint64_t toNodeId,
+                        const std::unordered_map<uint64_t, TestGraphNode>& nodes) {
   auto fromIt = nodes.find(fromNodeId);
   auto toIt = nodes.find(toNodeId);
 
@@ -1187,6 +1153,6 @@ TEST_CASE("Scene Container - Visual hierarchy properties (Issue #345)",
     [[maybe_unused]] const uint8_t crossSceneB = 100;
 
     CHECK(sceneTransitionG > sceneTransitionR); // Green-dominant
-    CHECK(crossSceneR > crossSceneG); // Red/orange-dominant
+    CHECK(crossSceneR > crossSceneG);           // Red/orange-dominant
   }
 }

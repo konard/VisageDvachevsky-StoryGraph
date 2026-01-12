@@ -138,7 +138,7 @@ struct Token {
 /**
  * @brief Convert token type to string for debugging
  */
-[[nodiscard]] inline const char *tokenTypeToString(TokenType type) {
+[[nodiscard]] inline const char* tokenTypeToString(TokenType type) {
   switch (type) {
   case TokenType::EndOfFile:
     return "EndOfFile";

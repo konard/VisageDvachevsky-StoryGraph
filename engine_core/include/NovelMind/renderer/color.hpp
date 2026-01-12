@@ -16,25 +16,21 @@ struct Color {
       : r(red), g(green), b(blue), a(alpha) {}
 
   static constexpr Color fromRGBA(u32 rgba) {
-    return Color(static_cast<u8>((rgba >> 24) & 0xFF),
-                 static_cast<u8>((rgba >> 16) & 0xFF),
-                 static_cast<u8>((rgba >> 8) & 0xFF),
-                 static_cast<u8>(rgba & 0xFF));
+    return Color(static_cast<u8>((rgba >> 24) & 0xFF), static_cast<u8>((rgba >> 16) & 0xFF),
+                 static_cast<u8>((rgba >> 8) & 0xFF), static_cast<u8>(rgba & 0xFF));
   }
 
   [[nodiscard]] constexpr u32 toRGBA() const {
-    return (static_cast<u32>(r) << 24) | (static_cast<u32>(g) << 16) |
-           (static_cast<u32>(b) << 8) | static_cast<u32>(a);
+    return (static_cast<u32>(r) << 24) | (static_cast<u32>(g) << 16) | (static_cast<u32>(b) << 8) |
+           static_cast<u32>(a);
   }
 
   // Comparison operators
-  [[nodiscard]] constexpr bool operator==(const Color &other) const {
+  [[nodiscard]] constexpr bool operator==(const Color& other) const {
     return r == other.r && g == other.g && b == other.b && a == other.a;
   }
 
-  [[nodiscard]] constexpr bool operator!=(const Color &other) const {
-    return !(*this == other);
-  }
+  [[nodiscard]] constexpr bool operator!=(const Color& other) const { return !(*this == other); }
 
   // Static factory methods (lowercase for convenience)
   static constexpr Color white() { return Color(255, 255, 255, 255); }

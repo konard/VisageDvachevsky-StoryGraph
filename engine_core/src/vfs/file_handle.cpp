@@ -45,18 +45,26 @@ Result<std::vector<u8>> IFileHandle::readBytes(usize count) {
 MemoryFileHandle::MemoryFileHandle(std::vector<u8> data)
     : m_data(std::move(data)), m_position(0), m_valid(true) {}
 
-MemoryFileHandle::MemoryFileHandle(const u8 *data, usize dataSize)
+MemoryFileHandle::MemoryFileHandle(const u8* data, usize dataSize)
     : m_data(data, data + dataSize), m_position(0), m_valid(true) {}
 
-bool MemoryFileHandle::isValid() const { return m_valid; }
+bool MemoryFileHandle::isValid() const {
+  return m_valid;
+}
 
-usize MemoryFileHandle::size() const { return m_data.size(); }
+usize MemoryFileHandle::size() const {
+  return m_data.size();
+}
 
-usize MemoryFileHandle::position() const { return m_position; }
+usize MemoryFileHandle::position() const {
+  return m_position;
+}
 
-bool MemoryFileHandle::isEof() const { return m_position >= m_data.size(); }
+bool MemoryFileHandle::isEof() const {
+  return m_position >= m_data.size();
+}
 
-Result<usize> MemoryFileHandle::read(u8 *buffer, usize count) {
+Result<usize> MemoryFileHandle::read(u8* buffer, usize count) {
   if (!m_valid) {
     return Result<usize>::error("Invalid file handle");
   }

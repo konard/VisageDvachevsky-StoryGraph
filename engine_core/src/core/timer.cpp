@@ -2,9 +2,7 @@
 
 namespace NovelMind::core {
 
-Timer::Timer()
-    : m_startTime(Clock::now()), m_lastTickTime(m_startTime), m_deltaTime(0.0) {
-}
+Timer::Timer() : m_startTime(Clock::now()), m_lastTickTime(m_startTime), m_deltaTime(0.0) {}
 
 void Timer::reset() {
   m_startTime = Clock::now();
@@ -30,10 +28,11 @@ f64 Timer::getElapsedMilliseconds() const {
 
 u64 Timer::getElapsedMicroseconds() const {
   auto elapsed = Clock::now() - m_startTime;
-  return static_cast<u64>(
-      std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
+  return static_cast<u64>(std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count());
 }
 
-f64 Timer::getDeltaTime() const { return m_deltaTime; }
+f64 Timer::getDeltaTime() const {
+  return m_deltaTime;
+}
 
 } // namespace NovelMind::core

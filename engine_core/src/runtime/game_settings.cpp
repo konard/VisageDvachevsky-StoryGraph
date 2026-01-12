@@ -10,8 +10,7 @@
 
 namespace NovelMind::runtime {
 
-GameSettings::GameSettings(ConfigManager *configManager)
-    : m_configManager(configManager) {}
+GameSettings::GameSettings(ConfigManager* configManager) : m_configManager(configManager) {}
 
 GameSettings::~GameSettings() = default;
 
@@ -23,15 +22,14 @@ Result<void> GameSettings::initialize() {
   buildSettingsItems();
   syncFromConfig();
 
-  NOVELMIND_LOG_INFO("Game settings initialized with " +
-                     std::to_string(m_settings.size()) + " settings");
+  NOVELMIND_LOG_INFO("Game settings initialized with " + std::to_string(m_settings.size()) +
+                     " settings");
   return Result<void>::ok();
 }
 
-std::vector<SettingItem>
-GameSettings::getItemsInCategory(SettingsCategory category) const {
+std::vector<SettingItem> GameSettings::getItemsInCategory(SettingsCategory category) const {
   std::vector<SettingItem> result;
-  for (const auto &item : m_settings) {
+  for (const auto& item : m_settings) {
     if (item.category == category) {
       result.push_back(item);
     }
@@ -40,9 +38,8 @@ GameSettings::getItemsInCategory(SettingsCategory category) const {
 }
 
 std::vector<SettingsCategory> GameSettings::getCategories() const {
-  return {SettingsCategory::Video, SettingsCategory::Audio,
-          SettingsCategory::Text,  SettingsCategory::Language,
-          SettingsCategory::Input, SettingsCategory::Accessibility};
+  return {SettingsCategory::Video,    SettingsCategory::Audio, SettingsCategory::Text,
+          SettingsCategory::Language, SettingsCategory::Input, SettingsCategory::Accessibility};
 }
 
 std::string GameSettings::getCategoryName(SettingsCategory category) {
@@ -63,8 +60,8 @@ std::string GameSettings::getCategoryName(SettingsCategory category) {
   return "Unknown";
 }
 
-const SettingItem *GameSettings::getSetting(const std::string &id) const {
-  for (const auto &item : m_settings) {
+const SettingItem* GameSettings::getSetting(const std::string& id) const {
+  for (const auto& item : m_settings) {
     if (item.id == id) {
       return &item;
     }
@@ -72,11 +69,11 @@ const SettingItem *GameSettings::getSetting(const std::string &id) const {
   return nullptr;
 }
 
-const std::vector<SettingItem> &GameSettings::getAllSettings() const {
+const std::vector<SettingItem>& GameSettings::getAllSettings() const {
   return m_settings;
 }
 
-void GameSettings::setBoolValue(const std::string &id, bool value) {
+void GameSettings::setBoolValue(const std::string& id, bool value) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
     SettingItem oldValue = m_settings[static_cast<size_t>(idx)];
@@ -86,18 +83,18 @@ void GameSettings::setBoolValue(const std::string &id, bool value) {
   }
 }
 
-void GameSettings::setFloatValue(const std::string &id, f32 value) {
+void GameSettings::setFloatValue(const std::string& id, f32 value) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
     SettingItem oldValue = m_settings[static_cast<size_t>(idx)];
-    auto &setting = m_settings[static_cast<size_t>(idx)];
+    auto& setting = m_settings[static_cast<size_t>(idx)];
     setting.floatValue = std::clamp(value, setting.minValue, setting.maxValue);
     m_hasPendingChanges = true;
     notifySettingChanged(id, oldValue);
   }
 }
 
-void GameSettings::setIntValue(const std::string &id, i32 value) {
+void GameSettings::setIntValue(const std::string& id, i32 value) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
     SettingItem oldValue = m_settings[static_cast<size_t>(idx)];
@@ -107,8 +104,7 @@ void GameSettings::setIntValue(const std::string &id, i32 value) {
   }
 }
 
-void GameSettings::setStringValue(const std::string &id,
-                                  const std::string &value) {
+void GameSettings::setStringValue(const std::string& id, const std::string& value) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
     SettingItem oldValue = m_settings[static_cast<size_t>(idx)];
@@ -118,12 +114,11 @@ void GameSettings::setStringValue(const std::string &id,
   }
 }
 
-void GameSettings::setChoice(const std::string &id, i32 choiceIndex) {
+void GameSettings::setChoice(const std::string& id, i32 choiceIndex) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
-    auto &setting = m_settings[static_cast<size_t>(idx)];
-    if (choiceIndex >= 0 &&
-        choiceIndex < static_cast<i32>(setting.choices.size())) {
+    auto& setting = m_settings[static_cast<size_t>(idx)];
+    if (choiceIndex >= 0 && choiceIndex < static_cast<i32>(setting.choices.size())) {
       SettingItem oldValue = setting;
       setting.selectedChoice = choiceIndex;
       setting.stringValue = setting.choices[static_cast<size_t>(choiceIndex)];
@@ -133,8 +128,7 @@ void GameSettings::setChoice(const std::string &id, i32 choiceIndex) {
   }
 }
 
-void GameSettings::setKeyBinding(const std::string &id,
-                                 const InputBinding &binding) {
+void GameSettings::setKeyBinding(const std::string& id, const InputBinding& binding) {
   i32 idx = findSettingIndex(id);
   if (idx >= 0) {
     SettingItem oldValue = m_settings[static_cast<size_t>(idx)];
@@ -185,7 +179,7 @@ void GameSettings::resetToDefaults() {
 
 void GameSettings::resetCategoryToDefaults(SettingsCategory category) {
   RuntimeConfig defaults;
-  auto &config = m_configManager->getConfigMutable();
+  auto& config = m_configManager->getConfigMutable();
 
   switch (category) {
   case SettingsCategory::Video:
@@ -419,8 +413,8 @@ void GameSettings::buildSettingsItems() {
   // Input Settings
   // =========================================================================
 
-  auto addKeyBinding = [this](InputAction action, const std::string &label,
-                              const std::string &desc) {
+  auto addKeyBinding = [this](InputAction action, const std::string& label,
+                              const std::string& desc) {
     SettingItem item;
     item.id = "key_" + inputActionToString(action);
     item.label = label;
@@ -447,20 +441,18 @@ void GameSettings::syncFromConfig() {
     return;
   }
 
-  const auto &config = m_configManager->getConfig();
+  const auto& config = m_configManager->getConfig();
 
-  for (auto &item : m_settings) {
+  for (auto& item : m_settings) {
     // Video
     if (item.id == "fullscreen") {
       item.boolValue = config.window.fullscreen;
     } else if (item.id == "resolution") {
-      std::string res =
-          formatResolution(config.window.width, config.window.height);
+      std::string res = formatResolution(config.window.width, config.window.height);
       auto it = std::find(item.choices.begin(), item.choices.end(), res);
-      item.selectedChoice =
-          (it != item.choices.end())
-              ? static_cast<i32>(std::distance(item.choices.begin(), it))
-              : 0;
+      item.selectedChoice = (it != item.choices.end())
+                                ? static_cast<i32>(std::distance(item.choices.begin(), it))
+                                : 0;
       item.stringValue = res;
     } else if (item.id == "vsync") {
       item.boolValue = config.window.vsync;
@@ -491,12 +483,11 @@ void GameSettings::syncFromConfig() {
     }
     // Language
     else if (item.id == "language") {
-      auto it = std::find(item.choices.begin(), item.choices.end(),
-                          config.localization.currentLocale);
-      item.selectedChoice =
-          (it != item.choices.end())
-              ? static_cast<i32>(std::distance(item.choices.begin(), it))
-              : 0;
+      auto it =
+          std::find(item.choices.begin(), item.choices.end(), config.localization.currentLocale);
+      item.selectedChoice = (it != item.choices.end())
+                                ? static_cast<i32>(std::distance(item.choices.begin(), it))
+                                : 0;
       item.stringValue = config.localization.currentLocale;
     }
     // Input bindings
@@ -514,20 +505,17 @@ void GameSettings::syncToConfig() {
     return;
   }
 
-  auto &config = m_configManager->getConfigMutable();
+  auto& config = m_configManager->getConfigMutable();
 
-  for (const auto &item : m_settings) {
+  for (const auto& item : m_settings) {
     // Video
     if (item.id == "fullscreen") {
       config.window.fullscreen = item.boolValue;
     } else if (item.id == "resolution") {
       auto resolutions = getAvailableResolutions();
-      if (item.selectedChoice >= 0 &&
-          item.selectedChoice < static_cast<i32>(resolutions.size())) {
-        config.window.width =
-            resolutions[static_cast<size_t>(item.selectedChoice)].first;
-        config.window.height =
-            resolutions[static_cast<size_t>(item.selectedChoice)].second;
+      if (item.selectedChoice >= 0 && item.selectedChoice < static_cast<i32>(resolutions.size())) {
+        config.window.width = resolutions[static_cast<size_t>(item.selectedChoice)].first;
+        config.window.height = resolutions[static_cast<size_t>(item.selectedChoice)].second;
       }
     } else if (item.id == "vsync") {
       config.window.vsync = item.boolValue;
@@ -556,10 +544,8 @@ void GameSettings::syncToConfig() {
     }
     // Language
     else if (item.id == "language") {
-      if (item.selectedChoice >= 0 &&
-          item.selectedChoice < static_cast<i32>(item.choices.size())) {
-        config.localization.currentLocale =
-            item.choices[static_cast<size_t>(item.selectedChoice)];
+      if (item.selectedChoice >= 0 && item.selectedChoice < static_cast<i32>(item.choices.size())) {
+        config.localization.currentLocale = item.choices[static_cast<size_t>(item.selectedChoice)];
       }
     }
     // Input bindings
@@ -571,7 +557,7 @@ void GameSettings::syncToConfig() {
   m_configManager->notifyConfigChanged();
 }
 
-i32 GameSettings::findSettingIndex(const std::string &id) const {
+i32 GameSettings::findSettingIndex(const std::string& id) const {
   for (size_t i = 0; i < m_settings.size(); ++i) {
     if (m_settings[i].id == id) {
       return static_cast<i32>(i);
@@ -580,8 +566,7 @@ i32 GameSettings::findSettingIndex(const std::string &id) const {
   return -1;
 }
 
-void GameSettings::notifySettingChanged(const std::string &id,
-                                        const SettingItem &oldValue) {
+void GameSettings::notifySettingChanged(const std::string& id, const SettingItem& oldValue) {
   if (m_onSettingsChanged) {
     i32 idx = findSettingIndex(id);
     if (idx >= 0) {

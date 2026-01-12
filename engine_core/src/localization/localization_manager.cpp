@@ -15,7 +15,7 @@ namespace NovelMind::localization {
 namespace fs = std::filesystem;
 namespace {
 
-bool readFileToString(std::ifstream &file, std::string &out) {
+bool readFileToString(std::ifstream& file, std::string& out) {
   file.seekg(0, std::ios::end);
   const std::streampos size = file.tellg();
   if (size < 0) {
@@ -34,25 +34,24 @@ bool readFileToString(std::ifstream &file, std::string &out) {
 // StringTable Implementation
 // =========================================================================
 
-StringTable::StringTable(const LocaleId &locale) : m_locale(locale) {}
+StringTable::StringTable(const LocaleId& locale) : m_locale(locale) {}
 
-void StringTable::addString(const std::string &id, const std::string &value) {
+void StringTable::addString(const std::string& id, const std::string& value) {
   LocalizedString str;
   str.id = id;
   str.forms[PluralCategory::Other] = value;
   m_strings[id] = std::move(str);
 }
 
-void StringTable::addPluralString(
-    const std::string &id,
-    const std::unordered_map<PluralCategory, std::string> &forms) {
+void StringTable::addPluralString(const std::string& id,
+                                  const std::unordered_map<PluralCategory, std::string>& forms) {
   LocalizedString str;
   str.id = id;
   str.forms = forms;
   m_strings[id] = std::move(str);
 }
 
-std::optional<std::string> StringTable::getString(const std::string &id) const {
+std::optional<std::string> StringTable::getString(const std::string& id) const {
   auto it = m_strings.find(id);
   if (it != m_strings.end()) {
     auto formIt = it->second.forms.find(PluralCategory::Other);
@@ -67,8 +66,7 @@ std::optional<std::string> StringTable::getString(const std::string &id) const {
   return std::nullopt;
 }
 
-std::optional<std::string> StringTable::getPluralString(const std::string &id,
-                                                        i64 count) const {
+std::optional<std::string> StringTable::getPluralString(const std::string& id, i64 count) const {
   auto it = m_strings.find(id);
   if (it == m_strings.end())
     return std::nullopt;
@@ -97,22 +95,26 @@ std::optional<std::string> StringTable::getPluralString(const std::string &id,
   return std::nullopt;
 }
 
-bool StringTable::hasString(const std::string &id) const {
+bool StringTable::hasString(const std::string& id) const {
   return m_strings.find(id) != m_strings.end();
 }
 
 std::vector<std::string> StringTable::getStringIds() const {
   std::vector<std::string> ids;
   ids.reserve(m_strings.size());
-  for (const auto &[id, str] : m_strings) {
+  for (const auto& [id, str] : m_strings) {
     ids.push_back(id);
   }
   return ids;
 }
 
-void StringTable::clear() { m_strings.clear(); }
+void StringTable::clear() {
+  m_strings.clear();
+}
 
-void StringTable::removeString(const std::string &id) { m_strings.erase(id); }
+void StringTable::removeString(const std::string& id) {
+  m_strings.erase(id);
+}
 
 // =========================================================================
 // LocalizationManager Implementation
@@ -130,11 +132,11 @@ LocalizationManager::~LocalizationManager() = default;
 // Locale Management
 // =========================================================================
 
-void LocalizationManager::setDefaultLocale(const LocaleId &locale) {
+void LocalizationManager::setDefaultLocale(const LocaleId& locale) {
   m_defaultLocale = locale;
 }
 
-void LocalizationManager::setCurrentLocale(const LocaleId &locale) {
+void LocalizationManager::setCurrentLocale(const LocaleId& locale) {
   if (m_currentLocale.toString() != locale.toString()) {
     m_currentLocale = locale;
     if (m_onLanguageChanged) {
@@ -146,23 +148,21 @@ void LocalizationManager::setCurrentLocale(const LocaleId &locale) {
 std::vector<LocaleId> LocalizationManager::getAvailableLocales() const {
   std::vector<LocaleId> locales;
   locales.reserve(m_stringTables.size());
-  for (const auto &[locale, table] : m_stringTables) {
+  for (const auto& [locale, table] : m_stringTables) {
     locales.push_back(locale);
   }
   return locales;
 }
 
-bool LocalizationManager::isLocaleAvailable(const LocaleId &locale) const {
+bool LocalizationManager::isLocaleAvailable(const LocaleId& locale) const {
   return m_stringTables.find(locale) != m_stringTables.end();
 }
 
-void LocalizationManager::registerLocale(const LocaleId &locale,
-                                         const LocaleConfig &config) {
+void LocalizationManager::registerLocale(const LocaleId& locale, const LocaleConfig& config) {
   m_localeConfigs[locale] = config;
 }
 
-std::optional<LocaleConfig>
-LocalizationManager::getLocaleConfig(const LocaleId &locale) const {
+std::optional<LocaleConfig> LocalizationManager::getLocaleConfig(const LocaleId& locale) const {
   auto it = m_localeConfigs.find(locale);
   if (it != m_localeConfigs.end()) {
     return it->second;
@@ -170,17 +170,17 @@ LocalizationManager::getLocaleConfig(const LocaleId &locale) const {
   return std::nullopt;
 }
 
-bool LocalizationManager::isRightToLeft(const LocaleId &locale) const {
+bool LocalizationManager::isRightToLeft(const LocaleId& locale) const {
   auto config = getLocaleConfig(locale);
   if (config.has_value()) {
     return config->rightToLeft;
   }
 
-  static const std::vector<std::string> kRtlLanguages = {
-      "ar", "he", "fa", "ur", "dv", "ps", "ku", "yi"};
+  static const std::vector<std::string> kRtlLanguages = {"ar", "he", "fa", "ur",
+                                                         "dv", "ps", "ku", "yi"};
 
-  return std::find(kRtlLanguages.begin(), kRtlLanguages.end(),
-                   locale.language) != kRtlLanguages.end();
+  return std::find(kRtlLanguages.begin(), kRtlLanguages.end(), locale.language) !=
+         kRtlLanguages.end();
 }
 
 bool LocalizationManager::isCurrentLocaleRightToLeft() const {
@@ -191,8 +191,7 @@ bool LocalizationManager::isCurrentLocaleRightToLeft() const {
 // String Loading
 // =========================================================================
 
-Result<void> LocalizationManager::loadStrings(const LocaleId &locale,
-                                              const std::string &filePath,
+Result<void> LocalizationManager::loadStrings(const LocaleId& locale, const std::string& filePath,
                                               LocalizationFormat format) {
   std::ifstream file(filePath);
   if (!file.is_open()) {
@@ -207,10 +206,9 @@ Result<void> LocalizationManager::loadStrings(const LocaleId &locale,
   return loadStringsFromMemory(locale, content, format);
 }
 
-Result<void>
-LocalizationManager::loadStringsFromMemory(const LocaleId &locale,
-                                           const std::string &data,
-                                           LocalizationFormat format) {
+Result<void> LocalizationManager::loadStringsFromMemory(const LocaleId& locale,
+                                                        const std::string& data,
+                                                        LocalizationFormat format) {
   switch (format) {
   case LocalizationFormat::CSV:
     return loadCSV(locale, data);
@@ -225,24 +223,25 @@ LocalizationManager::loadStringsFromMemory(const LocaleId &locale,
   }
 }
 
-Result<void> LocalizationManager::mergeStrings(const LocaleId &locale,
-                                               const std::string &filePath,
+Result<void> LocalizationManager::mergeStrings(const LocaleId& locale, const std::string& filePath,
                                                LocalizationFormat format) {
   // Load and merge into existing table
   return loadStrings(locale, filePath, format);
 }
 
-void LocalizationManager::unloadLocale(const LocaleId &locale) {
+void LocalizationManager::unloadLocale(const LocaleId& locale) {
   m_stringTables.erase(locale);
 }
 
-void LocalizationManager::clearAll() { m_stringTables.clear(); }
+void LocalizationManager::clearAll() {
+  m_stringTables.clear();
+}
 
 // =========================================================================
 // String Retrieval
 // =========================================================================
 
-std::string LocalizationManager::get(const std::string &id) const {
+std::string LocalizationManager::get(const std::string& id) const {
   // Try current locale first
   auto it = m_stringTables.find(m_currentLocale);
   if (it != m_stringTables.end()) {
@@ -269,15 +268,14 @@ std::string LocalizationManager::get(const std::string &id) const {
   return id;
 }
 
-std::string LocalizationManager::get(
-    const std::string &id,
-    const std::unordered_map<std::string, std::string> &variables) const {
+std::string
+LocalizationManager::get(const std::string& id,
+                         const std::unordered_map<std::string, std::string>& variables) const {
   std::string text = get(id);
   return interpolate(text, variables);
 }
 
-std::string LocalizationManager::getPlural(const std::string &id,
-                                           i64 count) const {
+std::string LocalizationManager::getPlural(const std::string& id, i64 count) const {
   // Try current locale first
   auto it = m_stringTables.find(m_currentLocale);
   if (it != m_stringTables.end()) {
@@ -304,14 +302,13 @@ std::string LocalizationManager::getPlural(const std::string &id,
 }
 
 std::string LocalizationManager::getPlural(
-    const std::string &id, i64 count,
-    const std::unordered_map<std::string, std::string> &variables) const {
+    const std::string& id, i64 count,
+    const std::unordered_map<std::string, std::string>& variables) const {
   std::string text = getPlural(id, count);
   return interpolate(text, variables);
 }
 
-std::string LocalizationManager::getForLocale(const LocaleId &locale,
-                                              const std::string &id) const {
+std::string LocalizationManager::getForLocale(const LocaleId& locale, const std::string& id) const {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     auto str = it->second.getString(id);
@@ -322,12 +319,11 @@ std::string LocalizationManager::getForLocale(const LocaleId &locale,
   return id;
 }
 
-bool LocalizationManager::hasString(const std::string &id) const {
+bool LocalizationManager::hasString(const std::string& id) const {
   return hasString(m_currentLocale, id);
 }
 
-bool LocalizationManager::hasString(const LocaleId &locale,
-                                    const std::string &id) const {
+bool LocalizationManager::hasString(const LocaleId& locale, const std::string& id) const {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     return it->second.hasString(id);
@@ -339,22 +335,19 @@ bool LocalizationManager::hasString(const LocaleId &locale,
 // String Editing
 // =========================================================================
 
-void LocalizationManager::setString(const LocaleId &locale,
-                                    const std::string &id,
-                                    const std::string &value) {
+void LocalizationManager::setString(const LocaleId& locale, const std::string& id,
+                                    const std::string& value) {
   getOrCreateTable(locale).addString(id, value);
 }
 
-void LocalizationManager::removeString(const LocaleId &locale,
-                                       const std::string &id) {
+void LocalizationManager::removeString(const LocaleId& locale, const std::string& id) {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     it->second.removeString(id);
   }
 }
 
-const StringTable *
-LocalizationManager::getStringTable(const LocaleId &locale) const {
+const StringTable* LocalizationManager::getStringTable(const LocaleId& locale) const {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     return &it->second;
@@ -362,8 +355,7 @@ LocalizationManager::getStringTable(const LocaleId &locale) const {
   return nullptr;
 }
 
-StringTable *
-LocalizationManager::getStringTableMutable(const LocaleId &locale) {
+StringTable* LocalizationManager::getStringTableMutable(const LocaleId& locale) {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     return &it->second;
@@ -375,10 +367,8 @@ LocalizationManager::getStringTableMutable(const LocaleId &locale) {
 // Export
 // =========================================================================
 
-Result<void>
-LocalizationManager::exportStrings(const LocaleId &locale,
-                                   const std::string &filePath,
-                                   LocalizationFormat format) const {
+Result<void> LocalizationManager::exportStrings(const LocaleId& locale, const std::string& filePath,
+                                                LocalizationFormat format) const {
   auto it = m_stringTables.find(locale);
   if (it == m_stringTables.end()) {
     return Result<void>::error("Locale not found: " + locale.toString());
@@ -398,10 +388,9 @@ LocalizationManager::exportStrings(const LocaleId &locale,
   }
 }
 
-Result<void>
-LocalizationManager::exportMissingStrings(const LocaleId &locale,
-                                          const std::string &filePath,
-                                          LocalizationFormat format) const {
+Result<void> LocalizationManager::exportMissingStrings(const LocaleId& locale,
+                                                       const std::string& filePath,
+                                                       LocalizationFormat format) const {
   auto defaultIt = m_stringTables.find(m_defaultLocale);
   if (defaultIt == m_stringTables.end()) {
     return Result<void>::error("Default locale not loaded");
@@ -410,9 +399,8 @@ LocalizationManager::exportMissingStrings(const LocaleId &locale,
   StringTable missingTable(locale);
   auto targetIt = m_stringTables.find(locale);
 
-  for (const auto &id : defaultIt->second.getStringIds()) {
-    bool hasinTarget =
-        targetIt != m_stringTables.end() && targetIt->second.hasString(id);
+  for (const auto& id : defaultIt->second.getStringIds()) {
+    bool hasinTarget = targetIt != m_stringTables.end() && targetIt->second.hasString(id);
     if (!hasinTarget) {
       auto str = defaultIt->second.getString(id);
       if (str) {
@@ -455,11 +443,10 @@ PluralCategory LocalizationManager::getPluralCategory(i64 count) const {
   return getPluralCategory(m_currentLocale, count);
 }
 
-PluralCategory LocalizationManager::getPluralCategory(const LocaleId &locale,
-                                                      i64 count) const {
+PluralCategory LocalizationManager::getPluralCategory(const LocaleId& locale, i64 count) const {
   // Simplified plural rules (would need CLDR data for full support)
   // English-style rules as default
-  const std::string &lang = locale.language;
+  const std::string& lang = locale.language;
 
   if (lang == "ru" || lang == "uk" || lang == "be") {
     // East Slavic rules
@@ -497,12 +484,11 @@ PluralCategory LocalizationManager::getPluralCategory(const LocaleId &locale,
 }
 
 std::string LocalizationManager::interpolate(
-    const std::string &text,
-    const std::unordered_map<std::string, std::string> &variables) const {
+    const std::string& text, const std::unordered_map<std::string, std::string>& variables) const {
   std::string result = text;
 
   // Replace {variable} patterns
-  for (const auto &[name, value] : variables) {
+  for (const auto& [name, value] : variables) {
     std::string pattern = "{" + name + "}";
     size_t pos = 0;
     while ((pos = result.find(pattern, pos)) != std::string::npos) {
@@ -518,7 +504,7 @@ std::string LocalizationManager::interpolate(
 // Private Helpers
 // =========================================================================
 
-StringTable &LocalizationManager::getOrCreateTable(const LocaleId &locale) {
+StringTable& LocalizationManager::getOrCreateTable(const LocaleId& locale) {
   auto it = m_stringTables.find(locale);
   if (it != m_stringTables.end()) {
     return it->second;
@@ -528,16 +514,14 @@ StringTable &LocalizationManager::getOrCreateTable(const LocaleId &locale) {
   return m_stringTables[locale];
 }
 
-void LocalizationManager::fireMissingString(const std::string &id,
-                                            const LocaleId &locale) const {
+void LocalizationManager::fireMissingString(const std::string& id, const LocaleId& locale) const {
   if (m_onStringMissing) {
     m_onStringMissing(id, locale);
   }
 }
 
-Result<void> LocalizationManager::loadCSV(const LocaleId &locale,
-                                          const std::string &content) {
-  StringTable &table = getOrCreateTable(locale);
+Result<void> LocalizationManager::loadCSV(const LocaleId& locale, const std::string& content) {
+  StringTable& table = getOrCreateTable(locale);
 
   std::istringstream stream(content);
   std::string line;
@@ -582,16 +566,14 @@ Result<void> LocalizationManager::loadCSV(const LocaleId &locale,
   return {};
 }
 
-Result<void> LocalizationManager::loadJSON(const LocaleId &locale,
-                                           const std::string &content) {
-  StringTable &table = getOrCreateTable(locale);
+Result<void> LocalizationManager::loadJSON(const LocaleId& locale, const std::string& content) {
+  StringTable& table = getOrCreateTable(locale);
 
   // Simple JSON parsing for {"key": "value"} format
   // Pattern: "key" : "value"
   std::string pattern = "\"([^\"]+)\"\\s*:\\s*\"((?:[^\"\\\\]|\\\\.)*)\"";
   std::regex keyValueRegex(pattern);
-  auto begin =
-      std::sregex_iterator(content.begin(), content.end(), keyValueRegex);
+  auto begin = std::sregex_iterator(content.begin(), content.end(), keyValueRegex);
   auto end = std::sregex_iterator();
 
   for (auto it = begin; it != end; ++it) {
@@ -616,9 +598,8 @@ Result<void> LocalizationManager::loadJSON(const LocaleId &locale,
   return {};
 }
 
-Result<void> LocalizationManager::loadPO(const LocaleId &locale,
-                                         const std::string &content) {
-  StringTable &table = getOrCreateTable(locale);
+Result<void> LocalizationManager::loadPO(const LocaleId& locale, const std::string& content) {
+  StringTable& table = getOrCreateTable(locale);
 
   std::istringstream stream(content);
   std::string line;
@@ -679,9 +660,8 @@ Result<void> LocalizationManager::loadPO(const LocaleId &locale,
   return {};
 }
 
-Result<void> LocalizationManager::loadXLIFF(const LocaleId &locale,
-                                            const std::string &content) {
-  StringTable &table = getOrCreateTable(locale);
+Result<void> LocalizationManager::loadXLIFF(const LocaleId& locale, const std::string& content) {
+  StringTable& table = getOrCreateTable(locale);
 
   // Simple XLIFF parsing for trans-unit elements
   std::string transUnitPattern = "<trans-unit[^>]*id=\"([^\"]*)\"[^>]*>";
@@ -692,14 +672,12 @@ Result<void> LocalizationManager::loadXLIFF(const LocaleId &locale,
   std::regex sourceRegex(sourcePattern);
   std::regex targetRegex(targetPattern);
 
-  auto unitBegin =
-      std::sregex_iterator(content.begin(), content.end(), transUnitRegex);
+  auto unitBegin = std::sregex_iterator(content.begin(), content.end(), transUnitRegex);
   auto unitEnd = std::sregex_iterator();
 
   for (auto it = unitBegin; it != unitEnd; ++it) {
     std::string id = (*it)[1].str();
-    size_t searchPos =
-        static_cast<size_t>(it->position()) + static_cast<size_t>(it->length());
+    size_t searchPos = static_cast<size_t>(it->position()) + static_cast<size_t>(it->length());
 
     // Find the closing </trans-unit> to scope the search
     size_t endPos = content.find("</trans-unit>", searchPos);
@@ -725,8 +703,8 @@ Result<void> LocalizationManager::loadXLIFF(const LocaleId &locale,
   return {};
 }
 
-Result<void> LocalizationManager::exportCSV(const StringTable &table,
-                                            const std::string &path) const {
+Result<void> LocalizationManager::exportCSV(const StringTable& table,
+                                            const std::string& path) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -734,7 +712,7 @@ Result<void> LocalizationManager::exportCSV(const StringTable &table,
 
   file << "ID,Text\n";
 
-  for (const auto &id : table.getStringIds()) {
+  for (const auto& id : table.getStringIds()) {
     auto str = table.getString(id);
     if (str) {
       // Escape quotes and wrap in quotes
@@ -751,8 +729,8 @@ Result<void> LocalizationManager::exportCSV(const StringTable &table,
   return {};
 }
 
-Result<void> LocalizationManager::exportJSON(const StringTable &table,
-                                             const std::string &path) const {
+Result<void> LocalizationManager::exportJSON(const StringTable& table,
+                                             const std::string& path) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -762,7 +740,7 @@ Result<void> LocalizationManager::exportJSON(const StringTable &table,
 
   auto ids = table.getStringIds();
   for (size_t i = 0; i < ids.size(); ++i) {
-    const auto &id = ids[i];
+    const auto& id = ids[i];
     auto str = table.getString(id);
     if (str) {
       // Escape JSON special characters
@@ -795,8 +773,8 @@ Result<void> LocalizationManager::exportJSON(const StringTable &table,
   return {};
 }
 
-Result<void> LocalizationManager::exportPO(const StringTable &table,
-                                           const std::string &path) const {
+Result<void> LocalizationManager::exportPO(const StringTable& table,
+                                           const std::string& path) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -807,7 +785,7 @@ Result<void> LocalizationManager::exportPO(const StringTable &table,
   file << "# Language: " << table.getLocale().toString() << "\n";
   file << "\n";
 
-  for (const auto &id : table.getStringIds()) {
+  for (const auto& id : table.getStringIds()) {
     auto str = table.getString(id);
     if (str) {
       file << "msgid \"" << id << "\"\n";
@@ -819,8 +797,8 @@ Result<void> LocalizationManager::exportPO(const StringTable &table,
   return {};
 }
 
-Result<void> LocalizationManager::exportXLIFF(const StringTable &table,
-                                              const std::string &path) const {
+Result<void> LocalizationManager::exportXLIFF(const StringTable& table,
+                                              const std::string& path) const {
   std::ofstream file(path);
   if (!file.is_open()) {
     return Result<void>::error("Failed to open file for writing: " + path);
@@ -836,14 +814,14 @@ Result<void> LocalizationManager::exportXLIFF(const StringTable &table,
        << "\" datatype=\"plaintext\" original=\"NovelMind\">\n";
   file << "    <body>\n";
 
-  for (const auto &id : table.getStringIds()) {
+  for (const auto& id : table.getStringIds()) {
     auto str = table.getString(id);
     if (str) {
       // XML escape special characters
       std::string escapedId = id;
       std::string escapedStr = *str;
 
-      auto escapeXml = [](std::string &text) {
+      auto escapeXml = [](std::string& text) {
         size_t pos = 0;
         while ((pos = text.find('&', pos)) != std::string::npos) {
           text.replace(pos, 1, "&amp;");

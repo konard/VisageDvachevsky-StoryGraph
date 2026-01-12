@@ -34,13 +34,13 @@ class NMSceneDialogueNodePalette : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMSceneDialogueNodePalette(QWidget *parent = nullptr);
+  explicit NMSceneDialogueNodePalette(QWidget* parent = nullptr);
 
 signals:
-  void nodeTypeSelected(const QString &nodeType);
+  void nodeTypeSelected(const QString& nodeType);
 
 private:
-  void createNodeButton(const QString &nodeType, const QString &icon);
+  void createNodeButton(const QString& nodeType, const QString& icon);
 };
 
 /**
@@ -53,21 +53,20 @@ class NMSceneDialogueGraphScene : public NMStoryGraphScene {
   Q_OBJECT
 
 public:
-  explicit NMSceneDialogueGraphScene(QObject *parent = nullptr);
+  explicit NMSceneDialogueGraphScene(QObject* parent = nullptr);
 
   /**
    * @brief Check if a node type is allowed in scene dialogue graphs
    * @param nodeType The type of node to check
    * @return true if the node type is allowed
    */
-  static bool isAllowedNodeType(const QString &nodeType);
+  static bool isAllowedNodeType(const QString& nodeType);
 
   /**
    * @brief Add a node to the dialogue graph (with type validation)
    */
-  NMGraphNodeItem *addNode(const QString &title, const QString &nodeType,
-                           const QPointF &pos, uint64_t nodeId = 0,
-                           const QString &nodeIdString = QString());
+  NMGraphNodeItem* addNode(const QString& title, const QString& nodeType, const QPointF& pos,
+                           uint64_t nodeId = 0, const QString& nodeIdString = QString());
 };
 
 /**
@@ -80,7 +79,7 @@ class NMSceneDialogueGraphPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMSceneDialogueGraphPanel(QWidget *parent = nullptr);
+  explicit NMSceneDialogueGraphPanel(QWidget* parent = nullptr);
   ~NMSceneDialogueGraphPanel() override;
 
   void onInitialize() override;
@@ -90,7 +89,7 @@ public:
    * @brief Load a scene's embedded dialogue graph
    * @param sceneId The scene ID to load
    */
-  void loadSceneDialogue(const QString &sceneId);
+  void loadSceneDialogue(const QString& sceneId);
 
   /**
    * @brief Clear the current dialogue graph
@@ -114,14 +113,12 @@ public:
   /**
    * @brief Get the dialogue graph scene
    */
-  [[nodiscard]] NMSceneDialogueGraphScene *graphScene() const {
-    return m_dialogueScene;
-  }
+  [[nodiscard]] NMSceneDialogueGraphScene* graphScene() const { return m_dialogueScene; }
 
   /**
    * @brief Get the graph view
    */
-  [[nodiscard]] NMStoryGraphView *graphView() const { return m_view; }
+  [[nodiscard]] NMStoryGraphView* graphView() const { return m_view; }
 
 signals:
   /**
@@ -129,7 +126,7 @@ signals:
    * @param sceneId The scene ID
    * @param count New dialogue node count
    */
-  void dialogueCountChanged(const QString &sceneId, int count);
+  void dialogueCountChanged(const QString& sceneId, int count);
 
   /**
    * @brief Emitted when the user wants to return to the Story Graph
@@ -139,7 +136,7 @@ signals:
   /**
    * @brief Emitted when node is selected
    */
-  void nodeSelected(const QString &nodeIdString);
+  void nodeSelected(const QString& nodeIdString);
 
 private slots:
   void onZoomIn();
@@ -148,39 +145,38 @@ private slots:
   void onFitToGraph();
   void onAutoLayout();
   void onReturnToStoryGraph();
-  void onNodeTypeSelected(const QString &nodeType);
-  void onNodeAdded(uint64_t nodeId, const QString &nodeIdString,
-                   const QString &nodeType);
+  void onNodeTypeSelected(const QString& nodeType);
+  void onNodeAdded(uint64_t nodeId, const QString& nodeIdString, const QString& nodeType);
   void onNodeDeleted(uint64_t nodeId);
   void onConnectionAdded(uint64_t fromNodeId, uint64_t toNodeId);
   void onConnectionDeleted(uint64_t fromNodeId, uint64_t toNodeId);
   void onRequestConnection(uint64_t fromNodeId, uint64_t toNodeId);
   void onDeleteSelected();
-  void onNodesMoved(const QVector<GraphNodeMove> &moves);
+  void onNodesMoved(const QVector<GraphNodeMove>& moves);
 
 private:
   void setupToolBar();
   void setupContent();
   void setupBreadcrumb();
   void updateBreadcrumb();
-  void createNode(const QString &nodeType);
+  void createNode(const QString& nodeType);
   void saveDialogueGraphToScene();
   void loadDialogueGraphFromScene();
   void updateDialogueCount();
   void markAsModified();
 
   // UI Components
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  QWidget *m_breadcrumbWidget = nullptr;
-  QLabel *m_breadcrumbLabel = nullptr;
-  QPushButton *m_returnButton = nullptr;
-  NMSceneDialogueNodePalette *m_nodePalette = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  QWidget* m_breadcrumbWidget = nullptr;
+  QLabel* m_breadcrumbLabel = nullptr;
+  QPushButton* m_returnButton = nullptr;
+  NMSceneDialogueNodePalette* m_nodePalette = nullptr;
 
   // Graph Components
-  NMSceneDialogueGraphScene *m_dialogueScene = nullptr;
-  NMStoryGraphView *m_view = nullptr;
-  NMStoryGraphMinimap *m_minimap = nullptr;
+  NMSceneDialogueGraphScene* m_dialogueScene = nullptr;
+  NMStoryGraphView* m_view = nullptr;
+  NMStoryGraphMinimap* m_minimap = nullptr;
 
   // State
   QString m_currentSceneId;

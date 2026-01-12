@@ -1172,7 +1172,8 @@ ParseResult parseNMScriptContent(const QString& content) {
     if (ifMatch.hasMatch() && node.type.isEmpty()) {
       node.conditionExpr = ifMatch.captured(1).trimmed();
       node.type = "Condition";
-      node.conditionOutputs << "true" << "false";
+      node.conditionOutputs << "true"
+                            << "false";
     }
 
     // Check for goto statements (for edges)

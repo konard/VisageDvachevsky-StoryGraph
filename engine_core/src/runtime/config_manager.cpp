@@ -18,7 +18,7 @@ namespace NovelMind::runtime {
 // Simple JSON parser helper (minimal implementation)
 namespace json {
 
-inline std::string trim(const std::string &s) {
+inline std::string trim(const std::string& s) {
   auto start = s.find_first_not_of(" \t\n\r");
   if (start == std::string::npos)
     return "";
@@ -26,8 +26,7 @@ inline std::string trim(const std::string &s) {
   return s.substr(start, end - start + 1);
 }
 
-inline std::string extractString(const std::string &json,
-                                 const std::string &key) {
+inline std::string extractString(const std::string& json, const std::string& key) {
   auto keyPos = json.find("\"" + key + "\"");
   if (keyPos == std::string::npos)
     return "";
@@ -47,8 +46,7 @@ inline std::string extractString(const std::string &json,
   return json.substr(valueStart + 1, valueEnd - valueStart - 1);
 }
 
-inline f32 extractFloat(const std::string &json, const std::string &key,
-                        f32 defaultVal) {
+inline f32 extractFloat(const std::string& json, const std::string& key, f32 defaultVal) {
   auto keyPos = json.find("\"" + key + "\"");
   if (keyPos == std::string::npos)
     return defaultVal;
@@ -68,8 +66,7 @@ inline f32 extractFloat(const std::string &json, const std::string &key,
   }
 }
 
-inline i32 extractInt(const std::string &json, const std::string &key,
-                      i32 defaultVal) {
+inline i32 extractInt(const std::string& json, const std::string& key, i32 defaultVal) {
   auto keyPos = json.find("\"" + key + "\"");
   if (keyPos == std::string::npos)
     return defaultVal;
@@ -89,8 +86,7 @@ inline i32 extractInt(const std::string &json, const std::string &key,
   }
 }
 
-inline bool extractBool(const std::string &json, const std::string &key,
-                        bool defaultVal) {
+inline bool extractBool(const std::string& json, const std::string& key, bool defaultVal) {
   auto keyPos = json.find("\"" + key + "\"");
   if (keyPos == std::string::npos)
     return defaultVal;
@@ -111,8 +107,7 @@ inline bool extractBool(const std::string &json, const std::string &key,
   return defaultVal;
 }
 
-inline std::string extractObject(const std::string &json,
-                                 const std::string &key) {
+inline std::string extractObject(const std::string& json, const std::string& key) {
   auto keyPos = json.find("\"" + key + "\"");
   if (keyPos == std::string::npos)
     return "";
@@ -134,8 +129,8 @@ inline std::string extractObject(const std::string &json,
   return json.substr(braceStart, pos - braceStart);
 }
 
-inline std::vector<std::string> extractStringArray(const std::string &json,
-                                                   const std::string &key) {
+inline std::vector<std::string> extractStringArray(const std::string& json,
+                                                   const std::string& key) {
   std::vector<std::string> result;
 
   auto keyPos = json.find("\"" + key + "\"");
@@ -150,8 +145,7 @@ inline std::vector<std::string> extractStringArray(const std::string &json,
   if (bracketEnd == std::string::npos)
     return result;
 
-  std::string arrayContent =
-      json.substr(bracketStart + 1, bracketEnd - bracketStart - 1);
+  std::string arrayContent = json.substr(bracketStart + 1, bracketEnd - bracketStart - 1);
 
   size_t pos = 0;
   while ((pos = arrayContent.find('"', pos)) != std::string::npos) {
@@ -172,12 +166,11 @@ inline std::vector<std::string> extractStringArray(const std::string &json,
 ConfigManager::ConfigManager() = default;
 ConfigManager::~ConfigManager() = default;
 
-Result<void> ConfigManager::initialize(const std::string &basePath) {
+Result<void> ConfigManager::initialize(const std::string& basePath) {
   m_basePath = basePath;
 
   // Normalize path
-  if (!m_basePath.empty() && m_basePath.back() != '/' &&
-      m_basePath.back() != '\\') {
+  if (!m_basePath.empty() && m_basePath.back() != '/' && m_basePath.back() != '\\') {
     m_basePath += '/';
   }
 
@@ -204,8 +197,8 @@ Result<void> ConfigManager::loadConfig() {
   std::string baseConfigPath = getConfigPath() + "runtime_config.json";
   auto baseResult = loadFromFile(baseConfigPath, false);
   if (baseResult.isError()) {
-    NOVELMIND_LOG_WARN("Could not load runtime_config.json: " +
-                       baseResult.error() + " - using defaults");
+    NOVELMIND_LOG_WARN("Could not load runtime_config.json: " + baseResult.error() +
+                       " - using defaults");
   } else {
     m_baseConfig = m_config;
   }
@@ -237,8 +230,7 @@ Result<void> ConfigManager::saveUserConfig() {
     std::string tempPath = userConfigPath + ".tmp";
     std::ofstream file(tempPath);
     if (!file.is_open()) {
-      return Result<void>::error("Cannot open file for writing: " +
-                                 userConfigPath);
+      return Result<void>::error("Cannot open file for writing: " + userConfigPath);
     }
 
     file << json;
@@ -250,9 +242,8 @@ Result<void> ConfigManager::saveUserConfig() {
     NOVELMIND_LOG_INFO("User configuration saved to " + userConfigPath);
     return Result<void>::ok();
 
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to save config: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to save config: ") + e.what());
   }
 }
 
@@ -282,9 +273,8 @@ Result<void> ConfigManager::ensureDirectories() {
     fs::create_directories(getSavesPath());
     fs::create_directories(getLogsPath());
     return Result<void>::ok();
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to create directories: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to create directories: ") + e.what());
   }
 }
 
@@ -362,18 +352,17 @@ void ConfigManager::setAutoAdvanceEnabled(bool enabled) {
   notifyConfigChanged();
 }
 
-void ConfigManager::setLocale(const std::string &locale) {
+void ConfigManager::setLocale(const std::string& locale) {
   m_config.localization.currentLocale = locale;
   notifyConfigChanged();
 }
 
-void ConfigManager::setInputBinding(InputAction action,
-                                    const InputBinding &binding) {
+void ConfigManager::setInputBinding(InputAction action, const InputBinding& binding) {
   m_config.input.bindings[action] = binding;
   notifyConfigChanged();
 }
 
-const InputBinding &ConfigManager::getInputBinding(InputAction action) const {
+const InputBinding& ConfigManager::getInputBinding(InputAction action) const {
   static InputBinding empty;
   auto it = m_config.input.bindings.find(action);
   if (it != m_config.input.bindings.end()) {
@@ -382,8 +371,7 @@ const InputBinding &ConfigManager::getInputBinding(InputAction action) const {
   return empty;
 }
 
-Result<void> ConfigManager::loadFromFile(const std::string &path,
-                                         bool isUserConfig) {
+Result<void> ConfigManager::loadFromFile(const std::string& path, bool isUserConfig) {
   if (!fs::exists(path)) {
     return Result<void>::error("File not found: " + path);
   }
@@ -400,13 +388,13 @@ Result<void> ConfigManager::loadFromFile(const std::string &path,
 
     return parseJson(content, m_config, isUserConfig);
 
-  } catch (const std::exception &e) {
+  } catch (const std::exception& e) {
     return Result<void>::error(std::string("Failed to read file: ") + e.what());
   }
 }
 
-Result<void> ConfigManager::parseJson(const std::string &jsonStr,
-                                      RuntimeConfig &config, [[maybe_unused]] bool isUserConfig) {
+Result<void> ConfigManager::parseJson(const std::string& jsonStr, RuntimeConfig& config,
+                                      [[maybe_unused]] bool isUserConfig) {
   // Parse version
   std::string version = json::extractString(jsonStr, "version");
   if (!version.empty()) {
@@ -440,31 +428,22 @@ Result<void> ConfigManager::parseJson(const std::string &jsonStr,
     if (height > 0)
       config.window.height = height;
 
-    config.window.fullscreen =
-        json::extractBool(windowObj, "fullscreen", config.window.fullscreen);
-    config.window.vsync =
-        json::extractBool(windowObj, "vsync", config.window.vsync);
-    config.window.resizable =
-        json::extractBool(windowObj, "resizable", config.window.resizable);
-    config.window.borderless =
-        json::extractBool(windowObj, "borderless", config.window.borderless);
+    config.window.fullscreen = json::extractBool(windowObj, "fullscreen", config.window.fullscreen);
+    config.window.vsync = json::extractBool(windowObj, "vsync", config.window.vsync);
+    config.window.resizable = json::extractBool(windowObj, "resizable", config.window.resizable);
+    config.window.borderless = json::extractBool(windowObj, "borderless", config.window.borderless);
   }
 
   // Parse audio settings
   std::string audioObj = json::extractObject(jsonStr, "audio");
   if (!audioObj.empty()) {
-    config.audio.master =
-        json::extractFloat(audioObj, "master", config.audio.master);
-    config.audio.music =
-        json::extractFloat(audioObj, "music", config.audio.music);
-    config.audio.voice =
-        json::extractFloat(audioObj, "voice", config.audio.voice);
+    config.audio.master = json::extractFloat(audioObj, "master", config.audio.master);
+    config.audio.music = json::extractFloat(audioObj, "music", config.audio.music);
+    config.audio.voice = json::extractFloat(audioObj, "voice", config.audio.voice);
     config.audio.sfx = json::extractFloat(audioObj, "sfx", config.audio.sfx);
-    config.audio.ambient =
-        json::extractFloat(audioObj, "ambient", config.audio.ambient);
+    config.audio.ambient = json::extractFloat(audioObj, "ambient", config.audio.ambient);
     config.audio.ui = json::extractFloat(audioObj, "ui", config.audio.ui);
-    config.audio.muted =
-        json::extractBool(audioObj, "muted", config.audio.muted);
+    config.audio.muted = json::extractBool(audioObj, "muted", config.audio.muted);
   }
 
   // Parse text settings
@@ -473,12 +452,9 @@ Result<void> ConfigManager::parseJson(const std::string &jsonStr,
     config.text.speed = json::extractInt(textObj, "speed", config.text.speed);
     config.text.autoAdvanceMs =
         json::extractInt(textObj, "auto_advance_ms", config.text.autoAdvanceMs);
-    config.text.typewriter =
-        json::extractBool(textObj, "typewriter", config.text.typewriter);
-    config.text.autoAdvance =
-        json::extractBool(textObj, "auto_advance", config.text.autoAdvance);
-    config.text.skipUnread =
-        json::extractBool(textObj, "skip_unread", config.text.skipUnread);
+    config.text.typewriter = json::extractBool(textObj, "typewriter", config.text.typewriter);
+    config.text.autoAdvance = json::extractBool(textObj, "auto_advance", config.text.autoAdvance);
+    config.text.skipUnread = json::extractBool(textObj, "skip_unread", config.text.skipUnread);
   }
 
   // Parse localization settings
@@ -508,8 +484,7 @@ Result<void> ConfigManager::parseJson(const std::string &jsonStr,
     if (!indexFile.empty())
       config.packs.indexFile = indexFile;
 
-    config.packs.encrypted =
-        json::extractBool(packsObj, "encrypted", config.packs.encrypted);
+    config.packs.encrypted = json::extractBool(packsObj, "encrypted", config.packs.encrypted);
   }
 
   // Parse save settings
@@ -519,23 +494,22 @@ Result<void> ConfigManager::parseJson(const std::string &jsonStr,
     if (!saveDir.empty())
       config.saves.saveDirectory = saveDir;
 
-    config.saves.enableCompression = json::extractBool(
-        savesObj, "enable_compression", config.saves.enableCompression);
-    config.saves.enableEncryption = json::extractBool(
-        savesObj, "enable_encryption", config.saves.enableEncryption);
-    config.saves.maxSlots =
-        json::extractInt(savesObj, "max_slots", config.saves.maxSlots);
-    config.saves.autoSaveEnabled = json::extractBool(
-        savesObj, "auto_save_enabled", config.saves.autoSaveEnabled);
-    config.saves.autoSaveIntervalMs = json::extractInt(
-        savesObj, "auto_save_interval_ms", config.saves.autoSaveIntervalMs);
+    config.saves.enableCompression =
+        json::extractBool(savesObj, "enable_compression", config.saves.enableCompression);
+    config.saves.enableEncryption =
+        json::extractBool(savesObj, "enable_encryption", config.saves.enableEncryption);
+    config.saves.maxSlots = json::extractInt(savesObj, "max_slots", config.saves.maxSlots);
+    config.saves.autoSaveEnabled =
+        json::extractBool(savesObj, "auto_save_enabled", config.saves.autoSaveEnabled);
+    config.saves.autoSaveIntervalMs =
+        json::extractInt(savesObj, "auto_save_interval_ms", config.saves.autoSaveIntervalMs);
   }
 
   // Parse logging settings (runtime section)
   std::string runtimeObj = json::extractObject(jsonStr, "runtime");
   if (!runtimeObj.empty()) {
-    config.logging.enableLogging = json::extractBool(
-        runtimeObj, "enable_logging", config.logging.enableLogging);
+    config.logging.enableLogging =
+        json::extractBool(runtimeObj, "enable_logging", config.logging.enableLogging);
 
     std::string logLevel = json::extractString(runtimeObj, "log_level");
     if (!logLevel.empty())
@@ -549,20 +523,19 @@ Result<void> ConfigManager::parseJson(const std::string &jsonStr,
   // Parse debug settings
   std::string debugObj = json::extractObject(jsonStr, "debug");
   if (!debugObj.empty()) {
-    config.debug.enableDebugConsole = json::extractBool(
-        debugObj, "enable_console", config.debug.enableDebugConsole);
-    config.debug.showFps =
-        json::extractBool(debugObj, "show_fps", config.debug.showFps);
-    config.debug.showDebugOverlay = json::extractBool(
-        debugObj, "show_overlay", config.debug.showDebugOverlay);
-    config.debug.enableHotReload = json::extractBool(
-        debugObj, "hot_reload", config.debug.enableHotReload);
+    config.debug.enableDebugConsole =
+        json::extractBool(debugObj, "enable_console", config.debug.enableDebugConsole);
+    config.debug.showFps = json::extractBool(debugObj, "show_fps", config.debug.showFps);
+    config.debug.showDebugOverlay =
+        json::extractBool(debugObj, "show_overlay", config.debug.showDebugOverlay);
+    config.debug.enableHotReload =
+        json::extractBool(debugObj, "hot_reload", config.debug.enableHotReload);
   }
 
   return Result<void>::ok();
 }
 
-std::string ConfigManager::serializeToJson(const RuntimeConfig &config,
+std::string ConfigManager::serializeToJson(const RuntimeConfig& config,
                                            bool userSettingsOnly) const {
   std::ostringstream json;
   json << "{\n";
@@ -581,13 +554,10 @@ std::string ConfigManager::serializeToJson(const RuntimeConfig &config,
   json << "  \"window\": {\n";
   json << "    \"width\": " << config.window.width << ",\n";
   json << "    \"height\": " << config.window.height << ",\n";
-  json << "    \"fullscreen\": " << (config.window.fullscreen ? "true" : "false")
-       << ",\n";
+  json << "    \"fullscreen\": " << (config.window.fullscreen ? "true" : "false") << ",\n";
   json << "    \"vsync\": " << (config.window.vsync ? "true" : "false") << ",\n";
-  json << "    \"resizable\": " << (config.window.resizable ? "true" : "false")
-       << ",\n";
-  json << "    \"borderless\": " << (config.window.borderless ? "true" : "false")
-       << "\n";
+  json << "    \"resizable\": " << (config.window.resizable ? "true" : "false") << ",\n";
+  json << "    \"borderless\": " << (config.window.borderless ? "true" : "false") << "\n";
   json << "  },\n";
 
   // Audio settings
@@ -605,20 +575,15 @@ std::string ConfigManager::serializeToJson(const RuntimeConfig &config,
   json << "  \"text\": {\n";
   json << "    \"speed\": " << config.text.speed << ",\n";
   json << "    \"auto_advance_ms\": " << config.text.autoAdvanceMs << ",\n";
-  json << "    \"typewriter\": " << (config.text.typewriter ? "true" : "false")
-       << ",\n";
-  json << "    \"auto_advance\": " << (config.text.autoAdvance ? "true" : "false")
-       << ",\n";
-  json << "    \"skip_unread\": " << (config.text.skipUnread ? "true" : "false")
-       << "\n";
+  json << "    \"typewriter\": " << (config.text.typewriter ? "true" : "false") << ",\n";
+  json << "    \"auto_advance\": " << (config.text.autoAdvance ? "true" : "false") << ",\n";
+  json << "    \"skip_unread\": " << (config.text.skipUnread ? "true" : "false") << "\n";
   json << "  },\n";
 
   // Localization settings
   json << "  \"localization\": {\n";
-  json << "    \"default_locale\": \"" << config.localization.defaultLocale
-       << "\",\n";
-  json << "    \"current_locale\": \"" << config.localization.currentLocale
-       << "\",\n";
+  json << "    \"default_locale\": \"" << config.localization.defaultLocale << "\",\n";
+  json << "    \"current_locale\": \"" << config.localization.currentLocale << "\",\n";
   json << "    \"available_locales\": [";
   for (size_t i = 0; i < config.localization.availableLocales.size(); ++i) {
     if (i > 0)
@@ -634,8 +599,7 @@ std::string ConfigManager::serializeToJson(const RuntimeConfig &config,
     json << "  \"packs\": {\n";
     json << "    \"directory\": \"" << config.packs.directory << "\",\n";
     json << "    \"index_file\": \"" << config.packs.indexFile << "\",\n";
-    json << "    \"encrypted\": " << (config.packs.encrypted ? "true" : "false")
-         << "\n";
+    json << "    \"encrypted\": " << (config.packs.encrypted ? "true" : "false") << "\n";
     json << "  }";
   }
 
@@ -643,7 +607,7 @@ std::string ConfigManager::serializeToJson(const RuntimeConfig &config,
   return json.str();
 }
 
-void ConfigManager::mergeConfig(const RuntimeConfig &userConfig) {
+void ConfigManager::mergeConfig(const RuntimeConfig& userConfig) {
   // Merge user-modifiable settings
   m_config.window = userConfig.window;
   m_config.audio = userConfig.audio;

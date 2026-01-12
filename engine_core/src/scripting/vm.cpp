@@ -1,8 +1,9 @@
 #include "NovelMind/scripting/vm.hpp"
 #include "NovelMind/core/logger.hpp"
+#include "NovelMind/core/endian.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
-#include <cstring>
+#include <bit>
 
 namespace NovelMind::scripting {
 
@@ -130,6 +131,15 @@ Value VirtualMachine::getVariable(const std::string &name) const {
   return std::monostate{};
 }
 
+const Value& VirtualMachine::getVariableRef(const std::string &name) const {
+  static const Value nullValue = std::monostate{};
+  auto it = m_variables.find(name);
+  if (it != m_variables.end()) {
+    return it->second;
+  }
+  return nullValue;
+}
+
 bool VirtualMachine::hasVariable(const std::string &name) const {
   return m_variables.find(name) != m_variables.end();
 }
@@ -196,6 +206,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::JUMP_IF:
+    if (!ensureStack(1)) {
+      return;
+    }
     if (asBool(pop())) {
       // Validate jump target is within program bounds
       if (instr.operand >= m_program.size()) {
@@ -215,6 +228,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::JUMP_IF_NOT:
+    if (!ensureStack(1)) {
+      return;
+    }
     if (!asBool(pop())) {
       // Validate jump target is within program bounds
       if (instr.operand >= m_program.size()) {
@@ -238,8 +254,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::PUSH_FLOAT: {
-    f32 val;
-    std::memcpy(&val, &instr.operand, sizeof(f32));
+    // Deserialize float from bytecode (converts from little-endian)
+    f32 val = deserializeFloat(instr.operand);
     push(val);
     break;
   }
@@ -257,28 +273,50 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::POP:
+    if (!ensureStack(1)) {
+      return;
+    }
     pop();
     break;
 
   case OpCode::DUP:
     if (!m_stack.empty()) {
-      push(m_stack.back());
+      // Optimize: Check security guard and duplicate directly to avoid extra copy
+      if (!m_securityGuard.checkStackPush(m_stack.size())) {
+        NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+        m_halted = true;
+        break;
+      }
+      m_stack.push_back(m_stack.back());
     }
     break;
 
   case OpCode::LOAD_VAR: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
   case OpCode::STORE_VAR: {
+    if (!ensureStack(1)) {
+      return;
+    }
     const std::string &name = getString(instr.operand);
     setVariable(name, pop());
     break;
   }
 
   case OpCode::ADD: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::String ||
@@ -294,6 +332,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::SUB: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::Float ||
@@ -306,6 +347,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::MUL: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::Float ||
@@ -318,19 +362,45 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::DIV: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
-    f32 divisor = asFloat(b);
-    if (divisor != 0.0f) {
+
+    // Check for division by zero before performing the operation
+    // Handle both integer and float divisions
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+
+    if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      // Float division
+      f32 divisor = asFloat(b);
+      if (divisor == 0.0f) {
+        NOVELMIND_LOG_ERROR("VM Runtime Error: Division by zero at instruction " +
+                            std::to_string(m_ip));
+        m_halted = true;
+        return;
+      }
       push(asFloat(a) / divisor);
     } else {
-      NOVELMIND_LOG_ERROR("Division by zero");
-      push(0);
+      // Integer division
+      i32 divisor = asInt(b);
+      if (divisor == 0) {
+        NOVELMIND_LOG_ERROR("VM Runtime Error: Division by zero at instruction " +
+                            std::to_string(m_ip));
+        m_halted = true;
+        return;
+      }
+      push(asInt(a) / divisor);
     }
     break;
   }
 
   case OpCode::EQ: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware equality comparison
@@ -353,6 +423,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::NE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware inequality comparison
@@ -375,34 +448,90 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::LT: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) < asFloat(b));
+    // Type-aware less-than comparison
+    // Coercion rules:
+    // - String types: lexicographic comparison
+    // - Numeric types (Int/Float): numeric comparison (convert to Float if either is Float)
+    // - Bool: treated as Int (true=1, false=0)
+    // - Null: treated as 0 in numeric context
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) < asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) < asFloat(b));
+    } else {
+      push(asInt(a) < asInt(b));
+    }
     break;
   }
 
   case OpCode::LE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) <= asFloat(b));
+    // Type-aware less-than-or-equal comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) <= asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) <= asFloat(b));
+    } else {
+      push(asInt(a) <= asInt(b));
+    }
     break;
   }
 
   case OpCode::GT: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) > asFloat(b));
+    // Type-aware greater-than comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) > asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) > asFloat(b));
+    } else {
+      push(asInt(a) > asInt(b));
+    }
     break;
   }
 
   case OpCode::GE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
-    push(asFloat(a) >= asFloat(b));
+    // Type-aware greater-than-or-equal comparison (same coercion rules as LT)
+    ValueType typeA = getValueType(a);
+    ValueType typeB = getValueType(b);
+    if (typeA == ValueType::String || typeB == ValueType::String) {
+      push(asString(a) >= asString(b));
+    } else if (typeA == ValueType::Float || typeB == ValueType::Float) {
+      push(asFloat(a) >= asFloat(b));
+    } else {
+      push(asInt(a) >= asInt(b));
+    }
     break;
   }
 
   case OpCode::AND: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     push(asBool(a) && asBool(b));
@@ -410,6 +539,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::OR: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     push(asBool(a) || asBool(b));
@@ -417,25 +549,38 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::NOT: {
+    if (!ensureStack(1)) {
+      return;
+    }
     Value a = pop();
     push(!asBool(a));
     break;
   }
 
   case OpCode::MOD: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
+
+    // Check for modulo by zero before performing the operation
+    // Modulo is only defined for integers
     i32 divisor = asInt(b);
-    if (divisor != 0) {
-      push(asInt(a) % divisor);
-    } else {
-      NOVELMIND_LOG_ERROR("Modulo by zero");
-      push(0);
+    if (divisor == 0) {
+      NOVELMIND_LOG_ERROR("VM Runtime Error: Modulo by zero at instruction " +
+                          std::to_string(m_ip));
+      m_halted = true;
+      return;
     }
+    push(asInt(a) % divisor);
     break;
   }
 
   case OpCode::NEG: {
+    if (!ensureStack(1)) {
+      return;
+    }
     Value a = pop();
     if (getValueType(a) == ValueType::Float) {
       push(-asFloat(a));
@@ -447,11 +592,21 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
 
   case OpCode::LOAD_GLOBAL: {
     const std::string &name = getString(instr.operand);
-    push(getVariable(name));
+    // Optimize: Use reference to avoid extra copy
+    const Value &val = getVariableRef(name);
+    if (!m_securityGuard.checkStackPush(m_stack.size())) {
+      NOVELMIND_LOG_ERROR("VM Error: Stack overflow - exceeded maximum stack size");
+      m_halted = true;
+      break;
+    }
+    m_stack.push_back(val);
     break;
   }
 
   case OpCode::STORE_GLOBAL: {
+    if (!ensureStack(1)) {
+      return;
+    }
     const std::string &name = getString(instr.operand);
     setVariable(name, pop());
     break;
@@ -484,6 +639,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::SET_FLAG: {
+    if (!ensureStack(1)) {
+      return;
+    }
     bool value = asBool(pop());
     const std::string &name = getString(instr.operand);
     setFlag(name, value);
@@ -511,8 +669,30 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     auto it = m_callbacks.find(instr.opcode);
     if (it != m_callbacks.end()) {
       std::vector<Value> args;
+
+      // VM Calling Convention:
+      // When arguments are pushed onto the stack, they are pushed in declaration order.
+      // Due to stack semantics (LIFO), popping arguments returns them in REVERSE order.
+      //
+      // To extract arguments correctly:
+      // 1. Pop all arguments from stack (they come out in reverse order)
+      // 2. Reverse the collected arguments to restore declaration order
+      // 3. Build the final args array in the correct parameter order
+      //
+      // Example: For function f(a, b, c):
+      //   - Compiler pushes: a, b, c
+      //   - Stack state (bottom to top): [a, b, c]
+      //   - Popping yields: c, b, a (reversed!)
+      //   - After std::reverse: a, b, c (correct order)
+      //
+      // This pattern ensures arguments match their parameter positions.
+
       auto popArg = [&]() -> Value {
         if (m_stack.empty()) {
+          // Stack underflow detected - log error and halt VM
+          NOVELMIND_LOG_ERROR("VM stack underflow during popArg() at IP: {} (opcode: {})",
+                              m_ip, static_cast<int>(instr.opcode));
+          m_halted = true;
           return std::monostate{};
         }
         Value val = std::move(m_stack.back());
@@ -524,58 +704,90 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         args.emplace_back(getString(instr.operand));
         break;
       case OpCode::SHOW_CHARACTER: {
-        Value posVal = popArg();
-        Value idVal = popArg();
-        if (std::holds_alternative<std::monostate>(idVal)) {
-          idVal = getString(instr.operand);
+        // Collect arguments from stack (in reverse order)
+        std::vector<Value> stackArgs;
+        stackArgs.push_back(popArg());  // position
+        stackArgs.push_back(popArg());  // id
+
+        // Reverse to get declaration order
+        std::reverse(stackArgs.begin(), stackArgs.end());
+
+        // Apply defaults if needed
+        if (std::holds_alternative<std::monostate>(stackArgs[0])) {
+          stackArgs[0] = getString(instr.operand);
         }
-        if (std::holds_alternative<std::monostate>(posVal)) {
-          posVal = static_cast<i32>(1);
+        if (std::holds_alternative<std::monostate>(stackArgs[1])) {
+          stackArgs[1] = static_cast<i32>(1);
         }
-        args.push_back(std::move(idVal));
-        args.push_back(std::move(posVal));
+
+        // Build final args array in correct order
+        args.push_back(std::move(stackArgs[0]));  // id
+        args.push_back(std::move(stackArgs[1]));  // position
         break;
       }
       case OpCode::HIDE_CHARACTER:
         args.emplace_back(getString(instr.operand));
         break;
       case OpCode::MOVE_CHARACTER: {
-        // Stack layout: duration, [customY, customX if custom], posCode, charId
-        Value durVal = popArg();
-        Value posVal = popArg();
+        // Collect arguments from stack (in reverse order)
+        // Stack layout (top to bottom): duration, [customY, customX if custom], posCode, charId
+        Value durVal = popArg();  // duration
+        Value posVal = popArg();  // position code
 
         // Check if position is custom (posCode == 3)
         i32 posCode = std::holds_alternative<i32>(posVal) ? std::get<i32>(posVal) : 1;
-        Value customY;
-        Value customX;
+
+        std::vector<Value> stackArgs;
         if (posCode == 3) {
-          // Custom position: need to pop Y and X coordinates
-          customY = popArg();
-          customX = popArg();
+          // Custom position: pop Y and X coordinates
+          Value customY = popArg();
+          Value customX = popArg();
+          Value idVal = popArg();
+
+          // Collect in reverse stack order: id, pos, X, Y, duration
+          stackArgs.push_back(std::move(idVal));
+          stackArgs.push_back(std::move(posVal));
+          stackArgs.push_back(std::move(customX));
+          stackArgs.push_back(std::move(customY));
+          stackArgs.push_back(std::move(durVal));
+        } else {
+          // No custom coordinates: id, pos, duration
+          Value idVal = popArg();
+
+          stackArgs.push_back(std::move(idVal));
+          stackArgs.push_back(std::move(posVal));
+          stackArgs.push_back(std::move(durVal));
         }
 
-        Value idVal = popArg();
-        if (std::holds_alternative<std::monostate>(idVal)) {
-          idVal = getString(instr.operand);
+        // Apply defaults if needed
+        if (std::holds_alternative<std::monostate>(stackArgs[0])) {
+          stackArgs[0] = getString(instr.operand);
         }
 
-        args.push_back(std::move(idVal));
-        args.push_back(std::move(posVal));
-        if (posCode == 3) {
-          args.push_back(std::move(customX));
-          args.push_back(std::move(customY));
+        // Build final args array in declaration order
+        for (auto &arg : stackArgs) {
+          args.push_back(std::move(arg));
         }
-        args.push_back(std::move(durVal));
         break;
       }
       case OpCode::SAY: {
+        // Only one stack argument (speaker), text comes from operand
         Value speakerVal = popArg();
-        args.emplace_back(getString(instr.operand));
-        args.push_back(std::move(speakerVal));
+        args.emplace_back(getString(instr.operand));  // text
+        args.push_back(std::move(speakerVal));        // speaker
         break;
       }
       case OpCode::CHOICE: {
         const u32 count = instr.operand;
+        // Check if stack has enough elements (count + 1 for the count value itself)
+        const u32 requiredStackSize = count + 1;
+        if (m_stack.size() < requiredStackSize) {
+          NOVELMIND_LOG_ERROR("VM Error: Stack underflow in CHOICE opcode - expected " +
+                              std::to_string(requiredStackSize) + " elements but stack has " +
+                              std::to_string(m_stack.size()));
+          m_halted = true;
+          return;
+        }
         std::vector<Value> choices;
         choices.reserve(count);
         for (u32 i = 0; i < count; ++i) {
@@ -590,12 +802,13 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
         break;
       }
       case OpCode::WAIT:
-        args.emplace_back(static_cast<i32>(instr.operand));
+        args.emplace_back(deserializeFloat(instr.operand));
         break;
       case OpCode::TRANSITION: {
+        // Only one stack argument (duration), type comes from operand
         Value durVal = popArg();
-        args.emplace_back(getString(instr.operand));
-        args.push_back(std::move(durVal));
+        args.emplace_back(getString(instr.operand));  // type
+        args.push_back(std::move(durVal));            // duration
         break;
       }
       case OpCode::PLAY_SOUND:
@@ -630,7 +843,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   default:
-    NOVELMIND_LOG_WARN("Unknown opcode");
+    NOVELMIND_LOG_WARN("Unknown opcode: 0x" +
+                       std::to_string(static_cast<u8>(instr.opcode)) +
+                       " at bytecode offset " + std::to_string(m_ip));
     break;
   }
 }
@@ -654,7 +869,7 @@ Value VirtualMachine::pop() {
   return val;
 }
 
-const std::string &VirtualMachine::getString(u32 index) const {
+const std::string &VirtualMachine::getString(u32 index) {
   static const std::string empty;
   if (index < m_stringTable.size()) {
     return m_stringTable[index];

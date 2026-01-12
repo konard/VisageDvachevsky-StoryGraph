@@ -290,8 +290,8 @@ private:
   void applyLayoutPreset(LayoutPreset preset);
   void focusNextDock(bool reverse = false);
   void showCommandPalette(bool panelsOnly = false);
-  void addDockContextActions(QDockWidget *dock);
-  void handleNavigationRequest(const QString &locationString);
+  void addDockContextActions(QDockWidget* dock);
+  void handleNavigationRequest(const QString& locationString);
   void toggleFocusMode(bool enabled);
   void applyFocusModeLayout();
   void updateStatusBarContext();

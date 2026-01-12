@@ -109,9 +109,9 @@ TEST_CASE("DialogueLocalizationHelper - Check Localization Key", "[localization]
 
   SECTION("Node with custom key override") {
     dialogueNode->setProperty(DialogueLocalizationHelper::PROP_LOCALIZATION_KEY,
-                               std::string("auto.key"));
+                              std::string("auto.key"));
     dialogueNode->setProperty(DialogueLocalizationHelper::PROP_LOCALIZATION_KEY_CUSTOM,
-                               std::string("custom.key"));
+                              std::string("custom.key"));
     dialogueNode->setProperty(DialogueLocalizationHelper::PROP_USE_CUSTOM_KEY, true);
 
     REQUIRE(helper.hasLocalizationKey(*dialogueNode));
@@ -205,9 +205,12 @@ TEST_CASE("DialogueLocalizationHelper - Get Localizable Nodes", "[localization][
 
   // Only dialogue and choice nodes should be returned
   REQUIRE(localizableNodes.size() == 3);
-  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), d1) != localizableNodes.end());
-  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), d2) != localizableNodes.end());
-  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), c1) != localizableNodes.end());
+  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), d1) !=
+          localizableNodes.end());
+  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), d2) !=
+          localizableNodes.end());
+  REQUIRE(std::find(localizableNodes.begin(), localizableNodes.end(), c1) !=
+          localizableNodes.end());
 }
 
 TEST_CASE("DialogueLocalizationHelper - Find Missing Keys", "[localization][dialogue]") {
@@ -233,8 +236,10 @@ TEST_CASE("DialogueLocalizationHelper - Find Missing Keys", "[localization][dial
 TEST_CASE("DialogueLocalizationHelper - Property Constants", "[localization][dialogue]") {
   // Verify property name constants are defined correctly
   REQUIRE(std::string(DialogueLocalizationHelper::PROP_LOCALIZATION_KEY) == "localization_key");
-  REQUIRE(std::string(DialogueLocalizationHelper::PROP_LOCALIZATION_KEY_CUSTOM) == "localization_key_custom");
-  REQUIRE(std::string(DialogueLocalizationHelper::PROP_USE_CUSTOM_KEY) == "use_custom_localization_key");
+  REQUIRE(std::string(DialogueLocalizationHelper::PROP_LOCALIZATION_KEY_CUSTOM) ==
+          "localization_key_custom");
+  REQUIRE(std::string(DialogueLocalizationHelper::PROP_USE_CUSTOM_KEY) ==
+          "use_custom_localization_key");
   REQUIRE(std::string(DialogueLocalizationHelper::PROP_TRANSLATION_STATUS) == "translation_status");
 }
 
@@ -253,13 +258,15 @@ TEST_CASE("IRNode - Dialogue node with localization properties", "[localization]
 
   // Set localization properties
   dialogueNode->setProperty("localization_key", std::string("scene.intro.dialogue.1"));
-  dialogueNode->setProperty("translation_status", static_cast<NovelMind::i64>(TranslationStatus::Translated));
+  dialogueNode->setProperty("translation_status",
+                            static_cast<NovelMind::i64>(TranslationStatus::Translated));
 
   // Verify properties
   REQUIRE(dialogueNode->getStringProperty("text") == "Hello, world!");
   REQUIRE(dialogueNode->getStringProperty("speaker") == "Hero");
   REQUIRE(dialogueNode->getStringProperty("localization_key") == "scene.intro.dialogue.1");
-  REQUIRE(dialogueNode->getIntProperty("translation_status") == static_cast<NovelMind::i64>(TranslationStatus::Translated));
+  REQUIRE(dialogueNode->getIntProperty("translation_status") ==
+          static_cast<NovelMind::i64>(TranslationStatus::Translated));
 }
 
 TEST_CASE("Scene Node with embedded dialogue localization", "[localization][dialogue][scene]") {
@@ -282,8 +289,8 @@ TEST_CASE("Scene Node with embedded dialogue localization", "[localization][dial
   graph.getNode(d2)->setProperty("text", std::string("What brings you here?"));
   graph.getNode(d2)->setProperty("speaker", std::string("Innkeeper"));
 
-  graph.getNode(choice)->setProperty("options",
-      std::vector<std::string>{"I'm looking for work.", "Just passing through."});
+  graph.getNode(choice)->setProperty(
+      "options", std::vector<std::string>{"I'm looking for work.", "Just passing through."});
 
   graph.getNode(d3)->setProperty("text", std::string("I see. Well, good luck!"));
   graph.getNode(d3)->setProperty("speaker", std::string("Innkeeper"));

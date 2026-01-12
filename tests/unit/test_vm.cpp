@@ -3,542 +3,1863 @@
 
 using namespace NovelMind::scripting;
 
-TEST_CASE("VM initial state", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM initial state", "[scripting]") {
+  VirtualMachine vm;
 
-    REQUIRE_FALSE(vm.isRunning());
-    REQUIRE_FALSE(vm.isPaused());
-    REQUIRE_FALSE(vm.isWaiting());
+  REQUIRE_FALSE(vm.isRunning());
+  REQUIRE_FALSE(vm.isPaused());
+  REQUIRE_FALSE(vm.isWaiting());
 }
 
-TEST_CASE("VM load empty program fails", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM load empty program fails", "[scripting]") {
+  VirtualMachine vm;
 
-    auto result = vm.load({}, {});
-    REQUIRE(result.isError());
+  auto result = vm.load({}, {});
+  REQUIRE(result.isError());
 }
 
-TEST_CASE("VM load and run simple program", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM load and run simple program", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 42},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 42}, {OpCode::HALT, 0}};
 
-    auto result = vm.load(program, {});
-    REQUIRE(result.isOk());
+  auto result = vm.load(program, {});
+  REQUIRE(result.isOk());
 
-    vm.run();
-    REQUIRE(vm.isHalted());
+  vm.run();
+  REQUIRE(vm.isHalted());
 }
 
-TEST_CASE("VM arithmetic operations", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM arithmetic operations", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 10},
-        {OpCode::PUSH_INT, 5},
-        {OpCode::ADD, 0},
-        {OpCode::STORE_VAR, 0},  // Store to "result"
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                      {OpCode::PUSH_INT, 5},
+                                      {OpCode::ADD, 0},
+                                      {OpCode::STORE_VAR, 0}, // Store to "result"
+                                      {OpCode::HALT, 0}};
 
-    std::vector<std::string> strings = {"result"};
+  std::vector<std::string> strings = {"result"};
 
-    auto result = vm.load(program, strings);
-    REQUIRE(result.isOk());
+  auto result = vm.load(program, strings);
+  REQUIRE(result.isOk());
 
-    vm.run();
+  vm.run();
 
-    auto val = vm.getVariable("result");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 15);
+  auto val = vm.getVariable("result");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 15);
 }
 
-TEST_CASE("VM subtraction", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM subtraction", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 20},
-        {OpCode::PUSH_INT, 8},
-        {OpCode::SUB, 0},
-        {OpCode::STORE_VAR, 0},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 20},
+                                      {OpCode::PUSH_INT, 8},
+                                      {OpCode::SUB, 0},
+                                      {OpCode::STORE_VAR, 0},
+                                      {OpCode::HALT, 0}};
 
-    vm.load(program, {"result"});
-    vm.run();
+  vm.load(program, {"result"});
+  vm.run();
 
-    auto val = vm.getVariable("result");
-    REQUIRE(std::get<NovelMind::i32>(val) == 12);
+  auto val = vm.getVariable("result");
+  REQUIRE(std::get<NovelMind::i32>(val) == 12);
 }
 
-TEST_CASE("VM multiplication", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM multiplication", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 6},
-        {OpCode::PUSH_INT, 7},
-        {OpCode::MUL, 0},
-        {OpCode::STORE_VAR, 0},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 6},
+                                      {OpCode::PUSH_INT, 7},
+                                      {OpCode::MUL, 0},
+                                      {OpCode::STORE_VAR, 0},
+                                      {OpCode::HALT, 0}};
 
-    vm.load(program, {"result"});
-    vm.run();
+  vm.load(program, {"result"});
+  vm.run();
 
-    auto val = vm.getVariable("result");
-    REQUIRE(std::get<NovelMind::i32>(val) == 42);
+  auto val = vm.getVariable("result");
+  REQUIRE(std::get<NovelMind::i32>(val) == 42);
 }
 
-TEST_CASE("VM comparison operations", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM comparison operations", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 5},
-        {OpCode::PUSH_INT, 5},
-        {OpCode::EQ, 0},
-        {OpCode::STORE_VAR, 0},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 5},
+                                      {OpCode::PUSH_INT, 5},
+                                      {OpCode::EQ, 0},
+                                      {OpCode::STORE_VAR, 0},
+                                      {OpCode::HALT, 0}};
 
-    vm.load(program, {"equal"});
-    vm.run();
+  vm.load(program, {"equal"});
+  vm.run();
 
-    auto val = vm.getVariable("equal");
-    REQUIRE(std::holds_alternative<bool>(val));
-    REQUIRE(std::get<bool>(val) == true);
+  auto val = vm.getVariable("equal");
+  REQUIRE(std::holds_alternative<bool>(val));
+  REQUIRE(std::get<bool>(val) == true);
 }
 
-TEST_CASE("VM conditional jump", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM conditional jump", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_BOOL, 1},      // true
-        {OpCode::JUMP_IF, 4},        // Jump to instruction 4 if true
-        {OpCode::PUSH_INT, 0},       // This should be skipped
-        {OpCode::JUMP, 5},
-        {OpCode::PUSH_INT, 1},       // This should execute
-        {OpCode::STORE_VAR, 0},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_BOOL, 1},                        // true
+      {OpCode::JUMP_IF, 4},                          // Jump to instruction 4 if true
+      {OpCode::PUSH_INT, 0},                         // This should be skipped
+      {OpCode::JUMP, 5},      {OpCode::PUSH_INT, 1}, // This should execute
+      {OpCode::STORE_VAR, 0}, {OpCode::HALT, 0}};
 
-    vm.load(program, {"result"});
-    vm.run();
+  vm.load(program, {"result"});
+  vm.run();
 
-    auto val = vm.getVariable("result");
-    REQUIRE(std::get<NovelMind::i32>(val) == 1);
+  auto val = vm.getVariable("result");
+  REQUIRE(std::get<NovelMind::i32>(val) == 1);
 }
 
-TEST_CASE("VM flags", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM flags", "[scripting]") {
+  VirtualMachine vm;
 
-    vm.load({{OpCode::HALT, 0}}, {});
+  vm.load({{OpCode::HALT, 0}}, {});
 
-    vm.setFlag("test_flag", true);
-    REQUIRE(vm.getFlag("test_flag") == true);
+  vm.setFlag("test_flag", true);
+  REQUIRE(vm.getFlag("test_flag") == true);
 
-    vm.setFlag("test_flag", false);
-    REQUIRE(vm.getFlag("test_flag") == false);
+  vm.setFlag("test_flag", false);
+  REQUIRE(vm.getFlag("test_flag") == false);
 }
 
-TEST_CASE("VM variables", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM variables", "[scripting]") {
+  VirtualMachine vm;
 
-    vm.load({{OpCode::HALT, 0}}, {});
+  vm.load({{OpCode::HALT, 0}}, {});
 
-    vm.setVariable("int_var", NovelMind::i32{100});
-    vm.setVariable("str_var", std::string{"hello"});
-    vm.setVariable("bool_var", true);
+  vm.setVariable("int_var", NovelMind::i32{100});
+  vm.setVariable("str_var", std::string{"hello"});
+  vm.setVariable("bool_var", true);
 
-    REQUIRE(std::get<NovelMind::i32>(vm.getVariable("int_var")) == 100);
-    REQUIRE(std::get<std::string>(vm.getVariable("str_var")) == "hello");
-    REQUIRE(std::get<bool>(vm.getVariable("bool_var")) == true);
+  REQUIRE(std::get<NovelMind::i32>(vm.getVariable("int_var")) == 100);
+  REQUIRE(std::get<std::string>(vm.getVariable("str_var")) == "hello");
+  REQUIRE(std::get<bool>(vm.getVariable("bool_var")) == true);
 }
 
-TEST_CASE("VM pause and resume", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM pause and resume", "[scripting]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::NOP, 0},
-        {OpCode::NOP, 0},
-        {OpCode::HALT, 0}
-    };
+  std::vector<Instruction> program = {{OpCode::NOP, 0}, {OpCode::NOP, 0}, {OpCode::HALT, 0}};
 
-    vm.load(program, {});
+  vm.load(program, {});
+  vm.step();
+  vm.pause();
+
+  REQUIRE(vm.isPaused());
+
+  vm.resume();
+  REQUIRE_FALSE(vm.isPaused());
+}
+
+TEST_CASE("VM reset", "[scripting]") {
+  VirtualMachine vm;
+
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 1}, {OpCode::HALT, 0}};
+
+  vm.load(program, {});
+  vm.run();
+  REQUIRE(vm.isHalted());
+
+  vm.reset();
+  REQUIRE_FALSE(vm.isHalted());
+  REQUIRE_FALSE(vm.isRunning());
+}
+
+TEST_CASE("VM JUMP to address 0", "[scripting][jump]") {
+  VirtualMachine vm;
+
+  // Simpler test: Just test JUMP_IF to address 0 directly
+  // Program counts from 0 to 3, then halts
+  // IP tracking:
+  // 0: PUSH_INT 1        -> stack: [1]
+  // 1: LOAD_VAR counter  -> stack: [1, counter]
+  // 2: ADD               -> stack: [counter+1]
+  // 3: DUP               -> stack: [counter+1, counter+1]
+  // 4: STORE_VAR counter -> counter = counter+1, stack: [counter+1]
+  // 5: PUSH_INT 3        -> stack: [counter+1, 3]
+  // 6: LT                -> stack: [counter+1 < 3]
+  // 7: JUMP_IF 0         -> if true, jump to 0
+  // 8: HALT
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_INT, 1},  // 0: Push 1
+      {OpCode::LOAD_VAR, 0},  // 1: Load counter
+      {OpCode::ADD, 0},       // 2: counter + 1
+      {OpCode::DUP, 0},       // 3: Duplicate result
+      {OpCode::STORE_VAR, 0}, // 4: Store back to counter
+      {OpCode::PUSH_INT, 3},  // 5: Push 3
+      {OpCode::LT, 0},        // 6: counter < 3
+      {OpCode::JUMP_IF, 0},   // 7: If true, jump to instruction 0
+      {OpCode::HALT, 0}       // 8: Otherwise halt
+  };
+
+  vm.load(program, {"counter"});
+  vm.setVariable("counter", NovelMind::i32{0});
+
+  // Track IP values during execution
+  int iterations = 0;
+  const int maxIterations = 50; // Safety limit
+
+  while (!vm.isHalted() && iterations < maxIterations) {
     vm.step();
-    vm.pause();
+    iterations++;
+  }
 
-    REQUIRE(vm.isPaused());
-
-    vm.resume();
-    REQUIRE_FALSE(vm.isPaused());
+  // Counter should be 3 (we looped 3 times: 0->1, 1->2, 2->3, then 3 < 3 is false)
+  auto val = vm.getVariable("counter");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 3);
+  REQUIRE(vm.isHalted());
 }
 
-TEST_CASE("VM reset", "[scripting]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM JUMP to address 0 unconditional", "[scripting][jump]") {
+  VirtualMachine vm;
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},
-        {OpCode::HALT, 0}
-    };
+  // Simple program that jumps back to 0 unconditionally
+  // Use a counter to ensure the jump works (max iterations will stop it)
+  std::vector<Instruction> program = {
+      {OpCode::LOAD_VAR, 0},  // 0: Load counter
+      {OpCode::PUSH_INT, 1},  // 1: Push 1
+      {OpCode::ADD, 0},       // 2: counter + 1
+      {OpCode::STORE_VAR, 0}, // 3: Store back to counter
+      {OpCode::JUMP, 0}       // 4: Unconditionally jump to 0
+  };
 
-    vm.load(program, {});
-    vm.run();
-    REQUIRE(vm.isHalted());
+  vm.load(program, {"counter"});
+  vm.setVariable("counter", NovelMind::i32{0});
 
-    vm.reset();
-    REQUIRE_FALSE(vm.isHalted());
-    REQUIRE_FALSE(vm.isRunning());
-}
-
-TEST_CASE("VM JUMP to address 0", "[scripting][jump]")
-{
-    VirtualMachine vm;
-
-    // Simpler test: Just test JUMP_IF to address 0 directly
-    // Program counts from 0 to 3, then halts
-    // IP tracking:
-    // 0: PUSH_INT 1        -> stack: [1]
-    // 1: LOAD_VAR counter  -> stack: [1, counter]
-    // 2: ADD               -> stack: [counter+1]
-    // 3: DUP               -> stack: [counter+1, counter+1]
-    // 4: STORE_VAR counter -> counter = counter+1, stack: [counter+1]
-    // 5: PUSH_INT 3        -> stack: [counter+1, 3]
-    // 6: LT                -> stack: [counter+1 < 3]
-    // 7: JUMP_IF 0         -> if true, jump to 0
-    // 8: HALT
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},       // 0: Push 1
-        {OpCode::LOAD_VAR, 0},       // 1: Load counter
-        {OpCode::ADD, 0},            // 2: counter + 1
-        {OpCode::DUP, 0},            // 3: Duplicate result
-        {OpCode::STORE_VAR, 0},      // 4: Store back to counter
-        {OpCode::PUSH_INT, 3},       // 5: Push 3
-        {OpCode::LT, 0},             // 6: counter < 3
-        {OpCode::JUMP_IF, 0},        // 7: If true, jump to instruction 0
-        {OpCode::HALT, 0}            // 8: Otherwise halt
-    };
-
-    vm.load(program, {"counter"});
-    vm.setVariable("counter", NovelMind::i32{0});
-
-    // Track IP values during execution
-    int iterations = 0;
-    const int maxIterations = 50; // Safety limit
-
-    while (!vm.isHalted() && iterations < maxIterations) {
-        vm.step();
-        iterations++;
-    }
-
-    // Counter should be 3 (we looped 3 times: 0->1, 1->2, 2->3, then 3 < 3 is false)
-    auto val = vm.getVariable("counter");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 3);
-    REQUIRE(vm.isHalted());
-}
-
-TEST_CASE("VM JUMP to address 0 unconditional", "[scripting][jump]")
-{
-    VirtualMachine vm;
-
-    // Simple program that jumps back to 0 unconditionally
-    // Use a counter to ensure the jump works (max iterations will stop it)
-    std::vector<Instruction> program = {
-        {OpCode::LOAD_VAR, 0},       // 0: Load counter
-        {OpCode::PUSH_INT, 1},       // 1: Push 1
-        {OpCode::ADD, 0},            // 2: counter + 1
-        {OpCode::STORE_VAR, 0},      // 3: Store back to counter
-        {OpCode::JUMP, 0}            // 4: Unconditionally jump to 0
-    };
-
-    vm.load(program, {"counter"});
-    vm.setVariable("counter", NovelMind::i32{0});
-
-    // Execute exactly 10 steps (2 full loops = 10 instructions)
-    for (int i = 0; i < 10; i++) {
-        bool continued = vm.step();
-        REQUIRE(continued);  // Should continue, not halt
-    }
-
-    // Counter should be 2 (completed 2 full loops)
-    auto val = vm.getVariable("counter");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 2);
-
-    // VM should NOT be halted (loop is infinite)
-    REQUIRE_FALSE(vm.isHalted());
-}
-
-TEST_CASE("VM JUMP to middle of program", "[scripting][jump]")
-{
-    VirtualMachine vm;
-
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},       // 0
-        {OpCode::JUMP, 3},           // 1: Skip to instruction 3
-        {OpCode::PUSH_INT, 999},     // 2: Should be skipped
-        {OpCode::STORE_VAR, 0},      // 3: Store 1 to result
-        {OpCode::HALT, 0}            // 4
-    };
-
-    vm.load(program, {"result"});
-    vm.run();
-
-    // Result should be 1 (instruction 2 was skipped)
-    auto val = vm.getVariable("result");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 1);
-}
-
-TEST_CASE("VM JUMP to invalid address halts", "[scripting][jump]")
-{
-    VirtualMachine vm;
-
-    std::vector<Instruction> program = {
-        {OpCode::JUMP, 999}          // 0: Invalid jump
-    };
-
-    vm.load(program, {});
+  // Execute exactly 10 steps (2 full loops = 10 instructions)
+  for (int i = 0; i < 10; i++) {
     bool continued = vm.step();
+    REQUIRE(continued); // Should continue, not halt
+  }
 
-    // VM should halt due to invalid jump
-    REQUIRE_FALSE(continued);
-    REQUIRE(vm.isHalted());
+  // Counter should be 2 (completed 2 full loops)
+  auto val = vm.getVariable("counter");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 2);
+
+  // VM should NOT be halted (loop is infinite)
+  REQUIRE_FALSE(vm.isHalted());
 }
 
-TEST_CASE("VM JUMP_IF_NOT to address 0", "[scripting][jump]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM JUMP to middle of program", "[scripting][jump]") {
+  VirtualMachine vm;
 
-    // Program: Loop while counter < 3 using JUMP_IF_NOT
-    std::vector<Instruction> program = {
-        {OpCode::LOAD_VAR, 0},       // 0: Load counter
-        {OpCode::PUSH_INT, 1},       // 1: Push 1
-        {OpCode::ADD, 0},            // 2: counter + 1
-        {OpCode::DUP, 0},            // 3: Duplicate for comparison
-        {OpCode::STORE_VAR, 0},      // 4: Store back to counter
-        {OpCode::PUSH_INT, 3},       // 5: Push 3
-        {OpCode::GE, 0},             // 6: counter >= 3
-        {OpCode::JUMP_IF_NOT, 0},    // 7: If NOT (counter >= 3), jump to 0
-        {OpCode::HALT, 0}            // 8: Otherwise halt
-    };
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_INT, 1},   // 0
+      {OpCode::JUMP, 3},       // 1: Skip to instruction 3
+      {OpCode::PUSH_INT, 999}, // 2: Should be skipped
+      {OpCode::STORE_VAR, 0},  // 3: Store 1 to result
+      {OpCode::HALT, 0}        // 4
+  };
 
-    vm.load(program, {"counter"});
-    vm.setVariable("counter", NovelMind::i32{0});
+  vm.load(program, {"result"});
+  vm.run();
 
-    // Execute until halted
-    int iterations = 0;
-    const int maxIterations = 50; // Safety limit
-
-    while (!vm.isHalted() && iterations < maxIterations) {
-        vm.step();
-        iterations++;
-    }
-
-    // Counter should be 3
-    auto val = vm.getVariable("counter");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 3);
-    REQUIRE(vm.isHalted());
+  // Result should be 1 (instruction 2 was skipped)
+  auto val = vm.getVariable("result");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 1);
 }
 
-TEST_CASE("VM stack overflow protection", "[scripting][security]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM JUMP to invalid address halts", "[scripting][jump]") {
+  VirtualMachine vm;
 
-    // Get default stack size limit
-    NovelMind::usize defaultLimit = vm.securityGuard().limits().maxStackSize;
+  std::vector<Instruction> program = {
+      {OpCode::JUMP, 999} // 0: Invalid jump
+  };
 
-    // Create a program that pushes many values onto the stack
-    std::vector<Instruction> program;
+  vm.load(program, {});
+  bool continued = vm.step();
 
-    // Push values up to and beyond the limit
-    for (NovelMind::usize i = 0; i < defaultLimit + 10; ++i) {
-        NovelMind::u32 value = static_cast<NovelMind::u32>(i);
-        program.push_back({OpCode::PUSH_INT, value});
-    }
-    program.push_back({OpCode::HALT, 0});
-
-    vm.load(program, {});
-    vm.run();
-
-    // VM should halt due to stack overflow before completing
-    REQUIRE(vm.isHalted());
-
-    // Check that a security violation was recorded
-    REQUIRE(vm.securityGuard().hasViolation());
-    auto violation = vm.securityGuard().lastViolation();
-    REQUIRE(violation != nullptr);
-    REQUIRE(violation->type == NovelMind::scripting::SecurityViolationType::StackOverflow);
+  // VM should halt due to invalid jump
+  REQUIRE_FALSE(continued);
+  REQUIRE(vm.isHalted());
 }
 
-TEST_CASE("VM stack overflow with custom limit", "[scripting][security]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM JUMP_IF_NOT to address 0", "[scripting][jump]") {
+  VirtualMachine vm;
 
-    // Set a small custom stack size limit
-    NovelMind::scripting::VMSecurityLimits limits;
-    limits.maxStackSize = 10;
-    vm.securityGuard().setLimits(limits);
+  // Program: Loop while counter < 3 using JUMP_IF_NOT
+  std::vector<Instruction> program = {
+      {OpCode::LOAD_VAR, 0},    // 0: Load counter
+      {OpCode::PUSH_INT, 1},    // 1: Push 1
+      {OpCode::ADD, 0},         // 2: counter + 1
+      {OpCode::DUP, 0},         // 3: Duplicate for comparison
+      {OpCode::STORE_VAR, 0},   // 4: Store back to counter
+      {OpCode::PUSH_INT, 3},    // 5: Push 3
+      {OpCode::GE, 0},          // 6: counter >= 3
+      {OpCode::JUMP_IF_NOT, 0}, // 7: If NOT (counter >= 3), jump to 0
+      {OpCode::HALT, 0}         // 8: Otherwise halt
+  };
 
-    // Create a program that pushes 15 values (exceeds limit of 10)
-    std::vector<Instruction> program;
-    for (NovelMind::u32 i = 0; i < 15; ++i) {
-        program.push_back({OpCode::PUSH_INT, i});
-    }
-    program.push_back({OpCode::HALT, 0});
+  vm.load(program, {"counter"});
+  vm.setVariable("counter", NovelMind::i32{0});
 
-    vm.load(program, {});
-    vm.run();
+  // Execute until halted
+  int iterations = 0;
+  const int maxIterations = 50; // Safety limit
 
-    // VM should halt due to stack overflow
-    REQUIRE(vm.isHalted());
-    REQUIRE(vm.securityGuard().hasViolation());
+  while (!vm.isHalted() && iterations < maxIterations) {
+    vm.step();
+    iterations++;
+  }
+
+  // Counter should be 3
+  auto val = vm.getVariable("counter");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 3);
+  REQUIRE(vm.isHalted());
 }
 
-TEST_CASE("VM stack within limits", "[scripting][security]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM stack overflow protection", "[scripting][security]") {
+  VirtualMachine vm;
 
-    // Set a reasonable stack limit
-    NovelMind::scripting::VMSecurityLimits limits;
-    limits.maxStackSize = 100;
-    vm.securityGuard().setLimits(limits);
+  // Get default stack size limit
+  NovelMind::usize defaultLimit = vm.securityGuard().limits().maxStackSize;
 
-    // Push 50 values (well within limit)
-    std::vector<Instruction> program;
-    for (NovelMind::u32 i = 0; i < 50; ++i) {
-        program.push_back({OpCode::PUSH_INT, i});
-    }
-    program.push_back({OpCode::HALT, 0});
+  // Create a program that pushes many values onto the stack
+  std::vector<Instruction> program;
 
-    vm.load(program, {});
-    vm.run();
+  // Push values up to and beyond the limit
+  for (NovelMind::usize i = 0; i < defaultLimit + 10; ++i) {
+    NovelMind::u32 value = static_cast<NovelMind::u32>(i);
+    program.push_back({OpCode::PUSH_INT, value});
+  }
+  program.push_back({OpCode::HALT, 0});
 
-    // VM should complete successfully
-    REQUIRE(vm.isHalted());
-    // No security violation should be recorded
-    REQUIRE_FALSE(vm.securityGuard().hasViolation());
+  vm.load(program, {});
+  vm.run();
+
+  // VM should halt due to stack overflow before completing
+  REQUIRE(vm.isHalted());
+
+  // Check that a security violation was recorded
+  REQUIRE(vm.securityGuard().hasViolation());
+  auto violation = vm.securityGuard().lastViolation();
+  REQUIRE(violation != nullptr);
+  REQUIRE(violation->type == NovelMind::scripting::SecurityViolationType::StackOverflow);
 }
 
-TEST_CASE("VM infinite loop with stack overflow protection", "[scripting][security]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM stack overflow with custom limit", "[scripting][security]") {
+  VirtualMachine vm;
 
-    // Set a small stack limit to trigger overflow quickly
-    NovelMind::scripting::VMSecurityLimits limits;
-    limits.maxStackSize = 100;
-    vm.securityGuard().setLimits(limits);
+  // Set a small custom stack size limit
+  NovelMind::scripting::VMSecurityLimits limits;
+  limits.maxStackSize = 10;
+  vm.securityGuard().setLimits(limits);
 
-    // Infinite loop that keeps pushing values (simulates malicious script)
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},       // 0: Push a value
-        {OpCode::JUMP, 0}            // 1: Jump back to 0 (infinite loop)
-    };
+  // Create a program that pushes 15 values (exceeds limit of 10)
+  std::vector<Instruction> program;
+  for (NovelMind::u32 i = 0; i < 15; ++i) {
+    program.push_back({OpCode::PUSH_INT, i});
+  }
+  program.push_back({OpCode::HALT, 0});
 
-    vm.load(program, {});
+  vm.load(program, {});
+  vm.run();
 
-    // Execute many steps - should be stopped by stack overflow
-    int iterations = 0;
-    const int maxIterations = 1000;
-
-    while (!vm.isHalted() && iterations < maxIterations) {
-        vm.step();
-        iterations++;
-    }
-
-    // VM should have halted due to stack overflow, not max iterations
-    REQUIRE(vm.isHalted());
-    REQUIRE(vm.securityGuard().hasViolation());
-    REQUIRE(iterations < maxIterations);
+  // VM should halt due to stack overflow
+  REQUIRE(vm.isHalted());
+  REQUIRE(vm.securityGuard().hasViolation());
 }
 
-TEST_CASE("VM IP bounds validation - program runs past end", "[scripting][security]")
-{
-    VirtualMachine vm;
+TEST_CASE("VM stack within limits", "[scripting][security]") {
+  VirtualMachine vm;
 
-    // Program without HALT - IP will increment past the end
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 42},      // 0
-        {OpCode::STORE_VAR, 0}       // 1 - no HALT, IP will be 2 after this
-    };
+  // Set a reasonable stack limit
+  NovelMind::scripting::VMSecurityLimits limits;
+  limits.maxStackSize = 100;
+  vm.securityGuard().setLimits(limits);
+
+  // Push 50 values (well within limit)
+  std::vector<Instruction> program;
+  for (NovelMind::u32 i = 0; i < 50; ++i) {
+    program.push_back({OpCode::PUSH_INT, i});
+  }
+  program.push_back({OpCode::HALT, 0});
+
+  vm.load(program, {});
+  vm.run();
+
+  // VM should complete successfully
+  REQUIRE(vm.isHalted());
+  // No security violation should be recorded
+  REQUIRE_FALSE(vm.securityGuard().hasViolation());
+}
+
+TEST_CASE("VM infinite loop with stack overflow protection", "[scripting][security]") {
+  VirtualMachine vm;
+
+  // Set a small stack limit to trigger overflow quickly
+  NovelMind::scripting::VMSecurityLimits limits;
+  limits.maxStackSize = 100;
+  vm.securityGuard().setLimits(limits);
+
+  // Infinite loop that keeps pushing values (simulates malicious script)
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_INT, 1}, // 0: Push a value
+      {OpCode::JUMP, 0}      // 1: Jump back to 0 (infinite loop)
+  };
+
+  vm.load(program, {});
+
+  // Execute many steps - should be stopped by stack overflow
+  int iterations = 0;
+  const int maxIterations = 1000;
+
+  while (!vm.isHalted() && iterations < maxIterations) {
+    vm.step();
+    iterations++;
+  }
+
+  // VM should have halted due to stack overflow, not max iterations
+  REQUIRE(vm.isHalted());
+  REQUIRE(vm.securityGuard().hasViolation());
+  REQUIRE(iterations < maxIterations);
+}
+
+TEST_CASE("VM IP bounds validation - program runs past end", "[scripting][security]") {
+  VirtualMachine vm;
+
+  // Program without HALT - IP will increment past the end
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_INT, 42}, // 0
+      {OpCode::STORE_VAR, 0}  // 1 - no HALT, IP will be 2 after this
+  };
+
+  vm.load(program, {"result"});
+
+  // First two steps should succeed
+  REQUIRE(vm.step()); // Execute instruction 0
+  REQUIRE(vm.step()); // Execute instruction 1
+
+  // Third step should fail - IP is now 2, which is >= program.size() (2)
+  REQUIRE_FALSE(vm.step());
+  REQUIRE(vm.isHalted());
+
+  // Verify the variable was set correctly before halting
+  auto val = vm.getVariable("result");
+  REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+  REQUIRE(std::get<NovelMind::i32>(val) == 42);
+}
+
+TEST_CASE("VM IP bounds validation - corrupted IP", "[scripting][security]") {
+  VirtualMachine vm;
+
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 1}, {OpCode::NOP, 0}, {OpCode::HALT, 0}};
+
+  vm.load(program, {});
+
+  // Execute first instruction
+  REQUIRE(vm.step()); // IP is now 1
+
+  // Manually try to set IP to an invalid value using setIP
+  vm.setIP(999);
+
+  // setIP should reject invalid IP (logs warning but doesn't change IP)
+  // VM should remain in a valid state at IP=1
+  // Step should execute the NOP instruction at IP=1
+  REQUIRE(vm.step()); // Execute NOP at IP=1, IP becomes 2
+  REQUIRE_FALSE(vm.isHalted());
+
+  // One more step should execute HALT
+  REQUIRE_FALSE(vm.step()); // Execute HALT, returns false because halted
+  REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security]") {
+  VirtualMachine vm;
+
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 1}, {OpCode::HALT, 0}};
+
+  vm.load(program, {});
+
+  // Try to set IP beyond program bounds - setIP should reject this
+  vm.setIP(10); // program.size() is 2
+
+  // setIP rejected the invalid value, so IP should still be 0
+  // VM should remain in a valid state and step() should succeed
+  REQUIRE(vm.step());
+  REQUIRE_FALSE(vm.isHalted()); // Executed PUSH_INT, not halted yet
+}
+
+TEST_CASE("VM function call argument order", "[scripting][vm]") {
+  VirtualMachine vm;
+
+  // Test that SHOW_CHARACTER receives arguments in the correct order
+  // Push arguments: character ID, then position
+  std::vector<Instruction> program = {{OpCode::PUSH_STRING, 0}, // Push character ID "hero"
+                                      {OpCode::PUSH_INT, 2},    // Push position (2 = right)
+                                      {OpCode::SHOW_CHARACTER, 0},
+                                      {OpCode::HALT, 0}};
+
+  std::vector<std::string> strings = {"hero"};
+
+  vm.load(program, strings);
+
+  // Register callback to capture arguments
+  std::vector<NovelMind::scripting::Value> capturedArgs;
+  vm.registerCallback(OpCode::SHOW_CHARACTER,
+                      [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+                        capturedArgs = args;
+                      });
+
+  vm.run();
+
+  // Verify we got 2 arguments in the correct order
+  REQUIRE(capturedArgs.size() == 2);
+
+  // First argument should be the character ID
+  REQUIRE(std::holds_alternative<std::string>(capturedArgs[0]));
+  REQUIRE(std::get<std::string>(capturedArgs[0]) == "hero");
+
+  // Second argument should be the position
+  REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[1]));
+  REQUIRE(std::get<NovelMind::i32>(capturedArgs[1]) == 2);
+}
+
+TEST_CASE("VM multiple arguments order", "[scripting][vm]") {
+  VirtualMachine vm;
+
+  // Test MOVE_CHARACTER with multiple arguments (without custom position)
+  std::vector<Instruction> program = {{OpCode::PUSH_STRING, 0}, // Push character ID "hero"
+                                      {OpCode::PUSH_INT, 1},    // Push position (1 = center)
+                                      {OpCode::PUSH_INT, 500},  // Push duration (500ms)
+                                      {OpCode::MOVE_CHARACTER, 0},
+                                      {OpCode::HALT, 0}};
+
+  std::vector<std::string> strings = {"hero"};
+
+  vm.load(program, strings);
+
+  // Register callback to capture arguments
+  std::vector<NovelMind::scripting::Value> capturedArgs;
+  vm.registerCallback(OpCode::MOVE_CHARACTER,
+                      [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+                        capturedArgs = args;
+                      });
+
+  vm.run();
+
+  // Verify arguments are in correct order: id, position, duration
+  REQUIRE(capturedArgs.size() == 3);
+
+  // First: character ID
+  REQUIRE(std::holds_alternative<std::string>(capturedArgs[0]));
+  REQUIRE(std::get<std::string>(capturedArgs[0]) == "hero");
+
+  // Second: position
+  REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[1]));
+  REQUIRE(std::get<NovelMind::i32>(capturedArgs[1]) == 1);
+
+  // Third: duration
+  REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[2]));
+  REQUIRE(std::get<NovelMind::i32>(capturedArgs[2]) == 500);
+}
+
+// =========================================================================
+// Type Coercion Tests for Comparison Operators (Issue #475)
+// =========================================================================
+
+TEST_CASE("test_vm_compare_int_float", "[scripting][coercion]") {
+  VirtualMachine vm;
+
+  SECTION("LT: int < float") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 5},
+                                        {OpCode::PUSH_FLOAT, 0}, // Need to encode 10.5f
+                                        {OpCode::LT, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    // Encode 10.5f as operand
+    NovelMind::f32 val = 10.5f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program[1].operand = operand;
 
     vm.load(program, {"result"});
+    vm.run();
 
-    // First two steps should succeed
-    REQUIRE(vm.step());  // Execute instruction 0
-    REQUIRE(vm.step());  // Execute instruction 1
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == true); // 5 < 10.5
+  }
 
-    // Third step should fail - IP is now 2, which is >= program.size() (2)
-    REQUIRE_FALSE(vm.step());
+  SECTION("GT: float > int") {
+    std::vector<Instruction> program = {{OpCode::PUSH_FLOAT, 0}, // 10.5f
+                                        {OpCode::PUSH_INT, 5},
+                                        {OpCode::GT, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    NovelMind::f32 val = 10.5f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program[0].operand = operand;
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == true); // 10.5 > 5
+  }
+
+  SECTION("LE: int <= float (equal values)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                        {OpCode::PUSH_FLOAT, 0}, // 10.0f
+                                        {OpCode::LE, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    NovelMind::f32 val = 10.0f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program[1].operand = operand;
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == true); // 10 <= 10.0
+  }
+
+  SECTION("GE: float >= int") {
+    std::vector<Instruction> program = {{OpCode::PUSH_FLOAT, 0}, // 5.5f
+                                        {OpCode::PUSH_INT, 10},
+                                        {OpCode::GE, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    NovelMind::f32 val = 5.5f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program[0].operand = operand;
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == false); // 5.5 >= 10 is false
+  }
+}
+
+TEST_CASE("test_vm_compare_string_int", "[scripting][coercion]") {
+  VirtualMachine vm;
+
+  SECTION("LT: string < int (lexicographic)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_STRING, 0}, // "10"
+                                        {OpCode::PUSH_INT, 5},
+                                        {OpCode::LT, 0},
+                                        {OpCode::STORE_VAR, 1}, // "result" is at index 1
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"10", "result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    // "10" < "5" lexicographically (because '1' < '5')
+    REQUIRE(std::get<bool>(result) == true);
+  }
+
+  SECTION("GT: int > string (converts int to string)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 20},
+                                        {OpCode::PUSH_STRING, 0}, // "10"
+                                        {OpCode::GT, 0},
+                                        {OpCode::STORE_VAR, 1}, // "result" is at index 1
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"10", "result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    // "20" > "10" lexicographically
+    REQUIRE(std::get<bool>(result) == true);
+  }
+
+  SECTION("EQ: string == int (converts int to string)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_STRING, 0}, // "42"
+                                        {OpCode::PUSH_INT, 42},
+                                        {OpCode::EQ, 0},
+                                        {OpCode::STORE_VAR, 1}, // "result" is at index 1
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"42", "result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == true); // "42" == "42"
+  }
+}
+
+TEST_CASE("VM comparison type coercion - comprehensive", "[scripting][coercion]") {
+  VirtualMachine vm;
+
+  SECTION("bool < bool (as int)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_BOOL, 0}, // false (0)
+                                        {OpCode::PUSH_BOOL, 1}, // true (1)
+                                        {OpCode::LT, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::get<bool>(result) == true); // false < true (0 < 1)
+  }
+
+  SECTION("null < int (null as 0)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_NULL, 0},
+                                        {OpCode::PUSH_INT, 5},
+                                        {OpCode::LT, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::get<bool>(result) == true); // 0 < 5
+  }
+
+  SECTION("int < int") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 3},
+                                        {OpCode::PUSH_INT, 7},
+                                        {OpCode::LT, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::get<bool>(result) == true); // 3 < 7
+  }
+
+  SECTION("string > string (lexicographic)") {
+    std::vector<Instruction> program = {{OpCode::PUSH_STRING, 0}, // "banana"
+                                        {OpCode::PUSH_STRING, 1}, // "apple"
+                                        {OpCode::GT, 0},
+                                        {OpCode::STORE_VAR, 2}, // "result" is at index 2
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"banana", "apple", "result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<bool>(result));
+    REQUIRE(std::get<bool>(result) == true); // "banana" > "apple"
+  }
+
+  SECTION("Consistency: EQ and NE type handling") {
+    // Test that EQ and comparison operators use same coercion
+    std::vector<Instruction> program1 = {{OpCode::PUSH_INT, 5},
+                                         {OpCode::PUSH_FLOAT, 0}, // 5.0f
+                                         {OpCode::EQ, 0},
+                                         {OpCode::STORE_VAR, 0},
+                                         {OpCode::HALT, 0}};
+
+    NovelMind::f32 val = 5.0f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program1[1].operand = operand;
+
+    vm.load(program1, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::get<bool>(result) == true); // 5 == 5.0
+  }
+}
+
+// =========================================================================
+// Division by Zero Tests (Issue #457)
+// =========================================================================
+
+TEST_CASE("test_vm_divide_by_zero_integer", "[scripting][division]") {
+  VirtualMachine vm;
+
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                      {OpCode::PUSH_INT, 0}, // Divisor is zero
+                                      {OpCode::DIV, 0},
+                                      {OpCode::STORE_VAR, 0},
+                                      {OpCode::HALT, 0}};
+
+  vm.load(program, {"result"});
+  vm.run();
+
+  // VM should halt due to division by zero error
+  REQUIRE(vm.isHalted());
+
+  // The variable should not be set because the operation halted before STORE_VAR
+  REQUIRE_FALSE(vm.hasVariable("result"));
+}
+
+TEST_CASE("test_vm_divide_by_zero_float", "[scripting][division]") {
+  VirtualMachine vm;
+
+  SECTION("Float dividend, zero divisor") {
+    std::vector<Instruction> program = {{OpCode::PUSH_FLOAT, 0}, // 10.5f
+                                        {OpCode::PUSH_FLOAT, 1}, // 0.0f
+                                        {OpCode::DIV, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    // Encode 10.5f as operand
+    NovelMind::f32 val1 = 10.5f;
+    NovelMind::u32 operand1;
+    std::memcpy(&operand1, &val1, sizeof(NovelMind::f32));
+    program[0].operand = operand1;
+
+    // Encode 0.0f as operand
+    NovelMind::f32 val2 = 0.0f;
+    NovelMind::u32 operand2;
+    std::memcpy(&operand2, &val2, sizeof(NovelMind::f32));
+    program[1].operand = operand2;
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    // VM should halt due to division by zero error
     REQUIRE(vm.isHalted());
 
-    // Verify the variable was set correctly before halting
-    auto val = vm.getVariable("result");
-    REQUIRE(std::holds_alternative<NovelMind::i32>(val));
-    REQUIRE(std::get<NovelMind::i32>(val) == 42);
-}
+    // The variable should not be set
+    REQUIRE_FALSE(vm.hasVariable("result"));
+  }
 
-TEST_CASE("VM IP bounds validation - corrupted IP", "[scripting][security]")
-{
-    VirtualMachine vm;
+  SECTION("Integer dividend divided by float zero") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 42},
+                                        {OpCode::PUSH_FLOAT, 0}, // 0.0f
+                                        {OpCode::DIV, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
 
-    std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},
-        {OpCode::NOP, 0},
-        {OpCode::HALT, 0}
-    };
+    // Encode 0.0f as operand
+    NovelMind::f32 val = 0.0f;
+    NovelMind::u32 operand;
+    std::memcpy(&operand, &val, sizeof(NovelMind::f32));
+    program[1].operand = operand;
 
-    vm.load(program, {});
+    vm.load(program, {"result"});
+    vm.run();
 
-    // Execute first instruction
-    REQUIRE(vm.step());  // IP is now 1
-
-    // Manually try to set IP to an invalid value using setIP
-    vm.setIP(999);
-
-    // setIP should reject invalid IP (logs warning but doesn't change IP)
-    // VM should remain in a valid state at IP=1
-    // Step should execute the NOP instruction at IP=1
-    REQUIRE(vm.step());  // Execute NOP at IP=1, IP becomes 2
-    REQUIRE_FALSE(vm.isHalted());
-
-    // One more step should execute HALT
-    REQUIRE_FALSE(vm.step());  // Execute HALT, returns false because halted
+    // VM should halt due to division by zero error
     REQUIRE(vm.isHalted());
+
+    // The variable should not be set
+    REQUIRE_FALSE(vm.hasVariable("result"));
+  }
 }
 
-TEST_CASE("VM IP bounds validation - setIP beyond bounds", "[scripting][security]")
-{
+TEST_CASE("test_vm_modulo_by_zero", "[scripting][division]") {
+  VirtualMachine vm;
+
+  std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                      {OpCode::PUSH_INT, 0}, // Divisor is zero
+                                      {OpCode::MOD, 0},
+                                      {OpCode::STORE_VAR, 0},
+                                      {OpCode::HALT, 0}};
+
+  vm.load(program, {"result"});
+  vm.run();
+
+  // VM should halt due to modulo by zero error
+  REQUIRE(vm.isHalted());
+
+  // The variable should not be set because the operation halted before STORE_VAR
+  REQUIRE_FALSE(vm.hasVariable("result"));
+}
+
+TEST_CASE("test_vm_division_normal_operations", "[scripting][division]") {
+  VirtualMachine vm;
+
+  SECTION("Integer division - normal case") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                        {OpCode::PUSH_INT, 2},
+                                        {OpCode::DIV, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+    REQUIRE(std::get<NovelMind::i32>(result) == 5);
+  }
+
+  SECTION("Float division - normal case") {
+    std::vector<Instruction> program = {{OpCode::PUSH_FLOAT, 0}, // 10.0f
+                                        {OpCode::PUSH_FLOAT, 1}, // 2.0f
+                                        {OpCode::DIV, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    NovelMind::f32 val1 = 10.0f;
+    NovelMind::u32 operand1;
+    std::memcpy(&operand1, &val1, sizeof(NovelMind::f32));
+    program[0].operand = operand1;
+
+    NovelMind::f32 val2 = 2.0f;
+    NovelMind::u32 operand2;
+    std::memcpy(&operand2, &val2, sizeof(NovelMind::f32));
+    program[1].operand = operand2;
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::f32>(result));
+    REQUIRE(std::get<NovelMind::f32>(result) == 5.0f);
+  }
+
+  SECTION("Modulo - normal case") {
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 10},
+                                        {OpCode::PUSH_INT, 3},
+                                        {OpCode::MOD, 0},
+                                        {OpCode::STORE_VAR, 0},
+                                        {OpCode::HALT, 0}};
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+    REQUIRE(std::get<NovelMind::i32>(result) == 1);
+  }
+}
+
+// ============================================================================
+// Stack Underflow Tests - Issue #552
+// ============================================================================
+
+TEST_CASE("VM stack underflow detection - SHOW_CHARACTER", "[scripting][stack-underflow]") {
+  VirtualMachine vm;
+
+  // SHOW_CHARACTER expects 2 arguments on the stack (id, position)
+  // But we provide none - should detect underflow and halt
+  std::vector<Instruction> program = {
+      {OpCode::SHOW_CHARACTER, 0}, // Expects 2 stack args, but stack is empty
+      {OpCode::HALT, 0}};
+
+  std::vector<std::string> strings = {"char1"};
+
+  vm.load(program, strings);
+  vm.run();
+
+  // VM should halt due to stack underflow
+  REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("VM stack underflow detection - MOVE_CHARACTER", "[scripting][stack-underflow]") {
+  VirtualMachine vm;
+
+  // MOVE_CHARACTER expects at least 3 arguments on the stack
+  // (charId, posCode, duration) but we provide only 1
+  std::vector<Instruction> program = {
+      {OpCode::PUSH_INT, 1000},    // duration
+      {OpCode::MOVE_CHARACTER, 0}, // Expects 3+ stack args, but only 1 available
+      {OpCode::HALT, 0}};
+
+  std::vector<std::string> strings = {"char1"};
+
+  vm.load(program, strings);
+  // =========================================================================
+  // CHOICE Opcode Stack Bounds Tests (Issue #508)
+  // =========================================================================
+
+  TEST_CASE("VM CHOICE opcode with sufficient stack", "[scripting][choice]") {
     VirtualMachine vm;
 
+    // Test CHOICE with 3 options, all elements on stack
+    // Stack layout: [count, option1, option2, option3]
+    std::vector<Instruction> program = {{OpCode::PUSH_INT, 3},    // Push count
+                                        {OpCode::PUSH_STRING, 0}, // Push "Option 1"
+                                        {OpCode::PUSH_STRING, 1}, // Push "Option 2"
+                                        {OpCode::PUSH_STRING, 2}, // Push "Option 3"
+                                        {OpCode::CHOICE, 3},      // Request 3 choices
+                                        {OpCode::HALT, 0}};
+
+    std::vector<std::string> strings = {"Option 1", "Option 2", "Option 3"};
+
+    vm.load(program, strings);
+
+    // Register callback to capture arguments
+    std::vector<NovelMind::scripting::Value> capturedArgs;
+    vm.registerCallback(OpCode::CHOICE,
+                        [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+                          capturedArgs = args;
+                        });
+
+    vm.run();
+
+    // Verify the callback was called with correct arguments
+    REQUIRE(capturedArgs.size() == 4); // count + 3 choices
+
+    // First argument should be the count
+    REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+    REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 3);
+
+    // Remaining arguments should be the choices in correct order
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[1]));
+    REQUIRE(std::get<std::string>(capturedArgs[1]) == "Option 1");
+
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[2]));
+    REQUIRE(std::get<std::string>(capturedArgs[2]) == "Option 2");
+
+    REQUIRE(std::holds_alternative<std::string>(capturedArgs[3]));
+    REQUIRE(std::get<std::string>(capturedArgs[3]) == "Option 3");
+  }
+
+  TEST_CASE("VM CHOICE opcode with insufficient stack - no elements",
+            "[scripting][choice][security]") {
+    VirtualMachine vm;
+
+    // Test CHOICE with empty stack - should halt with error
     std::vector<Instruction> program = {
-        {OpCode::PUSH_INT, 1},
-        {OpCode::HALT, 0}
-    };
+      {OpCode::CHOICE, 3}, // Request 3 choices but stack is empty
+      TEST_CASE("VM short-circuit evaluation for OR operator",
+                "[scripting][short-circuit]"){VirtualMachine vm;
 
-    vm.load(program, {});
+    SECTION("true || true - should short-circuit and return true") {
+      // When left is true, right side should not be evaluated
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 1}, // Push true (left)
+          {OpCode::DUP, 0},       // Duplicate for short-circuit
+          {OpCode::JUMP_IF, 6},   // If true, jump to end (position 6)
+          {OpCode::POP, 0},       // Pop if false (not executed)
+          {OpCode::PUSH_BOOL, 1}, // Right side: Push true (not executed)
+          // Position 5
+          {OpCode::STORE_VAR, 0}, // Position 6: Store result
+          {OpCode::HALT, 0}};
 
-    // Try to set IP beyond program bounds - setIP should reject this
-    vm.setIP(10);  // program.size() is 2
+      vm.load(program, {"result"});
+      vm.run();
 
-    // setIP rejected the invalid value, so IP should still be 0
-    // VM should remain in a valid state and step() should succeed
-    REQUIRE(vm.step());
-    REQUIRE_FALSE(vm.isHalted());  // Executed PUSH_INT, not halted yet
-}
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("true || false - should short-circuit and return true") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 1}, // Push true (left)
+          {OpCode::DUP, 0},       // Duplicate for short-circuit
+          {OpCode::JUMP_IF, 6},   // If true, jump to end
+          {OpCode::POP, 0},       // Pop if false (not executed)
+          {OpCode::PUSH_BOOL, 0}, // Right side: Push false (not executed)
+          {OpCode::STORE_VAR, 0}, // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("false || true - should evaluate right and return true") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 0}, // Push false (left)
+          {OpCode::DUP, 0},       // Duplicate for short-circuit
+          {OpCode::JUMP_IF, 6},   // If true, jump to end (not taken)
+          {OpCode::POP, 0},       // Pop the false
+          {OpCode::PUSH_BOOL, 1}, // Right side: Push true (evaluated)
+          {OpCode::STORE_VAR, 0}, // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == true);
+    }
+
+    SECTION("false || false - should evaluate right and return false") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 0}, // Push false (left)
+          {OpCode::DUP, 0},       // Duplicate for short-circuit
+          {OpCode::JUMP_IF, 6},   // If true, jump to end (not taken)
+          {OpCode::POP, 0},       // Pop the false
+          {OpCode::PUSH_BOOL, 0}, // Right side: Push false (evaluated)
+          {OpCode::STORE_VAR, 0}, // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == false);
+    }
+  }
+
+  TEST_CASE("VM short-circuit evaluation for AND operator", "[scripting][short-circuit]") {
+    VirtualMachine vm;
+
+    SECTION("false && false - should short-circuit and return false") {
+      // When left is false, right side should not be evaluated
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 0},   // Push false (left)
+          {OpCode::DUP, 0},         // Duplicate for short-circuit
+          {OpCode::JUMP_IF_NOT, 6}, // If false, jump to end (position 6)
+          {OpCode::POP, 0},         // Pop if true (not executed)
+          {OpCode::PUSH_BOOL, 0},   // Right side: Push false (not executed)
+          // Position 5
+          {OpCode::STORE_VAR, 0}, // Position 6: Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("false && true - should short-circuit and return false") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 0},   // Push false (left)
+          {OpCode::DUP, 0},         // Duplicate for short-circuit
+          {OpCode::JUMP_IF_NOT, 6}, // If false, jump to end
+          {OpCode::POP, 0},         // Pop if true (not executed)
+          {OpCode::PUSH_BOOL, 1},   // Right side: Push true (not executed)
+          {OpCode::STORE_VAR, 0},   // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("true && false - should evaluate right and return false") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 1},   // Push true (left)
+          {OpCode::DUP, 0},         // Duplicate for short-circuit
+          {OpCode::JUMP_IF_NOT, 6}, // If false, jump to end (not taken)
+          {OpCode::POP, 0},         // Pop the true
+          {OpCode::PUSH_BOOL, 0},   // Right side: Push false (evaluated)
+          {OpCode::STORE_VAR, 0},   // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == false);
+    }
+
+    SECTION("true && true - should evaluate right and return true") {
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 1},   // Push true (left)
+          {OpCode::DUP, 0},         // Duplicate for short-circuit
+          {OpCode::JUMP_IF_NOT, 6}, // If false, jump to end (not taken)
+          {OpCode::POP, 0},         // Pop the true
+          {OpCode::PUSH_BOOL, 1},   // Right side: Push true (evaluated)
+          {OpCode::STORE_VAR, 0},   // Store result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == true);
+    }
+  }
+
+  TEST_CASE("VM short-circuit side effects verification", "[scripting][short-circuit]") {
+    VirtualMachine vm;
+
+    SECTION("OR - right side with side effects not evaluated when left is true") {
+      // Simulates: true || (sideEffect(), false)
+      // sideEffect() should not be called
+      std::vector<Instruction> program = {{OpCode::PUSH_BOOL, 1}, // Push true (left)
+                                          {OpCode::DUP, 0},       // Duplicate for short-circuit
+                                          {OpCode::JUMP_IF, 9},   // If true, jump past right side
+                                          {OpCode::POP, 0},       // Pop if false (not executed)
+                                          // Right side with side effect (not executed):
+                                          {OpCode::PUSH_INT, 99}, // Side effect: push value
+                                          {OpCode::STORE_VAR, 1}, // Side effect: store to variable
+                                          {OpCode::PUSH_BOOL, 0}, // Result of right side
+                                          // Position 9 (end):
+                                          {OpCode::STORE_VAR, 0}, // Store OR result
+                                          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result", "sideEffect"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == true);
+
+      // sideEffect variable should not have been set (monostate)
+      auto sideEffect = vm.getVariable("sideEffect");
+      REQUIRE(std::holds_alternative<std::monostate>(sideEffect));
+    }
+
+    SECTION("AND - right side with side effects not evaluated when left is false") {
+      // Simulates: false && (sideEffect(), true)
+      // sideEffect() should not be called
+      std::vector<Instruction> program = {
+          {OpCode::PUSH_BOOL, 0},   // Push false (left)
+          {OpCode::DUP, 0},         // Duplicate for short-circuit
+          {OpCode::JUMP_IF_NOT, 9}, // If false, jump past right side
+          {OpCode::POP, 0},         // Pop if true (not executed)
+          // Right side with side effect (not executed):
+          {OpCode::PUSH_INT, 99}, // Side effect: push value
+          {OpCode::STORE_VAR, 1}, // Side effect: store to variable
+          {OpCode::PUSH_BOOL, 1}, // Result of right side
+          // Position 9 (end):
+          {OpCode::STORE_VAR, 0}, // Store AND result
+          {OpCode::HALT, 0}};
+
+      vm.load(program, {"result", "sideEffect"});
+      vm.run();
+
+      auto result = vm.getVariable("result");
+      REQUIRE(std::holds_alternative<bool>(result));
+      REQUIRE(std::get<bool>(result) == false);
+
+      // sideEffect variable should not have been set (monostate)
+      auto sideEffect = vm.getVariable("sideEffect");
+      REQUIRE(std::holds_alternative<std::monostate>(sideEffect));
+    }
+    TEST_CASE("VM deep recursion simulation - safe depth", "[scripting][recursion][security]") {
+      VirtualMachine vm;
+
+      // Simulate a recursive countdown function using jumps
+      // This simulates: function countdown(n) { if (n > 0) countdown(n-1) else halt }
+      // Program: decrement counter, check if > 0, if true jump back (recurse), else halt
+      std::vector<Instruction> program = {
+          {OpCode::LOAD_VAR, 0},  // 0: Load counter
+          {OpCode::PUSH_INT, 1},  // 1: Push 1
+          {OpCode::SUB, 0},       // 2: counter - 1
+          {OpCode::DUP, 0},       // 3: Duplicate for comparison
+          {OpCode::STORE_VAR, 0}, // 4: Store back to counter
+          {OpCode::PUSH_INT, 0},  // 5: Push 0
+          {OpCode::GT, 0},        // 6: counter > 0?
+          {OpCode::JUMP_IF, 0},   // 7: If true, jump to 0 (recurse)
+          {OpCode::HALT, 0}       // 8: Otherwise halt
+      };
+
+      vm.load(program, {"counter"});
+
+      // Test with safe recursion depth (50 iterations)
+      vm.setVariable("counter", NovelMind::i32{50});
+
+      int iterations = 0;
+      const int maxIterations = 1000;
+
+      while (!vm.isHalted() && iterations < maxIterations) {
+        vm.step();
+        iterations++;
+      }
+
+      // Should complete successfully
+      REQUIRE(vm.isHalted());
+      auto val = vm.getVariable("counter");
+      REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+      REQUIRE(std::get<NovelMind::i32>(val) == 0);
+
+      // No security violation should occur
+      REQUIRE_FALSE(vm.securityGuard().hasViolation());
+    }
+
+    TEST_CASE("VM deep recursion causing stack overflow", "[scripting][recursion][security]") {
+      VirtualMachine vm;
+
+      // Set a small stack limit to trigger overflow
+      NovelMind::scripting::VMSecurityLimits limits;
+      limits.maxStackSize = 200; // Small limit to trigger quickly
+      vm.securityGuard().setLimits(limits);
+
+      // Simulate deep recursion that pushes values on each iteration
+      // This simulates: function recurse(n) { push(n); if (n > 0) recurse(n-1) }
+      std::vector<Instruction> program = {
+          {OpCode::LOAD_VAR, 0}, // 0: Load depth counter
+          {OpCode::DUP, 0},      // 1: Duplicate for pushing
+          // Intentionally push multiple values to fill stack faster
+          {OpCode::DUP, 0},       // 2: Duplicate again
+          {OpCode::DUP, 0},       // 3: Duplicate again
+          {OpCode::PUSH_INT, 1},  // 4: Push 1
+          {OpCode::SUB, 0},       // 5: depth - 1 (only one value consumed)
+          {OpCode::DUP, 0},       // 6: Duplicate result
+          {OpCode::STORE_VAR, 0}, // 7: Store back to depth
+          {OpCode::PUSH_INT, 0},  // 8: Push 0
+          {OpCode::GT, 0},        // 9: depth > 0?
+          {OpCode::JUMP_IF, 0},   // 10: If true, jump to 0 (recurse)
+          {OpCode::HALT, 0}       // 11: Otherwise halt
+      };
+
+      vm.load(program, {"depth"});
+      vm.setVariable("depth", NovelMind::i32{500}); // Very deep recursion
+
+      int iterations = 0;
+      const int maxIterations = 2000;
+
+      while (!vm.isHalted() && iterations < maxIterations) {
+        vm.step();
+        iterations++;
+      }
+
+      // VM should halt due to stack overflow
+      REQUIRE(vm.isHalted());
+
+      // Should have a security violation
+      REQUIRE(vm.securityGuard().hasViolation());
+      auto violation = vm.securityGuard().lastViolation();
+      REQUIRE(violation != nullptr);
+      REQUIRE(violation->type == NovelMind::scripting::SecurityViolationType::StackOverflow);
+    }
+
+    TEST_CASE("VM maximum safe recursion depth", "[scripting][recursion][security]") {
+      VirtualMachine vm;
+
+      // Test that we can handle recursion up to a reasonable depth without overflow
+      // Using default stack size (1024)
+
+      // Simple recursive loop that doesn't accumulate stack
+      // Uses DUP sparingly to avoid excessive stack growth
+      std::vector<Instruction> program = {
+          {OpCode::LOAD_VAR, 0},  // 0: Load counter
+          {OpCode::PUSH_INT, 1},  // 1: Push 1
+          {OpCode::SUB, 0},       // 2: counter - 1
+          {OpCode::DUP, 0},       // 3: Duplicate for storage and comparison
+          {OpCode::STORE_VAR, 0}, // 4: Store back to counter
+          {OpCode::PUSH_INT, 0},  // 5: Push 0
+          {OpCode::GT, 0},        // 6: counter > 0?
+          {OpCode::JUMP_IF, 0},   // 7: If true, jump to 0
+          {OpCode::HALT, 0}       // 8: Otherwise halt
+      };
+
+      vm.load(program, {"counter"});
+
+      // Test with depth that should work (100 iterations, well below stack limit)
+      vm.setVariable("counter", NovelMind::i32{100});
+
+      vm.run();
+
+      // Should complete without security violation
+      REQUIRE(vm.isHalted());
+      REQUIRE_FALSE(vm.securityGuard().hasViolation());
+
+      auto val = vm.getVariable("counter");
+      REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+      REQUIRE(std::get<NovelMind::i32>(val) == 0);
+    }
+
+    TEST_CASE("VM stack overflow error message verification", "[scripting][recursion][security]") {
+      VirtualMachine vm;
+
+      // Set a very small stack limit for predictable overflow
+      NovelMind::scripting::VMSecurityLimits limits;
+      limits.maxStackSize = 10;
+      vm.securityGuard().setLimits(limits);
+
+      // Program that rapidly fills the stack
+      std::vector<Instruction> program;
+      for (NovelMind::u32 i = 0; i < 20; ++i) {
+        program.push_back({OpCode::PUSH_INT, i});
+      }
+      program.push_back({OpCode::HALT, 0});
+      // Stack Underflow Tests (Issue #447)
+      // =========================================================================
+
+      TEST_CASE("test_vm_add_empty_stack", "[scripting][stack_underflow]") {
+        VirtualMachine vm;
+
+        // ADD with empty stack should halt with error
+        std::vector<Instruction> program = {{OpCode::ADD, 0}, // Stack is empty, need 2 elements
+                                            {OpCode::HALT, 0}};
+
+        vm.load(program, {});
+        vm.run();
+
+        // VM should halt due to stack underflow
+        REQUIRE(vm.isHalted());
+      }
+
+      TEST_CASE("VM stack underflow detection - SAY", "[scripting][stack-underflow]") {
+        VirtualMachine vm;
+
+        // SAY expects 1 argument on the stack (speaker)
+        // But we provide none - should detect underflow and halt
+        std::vector<Instruction> program = {
+            {OpCode::SAY, 0}, // Expects 1 stack arg, but stack is empty
+            {OpCode::HALT, 0}};
+
+        std::vector<std::string> strings = {"Hello world"};
+
+        vm.load(program, strings);
+        TEST_CASE("test_vm_add_one_element_stack", "[scripting][stack_underflow]") {
+          VirtualMachine vm;
+
+          // ADD with only 1 element on stack should halt with error
+          std::vector<Instruction> program = {{OpCode::PUSH_INT, 5}, // Push 1 element
+                                              {OpCode::ADD, 0},      // Need 2 elements, only have 1
+                                              {OpCode::HALT, 0}};
+
+          vm.load(program, {});
+          vm.run();
+
+          // VM should halt due to stack underflow
+          REQUIRE(vm.isHalted());
+        }
+
+        TEST_CASE("test_vm_subtract_empty_stack", "[scripting][stack_underflow]") {
+          VirtualMachine vm;
+
+          // SUB with empty stack should halt with error
+          std::vector<Instruction> program = {{OpCode::SUB, 0}, {OpCode::HALT, 0}};
+
+          vm.load(program, {});
+          vm.run();
+
+          // VM should halt due to stack underflow
+          REQUIRE(vm.isHalted());
+        }
+
+        TEST_CASE("VM stack underflow detection - CHOICE", "[scripting][stack-underflow]") {
+          VirtualMachine vm;
+
+          // CHOICE expects count + 1 arguments on the stack
+          // (count choices + the count itself) but we provide none
+          std::vector<Instruction> program = {
+            {OpCode::CHOICE, 3}, // Expects 3 choices + count (4 total), but stack is empty
+            TEST_CASE("test_vm_multiply_empty_stack",
+                      "[scripting][stack_underflow]"){VirtualMachine vm;
+
+          // MUL with empty stack should halt with error
+          std::vector<Instruction> program = {{OpCode::MUL, 0}, {OpCode::HALT, 0}};
+
+          vm.load(program, {});
+          vm.run();
+
+          // VM should halt due to stack underflow
+          REQUIRE(vm.isHalted());
+        }
+
+        TEST_CASE("VM stack underflow detection - TRANSITION", "[scripting][stack-underflow]") {
+          VirtualMachine vm;
+
+          // TRANSITION expects 1 argument on the stack (duration)
+          // But we provide none - should detect underflow and halt
+          std::vector<Instruction> program = {
+              {OpCode::TRANSITION, 0}, // Expects 1 stack arg, but stack is empty
+              {OpCode::HALT, 0}};
+
+          std::vector<std::string> strings = {"fade"};
+
+          vm.load(program, strings);
+          TEST_CASE("VM CHOICE opcode with insufficient stack - partial elements",
+                    "[scripting][choice][security]") {
+            VirtualMachine vm;
+
+            // Test CHOICE requesting 3 options but only 2 elements on stack
+            // Stack needs: count + 3 options = 4 elements, but we only push 2
+            std::vector<Instruction> program = {
+                {OpCode::PUSH_INT, 3},    // Push count
+                {OpCode::PUSH_STRING, 0}, // Push "Option 1" only
+                {OpCode::CHOICE, 3}, // Request 3 choices but only 1 on stack (+ count = 2 total)
+                {OpCode::HALT, 0}};
+
+            std::vector<std::string> strings = {"Option 1"};
+
+            vm.load(program, strings);
+            TEST_CASE("test_vm_divide_empty_stack", "[scripting][stack_underflow]") {
+              VirtualMachine vm;
+
+              // DIV with empty stack should halt with error
+              std::vector<Instruction> program = {{OpCode::DIV, 0}, {OpCode::HALT, 0}};
+
+              vm.load(program, {});
+              vm.run();
+
+              // VM should halt due to stack underflow
+              REQUIRE(vm.isHalted());
+            }
+
+            TEST_CASE("VM stack underflow detection - partial underflow",
+                      "[scripting][stack-underflow]") {
+              VirtualMachine vm;
+
+              // SHOW_CHARACTER expects 2 arguments but we only provide 1
+              std::vector<Instruction> program = {
+                  {OpCode::PUSH_INT, 1},       // Push only position (1 arg)
+                  {OpCode::SHOW_CHARACTER, 0}, // Expects 2 args (id, position)
+                  {OpCode::HALT, 0}};
+
+              std::vector<std::string> strings = {"char1"};
+
+              vm.load(program, strings);
+              vm.run();
+
+              // VM should halt due to stack underflow on second pop
+              REQUIRE(vm.isHalted());
+            }
+
+            TEST_CASE("VM stack underflow detection - multiple underflows",
+                      "[scripting][stack-underflow]") {
+              VirtualMachine vm;
+
+              // Multiple operations that could cause underflow
+              // VM should halt on the first underflow
+              std::vector<Instruction> program = {
+                  {OpCode::SAY, 0},            // First underflow here
+                  {OpCode::SHOW_CHARACTER, 1}, // Should never reach this
+                  {OpCode::HALT, 0}};
+
+              std::vector<std::string> strings = {"Hello", "char1"};
+
+              vm.load(program, strings);
+              vm.run();
+
+              // VM should halt on first underflow
+              REQUIRE(vm.isHalted());
+            }
+
+            TEST_CASE("VM stack underflow - valid operations should not trigger",
+                      "[scripting][stack-underflow]") {
+              VirtualMachine vm;
+
+              // This should work correctly - no underflow
+              std::vector<Instruction> program = {
+                  {OpCode::PUSH_INT, 1},       // Push position
+                  {OpCode::PUSH_INT, 0},       // Push id (will be replaced by default)
+                  {OpCode::SHOW_CHARACTER, 0}, // Has enough args
+                  {OpCode::HALT, 0}};
+
+              std::vector<std::string> strings = {"char1"};
+
+              vm.load(program, strings);
+              vm.run();
+
+              // VM should complete successfully without underflow
+              REQUIRE(vm.isHalted());
+              TEST_CASE("VM CHOICE opcode with zero choices", "[scripting][choice]") {
+                VirtualMachine vm;
+
+                // Test CHOICE with 0 options
+                std::vector<Instruction> program = {
+                  {OpCode::PUSH_INT, 0}, // Push count
+                  {OpCode::CHOICE, 0},   // Request 0 choices
+                  TEST_CASE("test_vm_modulo_empty_stack",
+                            "[scripting][stack_underflow]"){VirtualMachine vm;
+
+                // MOD with empty stack should halt with error
+                std::vector<Instruction> program = {{OpCode::MOD, 0}, {OpCode::HALT, 0}};
+
+                vm.load(program, {});
+
+                // Register callback to capture arguments
+                std::vector<NovelMind::scripting::Value> capturedArgs;
+                vm.registerCallback(
+                    OpCode::CHOICE,
+                    [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+                      capturedArgs = args;
+                    });
+
+                vm.run();
+
+                // Should complete successfully with just the count argument
+                REQUIRE(vm.isHalted());
+                REQUIRE(capturedArgs.size() == 1); // Just the count
+                REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+                REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 0);
+              }
+
+              TEST_CASE("VM CHOICE opcode with one choice", "[scripting][choice]") {
+                VirtualMachine vm;
+
+                // Test CHOICE with exactly 1 option
+                std::vector<Instruction> program = {{OpCode::PUSH_INT, 1},    // Push count
+                                                    {OpCode::PUSH_STRING, 0}, // Push "Only Option"
+                                                    {OpCode::CHOICE, 1},      // Request 1 choice
+                                                    {OpCode::HALT, 0}};
+
+                std::vector<std::string> strings = {"Only Option"};
+
+                vm.load(program, strings);
+
+                // Register callback to capture arguments
+                std::vector<NovelMind::scripting::Value> capturedArgs;
+                vm.registerCallback(
+                    OpCode::CHOICE,
+                    [&capturedArgs](const std::vector<NovelMind::scripting::Value>& args) {
+                      capturedArgs = args;
+                    });
+
+                vm.run();
+
+                // Verify the callback was called correctly
+                REQUIRE(capturedArgs.size() == 2); // count + 1 choice
+                REQUIRE(std::holds_alternative<NovelMind::i32>(capturedArgs[0]));
+                REQUIRE(std::get<NovelMind::i32>(capturedArgs[0]) == 1);
+                REQUIRE(std::holds_alternative<std::string>(capturedArgs[1]));
+                REQUIRE(std::get<std::string>(capturedArgs[1]) == "Only Option");
+                vm.run();
+
+                // Verify halt occurred
+                REQUIRE(vm.isHalted());
+
+                // Verify security violation was recorded with correct type
+                REQUIRE(vm.securityGuard().hasViolation());
+                auto violation = vm.securityGuard().lastViolation();
+                REQUIRE(violation != nullptr);
+                REQUIRE(violation->type ==
+                        NovelMind::scripting::SecurityViolationType::StackOverflow);
+
+                // Verify error message contains relevant information
+                REQUIRE_FALSE(violation->message.empty());
+                REQUIRE(violation->message.find("Stack overflow") != std::string::npos);
+                REQUIRE(violation->message.find("10") != std::string::npos); // Stack limit
+              }
+
+              TEST_CASE("VM recovery after stack overflow", "[scripting][recursion][security]") {
+                VirtualMachine vm;
+
+                // Set a small stack limit
+                NovelMind::scripting::VMSecurityLimits limits;
+                limits.maxStackSize = 50;
+                vm.securityGuard().setLimits(limits);
+
+                // Program that causes stack overflow
+                std::vector<Instruction> overflow_program;
+                for (NovelMind::u32 i = 0; i < 100; ++i) {
+                  overflow_program.push_back({OpCode::PUSH_INT, i});
+                }
+                overflow_program.push_back({OpCode::HALT, 0});
+
+                vm.load(overflow_program, {});
+                vm.run();
+
+                // Verify overflow occurred
+                REQUIRE(vm.isHalted());
+                REQUIRE(vm.securityGuard().hasViolation());
+
+                // Now reset and run a simple valid program
+                std::vector<Instruction> valid_program = {
+                    {OpCode::PUSH_INT, 42}, {OpCode::STORE_VAR, 0}, {OpCode::HALT, 0}};
+
+                vm.load(valid_program, {"result"});
+                vm.run();
+
+                // VM should work correctly after recovery
+                REQUIRE(vm.isHalted());
+                // New load should have reset the security guard, so no violation
+                REQUIRE_FALSE(vm.securityGuard().hasViolation());
+
+                auto val = vm.getVariable("result");
+                REQUIRE(std::holds_alternative<NovelMind::i32>(val));
+                REQUIRE(std::get<NovelMind::i32>(val) == 42);
+              }
+
+              TEST_CASE("VM nested loops causing stack growth",
+                        "[scripting][recursion][security]") {
+                VirtualMachine vm;
+
+                // Set reasonable stack limit
+                NovelMind::scripting::VMSecurityLimits limits;
+                limits.maxStackSize = 100;
+                vm.securityGuard().setLimits(limits);
+
+                // Simulate nested recursive calls by using nested loops with stack accumulation
+                // Outer loop: 5 iterations, Inner loop: pushes values each iteration
+                std::vector<Instruction> program = {
+                    // Outer loop setup
+                    {OpCode::PUSH_INT, 5},  // 0: Push outer counter
+                    {OpCode::STORE_VAR, 0}, // 1: Store to outer_count
+
+                    // Outer loop start
+                    {OpCode::LOAD_VAR, 0},     // 2: Load outer_count
+                    {OpCode::PUSH_INT, 0},     // 3: Push 0
+                    {OpCode::GT, 0},           // 4: outer_count > 0?
+                    {OpCode::JUMP_IF_NOT, 16}, // 5: If false, jump to end
+
+                    // Inner loop - push values to simulate stack growth
+                    {OpCode::PUSH_INT, 1}, // 6: Push value
+                    {OpCode::PUSH_INT, 2}, // 7: Push value
+                    {OpCode::PUSH_INT, 3}, // 8: Push value
+                    {OpCode::POP, 0},      // 9: Pop one
+                    {OpCode::POP, 0},      // 10: Pop one (net +1 stack per iteration)
+
+                    // Decrement outer counter
+                    {OpCode::LOAD_VAR, 0},  // 11: Load outer_count
+                    {OpCode::PUSH_INT, 1},  // 12: Push 1
+                    {OpCode::SUB, 0},       // 13: outer_count - 1
+                    {OpCode::STORE_VAR, 0}, // 14: Store back
+                    {OpCode::JUMP, 2},      // 15: Jump to outer loop start
+
+                    {OpCode::HALT, 0} // 16: End
+                };
+
+                vm.load(program, {"outer_count"});
+
+                int iterations = 0;
+                const int maxIterations = 200;
+
+                while (!vm.isHalted() && iterations < maxIterations) {
+                  vm.step();
+                  iterations++;
+                }
+
+                // Should complete - this is a controlled test that shouldn't overflow
+                REQUIRE(vm.isHalted());
+
+                // Stack should be within limits
+                REQUIRE_FALSE(vm.securityGuard().hasViolation());
+                // VM should halt due to stack underflow
+                REQUIRE(vm.isHalted());
+              }
+
+              TEST_CASE("test_vm_comparison_empty_stack", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                SECTION("EQ with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::EQ, 0}, {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("LT with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::LT, 0}, {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("GT with one element") {
+                  std::vector<Instruction> program = {{OpCode::PUSH_INT, 5},
+                                                      {OpCode::GT, 0}, // Need 2 elements
+                                                      {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+              }
+
+              TEST_CASE("test_vm_logical_empty_stack", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                SECTION("AND with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::AND, 0}, {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("OR with one element") {
+                  std::vector<Instruction> program = {{OpCode::PUSH_BOOL, 1},
+                                                      {OpCode::OR, 0}, // Need 2 elements
+                                                      {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("NOT with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::NOT, 0}, // Need 1 element
+                                                      {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+              }
+
+              TEST_CASE("test_vm_unary_operations_empty_stack", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                SECTION("NEG with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::NEG, 0}, {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("POP with empty stack") {
+                  std::vector<Instruction> program = {{OpCode::POP, 0}, {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+              }
+
+              TEST_CASE("test_vm_store_var_empty_stack", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                // STORE_VAR with empty stack should halt with error
+                std::vector<Instruction> program = {
+                    {OpCode::STORE_VAR, 0}, // Need 1 element on stack
+                    {OpCode::HALT, 0}};
+
+                vm.load(program, {"var"});
+                vm.run();
+
+                // VM should halt due to stack underflow
+                REQUIRE(vm.isHalted());
+                // Variable should not be set
+                REQUIRE_FALSE(vm.hasVariable("var"));
+              }
+
+              TEST_CASE("test_vm_jump_if_empty_stack", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                SECTION("JUMP_IF with empty stack") {
+                  std::vector<Instruction> program = {
+                      {OpCode::JUMP_IF, 2}, // Need 1 element on stack
+                      {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+
+                SECTION("JUMP_IF_NOT with empty stack") {
+                  std::vector<Instruction> program = {
+                      {OpCode::JUMP_IF_NOT, 2}, // Need 1 element on stack
+                      {OpCode::HALT, 0}};
+                  vm.load(program, {});
+                  vm.run();
+                  REQUIRE(vm.isHalted());
+                }
+              }
+
+              TEST_CASE("test_vm_normal_operations_after_fix", "[scripting][stack_underflow]") {
+                VirtualMachine vm;
+
+                // Verify that normal operations still work correctly with sufficient stack
+                std::vector<Instruction> program = {{OpCode::PUSH_INT, 10}, {OpCode::PUSH_INT, 5},
+                                                    {OpCode::ADD, 0},       {OpCode::PUSH_INT, 3},
+                                                    {OpCode::MUL, 0},       {OpCode::STORE_VAR, 0},
+                                                    {OpCode::HALT, 0}};
+
+                vm.load(program, {"result"});
+                vm.run();
+
+                // VM should complete successfully
+                REQUIRE(vm.isHalted());
+                auto result = vm.getVariable("result");
+                REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+                REQUIRE(std::get<NovelMind::i32>(result) == 45); // (10 + 5) * 3 = 45
+              }

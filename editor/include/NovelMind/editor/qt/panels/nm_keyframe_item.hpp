@@ -27,11 +27,11 @@ struct KeyframeId {
   int trackIndex = -1;
   int frame = 0;
 
-  bool operator==(const KeyframeId &other) const {
+  bool operator==(const KeyframeId& other) const {
     return trackIndex == other.trackIndex && frame == other.frame;
   }
 
-  bool operator<(const KeyframeId &other) const {
+  bool operator<(const KeyframeId& other) const {
     if (trackIndex != other.trackIndex)
       return trackIndex < other.trackIndex;
     return frame < other.frame;
@@ -55,8 +55,8 @@ public:
    * @param color Color of the keyframe
    * @param parent Parent graphics item
    */
-  explicit NMKeyframeItem(int trackIndex, int frame, const QColor &color,
-                          QGraphicsItem *parent = nullptr);
+  explicit NMKeyframeItem(int trackIndex, int frame, const QColor& color,
+                          QGraphicsItem* parent = nullptr);
 
   /**
    * @brief Get the bounding rectangle
@@ -66,8 +66,8 @@ public:
   /**
    * @brief Paint the keyframe
    */
-  void paint(QPainter *painter, const QStyleOptionGraphicsItem *option,
-             QWidget *widget = nullptr) override;
+  void paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+             QWidget* widget = nullptr) override;
 
   /**
    * @brief Get keyframe ID
@@ -108,8 +108,7 @@ public:
   /**
    * @brief Set coordinate conversion functions
    */
-  void setFrameConverter(std::function<int(int)> xToFrame,
-                         std::function<int(int)> frameToX) {
+  void setFrameConverter(std::function<int(int)> xToFrame, std::function<int(int)> frameToX) {
     m_xToFrame = xToFrame;
     m_frameToX = frameToX;
   }
@@ -138,7 +137,7 @@ signals:
    * @brief Emitted when keyframe drag starts
    * @param id Keyframe ID
    */
-  void dragStarted(const KeyframeId &id);
+  void dragStarted(const KeyframeId& id);
 
   /**
    * @brief Emitted when keyframe drag ends
@@ -151,7 +150,7 @@ signals:
    * @param rangeSelection True if Shift is held (range selection)
    * @param id Keyframe ID
    */
-  void clicked(bool additiveSelection, bool rangeSelection, const KeyframeId &id);
+  void clicked(bool additiveSelection, bool rangeSelection, const KeyframeId& id);
 
   /**
    * @brief Emitted when keyframe is double-clicked
@@ -161,12 +160,12 @@ signals:
   void doubleClicked(int trackIndex, int frame);
 
 protected:
-  void mousePressEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseMoveEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent *event) override;
-  void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) override;
-  void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override;
-  void hoverLeaveEvent(QGraphicsSceneHoverEvent *event) override;
+  void mousePressEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event) override;
+  void mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) override;
+  void hoverEnterEvent(QGraphicsSceneHoverEvent* event) override;
+  void hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
 private:
   int snapToGrid(int frame) const;
@@ -198,16 +197,14 @@ private:
 // std::hash specialization for KeyframeId
 namespace std {
 template <> struct hash<NovelMind::editor::qt::KeyframeId> {
-  std::size_t
-  operator()(const NovelMind::editor::qt::KeyframeId &key) const noexcept {
-    return std::hash<int>{}(key.trackIndex) ^
-           (std::hash<int>{}(key.frame) << 1);
+  std::size_t operator()(const NovelMind::editor::qt::KeyframeId& key) const noexcept {
+    return std::hash<int>{}(key.trackIndex) ^ (std::hash<int>{}(key.frame) << 1);
   }
 };
 } // namespace std
 
 // Hash function for KeyframeId to use in QSet (must be in global namespace)
-inline uint qHash(const NovelMind::editor::qt::KeyframeId &key, uint seed = 0) {
+inline uint qHash(const NovelMind::editor::qt::KeyframeId& key, uint seed = 0) {
   Q_UNUSED(seed);
   return static_cast<uint>(std::hash<NovelMind::editor::qt::KeyframeId>{}(key));
 }

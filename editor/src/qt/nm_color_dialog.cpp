@@ -15,15 +15,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMColorDialog::NMColorDialog(QWidget *parent, const QColor &initial,
-                             const QString &title)
+NMColorDialog::NMColorDialog(QWidget* parent, const QColor& initial, const QString& title)
     : QDialog(parent) {
   setWindowTitle(title.isEmpty() ? tr("Select Color") : title);
   setModal(true);
   setObjectName("NMColorDialog");
   setWindowFlag(Qt::WindowContextHelpButtonHint, false);
 
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(12, 12, 12, 12);
   layout->setSpacing(8);
 
@@ -32,7 +31,7 @@ NMColorDialog::NMColorDialog(QWidget *parent, const QColor &initial,
   m_preview->setFrameShape(QFrame::StyledPanel);
   layout->addWidget(m_preview);
 
-  auto *formLayout = new QFormLayout();
+  auto* formLayout = new QFormLayout();
   formLayout->setSpacing(8);
 
   m_redSpin = new QSpinBox(this);
@@ -52,7 +51,7 @@ NMColorDialog::NMColorDialog(QWidget *parent, const QColor &initial,
 
   layout->addLayout(formLayout);
 
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
   auto& iconMgr = NMIconManager::instance();
@@ -80,15 +79,14 @@ NMColorDialog::NMColorDialog(QWidget *parent, const QColor &initial,
           [this]() { updatePreview(); });
   connect(m_blueSpin, QOverload<int>::of(&QSpinBox::valueChanged), this,
           [this]() { updatePreview(); });
-  connect(m_hexEdit, &QLineEdit::editingFinished, this,
-          &NMColorDialog::syncFromHex);
+  connect(m_hexEdit, &QLineEdit::editingFinished, this, &NMColorDialog::syncFromHex);
 
   setColor(initial);
   detail::applyDialogFrameStyle(this);
   detail::animateDialogIn(this);
 }
 
-void NMColorDialog::setColor(const QColor &color, bool updateFields) {
+void NMColorDialog::setColor(const QColor& color, bool updateFields) {
   QColor safeColor = color.isValid() ? color : QColor(255, 255, 255);
   if (updateFields) {
     const QSignalBlocker blockerRed(m_redSpin);
@@ -130,13 +128,12 @@ void NMColorDialog::syncFromHex() {
 }
 
 void NMColorDialog::updatePreview() {
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   const QString colorName = currentColor().name(QColor::HexRgb);
   if (m_preview) {
-    m_preview->setStyleSheet(
-        QString("background-color: %1; border: 1px solid %2;")
-            .arg(colorName)
-            .arg(NMStyleManager::colorToStyleString(palette.borderLight)));
+    m_preview->setStyleSheet(QString("background-color: %1; border: 1px solid %2;")
+                                 .arg(colorName)
+                                 .arg(NMStyleManager::colorToStyleString(palette.borderLight)));
   }
   if (m_hexEdit) {
     const QSignalBlocker blocker(m_hexEdit);
@@ -144,8 +141,8 @@ void NMColorDialog::updatePreview() {
   }
 }
 
-QColor NMColorDialog::getColor(const QColor &initial, QWidget *parent,
-                               const QString &title, bool *ok) {
+QColor NMColorDialog::getColor(const QColor& initial, QWidget* parent, const QString& title,
+                               bool* ok) {
   NMColorDialog dialog(parent, initial, title);
   const int result = dialog.exec();
   if (ok) {

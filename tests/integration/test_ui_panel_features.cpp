@@ -30,7 +30,7 @@ public:
   QtTestFixture() {
     if (!QApplication::instance()) {
       static int argc = 1;
-      static char *argv[] = {const_cast<char *>("test"), nullptr};
+      static char* argv[] = {const_cast<char*>("test"), nullptr};
       m_app = std::make_unique<QApplication>(argc, argv);
     }
   }
@@ -43,8 +43,7 @@ private:
 // Voice Metadata Dialog Tests
 // =============================================================================
 
-TEST_CASE("VoiceMetadataDialog: MetadataResult structure",
-          "[integration][editor][voice][dialog]") {
+TEST_CASE("VoiceMetadataDialog: MetadataResult structure", "[integration][editor][voice][dialog]") {
   SECTION("Default values are correct") {
     NMVoiceMetadataDialog::MetadataResult result;
     REQUIRE(result.tags.isEmpty());
@@ -85,9 +84,8 @@ TEST_CASE("VoiceMetadataDialog: Dialog can be constructed",
     QStringList scenes{"Intro", "Battle"};
     QStringList suggestedTags{"calm", "angry", "happy"};
 
-    NMVoiceMetadataDialog dialog(nullptr, "line_002", tags, "Test notes",
-                                  "Hero", "Intro", speakers, scenes,
-                                  suggestedTags);
+    NMVoiceMetadataDialog dialog(nullptr, "line_002", tags, "Test notes", "Hero", "Intro", speakers,
+                                 scenes, suggestedTags);
     // Dialog should be created without crash
     SUCCEED();
   }
@@ -97,8 +95,7 @@ TEST_CASE("VoiceMetadataDialog: Dialog can be constructed",
 // Localization Entry Tests
 // =============================================================================
 
-TEST_CASE("LocalizationEntry: Structure and fields",
-          "[integration][editor][localization]") {
+TEST_CASE("LocalizationEntry: Structure and fields", "[integration][editor][localization]") {
   SECTION("Default values are correct") {
     LocalizationEntry entry;
     REQUIRE(entry.key.isEmpty());
@@ -136,8 +133,7 @@ TEST_CASE("LocalizationEntry: Structure and fields",
   }
 }
 
-TEST_CASE("LocalizationFilter: Filter modes",
-          "[integration][editor][localization]") {
+TEST_CASE("LocalizationFilter: Filter modes", "[integration][editor][localization]") {
   SECTION("Filter enum values") {
     REQUIRE(static_cast<int>(LocalizationFilter::All) == 0);
     REQUIRE(static_cast<int>(LocalizationFilter::MissingTranslations) == 1);
@@ -151,8 +147,7 @@ TEST_CASE("LocalizationFilter: Filter modes",
 // Voice Manifest Tests (related to auto-detection)
 // =============================================================================
 
-TEST_CASE("VoiceManifest: Line lookup for auto-detection",
-          "[integration][editor][voice]") {
+TEST_CASE("VoiceManifest: Line lookup for auto-detection", "[integration][editor][voice]") {
   VoiceManifest manifest;
   manifest.setDefaultLocale("en");
   manifest.addLocale("en");
@@ -168,7 +163,7 @@ TEST_CASE("VoiceManifest: Line lookup for auto-detection",
     auto result = manifest.addLine(line);
     REQUIRE(result.isOk());
 
-    const VoiceManifestLine *retrieved = manifest.getLine("intro_001");
+    const VoiceManifestLine* retrieved = manifest.getLine("intro_001");
     REQUIRE(retrieved != nullptr);
     REQUIRE(retrieved->id == "intro_001");
     REQUIRE(retrieved->speaker == "Hero");
@@ -188,10 +183,10 @@ TEST_CASE("VoiceManifest: Line lookup for auto-detection",
 
     manifest.addLine(line);
 
-    const VoiceManifestLine *retrieved = manifest.getLine("greeting_001");
+    const VoiceManifestLine* retrieved = manifest.getLine("greeting_001");
     REQUIRE(retrieved != nullptr);
 
-    const VoiceLocaleFile *localeFile = retrieved->getFile("en");
+    const VoiceLocaleFile* localeFile = retrieved->getFile("en");
     REQUIRE(localeFile != nullptr);
     REQUIRE(localeFile->filePath == "voice/en/greeting_001.ogg");
     REQUIRE(localeFile->status == VoiceLineStatus::Recorded);
@@ -225,8 +220,7 @@ TEST_CASE("VoiceManifest: Line lookup for auto-detection",
 // Project Integrity Quick Fixes Tests
 // =============================================================================
 
-TEST_CASE("ProjectIntegrity: Quick fix dispatch",
-          "[integration][editor][integrity]") {
+TEST_CASE("ProjectIntegrity: Quick fix dispatch", "[integration][editor][integrity]") {
   using namespace NovelMind::editor;
 
   SECTION("IntegrityIssue structure") {
@@ -251,7 +245,8 @@ TEST_CASE("ProjectIntegrity: Quick fix dispatch",
   }
 
   SECTION("Issue categories") {
-    // Categories are: Scene, Asset, VoiceLine, Localization, StoryGraph, Script, Resource, Configuration
+    // Categories are: Scene, Asset, VoiceLine, Localization, StoryGraph, Script, Resource,
+    // Configuration
     REQUIRE(static_cast<int>(IssueCategory::Scene) == 0);
     REQUIRE(static_cast<int>(IssueCategory::Asset) == 1);
     REQUIRE(static_cast<int>(IssueCategory::VoiceLine) == 2);
@@ -293,8 +288,7 @@ TEST_CASE("LocalizationPanel: Panel can be constructed",
   }
 }
 
-TEST_CASE("LocalizationPanel: Key operations",
-          "[integration][editor][localization][panel]") {
+TEST_CASE("LocalizationPanel: Key operations", "[integration][editor][localization][panel]") {
   QtTestFixture fixture;
 
   SECTION("Add key operation") {

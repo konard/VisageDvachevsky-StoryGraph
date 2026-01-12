@@ -32,8 +32,7 @@ struct SceneDocument {
   std::vector<SceneDocumentObject> objects;
 };
 
-Result<SceneDocument> loadSceneDocument(const std::string &path);
-Result<void> saveSceneDocument(const SceneDocument &doc,
-                               const std::string &path);
+Result<SceneDocument> loadSceneDocument(const std::string& path);
+Result<void> saveSceneDocument(const SceneDocument& doc, const std::string& path);
 
 } // namespace NovelMind::editor

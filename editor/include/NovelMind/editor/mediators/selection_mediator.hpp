@@ -12,7 +12,9 @@
 
 #include "NovelMind/editor/event_bus.hpp"
 #include "NovelMind/editor/events/panel_events.hpp"
+#include "NovelMind/editor/qt/debouncer.hpp"
 #include <QObject>
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -43,11 +45,9 @@ public:
    * @param storyGraph Story graph panel (for node selection)
    * @param parent QObject parent
    */
-  SelectionMediator(qt::NMSceneViewPanel *sceneView,
-                    qt::NMHierarchyPanel *hierarchy,
-                    qt::NMInspectorPanel *inspector,
-                    qt::NMStoryGraphPanel *storyGraph,
-                    QObject *parent = nullptr);
+  SelectionMediator(qt::NMSceneViewPanel* sceneView, qt::NMHierarchyPanel* hierarchy,
+                    qt::NMInspectorPanel* inspector, qt::NMStoryGraphPanel* storyGraph,
+                    QObject* parent = nullptr);
 
   ~SelectionMediator() override;
 
@@ -62,18 +62,24 @@ public:
   void shutdown();
 
 private:
-  void onSceneObjectSelected(const events::SceneObjectSelectedEvent &event);
-  void onStoryGraphNodeSelected(const events::StoryGraphNodeSelectedEvent &event);
-  void onAssetSelected(const events::AssetSelectedEvent &event);
-  void onHierarchyObjectDoubleClicked(const events::HierarchyObjectDoubleClickedEvent &event);
+  void onSceneObjectSelected(const events::SceneObjectSelectedEvent& event);
+  void onStoryGraphNodeSelected(const events::StoryGraphNodeSelectedEvent& event);
+  void onAssetSelected(const events::AssetSelectedEvent& event);
+  void onHierarchyObjectDoubleClicked(const events::HierarchyObjectDoubleClickedEvent& event);
 
-  qt::NMSceneViewPanel *m_sceneView = nullptr;
-  qt::NMHierarchyPanel *m_hierarchy = nullptr;
-  qt::NMInspectorPanel *m_inspector = nullptr;
-  qt::NMStoryGraphPanel *m_storyGraph = nullptr;
+  qt::NMSceneViewPanel* m_sceneView = nullptr;
+  qt::NMHierarchyPanel* m_hierarchy = nullptr;
+  qt::NMInspectorPanel* m_inspector = nullptr;
+  qt::NMStoryGraphPanel* m_storyGraph = nullptr;
 
   std::vector<EventSubscription> m_subscriptions;
-  bool m_processingSelection = false; // Prevent feedback loops
+  std::atomic<bool> m_processingSelection{false}; // Prevent feedback loops (thread-safe)
+
+  // Issue #470: Debouncer for throttling rapid selection changes
+  // Prevents cascading event chains during marquee selection or rapid keyboard navigation
+  qt::Debouncer m_selectionDebouncer{100}; // 100ms delay for UI updates
+  qt::Debouncer m_sceneLoadDebouncer{200}; // 200ms delay for expensive scene loading
+  QString m_pendingNodeId;                 // Store pending node ID for debounced processing
 };
 
 } // namespace NovelMind::editor::mediators

@@ -18,8 +18,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMNewSceneDialog::NMNewSceneDialog(QWidget *parent,
-                                   SceneTemplateManager *templateManager)
+NMNewSceneDialog::NMNewSceneDialog(QWidget* parent, SceneTemplateManager* templateManager)
     : QDialog(parent), m_templateManager(templateManager) {
   setWindowTitle(tr("New Scene"));
   setModal(true);
@@ -50,7 +49,7 @@ QString NMNewSceneDialog::sceneId() const {
 
   // Remove characters that aren't alphanumeric or underscore
   QString sanitized;
-  for (const QChar &ch : id) {
+  for (const QChar& ch : id) {
     if (ch.isLetterOrNumber() || ch == '_') {
       sanitized += ch;
     }
@@ -71,10 +70,8 @@ QString NMNewSceneDialog::sceneId() const {
   return sanitized.isEmpty() ? "scene" : sanitized;
 }
 
-bool NMNewSceneDialog::getNewScene(QWidget *parent,
-                                   SceneTemplateManager *templateManager,
-                                   QString &outSceneId,
-                                   QString &outTemplateId) {
+bool NMNewSceneDialog::getNewScene(QWidget* parent, SceneTemplateManager* templateManager,
+                                   QString& outSceneId, QString& outTemplateId) {
   NMNewSceneDialog dialog(parent, templateManager);
   if (dialog.exec() == QDialog::Accepted) {
     outSceneId = dialog.sceneId();
@@ -85,13 +82,13 @@ bool NMNewSceneDialog::getNewScene(QWidget *parent,
 }
 
 void NMNewSceneDialog::buildUi() {
-  auto *layout = new QVBoxLayout(this);
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(16, 16, 16, 16);
   layout->setSpacing(12);
 
   // Scene Name Group
-  auto *nameGroup = new QGroupBox(tr("Scene Information"), this);
-  auto *nameLayout = new QFormLayout(nameGroup);
+  auto* nameGroup = new QGroupBox(tr("Scene Information"), this);
+  auto* nameLayout = new QFormLayout(nameGroup);
   nameLayout->setSpacing(8);
 
   m_nameEdit = new QLineEdit(nameGroup);
@@ -105,13 +102,13 @@ void NMNewSceneDialog::buildUi() {
   layout->addWidget(nameGroup);
 
   // Template Selection Group
-  auto *templateGroup = new QGroupBox(tr("Template Selection"), this);
-  auto *templateMainLayout = new QVBoxLayout(templateGroup);
+  auto* templateGroup = new QGroupBox(tr("Template Selection"), this);
+  auto* templateMainLayout = new QVBoxLayout(templateGroup);
   templateMainLayout->setSpacing(8);
 
   // Category filter
-  auto *categoryRow = new QHBoxLayout();
-  auto *categoryLabel = new QLabel(tr("Category:"), templateGroup);
+  auto* categoryRow = new QHBoxLayout();
+  auto* categoryLabel = new QLabel(tr("Category:"), templateGroup);
   m_categoryCombo = new QComboBox(templateGroup);
   m_categoryCombo->addItem(tr("All Templates"));
   m_categoryCombo->setToolTip(tr("Filter templates by category"));
@@ -120,7 +117,7 @@ void NMNewSceneDialog::buildUi() {
   templateMainLayout->addLayout(categoryRow);
 
   // Template list and preview splitter
-  auto *splitter = new QSplitter(Qt::Horizontal, templateGroup);
+  auto* splitter = new QSplitter(Qt::Horizontal, templateGroup);
   splitter->setChildrenCollapsible(false);
 
   // Template list
@@ -129,19 +126,17 @@ void NMNewSceneDialog::buildUi() {
   m_templateList->setViewMode(QListView::ListMode);
   m_templateList->setSelectionMode(QAbstractItemView::SingleSelection);
   m_templateList->setSpacing(2);
-  m_templateList->setToolTip(
-      tr("Select a template to start with, or choose 'Start from Blank'"));
+  m_templateList->setToolTip(tr("Select a template to start with, or choose 'Start from Blank'"));
 
   // Preview panel
-  auto *previewWidget = new QWidget(splitter);
-  auto *previewLayout = new QVBoxLayout(previewWidget);
+  auto* previewWidget = new QWidget(splitter);
+  auto* previewLayout = new QVBoxLayout(previewWidget);
   previewLayout->setContentsMargins(8, 0, 0, 0);
 
   m_previewImage = new QLabel(previewWidget);
   m_previewImage->setFixedSize(256, 144);
   m_previewImage->setAlignment(Qt::AlignCenter);
-  m_previewImage->setStyleSheet(
-      "background: #2a2a2a; border: 1px solid #444; border-radius: 4px;");
+  m_previewImage->setStyleSheet("background: #2a2a2a; border: 1px solid #444; border-radius: 4px;");
   previewLayout->addWidget(m_previewImage, 0, Qt::AlignCenter);
 
   m_previewName = new QLabel(previewWidget);
@@ -166,7 +161,7 @@ void NMNewSceneDialog::buildUi() {
   layout->addWidget(templateGroup, 1);
 
   // Buttons
-  auto *buttonLayout = new QHBoxLayout();
+  auto* buttonLayout = new QHBoxLayout();
   buttonLayout->addStretch();
 
   auto& iconMgr = NMIconManager::instance();
@@ -188,14 +183,12 @@ void NMNewSceneDialog::buildUi() {
   layout->addLayout(buttonLayout);
 
   // Connect signals
-  connect(m_nameEdit, &QLineEdit::textChanged, this,
-          &NMNewSceneDialog::updateCreateEnabled);
+  connect(m_nameEdit, &QLineEdit::textChanged, this, &NMNewSceneDialog::updateCreateEnabled);
   connect(m_nameEdit, &QLineEdit::textChanged, this, [this]() {
-    m_sceneIdPreview->setText(sceneId().isEmpty() ? tr("(enter name)")
-                                                  : sceneId());
+    m_sceneIdPreview->setText(sceneId().isEmpty() ? tr("(enter name)") : sceneId());
   });
-  connect(m_categoryCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMNewSceneDialog::onCategoryChanged);
+  connect(m_categoryCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMNewSceneDialog::onCategoryChanged);
   connect(m_templateList, &QListWidget::itemSelectionChanged, this,
           &NMNewSceneDialog::onTemplateSelected);
   connect(m_templateList, &QListWidget::itemDoubleClicked, this, [this]() {
@@ -218,7 +211,7 @@ void NMNewSceneDialog::populateTemplateList() {
   m_categoryCombo->clear();
   m_categoryCombo->addItem(tr("All Templates"));
   QStringList categories = m_templateManager->getCategories();
-  for (const QString &category : categories) {
+  for (const QString& category : categories) {
     m_categoryCombo->addItem(category);
   }
 
@@ -226,10 +219,9 @@ void NMNewSceneDialog::populateTemplateList() {
   m_templateList->clear();
 
   // Add "Start from Blank" option first
-  auto *blankItem = new QListWidgetItem(tr("Start from Blank"));
+  auto* blankItem = new QListWidgetItem(tr("Start from Blank"));
   blankItem->setData(Qt::UserRole, QString()); // Empty template ID
-  blankItem->setToolTip(
-      tr("Create an empty scene with no pre-defined objects"));
+  blankItem->setToolTip(tr("Create an empty scene with no pre-defined objects"));
   m_templateList->addItem(blankItem);
 
   // Get current category filter
@@ -240,16 +232,15 @@ void NMNewSceneDialog::populateTemplateList() {
 
   // Add templates
   auto templates = m_templateManager->getAvailableTemplates(categoryFilter);
-  for (const auto &meta : templates) {
-    auto *item = new QListWidgetItem(meta.name);
+  for (const auto& meta : templates) {
+    auto* item = new QListWidgetItem(meta.name);
     item->setData(Qt::UserRole, meta.id);
     item->setToolTip(meta.description);
 
     // Set icon from preview if available
     QPixmap preview = m_templateManager->getTemplatePreview(meta.id);
     if (!preview.isNull()) {
-      item->setIcon(QIcon(preview.scaled(64, 36, Qt::KeepAspectRatio,
-                                          Qt::SmoothTransformation)));
+      item->setIcon(QIcon(preview.scaled(64, 36, Qt::KeepAspectRatio, Qt::SmoothTransformation)));
     }
 
     m_templateList->addItem(item);
@@ -266,7 +257,7 @@ void NMNewSceneDialog::onTemplateSelected() {
     return;
   }
 
-  QListWidgetItem *item = m_templateList->currentItem();
+  QListWidgetItem* item = m_templateList->currentItem();
   if (!item) {
     m_selectedTemplateId.clear();
     updatePreview();
@@ -290,9 +281,8 @@ void NMNewSceneDialog::updatePreview() {
   if (m_selectedTemplateId.isEmpty()) {
     // "Start from Blank" selected
     m_previewName->setText(tr("Empty Scene"));
-    m_previewDescription->setText(
-        tr("Start with a completely blank canvas. "
-           "No objects will be pre-created - add everything yourself."));
+    m_previewDescription->setText(tr("Start with a completely blank canvas. "
+                                     "No objects will be pre-created - add everything yourself."));
 
     // Show placeholder preview
     QPixmap placeholder(256, 144);

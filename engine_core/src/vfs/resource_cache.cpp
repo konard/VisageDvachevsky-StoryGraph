@@ -10,7 +10,7 @@ void ResourceCache::setMaxSize(usize maxSize) {
   evictIfNeeded(0);
 }
 
-std::optional<std::vector<u8>> ResourceCache::get(const ResourceId &id) {
+std::optional<std::vector<u8>> ResourceCache::get(const ResourceId& id) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   const auto it = m_cache.find(id);
@@ -27,7 +27,7 @@ std::optional<std::vector<u8>> ResourceCache::get(const ResourceId &id) {
   return it->second.data;
 }
 
-void ResourceCache::put(const ResourceId &id, std::vector<u8> data) {
+void ResourceCache::put(const ResourceId& id, std::vector<u8> data) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   const usize dataSize = data.size();
@@ -68,7 +68,7 @@ void ResourceCache::put(const ResourceId &id, std::vector<u8> data) {
   ++m_stats.entryCount;
 }
 
-void ResourceCache::remove(const ResourceId &id) {
+void ResourceCache::remove(const ResourceId& id) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   const auto it = m_cache.find(id);
@@ -95,7 +95,7 @@ void ResourceCache::clear() {
   m_stats.entryCount = 0;
 }
 
-bool ResourceCache::contains(const ResourceId &id) const {
+bool ResourceCache::contains(const ResourceId& id) const {
   std::lock_guard<std::mutex> lock(m_mutex);
   return m_cache.find(id) != m_cache.end();
 }
@@ -118,7 +118,7 @@ void ResourceCache::resetStats() {
 
 void ResourceCache::evictIfNeeded(usize requiredSpace) {
   while (m_currentSize + requiredSpace > m_maxSize && !m_accessOrder.empty()) {
-    const ResourceId &lruId = m_accessOrder.back();
+    const ResourceId& lruId = m_accessOrder.back();
     const auto it = m_cache.find(lruId);
 
     if (it != m_cache.end()) {
@@ -136,7 +136,7 @@ void ResourceCache::evictIfNeeded(usize requiredSpace) {
   }
 }
 
-void ResourceCache::updateAccessOrder(const ResourceId &id) {
+void ResourceCache::updateAccessOrder(const ResourceId& id) {
   const auto orderIt = m_orderIterators.find(id);
   if (orderIt != m_orderIterators.end()) {
     // Erase from list using the stored iterator (invalidates orderIt->second)

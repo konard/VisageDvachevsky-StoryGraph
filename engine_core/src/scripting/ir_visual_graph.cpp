@@ -18,11 +18,11 @@ namespace NovelMind::scripting {
 VisualGraph::VisualGraph() = default;
 VisualGraph::~VisualGraph() = default;
 
-void VisualGraph::fromIR(const IRGraph &ir) {
+void VisualGraph::fromIR(const IRGraph& ir) {
   m_nodes.clear();
   m_edges.clear();
 
-  for (const auto *node : ir.getNodes()) {
+  for (const auto* node : ir.getNodes()) {
     VisualGraphNode vnode;
     vnode.id = node->getId();
     vnode.type = node->getTypeName();
@@ -30,17 +30,17 @@ void VisualGraph::fromIR(const IRGraph &ir) {
     vnode.x = node->getX();
     vnode.y = node->getY();
 
-    for (const auto &port : node->getInputPorts()) {
+    for (const auto& port : node->getInputPorts()) {
       vnode.inputPorts.push_back({port.name, port.displayName});
     }
-    for (const auto &port : node->getOutputPorts()) {
+    for (const auto& port : node->getOutputPorts()) {
       vnode.outputPorts.push_back({port.name, port.displayName});
     }
 
-    for (const auto &[name, value] : node->getProperties()) {
+    for (const auto& [name, value] : node->getProperties()) {
       std::string strValue;
       std::visit(
-          [&strValue](const auto &v) {
+          [&strValue](const auto& v) {
             using T = std::decay_t<decltype(v)>;
             if constexpr (std::is_same_v<T, std::nullptr_t>) {
               strValue = "";
@@ -62,7 +62,7 @@ void VisualGraph::fromIR(const IRGraph &ir) {
     m_nextId = std::max(m_nextId, vnode.id + 1);
   }
 
-  for (const auto &conn : ir.getConnections()) {
+  for (const auto& conn : ir.getConnections()) {
     VisualGraphEdge edge;
     edge.sourceNode = conn.source.nodeId;
     edge.sourcePort = conn.source.portName;
@@ -105,18 +105,17 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
       {"Custom", IRNodeType::Custom}};
 
   std::unordered_map<NodeId, NodeId> idMap;
-  for (const auto &vnode : m_nodes) {
+  for (const auto& vnode : m_nodes) {
     auto typeIt = typeMap.find(vnode.type);
-    IRNodeType type =
-        (typeIt != typeMap.end()) ? typeIt->second : IRNodeType::Custom;
+    IRNodeType type = (typeIt != typeMap.end()) ? typeIt->second : IRNodeType::Custom;
 
     NodeId newId = ir->createNode(type);
     idMap[vnode.id] = newId;
 
-    auto *node = ir->getNode(newId);
+    auto* node = ir->getNode(newId);
     node->setPosition(vnode.x, vnode.y);
 
-    for (const auto &[name, value] : vnode.properties) {
+    for (const auto& [name, value] : vnode.properties) {
       if (value == "true") {
         node->setProperty(name, true);
       } else if (value == "false") {
@@ -147,7 +146,7 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
     }
   }
 
-  for (const auto &edge : m_edges) {
+  for (const auto& edge : m_edges) {
     auto sourceIt = idMap.find(edge.sourceNode);
     auto targetIt = idMap.find(edge.targetNode);
 
@@ -161,8 +160,8 @@ std::unique_ptr<IRGraph> VisualGraph::toIR() const {
   return ir;
 }
 
-VisualGraphNode *VisualGraph::findNode(NodeId id) {
-  for (auto &node : m_nodes) {
+VisualGraphNode* VisualGraph::findNode(NodeId id) {
+  for (auto& node : m_nodes) {
     if (node.id == id) {
       return &node;
     }
@@ -170,8 +169,8 @@ VisualGraphNode *VisualGraph::findNode(NodeId id) {
   return nullptr;
 }
 
-const VisualGraphNode *VisualGraph::findNode(NodeId id) const {
-  for (const auto &node : m_nodes) {
+const VisualGraphNode* VisualGraph::findNode(NodeId id) const {
+  for (const auto& node : m_nodes) {
     if (node.id == id) {
       return &node;
     }
@@ -179,7 +178,7 @@ const VisualGraphNode *VisualGraph::findNode(NodeId id) const {
   return nullptr;
 }
 
-NodeId VisualGraph::addNode(const std::string &type, f32 x, f32 y) {
+NodeId VisualGraph::addNode(const std::string& type, f32 x, f32 y) {
   VisualGraphNode node;
   node.id = m_nextId++;
   node.type = type;
@@ -192,36 +191,33 @@ NodeId VisualGraph::addNode(const std::string &type, f32 x, f32 y) {
 
 void VisualGraph::removeNode(NodeId id) {
   m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
-                               [id](const VisualGraphEdge &e) {
-                                 return e.sourceNode == id ||
-                                        e.targetNode == id;
+                               [id](const VisualGraphEdge& e) {
+                                 return e.sourceNode == id || e.targetNode == id;
                                }),
                 m_edges.end());
 
-  m_nodes.erase(
-      std::remove_if(m_nodes.begin(), m_nodes.end(),
-                     [id](const VisualGraphNode &n) { return n.id == id; }),
-      m_nodes.end());
+  m_nodes.erase(std::remove_if(m_nodes.begin(), m_nodes.end(),
+                               [id](const VisualGraphNode& n) { return n.id == id; }),
+                m_nodes.end());
 }
 
 void VisualGraph::setNodePosition(NodeId id, f32 x, f32 y) {
-  auto *node = findNode(id);
+  auto* node = findNode(id);
   if (node) {
     node->x = x;
     node->y = y;
   }
 }
 
-void VisualGraph::setNodeProperty(NodeId id, const std::string &name,
-                                  const std::string &value) {
-  auto *node = findNode(id);
+void VisualGraph::setNodeProperty(NodeId id, const std::string& name, const std::string& value) {
+  auto* node = findNode(id);
   if (node) {
     node->properties[name] = value;
   }
 }
 
-void VisualGraph::addEdge(NodeId sourceNode, const std::string &sourcePort,
-                          NodeId targetNode, const std::string &targetPort) {
+void VisualGraph::addEdge(NodeId sourceNode, const std::string& sourcePort, NodeId targetNode,
+                          const std::string& targetPort) {
   VisualGraphEdge edge;
   edge.sourceNode = sourceNode;
   edge.sourcePort = sourcePort;
@@ -230,50 +226,46 @@ void VisualGraph::addEdge(NodeId sourceNode, const std::string &sourcePort,
   m_edges.push_back(edge);
 }
 
-void VisualGraph::removeEdge(NodeId sourceNode, const std::string &sourcePort,
-                             NodeId targetNode, const std::string &targetPort) {
+void VisualGraph::removeEdge(NodeId sourceNode, const std::string& sourcePort, NodeId targetNode,
+                             const std::string& targetPort) {
   m_edges.erase(std::remove_if(m_edges.begin(), m_edges.end(),
-                               [&](const VisualGraphEdge &e) {
-                                 return e.sourceNode == sourceNode &&
-                                        e.sourcePort == sourcePort &&
-                                        e.targetNode == targetNode &&
-                                        e.targetPort == targetPort;
+                               [&](const VisualGraphEdge& e) {
+                                 return e.sourceNode == sourceNode && e.sourcePort == sourcePort &&
+                                        e.targetNode == targetNode && e.targetPort == targetPort;
                                }),
                 m_edges.end());
 }
 
 void VisualGraph::selectNode(NodeId id, bool addToSelection) {
   if (!addToSelection) {
-    for (auto &node : m_nodes) {
+    for (auto& node : m_nodes) {
       node.selected = false;
     }
   }
 
-  auto *node = findNode(id);
+  auto* node = findNode(id);
   if (node) {
     node->selected = true;
   }
 }
 
 void VisualGraph::deselectNode(NodeId id) {
-  auto *node = findNode(id);
+  auto* node = findNode(id);
   if (node) {
     node->selected = false;
   }
 }
 
-void VisualGraph::selectEdge(NodeId /*sourceNode*/,
-                             const std::string & /*sourcePort*/,
-                             NodeId /*targetNode*/,
-                             const std::string & /*targetPort*/) {
+void VisualGraph::selectEdge(NodeId /*sourceNode*/, const std::string& /*sourcePort*/,
+                             NodeId /*targetNode*/, const std::string& /*targetPort*/) {
   // Find and select the edge
 }
 
 void VisualGraph::clearSelection() {
-  for (auto &node : m_nodes) {
+  for (auto& node : m_nodes) {
     node.selected = false;
   }
-  for (auto &edge : m_edges) {
+  for (auto& edge : m_edges) {
     edge.selected = false;
   }
 }
@@ -282,7 +274,7 @@ void VisualGraph::autoLayout() {
   f32 y = 100.0f;
   f32 spacing = 150.0f;
 
-  for (auto &node : m_nodes) {
+  for (auto& node : m_nodes) {
     node.x = 200.0f;
     node.y = y;
     y += spacing;
@@ -294,7 +286,7 @@ std::string VisualGraph::toJson() const {
   ss << "{\"nodes\":[";
 
   bool first = true;
-  for (const auto &node : m_nodes) {
+  for (const auto& node : m_nodes) {
     if (!first)
       ss << ",";
     first = false;
@@ -307,7 +299,7 @@ std::string VisualGraph::toJson() const {
   ss << "],\"edges\":[";
 
   first = true;
-  for (const auto &edge : m_edges) {
+  for (const auto& edge : m_edges) {
     if (!first)
       ss << ",";
     first = false;

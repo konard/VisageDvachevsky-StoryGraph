@@ -5,13 +5,14 @@
 
 namespace NovelMind::editor::qt {
 
-NMScriptDocPanel::NMScriptDocPanel(QWidget *parent)
-    : NMDockPanel(tr("Script Docs"), parent) {
+NMScriptDocPanel::NMScriptDocPanel(QWidget* parent) : NMDockPanel(tr("Script Docs"), parent) {
   setPanelId("ScriptDocs");
   setupContent();
 }
 
-void NMScriptDocPanel::onInitialize() { NMDockPanel::onInitialize(); }
+void NMScriptDocPanel::onInitialize() {
+  NMDockPanel::onInitialize();
+}
 
 void NMScriptDocPanel::onUpdate(double deltaTime) {
   NMDockPanel::onUpdate(deltaTime);
@@ -20,7 +21,7 @@ void NMScriptDocPanel::onUpdate(double deltaTime) {
 
 void NMScriptDocPanel::setupContent() {
   m_contentWidget = new QWidget(this);
-  auto *layout = new QVBoxLayout(m_contentWidget);
+  auto* layout = new QVBoxLayout(m_contentWidget);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -28,7 +29,7 @@ void NMScriptDocPanel::setupContent() {
   m_browser->setOpenExternalLinks(false);
   m_browser->setReadOnly(true);
 
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   m_browser->setStyleSheet(QString("QTextBrowser {"
                                    "  background-color: %1;"
                                    "  color: %2;"
@@ -46,7 +47,7 @@ void NMScriptDocPanel::setupContent() {
   setContentWidget(m_contentWidget);
 }
 
-void NMScriptDocPanel::setDocHtml(const QString &html) {
+void NMScriptDocPanel::setDocHtml(const QString& html) {
   if (!m_browser) {
     return;
   }

@@ -50,14 +50,14 @@ class NMPlayPreviewOverlay : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMPlayPreviewOverlay(QWidget *parent = nullptr)
+  explicit NMPlayPreviewOverlay(QWidget* parent = nullptr)
       : QWidget(parent), m_typeTimer(new QTimer(this)) {
     setAttribute(Qt::WA_TransparentForMouseEvents, false);
     setAttribute(Qt::WA_NoSystemBackground);
     setAttribute(Qt::WA_StyledBackground, true);
     setFocusPolicy(Qt::StrongFocus);
 
-    auto *layout = new QVBoxLayout(this);
+    auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(24, 24, 24, 18);
     layout->addStretch();
 
@@ -75,13 +75,13 @@ public:
     m_dialogueBox->setObjectName("DialogueBox");
     m_dialogueBox->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_dialogueBox->setMinimumHeight(150);
-    auto *dialogueLayout = new QVBoxLayout(m_dialogueBox);
+    auto* dialogueLayout = new QVBoxLayout(m_dialogueBox);
     dialogueLayout->setContentsMargins(22, 18, 22, 20);
     dialogueLayout->setSpacing(8);
 
     m_namePlate = new QFrame(m_dialogueBox);
     m_namePlate->setObjectName("NamePlate");
-    auto *nameLayout = new QHBoxLayout(m_namePlate);
+    auto* nameLayout = new QHBoxLayout(m_namePlate);
     nameLayout->setContentsMargins(10, 4, 10, 4);
     nameLayout->setSpacing(6);
 
@@ -110,7 +110,7 @@ public:
     // Navigation controls
     m_navControls = new QWidget(m_dialogueBox);
     m_navControls->setObjectName("NavControls");
-    auto *navLayout = new QHBoxLayout(m_navControls);
+    auto* navLayout = new QHBoxLayout(m_navControls);
     navLayout->setContentsMargins(0, 8, 0, 0);
     navLayout->setSpacing(8);
 
@@ -118,15 +118,13 @@ public:
     m_prevButton->setObjectName("NavButton");
     m_prevButton->setMinimumHeight(32);
     m_prevButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    connect(m_prevButton, &QPushButton::clicked, this,
-            &NMPlayPreviewOverlay::previousRequested);
+    connect(m_prevButton, &QPushButton::clicked, this, &NMPlayPreviewOverlay::previousRequested);
 
     m_nextButton = new QPushButton(tr("Next ►"), m_navControls);
     m_nextButton->setObjectName("NavButton");
     m_nextButton->setMinimumHeight(32);
     m_nextButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-    connect(m_nextButton, &QPushButton::clicked, this,
-            &NMPlayPreviewOverlay::nextRequested);
+    connect(m_nextButton, &QPushButton::clicked, this, &NMPlayPreviewOverlay::nextRequested);
 
     navLayout->addWidget(m_prevButton);
     navLayout->addWidget(m_nextButton);
@@ -146,69 +144,68 @@ public:
     m_dialogueBox->hide();
     m_choicesBox->hide();
 
-    const auto &palette = NMStyleManager::instance().palette();
-    setStyleSheet(
-        QString("QFrame#DialogueBox {"
-                "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
-                "stop:0 rgba(12, 12, 16, 235), stop:1 rgba(6, 6, 8, 235));"
-                "  border: 1px solid %1;"
-                "  border-radius: 14px;"
-                "}"
-                "QFrame#NamePlate {"
-                "  background-color: rgba(20, 20, 24, 220);"
-                "  border: 1px solid %1;"
-                "  border-radius: 10px;"
-                "}"
-                "QLabel#NameLabel {"
-                "  color: %2;"
-                "  font-weight: bold;"
-                "  letter-spacing: 0.4px;"
-                "}"
-                "QLabel#TextLabel {"
-                "  color: %3;"
-                "}"
-                "QLabel#PreviewBadge {"
-                "  background-color: rgba(255, 165, 0, 200);"
-                "  color: rgba(20, 20, 20, 255);"
-                "  border: 1px solid rgba(255, 200, 100, 255);"
-                "  border-radius: 6px;"
-                "  padding: 4px 12px;"
-                "  font-weight: bold;"
-                "  font-size: 11px;"
-                "  letter-spacing: 0.8px;"
-                "}"
-                "QPushButton#ChoiceButton {"
-                "  background-color: rgba(18, 18, 24, 225);"
-                "  color: %3;"
-                "  border: 1px solid %1;"
-                "  border-radius: 10px;"
-                "  padding: 12px 16px;"
-                "  text-align: left;"
-                "}"
-                "QPushButton#ChoiceButton:hover {"
-                "  border-color: %2;"
-                "  background-color: rgba(28, 28, 36, 230);"
-                "}"
-                "QPushButton#NavButton {"
-                "  background-color: rgba(30, 30, 38, 200);"
-                "  color: %3;"
-                "  border: 1px solid %1;"
-                "  border-radius: 6px;"
-                "  padding: 6px 12px;"
-                "  font-size: 12px;"
-                "}"
-                "QPushButton#NavButton:hover {"
-                "  border-color: %2;"
-                "  background-color: rgba(40, 40, 50, 220);"
-                "}"
-                "QPushButton#NavButton:pressed {"
-                "  background-color: rgba(50, 50, 60, 240);"
-                "}")
-            .arg(palette.borderLight.name())
-            .arg(palette.accentPrimary.name())
-            .arg(palette.textPrimary.name()));
+    const auto& palette = NMStyleManager::instance().palette();
+    setStyleSheet(QString("QFrame#DialogueBox {"
+                          "  background: qlineargradient(x1:0, y1:0, x2:0, y2:1, "
+                          "stop:0 rgba(12, 12, 16, 235), stop:1 rgba(6, 6, 8, 235));"
+                          "  border: 1px solid %1;"
+                          "  border-radius: 14px;"
+                          "}"
+                          "QFrame#NamePlate {"
+                          "  background-color: rgba(20, 20, 24, 220);"
+                          "  border: 1px solid %1;"
+                          "  border-radius: 10px;"
+                          "}"
+                          "QLabel#NameLabel {"
+                          "  color: %2;"
+                          "  font-weight: bold;"
+                          "  letter-spacing: 0.4px;"
+                          "}"
+                          "QLabel#TextLabel {"
+                          "  color: %3;"
+                          "}"
+                          "QLabel#PreviewBadge {"
+                          "  background-color: rgba(255, 165, 0, 200);"
+                          "  color: rgba(20, 20, 20, 255);"
+                          "  border: 1px solid rgba(255, 200, 100, 255);"
+                          "  border-radius: 6px;"
+                          "  padding: 4px 12px;"
+                          "  font-weight: bold;"
+                          "  font-size: 11px;"
+                          "  letter-spacing: 0.8px;"
+                          "}"
+                          "QPushButton#ChoiceButton {"
+                          "  background-color: rgba(18, 18, 24, 225);"
+                          "  color: %3;"
+                          "  border: 1px solid %1;"
+                          "  border-radius: 10px;"
+                          "  padding: 12px 16px;"
+                          "  text-align: left;"
+                          "}"
+                          "QPushButton#ChoiceButton:hover {"
+                          "  border-color: %2;"
+                          "  background-color: rgba(28, 28, 36, 230);"
+                          "}"
+                          "QPushButton#NavButton {"
+                          "  background-color: rgba(30, 30, 38, 200);"
+                          "  color: %3;"
+                          "  border: 1px solid %1;"
+                          "  border-radius: 6px;"
+                          "  padding: 6px 12px;"
+                          "  font-size: 12px;"
+                          "}"
+                          "QPushButton#NavButton:hover {"
+                          "  border-color: %2;"
+                          "  background-color: rgba(40, 40, 50, 220);"
+                          "}"
+                          "QPushButton#NavButton:pressed {"
+                          "  background-color: rgba(50, 50, 60, 240);"
+                          "}")
+                      .arg(palette.borderLight.name())
+                      .arg(palette.accentPrimary.name())
+                      .arg(palette.textPrimary.name()));
 
-    auto *dialogueShadow = new QGraphicsDropShadowEffect(this);
+    auto* dialogueShadow = new QGraphicsDropShadowEffect(this);
     dialogueShadow->setBlurRadius(18);
     dialogueShadow->setOffset(0, 4);
     dialogueShadow->setColor(QColor(0, 0, 0, 180));
@@ -219,8 +216,8 @@ public:
         m_typeTimer->stop();
         return;
       }
-      const int textLength = static_cast<int>(std::min<qsizetype>(
-          m_fullText.size(), std::numeric_limits<int>::max()));
+      const int textLength =
+          static_cast<int>(std::min<qsizetype>(m_fullText.size(), std::numeric_limits<int>::max()));
       m_typeIndex = std::min(m_typeIndex + 1, textLength);
       m_textLabel->setText(m_fullText.left(m_typeIndex));
       if (m_typeIndex >= textLength) {
@@ -236,7 +233,7 @@ public:
     hide();
   }
 
-  void setDialogue(const QString &speaker, const QString &text) {
+  void setDialogue(const QString& speaker, const QString& text) {
     m_nameLabel->setText(speaker.isEmpty() ? "Narrator" : speaker);
     m_namePlate->setVisible(!speaker.isEmpty());
     m_fullText = text;
@@ -250,16 +247,15 @@ public:
     }
   }
 
-  void setSpeakerColor(const QColor &color) {
+  void setSpeakerColor(const QColor& color) {
     if (color.isValid()) {
-      m_nameLabel->setStyleSheet(
-          QString("QLabel#NameLabel { color: %1; }").arg(color.name()));
+      m_nameLabel->setStyleSheet(QString("QLabel#NameLabel { color: %1; }").arg(color.name()));
     } else {
       m_nameLabel->setStyleSheet(QString());
     }
   }
 
-  void setDialogueImmediate(const QString &speaker, const QString &text) {
+  void setDialogueImmediate(const QString& speaker, const QString& text) {
     m_nameLabel->setText(speaker.isEmpty() ? "Narrator" : speaker);
     m_namePlate->setVisible(!speaker.isEmpty());
     m_fullText = text;
@@ -270,25 +266,24 @@ public:
 
   void clearDialogue() { setDialogue(QString(), QString()); }
 
-  void setChoices(const QStringList &choices) {
+  void setChoices(const QStringList& choices) {
     clearChoices();
     if (choices.isEmpty()) {
       return;
     }
     for (int i = 0; i < choices.size(); ++i) {
-      auto *button = new QPushButton(choices.at(i), m_choicesBox);
+      auto* button = new QPushButton(choices.at(i), m_choicesBox);
       button->setObjectName("ChoiceButton");
       button->setMinimumHeight(38);
       button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-      connect(button, &QPushButton::clicked, this,
-              [this, i]() { emit choiceSelected(i); });
+      connect(button, &QPushButton::clicked, this, [this, i]() { emit choiceSelected(i); });
       m_choicesLayout->addWidget(button);
     }
     m_choicesBox->setVisible(true);
   }
 
   void clearChoices() {
-    QLayoutItem *item;
+    QLayoutItem* item;
     while ((item = m_choicesLayout->takeAt(0)) != nullptr) {
       delete item->widget();
       delete item;
@@ -328,14 +323,14 @@ signals:
   void nextRequested();
 
 protected:
-  void mousePressEvent(QMouseEvent *event) override {
+  void mousePressEvent(QMouseEvent* event) override {
     if (event->button() == Qt::LeftButton) {
       emit advanceRequested();
     }
     QWidget::mousePressEvent(event);
   }
 
-  void keyPressEvent(QKeyEvent *event) override {
+  void keyPressEvent(QKeyEvent* event) override {
     if (event->key() == Qt::Key_Space || event->key() == Qt::Key_Return ||
         event->key() == Qt::Key_Enter) {
       emit advanceRequested();
@@ -356,12 +351,12 @@ protected:
     QWidget::keyPressEvent(event);
   }
 
-  bool eventFilter(QObject *watched, QEvent *event) override {
+  bool eventFilter(QObject* watched, QEvent* event) override {
     if (event->type() == QEvent::MouseButtonPress) {
       if (m_choicesBox && m_choicesBox->isVisible()) {
         return QWidget::eventFilter(watched, event);
       }
-      auto *mouseEvent = static_cast<QMouseEvent *>(event);
+      auto* mouseEvent = static_cast<QMouseEvent*>(event);
       if (mouseEvent->button() == Qt::LeftButton) {
         emit advanceRequested();
         return true;
@@ -371,17 +366,17 @@ protected:
   }
 
 private:
-  QLabel *m_previewBadge = nullptr;
-  QFrame *m_dialogueBox = nullptr;
-  QFrame *m_namePlate = nullptr;
-  QLabel *m_nameLabel = nullptr;
-  QLabel *m_textLabel = nullptr;
-  QWidget *m_choicesBox = nullptr;
-  QVBoxLayout *m_choicesLayout = nullptr;
-  QWidget *m_navControls = nullptr;
-  QPushButton *m_prevButton = nullptr;
-  QPushButton *m_nextButton = nullptr;
-  QTimer *m_typeTimer = nullptr;
+  QLabel* m_previewBadge = nullptr;
+  QFrame* m_dialogueBox = nullptr;
+  QFrame* m_namePlate = nullptr;
+  QLabel* m_nameLabel = nullptr;
+  QLabel* m_textLabel = nullptr;
+  QWidget* m_choicesBox = nullptr;
+  QVBoxLayout* m_choicesLayout = nullptr;
+  QWidget* m_navControls = nullptr;
+  QPushButton* m_prevButton = nullptr;
+  QPushButton* m_nextButton = nullptr;
+  QTimer* m_typeTimer = nullptr;
   QString m_fullText;
   int m_typeIndex = 0;
   int m_typeIntervalMs = 30;
@@ -395,13 +390,12 @@ class NMSceneGLViewport : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
-  explicit NMSceneGLViewport(QWidget *parent = nullptr)
-      : QOpenGLWidget(parent) {
+  explicit NMSceneGLViewport(QWidget* parent = nullptr) : QOpenGLWidget(parent) {
     setAutoFillBackground(false);
   }
 
   ~NMSceneGLViewport() override {
-    auto *ctx = context();
+    auto* ctx = context();
     if (!ctx || !ctx->isValid()) {
       m_textureCache.clear();
       return;
@@ -413,7 +407,7 @@ public:
       return;
     }
 
-    for (const auto &entry : m_textureCache) {
+    for (const auto& entry : m_textureCache) {
       if (entry.id != 0) {
         GLuint tex = entry.id;
         glDeleteTextures(1, &tex);
@@ -423,8 +417,7 @@ public:
     m_textureCache.clear();
   }
 
-  void setSnapshot(const ::NovelMind::editor::SceneSnapshot &snapshot,
-                   const QString &assetsRoot) {
+  void setSnapshot(const ::NovelMind::editor::SceneSnapshot& snapshot, const QString& assetsRoot) {
     m_snapshot = snapshot;
     m_assetsRoot = assetsRoot;
     if (snapshot.camera.valid) {
@@ -439,17 +432,13 @@ public:
   void setRenderChoice(bool enabled) { m_renderChoice = enabled; }
 
   [[nodiscard]] QString fontAtlasStatus() const { return m_fontAtlasStatus; }
-  [[nodiscard]] bool hasFontAtlas() const {
-    return m_fontAtlas && m_fontAtlas->isValid();
-  }
+  [[nodiscard]] bool hasFontAtlas() const { return m_fontAtlas && m_fontAtlas->isValid(); }
 
-  void setViewCamera(const QPointF &center, qreal zoom) {
-    m_camera.setViewportSize(static_cast<f32>(width()),
-                             static_cast<f32>(height()));
+  void setViewCamera(const QPointF& center, qreal zoom) {
+    m_camera.setViewportSize(static_cast<f32>(width()), static_cast<f32>(height()));
     const f32 baseX = m_snapshot.camera.valid ? m_snapshot.camera.x : 0.0f;
     const f32 baseY = m_snapshot.camera.valid ? m_snapshot.camera.y : 0.0f;
-    const f32 baseZoom =
-        m_snapshot.camera.valid ? m_snapshot.camera.zoom : 1.0f;
+    const f32 baseZoom = m_snapshot.camera.valid ? m_snapshot.camera.zoom : 1.0f;
     const f32 centerX = static_cast<f32>(center.x());
     const f32 centerY = static_cast<f32>(center.y());
     const f32 offsetX = centerX - baseX;
@@ -505,7 +494,7 @@ private:
     i32 height = 0;
   };
 
-  GLTexture uploadTexture(const QImage &img, const QString &cacheKey) {
+  GLTexture uploadTexture(const QImage& img, const QString& cacheKey) {
     QImage glImg = img.convertToFormat(QImage::Format_RGBA8888);
     GLTexture tex;
     glGenTextures(1, &tex.id);
@@ -514,8 +503,8 @@ private:
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glImg.width(), glImg.height(), 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, glImg.constBits());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, glImg.width(), glImg.height(), 0, GL_RGBA,
+                 GL_UNSIGNED_BYTE, glImg.constBits());
 
     tex.width = glImg.width();
     tex.height = glImg.height();
@@ -523,19 +512,16 @@ private:
     return tex;
   }
 
-  GLTexture placeholderTexture(const QString &label,
-                               scene::SceneObjectType type) {
-    QSize sz = (type == scene::SceneObjectType::Background) ? QSize(1280, 720)
-                                                            : QSize(400, 600);
+  GLTexture placeholderTexture(const QString& label, scene::SceneObjectType type) {
+    QSize sz = (type == scene::SceneObjectType::Background) ? QSize(1280, 720) : QSize(400, 600);
     QImage img(sz, QImage::Format_ARGB32_Premultiplied);
     if (img.isNull()) {
       QImage fallback(QSize(1, 1), QImage::Format_ARGB32_Premultiplied);
       fallback.fill(Qt::transparent);
       return uploadTexture(fallback, label);
     }
-    QColor fill = (type == scene::SceneObjectType::Background)
-                      ? QColor(40, 50, 70)
-                      : QColor(70, 80, 95);
+    QColor fill =
+        (type == scene::SceneObjectType::Background) ? QColor(40, 50, 70) : QColor(70, 80, 95);
     img.fill(fill);
     QPainter p(&img);
     if (!p.isActive()) {
@@ -550,7 +536,7 @@ private:
     return uploadTexture(QPixmap::fromImage(img).toImage(), label);
   }
 
-  GLTexture resolveTexture(const QString &hint, scene::SceneObjectType type) {
+  GLTexture resolveTexture(const QString& hint, scene::SceneObjectType type) {
     if (m_textureCache.contains(hint)) {
       return m_textureCache.value(hint);
     }
@@ -563,8 +549,8 @@ private:
     QStringList exts = {"", ".png", ".jpg", ".jpeg"};
     QStringList prefixes = {m_assetsRoot + "/", m_assetsRoot + "/Images/",
                             m_assetsRoot + "/images/", QString()};
-    for (const auto &prefix : prefixes) {
-      for (const auto &ext : exts) {
+    for (const auto& prefix : prefixes) {
+      for (const auto& ext : exts) {
         const QString path = prefix + baseName + ext;
         if (!path.isEmpty() && QFileInfo::exists(path)) {
           QImage img(path);
@@ -582,23 +568,20 @@ private:
     glViewport(0, 0, width(), height());
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glOrtho(0.0, static_cast<GLdouble>(width()),
-            static_cast<GLdouble>(height()), 0.0, -1.0, 1.0);
+    glOrtho(0.0, static_cast<GLdouble>(width()), static_cast<GLdouble>(height()), 0.0, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     const auto viewTransform = m_camera.getViewTransform();
-    glTranslatef(static_cast<GLfloat>(width()) * 0.5f,
-                 static_cast<GLfloat>(height()) * 0.5f, 0.0f);
+    glTranslatef(static_cast<GLfloat>(width()) * 0.5f, static_cast<GLfloat>(height()) * 0.5f, 0.0f);
     glScalef(viewTransform.scaleX, viewTransform.scaleY, 1.0f);
     glRotatef(-viewTransform.rotation, 0.0f, 0.0f, 1.0f);
     glTranslatef(-viewTransform.x, -viewTransform.y, 0.0f);
   }
 
-  static QString textureHintFromState(const scene::SceneObjectState &state) {
-    const char *keys[] = {"textureId", "texture", "image", "sprite",
-                          "background"};
-    for (auto *key : keys) {
+  static QString textureHintFromState(const scene::SceneObjectState& state) {
+    const char* keys[] = {"textureId", "texture", "image", "sprite", "background"};
+    for (auto* key : keys) {
       auto it = state.properties.find(key);
       if (it != state.properties.end()) {
         return QString::fromStdString(it->second);
@@ -608,30 +591,27 @@ private:
   }
 
   void renderObjects() {
-    std::vector<const scene::SceneObjectState *> sorted;
+    std::vector<const scene::SceneObjectState*> sorted;
     sorted.reserve(m_snapshot.objects.size());
-    for (const auto &obj : m_snapshot.objects) {
+    for (const auto& obj : m_snapshot.objects) {
       sorted.push_back(&obj);
     }
-    std::sort(
-        sorted.begin(), sorted.end(),
-        [](const scene::SceneObjectState *a, const scene::SceneObjectState *b) {
-          return a->zOrder < b->zOrder;
-        });
+    std::sort(sorted.begin(), sorted.end(),
+              [](const scene::SceneObjectState* a, const scene::SceneObjectState* b) {
+                return a->zOrder < b->zOrder;
+              });
 
     glEnable(GL_TEXTURE_2D);
 
-    for (const auto *state : sorted) {
+    for (const auto* state : sorted) {
       if (!state->visible) {
         continue;
       }
 
       GLTexture tex = resolveTexture(textureHintFromState(*state), state->type);
 
-      const f32 drawW =
-          (state->width > 0.0f) ? state->width : static_cast<f32>(tex.width);
-      const f32 drawH =
-          (state->height > 0.0f) ? state->height : static_cast<f32>(tex.height);
+      const f32 drawW = (state->width > 0.0f) ? state->width : static_cast<f32>(tex.width);
+      const f32 drawH = (state->height > 0.0f) ? state->height : static_cast<f32>(tex.height);
 
       const f32 anchorX = drawW * 0.5f;
       const f32 anchorY = drawH * 0.5f;
@@ -694,9 +674,8 @@ private:
 
     renderer::TextLayout layout = m_textLayout.layout(m_snapshot.dialogueText);
 
-    const auto &atlasTex = m_fontAtlas->getAtlasTexture();
-    auto atlasId = static_cast<GLuint>(
-        reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
+    const auto& atlasTex = m_fontAtlas->getAtlasTexture();
+    auto atlasId = static_cast<GLuint>(reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
     if (atlasId == 0) {
       return;
     }
@@ -708,16 +687,15 @@ private:
     f32 originY = static_cast<f32>(height()) - (layout.totalHeight + 40.0f);
 
     f32 penY = originY;
-    for (const auto &line : layout.lines) {
+    for (const auto& line : layout.lines) {
       f32 penX = originX;
       const f32 baseline = penY + line.height * 0.8f;
-      for (const auto &segment : line.segments) {
+      for (const auto& segment : line.segments) {
         if (segment.isCommand()) {
           continue;
         }
         for (char c : segment.text) {
-          const auto *glyph =
-              m_fontAtlas->getGlyph(static_cast<unsigned char>(c));
+          const auto* glyph = m_fontAtlas->getGlyph(static_cast<unsigned char>(c));
           if (!glyph) {
             continue;
           }
@@ -734,8 +712,7 @@ private:
           glTexCoord2f(glyph->uv.x + glyph->uv.width, glyph->uv.y);
           glVertex2f(x1, y0);
 
-          glTexCoord2f(glyph->uv.x + glyph->uv.width,
-                       glyph->uv.y + glyph->uv.height);
+          glTexCoord2f(glyph->uv.x + glyph->uv.width, glyph->uv.y + glyph->uv.height);
           glVertex2f(x1, y1);
 
           glTexCoord2f(glyph->uv.x, glyph->uv.y + glyph->uv.height);
@@ -770,9 +747,9 @@ private:
     const f32 choiceWidth = static_cast<f32>(width()) * 0.6f;
     const f32 choiceHeight = 40.0f;
     const f32 choiceSpacing = 12.0f;
-    const f32 totalHeight = static_cast<f32>(m_snapshot.choiceOptions.size()) *
-                                (choiceHeight + choiceSpacing) -
-                            choiceSpacing;
+    const f32 totalHeight =
+        static_cast<f32>(m_snapshot.choiceOptions.size()) * (choiceHeight + choiceSpacing) -
+        choiceSpacing;
 
     f32 originX = (static_cast<f32>(width()) - choiceWidth) * 0.5f;
     f32 originY = (static_cast<f32>(height()) - totalHeight) * 0.5f;
@@ -780,19 +757,15 @@ private:
     glDisable(GL_TEXTURE_2D);
 
     for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
-      const f32 y =
-          originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
 
       // Draw choice background
-      renderer::Color bgColor =
-          (static_cast<i32>(i) == m_snapshot.selectedChoice)
-              ? renderer::Color(40, 50, 70, 230)
-              : renderer::Color(20, 25, 35, 220);
+      renderer::Color bgColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
+                                    ? renderer::Color(40, 50, 70, 230)
+                                    : renderer::Color(20, 25, 35, 220);
 
-      glColor4f(static_cast<f32>(bgColor.r) / 255.0f,
-                static_cast<f32>(bgColor.g) / 255.0f,
-                static_cast<f32>(bgColor.b) / 255.0f,
-                static_cast<f32>(bgColor.a) / 255.0f);
+      glColor4f(static_cast<f32>(bgColor.r) / 255.0f, static_cast<f32>(bgColor.g) / 255.0f,
+                static_cast<f32>(bgColor.b) / 255.0f, static_cast<f32>(bgColor.a) / 255.0f);
 
       glBegin(GL_QUADS);
       glVertex2f(originX, y);
@@ -802,15 +775,12 @@ private:
       glEnd();
 
       // Draw border
-      renderer::Color borderColor =
-          (static_cast<i32>(i) == m_snapshot.selectedChoice)
-              ? renderer::Color(100, 140, 200, 255)
-              : renderer::Color(60, 70, 90, 255);
+      renderer::Color borderColor = (static_cast<i32>(i) == m_snapshot.selectedChoice)
+                                        ? renderer::Color(100, 140, 200, 255)
+                                        : renderer::Color(60, 70, 90, 255);
 
-      glColor4f(static_cast<f32>(borderColor.r) / 255.0f,
-                static_cast<f32>(borderColor.g) / 255.0f,
-                static_cast<f32>(borderColor.b) / 255.0f,
-                static_cast<f32>(borderColor.a) / 255.0f);
+      glColor4f(static_cast<f32>(borderColor.r) / 255.0f, static_cast<f32>(borderColor.g) / 255.0f,
+                static_cast<f32>(borderColor.b) / 255.0f, static_cast<f32>(borderColor.a) / 255.0f);
 
       glLineWidth(2.0f);
       glBegin(GL_LINE_LOOP);
@@ -824,9 +794,8 @@ private:
     glEnable(GL_TEXTURE_2D);
 
     // Render choice text
-    const auto &atlasTex = m_fontAtlas->getAtlasTexture();
-    auto atlasId = static_cast<GLuint>(
-        reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
+    const auto& atlasTex = m_fontAtlas->getAtlasTexture();
+    auto atlasId = static_cast<GLuint>(reinterpret_cast<uintptr_t>(atlasTex.getNativeHandle()));
     if (atlasId == 0) {
       return;
     }
@@ -835,16 +804,14 @@ private:
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     for (size_t i = 0; i < m_snapshot.choiceOptions.size(); ++i) {
-      const f32 y =
-          originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
-      const std::string &choiceText = m_snapshot.choiceOptions[i];
+      const f32 y = originY + static_cast<f32>(i) * (choiceHeight + choiceSpacing);
+      const std::string& choiceText = m_snapshot.choiceOptions[i];
 
       f32 penX = originX + 16.0f;
       const f32 baseline = y + choiceHeight * 0.65f;
 
       for (char c : choiceText) {
-        const auto *glyph =
-            m_fontAtlas->getGlyph(static_cast<unsigned char>(c));
+        const auto* glyph = m_fontAtlas->getGlyph(static_cast<unsigned char>(c));
         if (!glyph) {
           continue;
         }
@@ -861,8 +828,7 @@ private:
         glTexCoord2f(glyph->uv.x + glyph->uv.width, glyph->uv.y);
         glVertex2f(x1, y0);
 
-        glTexCoord2f(glyph->uv.x + glyph->uv.width,
-                     glyph->uv.y + glyph->uv.height);
+        glTexCoord2f(glyph->uv.x + glyph->uv.width, glyph->uv.y + glyph->uv.height);
         glVertex2f(x1, y1);
 
         glTexCoord2f(glyph->uv.x, glyph->uv.y + glyph->uv.height);
@@ -898,7 +864,7 @@ private:
         "C:/Windows/Fonts/arial.ttf"};
 
     std::vector<u8> fontData;
-    for (const auto &path : candidateFonts) {
+    for (const auto& path : candidateFonts) {
       QFile f(path);
       if (f.exists() && f.open(QIODevice::ReadOnly)) {
         auto bytes = f.readAll();
@@ -910,8 +876,7 @@ private:
 
     if (fontData.empty()) {
       m_fontAtlasStatus = "No system font found. Dialogue preview disabled.";
-      NOVELMIND_LOG_WARN(
-          "FontAtlas: no system font found, dialogue text preview disabled");
+      NOVELMIND_LOG_WARN("FontAtlas: no system font found, dialogue text preview disabled");
       return;
     }
 
@@ -929,8 +894,7 @@ private:
                                    "0123456789.,!?;:-_()[]{}<>/\\'\" ");
     if (res.isError()) {
       m_fontAtlasStatus = "Font atlas build failed. Dialogue preview disabled.";
-      NOVELMIND_LOG_WARN(std::string("FontAtlas: build failed: ") +
-                         res.error());
+      NOVELMIND_LOG_WARN(std::string("FontAtlas: build failed: ") + res.error());
       return;
     }
 

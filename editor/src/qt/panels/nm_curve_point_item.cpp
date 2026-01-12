@@ -7,11 +7,9 @@
 
 namespace NovelMind::editor::qt {
 
-NMCurvePointItem::NMCurvePointItem(CurvePointId pointId, qreal time,
-                                   qreal value, const QColor &color,
-                                   QGraphicsItem *parent)
-    : QGraphicsObject(parent), m_pointId(pointId), m_time(time), m_value(value),
-      m_color(color) {
+NMCurvePointItem::NMCurvePointItem(CurvePointId pointId, qreal time, qreal value,
+                                   const QColor& color, QGraphicsItem* parent)
+    : QGraphicsObject(parent), m_pointId(pointId), m_time(time), m_value(value), m_color(color) {
   setFlag(QGraphicsItem::ItemIsMovable, false);
   setFlag(QGraphicsItem::ItemIsSelectable, false);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges, true);
@@ -28,9 +26,8 @@ QRectF NMCurvePointItem::boundingRect() const {
   return QRectF(-radius, -radius, radius * 2, radius * 2);
 }
 
-void NMCurvePointItem::paint(QPainter *painter,
-                             const QStyleOptionGraphicsItem *option,
-                             QWidget *widget) {
+void NMCurvePointItem::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
+                             QWidget* widget) {
   Q_UNUSED(option);
   Q_UNUSED(widget);
 
@@ -77,7 +74,7 @@ void NMCurvePointItem::setPointSelected(bool selected) {
   }
 }
 
-void NMCurvePointItem::setColor(const QColor &color) {
+void NMCurvePointItem::setColor(const QColor& color) {
   if (m_color != color) {
     m_color = color;
     update();
@@ -91,7 +88,7 @@ void NMCurvePointItem::updatePositionFromNormalized() {
   }
 }
 
-void NMCurvePointItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
+void NMCurvePointItem::mousePressEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     m_dragging = true;
     bool additiveSelection = event->modifiers() & Qt::ControlModifier;
@@ -102,7 +99,7 @@ void NMCurvePointItem::mousePressEvent(QGraphicsSceneMouseEvent *event) {
   }
 }
 
-void NMCurvePointItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
+void NMCurvePointItem::mouseMoveEvent(QGraphicsSceneMouseEvent* event) {
   if (m_dragging && m_sceneToNormalized) {
     QPointF scenePos = event->scenePos();
     QPointF normalized = m_sceneToNormalized(scenePos);
@@ -124,7 +121,7 @@ void NMCurvePointItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event) {
   }
 }
 
-void NMCurvePointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
+void NMCurvePointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     if (m_dragging) {
       m_dragging = false;
@@ -136,7 +133,7 @@ void NMCurvePointItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event) {
   }
 }
 
-void NMCurvePointItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
+void NMCurvePointItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event) {
   if (event->button() == Qt::LeftButton) {
     emit doubleClicked(m_pointId);
     event->accept();
@@ -145,13 +142,13 @@ void NMCurvePointItem::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event) {
   }
 }
 
-void NMCurvePointItem::hoverEnterEvent(QGraphicsSceneHoverEvent *event) {
+void NMCurvePointItem::hoverEnterEvent(QGraphicsSceneHoverEvent* event) {
   Q_UNUSED(event);
   m_hovered = true;
   update();
 }
 
-void NMCurvePointItem::hoverLeaveEvent(QGraphicsSceneHoverEvent *event) {
+void NMCurvePointItem::hoverLeaveEvent(QGraphicsSceneHoverEvent* event) {
   Q_UNUSED(event);
   m_hovered = false;
   update();

@@ -15,11 +15,10 @@ namespace NovelMind::editor::qt {
 // ThumbnailLoadTask Implementation
 // =============================================================================
 
-ThumbnailLoadTask::ThumbnailLoadTask(
-    const QString &path, const QSize &size,
-    std::shared_ptr<std::atomic<bool>> cancelled, QObject *receiver)
-    : m_path(path), m_size(size), m_cancelled(std::move(cancelled)),
-      m_receiver(receiver) {
+ThumbnailLoadTask::ThumbnailLoadTask(const QString& path, const QSize& size,
+                                     std::shared_ptr<std::atomic<bool>> cancelled,
+                                     QObject* receiver)
+    : m_path(path), m_size(size), m_cancelled(std::move(cancelled)), m_receiver(receiver) {
   setAutoDelete(true);
 }
 
@@ -74,8 +73,8 @@ void ThumbnailLoadTask::run() {
   // Thread-safe delivery via queued connection
   // Issue #173: Use local copy of QPointer data to prevent TOCTOU race
   // The QPointer check and subsequent use must use the same pointer value
-  if (auto *receiver = m_receiver.data()) {
-    auto *loader = qobject_cast<LazyThumbnailLoader *>(receiver);
+  if (auto* receiver = m_receiver.data()) {
+    auto* loader = qobject_cast<LazyThumbnailLoader*>(receiver);
     if (loader && !loader->isShuttingDown()) {
       // Use QMetaObject::invokeMethod for guaranteed thread-safe delivery
       // This ensures the slot is called in the receiver's thread
@@ -83,8 +82,7 @@ void ThumbnailLoadTask::run() {
           loader,
           [loader, path = m_path, pixmap, lastModified = fileInfo.lastModified(),
            size = fileInfo.size()]() {
-            emit loader->thumbnailLoadedInternal(path, pixmap, lastModified,
-                                                 size);
+            emit loader->thumbnailLoadedInternal(path, pixmap, lastModified, size);
           },
           Qt::QueuedConnection);
     }
@@ -95,11 +93,10 @@ void ThumbnailLoadTask::run() {
 // LazyThumbnailLoader Implementation
 // =============================================================================
 
-LazyThumbnailLoader::LazyThumbnailLoader(QObject *parent)
+LazyThumbnailLoader::LazyThumbnailLoader(QObject* parent)
     : LazyThumbnailLoader(ThumbnailLoaderConfig{}, parent) {}
 
-LazyThumbnailLoader::LazyThumbnailLoader(const ThumbnailLoaderConfig &config,
-                                         QObject *parent)
+LazyThumbnailLoader::LazyThumbnailLoader(const ThumbnailLoaderConfig& config, QObject* parent)
     : QObject(parent), m_config(config) {
   m_cache.setMaxCost(config.maxCacheSizeKB);
 
@@ -124,8 +121,7 @@ LazyThumbnailLoader::~LazyThumbnailLoader() {
   }
 }
 
-bool LazyThumbnailLoader::requestThumbnail(const QString &path,
-                                           const QSize &size, int priority) {
+bool LazyThumbnailLoader::requestThumbnail(const QString& path, const QSize& size, int priority) {
   if (m_shuttingDown.load()) {
     return false;
   }
@@ -135,7 +131,7 @@ bool LazyThumbnailLoader::requestThumbnail(const QString &path,
   QMutexLocker locker(&m_mutex);
 
   // Check cache first
-  if (auto *cached = m_cache.object(key)) {
+  if (auto* cached = m_cache.object(key)) {
     // Validate cache entry
     QFileInfo info(path);
     if (info.exists() && info.lastModified() == cached->lastModified &&
@@ -172,15 +168,14 @@ bool LazyThumbnailLoader::requestThumbnail(const QString &path,
   return false;
 }
 
-QPixmap LazyThumbnailLoader::getCached(const QString &path) const {
+QPixmap LazyThumbnailLoader::getCached(const QString& path) const {
   QMutexLocker locker(&m_mutex);
 
   // Try all common sizes
   for (int size : {64, 80, 96, 128}) {
     QString key = cacheKey(path, QSize(size, size));
-    if (auto *cached = m_cache.object(key)) {
-      const_cast<CachedThumbnail *>(cached)->accessTime =
-          m_accessCounter.fetch_add(1);
+    if (auto* cached = m_cache.object(key)) {
+      const_cast<CachedThumbnail*>(cached)->accessTime = m_accessCounter.fetch_add(1);
       m_hitCount.fetch_add(1);
       return cached->pixmap;
     }
@@ -190,12 +185,12 @@ QPixmap LazyThumbnailLoader::getCached(const QString &path) const {
   return QPixmap();
 }
 
-bool LazyThumbnailLoader::isThumbnailValid(const QString &path) const {
+bool LazyThumbnailLoader::isThumbnailValid(const QString& path) const {
   QMutexLocker locker(&m_mutex);
 
   for (int size : {64, 80, 96, 128}) {
     QString key = cacheKey(path, QSize(size, size));
-    if (auto *cached = m_cache.object(key)) {
+    if (auto* cached = m_cache.object(key)) {
       QFileInfo info(path);
       if (info.exists() && info.lastModified() == cached->lastModified &&
           info.size() == cached->fileSize) {
@@ -215,13 +210,13 @@ void LazyThumbnailLoader::cancelPending() {
   m_pendingPaths.clear();
 
   // Signal cancellation to all active tasks
-  for (auto &cancelFlag : m_activeTasks) {
+  for (auto& cancelFlag : m_activeTasks) {
     cancelFlag->store(true);
   }
   m_activeTasks.clear();
 }
 
-void LazyThumbnailLoader::cancelRequest(const QString &path) {
+void LazyThumbnailLoader::cancelRequest(const QString& path) {
   QMutexLocker locker(&m_mutex);
 
   // Remove from pending
@@ -257,7 +252,7 @@ LazyThumbnailLoader::CacheStats LazyThumbnailLoader::getStats() const {
   return stats;
 }
 
-void LazyThumbnailLoader::setConfig(const ThumbnailLoaderConfig &config) {
+void LazyThumbnailLoader::setConfig(const ThumbnailLoaderConfig& config) {
   QMutexLocker locker(&m_mutex);
   m_config = config;
   m_cache.setMaxCost(config.maxCacheSizeKB);
@@ -266,10 +261,8 @@ void LazyThumbnailLoader::setConfig(const ThumbnailLoaderConfig &config) {
   }
 }
 
-void LazyThumbnailLoader::onThumbnailLoaded(const QString &path,
-                                            const QPixmap &pixmap,
-                                            const QDateTime &lastModified,
-                                            qint64 fileSize) {
+void LazyThumbnailLoader::onThumbnailLoaded(const QString& path, const QPixmap& pixmap,
+                                            const QDateTime& lastModified, qint64 fileSize) {
   if (m_shuttingDown.load()) {
     return;
   }
@@ -288,8 +281,7 @@ void LazyThumbnailLoader::onThumbnailLoaded(const QString &path,
 
   // Cache the result
   QString key = cacheKey(path, pixmap.size());
-  auto *entry = new CachedThumbnail{pixmap, lastModified, fileSize,
-                                    m_accessCounter.fetch_add(1)};
+  auto* entry = new CachedThumbnail{pixmap, lastModified, fileSize, m_accessCounter.fetch_add(1)};
 
   m_cache.insert(key, entry, entry->costKB());
 
@@ -310,8 +302,7 @@ void LazyThumbnailLoader::processQueue() {
   QMutexLocker locker(&m_mutex);
 
   // Check if we can start more tasks
-  while (m_activeTasks.size() < m_config.maxConcurrentTasks &&
-         !m_pendingQueue.isEmpty()) {
+  while (m_activeTasks.size() < m_config.maxConcurrentTasks && !m_pendingQueue.isEmpty()) {
     ThumbnailRequest request = m_pendingQueue.dequeue();
     m_pendingPaths.remove(request.path);
 
@@ -325,8 +316,7 @@ void LazyThumbnailLoader::processQueue() {
     m_activeTasks[request.path] = cancelFlag;
 
     // Create and start task
-    auto *task =
-        new ThumbnailLoadTask(request.path, request.size, cancelFlag, this);
+    auto* task = new ThumbnailLoadTask(request.path, request.size, cancelFlag, this);
     m_threadPool->start(task);
   }
 }
@@ -336,8 +326,7 @@ void LazyThumbnailLoader::trimCache() {
   // This method is here for future custom LRU policies if needed
 }
 
-QString LazyThumbnailLoader::cacheKey(const QString &path,
-                                      const QSize &size) const {
+QString LazyThumbnailLoader::cacheKey(const QString& path, const QSize& size) const {
   return QString("%1_%2x%3").arg(path).arg(size.width()).arg(size.height());
 }
 

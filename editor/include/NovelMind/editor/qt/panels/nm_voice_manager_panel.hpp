@@ -27,6 +27,8 @@
 #include <QHash>
 #include <QPointer>
 #include <QQueue>
+#include <QRunnable>
+#include <QThreadPool>
 #include <QToolBar>
 #include <QWidget>
 
@@ -81,6 +83,22 @@ struct DurationCacheEntry {
 };
 
 /**
+ * @brief Task for probing audio file duration in background
+ */
+class DurationProbeTask : public QRunnable {
+public:
+  DurationProbeTask(const QString& path, std::shared_ptr<std::atomic<bool>> cancelled,
+                    QObject* receiver);
+
+  void run() override;
+
+private:
+  QString m_path;
+  std::shared_ptr<std::atomic<bool>> m_cancelled;
+  QPointer<QObject> m_receiver;
+};
+
+/**
  * @brief Voice Manager panel
  *
  * Uses IAudioPlayer interface for playback, enabling:
@@ -98,8 +116,7 @@ public:
    * @param audioPlayer Optional audio player for dependency injection
    *                    If nullptr, uses ServiceLocator or creates QtAudioPlayer
    */
-  explicit NMVoiceManagerPanel(QWidget *parent = nullptr,
-                               IAudioPlayer *audioPlayer = nullptr);
+  explicit NMVoiceManagerPanel(QWidget* parent = nullptr, IAudioPlayer* audioPlayer = nullptr);
   ~NMVoiceManagerPanel() override;
 
   void onInitialize() override;
@@ -119,8 +136,7 @@ public:
   /**
    * @brief Get list of missing voice lines for current locale
    */
-  [[nodiscard]] std::vector<const ::NovelMind::audio::VoiceManifestLine *>
-  getMissingLines() const;
+  [[nodiscard]] std::vector<const ::NovelMind::audio::VoiceManifestLine*> getMissingLines() const;
 
   /**
    * @brief Get list of unmatched lines (lines with no voice files)
@@ -130,30 +146,34 @@ public:
   /**
    * @brief Export voice mapping to CSV
    */
-  bool exportToCsv(const QString &filePath);
+  bool exportToCsv(const QString& filePath);
 
   /**
    * @brief Import voice mapping from CSV
    */
-  bool importFromCsv(const QString &filePath);
+  bool importFromCsv(const QString& filePath);
 
 signals:
   /**
    * @brief Emitted when a voice line is selected
    */
-  void voiceLineSelected(const QString &dialogueId);
+  void voiceLineSelected(const QString& dialogueId);
 
   /**
    * @brief Emitted when a voice file assignment changes
    */
-  void voiceFileChanged(const QString &dialogueId,
-                        const QString &voiceFilePath);
+  void voiceFileChanged(const QString& dialogueId, const QString& voiceFilePath);
 
   /**
    * @brief Emitted when a playback error occurs
    * @param errorMessage Human-readable error description
    */
-  void playbackError(const QString &errorMessage);
+  void playbackError(const QString& errorMessage);
+
+  /**
+   * @brief Internal signal for thread-safe duration delivery
+   */
+  void durationProbedInternal(const QString& filePath, double duration);
 
 public slots:
   /**
@@ -161,14 +181,14 @@ public slots:
    * @param lineId Voice line ID that was recorded
    * @param locale Locale of the recording
    */
-  void onRecordingCompleted(const QString &lineId, const QString &locale);
+  void onRecordingCompleted(const QString& lineId, const QString& locale);
 
   /**
    * @brief Handle file status change from manifest
    * @param lineId Voice line ID that changed
    * @param locale Locale that changed
    */
-  void onFileStatusChanged(const QString &lineId, const QString &locale);
+  void onFileStatusChanged(const QString& lineId, const QString& locale);
 
 private slots:
   void onScanClicked();
@@ -179,8 +199,8 @@ private slots:
   void onValidateManifestClicked();
   void onPlayClicked();
   void onStopClicked();
-  void onLineSelected(QTreeWidgetItem *item, int column);
-  void onFilterChanged(const QString &text);
+  void onLineSelected(QTreeWidgetItem* item, int column);
+  void onFilterChanged(const QString& text);
   void onCharacterFilterChanged(int index);
   void onLocaleFilterChanged(int index);
   void onStatusFilterChanged(int index);
@@ -204,6 +224,7 @@ private slots:
   // Async duration probing slots
   void onProbeDurationFinished();
   void processNextDurationProbe();
+  void onDurationProbed(const QString& filePath, double duration);
 
 private:
   void setupUI();
@@ -216,54 +237,54 @@ private:
   void updateStatistics();
   void scanScriptsForDialogue();
   void scanVoiceFolder();
-  void matchVoiceToDialogue(const QString &voiceFile);
-  QString generateDialogueId(const QString &scriptPath, int lineNumber) const;
-  bool playVoiceFile(const QString &filePath);
+  void matchVoiceToDialogue(const QString& voiceFile);
+  QString generateDialogueId(const QString& scriptPath, int lineNumber) const;
+  bool playVoiceFile(const QString& filePath);
   void stopPlayback();
   void resetPlaybackUI();
-  void setPlaybackError(const QString &message);
+  void setPlaybackError(const QString& message);
   QString formatDuration(qint64 ms) const;
 
   // Async duration probing
   void startDurationProbing();
-  void probeDurationAsync(const QString &filePath);
-  double getCachedDuration(const QString &filePath) const;
-  void cacheDuration(const QString &filePath, double duration);
+  void probeDurationAsync(const QString& filePath);
+  double getCachedDuration(const QString& filePath) const;
+  void cacheDuration(const QString& filePath, double duration);
   void updateDurationsInList();
 
   // Selection and row management (VM-4)
-  int findRowByLineId(const QString &lineId) const;
-  void updateRowStatus(int row, const QString &lineId, const QString &locale);
+  int findRowByLineId(const QString& lineId) const;
+  void updateRowStatus(int row, const QString& lineId, const QString& locale);
   void flashRow(int row);
   void setupManifestCallbacks();
 
   // UI Elements
-  QSplitter *m_splitter = nullptr;
-  QTreeWidget *m_voiceTree = nullptr;
-  QToolBar *m_toolbar = nullptr;
-  QLineEdit *m_filterEdit = nullptr;
-  QComboBox *m_characterFilter = nullptr;
-  QComboBox *m_localeFilter = nullptr;
-  QComboBox *m_statusFilter = nullptr;
-  QPushButton *m_showUnmatchedBtn = nullptr;
-  QPushButton *m_playBtn = nullptr;
-  QPushButton *m_stopBtn = nullptr;
-  QSlider *m_volumeSlider = nullptr;
-  QLabel *m_durationLabel = nullptr;
-  QProgressBar *m_playbackProgress = nullptr;
-  QLabel *m_statsLabel = nullptr;
+  QSplitter* m_splitter = nullptr;
+  QTreeWidget* m_voiceTree = nullptr;
+  QToolBar* m_toolbar = nullptr;
+  QLineEdit* m_filterEdit = nullptr;
+  QComboBox* m_characterFilter = nullptr;
+  QComboBox* m_localeFilter = nullptr;
+  QComboBox* m_statusFilter = nullptr;
+  QPushButton* m_showUnmatchedBtn = nullptr;
+  QPushButton* m_playBtn = nullptr;
+  QPushButton* m_stopBtn = nullptr;
+  QSlider* m_volumeSlider = nullptr;
+  QLabel* m_durationLabel = nullptr;
+  QProgressBar* m_playbackProgress = nullptr;
+  QLabel* m_statsLabel = nullptr;
 
   // Audio playback - using IAudioPlayer interface (issue #150)
   std::unique_ptr<IAudioPlayer> m_ownedAudioPlayer; // If we created it
-  IAudioPlayer *m_audioPlayer = nullptr;            // Interface pointer
+  IAudioPlayer* m_audioPlayer = nullptr;            // Interface pointer
 
-  // Duration probing player (separate from playback)
-  QPointer<QMediaPlayer> m_probePlayer;
+  // Duration probing - async with QThreadPool (issue #469)
+  QThreadPool* m_probeThreadPool = nullptr;
   QQueue<QString> m_probeQueue;
-  QString m_currentProbeFile;
-  std::atomic<bool> m_isProbing{false};    // Thread-safe flag for probing state
-  mutable std::mutex m_probeMutex;         // Mutex for queue and file access
-  static constexpr int MAX_CONCURRENT_PROBES = 1; // One at a time for stability
+  QHash<QString, std::shared_ptr<std::atomic<bool>>> m_activeProbeTasks;
+  std::atomic<bool> m_isProbing{false};           // Thread-safe flag for probing state
+  mutable std::mutex m_probeMutex;                // Mutex for queue and file access
+  static constexpr int MAX_CONCURRENT_PROBES = 2; // Concurrent probes for better throughput
 
   // Duration cache: path -> {duration, mtime}
   std::unordered_map<std::string, DurationCacheEntry> m_durationCache;

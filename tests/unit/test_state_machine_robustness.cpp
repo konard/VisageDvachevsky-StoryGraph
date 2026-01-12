@@ -31,9 +31,7 @@ using namespace NovelMind::editor;
 // Simple debounce test helper
 class TestDebouncer {
 public:
-  explicit TestDebouncer(int delayMs) : m_delayMs(delayMs) {
-    m_timer.setSingleShot(true);
-  }
+  explicit TestDebouncer(int delayMs) : m_delayMs(delayMs) { m_timer.setSingleShot(true); }
 
   void trigger(std::function<void()> callback) {
     m_pendingCallback = std::move(callback);
@@ -78,7 +76,7 @@ public:
     }
   }
 
-  void block(QObject *obj) {
+  void block(QObject* obj) {
     if (obj) {
       m_blockers.push_back(std::make_unique<QSignalBlocker>(obj));
     }
@@ -98,16 +96,14 @@ private:
 // Batch update guard test helper
 class TestBatchUpdateGuard {
 public:
-  explicit TestBatchUpdateGuard(bool &flag) : m_flag(flag), m_wasActive(flag) {
-    m_flag = true;
-  }
+  explicit TestBatchUpdateGuard(bool& flag) : m_flag(flag), m_wasActive(flag) { m_flag = true; }
 
   ~TestBatchUpdateGuard() { m_flag = m_wasActive; }
 
   bool wasAlreadyActive() const { return m_wasActive; }
 
 private:
-  bool &m_flag;
+  bool& m_flag;
   bool m_wasActive;
 };
 
@@ -115,8 +111,7 @@ private:
 // Debouncer Tests
 // ============================================================================
 
-TEST_CASE("Debouncer flush executes immediately",
-          "[state_machine][debouncer]") {
+TEST_CASE("Debouncer flush executes immediately", "[state_machine][debouncer]") {
   TestDebouncer debouncer(1000); // Long delay
   int callCount = 0;
 
@@ -129,8 +124,7 @@ TEST_CASE("Debouncer flush executes immediately",
   REQUIRE_FALSE(debouncer.isPending());
 }
 
-TEST_CASE("Debouncer cancel stops pending callback",
-          "[state_machine][debouncer]") {
+TEST_CASE("Debouncer cancel stops pending callback", "[state_machine][debouncer]") {
   TestDebouncer debouncer(100);
   int callCount = 0;
 
@@ -145,8 +139,7 @@ TEST_CASE("Debouncer cancel stops pending callback",
   REQUIRE(callCount == 0);
 }
 
-TEST_CASE("Debouncer delay can be changed",
-          "[state_machine][debouncer]") {
+TEST_CASE("Debouncer delay can be changed", "[state_machine][debouncer]") {
   TestDebouncer debouncer(50);
   REQUIRE(debouncer.delay() == 50);
 
@@ -158,8 +151,7 @@ TEST_CASE("Debouncer delay can be changed",
 // BatchSignalBlocker Tests
 // ============================================================================
 
-TEST_CASE("BatchSignalBlocker tracks blocked count",
-          "[state_machine][batch]") {
+TEST_CASE("BatchSignalBlocker tracks blocked count", "[state_machine][batch]") {
   QObject obj1;
   QObject obj2;
   QObject obj3;
@@ -175,21 +167,18 @@ TEST_CASE("BatchSignalBlocker tracks blocked count",
   REQUIRE(blocker.blockedCount() == 3);
 }
 
-TEST_CASE("BatchSignalBlocker completion callback is invoked",
-          "[state_machine][batch]") {
+TEST_CASE("BatchSignalBlocker completion callback is invoked", "[state_machine][batch]") {
   bool callbackCalled = false;
 
   {
     TestBatchSignalBlocker blocker;
-    blocker.setCompletionCallback(
-        [&callbackCalled]() { callbackCalled = true; });
+    blocker.setCompletionCallback([&callbackCalled]() { callbackCalled = true; });
   }
 
   REQUIRE(callbackCalled);
 }
 
-TEST_CASE("BatchSignalBlocker handles null objects gracefully",
-          "[state_machine][batch]") {
+TEST_CASE("BatchSignalBlocker handles null objects gracefully", "[state_machine][batch]") {
   TestBatchSignalBlocker blocker;
 
   blocker.block(nullptr);
@@ -204,8 +193,7 @@ TEST_CASE("BatchSignalBlocker handles null objects gracefully",
 // BatchUpdateGuard Tests
 // ============================================================================
 
-TEST_CASE("BatchUpdateGuard sets and restores flag",
-          "[state_machine][batch]") {
+TEST_CASE("BatchUpdateGuard sets and restores flag", "[state_machine][batch]") {
   bool flag = false;
 
   {
@@ -217,8 +205,7 @@ TEST_CASE("BatchUpdateGuard sets and restores flag",
   REQUIRE(flag == false);
 }
 
-TEST_CASE("BatchUpdateGuard detects nested guards",
-          "[state_machine][batch]") {
+TEST_CASE("BatchUpdateGuard detects nested guards", "[state_machine][batch]") {
   bool flag = false;
 
   {
@@ -242,8 +229,7 @@ TEST_CASE("BatchUpdateGuard detects nested guards",
 // EventBus Focus Synchronization Tests
 // ============================================================================
 
-TEST_CASE("EventBus PanelFocusEvent is published and received",
-          "[state_machine][eventbus]") {
+TEST_CASE("EventBus PanelFocusEvent is published and received", "[state_machine][eventbus]") {
   // Clean state
   EventBus::instance().unsubscribeAll();
   EventBus::instance().setSynchronous(true);
@@ -253,9 +239,8 @@ TEST_CASE("EventBus PanelFocusEvent is published and received",
   int eventCount = 0;
 
   auto subscription = EventBus::instance().subscribe(
-      EditorEventType::PanelFocusChanged, [&](const EditorEvent &event) {
-        if (auto *focusEvent =
-                dynamic_cast<const PanelFocusChangedEvent *>(&event)) {
+      EditorEventType::PanelFocusChanged, [&](const EditorEvent& event) {
+        if (auto* focusEvent = dynamic_cast<const PanelFocusChangedEvent*>(&event)) {
           receivedPanelName = focusEvent->panelName;
           receivedHasFocus = focusEvent->hasFocus;
           eventCount++;
@@ -283,8 +268,7 @@ TEST_CASE("EventBus PanelFocusEvent is published and received",
   EventBus::instance().unsubscribeAll();
 }
 
-TEST_CASE("EventBus multiple subscribers receive events",
-          "[state_machine][eventbus]") {
+TEST_CASE("EventBus multiple subscribers receive events", "[state_machine][eventbus]") {
   EventBus::instance().unsubscribeAll();
   EventBus::instance().setSynchronous(true);
 
@@ -293,11 +277,11 @@ TEST_CASE("EventBus multiple subscribers receive events",
 
   auto sub1 = EventBus::instance().subscribe(
       EditorEventType::PanelFocusChanged,
-      [&subscriber1Count](const EditorEvent &) { subscriber1Count++; });
+      [&subscriber1Count](const EditorEvent&) { subscriber1Count++; });
 
   auto sub2 = EventBus::instance().subscribe(
       EditorEventType::PanelFocusChanged,
-      [&subscriber2Count](const EditorEvent &) { subscriber2Count++; });
+      [&subscriber2Count](const EditorEvent&) { subscriber2Count++; });
 
   PanelFocusChangedEvent focusEvent;
   focusEvent.panelName = "StoryGraph";
@@ -312,16 +296,14 @@ TEST_CASE("EventBus multiple subscribers receive events",
   EventBus::instance().unsubscribeAll();
 }
 
-TEST_CASE("EventBus unsubscribe stops events",
-          "[state_machine][eventbus]") {
+TEST_CASE("EventBus unsubscribe stops events", "[state_machine][eventbus]") {
   EventBus::instance().unsubscribeAll();
   EventBus::instance().setSynchronous(true);
 
   int eventCount = 0;
 
   auto subscription = EventBus::instance().subscribe(
-      EditorEventType::PanelFocusChanged,
-      [&eventCount](const EditorEvent &) { eventCount++; });
+      EditorEventType::PanelFocusChanged, [&eventCount](const EditorEvent&) { eventCount++; });
 
   PanelFocusChangedEvent focusEvent;
   focusEvent.panelName = "Test";
@@ -348,7 +330,7 @@ TEST_CASE("QPointer detects deleted object", "[state_machine][qpointer]") {
   QPointer<QObject> ptr;
 
   {
-    QObject *obj = new QObject();
+    QObject* obj = new QObject();
     ptr = obj;
     REQUIRE_FALSE(ptr.isNull());
     REQUIRE(ptr.data() != nullptr);
@@ -360,15 +342,14 @@ TEST_CASE("QPointer detects deleted object", "[state_machine][qpointer]") {
   REQUIRE(ptr.data() == nullptr);
 }
 
-TEST_CASE("QPointer local copy pattern prevents TOCTOU",
-          "[state_machine][qpointer]") {
+TEST_CASE("QPointer local copy pattern prevents TOCTOU", "[state_machine][qpointer]") {
   QPointer<QObject> ptr;
-  QObject *obj = new QObject();
+  QObject* obj = new QObject();
   ptr = obj;
 
   // Simulate TOCTOU-safe access pattern
   // The local copy ensures the pointer remains valid for the entire scope
-  if (auto *localPtr = ptr.data()) {
+  if (auto* localPtr = ptr.data()) {
     // Use local pointer for all operations in this block
     // This prevents race conditions where ptr becomes null mid-operation
     REQUIRE(localPtr != nullptr);
@@ -379,12 +360,11 @@ TEST_CASE("QPointer local copy pattern prevents TOCTOU",
   REQUIRE(ptr.isNull());
 }
 
-TEST_CASE("QPointer handles multiple references",
-          "[state_machine][qpointer]") {
+TEST_CASE("QPointer handles multiple references", "[state_machine][qpointer]") {
   QPointer<QObject> ptr1;
   QPointer<QObject> ptr2;
 
-  QObject *obj = new QObject();
+  QObject* obj = new QObject();
   ptr1 = obj;
   ptr2 = obj;
 

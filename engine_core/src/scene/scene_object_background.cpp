@@ -15,18 +15,20 @@ namespace NovelMind::scene {
 // BackgroundObject Implementation
 // ============================================================================
 
-BackgroundObject::BackgroundObject(const std::string &id)
+BackgroundObject::BackgroundObject(const std::string& id)
     : SceneObjectBase(id, SceneObjectType::Background) {}
 
-void BackgroundObject::setTextureId(const std::string &textureId) {
+void BackgroundObject::setTextureId(const std::string& textureId) {
   std::string oldValue = m_textureId;
   m_textureId = textureId;
   notifyPropertyChanged("textureId", oldValue, textureId);
 }
 
-void BackgroundObject::setTint(const renderer::Color &color) { m_tint = color; }
+void BackgroundObject::setTint(const renderer::Color& color) {
+  m_tint = color;
+}
 
-void BackgroundObject::render(renderer::IRenderer &renderer) {
+void BackgroundObject::render(renderer::IRenderer& renderer) {
   if (!m_visible || m_alpha <= 0.0f) {
     return;
   }
@@ -40,7 +42,7 @@ void BackgroundObject::render(renderer::IRenderer &renderer) {
     return;
   }
 
-  const auto &texture = *texResult.value();
+  const auto& texture = *texResult.value();
   if (!texture.isValid()) {
     return;
   }
@@ -72,7 +74,7 @@ SceneObjectState BackgroundObject::saveState() const {
   return state;
 }
 
-void BackgroundObject::loadState(const SceneObjectState &state) {
+void BackgroundObject::loadState(const SceneObjectState& state) {
   SceneObjectBase::loadState(state);
   auto texIt = state.properties.find("textureId");
   if (texIt != state.properties.end()) {

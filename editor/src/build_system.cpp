@@ -46,160 +46,17 @@
 // Platform-specific includes for process handling
 #ifdef _WIN32
 #include <io.h>
+#include <windows.h> // for CreateProcess, etc.
 #define popen _popen
 #define pclose _pclose
 #else
 #include <sys/wait.h> // for WIFEXITED, WEXITSTATUS
+#include <unistd.h>   // for fork, execv, pipe, dup2, read, close
 #endif
 
 namespace fs = std::filesystem;
 
 namespace NovelMind::editor {
-
-// ============================================================================
-// BuildUtils Implementation
-// ============================================================================
-
-namespace BuildUtils {
-
-std::string getPlatformName(BuildPlatform platform) {
-  switch (platform) {
-  case BuildPlatform::Windows:
-    return "Windows";
-  case BuildPlatform::Linux:
-    return "Linux";
-  case BuildPlatform::MacOS:
-    return "macOS";
-  case BuildPlatform::Web:
-    return "Web (WebAssembly)";
-  case BuildPlatform::Android:
-    return "Android";
-  case BuildPlatform::iOS:
-    return "iOS";
-  case BuildPlatform::All:
-    return "All Platforms";
-  }
-  return "Unknown";
-}
-
-std::string getExecutableExtension(BuildPlatform platform) {
-  switch (platform) {
-  case BuildPlatform::Windows:
-    return ".exe";
-  case BuildPlatform::Linux:
-  case BuildPlatform::MacOS:
-    return "";
-  case BuildPlatform::Web:
-    return ".html"; // Entry point for web builds
-  case BuildPlatform::Android:
-    return ".apk";
-  case BuildPlatform::iOS:
-    return ".ipa";
-  case BuildPlatform::All:
-#ifdef _WIN32
-    return ".exe";
-#else
-    return "";
-#endif
-  }
-  return "";
-}
-
-BuildPlatform getCurrentPlatform() {
-#ifdef _WIN32
-  return BuildPlatform::Windows;
-#elif defined(__APPLE__)
-  return BuildPlatform::MacOS;
-#else
-  return BuildPlatform::Linux;
-#endif
-}
-
-std::string formatFileSize(i64 bytes) {
-  const char* units[] = {"B", "KB", "MB", "GB", "TB"};
-  i32 unitIndex = 0;
-  f64 size = static_cast<f64>(bytes);
-
-  while (size >= 1024.0 && unitIndex < 4) {
-    size /= 1024.0;
-    unitIndex++;
-  }
-
-  std::ostringstream oss;
-  if (unitIndex == 0) {
-    oss << bytes << " " << units[unitIndex];
-  } else {
-    oss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
-  }
-  return oss.str();
-}
-
-std::string formatDuration(f64 milliseconds) {
-  if (milliseconds < 1000) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(0) << milliseconds << " ms";
-    return oss.str();
-  }
-
-  f64 seconds = milliseconds / 1000.0;
-  if (seconds < 60) {
-    std::ostringstream oss;
-    oss << std::fixed << std::setprecision(1) << seconds << " s";
-    return oss.str();
-  }
-
-  i32 minutes = static_cast<i32>(seconds) / 60;
-  i32 secs = static_cast<i32>(seconds) % 60;
-  std::ostringstream oss;
-  oss << minutes << " min " << secs << " s";
-  return oss.str();
-}
-
-i64 calculateDirectorySize(const std::string& path) {
-  i64 totalSize = 0;
-  try {
-    for (const auto& entry : fs::recursive_directory_iterator(path)) {
-      if (entry.is_regular_file()) {
-        totalSize += static_cast<i64>(entry.file_size());
-      }
-    }
-  } catch (const fs::filesystem_error&) {
-    // Directory doesn't exist or permission denied
-  }
-  return totalSize;
-}
-
-Result<void> copyDirectory(const std::string& source, const std::string& destination) {
-  try {
-    fs::copy(source, destination,
-             fs::copy_options::recursive | fs::copy_options::overwrite_existing);
-    return Result<void>::ok();
-  } catch (const fs::filesystem_error& e) {
-    return Result<void>::error(std::string("Failed to copy directory: ") + e.what());
-  }
-}
-
-Result<void> deleteDirectory(const std::string& path) {
-  try {
-    if (fs::exists(path)) {
-      fs::remove_all(path);
-    }
-    return Result<void>::ok();
-  } catch (const fs::filesystem_error& e) {
-    return Result<void>::error(std::string("Failed to delete directory: ") + e.what());
-  }
-}
-
-Result<void> createDirectories(const std::string& path) {
-  try {
-    fs::create_directories(path);
-    return Result<void>::ok();
-  } catch (const fs::filesystem_error& e) {
-    return Result<void>::error(std::string("Failed to create directories: ") + e.what());
-  }
-}
-
-} // namespace BuildUtils
 
 // ============================================================================
 // CRC32, SHA-256, Compression, Encryption Static Helpers
@@ -317,10 +174,18 @@ Result<std::vector<u8>> BuildSystem::compressData(const std::vector<u8>& data,
 }
 
 Result<std::vector<u8>> BuildSystem::encryptData(const std::vector<u8>& data,
-                                                 const std::vector<u8>& key,
+                                                 const Core::SecureVector<u8>& key,
                                                  std::array<u8, 12>& ivOut) {
   if (key.size() != 32) {
-    return Result<std::vector<u8>>::error("Invalid key size: expected 32 bytes for AES-256-GCM");
+    std::string errorMsg = "Build encryption error: Invalid encryption key size\n\n";
+    errorMsg += "What went wrong: The encryption key must be exactly 32 bytes (256 bits) for "
+                "AES-256-GCM.\n";
+    errorMsg += "Current key size: " + std::to_string(key.size()) + " bytes\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Use a 32-byte (256-bit) encryption key\n";
+    errorMsg += "  - Generate a secure key with: openssl rand -hex 32\n";
+    errorMsg += "  - Or let the build system auto-generate a secure key";
+    return Result<std::vector<u8>>::error(errorMsg);
   }
 
 #ifdef NOVELMIND_HAS_OPENSSL
@@ -402,22 +267,88 @@ std::string BuildSystem::normalizeVfsPath(const std::string& path) {
   return result;
 }
 
+// Path security validation to prevent path traversal attacks
+Result<std::string> BuildSystem::sanitizeOutputPath(const std::string& basePath,
+                                                    const std::string& relativePath) {
+  // Reject paths containing ".." components before filesystem resolution
+  // This provides an early defense against path traversal attempts
+  if (relativePath.find("..") != std::string::npos) {
+    return Result<std::string>::error("Path traversal detected: path contains '..' component: " +
+                                      relativePath);
+  }
+
+  // Normalize the base path to ensure we have a canonical reference
+  std::error_code ec;
+  fs::path canonicalBase = fs::weakly_canonical(basePath, ec);
+  if (ec) {
+    return Result<std::string>::error("Failed to canonicalize base path: " + basePath + " - " +
+                                      ec.message());
+  }
+
+  // Construct the full output path
+  fs::path fullPath = fs::path(basePath) / relativePath;
+
+  // Resolve the full path to its canonical form
+  // weakly_canonical resolves ".." and "." components and follows symlinks
+  fs::path canonicalPath = fs::weakly_canonical(fullPath, ec);
+  if (ec) {
+    return Result<std::string>::error("Failed to canonicalize output path: " + fullPath.string() +
+                                      " - " + ec.message());
+  }
+
+  // Security check: Verify the resolved path is within the base directory
+  // This prevents writing to arbitrary locations on the filesystem
+  auto [rootEnd, nothing] = std::mismatch(canonicalBase.begin(), canonicalBase.end(),
+                                          canonicalPath.begin(), canonicalPath.end());
+
+  if (rootEnd != canonicalBase.end()) {
+    return Result<std::string>::error("Path traversal detected: resolved path '" +
+                                      canonicalPath.string() + "' escapes base directory '" +
+                                      canonicalBase.string() + "'");
+  }
+
+  return Result<std::string>::ok(fullPath.string());
+}
+
 // Load encryption key from environment variables
-Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
+Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
   // Try NOVELMIND_PACK_AES_KEY_HEX first
   const char* hexKey = std::getenv("NOVELMIND_PACK_AES_KEY_HEX");
   if (hexKey != nullptr) {
     std::string hexStr(hexKey);
     if (hexStr.length() != 64) {
-      return Result<std::vector<u8>>::error(
+      return Result<Core::SecureVector<u8>>::error(
           "NOVELMIND_PACK_AES_KEY_HEX must be 64 hex characters (32 bytes)");
     }
-    std::vector<u8> key(32);
+
+    // Validate hex characters before parsing
+    for (char c : hexStr) {
+      if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+        return Result<Core::SecureVector<u8>>::error(
+            "NOVELMIND_PACK_AES_KEY_HEX contains invalid hex characters. Only 0-9, a-f, A-F are "
+            "allowed");
+      }
+    }
+
+    Core::SecureVector<u8> key(32);
     for (usize i = 0; i < 32; ++i) {
       std::string byteStr = hexStr.substr(i * 2, 2);
-      key[i] = static_cast<u8>(std::stoul(byteStr, nullptr, 16));
+      try {
+        unsigned long val = std::stoul(byteStr, nullptr, 16);
+        key[i] = static_cast<u8>(val);
+      } catch (const std::invalid_argument& e) {
+        return Result<Core::SecureVector<u8>>::error(
+            "Invalid hex format in encryption key at byte " + std::to_string(i) + ": " + e.what());
+      } catch (const std::out_of_range& e) {
+        return Result<Core::SecureVector<u8>>::error(
+            "Hex value out of range in encryption key at byte " + std::to_string(i) + ": " +
+            e.what());
+      } catch (...) {
+        return Result<Core::SecureVector<u8>>::error(
+            "Unknown error parsing encryption key at byte " + std::to_string(i));
+      }
     }
-    return Result<std::vector<u8>>::ok(std::move(key));
+    return Result<Core::SecureVector<u8>>::ok(std::move(key));
   }
 
   // Try NOVELMIND_PACK_AES_KEY_FILE
@@ -426,27 +357,27 @@ Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
     return loadEncryptionKeyFromFile(keyFile);
   }
 
-  return Result<std::vector<u8>>::error(
+  return Result<Core::SecureVector<u8>>::error(
       "No encryption key found. Set NOVELMIND_PACK_AES_KEY_HEX or "
       "NOVELMIND_PACK_AES_KEY_FILE environment variable");
 }
 
 // Load encryption key from file
-Result<std::vector<u8>> BuildSystem::loadEncryptionKeyFromFile(const std::string& path) {
+Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromFile(const std::string& path) {
   std::ifstream file(path, std::ios::binary);
   if (!file.is_open()) {
-    return Result<std::vector<u8>>::error("Cannot open key file: " + path);
+    return Result<Core::SecureVector<u8>>::error("Cannot open key file: " + path);
   }
 
-  std::vector<u8> key(32);
+  Core::SecureVector<u8> key(32);
   file.read(reinterpret_cast<char*>(key.data()), 32);
 
   if (file.gcount() != 32) {
-    return Result<std::vector<u8>>::error("Key file must contain exactly 32 bytes: " + path);
+    return Result<Core::SecureVector<u8>>::error("Key file must contain exactly 32 bytes: " + path);
   }
 
   file.close();
-  return Result<std::vector<u8>>::ok(std::move(key));
+  return Result<Core::SecureVector<u8>>::ok(std::move(key));
 }
 
 // Sign data with RSA private key (returns signature)
@@ -592,20 +523,42 @@ void BuildSystem::configure(const BuildConfig& config) {
 
 Result<void> BuildSystem::startBuild(const BuildConfig& config) {
   if (m_buildInProgress) {
-    return Result<void>::error("Build already in progress");
+    std::string errorMsg = "Build already in progress\n\n";
+    errorMsg += "What went wrong: Another build is currently running.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Wait for the current build to complete\n";
+    errorMsg += "  - Or cancel the current build first using cancelBuild()";
+    return Result<void>::error(errorMsg);
   }
 
   // Validate configuration
   if (config.projectPath.empty()) {
-    return Result<void>::error("Project path is required");
+    std::string errorMsg = "Build configuration error: Project path is required\n\n";
+    errorMsg += "What went wrong: The build configuration is missing the project path.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Set config.projectPath to your project's root directory\n";
+    errorMsg += "  - Ensure the path points to a valid NovelMind project";
+    return Result<void>::error(errorMsg);
   }
   if (config.outputPath.empty()) {
-    return Result<void>::error("Output path is required");
+    std::string errorMsg = "Build configuration error: Output path is required\n\n";
+    errorMsg += "What went wrong: The build configuration is missing the output path.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Set config.outputPath to where you want the build output\n";
+    errorMsg += "  - Example: './build/output' or '../releases/MyGame'";
+    return Result<void>::error(errorMsg);
   }
 
   // Check project exists
   if (!fs::exists(config.projectPath)) {
-    return Result<void>::error("Project path does not exist: " + config.projectPath);
+    std::string errorMsg = "Build failed: Project directory not found\n\n";
+    errorMsg +=
+        "What went wrong: The project directory '" + config.projectPath + "' does not exist.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Verify the project path is correct\n";
+    errorMsg += "  - Check if the project was moved or deleted\n";
+    errorMsg += "  - Ensure you have read permissions for the directory";
+    return Result<void>::error(errorMsg);
   }
 
   m_config = config;
@@ -1040,7 +993,14 @@ Result<void> BuildSystem::processAssets() {
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
 
     fs::path relativePath = fs::relative(assetPath, fs::path(m_config.projectPath) / "assets");
-    fs::path outputPath = assetsDir / relativePath;
+
+    // Security: Validate output path to prevent path traversal attacks
+    auto sanitizedPathResult = sanitizeOutputPath(assetsDir.string(), relativePath.string());
+    if (sanitizedPathResult.isError()) {
+      endStep(false, sanitizedPathResult.error());
+      return Result<void>::error(sanitizedPathResult.error());
+    }
+    fs::path outputPath = sanitizedPathResult.value();
 
     // Create output directory
     fs::create_directories(outputPath.parent_path());
@@ -1678,8 +1638,32 @@ Result<void> BuildSystem::signAndFinalize() {
   // Sign executable if requested
   if (m_config.signExecutable && !m_config.signingCertificate.empty()) {
     updateProgress(0.7f, "Signing executable...");
-    logMessage("Code signing not yet implemented - skipping", false);
-    m_progress.warnings.push_back("Code signing requested but not yet implemented");
+
+    // Determine the executable path based on platform
+    std::string executablePath;
+    if (m_config.platform == BuildPlatform::Windows) {
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Windows)))
+                           .string();
+    } else if (m_config.platform == BuildPlatform::MacOS) {
+      executablePath = (stagingDir / (m_config.executableName + ".app")).string();
+    } else if (m_config.platform == BuildPlatform::Linux) {
+      executablePath = (stagingDir / (m_config.executableName +
+                                      BuildUtils::getExecutableExtension(BuildPlatform::Linux)))
+                           .string();
+    }
+
+    if (!executablePath.empty()) {
+      auto signResult = signExecutableForPlatform(executablePath);
+      if (!signResult.isOk()) {
+        // Signing failed - log error but continue
+        std::string errorMsg = "Code signing failed: " + signResult.error();
+        logMessage(errorMsg, true);
+        m_progress.warnings.push_back(errorMsg);
+      }
+    } else {
+      m_progress.warnings.push_back("Code signing skipped: No executable path for platform");
+    }
   }
 
   // Calculate final sizes
@@ -2600,18 +2584,27 @@ Result<void> BuildSystem::buildPack(const std::string& outputPath,
                    static_cast<std::streamsize>(entry.data.size()));
     }
 
-    // Calculate CRC32 of header + resource table + string table
+    // Calculate integrity hashes of header + resource table + string table
     std::vector<u8> tablesData;
     tablesData.reserve(headerBuffer.size() + resourceTableBuffer.size() + stringTableBuffer.size());
     tablesData.insert(tablesData.end(), headerBuffer.begin(), headerBuffer.end());
     tablesData.insert(tablesData.end(), resourceTableBuffer.begin(), resourceTableBuffer.end());
     tablesData.insert(tablesData.end(), stringTableBuffer.begin(), stringTableBuffer.end());
+
+    // SHA-256 for cryptographic integrity (prevents forgery)
+    auto tablesSha256 = calculateSha256(tablesData.data(), tablesData.size());
+
+    // CRC32 for quick corruption detection (fast non-cryptographic check)
     u32 tablesCrc = calculateCrc32(tablesData.data(), tablesData.size());
 
-    // Write footer (32 bytes)
+    // Write footer (64 bytes)
     const char footerMagic[] = "NMRF";
     output.write(footerMagic, 4);
 
+    // SHA-256 hash (32 bytes) - primary integrity check
+    output.write(reinterpret_cast<const char*>(tablesSha256.data()), 32);
+
+    // CRC32 (4 bytes) - secondary quick check
     output.write(reinterpret_cast<const char*>(&tablesCrc), 4);
 
     // Use deterministic timestamp if configured
@@ -3289,7 +3282,7 @@ Result<void> PackBuilder::finalizePack() {
   }
 }
 
-void PackBuilder::setEncryptionKey(const std::string& key) {
+void PackBuilder::setEncryptionKey(const Core::SecureVector<u8>& key) {
   m_encryptionKey = key;
 }
 
@@ -3340,7 +3333,7 @@ Result<std::vector<u8>> PackBuilder::compressData(const std::vector<u8>& data) {
   case CompressionLevel::Balanced:
     zlibLevel = Z_DEFAULT_COMPRESSION;
     break;
-  case CompressionLevel::Best:
+  case CompressionLevel::Maximum:
     zlibLevel = Z_BEST_COMPRESSION;
     break;
   }
@@ -3380,7 +3373,8 @@ Result<std::vector<u8>> PackBuilder::encryptData(const std::vector<u8>& data) {
   constexpr int kTagSize = 16;
 
   // Prepare 32-byte key (pad or truncate if necessary)
-  std::vector<u8> key256(kKeySize, 0);
+  // Use SecureVector to ensure proper zeroing
+  Core::SecureVector<u8> key256(kKeySize, 0);
   std::memcpy(key256.data(), m_encryptionKey.data(),
               std::min(m_encryptionKey.size(), static_cast<usize>(kKeySize)));
 
@@ -3800,6 +3794,456 @@ IntegrityChecker::checkCircularReferences(const std::string& projectPath) {
   }
 
   return issues;
+}
+
+// =============================================================================
+// Code Signing Implementation (Secure)
+// =============================================================================
+
+/**
+ * @brief Validate that a signing tool path is safe to use
+ *
+ * This function prevents command injection by:
+ * 1. Checking that the path exists and is a regular file
+ * 2. Checking that the path is executable
+ * 3. Rejecting paths with shell metacharacters
+ * 4. Verifying against an allowlist of known signing tools
+ */
+Result<void> BuildSystem::validateSigningToolPath(const std::string& toolPath,
+                                                  const std::vector<std::string>& allowedNames) {
+  // Check for empty path
+  if (toolPath.empty()) {
+    return Result<void>::error("Signing tool path cannot be empty");
+  }
+
+  // Check for shell metacharacters that could enable command injection
+  const std::string dangerousChars = "|&;<>$`\\\"'(){}[]!*?~";
+  for (char c : toolPath) {
+    if (dangerousChars.find(c) != std::string::npos) {
+      return Result<void>::error("Signing tool path contains invalid character: '" +
+                                 std::string(1, c) +
+                                 "'. Paths with shell metacharacters are not allowed.");
+    }
+  }
+
+  // Convert to filesystem path
+  fs::path path(toolPath);
+
+  // Check if path exists
+  if (!fs::exists(path)) {
+    return Result<void>::error("Signing tool not found: " + toolPath);
+  }
+
+  // Check if it's a regular file
+  if (!fs::is_regular_file(path)) {
+    return Result<void>::error("Signing tool path is not a regular file: " + toolPath);
+  }
+
+  // Get the filename for allowlist checking
+  std::string filename = path.filename().string();
+
+  // Validate against allowlist
+  bool isAllowed = false;
+  for (const auto& allowedName : allowedNames) {
+    if (filename == allowedName || filename == (allowedName + ".exe")) {
+      isAllowed = true;
+      break;
+    }
+  }
+
+  if (!isAllowed) {
+    std::string allowedList;
+    for (size_t i = 0; i < allowedNames.size(); ++i) {
+      allowedList += allowedNames[i];
+      if (i < allowedNames.size() - 1) {
+        allowedList += ", ";
+      }
+    }
+    return Result<void>::error("Signing tool '" + filename +
+                               "' is not in the allowlist. Allowed tools: " + allowedList);
+  }
+
+  return Result<void>::ok();
+}
+
+/**
+ * @brief Execute a command securely without shell injection vulnerabilities
+ *
+ * This uses platform-specific APIs to execute commands without involving a shell:
+ * - On Windows: CreateProcess
+ * - On Unix: fork + execv
+ *
+ * This prevents command injection attacks that would be possible with system() or popen().
+ */
+Result<i32> BuildSystem::executeCommand(const std::string& command, std::string& output) const {
+#ifdef _WIN32
+  // Windows implementation using CreateProcess
+  SECURITY_ATTRIBUTES sa;
+  sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+  sa.bInheritHandle = TRUE;
+  sa.lpSecurityDescriptor = NULL;
+
+  // Create pipes for stdout
+  HANDLE hStdoutRead, hStdoutWrite;
+  if (!CreatePipe(&hStdoutRead, &hStdoutWrite, &sa, 0)) {
+    return Result<i32>::error("Failed to create pipe for command output");
+  }
+
+  // Ensure read handle is not inherited
+  SetHandleInformation(hStdoutRead, HANDLE_FLAG_INHERIT, 0);
+
+  // Setup startup info
+  STARTUPINFOA si;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  si.hStdOutput = hStdoutWrite;
+  si.hStdError = hStdoutWrite;
+  si.dwFlags |= STARTF_USESTDHANDLES;
+
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&pi, sizeof(pi));
+
+  // Create process (note: command must be mutable for CreateProcessA)
+  std::vector<char> cmdLine(command.begin(), command.end());
+  cmdLine.push_back('\0');
+
+  if (!CreateProcessA(NULL, cmdLine.data(), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+    CloseHandle(hStdoutRead);
+    CloseHandle(hStdoutWrite);
+    return Result<i32>::error("Failed to create process: " + command);
+  }
+
+  // Close write end of pipe
+  CloseHandle(hStdoutWrite);
+
+  // Read output
+  const size_t BUFFER_SIZE = 4096;
+  char buffer[BUFFER_SIZE];
+  DWORD bytesRead;
+  output.clear();
+
+  while (ReadFile(hStdoutRead, buffer, BUFFER_SIZE - 1, &bytesRead, NULL) && bytesRead > 0) {
+    buffer[bytesRead] = '\0';
+    output += buffer;
+  }
+
+  // Wait for process to complete
+  WaitForSingleObject(pi.hProcess, INFINITE);
+
+  // Get exit code
+  DWORD exitCode;
+  GetExitCodeProcess(pi.hProcess, &exitCode);
+
+  // Cleanup
+  CloseHandle(hStdoutRead);
+  CloseHandle(pi.hProcess);
+  CloseHandle(pi.hThread);
+
+  return Result<i32>::ok(static_cast<i32>(exitCode));
+
+#else
+  // Unix implementation using fork + execv
+  int pipefd[2];
+  if (pipe(pipefd) == -1) {
+    return Result<i32>::error("Failed to create pipe for command output");
+  }
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return Result<i32>::error("Failed to fork process");
+  }
+
+  if (pid == 0) {
+    // Child process
+    close(pipefd[0]); // Close read end
+
+    // Redirect stdout and stderr to pipe
+    dup2(pipefd[1], STDOUT_FILENO);
+    dup2(pipefd[1], STDERR_FILENO);
+    close(pipefd[1]);
+
+    // Parse command into argv array
+    // Note: This is a simplified parser. In production, use a proper shell parser
+    // or pass command and arguments separately
+    std::vector<std::string> tokens;
+    std::istringstream iss(command);
+    std::string token;
+    while (iss >> std::quoted(token)) {
+      tokens.push_back(token);
+    }
+
+    std::vector<char*> argv;
+    for (auto& t : tokens) {
+      argv.push_back(const_cast<char*>(t.c_str()));
+    }
+    argv.push_back(nullptr);
+
+    // Execute command without shell
+    execv(argv[0], argv.data());
+
+    // If execv returns, it failed
+    _exit(127);
+  } else {
+    // Parent process
+    close(pipefd[1]); // Close write end
+
+    // Read output
+    const size_t BUFFER_SIZE = 4096;
+    char buffer[BUFFER_SIZE];
+    ssize_t bytesRead;
+    output.clear();
+
+    while ((bytesRead = read(pipefd[0], buffer, BUFFER_SIZE - 1)) > 0) {
+      buffer[bytesRead] = '\0';
+      output += buffer;
+    }
+
+    close(pipefd[0]);
+
+    // Wait for child process
+    int status;
+    waitpid(pid, &status, 0);
+
+    if (WIFEXITED(status)) {
+      return Result<i32>::ok(WEXITSTATUS(status));
+    } else {
+      return Result<i32>::error("Process did not exit normally");
+    }
+  }
+#endif
+}
+
+/**
+ * @brief Sign executable for the configured platform
+ */
+Result<void> BuildSystem::signExecutableForPlatform(const std::string& executablePath) {
+  if (!m_config.signExecutable) {
+    return Result<void>::ok(); // Signing not requested
+  }
+
+  if (m_config.signingCertificate.empty()) {
+    return Result<void>::error("Signing requested but no certificate path provided");
+  }
+
+  // Validate the executable path exists
+  if (!fs::exists(executablePath)) {
+    return Result<void>::error("Executable not found for signing: " + executablePath);
+  }
+
+  logMessage("Signing executable: " + executablePath, false);
+
+  // Dispatch to platform-specific signing
+  switch (m_config.platform) {
+  case BuildPlatform::Windows:
+    return signWindowsExecutable(executablePath);
+
+  case BuildPlatform::MacOS:
+    return signMacOSBundle(executablePath);
+
+  case BuildPlatform::Linux:
+    // Linux doesn't have standard code signing like Windows/macOS
+    logMessage("Code signing not required for Linux builds", false);
+    return Result<void>::ok();
+
+  default:
+    logMessage("Code signing not supported for this platform", false);
+    return Result<void>::ok();
+  }
+}
+
+/**
+ * @brief Sign Windows executable using signtool.exe
+ *
+ * This implements secure signing without command injection vulnerabilities:
+ * 1. Validates the signtool.exe path
+ * 2. Validates the certificate path
+ * 3. Uses executeCommand() which doesn't use a shell
+ * 4. Properly quotes all arguments
+ */
+Result<void> BuildSystem::signWindowsExecutable(const std::string& executablePath) {
+  // Determine signing tool path
+  std::string signtoolPath;
+
+  // Check for user-provided signing tool path
+  const char* customSigntool = std::getenv("NOVELMIND_SIGNTOOL_PATH");
+  if (customSigntool != nullptr) {
+    signtoolPath = customSigntool;
+  } else {
+    // Use default Windows SDK signtool.exe
+    // Try common locations
+    std::vector<std::string> commonPaths = {
+        "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\x64\\signtool.exe",
+        "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\x86\\signtool.exe",
+        "signtool.exe" // Assume it's in PATH
+    };
+
+    for (const auto& path : commonPaths) {
+      if (fs::exists(path)) {
+        signtoolPath = path;
+        break;
+      }
+    }
+
+    if (signtoolPath.empty()) {
+      signtoolPath = "signtool.exe"; // Hope it's in PATH
+    }
+  }
+
+  // Validate signing tool path
+  std::vector<std::string> allowedTools = {"signtool.exe", "signtool"};
+  auto validationResult = validateSigningToolPath(signtoolPath, allowedTools);
+  if (!validationResult.isOk()) {
+    return Result<void>::error("Signing tool validation failed: " + validationResult.error());
+  }
+
+  // Validate certificate path
+  if (!fs::exists(m_config.signingCertificate)) {
+    return Result<void>::error("Signing certificate not found: " + m_config.signingCertificate);
+  }
+
+  // Build command with proper quoting
+  // Note: We're building a command string, but executeCommand() will parse it safely
+  std::ostringstream cmd;
+  cmd << "\"" << signtoolPath << "\" sign";
+
+  // Add certificate file
+  cmd << " /f \"" << m_config.signingCertificate << "\"";
+
+  // Add password if provided (note: this is sensitive data)
+  if (!m_config.signingPassword.empty()) {
+    // Validate password doesn't contain command injection chars
+    const std::string dangerousChars = "|&;<>$`\\\"'";
+    for (char c : m_config.signingPassword) {
+      if (dangerousChars.find(c) != std::string::npos) {
+        return Result<void>::error("Signing password contains invalid characters");
+      }
+    }
+    cmd << " /p \"" << m_config.signingPassword << "\"";
+  }
+
+  // Add timestamp server if provided
+  if (!m_config.signingTimestampUrl.empty()) {
+    // Validate URL format (basic check)
+    if (m_config.signingTimestampUrl.find("http://") != 0 &&
+        m_config.signingTimestampUrl.find("https://") != 0) {
+      return Result<void>::error("Invalid timestamp URL format");
+    }
+    cmd << " /t \"" << m_config.signingTimestampUrl << "\"";
+  }
+
+  // Add file to sign
+  cmd << " \"" << executablePath << "\"";
+
+  // Execute signing command
+  std::string output;
+  auto result = executeCommand(cmd.str(), output);
+
+  if (!result.isOk()) {
+    return Result<void>::error("Failed to execute signing command: " + result.error());
+  }
+
+  i32 exitCode = result.value();
+  if (exitCode != 0) {
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
+  }
+
+  logMessage("Successfully signed Windows executable", false);
+  return Result<void>::ok();
+}
+
+/**
+ * @brief Sign macOS application bundle using codesign
+ *
+ * This implements secure signing without command injection vulnerabilities:
+ * 1. Validates the codesign path
+ * 2. Validates the certificate/identity
+ * 3. Uses executeCommand() which doesn't use a shell
+ * 4. Properly quotes all arguments
+ */
+Result<void> BuildSystem::signMacOSBundle(const std::string& bundlePath) {
+  // Determine signing tool path
+  std::string codesignPath;
+
+  // Check for user-provided signing tool path
+  const char* customCodesign = std::getenv("NOVELMIND_CODESIGN_PATH");
+  if (customCodesign != nullptr) {
+    codesignPath = customCodesign;
+  } else {
+    // Use system codesign
+    codesignPath = "/usr/bin/codesign";
+  }
+
+  // Validate signing tool path
+  std::vector<std::string> allowedTools = {"codesign"};
+  auto validationResult = validateSigningToolPath(codesignPath, allowedTools);
+  if (!validationResult.isOk()) {
+    return Result<void>::error("Signing tool validation failed: " + validationResult.error());
+  }
+
+  // Validate bundle path
+  if (!fs::exists(bundlePath)) {
+    return Result<void>::error("Bundle not found for signing: " + bundlePath);
+  }
+
+  // Build command with proper quoting
+  std::ostringstream cmd;
+  cmd << "\"" << codesignPath << "\" --force --sign \"" << m_config.signingCertificate << "\"";
+
+  // Add entitlements if provided
+  if (!m_config.signingEntitlements.empty()) {
+    if (!fs::exists(m_config.signingEntitlements)) {
+      return Result<void>::error("Entitlements file not found: " + m_config.signingEntitlements);
+    }
+    cmd << " --entitlements \"" << m_config.signingEntitlements << "\"";
+  }
+
+  // Add team ID if provided (for notarization)
+  if (!m_config.signingTeamId.empty()) {
+    // Validate team ID format (alphanumeric)
+    for (char c : m_config.signingTeamId) {
+      if (!std::isalnum(c)) {
+        return Result<void>::error("Invalid team ID format (must be alphanumeric)");
+      }
+    }
+    cmd << " --team-id " << m_config.signingTeamId;
+  }
+
+  // Add bundle to sign
+  cmd << " \"" << bundlePath << "\"";
+
+  // Execute signing command
+  std::string output;
+  auto result = executeCommand(cmd.str(), output);
+
+  if (!result.isOk()) {
+    return Result<void>::error("Failed to execute signing command: " + result.error());
+  }
+
+  i32 exitCode = result.value();
+  if (exitCode != 0) {
+    return Result<void>::error("Signing failed with exit code " + std::to_string(exitCode) + ": " +
+                               output);
+  }
+
+  logMessage("Successfully signed macOS bundle", false);
+
+  // Verify the signature
+  std::ostringstream verifyCmd;
+  verifyCmd << "\"" << codesignPath << "\" --verify --verbose \"" << bundlePath << "\"";
+
+  std::string verifyOutput;
+  auto verifyResult = executeCommand(verifyCmd.str(), verifyOutput);
+
+  if (!verifyResult.isOk() || verifyResult.value() != 0) {
+    m_progress.warnings.push_back("Code signature verification failed: " + verifyOutput);
+  } else {
+    logMessage("Code signature verified successfully", false);
+  }
+
+  return Result<void>::ok();
 }
 
 } // namespace NovelMind::editor

@@ -3,15 +3,14 @@
 namespace NovelMind::editor::qt {
 
 // Scoring constants
-static constexpr int SCORE_MATCH = 10;              // Base score for any match
-static constexpr int SCORE_CONSECUTIVE = 15;        // Bonus for consecutive matches
-static constexpr int SCORE_WORD_BOUNDARY = 20;      // Bonus for word boundary
-static constexpr int SCORE_START = 25;              // Bonus for start of string
-static constexpr int SCORE_CASE_MATCH = 5;          // Bonus for case match
-static constexpr int PENALTY_GAP = -2;              // Penalty for each gap
+static constexpr int SCORE_MATCH = 10;         // Base score for any match
+static constexpr int SCORE_CONSECUTIVE = 15;   // Bonus for consecutive matches
+static constexpr int SCORE_WORD_BOUNDARY = 20; // Bonus for word boundary
+static constexpr int SCORE_START = 25;         // Bonus for start of string
+static constexpr int SCORE_CASE_MATCH = 5;     // Bonus for case match
+static constexpr int PENALTY_GAP = -2;         // Penalty for each gap
 
-FuzzyMatchResult NMFuzzyMatcher::match(const QString &pattern,
-                                       const QString &text) {
+FuzzyMatchResult NMFuzzyMatcher::match(const QString& pattern, const QString& text) {
   FuzzyMatchResult result;
 
   // Empty pattern matches everything with zero score
@@ -37,8 +36,7 @@ FuzzyMatchResult NMFuzzyMatcher::match(const QString &pattern,
   int lastMatchIndex = -1;
   QVector<int> matchedIndices;
 
-  while (patternIndex < patternLower.length() &&
-         textIndex < textLower.length()) {
+  while (patternIndex < patternLower.length() && textIndex < textLower.length()) {
     if (patternLower[patternIndex] == textLower[textIndex]) {
       // Found a match
       matchedIndices.append(textIndex);
@@ -81,16 +79,15 @@ FuzzyMatchResult NMFuzzyMatcher::match(const QString &pattern,
   return result;
 }
 
-bool NMFuzzyMatcher::matches(const QString &pattern, const QString &text) {
+bool NMFuzzyMatcher::matches(const QString& pattern, const QString& text) {
   return match(pattern, text).matched;
 }
 
-int NMFuzzyMatcher::calculateScore(const QString &pattern,
-                                   const QString &text) {
+int NMFuzzyMatcher::calculateScore(const QString& pattern, const QString& text) {
   return match(pattern, text).score;
 }
 
-bool NMFuzzyMatcher::isWordBoundary(const QString &text, int index) {
+bool NMFuzzyMatcher::isWordBoundary(const QString& text, int index) {
   if (index == 0) {
     return true; // Start of string
   }
@@ -117,7 +114,7 @@ bool NMFuzzyMatcher::isWordBoundary(const QString &text, int index) {
   return false;
 }
 
-int NMFuzzyMatcher::getPositionBonus(const QString &text, int index,
+int NMFuzzyMatcher::getPositionBonus(const QString& text, int index,
                                      [[maybe_unused]] bool isConsecutive) {
   int bonus = 0;
 

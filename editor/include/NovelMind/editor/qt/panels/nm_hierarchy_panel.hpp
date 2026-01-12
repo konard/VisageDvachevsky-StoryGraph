@@ -27,17 +27,13 @@ class NMHierarchyTree : public QTreeWidget {
   Q_OBJECT
 
 public:
-  explicit NMHierarchyTree(QWidget *parent = nullptr);
+  explicit NMHierarchyTree(QWidget* parent = nullptr);
 
-  void setScene(class NMSceneGraphicsScene *scene);
-  [[nodiscard]] class NMSceneGraphicsScene *scene() const { return m_scene; }
+  void setScene(class NMSceneGraphicsScene* scene);
+  [[nodiscard]] class NMSceneGraphicsScene* scene() const { return m_scene; }
 
-  void setSceneViewPanel(class NMSceneViewPanel *panel) {
-    m_sceneViewPanel = panel;
-  }
-  [[nodiscard]] class NMSceneViewPanel *sceneViewPanel() const {
-    return m_sceneViewPanel;
-  }
+  void setSceneViewPanel(class NMSceneViewPanel* panel) { m_sceneViewPanel = panel; }
+  [[nodiscard]] class NMSceneViewPanel* sceneViewPanel() const { return m_sceneViewPanel; }
 
   /**
    * @brief Clear and rebuild the tree
@@ -52,61 +48,59 @@ public:
    *
    * @param objectId ID of the object to update
    */
-  void updateObjectItem(const QString &objectId);
+  void updateObjectItem(const QString& objectId);
 
   /**
    * @brief Find tree item for a specific object (O(1) lookup)
    * @param objectId ID of the object
    * @return Tree item or nullptr if not found
    */
-  QTreeWidgetItem *findTreeItemForObject(const QString &objectId) const;
+  QTreeWidgetItem* findTreeItemForObject(const QString& objectId) const;
 
   /**
    * @brief Set filter text for searching objects
    */
-  void setFilterText(const QString &text);
+  void setFilterText(const QString& text);
 
   /**
    * @brief Set type filter
    */
-  void
-  setTypeFilter(int typeIndex); // -1 = all, or NMSceneObjectType enum value
+  void setTypeFilter(int typeIndex); // -1 = all, or NMSceneObjectType enum value
 
   /**
    * @brief Set tag filter
    */
-  void setTagFilter(const QString &tag);
+  void setTagFilter(const QString& tag);
 
 signals:
-  void itemSelected(const QString &objectId);
-  void itemDoubleClicked(const QString &objectId);
+  void itemSelected(const QString& objectId);
+  void itemDoubleClicked(const QString& objectId);
 
 protected:
-  void selectionChanged(const QItemSelection &selected,
-                        const QItemSelection &deselected) override;
-  void dropEvent(QDropEvent *event) override;
-  void dragEnterEvent(QDragEnterEvent *event) override;
-  void dragMoveEvent(QDragMoveEvent *event) override;
-  void contextMenuEvent(QContextMenuEvent *event) override;
+  void selectionChanged(const QItemSelection& selected, const QItemSelection& deselected) override;
+  void dropEvent(QDropEvent* event) override;
+  void dragEnterEvent(QDragEnterEvent* event) override;
+  void dragMoveEvent(QDragMoveEvent* event) override;
+  void contextMenuEvent(QContextMenuEvent* event) override;
 
 private slots:
-  void onItemDoubleClicked(QTreeWidgetItem *item, int column);
-  void onItemChanged(QTreeWidgetItem *item, int column);
+  void onItemDoubleClicked(QTreeWidgetItem* item, int column);
+  void onItemChanged(QTreeWidgetItem* item, int column);
 
 private:
-  bool canDropOn(QTreeWidgetItem *dragItem, QTreeWidgetItem *dropItem) const;
-  QString getObjectId(QTreeWidgetItem *item) const;
-  bool isLayerItem(QTreeWidgetItem *item) const;
-  bool passesFilters(class NMSceneObject *obj) const;
+  bool canDropOn(QTreeWidgetItem* dragItem, QTreeWidgetItem* dropItem) const;
+  QString getObjectId(QTreeWidgetItem* item) const;
+  bool isLayerItem(QTreeWidgetItem* item) const;
+  bool passesFilters(class NMSceneObject* obj) const;
 
-  class NMSceneGraphicsScene *m_scene = nullptr;
-  class NMSceneViewPanel *m_sceneViewPanel = nullptr;
+  class NMSceneGraphicsScene* m_scene = nullptr;
+  class NMSceneViewPanel* m_sceneViewPanel = nullptr;
   QString m_filterText;
   int m_typeFilter = -1; // -1 = all types
   QString m_tagFilter;
 
   // PERF-2: Object ID to tree item mapping for O(1) lookup
-  QHash<QString, QTreeWidgetItem *> m_objectToItemMap;
+  QHash<QString, QTreeWidgetItem*> m_objectToItemMap;
 };
 
 /**
@@ -116,13 +110,13 @@ class NMHierarchyPanel : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMHierarchyPanel(QWidget *parent = nullptr);
+  explicit NMHierarchyPanel(QWidget* parent = nullptr);
   ~NMHierarchyPanel() override;
 
   void onInitialize() override;
   void onUpdate(double deltaTime) override;
 
-  [[nodiscard]] NMHierarchyTree *hierarchyTree() const { return m_tree; }
+  [[nodiscard]] NMHierarchyTree* hierarchyTree() const { return m_tree; }
 
   /**
    * @brief Refresh the hierarchy display
@@ -137,19 +131,19 @@ public:
    *
    * @param objectId ID of the object to update
    */
-  void updateObject(const QString &objectId);
+  void updateObject(const QString& objectId);
 
   /**
    * @brief Select an item by object ID
    */
-  void selectObject(const QString &objectId);
+  void selectObject(const QString& objectId);
 
-  void setScene(class NMSceneGraphicsScene *scene);
-  void setSceneViewPanel(class NMSceneViewPanel *panel);
+  void setScene(class NMSceneGraphicsScene* scene);
+  void setSceneViewPanel(class NMSceneViewPanel* panel);
 
 signals:
-  void objectSelected(const QString &objectId);
-  void objectDoubleClicked(const QString &objectId);
+  void objectSelected(const QString& objectId);
+  void objectDoubleClicked(const QString& objectId);
 
 private slots:
   void onRefresh();
@@ -161,22 +155,22 @@ private slots:
   void onSendToBack();
 
 private slots:
-  void onFilterTextChanged(const QString &text);
+  void onFilterTextChanged(const QString& text);
   void onTypeFilterChanged(int index);
-  void onTagFilterChanged(const QString &tag);
+  void onTagFilterChanged(const QString& tag);
 
 private:
   void setupToolBar();
   void setupContent();
   void adjustSelectedZ(int mode);
 
-  NMHierarchyTree *m_tree = nullptr;
-  QWidget *m_contentWidget = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  class NMSceneViewPanel *m_sceneViewPanel = nullptr;
-  QLineEdit *m_searchEdit = nullptr;
-  QComboBox *m_typeFilterCombo = nullptr;
-  QLineEdit *m_tagFilterEdit = nullptr;
+  NMHierarchyTree* m_tree = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  class NMSceneViewPanel* m_sceneViewPanel = nullptr;
+  QLineEdit* m_searchEdit = nullptr;
+  QComboBox* m_typeFilterCombo = nullptr;
+  QLineEdit* m_tagFilterEdit = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

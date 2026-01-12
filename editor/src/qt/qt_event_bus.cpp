@@ -5,14 +5,14 @@ namespace NovelMind::editor::qt {
 // Thread-local flag to prevent re-entrance during signal emission
 thread_local bool g_publishingEvent = false;
 
-QtEventBus &QtEventBus::instance() {
+QtEventBus& QtEventBus::instance() {
   static QtEventBus instance;
   return instance;
 }
 
 QtEventBus::QtEventBus() : QObject(nullptr) {}
 
-void QtEventBus::publish(const QtEditorEvent &event) {
+void QtEventBus::publish(const QtEditorEvent& event) {
   // Prevent re-entrance if a signal handler calls publish() again
   if (g_publishingEvent) {
     return;
@@ -30,8 +30,7 @@ void QtEventBus::publish(const QtEditorEvent &event) {
 
   case QtEditorEventType::PropertyChanged:
     emit propertyChanged(event.data.value("objectId").toString(),
-                         event.data.value("propertyName").toString(),
-                         event.data.value("oldValue"),
+                         event.data.value("propertyName").toString(), event.data.value("oldValue"),
                          event.data.value("newValue"));
     break;
 
@@ -64,8 +63,7 @@ void QtEventBus::publish(const QtEditorEvent &event) {
     break;
 
   case QtEditorEventType::LogMessage:
-    emit logMessage(event.data.value("message").toString(),
-                    event.data.value("source").toString(),
+    emit logMessage(event.data.value("message").toString(), event.data.value("source").toString(),
                     event.data.value("level").toInt());
     break;
 
@@ -115,8 +113,8 @@ void QtEventBus::publish(const QtEditorEvent &event) {
   g_publishingEvent = false;
 }
 
-void QtEventBus::publishSelectionChanged(const QStringList &selectedIds,
-                                         const QString &selectionType) {
+void QtEventBus::publishSelectionChanged(const QStringList& selectedIds,
+                                         const QString& selectionType) {
   QtEditorEvent event;
   event.type = QtEditorEventType::SelectionChanged;
   event.data["selectedIds"] = selectedIds;
@@ -124,10 +122,8 @@ void QtEventBus::publishSelectionChanged(const QStringList &selectedIds,
   publish(event);
 }
 
-void QtEventBus::publishPropertyChanged(const QString &objectId,
-                                        const QString &propertyName,
-                                        const QVariant &oldValue,
-                                        const QVariant &newValue) {
+void QtEventBus::publishPropertyChanged(const QString& objectId, const QString& propertyName,
+                                        const QVariant& oldValue, const QVariant& newValue) {
   QtEditorEvent event;
   event.type = QtEditorEventType::PropertyChanged;
   event.data["objectId"] = objectId;
@@ -137,8 +133,7 @@ void QtEventBus::publishPropertyChanged(const QString &objectId,
   publish(event);
 }
 
-void QtEventBus::publishLogMessage(const QString &message,
-                                   const QString &source, int level) {
+void QtEventBus::publishLogMessage(const QString& message, const QString& source, int level) {
   QtEditorEvent event;
   event.type = QtEditorEventType::LogMessage;
   event.data["message"] = message;
@@ -147,13 +142,12 @@ void QtEventBus::publishLogMessage(const QString &message,
   publish(event);
 }
 
-void QtEventBus::publishNavigationRequest(const QString &locationString) {
+void QtEventBus::publishNavigationRequest(const QString& locationString) {
   emit navigationRequested(locationString);
 }
 
-void QtEventBus::publishGraphNodeAdded(const QString &nodeId,
-                                       const QString &nodeType,
-                                       const QVariantMap &nodeData) {
+void QtEventBus::publishGraphNodeAdded(const QString& nodeId, const QString& nodeType,
+                                       const QVariantMap& nodeData) {
   QtEditorEvent event;
   event.type = QtEditorEventType::GraphNodeAdded;
   event.data["nodeId"] = nodeId;
@@ -162,16 +156,16 @@ void QtEventBus::publishGraphNodeAdded(const QString &nodeId,
   publish(event);
 }
 
-void QtEventBus::publishGraphNodeRemoved(const QString &nodeId) {
+void QtEventBus::publishGraphNodeRemoved(const QString& nodeId) {
   QtEditorEvent event;
   event.type = QtEditorEventType::GraphNodeRemoved;
   event.data["nodeId"] = nodeId;
   publish(event);
 }
 
-void QtEventBus::publishGraphConnectionAdded(const QString &connectionId,
-                                             const QString &sourceNodeId,
-                                             const QString &targetNodeId) {
+void QtEventBus::publishGraphConnectionAdded(const QString& connectionId,
+                                             const QString& sourceNodeId,
+                                             const QString& targetNodeId) {
   QtEditorEvent event;
   event.type = QtEditorEventType::GraphConnectionAdded;
   event.data["connectionId"] = connectionId;
@@ -180,15 +174,14 @@ void QtEventBus::publishGraphConnectionAdded(const QString &connectionId,
   publish(event);
 }
 
-void QtEventBus::publishGraphConnectionRemoved(const QString &connectionId) {
+void QtEventBus::publishGraphConnectionRemoved(const QString& connectionId) {
   QtEditorEvent event;
   event.type = QtEditorEventType::GraphConnectionRemoved;
   event.data["connectionId"] = connectionId;
   publish(event);
 }
 
-void QtEventBus::publishAssetImported(const QString &assetPath,
-                                      const QString &targetDir) {
+void QtEventBus::publishAssetImported(const QString& assetPath, const QString& targetDir) {
   QtEditorEvent event;
   event.type = QtEditorEventType::AssetImported;
   event.source = "AssetPipeline";
@@ -197,7 +190,7 @@ void QtEventBus::publishAssetImported(const QString &assetPath,
   publish(event);
 }
 
-void QtEventBus::publishAssetDeleted(const QString &assetPath) {
+void QtEventBus::publishAssetDeleted(const QString& assetPath) {
   QtEditorEvent event;
   event.type = QtEditorEventType::AssetDeleted;
   event.source = "AssetPipeline";
@@ -205,8 +198,7 @@ void QtEventBus::publishAssetDeleted(const QString &assetPath) {
   publish(event);
 }
 
-void QtEventBus::publishAssetRenamed(const QString &oldPath,
-                                     const QString &newPath) {
+void QtEventBus::publishAssetRenamed(const QString& oldPath, const QString& newPath) {
   QtEditorEvent event;
   event.type = QtEditorEventType::AssetRenamed;
   event.source = "AssetPipeline";

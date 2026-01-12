@@ -15,8 +15,8 @@ namespace NovelMind::editor::qt {
 // NMScrollableToolBar
 // ============================================================================
 
-NMScrollableToolBar::NMScrollableToolBar(QWidget *parent) : QWidget(parent) {
-  auto *layout = new QVBoxLayout(this);
+NMScrollableToolBar::NMScrollableToolBar(QWidget* parent) : QWidget(parent) {
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -32,7 +32,7 @@ NMScrollableToolBar::NMScrollableToolBar(QWidget *parent) : QWidget(parent) {
   m_scrollArea->setMaximumHeight(48);
 
   // Style the scroll bar to be minimal and unobtrusive
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   m_scrollArea->setStyleSheet(
       QString("QScrollArea { background: transparent; border: none; }"
               "QScrollBar:horizontal { height: 6px; background: %1; }"
@@ -54,17 +54,19 @@ NMScrollableToolBar::NMScrollableToolBar(QWidget *parent) : QWidget(parent) {
   layout->addWidget(m_scrollArea);
 }
 
-void NMScrollableToolBar::setToolBarObjectName(const QString &name) {
+void NMScrollableToolBar::setToolBarObjectName(const QString& name) {
   m_toolbar->setObjectName(name);
 }
 
-void NMScrollableToolBar::setIconSize(const QSize &size) {
+void NMScrollableToolBar::setIconSize(const QSize& size) {
   m_toolbar->setIconSize(size);
 }
 
-bool NMScrollableToolBar::isScrollingNeeded() const { return m_scrollNeeded; }
+bool NMScrollableToolBar::isScrollingNeeded() const {
+  return m_scrollNeeded;
+}
 
-void NMScrollableToolBar::resizeEvent(QResizeEvent *event) {
+void NMScrollableToolBar::resizeEvent(QResizeEvent* event) {
   QWidget::resizeEvent(event);
   updateScrollIndicators();
 }
@@ -86,19 +88,19 @@ void NMScrollableToolBar::updateScrollIndicators() {
 // NMCollapsiblePanel
 // ============================================================================
 
-NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
+NMCollapsiblePanel::NMCollapsiblePanel(const QString& title, QWidget* parent)
     : QWidget(parent), m_collapsed(false) {
-  auto *mainLayout = new QVBoxLayout(this);
+  auto* mainLayout = new QVBoxLayout(this);
   mainLayout->setContentsMargins(0, 0, 0, 0);
   mainLayout->setSpacing(0);
 
-  const auto &palette = NMStyleManager::instance().palette();
-  const auto &buttonSizes = NMStyleManager::instance().buttonSizes();
+  const auto& palette = NMStyleManager::instance().palette();
+  const auto& buttonSizes = NMStyleManager::instance().buttonSizes();
 
   // Create header with toggle button
   m_headerWidget = new QWidget(this);
   m_headerWidget->setFixedHeight(24);
-  auto *headerLayout = new QHBoxLayout(m_headerWidget);
+  auto* headerLayout = new QHBoxLayout(m_headerWidget);
   headerLayout->setContentsMargins(4, 2, 4, 2);
   headerLayout->setSpacing(4);
 
@@ -114,10 +116,9 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
               "QPushButton:hover { background: %1; }")
           .arg(NMStyleManager::colorToStyleString(palette.borderDefault)));
 
-  auto *titleLabel = new QLabel(title, m_headerWidget);
-  titleLabel->setStyleSheet(
-      QString("color: %1; font-weight: 600; font-size: 11px;")
-          .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
+  auto* titleLabel = new QLabel(title, m_headerWidget);
+  titleLabel->setStyleSheet(QString("color: %1; font-weight: 600; font-size: 11px;")
+                                .arg(NMStyleManager::colorToStyleString(palette.textSecondary)));
 
   headerLayout->addWidget(m_toggleButton);
   headerLayout->addWidget(titleLabel);
@@ -132,22 +133,21 @@ NMCollapsiblePanel::NMCollapsiblePanel(const QString &title, QWidget *parent)
 
   // Create content container with scroll area
   m_contentContainer = new QWidget(this);
-  auto *contentLayout = new QVBoxLayout(m_contentContainer);
+  auto* contentLayout = new QVBoxLayout(m_contentContainer);
   contentLayout->setContentsMargins(0, 0, 0, 0);
   contentLayout->setSpacing(0);
 
   mainLayout->addWidget(m_contentContainer);
 
   // Connect toggle
-  connect(m_toggleButton, &QPushButton::clicked, this,
-          &NMCollapsiblePanel::toggle);
+  connect(m_toggleButton, &QPushButton::clicked, this, &NMCollapsiblePanel::toggle);
 
   // Make header clickable
   m_headerWidget->setCursor(Qt::PointingHandCursor);
   m_headerWidget->installEventFilter(this);
 }
 
-void NMCollapsiblePanel::setContentWidget(QWidget *widget) {
+void NMCollapsiblePanel::setContentWidget(QWidget* widget) {
   if (m_contentWidget) {
     m_contentContainer->layout()->removeWidget(m_contentWidget);
     m_contentWidget->setParent(nullptr);
@@ -169,7 +169,9 @@ void NMCollapsiblePanel::setCollapsed(bool collapsed) {
   }
 }
 
-void NMCollapsiblePanel::toggle() { setCollapsed(!m_collapsed); }
+void NMCollapsiblePanel::toggle() {
+  setCollapsed(!m_collapsed);
+}
 
 void NMCollapsiblePanel::updateVisibility() {
   if (m_toggleButton) {
@@ -186,8 +188,8 @@ void NMCollapsiblePanel::updateVisibility() {
 // NMScrollableContent
 // ============================================================================
 
-NMScrollableContent::NMScrollableContent(QWidget *parent) : QWidget(parent) {
-  auto *layout = new QVBoxLayout(this);
+NMScrollableContent::NMScrollableContent(QWidget* parent) : QWidget(parent) {
+  auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(0);
 
@@ -198,7 +200,7 @@ NMScrollableContent::NMScrollableContent(QWidget *parent) : QWidget(parent) {
   m_scrollArea->setFrameShape(QFrame::NoFrame);
 
   // Style the scroll bar
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   m_scrollArea->setStyleSheet(
       QString("QScrollArea { background: transparent; border: none; }"
               "QScrollBar:vertical { width: 6px; background: %1; }"
@@ -214,7 +216,7 @@ NMScrollableContent::NMScrollableContent(QWidget *parent) : QWidget(parent) {
   layout->addWidget(m_scrollArea);
 }
 
-void NMScrollableContent::setContentWidget(QWidget *widget) {
+void NMScrollableContent::setContentWidget(QWidget* widget) {
   m_scrollArea->setWidget(widget);
 }
 

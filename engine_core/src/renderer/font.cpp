@@ -12,15 +12,16 @@ namespace NovelMind::renderer {
 
 Font::Font() : m_handle(nullptr), m_size(0) {}
 
-Font::~Font() { destroy(); }
+Font::~Font() {
+  destroy();
+}
 
-Font::Font(Font &&other) noexcept
-    : m_handle(other.m_handle), m_size(other.m_size) {
+Font::Font(Font&& other) noexcept : m_handle(other.m_handle), m_size(other.m_size) {
   other.m_handle = nullptr;
   other.m_size = 0;
 }
 
-Font &Font::operator=(Font &&other) noexcept {
+Font& Font::operator=(Font&& other) noexcept {
   if (this != &other) {
     destroy();
     m_handle = other.m_handle;
@@ -31,7 +32,7 @@ Font &Font::operator=(Font &&other) noexcept {
   return *this;
 }
 
-Result<void> Font::loadFromMemory(const std::vector<u8> &data, i32 size) {
+Result<void> Font::loadFromMemory(const std::vector<u8>& data, i32 size) {
   if (data.empty() || size <= 0) {
     return Result<void>::error("Invalid font data or size");
   }
@@ -43,7 +44,7 @@ Result<void> Font::loadFromMemory(const std::vector<u8> &data, i32 size) {
   }
 
   FT_Face face;
-  if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte *>(data.data()),
+  if (FT_New_Memory_Face(ft, reinterpret_cast<const FT_Byte*>(data.data()),
                          static_cast<FT_Long>(data.size()), 0, &face)) {
     FT_Done_FreeType(ft);
     return Result<void>::error("Failed to load font from memory");
@@ -86,18 +87,23 @@ void Font::destroy() {
   m_size = 0;
 }
 
-bool Font::isValid() const { return m_size > 0; }
+bool Font::isValid() const {
+  return m_size > 0;
+}
 
-i32 Font::getSize() const { return m_size; }
+i32 Font::getSize() const {
+  return m_size;
+}
 
-void *Font::getNativeHandle() const { return m_handle; }
+void* Font::getNativeHandle() const {
+  return m_handle;
+}
 
 } // namespace NovelMind::renderer
 
 namespace NovelMind::renderer {
 
-Result<void> FontAtlas::build(const Font &font, const std::string &charset,
-                              i32 padding) {
+Result<void> FontAtlas::build(const Font& font, const std::string& charset, i32 padding) {
   m_glyphs.clear();
   m_texture.destroy();
   m_lineHeight = 0;
@@ -108,7 +114,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
   }
 
 #if defined(NOVELMIND_HAS_FREETYPE)
-  auto *face = static_cast<FT_Face>(font.getNativeHandle());
+  auto* face = static_cast<FT_Face>(font.getNativeHandle());
   if (!face) {
     return Result<void>::error("FontAtlas::build - missing FreeType face");
   }
@@ -116,8 +122,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
   // Fixed atlas width for simplicity; height will grow as needed.
   const i32 atlasWidth = 1024;
   i32 atlasHeight = padding * 2;
-  std::vector<u8> atlasPixels(static_cast<size_t>(atlasWidth * atlasHeight * 4),
-                              0);
+  std::vector<u8> atlasPixels(static_cast<size_t>(atlasWidth * atlasHeight * 4), 0);
 
   i32 cursorX = padding;
   i32 cursorY = padding;
@@ -125,8 +130,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
 
   // Record line height from the face metrics
   if (face->size) {
-    m_lineHeight =
-        static_cast<i32>(face->size->metrics.height / 64); // 26.6 fixed point
+    m_lineHeight = static_cast<i32>(face->size->metrics.height / 64); // 26.6 fixed point
   } else {
     m_lineHeight = font.getSize();
   }
@@ -165,12 +169,11 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
 
     // Copy bitmap into atlas (RGBA, white with alpha from glyph)
     for (i32 y = 0; y < glyphH; ++y) {
-      const u8 *srcRow =
-          reinterpret_cast<const u8 *>(g->bitmap.buffer + y * g->bitmap.pitch);
+      const u8* srcRow = reinterpret_cast<const u8*>(g->bitmap.buffer + y * g->bitmap.pitch);
       for (i32 x = 0; x < glyphW; ++x) {
         const u8 alpha = srcRow[x];
-        const size_t dstIndex = static_cast<size_t>(
-            ((cursorY + y) * atlasWidth + (cursorX + x)) * 4);
+        const size_t dstIndex =
+            static_cast<size_t>(((cursorY + y) * atlasWidth + (cursorX + x)) * 4);
         atlasPixels[dstIndex + 0] = 255;
         atlasPixels[dstIndex + 1] = 255;
         atlasPixels[dstIndex + 2] = 255;
@@ -186,8 +189,8 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
     info.bearingY = static_cast<f32>(g->bitmap_top);
     info.width = static_cast<f32>(glyphW);
     info.height = static_cast<f32>(glyphH);
-    info.uv = Rect(static_cast<f32>(cursorX), static_cast<f32>(cursorY),
-                   static_cast<f32>(glyphW), static_cast<f32>(glyphH));
+    info.uv = Rect(static_cast<f32>(cursorX), static_cast<f32>(cursorY), static_cast<f32>(glyphW),
+                   static_cast<f32>(glyphH));
 
     m_glyphs[codepoint] = info;
 
@@ -201,8 +204,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
     auto res = addGlyph(static_cast<char32_t>(code));
     if (res.isError()) {
       NOVELMIND_LOG_WARN("FontAtlas::build - failed for glyph " +
-                         std::to_string(static_cast<int>(code)) + ": " +
-                         res.error());
+                         std::to_string(static_cast<int>(code)) + ": " + res.error());
     }
   }
 
@@ -211,15 +213,14 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
   atlasPixels.resize(static_cast<size_t>(atlasWidth * atlasHeight * 4), 0);
 
   // Normalize UVs now that final atlas dimensions are known
-  for (auto &[_, glyph] : m_glyphs) {
+  for (auto& [_, glyph] : m_glyphs) {
     glyph.uv.x /= static_cast<f32>(atlasWidth);
     glyph.uv.y /= static_cast<f32>(atlasHeight);
     glyph.uv.width /= static_cast<f32>(atlasWidth);
     glyph.uv.height /= static_cast<f32>(atlasHeight);
   }
 
-  auto texRes =
-      m_texture.loadFromRGBA(atlasPixels.data(), atlasWidth, atlasHeight);
+  auto texRes = m_texture.loadFromRGBA(atlasPixels.data(), atlasWidth, atlasHeight);
   if (texRes.isError()) {
     return texRes;
   }
@@ -237,7 +238,7 @@ Result<void> FontAtlas::build(const Font &font, const std::string &charset,
 #endif
 }
 
-const GlyphInfo *FontAtlas::getGlyph(char32_t codepoint) const {
+const GlyphInfo* FontAtlas::getGlyph(char32_t codepoint) const {
   auto it = m_glyphs.find(codepoint);
   if (it != m_glyphs.end()) {
     return &it->second;

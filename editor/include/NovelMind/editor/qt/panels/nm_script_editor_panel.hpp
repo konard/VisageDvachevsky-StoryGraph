@@ -69,13 +69,13 @@ class NMScriptHighlighter final : public QSyntaxHighlighter {
   Q_OBJECT
 
 public:
-  explicit NMScriptHighlighter(QTextDocument *parent = nullptr);
+  explicit NMScriptHighlighter(QTextDocument* parent = nullptr);
 
   /**
    * @brief Set diagnostic markers for inline error/warning highlighting
    * @param diagnostics Map of line number (1-based) to list of issues
    */
-  void setDiagnostics(const QHash<int, QList<NMScriptIssue>> &diagnostics);
+  void setDiagnostics(const QHash<int, QList<NMScriptIssue>>& diagnostics);
 
   /**
    * @brief Clear all diagnostic markers
@@ -83,7 +83,7 @@ public:
   void clearDiagnostics();
 
 protected:
-  void highlightBlock(const QString &text) override;
+  void highlightBlock(const QString& text) override;
 
 private:
   struct Rule {
@@ -172,7 +172,7 @@ class NMScriptMinimap final : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMScriptMinimap(NMScriptEditor *editor, QWidget *parent = nullptr);
+  explicit NMScriptMinimap(NMScriptEditor* editor, QWidget* parent = nullptr);
 
   /**
    * @brief Update the minimap when document content changes
@@ -185,13 +185,13 @@ public:
   void setViewportRange(int firstLine, int lastLine);
 
 protected:
-  void paintEvent(QPaintEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void wheelEvent(QWheelEvent *event) override;
+  void paintEvent(QPaintEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void wheelEvent(QWheelEvent* event) override;
 
 private:
-  NMScriptEditor *m_editor = nullptr;
+  NMScriptEditor* m_editor = nullptr;
   QImage m_cachedImage;
   int m_firstVisibleLine = 0;
   int m_lastVisibleLine = 0;
@@ -218,12 +218,12 @@ class NMFindReplaceWidget final : public QWidget {
   Q_OBJECT
 
 public:
-  explicit NMFindReplaceWidget(QWidget *parent = nullptr);
+  explicit NMFindReplaceWidget(QWidget* parent = nullptr);
 
   /**
    * @brief Set the editor to search in
    */
-  void setEditor(NMScriptEditor *editor);
+  void setEditor(NMScriptEditor* editor);
 
   /**
    * @brief Show find mode (Ctrl+F)
@@ -238,7 +238,7 @@ public:
   /**
    * @brief Set initial search text
    */
-  void setSearchText(const QString &text);
+  void setSearchText(const QString& text);
 
 signals:
   void closeRequested();
@@ -248,7 +248,7 @@ private slots:
   void findPrevious();
   void replaceNext();
   void replaceAll();
-  void onSearchTextChanged(const QString &text);
+  void onSearchTextChanged(const QString& text);
 
 private:
   void performSearch(bool forward);
@@ -257,15 +257,15 @@ private:
   int countMatches() const;
   void updateMatchCount();
 
-  NMScriptEditor *m_editor = nullptr;
-  QLineEdit *m_searchEdit = nullptr;
-  QLineEdit *m_replaceEdit = nullptr;
-  QWidget *m_replaceRow = nullptr;
-  QCheckBox *m_caseSensitive = nullptr;
-  QCheckBox *m_wholeWord = nullptr;
-  QCheckBox *m_useRegex = nullptr;
-  QLabel *m_matchCountLabel = nullptr;
-  QPushButton *m_closeBtn = nullptr;
+  NMScriptEditor* m_editor = nullptr;
+  QLineEdit* m_searchEdit = nullptr;
+  QLineEdit* m_replaceEdit = nullptr;
+  QWidget* m_replaceRow = nullptr;
+  QCheckBox* m_caseSensitive = nullptr;
+  QCheckBox* m_wholeWord = nullptr;
+  QCheckBox* m_useRegex = nullptr;
+  QLabel* m_matchCountLabel = nullptr;
+  QPushButton* m_closeBtn = nullptr;
   QList<QTextEdit::ExtraSelection> m_searchHighlights;
 };
 
@@ -287,12 +287,12 @@ public:
     std::function<void()> action;
   };
 
-  explicit NMScriptCommandPalette(QWidget *parent = nullptr);
+  explicit NMScriptCommandPalette(QWidget* parent = nullptr);
 
   /**
    * @brief Register a command
    */
-  void addCommand(const Command &cmd);
+  void addCommand(const Command& cmd);
 
   /**
    * @brief Show the command palette
@@ -300,20 +300,20 @@ public:
   void show();
 
 signals:
-  void commandExecuted(const QString &commandName);
+  void commandExecuted(const QString& commandName);
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
-  void onFilterChanged(const QString &filter);
-  void onItemActivated(QListWidgetItem *item);
+  void onFilterChanged(const QString& filter);
+  void onItemActivated(QListWidgetItem* item);
 
 private:
-  void updateCommandList(const QString &filter);
+  void updateCommandList(const QString& filter);
 
-  QLineEdit *m_filterEdit = nullptr;
-  QListWidget *m_commandList = nullptr;
+  QLineEdit* m_filterEdit = nullptr;
+  QListWidget* m_commandList = nullptr;
   QList<Command> m_commands;
 };
 
@@ -338,41 +338,39 @@ public:
     bool isCollapsed = false;
   };
 
-  explicit NMScriptEditor(QWidget *parent = nullptr);
+  explicit NMScriptEditor(QWidget* parent = nullptr);
   ~NMScriptEditor() override;
 
-  void setCompletionWords(const QStringList &words);
-  void setCompletionEntries(const QList<CompletionEntry> &entries);
-  void setHoverDocs(const QHash<QString, QString> &docs);
-  void setDocHtml(const QHash<QString, QString> &docs);
-  void setProjectDocs(const QHash<QString, QString> &docs);
+  void setCompletionWords(const QStringList& words);
+  void setCompletionEntries(const QList<CompletionEntry>& entries);
+  void setHoverDocs(const QHash<QString, QString>& docs);
+  void setDocHtml(const QHash<QString, QString>& docs);
+  void setProjectDocs(const QHash<QString, QString>& docs);
   [[nodiscard]] int indentSize() const { return m_indentSize; }
 
   /**
    * @brief Set symbol locations for go-to-definition feature
    * @param locations Map of lowercase symbol name to its definition location
    */
-  void setSymbolLocations(const QHash<QString, SymbolLocation> &locations);
+  void setSymbolLocations(const QHash<QString, SymbolLocation>& locations);
 
   /**
    * @brief Set the highlighter for diagnostic updates
    */
-  void setHighlighter(NMScriptHighlighter *highlighter) {
-    m_highlighter = highlighter;
-  }
+  void setHighlighter(NMScriptHighlighter* highlighter) { m_highlighter = highlighter; }
 
   /**
    * @brief Update inline diagnostics (error/warning underlines)
    */
-  void setDiagnostics(const QList<NMScriptIssue> &issues);
+  void setDiagnostics(const QList<NMScriptIssue>& issues);
 
   int lineNumberAreaWidth() const;
-  void lineNumberAreaPaintEvent(QPaintEvent *event);
+  void lineNumberAreaPaintEvent(QPaintEvent* event);
 
   /**
    * @brief Paint code folding indicators in the fold margin
    */
-  void foldingAreaPaintEvent(QPaintEvent *event);
+  void foldingAreaPaintEvent(QPaintEvent* event);
 
   /**
    * @brief Get the folding area width
@@ -382,21 +380,19 @@ public:
   /**
    * @brief Get the first visible block (wrapper for protected method)
    */
-  [[nodiscard]] QTextBlock getFirstVisibleBlock() const {
-    return firstVisibleBlock();
-  }
+  [[nodiscard]] QTextBlock getFirstVisibleBlock() const { return firstVisibleBlock(); }
 
   /**
    * @brief Get block bounding geometry (wrapper for protected method)
    */
-  [[nodiscard]] QRectF getBlockBoundingGeometry(const QTextBlock &block) const {
+  [[nodiscard]] QRectF getBlockBoundingGeometry(const QTextBlock& block) const {
     return blockBoundingGeometry(block);
   }
 
   /**
    * @brief Get block bounding rect (wrapper for protected method)
    */
-  [[nodiscard]] QRectF getBlockBoundingRect(const QTextBlock &block) const {
+  [[nodiscard]] QRectF getBlockBoundingRect(const QTextBlock& block) const {
     return blockBoundingRect(block);
   }
 
@@ -409,13 +405,13 @@ public:
    * @brief Insert a code snippet at cursor position
    * @param snippetType Type of snippet: "scene", "choice", "if", "goto"
    */
-  void insertSnippet(const QString &snippetType);
+  void insertSnippet(const QString& snippetType);
 
   /**
    * @brief Insert a snippet template with tabstop navigation
    * @param snippet The snippet template to insert
    */
-  void insertSnippetTemplate(const SnippetTemplate &snippet);
+  void insertSnippetTemplate(const SnippetTemplate& snippet);
 
   /**
    * @brief Get the current completion context based on cursor position
@@ -428,8 +424,7 @@ public:
    * @param prefix The current typing prefix
    * @return List of completion entries filtered by context
    */
-  [[nodiscard]] QList<CompletionEntry>
-  getContextualCompletions(const QString &prefix) const;
+  [[nodiscard]] QList<CompletionEntry> getContextualCompletions(const QString& prefix) const;
 
   /**
    * @brief Get quick fixes for the current line
@@ -441,7 +436,7 @@ public:
    * @brief Apply a quick fix
    * @param fix The quick fix to apply
    */
-  void applyQuickFix(const QuickFix &fix);
+  void applyQuickFix(const QuickFix& fix);
 
   /**
    * @brief Navigate to the next tabstop in snippet mode
@@ -478,9 +473,7 @@ public:
   /**
    * @brief Get all folding regions
    */
-  [[nodiscard]] const QList<FoldingRegion> &foldingRegions() const {
-    return m_foldingRegions;
-  }
+  [[nodiscard]] const QList<FoldingRegion>& foldingRegions() const { return m_foldingRegions; }
 
   /**
    * @brief Update folding regions based on document structure
@@ -505,7 +498,7 @@ public:
   /**
    * @brief Set search highlight positions
    */
-  void setSearchHighlights(const QList<QTextEdit::ExtraSelection> &highlights);
+  void setSearchHighlights(const QList<QTextEdit::ExtraSelection>& highlights);
 
   /**
    * @brief Clear search highlights
@@ -515,7 +508,7 @@ public:
   /**
    * @brief Get the minimap widget
    */
-  [[nodiscard]] NMScriptMinimap *minimap() const { return m_minimap; }
+  [[nodiscard]] NMScriptMinimap* minimap() const { return m_minimap; }
 
   // === Breakpoint Support ===
 
@@ -523,7 +516,7 @@ public:
    * @brief Set breakpoints for this editor
    * @param lines Set of line numbers (1-based) with breakpoints
    */
-  void setBreakpoints(const QSet<int> &lines);
+  void setBreakpoints(const QSet<int>& lines);
 
   /**
    * @brief Get breakpoints for this editor
@@ -533,9 +526,7 @@ public:
   /**
    * @brief Check if a line has a breakpoint
    */
-  [[nodiscard]] bool hasBreakpoint(int line) const {
-    return m_breakpoints.contains(line);
-  }
+  [[nodiscard]] bool hasBreakpoint(int line) const { return m_breakpoints.contains(line); }
 
   /**
    * @brief Toggle breakpoint at line
@@ -551,14 +542,12 @@ public:
   /**
    * @brief Get the current execution line
    */
-  [[nodiscard]] int currentExecutionLine() const {
-    return m_currentExecutionLine;
-  }
+  [[nodiscard]] int currentExecutionLine() const { return m_currentExecutionLine; }
 
   /**
    * @brief Paint breakpoint gutter (called by line number area widget)
    */
-  void breakpointGutterPaintEvent(QPaintEvent *event);
+  void breakpointGutterPaintEvent(QPaintEvent* event);
 
   /**
    * @brief Get breakpoint gutter width
@@ -575,14 +564,12 @@ public:
    *
    * @param sceneLines Map of line number (1-based) to scene ID
    */
-  void setGraphConnectedScenes(const QHash<int, QString> &sceneLines);
+  void setGraphConnectedScenes(const QHash<int, QString>& sceneLines);
 
   /**
    * @brief Get graph-connected scenes
    */
-  [[nodiscard]] QHash<int, QString> graphConnectedScenes() const {
-    return m_graphConnectedScenes;
-  }
+  [[nodiscard]] QHash<int, QString> graphConnectedScenes() const { return m_graphConnectedScenes; }
 
   /**
    * @brief Check if a line has a graph-connected scene
@@ -594,14 +581,12 @@ public:
   /**
    * @brief Get scene ID at a line
    */
-  [[nodiscard]] QString sceneIdAtLine(int line) const {
-    return m_graphConnectedScenes.value(line);
-  }
+  [[nodiscard]] QString sceneIdAtLine(int line) const { return m_graphConnectedScenes.value(line); }
 
   /**
    * @brief Paint graph integration gutter
    */
-  void graphGutterPaintEvent(QPaintEvent *event);
+  void graphGutterPaintEvent(QPaintEvent* event);
 
   /**
    * @brief Get graph integration gutter width
@@ -610,23 +595,22 @@ public:
 
 signals:
   void requestSave();
-  void hoverDocChanged(const QString &token, const QString &html);
+  void hoverDocChanged(const QString& token, const QString& html);
 
   /**
    * @brief Emitted when go-to-definition is triggered (F12 or Ctrl+Click)
    */
-  void goToDefinitionRequested(const QString &symbol,
-                               const SymbolLocation &location);
+  void goToDefinitionRequested(const QString& symbol, const SymbolLocation& location);
 
   /**
    * @brief Emitted when find-references is triggered (Shift+F12)
    */
-  void findReferencesRequested(const QString &symbol);
+  void findReferencesRequested(const QString& symbol);
 
   /**
    * @brief Emitted to request navigation to a graph node
    */
-  void navigateToGraphNodeRequested(const QString &sceneId);
+  void navigateToGraphNodeRequested(const QString& sceneId);
 
   /**
    * @brief Emitted when find dialog should be shown
@@ -651,17 +635,17 @@ signals:
   /**
    * @brief Emitted when syntax hint changes (for status bar)
    */
-  void syntaxHintChanged(const QString &hint);
+  void syntaxHintChanged(const QString& hint);
 
   /**
    * @brief Emitted when breadcrumbs change
    */
-  void breadcrumbsChanged(const QStringList &breadcrumbs);
+  void breadcrumbsChanged(const QStringList& breadcrumbs);
 
   /**
    * @brief Emitted when quick fixes are available for current position
    */
-  void quickFixesAvailable(const QList<QuickFix> &fixes);
+  void quickFixesAvailable(const QList<QuickFix>& fixes);
 
   /**
    * @brief Emitted when a breakpoint is toggled in the gutter
@@ -673,32 +657,32 @@ signals:
    * @brief Emitted when user clicks on a graph-connected scene indicator (Issue #239)
    * @param sceneId The scene ID to navigate to
    */
-  void graphIndicatorClicked(const QString &sceneId);
+  void graphIndicatorClicked(const QString& sceneId);
 
 protected:
-  void keyPressEvent(QKeyEvent *event) override;
-  void mousePressEvent(QMouseEvent *event) override;
-  void mouseMoveEvent(QMouseEvent *event) override;
-  void resizeEvent(QResizeEvent *event) override;
-  void contextMenuEvent(QContextMenuEvent *event) override;
-  void paintEvent(QPaintEvent *event) override;
+  void keyPressEvent(QKeyEvent* event) override;
+  void mousePressEvent(QMouseEvent* event) override;
+  void mouseMoveEvent(QMouseEvent* event) override;
+  void resizeEvent(QResizeEvent* event) override;
+  void contextMenuEvent(QContextMenuEvent* event) override;
+  void paintEvent(QPaintEvent* event) override;
   void scrollContentsBy(int dx, int dy) override;
 
 private:
   QString textUnderCursor() const;
-  QString symbolAtPosition(const QPoint &pos) const;
-  void insertCompletion(const QString &completion);
+  QString symbolAtPosition(const QPoint& pos) const;
+  void insertCompletion(const QString& completion);
   void refreshDynamicCompletions();
-  void rebuildCompleterModel(const QList<CompletionEntry> &entries);
+  void rebuildCompleterModel(const QList<CompletionEntry>& entries);
   void updateLineNumberAreaWidth(int newBlockCount = 0);
-  void updateLineNumberArea(const QRect &rect, int dy);
+  void updateLineNumberArea(const QRect& rect, int dy);
   void highlightCurrentLine();
   void highlightMatchingBrackets();
-  void handleTabKey(QKeyEvent *event);
-  void handleBacktabKey(QKeyEvent *event);
-  void handleReturnKey(QKeyEvent *event);
+  void handleTabKey(QKeyEvent* event);
+  void handleBacktabKey(QKeyEvent* event);
+  void handleReturnKey(QKeyEvent* event);
   void indentSelection(int delta);
-  QString indentForCurrentLine(int *outLogicalIndent = nullptr) const;
+  QString indentForCurrentLine(int* outLogicalIndent = nullptr) const;
   void updateMinimapGeometry();
   void emitViewportChanged();
 
@@ -706,8 +690,8 @@ private:
   void findReferences();
   void showSnippetMenu();
 
-  QCompleter *m_completer = nullptr;
-  NMScriptHighlighter *m_highlighter = nullptr;
+  QCompleter* m_completer = nullptr;
+  NMScriptHighlighter* m_highlighter = nullptr;
   QHash<QString, QString> m_hoverDocs;
   QHash<QString, QString> m_docHtml;
   QHash<QString, QString> m_projectDocs;
@@ -716,9 +700,9 @@ private:
   QString m_lastHoverToken;
   QList<CompletionEntry> m_staticCompletionEntries;
   QList<CompletionEntry> m_cachedCompletionEntries;
-  QWidget *m_lineNumberArea = nullptr;
-  QWidget *m_foldingArea = nullptr;
-  NMScriptMinimap *m_minimap = nullptr;
+  QWidget* m_lineNumberArea = nullptr;
+  QWidget* m_foldingArea = nullptr;
+  NMScriptMinimap* m_minimap = nullptr;
   int m_indentSize = 2;
   bool m_minimapEnabled = true;
   QList<FoldingRegion> m_foldingRegions;
@@ -740,13 +724,13 @@ private:
   QHash<int, QList<QuickFix>> m_quickFixes; // line -> fixes
 
   // Breakpoint support
-  QSet<int> m_breakpoints;      // Set of lines with breakpoints (1-based)
+  QSet<int> m_breakpoints;        // Set of lines with breakpoints (1-based)
   int m_currentExecutionLine = 0; // Current execution line for debug highlight
-  QWidget *m_breakpointGutter = nullptr;
+  QWidget* m_breakpointGutter = nullptr;
 
   // Issue #239: Graph integration gutter
   QHash<int, QString> m_graphConnectedScenes; // line -> scene ID
-  QWidget *m_graphGutter = nullptr;
+  QWidget* m_graphGutter = nullptr;
 };
 
 /**
@@ -779,35 +763,35 @@ class NMScriptEditorPanel final : public NMDockPanel {
   Q_OBJECT
 
 public:
-  explicit NMScriptEditorPanel(QWidget *parent = nullptr);
-  void setIssuesPanel(class NMIssuesPanel *panel) { m_issuesPanel = panel; }
+  explicit NMScriptEditorPanel(QWidget* parent = nullptr);
+  void setIssuesPanel(class NMIssuesPanel* panel) { m_issuesPanel = panel; }
   ~NMScriptEditorPanel() override;
 
   void onInitialize() override;
   void onUpdate(double deltaTime) override;
 
-  void openScript(const QString &path);
+  void openScript(const QString& path);
   void refreshFileList();
-  void goToLocation(const QString &path, int line);
+  void goToLocation(const QString& path, int line);
 
   /**
    * @brief Navigate to a scene definition
    * @param sceneName The scene name to navigate to
    * @return true if navigation succeeded
    */
-  bool goToSceneDefinition(const QString &sceneName);
+  bool goToSceneDefinition(const QString& sceneName);
 
   /**
    * @brief Find all references to a symbol across all scripts
    * @param symbol The symbol to find references for
    * @return List of reference locations
    */
-  QList<ReferenceResult> findAllReferences(const QString &symbol) const;
+  QList<ReferenceResult> findAllReferences(const QString& symbol) const;
 
   /**
    * @brief Get the symbol index for external use
    */
-  [[nodiscard]] const auto &symbolIndex() const { return m_symbolIndex; }
+  [[nodiscard]] const auto& symbolIndex() const { return m_symbolIndex; }
 
   /**
    * @brief Show the find dialog (Ctrl+F)
@@ -845,7 +829,7 @@ public:
    * @param readOnly true to enable read-only mode
    * @param reason Optional reason text for the banner (e.g., "Graph Mode")
    */
-  void setReadOnly(bool readOnly, const QString &reason = QString());
+  void setReadOnly(bool readOnly, const QString& reason = QString());
 
   /**
    * @brief Check if panel is in read-only mode
@@ -861,18 +845,17 @@ public:
   void syncScriptToGraph();
 
 signals:
-  void docHtmlChanged(const QString &html);
+  void docHtmlChanged(const QString& html);
 
   /**
    * @brief Emitted when user requests to navigate to a graph node from script
    */
-  void navigateToGraphNode(const QString &sceneId);
+  void navigateToGraphNode(const QString& sceneId);
 
   /**
    * @brief Emitted when find references results are ready
    */
-  void referencesFound(const QString &symbol,
-                       const QList<ReferenceResult> &references);
+  void referencesFound(const QString& symbol, const QList<ReferenceResult>& references);
 
   /**
    * @brief Emitted when script content should be synced to Story Graph
@@ -880,30 +863,29 @@ signals:
    * Contains parsed scene data from script files that should update
    * the corresponding Story Graph nodes.
    */
-  void syncToGraphRequested(const QString &sceneName, const QString &speaker,
-                            const QString &dialogueText,
-                            const QStringList &choices);
+  void syncToGraphRequested(const QString& sceneName, const QString& speaker,
+                            const QString& dialogueText, const QStringList& choices);
 
 private slots:
-  void onFileActivated(QTreeWidgetItem *item, int column);
+  void onFileActivated(QTreeWidgetItem* item, int column);
   void onSaveRequested();
   void onSaveAllRequested();
   void onFormatRequested();
   void onCurrentTabChanged(int index);
-  void onSymbolListActivated(QListWidgetItem *item);
+  void onSymbolListActivated(QListWidgetItem* item);
   void onSymbolNavigatorRequested();
-  void onGoToDefinition(const QString &symbol, const SymbolLocation &location);
-  void onFindReferences(const QString &symbol);
+  void onGoToDefinition(const QString& symbol, const SymbolLocation& location);
+  void onFindReferences(const QString& symbol);
   void onInsertSnippetRequested();
-  void onNavigateToGraphNode(const QString &sceneId);
+  void onNavigateToGraphNode(const QString& sceneId);
   void onToggleMinimap();
   void onFoldAll();
   void onUnfoldAll();
   void runDiagnostics();
-  void onSyntaxHintChanged(const QString &hint);
-  void onBreadcrumbsChanged(const QStringList &breadcrumbs);
+  void onSyntaxHintChanged(const QString& hint);
+  void onBreadcrumbsChanged(const QStringList& breadcrumbs);
   void onQuickFixRequested();
-  void showQuickFixMenu(const QList<QuickFix> &fixes);
+  void showQuickFixMenu(const QList<QuickFix>& fixes);
   void onScriptTextChanged();
   void onCursorPositionChanged();
 
@@ -911,26 +893,24 @@ private:
   void setupContent();
   void setupToolBar();
   void setupCommandPalette();
-  void addEditorTab(const QString &path);
-  bool saveEditor(QPlainTextEdit *editor);
-  bool ensureScriptFile(const QString &path);
-  QList<NMScriptIssue> validateSource(const QString &path,
-                                      const QString &source) const;
+  void addEditorTab(const QString& path);
+  bool saveEditor(QPlainTextEdit* editor);
+  bool ensureScriptFile(const QString& path);
+  QList<NMScriptIssue> validateSource(const QString& path, const QString& source) const;
   void refreshSymbolIndex();
   void pushCompletionsToEditors();
   void refreshSymbolList();
-  void filterSymbolList(const QString &filter);
+  void filterSymbolList(const QString& filter);
   QList<NMScriptEditor::CompletionEntry> buildProjectCompletionEntries() const;
   QHash<QString, QString> buildProjectHoverDocs() const;
   QHash<QString, QString> buildProjectDocHtml() const;
   QHash<QString, SymbolLocation> buildSymbolLocations() const;
   void rebuildWatchList();
   QString scriptsRootPath() const;
-  QList<NMScriptEditor *> editors() const;
-  void showReferencesDialog(const QString &symbol,
-                            const QList<ReferenceResult> &references);
-  NMScriptEditor *currentEditor() const;
-  void loadSampleScript(const QString &sampleId);
+  QList<NMScriptEditor*> editors() const;
+  void showReferencesDialog(const QString& symbol, const QList<ReferenceResult>& references);
+  NMScriptEditor* currentEditor() const;
+  void loadSampleScript(const QString& sampleId);
 
   // State persistence
   void saveState();
@@ -938,29 +918,29 @@ private:
   void applySettings();
 
   // File conflict handling helpers
-  NMScriptEditor *findEditorForPath(const QString &path) const;
-  bool isTabModified(const QWidget *editor) const;
-  QDateTime getEditorSaveTime(const QWidget *editor) const;
-  void setEditorSaveTime(QWidget *editor, const QDateTime &time);
-  void onFileChanged(const QString &path);
-  void onDirectoryChanged(const QString &path);
-  void showConflictDialog(const QString &path, NMScriptEditor *editor);
-  void showReloadPrompt(const QString &path, NMScriptEditor *editor);
+  NMScriptEditor* findEditorForPath(const QString& path) const;
+  bool isTabModified(const QWidget* editor) const;
+  QDateTime getEditorSaveTime(const QWidget* editor) const;
+  void setEditorSaveTime(QWidget* editor, const QDateTime& time);
+  void onFileChanged(const QString& path);
+  void onDirectoryChanged(const QString& path);
+  void showConflictDialog(const QString& path, NMScriptEditor* editor);
+  void showReloadPrompt(const QString& path, NMScriptEditor* editor);
 
-  QWidget *m_contentWidget = nullptr;
-  QSplitter *m_splitter = nullptr;
-  QSplitter *m_leftSplitter = nullptr;
-  QSplitter *m_mainSplitter = nullptr; // Horizontal splitter for editor and preview
-  QTreeWidget *m_fileTree = nullptr;
-  QListWidget *m_symbolList = nullptr;
-  QTabWidget *m_tabs = nullptr;
-  QToolBar *m_toolBar = nullptr;
-  NMFindReplaceWidget *m_findReplaceWidget = nullptr;
-  NMScriptCommandPalette *m_commandPalette = nullptr;
-  NMScenePreviewWidget *m_scenePreview = nullptr;
+  QWidget* m_contentWidget = nullptr;
+  QSplitter* m_splitter = nullptr;
+  QSplitter* m_leftSplitter = nullptr;
+  QSplitter* m_mainSplitter = nullptr; // Horizontal splitter for editor and preview
+  QTreeWidget* m_fileTree = nullptr;
+  QListWidget* m_symbolList = nullptr;
+  QTabWidget* m_tabs = nullptr;
+  QToolBar* m_toolBar = nullptr;
+  NMFindReplaceWidget* m_findReplaceWidget = nullptr;
+  NMScriptCommandPalette* m_commandPalette = nullptr;
+  NMScenePreviewWidget* m_scenePreview = nullptr;
 
-  QHash<QWidget *, QString> m_tabPaths;
-  QHash<QWidget *, QDateTime> m_editorSaveTimes; // Track last save time per editor
+  QHash<QWidget*, QString> m_tabPaths;
+  QHash<QWidget*, QDateTime> m_editorSaveTimes; // Track last save time per editor
   QPointer<QFileSystemWatcher> m_scriptWatcher;
 
   struct ScriptSymbolIndex {
@@ -983,30 +963,30 @@ private:
   mutable QRecursiveMutex m_symbolIndexMutex;
 
   QTimer m_diagnosticsTimer;
-  class NMIssuesPanel *m_issuesPanel = nullptr;
+  class NMIssuesPanel* m_issuesPanel = nullptr;
   bool m_minimapEnabled = true;
 
   // Status bar and breadcrumbs
-  QWidget *m_statusBar = nullptr;
-  QLabel *m_syntaxHintLabel = nullptr;
-  QLabel *m_cursorPosLabel = nullptr;
-  QWidget *m_breadcrumbBar = nullptr;
+  QWidget* m_statusBar = nullptr;
+  QLabel* m_syntaxHintLabel = nullptr;
+  QLabel* m_cursorPosLabel = nullptr;
+  QWidget* m_breadcrumbBar = nullptr;
 
   // Snippet templates
   QList<SnippetTemplate> m_snippetTemplates;
 
   // Read-only mode for workflow enforcement (issue #117)
   bool m_readOnly = false;
-  QWidget *m_readOnlyBanner = nullptr;
-  QLabel *m_readOnlyLabel = nullptr;
-  QPushButton *m_syncToGraphBtn = nullptr;
+  QWidget* m_readOnlyBanner = nullptr;
+  QLabel* m_readOnlyLabel = nullptr;
+  QPushButton* m_syncToGraphBtn = nullptr;
 
   // Project context for asset validation (issue #241)
-  NovelMind::editor::ScriptProjectContext *m_projectContext = nullptr;
+  NovelMind::editor::ScriptProjectContext* m_projectContext = nullptr;
 
   // Live scene preview (issue #240)
   bool m_scenePreviewEnabled = false;
-  QAction *m_togglePreviewAction = nullptr;
+  QAction* m_togglePreviewAction = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

@@ -83,7 +83,7 @@ struct TimelineEvent {
 /**
  * @brief Event callback type
  */
-using TimelineEventCallback = std::function<void(const TimelineEvent &)>;
+using TimelineEventCallback = std::function<void(const TimelineEvent&)>;
 
 /**
  * @brief Scheduled event for the playback engine
@@ -130,10 +130,9 @@ public:
 
   virtual void onPlaybackStateChanged(PlaybackState /*state*/) {}
   virtual void onTimeChanged(f64 /*currentTime*/, f64 /*duration*/) {}
-  virtual void onTrackStateChanged(const std::string & /*trackId*/) {}
+  virtual void onTrackStateChanged(const std::string& /*trackId*/) {}
   virtual void onLoopCompleted(u32 /*loopCount*/) {}
-  virtual void onMarkerReached(const std::string & /*markerId*/, f64 /*time*/) {
-  }
+  virtual void onMarkerReached(const std::string& /*markerId*/, f64 /*time*/) {}
 };
 
 /**
@@ -152,13 +151,13 @@ public:
   ~TimelinePlaybackEngine();
 
   // Prevent copying
-  TimelinePlaybackEngine(const TimelinePlaybackEngine &) = delete;
-  TimelinePlaybackEngine &operator=(const TimelinePlaybackEngine &) = delete;
+  TimelinePlaybackEngine(const TimelinePlaybackEngine&) = delete;
+  TimelinePlaybackEngine& operator=(const TimelinePlaybackEngine&) = delete;
 
   /**
    * @brief Get singleton instance
    */
-  static TimelinePlaybackEngine &instance();
+  static TimelinePlaybackEngine& instance();
 
   // =========================================================================
   // Playback Control
@@ -172,7 +171,7 @@ public:
   /**
    * @brief Start playback with configuration
    */
-  void play(const PlaybackConfig &config);
+  void play(const PlaybackConfig& config);
 
   /**
    * @brief Pause playback
@@ -344,33 +343,32 @@ public:
   /**
    * @brief Register a track for playback
    */
-  void registerTrack(const std::string &trackId);
+  void registerTrack(const std::string& trackId);
 
   /**
    * @brief Unregister a track
    */
-  void unregisterTrack(const std::string &trackId);
+  void unregisterTrack(const std::string& trackId);
 
   /**
    * @brief Get track state
    */
-  [[nodiscard]] std::optional<TrackPlaybackState>
-  getTrackState(const std::string &trackId) const;
+  [[nodiscard]] std::optional<TrackPlaybackState> getTrackState(const std::string& trackId) const;
 
   /**
    * @brief Set track enabled state
    */
-  void setTrackEnabled(const std::string &trackId, bool enabled);
+  void setTrackEnabled(const std::string& trackId, bool enabled);
 
   /**
    * @brief Set track solo state
    */
-  void setTrackSolo(const std::string &trackId, bool solo);
+  void setTrackSolo(const std::string& trackId, bool solo);
 
   /**
    * @brief Set track mute state
    */
-  void setTrackMuted(const std::string &trackId, bool muted);
+  void setTrackMuted(const std::string& trackId, bool muted);
 
   /**
    * @brief Clear all track solo states
@@ -390,23 +388,22 @@ public:
   /**
    * @brief Schedule a repeating event
    */
-  std::string scheduleRepeatingEvent(f64 startTime, f64 interval,
-                                     TimelineEventCallback callback);
+  std::string scheduleRepeatingEvent(f64 startTime, f64 interval, TimelineEventCallback callback);
 
   /**
    * @brief Cancel a scheduled event
    */
-  void cancelEvent(const std::string &eventId);
+  void cancelEvent(const std::string& eventId);
 
   /**
    * @brief Add a marker
    */
-  void addMarker(const std::string &markerId, f64 time);
+  void addMarker(const std::string& markerId, f64 time);
 
   /**
    * @brief Remove a marker
    */
-  void removeMarker(const std::string &markerId);
+  void removeMarker(const std::string& markerId);
 
   /**
    * @brief Get all markers
@@ -416,7 +413,7 @@ public:
   /**
    * @brief Jump to marker
    */
-  void jumpToMarker(const std::string &markerId);
+  void jumpToMarker(const std::string& markerId);
 
   // =========================================================================
   // Update
@@ -446,12 +443,12 @@ public:
   /**
    * @brief Add a playback listener
    */
-  void addListener(IPlaybackListener *listener);
+  void addListener(IPlaybackListener* listener);
 
   /**
    * @brief Remove a playback listener
    */
-  void removeListener(IPlaybackListener *listener);
+  void removeListener(IPlaybackListener* listener);
 
   // =========================================================================
   // Snapshot/Restore
@@ -473,14 +470,14 @@ public:
   /**
    * @brief Restore from snapshot
    */
-  void restoreFromSnapshot(const PlaybackSnapshot &snapshot);
+  void restoreFromSnapshot(const PlaybackSnapshot& snapshot);
 
 private:
   // Internal methods
   void processScheduledEvents(f64 fromTime, f64 toTime);
   void notifyStateChanged();
   void notifyTimeChanged();
-  void notifyTrackStateChanged(const std::string &trackId);
+  void notifyTrackStateChanged(const std::string& trackId);
   void handleLoopBoundary();
   f64 clampTime(f64 time) const;
 
@@ -511,7 +508,7 @@ private:
 
   // Callbacks and listeners
   TimelineEventCallback m_eventCallback;
-  std::vector<IPlaybackListener *> m_listeners;
+  std::vector<IPlaybackListener*> m_listeners;
 
   // Thread safety
   mutable std::mutex m_mutex;

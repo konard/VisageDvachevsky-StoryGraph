@@ -63,7 +63,7 @@ public:
    * @brief Get the registered audio player
    * @return Pointer to audio player, nullptr if not registered
    */
-  static IAudioPlayer *getAudioPlayer() {
+  static IAudioPlayer* getAudioPlayer() {
     std::lock_guard<std::mutex> lock(s_mutex);
     return s_audioPlayer.get();
   }
@@ -115,7 +115,7 @@ public:
    * @brief Get the registered file system
    * @return Pointer to file system, nullptr if not registered
    */
-  static IFileSystem *getFileSystem() {
+  static IFileSystem* getFileSystem() {
     std::lock_guard<std::mutex> lock(s_mutex);
     return s_fileSystem.get();
   }

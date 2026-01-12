@@ -7,14 +7,16 @@
 
 namespace NovelMind::core {
 
-Logger &Logger::instance() {
+Logger& Logger::instance() {
   static Logger instance;
   return instance;
 }
 
 Logger::Logger() : m_level(LogLevel::Info), m_useColors(true) {}
 
-Logger::~Logger() { closeOutputFile(); }
+Logger::~Logger() {
+  closeOutputFile();
+}
 
 void Logger::setLevel(LogLevel level) {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -26,7 +28,7 @@ LogLevel Logger::getLevel() const {
   return m_level;
 }
 
-void Logger::setOutputFile(const std::string &path) {
+void Logger::setOutputFile(const std::string& path) {
   std::lock_guard<std::mutex> lock(m_mutex);
   closeOutputFile();
   m_fileStream.open(path, std::ios::out | std::ios::app);
@@ -57,7 +59,7 @@ void Logger::log(LogLevel level, std::string_view message) {
   }
 
   std::string timestamp = getCurrentTimestamp();
-  const char *levelStr = levelToString(level);
+  const char* levelStr = levelToString(level);
 
   std::ostringstream oss;
   oss << "[" << timestamp << "] [" << levelStr << "] " << message;
@@ -67,11 +69,11 @@ void Logger::log(LogLevel level, std::string_view message) {
     m_fileStream << logLine << std::endl;
   }
 
-  std::ostream &out = (level >= LogLevel::Warning) ? std::cerr : std::cout;
+  std::ostream& out = (level >= LogLevel::Warning) ? std::cerr : std::cout;
 
   if (m_useColors) {
-    const char *colorCode = "";
-    const char *resetCode = "\033[0m";
+    const char* colorCode = "";
+    const char* resetCode = "\033[0m";
 
     switch (level) {
     case LogLevel::Trace:
@@ -103,28 +105,38 @@ void Logger::log(LogLevel level, std::string_view message) {
 
   // Call registered callbacks (e.g., for GUI console)
   std::string messageStr(message);
-  for (const auto &callback : m_callbacks) {
+  for (const auto& callback : m_callbacks) {
     if (callback) {
       callback(level, messageStr);
     }
   }
 }
 
-void Logger::trace(std::string_view message) { log(LogLevel::Trace, message); }
+void Logger::trace(std::string_view message) {
+  log(LogLevel::Trace, message);
+}
 
-void Logger::debug(std::string_view message) { log(LogLevel::Debug, message); }
+void Logger::debug(std::string_view message) {
+  log(LogLevel::Debug, message);
+}
 
-void Logger::info(std::string_view message) { log(LogLevel::Info, message); }
+void Logger::info(std::string_view message) {
+  log(LogLevel::Info, message);
+}
 
 void Logger::warning(std::string_view message) {
   log(LogLevel::Warning, message);
 }
 
-void Logger::error(std::string_view message) { log(LogLevel::Error, message); }
+void Logger::error(std::string_view message) {
+  log(LogLevel::Error, message);
+}
 
-void Logger::fatal(std::string_view message) { log(LogLevel::Fatal, message); }
+void Logger::fatal(std::string_view message) {
+  log(LogLevel::Fatal, message);
+}
 
-const char *Logger::levelToString(LogLevel level) const {
+const char* Logger::levelToString(LogLevel level) const {
   switch (level) {
   case LogLevel::Trace:
     return "TRACE";
@@ -146,9 +158,7 @@ const char *Logger::levelToString(LogLevel level) const {
 std::string Logger::getCurrentTimestamp() const {
   auto now = std::chrono::system_clock::now();
   auto time = std::chrono::system_clock::to_time_t(now);
-  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                now.time_since_epoch()) %
-            1000;
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
   // Thread safety: use localtime_r (POSIX) or localtime_s (Windows)
   std::tm timeinfo{};

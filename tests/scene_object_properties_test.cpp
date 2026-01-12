@@ -13,13 +13,13 @@ using namespace NovelMind;
 using namespace NovelMind::scene;
 
 // Test macro
-#define TEST_ASSERT(condition, message)                                        \
-  do {                                                                         \
-    if (!(condition)) {                                                        \
-      std::cerr << "ASSERTION FAILED: " << message << "\n";                    \
-      std::cerr << "  at " << __FILE__ << ":" << __LINE__ << "\n";            \
-      return false;                                                            \
-    }                                                                          \
+#define TEST_ASSERT(condition, message)                                                            \
+  do {                                                                                             \
+    if (!(condition)) {                                                                            \
+      std::cerr << "ASSERTION FAILED: " << message << "\n";                                        \
+      std::cerr << "  at " << __FILE__ << ":" << __LINE__ << "\n";                                 \
+      return false;                                                                                \
+    }                                                                                              \
   } while (0)
 
 bool testSceneObjectBaseProperties() {
@@ -27,20 +27,15 @@ bool testSceneObjectBaseProperties() {
 
   registerSceneObjectBaseProperties();
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<SceneObjectBase>();
-  TEST_ASSERT(typeInfo != nullptr,
-              "SceneObjectBase should be registered");
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<SceneObjectBase>();
+  TEST_ASSERT(typeInfo != nullptr, "SceneObjectBase should be registered");
 
   // Check essential properties exist
   TEST_ASSERT(typeInfo->findProperty("x") != nullptr, "x property exists");
   TEST_ASSERT(typeInfo->findProperty("y") != nullptr, "y property exists");
-  TEST_ASSERT(typeInfo->findProperty("scaleX") != nullptr,
-              "scaleX property exists");
-  TEST_ASSERT(typeInfo->findProperty("alpha") != nullptr,
-              "alpha property exists");
-  TEST_ASSERT(typeInfo->findProperty("visible") != nullptr,
-              "visible property exists");
+  TEST_ASSERT(typeInfo->findProperty("scaleX") != nullptr, "scaleX property exists");
+  TEST_ASSERT(typeInfo->findProperty("alpha") != nullptr, "alpha property exists");
+  TEST_ASSERT(typeInfo->findProperty("visible") != nullptr, "visible property exists");
 
   std::cout << "  ✓ All base properties registered\n";
   return true;
@@ -51,19 +46,14 @@ bool testCharacterObjectProperties() {
 
   registerCharacterObjectProperties();
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<CharacterObject>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<CharacterObject>();
   TEST_ASSERT(typeInfo != nullptr, "CharacterObject should be registered");
 
   // Check character-specific properties
-  TEST_ASSERT(typeInfo->findProperty("characterId") != nullptr,
-              "characterId property exists");
-  TEST_ASSERT(typeInfo->findProperty("displayName") != nullptr,
-              "displayName property exists");
-  TEST_ASSERT(typeInfo->findProperty("expression") != nullptr,
-              "expression property exists");
-  TEST_ASSERT(typeInfo->findProperty("highlighted") != nullptr,
-              "highlighted property exists");
+  TEST_ASSERT(typeInfo->findProperty("characterId") != nullptr, "characterId property exists");
+  TEST_ASSERT(typeInfo->findProperty("displayName") != nullptr, "displayName property exists");
+  TEST_ASSERT(typeInfo->findProperty("expression") != nullptr, "expression property exists");
+  TEST_ASSERT(typeInfo->findProperty("highlighted") != nullptr, "highlighted property exists");
 
   std::cout << "  ✓ All character properties registered\n";
   return true;
@@ -79,18 +69,16 @@ bool testPropertyGettersSetters() {
   bg.setPosition(100.0f, 200.0f);
   bg.setAlpha(0.5f);
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<SceneObjectBase>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<SceneObjectBase>();
   TEST_ASSERT(typeInfo != nullptr, "TypeInfo available");
 
   // Test getter
-  const auto *xProp = typeInfo->findProperty("x");
+  const auto* xProp = typeInfo->findProperty("x");
   TEST_ASSERT(xProp != nullptr, "x property found");
 
   PropertyValue xValue = xProp->getValue(&bg);
-  auto *xFloat = std::get_if<f32>(&xValue);
-  TEST_ASSERT(xFloat != nullptr && *xFloat == 100.0f,
-              "x getter returns correct value");
+  auto* xFloat = std::get_if<f32>(&xValue);
+  TEST_ASSERT(xFloat != nullptr && *xFloat == 100.0f, "x getter returns correct value");
 
   // Test setter
   xProp->setValue(&bg, PropertyValue{150.0f});
@@ -105,14 +93,13 @@ bool testPropertyMetadata() {
 
   registerCharacterObjectProperties();
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<CharacterObject>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<CharacterObject>();
   TEST_ASSERT(typeInfo != nullptr, "TypeInfo available");
 
-  const auto *nameProp = typeInfo->findProperty("displayName");
+  const auto* nameProp = typeInfo->findProperty("displayName");
   TEST_ASSERT(nameProp != nullptr, "displayName property found");
 
-  const auto &meta = nameProp->getMeta();
+  const auto& meta = nameProp->getMeta();
   TEST_ASSERT(meta.name == "displayName", "Property name correct");
   TEST_ASSERT(meta.displayName == "Display Name", "Display name correct");
   TEST_ASSERT(meta.type == PropertyType::String, "Type is String");
@@ -127,8 +114,7 @@ bool testPropertyCategories() {
 
   registerCharacterObjectProperties();
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<CharacterObject>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<CharacterObject>();
   TEST_ASSERT(typeInfo != nullptr, "TypeInfo available");
 
   auto categories = typeInfo->getPropertiesByCategory();
@@ -138,7 +124,7 @@ bool testPropertyCategories() {
   bool foundCharacterCategory = false;
   bool foundAppearanceCategory = false;
 
-  for (const auto &[category, props] : categories) {
+  for (const auto& [category, props] : categories) {
     if (category == "Character") {
       foundCharacterCategory = true;
       TEST_ASSERT(!props.empty(), "Character category has properties");
@@ -163,16 +149,15 @@ bool testColorConversion() {
   BackgroundObject bg("test_bg");
   bg.setTint(renderer::Color(128, 64, 32, 255));
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<BackgroundObject>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<BackgroundObject>();
   TEST_ASSERT(typeInfo != nullptr, "TypeInfo available");
 
-  const auto *tintProp = typeInfo->findProperty("tint");
+  const auto* tintProp = typeInfo->findProperty("tint");
   TEST_ASSERT(tintProp != nullptr, "tint property found");
 
   // Get color as property value
   PropertyValue tintValue = tintProp->getValue(&bg);
-  auto *color = std::get_if<Color>(&tintValue);
+  auto* color = std::get_if<Color>(&tintValue);
   TEST_ASSERT(color != nullptr, "Color value retrieved");
 
   // Check conversion (128/255 ≈ 0.502)
@@ -184,7 +169,7 @@ bool testColorConversion() {
   tintProp->setValue(&bg, PropertyValue{newColor});
 
   // Verify it was set
-  const auto &tint = bg.getTint();
+  const auto& tint = bg.getTint();
   TEST_ASSERT(tint.r == 255, "Red component set correctly");
   TEST_ASSERT(tint.g >= 127 && tint.g <= 128, "Green component set correctly");
 
@@ -200,23 +185,21 @@ bool testEnumProperties() {
   CharacterObject character("test_char", "test");
   character.setSlotPosition(CharacterObject::Position::Right);
 
-  const TypeInfo *typeInfo =
-      PropertyRegistry::instance().getTypeInfo<CharacterObject>();
+  const TypeInfo* typeInfo = PropertyRegistry::instance().getTypeInfo<CharacterObject>();
   TEST_ASSERT(typeInfo != nullptr, "TypeInfo available");
 
-  const auto *slotProp = typeInfo->findProperty("slotPosition");
+  const auto* slotProp = typeInfo->findProperty("slotPosition");
   TEST_ASSERT(slotProp != nullptr, "slotPosition property found");
 
   // Get enum value
   PropertyValue value = slotProp->getValue(&character);
-  auto *enumVal = std::get_if<EnumValue>(&value);
+  auto* enumVal = std::get_if<EnumValue>(&value);
   TEST_ASSERT(enumVal != nullptr, "EnumValue retrieved");
   TEST_ASSERT(enumVal->value == 2, "Enum value correct (Right = 2)");
 
   // Set enum value
   slotProp->setValue(&character, PropertyValue{EnumValue(0, "Left")});
-  TEST_ASSERT(character.getSlotPosition() == CharacterObject::Position::Left,
-              "Enum setter works");
+  TEST_ASSERT(character.getSlotPosition() == CharacterObject::Position::Left, "Enum setter works");
 
   std::cout << "  ✓ Enum properties work correctly\n";
   return true;
@@ -230,7 +213,7 @@ int main() {
   int passed = 0;
   int total = 0;
 
-  auto runTest = [&](bool (*test)(), const char *name) {
+  auto runTest = [&](bool (*test)(), const char* name) {
     total++;
     std::cout << "\n[" << total << "] " << name << "\n";
     if (test()) {

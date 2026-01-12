@@ -12,7 +12,7 @@ using namespace NovelMind::scripting;
 // Test script that mimics the issue:
 // node_7 has dialogue and goto node_8
 // node_8 has a choice block
-static const char *DIALOGUE_CHOICE_SCRIPT = R"(
+static const char* DIALOGUE_CHOICE_SCRIPT = R"(
 scene node_7 {
     say "This is dialogue in node_7"
     goto node_8
@@ -52,7 +52,7 @@ TEST_CASE("ScriptRuntime dialogue to choice transition", "[scripting][issue-73]"
     bool choiceShown = false;
     std::string dialogueText;
 
-    runtime.setEventCallback([&](const ScriptEvent &event) {
+    runtime.setEventCallback([&](const ScriptEvent& event) {
       if (event.type == ScriptEventType::DialogueStart) {
         dialogueShown = true;
         dialogueText = asString(event.value);
@@ -100,7 +100,7 @@ TEST_CASE("ScriptRuntime dialogue to choice transition", "[scripting][issue-73]"
   }
 
   SECTION("Multiple dialogue nodes before choice work correctly") {
-    const char *script = R"(
+    const char* script = R"(
 scene start {
     say "First dialogue"
     goto middle

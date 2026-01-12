@@ -9,16 +9,16 @@ std::mutex g_globalVFSMutex;
 } // anonymous namespace
 
 VirtualFileSystem::VirtualFileSystem()
-    : m_config(),
-      m_cache(std::make_unique<ResourceCache>(m_config.cacheMaxSize)) {}
+    : m_config(), m_cache(std::make_unique<ResourceCache>(m_config.cacheMaxSize)) {}
 
-VirtualFileSystem::VirtualFileSystem(const VFSConfig &config)
+VirtualFileSystem::VirtualFileSystem(const VFSConfig& config)
     : m_config(config),
-      m_cache(config.enableCaching
-                  ? std::make_unique<ResourceCache>(config.cacheMaxSize)
-                  : nullptr) {}
+      m_cache(config.enableCaching ? std::make_unique<ResourceCache>(config.cacheMaxSize)
+                                   : nullptr) {}
 
-VirtualFileSystem::~VirtualFileSystem() { shutdown(); }
+VirtualFileSystem::~VirtualFileSystem() {
+  shutdown();
+}
 
 Result<void> VirtualFileSystem::initialize() {
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -27,11 +27,11 @@ Result<void> VirtualFileSystem::initialize() {
     return Result<void>::ok();
   }
 
-  for (auto &backend : m_backends) {
+  for (auto& backend : m_backends) {
     auto result = backend->initialize();
     if (!result.isOk()) {
-      return Result<void>::error("Failed to initialize backend '" +
-                                 backend->name() + "': " + result.error());
+      return Result<void>::error("Failed to initialize backend '" + backend->name() +
+                                 "': " + result.error());
     }
   }
 
@@ -50,15 +50,14 @@ void VirtualFileSystem::shutdown() {
     m_cache->clear();
   }
 
-  for (auto &backend : m_backends) {
+  for (auto& backend : m_backends) {
     backend->shutdown();
   }
 
   m_initialized = false;
 }
 
-void VirtualFileSystem::registerBackend(
-    std::unique_ptr<IFileSystemBackend> backend) {
+void VirtualFileSystem::registerBackend(std::unique_ptr<IFileSystemBackend> backend) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (!backend) {
@@ -69,25 +68,22 @@ void VirtualFileSystem::registerBackend(
   sortBackendsByPriority();
 }
 
-void VirtualFileSystem::unregisterBackend(const std::string &name) {
+void VirtualFileSystem::unregisterBackend(const std::string& name) {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   m_backends.erase(std::remove_if(m_backends.begin(), m_backends.end(),
-                                  [&name](const auto &backend) {
-                                    return backend->name() == name;
-                                  }),
+                                  [&name](const auto& backend) { return backend->name() == name; }),
                    m_backends.end());
 }
 
-std::unique_ptr<IFileHandle>
-VirtualFileSystem::openStream(const ResourceId &id) {
+std::unique_ptr<IFileHandle> VirtualFileSystem::openStream(const ResourceId& id) {
   // Copy callback and open file while holding lock
   ResourceLoadCallback callback;
   std::unique_ptr<IFileHandle> handle;
   {
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    IFileSystemBackend *backend = findBackend(id);
+    IFileSystemBackend* backend = findBackend(id);
     if (!backend) {
       return nullptr;
     }
@@ -104,7 +100,7 @@ VirtualFileSystem::openStream(const ResourceId &id) {
   return handle;
 }
 
-Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId &id) {
+Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId& id) {
   if (m_config.enableCaching && m_cache) {
     auto cached = m_cache->get(id);
     if (cached.has_value()) {
@@ -129,14 +125,14 @@ Result<std::vector<u8>> VirtualFileSystem::readAll(const ResourceId &id) {
   return result;
 }
 
-Result<std::vector<u8>> VirtualFileSystem::readAll(const std::string &id) {
+Result<std::vector<u8>> VirtualFileSystem::readAll(const std::string& id) {
   return readAll(ResourceId(id));
 }
 
-bool VirtualFileSystem::exists(const ResourceId &id) const {
+bool VirtualFileSystem::exists(const ResourceId& id) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &backend : m_backends) {
+  for (const auto& backend : m_backends) {
     if (backend->exists(id)) {
       return true;
     }
@@ -145,15 +141,14 @@ bool VirtualFileSystem::exists(const ResourceId &id) const {
   return false;
 }
 
-bool VirtualFileSystem::exists(const std::string &id) const {
+bool VirtualFileSystem::exists(const std::string& id) const {
   return exists(ResourceId(id));
 }
 
-std::optional<ResourceInfo>
-VirtualFileSystem::getInfo(const ResourceId &id) const {
+std::optional<ResourceInfo> VirtualFileSystem::getInfo(const ResourceId& id) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
-  for (const auto &backend : m_backends) {
+  for (const auto& backend : m_backends) {
     auto info = backend->getInfo(id);
     if (info.has_value()) {
       return info;
@@ -163,12 +158,11 @@ VirtualFileSystem::getInfo(const ResourceId &id) const {
   return std::nullopt;
 }
 
-std::vector<ResourceId>
-VirtualFileSystem::listResources(ResourceType type) const {
+std::vector<ResourceId> VirtualFileSystem::listResources(ResourceType type) const {
   std::lock_guard<std::mutex> lock(m_mutex);
 
   std::vector<ResourceId> result;
-  for (const auto &backend : m_backends) {
+  for (const auto& backend : m_backends) {
     auto resources = backend->list(type);
     result.insert(result.end(), resources.begin(), resources.end());
   }
@@ -197,7 +191,7 @@ VFSStats VirtualFileSystem::stats() const {
   VFSStats result;
   result.backendsCount = m_backends.size();
 
-  for (const auto &backend : m_backends) {
+  for (const auto& backend : m_backends) {
     result.totalResources += backend->list().size();
   }
 
@@ -209,8 +203,8 @@ VFSStats VirtualFileSystem::stats() const {
   return result;
 }
 
-IFileSystemBackend *VirtualFileSystem::findBackend(const ResourceId &id) const {
-  for (const auto &backend : m_backends) {
+IFileSystemBackend* VirtualFileSystem::findBackend(const ResourceId& id) const {
+  for (const auto& backend : m_backends) {
     if (backend->exists(id)) {
       return backend.get();
     }
@@ -221,12 +215,10 @@ IFileSystemBackend *VirtualFileSystem::findBackend(const ResourceId &id) const {
 
 void VirtualFileSystem::sortBackendsByPriority() {
   std::sort(m_backends.begin(), m_backends.end(),
-            [](const auto &a, const auto &b) {
-              return a->priority() > b->priority();
-            });
+            [](const auto& a, const auto& b) { return a->priority() > b->priority(); });
 }
 
-VirtualFileSystem &getGlobalVFS() {
+VirtualFileSystem& getGlobalVFS() {
   std::lock_guard<std::mutex> lock(g_globalVFSMutex);
 
   if (!g_globalVFS) {

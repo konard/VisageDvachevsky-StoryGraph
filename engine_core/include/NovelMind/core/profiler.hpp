@@ -25,9 +25,7 @@ struct ProfileSample {
   }
 
   [[nodiscard]] i64 durationUs() const {
-    return std::chrono::duration_cast<std::chrono::microseconds>(endTime -
-                                                                 startTime)
-        .count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(endTime - startTime).count();
   }
 };
 
@@ -42,7 +40,7 @@ struct ProfileStats {
 
 class Profiler {
 public:
-  static Profiler &instance();
+  static Profiler& instance();
 
   void setEnabled(bool enabled) { m_enabled = enabled; }
   [[nodiscard]] bool isEnabled() const { return m_enabled; }
@@ -50,13 +48,11 @@ public:
   void beginFrame();
   void endFrame();
 
-  void beginSample(const std::string &name, const std::string &category = "");
-  void endSample(const std::string &name);
+  void beginSample(const std::string& name, const std::string& category = "");
+  void endSample(const std::string& name);
 
   [[nodiscard]] f64 frameTimeMs() const { return m_lastFrameTime; }
-  [[nodiscard]] f64 fps() const {
-    return m_lastFrameTime > 0.0 ? 1000.0 / m_lastFrameTime : 0.0;
-  }
+  [[nodiscard]] f64 fps() const { return m_lastFrameTime > 0.0 ? 1000.0 / m_lastFrameTime : 0.0; }
   [[nodiscard]] usize frameCount() const { return m_frameCount; }
 
   [[nodiscard]] std::vector<ProfileSample> getFrameSamples() const;
@@ -64,15 +60,15 @@ public:
 
   void reset();
 
-  bool exportToJson(const std::string &filename) const;
-  bool exportToChromeTrace(const std::string &filename) const;
+  bool exportToJson(const std::string& filename) const;
+  bool exportToChromeTrace(const std::string& filename) const;
 
 private:
   Profiler() = default;
   ~Profiler() = default;
 
-  Profiler(const Profiler &) = delete;
-  Profiler &operator=(const Profiler &) = delete;
+  Profiler(const Profiler&) = delete;
+  Profiler& operator=(const Profiler&) = delete;
 
   struct ThreadData {
     std::vector<ProfileSample> activeSamples;
@@ -80,7 +76,7 @@ private:
     u32 currentDepth = 0;
   };
 
-  ThreadData &getThreadData();
+  ThreadData& getThreadData();
 
   mutable std::mutex m_mutex;
   std::unordered_map<std::thread::id, ThreadData> m_threadData;
@@ -94,31 +90,26 @@ private:
 
 class ScopedProfileSample {
 public:
-  ScopedProfileSample(const std::string &name, const std::string &category = "")
-      : m_name(name) {
+  ScopedProfileSample(const std::string& name, const std::string& category = "") : m_name(name) {
     Profiler::instance().beginSample(name, category);
   }
 
   ~ScopedProfileSample() { Profiler::instance().endSample(m_name); }
 
-  ScopedProfileSample(const ScopedProfileSample &) = delete;
-  ScopedProfileSample &operator=(const ScopedProfileSample &) = delete;
+  ScopedProfileSample(const ScopedProfileSample&) = delete;
+  ScopedProfileSample& operator=(const ScopedProfileSample&) = delete;
 
 private:
   std::string m_name;
 };
 
 #ifdef NOVELMIND_PROFILING_ENABLED
-#define NOVELMIND_PROFILE_SCOPE(name)                                          \
-  NovelMind::Core::ScopedProfileSample _profile_##__LINE__(name)
-#define NOVELMIND_PROFILE_SCOPE_CAT(name, category)                            \
+#define NOVELMIND_PROFILE_SCOPE(name) NovelMind::Core::ScopedProfileSample _profile_##__LINE__(name)
+#define NOVELMIND_PROFILE_SCOPE_CAT(name, category)                                                \
   NovelMind::Core::ScopedProfileSample _profile_##__LINE__(name, category)
-#define NOVELMIND_PROFILE_FUNCTION()                                           \
-  NovelMind::Core::ScopedProfileSample _profile_func(__func__)
-#define NOVELMIND_PROFILE_BEGIN(name)                                          \
-  NovelMind::Core::Profiler::instance().beginSample(name)
-#define NOVELMIND_PROFILE_END(name)                                            \
-  NovelMind::Core::Profiler::instance().endSample(name)
+#define NOVELMIND_PROFILE_FUNCTION() NovelMind::Core::ScopedProfileSample _profile_func(__func__)
+#define NOVELMIND_PROFILE_BEGIN(name) NovelMind::Core::Profiler::instance().beginSample(name)
+#define NOVELMIND_PROFILE_END(name) NovelMind::Core::Profiler::instance().endSample(name)
 #else
 #define NOVELMIND_PROFILE_SCOPE(name)
 #define NOVELMIND_PROFILE_SCOPE_CAT(name, category)

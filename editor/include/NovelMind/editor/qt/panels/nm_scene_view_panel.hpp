@@ -14,6 +14,7 @@
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
+#include "NovelMind/editor/qt/debouncer.hpp"
 #include <atomic>
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
@@ -120,6 +121,7 @@ public:
   enum class HandleType { XAxis, YAxis, XYPlane, Corner, Rotation };
 
   explicit NMTransformGizmo(QGraphicsItem* parent = nullptr);
+  ~NMTransformGizmo() override;
 
   void setMode(GizmoMode mode);
   [[nodiscard]] GizmoMode mode() const { return m_mode; }
@@ -138,6 +140,8 @@ private:
   void createScaleGizmo();
   void clearGizmo();
   class NMSceneObject* resolveTarget() const;
+  qreal getDpiScale() const;
+  qreal screenPixelsToSceneUnits(qreal screenPixels) const;
 
   GizmoMode m_mode = GizmoMode::Move;
   QString m_targetObjectId;
@@ -208,6 +212,7 @@ signals:
                                const QPointF& newPosition, qreal oldRotation, qreal newRotation,
                                qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
   void deleteRequested(const QString& objectId);
+  void objectDeleted(const QString& objectId);
 
 protected:
   void drawBackground(QPainter* painter, const QRectF& rect) override;
@@ -299,9 +304,12 @@ protected:
   void contextMenuEvent(QContextMenuEvent* event) override;
 
 private:
+  void updateCursor(const QCursor& newCursor);
+
   qreal m_zoomLevel = 1.0;
   bool m_isPanning = false;
   QPoint m_lastPanPoint;
+  QCursor m_currentCursor = Qt::ArrowCursor;
 };
 
 /**
@@ -419,6 +427,7 @@ signals:
                                qreal oldScaleX, qreal newScaleX, qreal oldScaleY, qreal newScaleY);
   void sceneChanged(const QString& sceneId);
   void focusModeRequested(bool enabled);
+  void objectDeleted(const QString& objectId);
 
 private slots:
   void onZoomIn();
@@ -528,6 +537,10 @@ private:
   QString m_editorPreviewText;
   QStringList m_editorPreviewChoices;
   bool m_animationPreviewMode = false;
+
+  // Issue #521: Debouncer for document save/event publishing to prevent spam
+  Debouncer m_saveDebouncer{300};           // 300ms delay for batching document saves
+  std::atomic<bool> m_documentDirty{false}; // Track if there are unsaved changes
 };
 
 } // namespace NovelMind::editor::qt

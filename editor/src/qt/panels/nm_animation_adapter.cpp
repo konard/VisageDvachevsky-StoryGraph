@@ -64,6 +64,10 @@ void NMAnimationAdapter::connectSceneView(NMSceneViewPanel* sceneView) {
     }
   });
 
+  // Connect object deletion signal to invalidate cache entries
+  connect(m_sceneView, &NMSceneViewPanel::objectDeleted, this,
+          &NMAnimationAdapter::onObjectDeleted);
+
   NOVELMIND_LOG_INFO("[AnimationAdapter] Connected to Scene View");
 }
 
@@ -280,6 +284,15 @@ void NMAnimationAdapter::applyAnimationToScene(const AnimationBinding& binding, 
   auto objIt = m_objectCache.find(binding.objectId);
   if (objIt != m_objectCache.end() && objIt.value()) {
     obj = objIt.value();
+    // Validate cached pointer: verify object still exists in scene
+    // This catches cases where object was deleted but signal was not received
+    if (!m_sceneView->findObjectById(binding.objectId)) {
+      // Object was deleted, invalidate cache entry
+      m_objectCache.remove(binding.objectId);
+      NOVELMIND_LOG_WARN(std::string("[AnimationAdapter] Cached object no longer exists: ") +
+                         binding.objectId.toStdString());
+      return;
+    }
   } else {
     obj = m_sceneView->findObjectById(binding.objectId);
     if (!obj) {
@@ -414,6 +427,16 @@ void NMAnimationAdapter::cleanupAnimations() {
   // PERF-6: Clear object cache when animations are cleaned up
   clearObjectCache();
   NOVELMIND_LOG_INFO("[AnimationAdapter] Cleaned up animations");
+}
+
+void NMAnimationAdapter::onObjectDeleted(const QString& objectId) {
+  // Remove the deleted object from the cache to prevent dangling pointer access
+  auto it = m_objectCache.find(objectId);
+  if (it != m_objectCache.end()) {
+    m_objectCache.erase(it);
+    NOVELMIND_LOG_DEBUG(std::string("[AnimationAdapter] Removed deleted object from cache: ") +
+                        objectId.toStdString());
+  }
 }
 
 } // namespace NovelMind::editor::qt

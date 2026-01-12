@@ -10,7 +10,7 @@
 
 namespace NovelMind::editor::qt {
 
-NMSceneIdPicker::NMSceneIdPicker(SceneRegistry *registry, QWidget *parent)
+NMSceneIdPicker::NMSceneIdPicker(SceneRegistry* registry, QWidget* parent)
     : QWidget(parent), m_registry(registry) {
   setupUI();
 
@@ -45,7 +45,7 @@ void NMSceneIdPicker::setupUI() {
   m_sceneCombo->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
   // Style the combo box
-  const auto &palette = NMStyleManager::instance().palette();
+  const auto& palette = NMStyleManager::instance().palette();
   const QColor bgColor = palette.bgDark;
   const QColor textColor = palette.textPrimary;
   const QColor borderColor = palette.borderLight;
@@ -78,8 +78,8 @@ void NMSceneIdPicker::setupUI() {
                                   .arg(borderColor.name())
                                   .arg(highlightColor.name()));
 
-  connect(m_sceneCombo, QOverload<int>::of(&QComboBox::currentIndexChanged),
-          this, &NMSceneIdPicker::onSceneSelectionChanged);
+  connect(m_sceneCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
+          &NMSceneIdPicker::onSceneSelectionChanged);
 
   // Validation icon
   m_validationIcon = new QLabel(this);
@@ -108,8 +108,7 @@ void NMSceneIdPicker::setupUI() {
   m_sceneInfoLabel = new QLabel(this);
   m_sceneInfoLabel->setWordWrap(true);
   m_sceneInfoLabel->setStyleSheet(
-      QString("QLabel { color: %1; font-size: 11px; }")
-          .arg(palette.textSecondary.name()));
+      QString("QLabel { color: %1; font-size: 11px; }").arg(palette.textSecondary.name()));
 
   m_previewLayout->addWidget(m_thumbnailLabel);
   m_previewLayout->addWidget(m_sceneInfoLabel, 1);
@@ -156,12 +155,9 @@ void NMSceneIdPicker::setupUI() {
   m_editButton->setStyleSheet(buttonStyle);
   m_locateButton->setStyleSheet(buttonStyle);
 
-  connect(m_createButton, &QPushButton::clicked, this,
-          &NMSceneIdPicker::onCreateNewClicked);
-  connect(m_editButton, &QPushButton::clicked, this,
-          &NMSceneIdPicker::onEditSceneClicked);
-  connect(m_locateButton, &QPushButton::clicked, this,
-          &NMSceneIdPicker::onLocateClicked);
+  connect(m_createButton, &QPushButton::clicked, this, &NMSceneIdPicker::onCreateNewClicked);
+  connect(m_editButton, &QPushButton::clicked, this, &NMSceneIdPicker::onEditSceneClicked);
+  connect(m_locateButton, &QPushButton::clicked, this, &NMSceneIdPicker::onLocateClicked);
 
   m_actionsLayout->addWidget(m_createButton);
   m_actionsLayout->addWidget(m_editButton);
@@ -174,7 +170,7 @@ void NMSceneIdPicker::setupUI() {
   m_locateButton->setEnabled(false);
 }
 
-void NMSceneIdPicker::setSceneId(const QString &sceneId) {
+void NMSceneIdPicker::setSceneId(const QString& sceneId) {
   if (m_currentSceneId == sceneId) {
     return;
   }
@@ -188,8 +184,7 @@ void NMSceneIdPicker::setSceneId(const QString &sceneId) {
     m_sceneCombo->setCurrentIndex(index);
   } else if (!sceneId.isEmpty()) {
     // Scene ID not in registry - add as invalid entry
-    m_sceneCombo->insertItem(0, QString("⚠ %1 (not found)").arg(sceneId),
-                             sceneId);
+    m_sceneCombo->insertItem(0, QString("⚠ %1 (not found)").arg(sceneId), sceneId);
     m_sceneCombo->setCurrentIndex(0);
   } else {
     m_sceneCombo->setCurrentIndex(0); // Select "(none)"
@@ -200,7 +195,9 @@ void NMSceneIdPicker::setSceneId(const QString &sceneId) {
   m_updating = false;
 }
 
-QString NMSceneIdPicker::sceneId() const { return m_currentSceneId; }
+QString NMSceneIdPicker::sceneId() const {
+  return m_currentSceneId;
+}
 
 void NMSceneIdPicker::refreshSceneList() {
   if (!m_registry) {
@@ -218,12 +215,10 @@ void NMSceneIdPicker::refreshSceneList() {
 
   // Sort scenes by name
   std::sort(scenes.begin(), scenes.end(),
-            [](const SceneMetadata &a, const SceneMetadata &b) {
-              return a.name < b.name;
-            });
+            [](const SceneMetadata& a, const SceneMetadata& b) { return a.name < b.name; });
 
   // Add scenes to combo box
-  for (const SceneMetadata &meta : scenes) {
+  for (const SceneMetadata& meta : scenes) {
     QString displayText = QString("%1 (%2)").arg(meta.name, meta.id);
     m_sceneCombo->addItem(displayText, meta.id);
   }
@@ -279,7 +274,9 @@ void NMSceneIdPicker::onLocateClicked() {
   }
 }
 
-void NMSceneIdPicker::onSceneRegistryChanged() { refreshSceneList(); }
+void NMSceneIdPicker::onSceneRegistryChanged() {
+  refreshSceneList();
+}
 
 void NMSceneIdPicker::updateThumbnail() {
   if (m_currentSceneId.isEmpty() || !m_registry) {
@@ -290,9 +287,8 @@ void NMSceneIdPicker::updateThumbnail() {
 
   if (!m_registry->sceneExists(m_currentSceneId)) {
     m_thumbnailLabel->clear();
-    m_sceneInfoLabel->setText(
-        QString("<span style='color: #ff6b6b;'>Scene not found in "
-                "registry</span>"));
+    m_sceneInfoLabel->setText(QString("<span style='color: #ff6b6b;'>Scene not found in "
+                                      "registry</span>"));
     return;
   }
 
@@ -354,7 +350,7 @@ void NMSceneIdPicker::updateValidationState() {
   }
 }
 
-QString NMSceneIdPicker::getDisplayName(const QString &sceneId) const {
+QString NMSceneIdPicker::getDisplayName(const QString& sceneId) const {
   if (sceneId.isEmpty()) {
     return "(none)";
   }

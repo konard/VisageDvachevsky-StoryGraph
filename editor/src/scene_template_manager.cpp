@@ -29,7 +29,7 @@ QJsonObject SceneTemplateMetadata::toJson() const {
   obj.insert("modified", modified.toString(Qt::ISODate));
 
   QJsonArray tagsArray;
-  for (const QString &tag : tags) {
+  for (const QString& tag : tags) {
     tagsArray.append(tag);
   }
   obj.insert("tags", tagsArray);
@@ -37,26 +37,23 @@ QJsonObject SceneTemplateMetadata::toJson() const {
   return obj;
 }
 
-SceneTemplateMetadata SceneTemplateMetadata::fromJson(const QJsonObject &json) {
+SceneTemplateMetadata SceneTemplateMetadata::fromJson(const QJsonObject& json) {
   SceneTemplateMetadata meta;
   meta.id = json.value("id").toString();
   meta.name = json.value("name").toString();
   meta.description = json.value("description").toString();
   meta.category = json.value("category").toString("Standard");
-  meta.type = json.value("type").toString() == "builtin"
-                  ? SceneTemplateType::BuiltIn
-                  : SceneTemplateType::User;
+  meta.type = json.value("type").toString() == "builtin" ? SceneTemplateType::BuiltIn
+                                                         : SceneTemplateType::User;
   meta.previewPath = json.value("previewPath").toString();
   meta.author = json.value("author").toString();
   meta.version = json.value("version").toString("1.0");
-  meta.created =
-      QDateTime::fromString(json.value("created").toString(), Qt::ISODate);
-  meta.modified =
-      QDateTime::fromString(json.value("modified").toString(), Qt::ISODate);
+  meta.created = QDateTime::fromString(json.value("created").toString(), Qt::ISODate);
+  meta.modified = QDateTime::fromString(json.value("modified").toString(), Qt::ISODate);
 
   const QJsonArray tagsArray = json.value("tags").toArray();
   meta.tags.reserve(tagsArray.size());
-  for (const auto &value : tagsArray) {
+  for (const auto& value : tagsArray) {
     meta.tags.append(value.toString());
   }
 
@@ -76,7 +73,7 @@ QJsonObject SceneTemplate::toJson() const {
   contentObj.insert("sceneId", QString::fromStdString(content.sceneId));
 
   QJsonArray objectsArray;
-  for (const auto &sceneObj : content.objects) {
+  for (const auto& sceneObj : content.objects) {
     QJsonObject objEntry;
     objEntry.insert("id", QString::fromStdString(sceneObj.id));
     objEntry.insert("name", QString::fromStdString(sceneObj.name));
@@ -91,9 +88,8 @@ QJsonObject SceneTemplate::toJson() const {
     objEntry.insert("zOrder", sceneObj.zOrder);
 
     QJsonObject propsObj;
-    for (const auto &[key, value] : sceneObj.properties) {
-      propsObj.insert(QString::fromStdString(key),
-                      QString::fromStdString(value));
+    for (const auto& [key, value] : sceneObj.properties) {
+      propsObj.insert(QString::fromStdString(key), QString::fromStdString(value));
     }
     objEntry.insert("properties", propsObj);
 
@@ -105,7 +101,7 @@ QJsonObject SceneTemplate::toJson() const {
   return obj;
 }
 
-SceneTemplate SceneTemplate::fromJson(const QJsonObject &json) {
+SceneTemplate SceneTemplate::fromJson(const QJsonObject& json) {
   SceneTemplate tmpl;
   tmpl.metadata = SceneTemplateMetadata::fromJson(json.value("metadata").toObject());
 
@@ -113,7 +109,7 @@ SceneTemplate SceneTemplate::fromJson(const QJsonObject &json) {
   tmpl.content.sceneId = contentObj.value("sceneId").toString().toStdString();
 
   const QJsonArray objectsArray = contentObj.value("objects").toArray();
-  for (const auto &value : objectsArray) {
+  for (const auto& value : objectsArray) {
     const QJsonObject objEntry = value.toObject();
     SceneDocumentObject sceneObj;
     sceneObj.id = objEntry.value("id").toString().toStdString();
@@ -130,8 +126,7 @@ SceneTemplate SceneTemplate::fromJson(const QJsonObject &json) {
 
     const QJsonObject propsObj = objEntry.value("properties").toObject();
     for (auto it = propsObj.begin(); it != propsObj.end(); ++it) {
-      sceneObj.properties.emplace(it.key().toStdString(),
-                                   it.value().toString().toStdString());
+      sceneObj.properties.emplace(it.key().toStdString(), it.value().toString().toStdString());
     }
 
     tmpl.content.objects.push_back(std::move(sceneObj));
@@ -144,7 +139,7 @@ SceneTemplate SceneTemplate::fromJson(const QJsonObject &json) {
 // SceneTemplateManager Implementation
 // ============================================================================
 
-SceneTemplateManager::SceneTemplateManager(QObject *parent) : QObject(parent) {}
+SceneTemplateManager::SceneTemplateManager(QObject* parent) : QObject(parent) {}
 
 SceneTemplateManager::~SceneTemplateManager() = default;
 
@@ -162,9 +157,8 @@ int SceneTemplateManager::loadBuiltInTemplates() {
     filters << "*" + QString(TEMPLATE_FILE_EXTENSION);
     QFileInfoList files = resourceDir.entryInfoList(filters, QDir::Files);
 
-    for (const QFileInfo &fileInfo : files) {
-      auto tmpl = loadTemplateFromFile(fileInfo.absoluteFilePath(),
-                                       SceneTemplateType::BuiltIn);
+    for (const QFileInfo& fileInfo : files) {
+      auto tmpl = loadTemplateFromFile(fileInfo.absoluteFilePath(), SceneTemplateType::BuiltIn);
       if (tmpl.has_value()) {
         m_templates.insert(tmpl->metadata.id, tmpl.value());
         ++loaded;
@@ -180,7 +174,7 @@ int SceneTemplateManager::loadBuiltInTemplates() {
   return loaded;
 }
 
-int SceneTemplateManager::loadUserTemplates(const QString &projectPath) {
+int SceneTemplateManager::loadUserTemplates(const QString& projectPath) {
   if (projectPath.isEmpty()) {
     return 0;
   }
@@ -199,9 +193,8 @@ int SceneTemplateManager::loadUserTemplates(const QString &projectPath) {
   filters << "*" + QString(TEMPLATE_FILE_EXTENSION);
   QFileInfoList files = userDir.entryInfoList(filters, QDir::Files);
 
-  for (const QFileInfo &fileInfo : files) {
-    auto tmpl =
-        loadTemplateFromFile(fileInfo.absoluteFilePath(), SceneTemplateType::User);
+  for (const QFileInfo& fileInfo : files) {
+    auto tmpl = loadTemplateFromFile(fileInfo.absoluteFilePath(), SceneTemplateType::User);
     if (tmpl.has_value()) {
       // Prefix user template IDs to avoid conflicts with built-in
       QString userTemplateId = "user_" + tmpl->metadata.id;
@@ -238,7 +231,7 @@ QStringList SceneTemplateManager::getAvailableTemplateIds() const {
 }
 
 QList<SceneTemplateMetadata>
-SceneTemplateManager::getAvailableTemplates(const QString &category) const {
+SceneTemplateManager::getAvailableTemplates(const QString& category) const {
   QList<SceneTemplateMetadata> result;
   result.reserve(m_templates.size());
 
@@ -250,7 +243,7 @@ SceneTemplateManager::getAvailableTemplates(const QString &category) const {
 
   // Sort by name
   std::sort(result.begin(), result.end(),
-            [](const SceneTemplateMetadata &a, const SceneTemplateMetadata &b) {
+            [](const SceneTemplateMetadata& a, const SceneTemplateMetadata& b) {
               return a.name.toLower() < b.name.toLower();
             });
 
@@ -270,28 +263,25 @@ QStringList SceneTemplateManager::getCategories() const {
   return result;
 }
 
-std::optional<SceneTemplate>
-SceneTemplateManager::getTemplate(const QString &templateId) const {
+std::optional<SceneTemplate> SceneTemplateManager::getTemplate(const QString& templateId) const {
   if (m_templates.contains(templateId)) {
     return m_templates.value(templateId);
   }
   return std::nullopt;
 }
 
-SceneTemplateMetadata
-SceneTemplateManager::getTemplateMetadata(const QString &templateId) const {
+SceneTemplateMetadata SceneTemplateManager::getTemplateMetadata(const QString& templateId) const {
   if (m_templates.contains(templateId)) {
     return m_templates.value(templateId).metadata;
   }
   return SceneTemplateMetadata{};
 }
 
-bool SceneTemplateManager::hasTemplate(const QString &templateId) const {
+bool SceneTemplateManager::hasTemplate(const QString& templateId) const {
   return m_templates.contains(templateId);
 }
 
-QPixmap
-SceneTemplateManager::getTemplatePreview(const QString &templateId) const {
+QPixmap SceneTemplateManager::getTemplatePreview(const QString& templateId) const {
   // Check cache
   if (m_previewCache.contains(templateId)) {
     return m_previewCache.value(templateId);
@@ -299,21 +289,18 @@ SceneTemplateManager::getTemplatePreview(const QString &templateId) const {
 
   // Try to load preview from file
   if (m_templates.contains(templateId)) {
-    const auto &tmpl = m_templates.value(templateId);
+    const auto& tmpl = m_templates.value(templateId);
     if (!tmpl.metadata.previewPath.isEmpty()) {
       QPixmap preview(tmpl.metadata.previewPath);
       if (!preview.isNull()) {
-        const_cast<SceneTemplateManager *>(this)->m_previewCache.insert(
-            templateId, preview);
+        const_cast<SceneTemplateManager*>(this)->m_previewCache.insert(templateId, preview);
         return preview;
       }
     }
 
     // Generate placeholder
-    QPixmap placeholder =
-        generatePlaceholderPreview(tmpl.metadata.name);
-    const_cast<SceneTemplateManager *>(this)->m_previewCache.insert(
-        templateId, placeholder);
+    QPixmap placeholder = generatePlaceholderPreview(tmpl.metadata.name);
+    const_cast<SceneTemplateManager*>(this)->m_previewCache.insert(templateId, placeholder);
     return placeholder;
   }
 
@@ -324,22 +311,20 @@ SceneTemplateManager::getTemplatePreview(const QString &templateId) const {
 // Template Instantiation
 // ============================================================================
 
-Result<SceneDocument>
-SceneTemplateManager::instantiateTemplate(const QString &templateId,
-                                          const QString &sceneId) const {
+Result<SceneDocument> SceneTemplateManager::instantiateTemplate(const QString& templateId,
+                                                                const QString& sceneId) const {
   if (!m_templates.contains(templateId)) {
-    return Result<SceneDocument>::error("Template not found: " +
-                                        templateId.toStdString());
+    return Result<SceneDocument>::error("Template not found: " + templateId.toStdString());
   }
 
-  const auto &tmpl = m_templates.value(templateId);
+  const auto& tmpl = m_templates.value(templateId);
   SceneDocument doc = tmpl.content;
 
   // Update scene ID
   doc.sceneId = sceneId.toStdString();
 
   // Update object IDs to use the new scene ID as prefix
-  for (auto &obj : doc.objects) {
+  for (auto& obj : doc.objects) {
     // Replace template placeholder {{scene_id}} if present
     QString objId = QString::fromStdString(obj.id);
     objId.replace("{{scene_id}}", sceneId);
@@ -349,10 +334,9 @@ SceneTemplateManager::instantiateTemplate(const QString &templateId,
   return Result<SceneDocument>::ok(doc);
 }
 
-Result<void>
-SceneTemplateManager::createSceneFromTemplate(const QString &templateId,
-                                              const QString &sceneId,
-                                              const QString &outputPath) const {
+Result<void> SceneTemplateManager::createSceneFromTemplate(const QString& templateId,
+                                                           const QString& sceneId,
+                                                           const QString& outputPath) const {
   auto docResult = instantiateTemplate(templateId, sceneId);
   if (docResult.isError()) {
     return Result<void>::error(docResult.error());
@@ -375,11 +359,10 @@ SceneTemplateManager::createSceneFromTemplate(const QString &templateId,
 // User Template Management
 // ============================================================================
 
-Result<QString>
-SceneTemplateManager::saveAsUserTemplate(const SceneDocument &scene,
-                                         const QString &name,
-                                         const QString &description,
-                                         const QString &projectPath) {
+Result<QString> SceneTemplateManager::saveAsUserTemplate(const SceneDocument& scene,
+                                                         const QString& name,
+                                                         const QString& description,
+                                                         const QString& projectPath) {
   if (projectPath.isEmpty()) {
     return Result<QString>::error("No project path specified");
   }
@@ -419,12 +402,10 @@ SceneTemplateManager::saveAsUserTemplate(const SceneDocument &scene,
   tmpl.content.sceneId = "{{scene_id}}";
 
   // Save to file
-  QString filePath =
-      QDir(userTemplatesPath).filePath(templateId + TEMPLATE_FILE_EXTENSION);
+  QString filePath = QDir(userTemplatesPath).filePath(templateId + TEMPLATE_FILE_EXTENSION);
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    return Result<QString>::error("Failed to create template file: " +
-                                  filePath.toStdString());
+    return Result<QString>::error("Failed to create template file: " + filePath.toStdString());
   }
 
   QJsonDocument doc(tmpl.toJson());
@@ -438,9 +419,8 @@ SceneTemplateManager::saveAsUserTemplate(const SceneDocument &scene,
   return Result<QString>::ok(userTemplateId);
 }
 
-Result<void>
-SceneTemplateManager::deleteUserTemplate(const QString &templateId,
-                                         const QString &projectPath) {
+Result<void> SceneTemplateManager::deleteUserTemplate(const QString& templateId,
+                                                      const QString& projectPath) {
   if (projectPath.isEmpty()) {
     return Result<void>::error("No project path specified");
   }
@@ -449,7 +429,7 @@ SceneTemplateManager::deleteUserTemplate(const QString &templateId,
     return Result<void>::error("Template not found: " + templateId.toStdString());
   }
 
-  const auto &tmpl = m_templates.value(templateId);
+  const auto& tmpl = m_templates.value(templateId);
   if (tmpl.metadata.type != SceneTemplateType::User) {
     return Result<void>::error("Cannot delete built-in templates");
   }
@@ -459,13 +439,11 @@ SceneTemplateManager::deleteUserTemplate(const QString &templateId,
 
   // Delete file
   QString userTemplatesPath = QDir(projectPath).filePath(userTemplatesDir());
-  QString filePath =
-      QDir(userTemplatesPath).filePath(baseId + TEMPLATE_FILE_EXTENSION);
+  QString filePath = QDir(userTemplatesPath).filePath(baseId + TEMPLATE_FILE_EXTENSION);
 
   if (QFile::exists(filePath)) {
     if (!QFile::remove(filePath)) {
-      return Result<void>::error("Failed to delete template file: " +
-                                 filePath.toStdString());
+      return Result<void>::error("Failed to delete template file: " + filePath.toStdString());
     }
   }
 
@@ -477,10 +455,9 @@ SceneTemplateManager::deleteUserTemplate(const QString &templateId,
   return Result<void>::ok();
 }
 
-Result<void>
-SceneTemplateManager::updateUserTemplate(const QString &templateId,
-                                         const SceneDocument &scene,
-                                         const QString &projectPath) {
+Result<void> SceneTemplateManager::updateUserTemplate(const QString& templateId,
+                                                      const SceneDocument& scene,
+                                                      const QString& projectPath) {
   if (projectPath.isEmpty()) {
     return Result<void>::error("No project path specified");
   }
@@ -489,7 +466,7 @@ SceneTemplateManager::updateUserTemplate(const QString &templateId,
     return Result<void>::error("Template not found: " + templateId.toStdString());
   }
 
-  auto &tmpl = m_templates[templateId];
+  auto& tmpl = m_templates[templateId];
   if (tmpl.metadata.type != SceneTemplateType::User) {
     return Result<void>::error("Cannot update built-in templates");
   }
@@ -504,13 +481,11 @@ SceneTemplateManager::updateUserTemplate(const QString &templateId,
 
   // Save to file
   QString userTemplatesPath = QDir(projectPath).filePath(userTemplatesDir());
-  QString filePath =
-      QDir(userTemplatesPath).filePath(baseId + TEMPLATE_FILE_EXTENSION);
+  QString filePath = QDir(userTemplatesPath).filePath(baseId + TEMPLATE_FILE_EXTENSION);
 
   QFile file(filePath);
   if (!file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    return Result<void>::error("Failed to update template file: " +
-                               filePath.toStdString());
+    return Result<void>::error("Failed to update template file: " + filePath.toStdString());
   }
 
   QJsonDocument doc(tmpl.toJson());
@@ -528,7 +503,7 @@ SceneTemplateManager::updateUserTemplate(const QString &templateId,
 // Configuration
 // ============================================================================
 
-void SceneTemplateManager::setBuiltInTemplatesPath(const QString &path) {
+void SceneTemplateManager::setBuiltInTemplatesPath(const QString& path) {
   m_builtInTemplatesPath = path;
 }
 
@@ -536,9 +511,8 @@ void SceneTemplateManager::setBuiltInTemplatesPath(const QString &path) {
 // Private Methods
 // ============================================================================
 
-std::optional<SceneTemplate>
-SceneTemplateManager::loadTemplateFromFile(const QString &filePath,
-                                           SceneTemplateType type) {
+std::optional<SceneTemplate> SceneTemplateManager::loadTemplateFromFile(const QString& filePath,
+                                                                        SceneTemplateType type) {
   QFile file(filePath);
   if (!file.open(QIODevice::ReadOnly)) {
     qWarning() << "Failed to open template file:" << filePath;
@@ -567,14 +541,14 @@ SceneTemplateManager::loadTemplateFromFile(const QString &filePath,
   return tmpl;
 }
 
-QString SceneTemplateManager::generateTemplateId(const QString &name) const {
+QString SceneTemplateManager::generateTemplateId(const QString& name) const {
   // Convert to lowercase and replace spaces with underscores
   QString id = name.toLower().trimmed();
   id.replace(' ', '_');
 
   // Remove characters that aren't alphanumeric or underscore
   QString sanitized;
-  for (const QChar &ch : id) {
+  for (const QChar& ch : id) {
     if (ch.isLetterOrNumber() || ch == '_') {
       sanitized += ch;
     }
@@ -638,15 +612,13 @@ SceneTemplate SceneTemplateManager::createDialogueSceneTemplate() const {
   SceneTemplate tmpl;
   tmpl.metadata.id = "dialogue_scene";
   tmpl.metadata.name = "Dialogue Scene";
-  tmpl.metadata.description =
-      "Standard visual novel dialogue scene with background, two character "
-      "positions (left and right), and dialogue UI placeholder.";
+  tmpl.metadata.description = "Standard visual novel dialogue scene with background, two character "
+                              "positions (left and right), and dialogue UI placeholder.";
   tmpl.metadata.category = "Visual Novel";
   tmpl.metadata.type = SceneTemplateType::BuiltIn;
   tmpl.metadata.author = "NovelMind Team";
   tmpl.metadata.version = "1.0";
-  tmpl.metadata.tags =
-      QStringList{"dialogue", "conversation", "vn", "characters"};
+  tmpl.metadata.tags = QStringList{"dialogue", "conversation", "vn", "characters"};
 
   tmpl.content.sceneId = "{{scene_id}}";
 
@@ -708,9 +680,8 @@ SceneTemplate SceneTemplateManager::createChoiceSceneTemplate() const {
   SceneTemplate tmpl;
   tmpl.metadata.id = "choice_scene";
   tmpl.metadata.name = "Choice Scene";
-  tmpl.metadata.description =
-      "Scene for player choices with background, character position, "
-      "and choice menu layout.";
+  tmpl.metadata.description = "Scene for player choices with background, character position, "
+                              "and choice menu layout.";
   tmpl.metadata.category = "Visual Novel";
   tmpl.metadata.type = SceneTemplateType::BuiltIn;
   tmpl.metadata.author = "NovelMind Team";
@@ -764,15 +735,13 @@ SceneTemplate SceneTemplateManager::createCutsceneTemplate() const {
   SceneTemplate tmpl;
   tmpl.metadata.id = "cutscene";
   tmpl.metadata.name = "Cutscene";
-  tmpl.metadata.description =
-      "Fullscreen cutscene with no UI elements. Perfect for dramatic "
-      "moments, transitions, and cinematic sequences.";
+  tmpl.metadata.description = "Fullscreen cutscene with no UI elements. Perfect for dramatic "
+                              "moments, transitions, and cinematic sequences.";
   tmpl.metadata.category = "Cinematic";
   tmpl.metadata.type = SceneTemplateType::BuiltIn;
   tmpl.metadata.author = "NovelMind Team";
   tmpl.metadata.version = "1.0";
-  tmpl.metadata.tags =
-      QStringList{"cutscene", "cinematic", "fullscreen", "transition"};
+  tmpl.metadata.tags = QStringList{"cutscene", "cinematic", "fullscreen", "transition"};
 
   tmpl.content.sceneId = "{{scene_id}}";
 
@@ -796,9 +765,8 @@ SceneTemplate SceneTemplateManager::createTitleScreenTemplate() const {
   SceneTemplate tmpl;
   tmpl.metadata.id = "title_screen";
   tmpl.metadata.name = "Title Screen";
-  tmpl.metadata.description =
-      "Title/menu screen with logo position and menu button layout. "
-      "Ideal for game start screens and main menus.";
+  tmpl.metadata.description = "Title/menu screen with logo position and menu button layout. "
+                              "Ideal for game start screens and main menus.";
   tmpl.metadata.category = "Menu";
   tmpl.metadata.type = SceneTemplateType::BuiltIn;
   tmpl.metadata.author = "NovelMind Team";
@@ -861,8 +829,7 @@ SceneTemplate SceneTemplateManager::createTitleScreenTemplate() const {
   return tmpl;
 }
 
-QPixmap SceneTemplateManager::generatePlaceholderPreview(
-    const QString &templateName) const {
+QPixmap SceneTemplateManager::generatePlaceholderPreview(const QString& templateName) const {
   QImage image(PREVIEW_WIDTH, PREVIEW_HEIGHT, QImage::Format_ARGB32);
   image.fill(Qt::transparent);
 

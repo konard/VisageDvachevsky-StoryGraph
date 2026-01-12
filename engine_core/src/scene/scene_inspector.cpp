@@ -9,14 +9,11 @@ namespace NovelMind::scene {
 // SetPropertyCommand Implementation
 // ============================================================================
 
-SetPropertyCommand::SetPropertyCommand(SceneInspectorAPI *inspector,
-                                       const std::string &objectId,
-                                       const std::string &propertyName,
-                                       const std::string &oldValue,
-                                       const std::string &newValue)
-    : m_inspector(inspector), m_objectId(objectId),
-      m_propertyName(propertyName), m_oldValue(oldValue), m_newValue(newValue) {
-}
+SetPropertyCommand::SetPropertyCommand(SceneInspectorAPI* inspector, const std::string& objectId,
+                                       const std::string& propertyName, const std::string& oldValue,
+                                       const std::string& newValue)
+    : m_inspector(inspector), m_objectId(objectId), m_propertyName(propertyName),
+      m_oldValue(oldValue), m_newValue(newValue) {}
 
 void SetPropertyCommand::execute() {
   m_inspector->setProperty(m_objectId, m_propertyName, m_newValue, false);
@@ -34,8 +31,7 @@ std::string SetPropertyCommand::getDescription() const {
 // AddObjectCommand Implementation
 // ============================================================================
 
-AddObjectCommand::AddObjectCommand(SceneInspectorAPI *inspector,
-                                   LayerType layer,
+AddObjectCommand::AddObjectCommand(SceneInspectorAPI* inspector, LayerType layer,
                                    std::unique_ptr<SceneObjectBase> object)
     : m_inspector(inspector), m_layer(layer), m_object(std::move(object)) {
   if (m_object) {
@@ -52,8 +48,7 @@ void AddObjectCommand::execute() {
 
 void AddObjectCommand::undo() {
   if (m_executed) {
-    m_object =
-        m_inspector->getSceneGraph()->removeFromLayer(m_layer, m_objectId);
+    m_object = m_inspector->getSceneGraph()->removeFromLayer(m_layer, m_objectId);
     m_executed = false;
   }
 }
@@ -66,10 +61,9 @@ std::string AddObjectCommand::getDescription() const {
 // RemoveObjectCommand Implementation
 // ============================================================================
 
-RemoveObjectCommand::RemoveObjectCommand(SceneInspectorAPI *inspector,
-                                         const std::string &objectId)
+RemoveObjectCommand::RemoveObjectCommand(SceneInspectorAPI* inspector, const std::string& objectId)
     : m_inspector(inspector), m_objectId(objectId) {
-  auto *obj = m_inspector->getSceneGraph()->findObject(objectId);
+  auto* obj = m_inspector->getSceneGraph()->findObject(objectId);
   if (obj) {
     m_savedState = obj->saveState();
     m_layer = m_inspector->findObjectLayer(objectId);
@@ -77,14 +71,12 @@ RemoveObjectCommand::RemoveObjectCommand(SceneInspectorAPI *inspector,
 }
 
 void RemoveObjectCommand::execute() {
-  m_removedObject =
-      m_inspector->getSceneGraph()->removeFromLayer(m_layer, m_objectId);
+  m_removedObject = m_inspector->getSceneGraph()->removeFromLayer(m_layer, m_objectId);
 }
 
 void RemoveObjectCommand::undo() {
   if (m_removedObject) {
-    m_inspector->getSceneGraph()->addToLayer(m_layer,
-                                             std::move(m_removedObject));
+    m_inspector->getSceneGraph()->addToLayer(m_layer, std::move(m_removedObject));
   }
 }
 
@@ -93,11 +85,37 @@ std::string RemoveObjectCommand::getDescription() const {
 }
 
 // ============================================================================
+// CompositeCommand Implementation
+// ============================================================================
+
+CompositeCommand::CompositeCommand(const std::string& description) : m_description(description) {}
+
+void CompositeCommand::addCommand(std::unique_ptr<ICommand> command) {
+  m_commands.push_back(std::move(command));
+}
+
+void CompositeCommand::execute() {
+  for (auto& cmd : m_commands) {
+    cmd->execute();
+  }
+}
+
+void CompositeCommand::undo() {
+  // Undo in reverse order
+  for (auto it = m_commands.rbegin(); it != m_commands.rend(); ++it) {
+    (*it)->undo();
+  }
+}
+
+std::string CompositeCommand::getDescription() const {
+  return m_description;
+}
+
+// ============================================================================
 // SceneInspectorAPI Implementation
 // ============================================================================
 
-SceneInspectorAPI::SceneInspectorAPI(SceneGraph *sceneGraph)
-    : m_sceneGraph(sceneGraph) {
+SceneInspectorAPI::SceneInspectorAPI(SceneGraph* sceneGraph) : m_sceneGraph(sceneGraph) {
   if (m_sceneGraph) {
     m_sceneGraph->addObserver(this);
   }
@@ -112,13 +130,13 @@ SceneInspectorAPI::~SceneInspectorAPI() {
 std::vector<LayerDescriptor> SceneInspectorAPI::getLayers() const {
   std::vector<LayerDescriptor> layers;
 
-  auto addLayer = [&layers](const Layer &layer, LayerType type) {
+  auto addLayer = [&layers](const Layer& layer, LayerType type) {
     LayerDescriptor desc;
     desc.name = layer.getName();
     desc.type = type;
     desc.visible = layer.isVisible();
     desc.alpha = layer.getAlpha();
-    for (const auto &obj : layer.getObjects()) {
+    for (const auto& obj : layer.getObjects()) {
       desc.objectIds.push_back(obj->getId());
     }
     layers.push_back(desc);
@@ -135,9 +153,8 @@ std::vector<LayerDescriptor> SceneInspectorAPI::getLayers() const {
 std::vector<ObjectDescriptor> SceneInspectorAPI::getObjects() const {
   std::vector<ObjectDescriptor> objects;
 
-  auto addLayerObjects = [this, &objects](const Layer &layer,
-                                          const std::string &layerName) {
-    for (const auto &obj : layer.getObjects()) {
+  auto addLayerObjects = [this, &objects](const Layer& layer, const std::string& layerName) {
+    for (const auto& obj : layer.getObjects()) {
       ObjectDescriptor desc;
       desc.id = obj->getId();
       desc.displayName = obj->getId();
@@ -147,7 +164,7 @@ std::vector<ObjectDescriptor> SceneInspectorAPI::getObjects() const {
       desc.properties = getProperties(obj->getId());
 
       // Add child IDs
-      for (const auto &child : obj->getChildren()) {
+      for (const auto& child : obj->getChildren()) {
         desc.childIds.push_back(child->getId());
       }
 
@@ -163,9 +180,8 @@ std::vector<ObjectDescriptor> SceneInspectorAPI::getObjects() const {
   return objects;
 }
 
-std::optional<ObjectDescriptor>
-SceneInspectorAPI::getObject(const std::string &id) const {
-  auto *obj = m_sceneGraph->findObject(id);
+std::optional<ObjectDescriptor> SceneInspectorAPI::getObject(const std::string& id) const {
+  auto* obj = m_sceneGraph->findObject(id);
   if (!obj) {
     return std::nullopt;
   }
@@ -195,7 +211,7 @@ SceneInspectorAPI::getObject(const std::string &id) const {
     break;
   }
 
-  for (const auto &child : obj->getChildren()) {
+  for (const auto& child : obj->getChildren()) {
     desc.childIds.push_back(child->getId());
   }
 
@@ -203,8 +219,8 @@ SceneInspectorAPI::getObject(const std::string &id) const {
 }
 
 std::vector<PropertyDescriptor>
-SceneInspectorAPI::getProperties(const std::string &objectId) const {
-  auto *obj = m_sceneGraph->findObject(objectId);
+SceneInspectorAPI::getProperties(const std::string& objectId) const {
+  auto* obj = m_sceneGraph->findObject(objectId);
   if (!obj) {
     return {};
   }
@@ -214,51 +230,45 @@ SceneInspectorAPI::getProperties(const std::string &objectId) const {
   // Add type-specific properties
   switch (obj->getType()) {
   case SceneObjectType::Background: {
-    auto *bg = static_cast<const BackgroundObject *>(obj);
-    props.push_back(createPropertyDescriptor(
-        "textureId", PropertyDescriptor::Type::Resource, bg->getTextureId()));
+    auto* bg = static_cast<const BackgroundObject*>(obj);
+    props.push_back(createPropertyDescriptor("textureId", PropertyDescriptor::Type::Resource,
+                                             bg->getTextureId()));
     break;
   }
   case SceneObjectType::Character: {
-    auto *character = static_cast<const CharacterObject *>(obj);
-    props.push_back(createPropertyDescriptor("characterId",
-                                             PropertyDescriptor::Type::String,
+    auto* character = static_cast<const CharacterObject*>(obj);
+    props.push_back(createPropertyDescriptor("characterId", PropertyDescriptor::Type::String,
                                              character->getCharacterId()));
-    props.push_back(createPropertyDescriptor("displayName",
-                                             PropertyDescriptor::Type::String,
+    props.push_back(createPropertyDescriptor("displayName", PropertyDescriptor::Type::String,
                                              character->getDisplayName()));
-    props.push_back(createPropertyDescriptor("expression",
-                                             PropertyDescriptor::Type::String,
+    props.push_back(createPropertyDescriptor("expression", PropertyDescriptor::Type::String,
                                              character->getExpression()));
-    props.push_back(createPropertyDescriptor(
-        "pose", PropertyDescriptor::Type::String, character->getPose()));
+    props.push_back(
+        createPropertyDescriptor("pose", PropertyDescriptor::Type::String, character->getPose()));
 
     PropertyDescriptor slotProp;
     slotProp.name = "slotPosition";
     slotProp.displayName = "Slot Position";
     slotProp.type = PropertyDescriptor::Type::Enum;
-    slotProp.value =
-        std::to_string(static_cast<int>(character->getSlotPosition()));
+    slotProp.value = std::to_string(static_cast<int>(character->getSlotPosition()));
     slotProp.enumOptions = {"Left", "Center", "Right", "Custom"};
     props.push_back(slotProp);
 
-    props.push_back(createPropertyDescriptor(
-        "highlighted", PropertyDescriptor::Type::Bool,
-        character->isHighlighted() ? "true" : "false"));
+    props.push_back(createPropertyDescriptor("highlighted", PropertyDescriptor::Type::Bool,
+                                             character->isHighlighted() ? "true" : "false"));
     break;
   }
   case SceneObjectType::DialogueUI: {
-    auto *dialogue = static_cast<const DialogueUIObject *>(obj);
-    props.push_back(createPropertyDescriptor(
-        "speaker", PropertyDescriptor::Type::String, dialogue->getSpeaker()));
-    props.push_back(createPropertyDescriptor(
-        "text", PropertyDescriptor::Type::String, dialogue->getText()));
-    props.push_back(createPropertyDescriptor(
-        "backgroundTextureId", PropertyDescriptor::Type::Resource,
-        dialogue->getBackgroundTextureId()));
-    props.push_back(createPropertyDescriptor(
-        "typewriterEnabled", PropertyDescriptor::Type::Bool,
-        dialogue->isTypewriterEnabled() ? "true" : "false"));
+    auto* dialogue = static_cast<const DialogueUIObject*>(obj);
+    props.push_back(createPropertyDescriptor("speaker", PropertyDescriptor::Type::String,
+                                             dialogue->getSpeaker()));
+    props.push_back(
+        createPropertyDescriptor("text", PropertyDescriptor::Type::String, dialogue->getText()));
+    props.push_back(createPropertyDescriptor("backgroundTextureId",
+                                             PropertyDescriptor::Type::Resource,
+                                             dialogue->getBackgroundTextureId()));
+    props.push_back(createPropertyDescriptor("typewriterEnabled", PropertyDescriptor::Type::Bool,
+                                             dialogue->isTypewriterEnabled() ? "true" : "false"));
 
     PropertyDescriptor speedProp;
     speedProp.name = "typewriterSpeed";
@@ -271,15 +281,14 @@ SceneInspectorAPI::getProperties(const std::string &objectId) const {
     break;
   }
   case SceneObjectType::EffectOverlay: {
-    auto *effect = static_cast<const EffectOverlayObject *>(obj);
+    auto* effect = static_cast<const EffectOverlayObject*>(obj);
 
     PropertyDescriptor typeProp;
     typeProp.name = "effectType";
     typeProp.displayName = "Effect Type";
     typeProp.type = PropertyDescriptor::Type::Enum;
     typeProp.value = std::to_string(static_cast<int>(effect->getEffectType()));
-    typeProp.enumOptions = {"None", "Fade", "Flash", "Shake",
-                            "Rain", "Snow", "Custom"};
+    typeProp.enumOptions = {"None", "Fade", "Flash", "Shake", "Rain", "Snow", "Custom"};
     props.push_back(typeProp);
 
     PropertyDescriptor intensityProp;
@@ -297,18 +306,16 @@ SceneInspectorAPI::getProperties(const std::string &objectId) const {
   }
 
   // Add custom properties
-  for (const auto &[name, value] : obj->getProperties()) {
-    props.push_back(createPropertyDescriptor(
-        name, PropertyDescriptor::Type::String, value));
+  for (const auto& [name, value] : obj->getProperties()) {
+    props.push_back(createPropertyDescriptor(name, PropertyDescriptor::Type::String, value));
   }
 
   return props;
 }
 
-std::optional<std::string>
-SceneInspectorAPI::getProperty(const std::string &objectId,
-                               const std::string &propertyName) const {
-  auto *obj = m_sceneGraph->findObject(objectId);
+std::optional<std::string> SceneInspectorAPI::getProperty(const std::string& objectId,
+                                                          const std::string& propertyName) const {
+  auto* obj = m_sceneGraph->findObject(objectId);
   if (!obj) {
     return std::nullopt;
   }
@@ -335,11 +342,10 @@ SceneInspectorAPI::getProperty(const std::string &objectId,
   return obj->getProperty(propertyName);
 }
 
-Result<void> SceneInspectorAPI::setProperty(const std::string &objectId,
-                                            const std::string &propertyName,
-                                            const std::string &value,
-                                            bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(objectId);
+Result<void> SceneInspectorAPI::setProperty(const std::string& objectId,
+                                            const std::string& propertyName,
+                                            const std::string& value, bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(objectId);
   if (!obj) {
     return Result<void>::error("Object not found: " + objectId);
   }
@@ -352,8 +358,7 @@ Result<void> SceneInspectorAPI::setProperty(const std::string &objectId,
 
   // Record undo before making changes
   if (recordUndo && oldValue != value) {
-    auto cmd = std::make_unique<SetPropertyCommand>(
-        this, objectId, propertyName, oldValue, value);
+    auto cmd = std::make_unique<SetPropertyCommand>(this, objectId, propertyName, oldValue, value);
     m_undoStack.push(std::move(cmd));
     while (!m_redoStack.empty()) {
       m_redoStack.pop();
@@ -383,19 +388,16 @@ Result<void> SceneInspectorAPI::setProperty(const std::string &objectId,
       // Type-specific properties or custom properties
       obj->setProperty(propertyName, value);
     }
-  } catch (const std::exception &e) {
-    return Result<void>::error(std::string("Failed to set property: ") +
-                               e.what());
+  } catch (const std::exception& e) {
+    return Result<void>::error(std::string("Failed to set property: ") + e.what());
   }
 
   notifySceneModified();
   return Result<void>::ok();
 }
 
-Result<std::string> SceneInspectorAPI::createObject(LayerType layer,
-                                                    SceneObjectType type,
-                                                    const std::string &id,
-                                                    bool recordUndo) {
+Result<std::string> SceneInspectorAPI::createObject(LayerType layer, SceneObjectType type,
+                                                    const std::string& id, bool recordUndo) {
   std::string objectId = id.empty() ? generateUniqueId("object") : id;
   auto obj = createObjectOfType(type, objectId);
 
@@ -419,9 +421,8 @@ Result<std::string> SceneInspectorAPI::createObject(LayerType layer,
   return Result<std::string>::ok(objectId);
 }
 
-Result<void> SceneInspectorAPI::deleteObject(const std::string &id,
-                                             bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(id);
+Result<void> SceneInspectorAPI::deleteObject(const std::string& id, bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(id);
   if (!obj) {
     return Result<void>::error("Object not found: " + id);
   }
@@ -446,9 +447,8 @@ Result<void> SceneInspectorAPI::deleteObject(const std::string &id,
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::duplicateObject(const std::string &sourceId,
-                                                bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(sourceId);
+Result<void> SceneInspectorAPI::duplicateObject(const std::string& sourceId, bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(sourceId);
   if (!obj) {
     return Result<void>::error("Object not found: " + sourceId);
   }
@@ -465,8 +465,7 @@ Result<void> SceneInspectorAPI::duplicateObject(const std::string &sourceId,
     newObj->loadState(state);
 
     if (recordUndo) {
-      auto cmd =
-          std::make_unique<AddObjectCommand>(this, layer, std::move(newObj));
+      auto cmd = std::make_unique<AddObjectCommand>(this, layer, std::move(newObj));
       cmd->execute();
       m_undoStack.push(std::move(cmd));
       while (!m_redoStack.empty()) {
@@ -482,9 +481,8 @@ Result<void> SceneInspectorAPI::duplicateObject(const std::string &sourceId,
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::moveObject(const std::string &id, f32 x, f32 y,
-                                           bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(id);
+Result<void> SceneInspectorAPI::moveObject(const std::string& id, f32 x, f32 y, bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(id);
   if (!obj) {
     return Result<void>::error("Object not found: " + id);
   }
@@ -493,17 +491,16 @@ Result<void> SceneInspectorAPI::moveObject(const std::string &id, f32 x, f32 y,
     std::string oldX = std::to_string(obj->getX());
     std::string oldY = std::to_string(obj->getY());
 
-    auto cmdX = std::make_unique<SetPropertyCommand>(this, id, "x", oldX,
-                                                     std::to_string(x));
-    auto cmdY = std::make_unique<SetPropertyCommand>(this, id, "y", oldY,
-                                                     std::to_string(y));
+    auto cmdX = std::make_unique<SetPropertyCommand>(this, id, "x", oldX, std::to_string(x));
+    auto cmdY = std::make_unique<SetPropertyCommand>(this, id, "y", oldY, std::to_string(y));
 
-    // Execute both
-    cmdX->execute();
-    cmdY->execute();
+    // Group both commands into a composite command
+    auto composite = std::make_unique<CompositeCommand>("Move object " + id);
+    composite->addCommand(std::move(cmdX));
+    composite->addCommand(std::move(cmdY));
+    composite->execute();
 
-    // For simplicity, only push one command
-    m_undoStack.push(std::move(cmdX));
+    m_undoStack.push(std::move(composite));
     while (!m_redoStack.empty()) {
       m_redoStack.pop();
     }
@@ -516,9 +513,9 @@ Result<void> SceneInspectorAPI::moveObject(const std::string &id, f32 x, f32 y,
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::scaleObject(const std::string &id, f32 scaleX,
-                                            f32 scaleY, bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(id);
+Result<void> SceneInspectorAPI::scaleObject(const std::string& id, f32 scaleX, f32 scaleY,
+                                            bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(id);
   if (!obj) {
     return Result<void>::error("Object not found: " + id);
   }
@@ -527,32 +524,39 @@ Result<void> SceneInspectorAPI::scaleObject(const std::string &id, f32 scaleX,
     std::string oldScaleX = std::to_string(obj->getScaleX());
     std::string oldScaleY = std::to_string(obj->getScaleY());
 
-    auto cmd = std::make_unique<SetPropertyCommand>(
-        this, id, "scaleX", oldScaleX, std::to_string(scaleX));
-    cmd->execute();
-    m_undoStack.push(std::move(cmd));
+    auto cmdScaleX =
+        std::make_unique<SetPropertyCommand>(this, id, "scaleX", oldScaleX, std::to_string(scaleX));
+    auto cmdScaleY =
+        std::make_unique<SetPropertyCommand>(this, id, "scaleY", oldScaleY, std::to_string(scaleY));
+
+    // Group both commands into a composite command
+    auto composite = std::make_unique<CompositeCommand>("Scale object " + id);
+    composite->addCommand(std::move(cmdScaleX));
+    composite->addCommand(std::move(cmdScaleY));
+    composite->execute();
+
+    m_undoStack.push(std::move(composite));
     while (!m_redoStack.empty()) {
       m_redoStack.pop();
     }
     notifyUndoStackChanged();
+  } else {
+    obj->setScale(scaleX, scaleY);
   }
-
-  obj->setScale(scaleX, scaleY);
   notifySceneModified();
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::rotateObject(const std::string &id, f32 angle,
-                                             bool recordUndo) {
-  auto *obj = m_sceneGraph->findObject(id);
+Result<void> SceneInspectorAPI::rotateObject(const std::string& id, f32 angle, bool recordUndo) {
+  auto* obj = m_sceneGraph->findObject(id);
   if (!obj) {
     return Result<void>::error("Object not found: " + id);
   }
 
   if (recordUndo) {
     std::string oldAngle = std::to_string(obj->getRotation());
-    auto cmd = std::make_unique<SetPropertyCommand>(
-        this, id, "rotation", oldAngle, std::to_string(angle));
+    auto cmd =
+        std::make_unique<SetPropertyCommand>(this, id, "rotation", oldAngle, std::to_string(angle));
     cmd->execute();
     m_undoStack.push(std::move(cmd));
     while (!m_redoStack.empty()) {
@@ -567,8 +571,7 @@ Result<void> SceneInspectorAPI::rotateObject(const std::string &id, f32 angle,
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::setObjectLayer(const std::string &id,
-                                               LayerType layer,
+Result<void> SceneInspectorAPI::setObjectLayer(const std::string& id, LayerType layer,
                                                bool /*recordUndo*/) {
   LayerType currentLayer = findObjectLayer(id);
   if (currentLayer == layer) {
@@ -585,26 +588,24 @@ Result<void> SceneInspectorAPI::setObjectLayer(const std::string &id,
   return Result<void>::ok();
 }
 
-Result<void> SceneInspectorAPI::setObjectZOrder(const std::string &id,
-                                                i32 zOrder, bool recordUndo) {
+Result<void> SceneInspectorAPI::setObjectZOrder(const std::string& id, i32 zOrder,
+                                                bool recordUndo) {
   return setProperty(id, "zOrder", std::to_string(zOrder), recordUndo);
 }
 
-void SceneInspectorAPI::selectObject(const std::string &id,
-                                     bool addToSelection) {
+void SceneInspectorAPI::selectObject(const std::string& id, bool addToSelection) {
   if (!addToSelection) {
     m_selection.clear();
   }
 
-  if (std::find(m_selection.begin(), m_selection.end(), id) ==
-      m_selection.end()) {
+  if (std::find(m_selection.begin(), m_selection.end(), id) == m_selection.end()) {
     m_selection.push_back(id);
   }
 
   notifySelectionChanged();
 }
 
-void SceneInspectorAPI::deselectObject(const std::string &id) {
+void SceneInspectorAPI::deselectObject(const std::string& id) {
   auto it = std::find(m_selection.begin(), m_selection.end(), id);
   if (it != m_selection.end()) {
     m_selection.erase(it);
@@ -619,19 +620,17 @@ void SceneInspectorAPI::clearSelection() {
   }
 }
 
-const std::vector<std::string> &SceneInspectorAPI::getSelection() const {
+const std::vector<std::string>& SceneInspectorAPI::getSelection() const {
   return m_selection;
 }
 
-bool SceneInspectorAPI::isSelected(const std::string &id) const {
-  return std::find(m_selection.begin(), m_selection.end(), id) !=
-         m_selection.end();
+bool SceneInspectorAPI::isSelected(const std::string& id) const {
+  return std::find(m_selection.begin(), m_selection.end(), id) != m_selection.end();
 }
 
-Result<void> SceneInspectorAPI::moveSelection(f32 deltaX, f32 deltaY,
-                                              bool recordUndo) {
-  for (const auto &id : m_selection) {
-    auto *obj = m_sceneGraph->findObject(id);
+Result<void> SceneInspectorAPI::moveSelection(f32 deltaX, f32 deltaY, bool recordUndo) {
+  for (const auto& id : m_selection) {
+    auto* obj = m_sceneGraph->findObject(id);
     if (obj) {
       moveObject(id, obj->getX() + deltaX, obj->getY() + deltaY, recordUndo);
     }
@@ -641,7 +640,7 @@ Result<void> SceneInspectorAPI::moveSelection(f32 deltaX, f32 deltaY,
 
 Result<void> SceneInspectorAPI::deleteSelection(bool recordUndo) {
   auto selectionCopy = m_selection;
-  for (const auto &id : selectionCopy) {
+  for (const auto& id : selectionCopy) {
     deleteObject(id, recordUndo);
   }
   return Result<void>::ok();
@@ -651,7 +650,7 @@ Result<void> SceneInspectorAPI::duplicateSelection(bool recordUndo) {
   auto selectionCopy = m_selection;
   clearSelection();
 
-  for (const auto &id : selectionCopy) {
+  for (const auto& id : selectionCopy) {
     duplicateObject(id, recordUndo);
   }
   return Result<void>::ok();
@@ -665,17 +664,24 @@ void SceneInspectorAPI::executeCommand(std::unique_ptr<ICommand> command) {
       m_redoStack.pop();
     }
 
-    // Limit stack size
-    while (m_undoStack.size() > m_maxHistorySize) {
-      std::stack<std::unique_ptr<ICommand>> tempStack;
-      while (m_undoStack.size() > 1) {
-        tempStack.push(std::move(m_undoStack.top()));
+    // Limit stack size - remove oldest entries while preserving order
+    if (m_undoStack.size() > m_maxHistorySize) {
+      // Transfer all elements to a vector (this reverses the order)
+      std::vector<std::unique_ptr<ICommand>> temp;
+      while (!m_undoStack.empty()) {
+        temp.push_back(std::move(m_undoStack.top()));
         m_undoStack.pop();
       }
-      m_undoStack.pop(); // Remove oldest
-      while (!tempStack.empty()) {
-        m_undoStack.push(std::move(tempStack.top()));
-        tempStack.pop();
+
+      // temp now has [newest, ..., oldest]
+      // Remove oldest entries from the end
+      while (temp.size() > m_maxHistorySize) {
+        temp.pop_back();
+      }
+
+      // Restore to stack in reverse order to maintain correct sequence
+      for (auto it = temp.rbegin(); it != temp.rend(); ++it) {
+        m_undoStack.push(std::move(*it));
       }
     }
 
@@ -711,9 +717,13 @@ void SceneInspectorAPI::redo() {
   notifySceneModified();
 }
 
-bool SceneInspectorAPI::canUndo() const { return !m_undoStack.empty(); }
+bool SceneInspectorAPI::canUndo() const {
+  return !m_undoStack.empty();
+}
 
-bool SceneInspectorAPI::canRedo() const { return !m_redoStack.empty(); }
+bool SceneInspectorAPI::canRedo() const {
+  return !m_redoStack.empty();
+}
 
 void SceneInspectorAPI::clearHistory() {
   while (!m_undoStack.empty()) {
@@ -739,14 +749,14 @@ std::vector<std::string> SceneInspectorAPI::getRedoHistory() const {
   return history;
 }
 
-void SceneInspectorAPI::addListener(IInspectorListener *listener) {
-  if (listener && std::find(m_listeners.begin(), m_listeners.end(), listener) ==
-                      m_listeners.end()) {
+void SceneInspectorAPI::addListener(IInspectorListener* listener) {
+  if (listener &&
+      std::find(m_listeners.begin(), m_listeners.end(), listener) == m_listeners.end()) {
     m_listeners.push_back(listener);
   }
 }
 
-void SceneInspectorAPI::removeListener(IInspectorListener *listener) {
+void SceneInspectorAPI::removeListener(IInspectorListener* listener) {
   auto it = std::find(m_listeners.begin(), m_listeners.end(), listener);
   if (it != m_listeners.end()) {
     m_listeners.erase(it);
@@ -755,8 +765,8 @@ void SceneInspectorAPI::removeListener(IInspectorListener *listener) {
 
 void SceneInspectorAPI::copySelection() {
   m_clipboard.clear();
-  for (const auto &id : m_selection) {
-    auto *obj = m_sceneGraph->findObject(id);
+  for (const auto& id : m_selection) {
+    auto* obj = m_sceneGraph->findObject(id);
     if (obj) {
       m_clipboard.push_back(obj->saveState());
     }
@@ -771,7 +781,7 @@ void SceneInspectorAPI::cutSelection() {
 void SceneInspectorAPI::paste(f32 offsetX, f32 offsetY) {
   clearSelection();
 
-  for (const auto &state : m_clipboard) {
+  for (const auto& state : m_clipboard) {
     std::string newId = generateUniqueId(state.id);
     auto obj = createObjectOfType(state.type, newId);
     if (obj) {
@@ -816,35 +826,33 @@ SceneState SceneInspectorAPI::getSceneSnapshot() const {
   return m_sceneGraph->saveState();
 }
 
-void SceneInspectorAPI::restoreSceneSnapshot(const SceneState &snapshot) {
+void SceneInspectorAPI::restoreSceneSnapshot(const SceneState& snapshot) {
   m_sceneGraph->loadState(snapshot);
   clearSelection();
   notifySceneModified();
 }
 
-void SceneInspectorAPI::onObjectAdded(const std::string & /*objectId*/,
-                                      SceneObjectType /*type*/) {
+void SceneInspectorAPI::onObjectAdded(const std::string& /*objectId*/, SceneObjectType /*type*/) {
   notifySceneModified();
 }
 
-void SceneInspectorAPI::onObjectRemoved(const std::string &objectId) {
+void SceneInspectorAPI::onObjectRemoved(const std::string& objectId) {
   deselectObject(objectId);
   notifySceneModified();
 }
 
-void SceneInspectorAPI::onPropertyChanged(const PropertyChange & /*change*/) {
+void SceneInspectorAPI::onPropertyChanged(const PropertyChange& /*change*/) {
   notifySceneModified();
 }
 
-void SceneInspectorAPI::onLayerChanged(const std::string & /*objectId*/,
-                                       const std::string & /*newLayer*/) {
+void SceneInspectorAPI::onLayerChanged(const std::string& /*objectId*/,
+                                       const std::string& /*newLayer*/) {
   notifySceneModified();
 }
 
-PropertyDescriptor
-SceneInspectorAPI::createPropertyDescriptor(const std::string &name,
-                                            PropertyDescriptor::Type type,
-                                            const std::string &value) const {
+PropertyDescriptor SceneInspectorAPI::createPropertyDescriptor(const std::string& name,
+                                                               PropertyDescriptor::Type type,
+                                                               const std::string& value) const {
   PropertyDescriptor desc;
   desc.name = name;
   desc.displayName = name; // Could be prettified
@@ -855,7 +863,7 @@ SceneInspectorAPI::createPropertyDescriptor(const std::string &name,
 }
 
 std::vector<PropertyDescriptor>
-SceneInspectorAPI::getBaseProperties(const SceneObjectBase *obj) const {
+SceneInspectorAPI::getBaseProperties(const SceneObjectBase* obj) const {
   std::vector<PropertyDescriptor> props;
 
   PropertyDescriptor idProp;
@@ -874,33 +882,27 @@ SceneInspectorAPI::getBaseProperties(const SceneObjectBase *obj) const {
   typeProp.readOnly = true;
   props.push_back(typeProp);
 
-  props.push_back(createPropertyDescriptor("x", PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getX())));
-  props.push_back(createPropertyDescriptor("y", PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getY())));
-  props.push_back(createPropertyDescriptor("scaleX",
-                                           PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getScaleX())));
-  props.push_back(createPropertyDescriptor("scaleY",
-                                           PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getScaleY())));
-  props.push_back(createPropertyDescriptor("rotation",
-                                           PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getRotation())));
-  props.push_back(createPropertyDescriptor("alpha",
-                                           PropertyDescriptor::Type::Float,
-                                           std::to_string(obj->getAlpha())));
   props.push_back(
-      createPropertyDescriptor("visible", PropertyDescriptor::Type::Bool,
-                               obj->isVisible() ? "true" : "false"));
-  props.push_back(createPropertyDescriptor("zOrder",
-                                           PropertyDescriptor::Type::Int,
+      createPropertyDescriptor("x", PropertyDescriptor::Type::Float, std::to_string(obj->getX())));
+  props.push_back(
+      createPropertyDescriptor("y", PropertyDescriptor::Type::Float, std::to_string(obj->getY())));
+  props.push_back(createPropertyDescriptor("scaleX", PropertyDescriptor::Type::Float,
+                                           std::to_string(obj->getScaleX())));
+  props.push_back(createPropertyDescriptor("scaleY", PropertyDescriptor::Type::Float,
+                                           std::to_string(obj->getScaleY())));
+  props.push_back(createPropertyDescriptor("rotation", PropertyDescriptor::Type::Float,
+                                           std::to_string(obj->getRotation())));
+  props.push_back(createPropertyDescriptor("alpha", PropertyDescriptor::Type::Float,
+                                           std::to_string(obj->getAlpha())));
+  props.push_back(createPropertyDescriptor("visible", PropertyDescriptor::Type::Bool,
+                                           obj->isVisible() ? "true" : "false"));
+  props.push_back(createPropertyDescriptor("zOrder", PropertyDescriptor::Type::Int,
                                            std::to_string(obj->getZOrder())));
 
   return props;
 }
 
-LayerType SceneInspectorAPI::findObjectLayer(const std::string &id) const {
+LayerType SceneInspectorAPI::findObjectLayer(const std::string& id) const {
   if (m_sceneGraph->getBackgroundLayer().findObject(id)) {
     return LayerType::Background;
   }
@@ -917,7 +919,7 @@ LayerType SceneInspectorAPI::findObjectLayer(const std::string &id) const {
 }
 
 void SceneInspectorAPI::notifySelectionChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     if (listener) {
       listener->onSelectionChanged(m_selection);
     }
@@ -925,7 +927,7 @@ void SceneInspectorAPI::notifySelectionChanged() {
 }
 
 void SceneInspectorAPI::notifySceneModified() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     if (listener) {
       listener->onSceneModified();
     }
@@ -933,14 +935,14 @@ void SceneInspectorAPI::notifySceneModified() {
 }
 
 void SceneInspectorAPI::notifyUndoStackChanged() {
-  for (auto *listener : m_listeners) {
+  for (auto* listener : m_listeners) {
     if (listener) {
       listener->onUndoStackChanged(canUndo(), canRedo());
     }
   }
 }
 
-std::string SceneInspectorAPI::generateUniqueId(const std::string &base) const {
+std::string SceneInspectorAPI::generateUniqueId(const std::string& base) const {
   std::string candidate = base;
   int counter = 1;
 
@@ -953,8 +955,7 @@ std::string SceneInspectorAPI::generateUniqueId(const std::string &base) const {
 }
 
 std::unique_ptr<SceneObjectBase>
-SceneInspectorAPI::createObjectOfType(SceneObjectType type,
-                                      const std::string &id) const {
+SceneInspectorAPI::createObjectOfType(SceneObjectType type, const std::string& id) const {
   switch (type) {
   case SceneObjectType::Background:
     return std::make_unique<BackgroundObject>(id);
