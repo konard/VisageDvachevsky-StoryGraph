@@ -64,6 +64,9 @@ void NMBuildSettingsPanel::onShutdown() {
       m_buildStatus == BuildStatus::Compiling || m_buildStatus == BuildStatus::Packaging) {
     cancelBuild();
   }
+
+  // Clear build system to ensure proper cleanup
+  m_buildSystem.reset();
 }
 
 void NMBuildSettingsPanel::onUpdate([[maybe_unused]] double deltaTime) {
@@ -591,8 +594,9 @@ QList<BuildWarning> NMBuildSettingsPanel::scanForWarnings() const {
 void NMBuildSettingsPanel::startBuild() {
   m_buildStatus = BuildStatus::Preparing;
 
-  // Create build system
-  auto buildSystem = std::make_shared<editor::BuildSystem>();
+  // Create build system and store as member to ensure it stays alive
+  // for the duration of the build and callbacks
+  m_buildSystem = std::make_shared<editor::BuildSystem>();
 
   // Configure build
   editor::BuildConfig config;
@@ -601,7 +605,7 @@ void NMBuildSettingsPanel::startBuild() {
 
   // Run preflight validation before starting build
   // This ensures consistency between UI validation and build system validation
-  auto validationResult = buildSystem->validateProject(config.projectPath);
+  auto validationResult = m_buildSystem->validateProject(config.projectPath);
   if (validationResult.isError()) {
     m_buildStatus = BuildStatus::Failed;
     QString errorMsg = QString::fromStdString(validationResult.error());
@@ -698,7 +702,7 @@ void NMBuildSettingsPanel::startBuild() {
   config.defaultLanguage = "en";
 
   // Setup callbacks
-  buildSystem->setOnProgressUpdate([this](const editor::BuildProgress& progress) {
+  m_buildSystem->setOnProgressUpdate([this](const editor::BuildProgress& progress) {
     QMetaObject::invokeMethod(this, [this, progress]() {
       int percent = static_cast<int>(progress.progress * 100);
       m_progressBar->setValue(percent);
@@ -722,7 +726,7 @@ void NMBuildSettingsPanel::startBuild() {
     });
   });
 
-  buildSystem->setOnLogMessage([this](const std::string& message, bool isError) {
+  m_buildSystem->setOnLogMessage([this](const std::string& message, bool isError) {
     QMetaObject::invokeMethod(this, [this, message, isError]() {
       QString formattedMsg =
           QString("[%1] %2").arg(isError ? "ERROR" : "INFO").arg(QString::fromStdString(message));
@@ -730,7 +734,7 @@ void NMBuildSettingsPanel::startBuild() {
     });
   });
 
-  buildSystem->setOnBuildComplete([this](const editor::BuildResult& result) {
+  m_buildSystem->setOnBuildComplete([this](const editor::BuildResult& result) {
     QMetaObject::invokeMethod(this, [this, result]() {
       if (result.success) {
         m_buildStatus = BuildStatus::Complete;
@@ -774,7 +778,7 @@ void NMBuildSettingsPanel::startBuild() {
 
   // Start build
   appendLog("Starting build...");
-  auto result = buildSystem->startBuild(config);
+  auto result = m_buildSystem->startBuild(config);
 
   if (result.isError()) {
     m_buildStatus = BuildStatus::Failed;

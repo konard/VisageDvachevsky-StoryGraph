@@ -192,6 +192,9 @@ private:
   QList<BuildWarning> m_warnings;
   BuildSizeInfo m_sizeInfo;
   QString m_outputPath;
+
+  // Build system (must be kept alive for callbacks)
+  std::shared_ptr<NovelMind::editor::BuildSystem> m_buildSystem;
 };
 
 } // namespace NovelMind::editor::qt
