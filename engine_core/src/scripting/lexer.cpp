@@ -59,10 +59,10 @@ inline uint32_t decodeUtf8(std::string_view source, size_t& pos) {
 
   size_t seqLen = static_cast<size_t>(utf8SequenceLength(c));
   if (seqLen == 0 || pos + seqLen > source.size()) {
-    return 0; // Invalid sequence
+    return 0; // Invalid sequence or truncated
   }
 
-  // Verify continuation bytes
+  // Verify continuation bytes before decoding
   for (size_t i = 1; i < seqLen; ++i) {
     if (!isUtf8Continuation(static_cast<unsigned char>(source[pos + i]))) {
       return 0; // Invalid continuation byte
@@ -75,17 +75,37 @@ inline uint32_t decodeUtf8(std::string_view source, size_t& pos) {
   case 2:
     codePoint = static_cast<uint32_t>(c & 0x1F) << 6;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F);
+    // Check for overlong encoding: 2-byte sequences must encode values >= 0x80
+    if (codePoint < 0x80) {
+      return 0; // Overlong encoding
+    }
     break;
   case 3:
     codePoint = static_cast<uint32_t>(c & 0x0F) << 12;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 6;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 2]) & 0x3F);
+    // Check for overlong encoding: 3-byte sequences must encode values >= 0x800
+    if (codePoint < 0x800) {
+      return 0; // Overlong encoding
+    }
+    // Check for UTF-16 surrogate pairs (U+D800 to U+DFFF) - invalid in UTF-8
+    if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
+      return 0; // Surrogate pair
+    }
     break;
   case 4:
     codePoint = static_cast<uint32_t>(c & 0x07) << 18;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 1]) & 0x3F) << 12;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 2]) & 0x3F) << 6;
     codePoint |= static_cast<uint32_t>(static_cast<unsigned char>(source[pos + 3]) & 0x3F);
+    // Check for overlong encoding: 4-byte sequences must encode values >= 0x10000
+    if (codePoint < 0x10000) {
+      return 0; // Overlong encoding
+    }
+    // Check maximum valid Unicode code point (U+10FFFF)
+    if (codePoint > 0x10FFFF) {
+      return 0; // Beyond valid Unicode range
+    }
     break;
   default:
     return 0;

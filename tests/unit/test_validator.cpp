@@ -678,22 +678,19 @@ TEST_CASE("Validator - Missing asset file warning for background", "[validator][
 
   auto result = validator.validate(program);
 
-  CHECK(result.errors.hasErrors());
+  // Should have warnings (not necessarily errors) about missing asset
+  CHECK(result.errors.hasWarnings());
 
-  bool foundSuggestion = false;
+  bool foundMissingAsset = false;
   for (const auto& error : result.errors.all()) {
-    if (error.code == ErrorCode::UndefinedCharacter) {
-      // Check for "Did you mean" suggestion
-      for (const auto& suggestion : error.suggestions) {
-        if (suggestion.find("Villain") != std::string::npos) {
-          foundSuggestion = true;
-          break;
-        }
-      }
+    if (error.code == ErrorCode::MissingAssetFile) {
+      foundMissingAsset = true;
+      CHECK(error.severity == Severity::Warning);
+      CHECK(error.message.find("bg_city.png") != std::string::npos);
       break;
     }
   }
-  CHECK(foundSuggestion);
+  CHECK(foundMissingAsset);
 }
 
 TEST_CASE("Validator - Undefined scene provides suggestions", "[validator]") {
@@ -850,18 +847,7 @@ TEST_CASE("Validator - No warnings when resources exist", "[validator][resources
 
   auto result = validator.validate(program);
 
-  CHECK(result.errors.hasErrors());
-
-  for (const auto& error : result.errors.all()) {
-    if (error.code == ErrorCode::UndefinedCharacter) {
-      CHECK(error.filePath.has_value());
-      CHECK(error.filePath.value() == "test.nms");
-      CHECK(error.source.has_value());
-      CHECK_FALSE(error.source.value().empty());
-      break;
-    }
-  }
-  // Should not have any resource warnings
+  // With all resources existing, there should be no resource-related warnings
   bool foundResourceWarning = false;
   for (const auto& error : result.errors.all()) {
     if (error.code == ErrorCode::MissingSceneFile || error.code == ErrorCode::MissingSceneObject ||
@@ -870,5 +856,6 @@ TEST_CASE("Validator - No warnings when resources exist", "[validator][resources
       break;
     }
   }
-  CHECK_FALSE(foundResourceWarning);
+}
+CHECK_FALSE(foundResourceWarning);
 }

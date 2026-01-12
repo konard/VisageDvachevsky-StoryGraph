@@ -161,6 +161,7 @@ private:
   struct PendingJump {
     u32 instructionIndex;
     std::string targetLabel;
+    SourceLocation location; // Source location of the jump/goto statement
   };
   std::vector<PendingJump> m_pendingJumps;
   std::unordered_map<std::string, u32> m_labels;

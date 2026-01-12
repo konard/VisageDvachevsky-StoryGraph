@@ -384,7 +384,15 @@ void NMTransformGizmo::beginHandleDrag(HandleType type, const QPointF& scenePos)
   m_activeHandle = type;
   m_dragStartScenePos = scenePos;
   m_dragStartTargetPos = target->pos();
-  m_dragStartRotation = target->rotation();
+
+  // Normalize rotation to [0, 360) range to prevent drift from accumulated rotations
+  qreal rotation = target->rotation();
+  rotation = std::fmod(rotation, 360.0);
+  if (rotation < 0.0) {
+    rotation += 360.0;
+  }
+  m_dragStartRotation = rotation;
+
   m_dragStartScaleX = target->scaleX();
   m_dragStartScaleY = target->scaleY();
 
@@ -438,7 +446,15 @@ void NMTransformGizmo::updateHandleDrag(const QPointF& scenePos) {
     const qreal startAngle = QLineF(center, startPoint).angle();
     const qreal currentAngle = QLineF(center, currentPoint).angle();
     const qreal deltaAngle = startAngle - currentAngle;
-    target->setRotation(m_dragStartRotation + deltaAngle);
+
+    // Calculate new rotation and normalize to 0-360 range to prevent accumulation
+    qreal newRotation = m_dragStartRotation + deltaAngle;
+    newRotation = std::fmod(newRotation, 360.0);
+    if (newRotation < 0.0) {
+      newRotation += 360.0;
+    }
+
+    target->setRotation(newRotation);
     updatePosition();
   } else if (m_mode == GizmoMode::Scale) {
     const QPointF center = target->sceneBoundingRect().center();
@@ -613,7 +629,6 @@ void NMTransformGizmo::createRotateGizmo() {
 void NMTransformGizmo::createScaleGizmo() {
   const auto& palette = NMStyleManager::instance().palette();
   const qreal uiScale = NMStyleManager::instance().uiScale();
-  qreal size = 50;
   const qreal dpiScale = getDpiScale();
   qreal size = 50 * dpiScale;
 

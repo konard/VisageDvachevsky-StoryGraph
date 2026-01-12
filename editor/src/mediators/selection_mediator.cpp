@@ -152,10 +152,11 @@ void SelectionMediator::shutdown() {
 }
 
 void SelectionMediator::onSceneObjectSelected(const events::SceneObjectSelectedEvent& event) {
-  if (m_processingSelection) {
+  // Issue #479: Use atomic exchange for thread-safe re-entrancy guard
+  // If already processing (exchange returns true), exit early
+  if (m_processingSelection.exchange(true)) {
     return;
   }
-  m_processingSelection = true;
 
   qDebug() << "[SelectionMediator] Scene object selected:" << event.objectId
            << "from:" << event.sourcePanel;
@@ -192,10 +193,11 @@ void SelectionMediator::onSceneObjectSelected(const events::SceneObjectSelectedE
 }
 
 void SelectionMediator::onStoryGraphNodeSelected(const events::StoryGraphNodeSelectedEvent& event) {
-  if (m_processingSelection) {
+  // Issue #479: Use atomic exchange for thread-safe re-entrancy guard
+  // If already processing (exchange returns true), exit early
+  if (m_processingSelection.exchange(true)) {
     return;
   }
-  m_processingSelection = true;
 
   qDebug() << "[SelectionMediator] Story graph node selected:" << event.nodeIdString;
 

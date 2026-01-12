@@ -19,8 +19,9 @@
 #include "NovelMind/scene/scene_graph.hpp"
 #include "NovelMind/vfs/memory_fs.hpp"
 #include "NovelMind/renderer/renderer.hpp"
-#include <vector>
+#include <cstdlib>
 #include <random>
+#include <vector>
 
 using namespace NovelMind::scene;
 using namespace NovelMind::vfs;
@@ -137,11 +138,115 @@ TEST_CASE("Benchmark: Object creation and destruction", "[benchmark][scene]") {
     }
   };
 
+  BENCHMARK("Render 100 objects") {
+    graph.render(renderer);
+  };
+}
+
+TEST_CASE("Benchmark: Scene update with animations", "[benchmark][scene]") {
+  SceneGraph graph;
+
+  // Setup objects with animations
+  for (int i = 0; i < 50; ++i) {
+    auto obj = std::make_unique<TestObject>("anim_" + std::to_string(i));
+    obj->animatePosition(100.0f, 100.0f, 1.0f);
+    obj->animateAlpha(0.5f, 1.0f);
+    graph.addToLayer(LayerType::UI, std::move(obj));
+  }
+
+  BENCHMARK("Update 50 animated objects") {
+    graph.update(0.016);
+  };
+}
+
+TEST_CASE("Benchmark: Object search by tag", "[benchmark][scene]") {
+  SceneGraph graph;
+
+  // Create objects with tags
+  for (int i = 0; i < 200; ++i) {
+    auto obj = std::make_unique<TestObject>("tagged_" + std::to_string(i));
+    if (i % 5 == 0)
+      obj->addTag("important");
+    if (i % 3 == 0)
+      obj->addTag("clickable");
+    if (i % 7 == 0)
+      obj->addTag("animated");
+    graph.addToLayer(LayerType::UI, std::move(obj));
+  }
+
+  BENCHMARK("Find objects by tag (200 objects)") {
+    return graph.findObjectsByTag("important");
+  };
+
+  BENCHMARK("Find objects by type (200 objects)") {
+    return graph.findObjectsByType(SceneObjectType::Custom);
+  };
+}
+
+TEST_CASE("Benchmark: Object creation and destruction", "[benchmark][scene]") {
+  // Issue #494: Skip benchmark tests in CI environments.
+  // Catch2 BENCHMARK runs many iterations to get stable measurements,
+  // which causes timeouts in CI with Debug builds and coverage instrumentation.
+  const char* ciEnv = std::getenv("CI");
+  if (ciEnv && std::string(ciEnv) == "true") {
+    SKIP("Skipping benchmark in CI environment - too slow with coverage/debug");
+  }
+
+  SceneGraph graph;
+
+  BENCHMARK("Create and add 100 objects") {
+    for (int i = 0; i < 100; ++i) {
+      auto obj = std::make_unique<TestObject>("temp_" + std::to_string(i));
+      graph.addToLayer(LayerType::UI, std::move(obj));
+    }
+  };
+
   BENCHMARK("Remove 100 objects") {
     for (int i = 0; i < 100; ++i) {
       graph.removeFromLayer(LayerType::UI, "temp_" + std::to_string(i));
     }
   };
+}
+
+TEST_CASE("Benchmark: Scene serialization", "[benchmark][scene]") {
+  SceneGraph graph;
+
+  // Setup complex scene
+  graph.setSceneId("benchmark_scene");
+  graph.showBackground("bg.png");
+
+  for (int i = 0; i < 20; ++i) {
+    auto obj = std::make_unique<TestObject>("obj_" + std::to_string(i));
+    obj->setProperty("key1", "value1");
+    obj->setProperty("key2", "value2");
+    obj->setProperty("key3", "value3");
+    obj->addTag("tag" + std::to_string(i % 5));
+    graph.addToLayer(LayerType::UI, std::move(obj));
+  }
+
+  BENCHMARK("Save scene state") {
+    return graph.saveState();
+  };
+
+  auto state = graph.saveState();
+
+  BENCHMARK("Load scene state") {
+    SceneGraph newGraph;
+    newGraph.loadState(state);
+  };
+}
+
+TEST_CASE("Benchmark: Layer z-order sorting", "[benchmark][scene]") {
+  Layer layer("Benchmark", LayerType::UI);
+
+  // Add objects with random z-orders
+  std::mt19937 rng(42); // Fixed seed for reproducibility
+  std::uniform_int_distribution<int> dist(-100, 100);
+
+  for (int i = 0; i < 100; ++i) {
+    graph.removeFromLayer(LayerType::UI, "temp_" + std::to_string(i));
+  }
+};
 }
 
 TEST_CASE("Benchmark: Scene serialization", "[benchmark][scene]") {

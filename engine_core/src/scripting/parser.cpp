@@ -1,4 +1,5 @@
 #include "NovelMind/scripting/parser.hpp"
+#include <cassert>
 
 namespace NovelMind::scripting {
 
@@ -38,10 +39,21 @@ bool Parser::isAtEnd() const {
 }
 
 const Token& Parser::peek() const {
+  // Bounds check: return error token if current index is out of bounds
+  if (!m_tokens || m_current >= m_tokens->size()) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
   return (*m_tokens)[m_current];
 }
 
 const Token& Parser::previous() const {
+  assert(m_current > 0 && "Cannot call previous() before any tokens are consumed");
+  // Bounds check: return error token if trying to access before start
+  if (!m_tokens || m_current == 0) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
   return (*m_tokens)[m_current - 1];
 }
 
