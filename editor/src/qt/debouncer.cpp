@@ -1,17 +1,38 @@
 /**
  * @file debouncer.cpp
- * @brief MOC source file for Debouncer classes
+ * @brief Implementation of Debouncer classes
  *
- * This file provides the translation unit required for Qt's MOC (Meta-Object
- * Compiler) to generate the meta-object code for the Debouncer and
- * PropertyDebouncer classes. These classes are defined in the header-only
- * debouncer.hpp but require MOC processing due to their use of Q_OBJECT.
+ * This file provides implementations for the Debouncer and PropertyDebouncer
+ * classes. Moving the constructor, destructor, and slot implementations here
+ * ensures proper vtable and moc-generated code linking.
  *
- * Without this .cpp file, the linker would fail with "undefined reference to
- * vtable" errors when the Debouncer classes are used.
+ * Qt's AUTOMOC will process this file and generate the necessary meta-object
+ * code for Q_OBJECT classes defined in debouncer.hpp.
  */
 
 #include "NovelMind/editor/qt/debouncer.hpp"
 
-// Force MOC to generate meta-object code for these classes
-// by including them in a compiled translation unit
+namespace NovelMind::editor::qt {
+
+Debouncer::Debouncer(int delayMs, QObject *parent)
+    : QObject(parent), m_delayMs(delayMs) {
+  m_timer.setSingleShot(true);
+  connect(&m_timer, &QTimer::timeout, this, &Debouncer::onTimeout);
+}
+
+Debouncer::~Debouncer() = default;
+
+void Debouncer::onTimeout() {
+  if (m_pendingCallback) {
+    emit triggered();
+    m_pendingCallback();
+    m_pendingCallback = nullptr;
+  }
+}
+
+PropertyDebouncer::PropertyDebouncer(int delayMs, QObject *parent)
+    : Debouncer(delayMs, parent) {}
+
+PropertyDebouncer::~PropertyDebouncer() = default;
+
+} // namespace NovelMind::editor::qt
