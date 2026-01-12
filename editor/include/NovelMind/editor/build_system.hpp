@@ -24,6 +24,9 @@
 #include <unordered_map>
 #include <vector>
 
+// Forward declaration for test access to private methods
+class BuildSystemTestHelper;
+
 namespace NovelMind::editor {
 
 /**
