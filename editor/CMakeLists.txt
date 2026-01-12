@@ -192,6 +192,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/lazy_thumbnail_loader.hpp
     include/NovelMind/editor/qt/timeline_render_cache.hpp
     include/NovelMind/editor/qt/performance_metrics.hpp
+    include/NovelMind/editor/qt/debouncer.hpp
 
     # Qt6 Headers (required for AUTOMOC to work)
     include/NovelMind/editor/qt/qt_event_bus.hpp
