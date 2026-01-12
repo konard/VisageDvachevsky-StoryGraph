@@ -107,18 +107,12 @@ if(NOVELMIND_BUILD_EDITOR)
         unit/test_state_machine_robustness.cpp
         unit/test_project_integrity.cpp
         unit/test_event_bus.cpp
-        # Issue #477 - Gizmo memory management tests
         unit/test_gizmo_memory.cpp
-        # Issue #460 - Gizmo DPI scaling tests
         unit/test_gizmo_dpi_scaling.cpp
-        # Issue #452 - Gizmo rotation normalization tests
         unit/test_gizmo_rotation_normalization.cpp
-        # Issue #570 - Build size analyzer hash security tests
         unit/test_build_size_analyzer.cpp
         unit/test_build_system.cpp
-        # Issue #451 - SelectionMediator feedback loop prevention
         unit/test_selection_mediator.cpp
-        # Issue #453 - PropertyMediator feedback loop prevention
         unit/test_property_mediator.cpp
     )
 
