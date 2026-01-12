@@ -79,9 +79,11 @@ include(Catch)
 
 # Discover tests with reasonable timeout for fuzz tests
 # Windows Debug builds can be significantly slower, so we use a generous default
+# SKIP_RETURN_CODE 4: Catch2 returns exit code 4 for skipped tests (SKIP macro)
 catch_discover_tests(unit_tests
     PROPERTIES
         TIMEOUT 60  # 60 seconds max per test
+        SKIP_RETURN_CODE 4
 )
 
 # Integration tests (requires editor)
@@ -133,6 +135,7 @@ if(NOVELMIND_BUILD_EDITOR)
     catch_discover_tests(integration_tests
         PROPERTIES
             TIMEOUT 60
+            SKIP_RETURN_CODE 4
     )
 
     # Abstraction interface unit tests (issue #150)
@@ -157,5 +160,6 @@ if(NOVELMIND_BUILD_EDITOR)
     catch_discover_tests(abstraction_interface_tests
         PROPERTIES
             TIMEOUT 60
+            SKIP_RETURN_CODE 4
     )
 endif()
