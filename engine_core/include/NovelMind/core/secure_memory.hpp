@@ -21,6 +21,10 @@
 // Platform detection for memory locking
 #if defined(_WIN32) || defined(_WIN64)
 #define NOVELMIND_PLATFORM_WINDOWS
+// Prevent Windows.h from defining min/max macros that conflict with std::numeric_limits
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <windows.h>
 #elif defined(__linux__) || defined(__APPLE__) || defined(__unix__)
 #define NOVELMIND_PLATFORM_POSIX

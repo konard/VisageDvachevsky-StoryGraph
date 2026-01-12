@@ -1,0 +1,176 @@
+name: Valgrind Nightly
+
+on:
+  schedule:
+    # Run every night at 3 AM UTC
+    - cron: '0 3 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  valgrind-memcheck:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev valgrind
+
+    - name: Configure CMake for Valgrind
+      env:
+        CC: gcc
+        CXX: g++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DNM_BUILD_TESTS=ON \
+          -DCMAKE_CXX_FLAGS="-g -O1" \
+          -DCMAKE_C_FLAGS="-g -O1"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run Valgrind memcheck
+      run: |
+        cd build
+        # Run tests with Valgrind memcheck
+        valgrind --tool=memcheck \
+          --leak-check=full \
+          --show-leak-kinds=all \
+          --track-origins=yes \
+          --verbose \
+          --log-file=../valgrind-memcheck.log \
+          ctest --output-on-failure --timeout 600
+      continue-on-error: true
+
+    - name: Parse Valgrind results
+      if: always()
+      run: |
+        if [ -f valgrind-memcheck.log ]; then
+          echo "## Valgrind Memcheck Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 5 "HEAP SUMMARY" valgrind-memcheck.log | head -20 >> $GITHUB_STEP_SUMMARY || echo "No heap summary found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep "ERROR SUMMARY" valgrind-memcheck.log | tail -1 >> $GITHUB_STEP_SUMMARY || echo "No error summary found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload Valgrind reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: valgrind-reports
+        path: |
+          valgrind-memcheck.log
+          build/Testing/Temporary/LastTest.log
+        retention-days: 30
+
+    - name: Check for Valgrind errors
+      if: always()
+      run: |
+        if [ -f valgrind-memcheck.log ]; then
+          ERROR_COUNT=$(grep "ERROR SUMMARY" valgrind-memcheck.log | tail -1 | grep -oP '\d+(?= errors)' || echo "0")
+          echo "Valgrind found $ERROR_COUNT errors"
+          if [ "$ERROR_COUNT" -gt "0" ]; then
+            echo "::error::Valgrind detected $ERROR_COUNT memory errors"
+            exit 1
+          fi
+        fi
+
+    - name: Create issue on failure
+      if: failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: 'Valgrind Nightly Build Failed',
+            body: 'The Valgrind nightly build has failed. Please check the workflow run for details.\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}',
+            labels: ['valgrind', 'memory', 'automated']
+          })
+
+  valgrind-memcheck-gui:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake ninja-build libsdl2-dev qt6-base-dev qt6-svg-dev qt6-multimedia-dev xvfb pulseaudio valgrind
+
+    - name: Configure CMake for Valgrind with GUI
+      env:
+        CC: gcc
+        CXX: g++
+      run: |
+        cmake -B build -G Ninja \
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+          -DNM_BUILD_TESTS=ON \
+          -DNOVELMIND_BUILD_EDITOR=ON \
+          -DCMAKE_CXX_FLAGS="-g -O1" \
+          -DCMAKE_C_FLAGS="-g -O1"
+
+    - name: Build
+      run: cmake --build build
+
+    - name: Run Valgrind memcheck with GUI tests
+      env:
+        QT_QPA_PLATFORM: offscreen
+      run: |
+        # Start PulseAudio for Qt Multimedia audio tests
+        pulseaudio --start --exit-idle-time=-1 || true
+        cd build
+        # Run tests with Valgrind memcheck
+        xvfb-run --auto-servernum valgrind --tool=memcheck \
+          --leak-check=full \
+          --show-leak-kinds=all \
+          --track-origins=yes \
+          --verbose \
+          --log-file=../valgrind-memcheck-gui.log \
+          ctest --output-on-failure --timeout 600
+      continue-on-error: true
+
+    - name: Parse Valgrind GUI results
+      if: always()
+      run: |
+        if [ -f valgrind-memcheck-gui.log ]; then
+          echo "## Valgrind Memcheck GUI Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 5 "HEAP SUMMARY" valgrind-memcheck-gui.log | head -20 >> $GITHUB_STEP_SUMMARY || echo "No heap summary found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep "ERROR SUMMARY" valgrind-memcheck-gui.log | tail -1 >> $GITHUB_STEP_SUMMARY || echo "No error summary found" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload Valgrind GUI reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: valgrind-gui-reports
+        path: |
+          valgrind-memcheck-gui.log
+          build/Testing/Temporary/LastTest.log
+        retention-days: 30
+
+    - name: Check for Valgrind errors in GUI tests
+      if: always()
+      run: |
+        if [ -f valgrind-memcheck-gui.log ]; then
+          ERROR_COUNT=$(grep "ERROR SUMMARY" valgrind-memcheck-gui.log | tail -1 | grep -oP '\d+(?= errors)' || echo "0")
+          echo "Valgrind found $ERROR_COUNT errors in GUI tests"
+          if [ "$ERROR_COUNT" -gt "0" ]; then
+            echo "::error::Valgrind detected $ERROR_COUNT memory errors in GUI tests"
+            exit 1
+          fi
+        fi

@@ -94,14 +94,20 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
 
   const u64 resourceTableSize =
       static_cast<u64>(m_header.resourceCount) * detail::kResourceEntrySize;
-  if (m_header.resourceTableOffset < sizeof(PackHeader) ||
-      m_header.resourceTableOffset + resourceTableSize > m_fileSize) {
+  if (m_header.resourceTableOffset < sizeof(PackHeader)) {
+    m_lastResult = PackVerificationResult::CorruptedResourceTable;
+    return Result<void>::error("Invalid resource table offset/size");
+  }
+  // Safe check to prevent overflow: offset + size <= fileSize
+  // Rewritten as: offset <= fileSize && size <= fileSize - offset
+  if (m_header.resourceTableOffset > m_fileSize ||
+      resourceTableSize > m_fileSize - m_header.resourceTableOffset) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid resource table offset/size");
   }
 
-  if (m_header.stringTableOffset <
-          m_header.resourceTableOffset + resourceTableSize ||
+  const u64 resourceTableEnd = m_header.resourceTableOffset + resourceTableSize;
+  if (m_header.stringTableOffset < resourceTableEnd ||
       m_header.stringTableOffset > m_fileSize) {
     m_lastResult = PackVerificationResult::CorruptedResourceTable;
     return Result<void>::error("Invalid string table offset");
@@ -182,9 +188,12 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       return Result<void>::error("String table entry too large");
     }
 
-    const u64 stringEnd =
-        static_cast<u64>(offsets[i]) + static_cast<u64>(str.size());
-    if (stringEnd >= stringDataSize) {
+    // Safe boundary check to prevent integer overflow
+    // Instead of: offset + length <= size (which can overflow)
+    // Use: offset <= size && length <= size - offset
+    const u64 offset = static_cast<u64>(offsets[i]);
+    const u64 strSize = static_cast<u64>(str.size());
+    if (offset > stringDataSize || strSize > stringDataSize - offset) {
       m_lastResult = PackVerificationResult::CorruptedResourceTable;
       return Result<void>::error("String table entry out of bounds");
     }
@@ -211,14 +220,23 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
       return Result<void>::error("Resource size exceeds limit");
     }
 
-    const u64 absoluteOffset = m_header.dataOffset + entry.dataOffset;
-    if (absoluteOffset < m_header.dataOffset) {
+    // Safe check to prevent overflow when calculating absolute offset
+    if (entry.dataOffset > m_fileSize ||
+        m_header.dataOffset > m_fileSize - entry.dataOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource offset overflow");
     }
+    const u64 absoluteOffset = m_header.dataOffset + entry.dataOffset;
 
-    if (absoluteOffset + entry.compressedSize >
-        m_fileSize - detail::kFooterSize) {
+    // Safe check to prevent overflow: absoluteOffset + compressedSize <= fileSize - footerSize
+    // First check if fileSize is large enough for footer
+    if (m_fileSize < detail::kFooterSize) {
+      m_lastResult = PackVerificationResult::CorruptedData;
+      return Result<void>::error("File too small for footer");
+    }
+    const u64 maxDataEnd = m_fileSize - detail::kFooterSize;
+    if (absoluteOffset > maxDataEnd ||
+        entry.compressedSize > maxDataEnd - absoluteOffset) {
       m_lastResult = PackVerificationResult::CorruptedData;
       return Result<void>::error("Resource data extends beyond pack file");
     }
@@ -242,8 +260,58 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     return Result<void>::error("Invalid pack footer magic");
   }
 
+  // Verify integrity using SHA-256 (primary cryptographic check)
   file.seekg(0, std::ios::beg);
-  u32 crc = 0xFFFFFFFF;
+  std::array<u8, 32> computedSha256{};
+
+#ifdef NOVELMIND_HAS_OPENSSL
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  if (!mdctx) {
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to create hash context for SHA-256 verification");
+  }
+
+  if (EVP_DigestInit_ex(mdctx, EVP_sha256(), nullptr) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to initialize SHA-256 verification");
+  }
+
+  u64 remaining = m_header.dataOffset;
+  std::vector<u8> buffer(64 * 1024);
+  while (remaining > 0) {
+    const usize toRead =
+        static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+    file.read(reinterpret_cast<char *>(buffer.data()),
+              static_cast<std::streamsize>(toRead));
+    const std::streamsize readCount = file.gcount();
+    if (readCount <= 0) {
+      EVP_MD_CTX_free(mdctx);
+      m_lastResult = PackVerificationResult::CorruptedHeader;
+      return Result<void>::error("Failed to read pack for SHA-256 verification");
+    }
+
+    if (EVP_DigestUpdate(mdctx, buffer.data(), static_cast<usize>(readCount)) != 1) {
+      EVP_MD_CTX_free(mdctx);
+      m_lastResult = PackVerificationResult::CorruptedHeader;
+      return Result<void>::error("Failed to update SHA-256 hash");
+    }
+
+    remaining -= static_cast<u64>(readCount);
+  }
+
+  unsigned int hashLen = 32;
+  if (EVP_DigestFinal_ex(mdctx, computedSha256.data(), &hashLen) != 1) {
+    EVP_MD_CTX_free(mdctx);
+    m_lastResult = PackVerificationResult::CorruptedHeader;
+    return Result<void>::error("Failed to finalize SHA-256 hash");
+  }
+  EVP_MD_CTX_free(mdctx);
+#else
+  // Fallback implementation without OpenSSL
+  detail::Sha256Context ctx;
+  detail::sha256Init(ctx);
+
   u64 remaining = m_header.dataOffset;
   std::vector<u8> buffer(64 * 1024);
   while (remaining > 0) {
@@ -254,7 +322,42 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
     const std::streamsize readCount = file.gcount();
     if (readCount <= 0) {
       m_lastResult = PackVerificationResult::CorruptedHeader;
-      return Result<void>::error("Failed to read pack for CRC verification");
+      return Result<void>::error("Failed to read pack for SHA-256 verification");
+    }
+
+    detail::sha256Update(ctx, buffer.data(), static_cast<usize>(readCount));
+    remaining -= static_cast<u64>(readCount);
+  }
+
+  detail::sha256Final(ctx, computedSha256.data());
+#endif
+
+  // Compare SHA-256 hashes (constant-time comparison to prevent timing attacks)
+  bool sha256Match = true;
+  for (usize i = 0; i < 32; ++i) {
+    if (computedSha256[i] != m_footer.tablesSha256[i]) {
+      sha256Match = false;
+    }
+  }
+
+  if (!sha256Match) {
+    m_lastResult = PackVerificationResult::ChecksumMismatch;
+    return Result<void>::error("Pack table SHA-256 mismatch - integrity check failed");
+  }
+
+  // Optional: Quick CRC32 check for corruption detection
+  // (CRC32 is kept for backward compatibility and fast corruption detection)
+  file.seekg(0, std::ios::beg);
+  u32 crc = 0xFFFFFFFF;
+  remaining = m_header.dataOffset;
+  while (remaining > 0) {
+    const usize toRead =
+        static_cast<usize>(std::min<u64>(remaining, buffer.size()));
+    file.read(reinterpret_cast<char *>(buffer.data()),
+              static_cast<std::streamsize>(toRead));
+    const std::streamsize readCount = file.gcount();
+    if (readCount <= 0) {
+      break;  // SHA-256 already verified, CRC is optional
     }
     crc =
         detail::updateCrc32(crc, buffer.data(), static_cast<usize>(readCount));
@@ -263,8 +366,9 @@ Result<void> SecurePackReader::openPack(const std::string &path) {
   crc = ~crc;
 
   if (crc != m_footer.tablesCrc32) {
-    m_lastResult = PackVerificationResult::ChecksumMismatch;
-    return Result<void>::error("Pack table CRC mismatch");
+    // CRC mismatch is a warning but not fatal since SHA-256 passed
+    // This could indicate corruption detected by CRC but not by SHA-256 read order
+    // In practice, if SHA-256 matches, the data is correct
   }
 
   const bool requiresSignature =
