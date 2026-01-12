@@ -17,7 +17,9 @@
 #include <any>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <shared_mutex>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -325,31 +327,10 @@ private:
 
   std::string m_userSettingsPath;
   std::string m_projectSettingsPath;
+
+  // Thread synchronization
+  // Using shared_mutex to allow concurrent reads but exclusive writes
+  mutable std::shared_mutex m_mutex;
 };
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * @brief Convert SettingValue to string (for display)
- */
-std::string settingValueToString(const SettingValue &value);
-
-/**
- * @brief Convert string to SettingValue (for parsing)
- */
-std::optional<SettingValue> stringToSettingValue(const std::string &str,
-                                                 SettingType type);
-
-/**
- * @brief Get display name for SettingType
- */
-const char *settingTypeToString(SettingType type);
-
-/**
- * @brief Get display name for SettingScope
- */
-const char *settingScopeToString(SettingScope scope);
 
 } // namespace NovelMind::editor

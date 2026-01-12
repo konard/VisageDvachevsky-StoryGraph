@@ -101,8 +101,13 @@ Result<AssetMetadata> ImageImporter::import(const std::string &sourcePath,
                                             const std::string &destPath,
                                             AssetDatabase *database) {
   if (!fs::exists(sourcePath)) {
-    return Result<AssetMetadata>::error("Source file does not exist: " +
-                                        sourcePath);
+    std::string errorMsg = "Failed to import image: Source file not found\n\n";
+    errorMsg += "What went wrong: The image file '" + sourcePath + "' does not exist.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Check if the file path is correct\n";
+    errorMsg += "  - Verify the file hasn't been moved or deleted\n";
+    errorMsg += "  - Ensure you have read permissions for the file location";
+    return Result<AssetMetadata>::error(errorMsg);
   }
 
   // Create destination directory if needed
@@ -179,8 +184,17 @@ Result<void> ImageImporter::processImage(const std::string &sourcePath,
     fs::copy(sourcePath, destPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
   } catch (const fs::filesystem_error &e) {
-    return Result<void>::error(std::string("Failed to process image: ") +
-                               e.what());
+    std::string errorMsg = "Failed to process image file\n\n";
+    errorMsg += "What went wrong: Could not copy or convert the image file.\n";
+    errorMsg += "Source: " + sourcePath + "\n";
+    errorMsg += "Destination: " + destPath + "\n";
+    errorMsg += "System error: " + std::string(e.what()) + "\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Ensure you have write permissions for the destination folder\n";
+    errorMsg += "  - Check if there is enough disk space\n";
+    errorMsg += "  - Verify the destination path is valid\n";
+    errorMsg += "  - Try closing any programs that might be using the file";
+    return Result<void>::error(errorMsg);
   }
 }
 
@@ -201,8 +215,16 @@ ImageImporter::generateThumbnail(const std::string &sourcePath,
     fs::copy(sourcePath, thumbnailPath, fs::copy_options::overwrite_existing);
     return Result<void>::ok();
   } catch (const fs::filesystem_error &e) {
-    return Result<void>::error(std::string("Failed to generate thumbnail: ") +
-                               e.what());
+    std::string errorMsg = "Failed to generate thumbnail for image\n\n";
+    errorMsg += "What went wrong: Could not create a thumbnail preview of the image.\n";
+    errorMsg += "Source: " + sourcePath + "\n";
+    errorMsg += "Thumbnail path: " + thumbnailPath + "\n";
+    errorMsg += "System error: " + std::string(e.what()) + "\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - The asset will still be imported, but won't have a thumbnail preview\n";
+    errorMsg += "  - Check if the image format is supported\n";
+    errorMsg += "  - Ensure write permissions for the thumbnails directory";
+    return Result<void>::error(errorMsg);
   }
 }
 
@@ -229,8 +251,14 @@ Result<AssetMetadata> AudioImporter::import(const std::string &sourcePath,
                                             const std::string &destPath,
                                             AssetDatabase * /*database*/) {
   if (!fs::exists(sourcePath)) {
-    return Result<AssetMetadata>::error("Source file does not exist: " +
-                                        sourcePath);
+    std::string errorMsg = "Failed to import audio: Source file not found\n\n";
+    errorMsg += "What went wrong: The audio file '" + sourcePath + "' does not exist.\n\n";
+    errorMsg += "How to fix:\n";
+    errorMsg += "  - Check if the file path is correct\n";
+    errorMsg += "  - Verify the file hasn't been moved or deleted\n";
+    errorMsg += "  - Ensure you have read permissions for the file location\n";
+    errorMsg += "  - Supported formats: .wav, .mp3, .ogg, .flac, .aiff, .opus";
+    return Result<AssetMetadata>::error(errorMsg);
   }
 
   // Create destination directory if needed
