@@ -6,6 +6,7 @@
 #include "NovelMind/scene/scene_graph.hpp"
 
 #include <algorithm>
+#include <atomic>
 
 namespace NovelMind::scene {
 
@@ -13,8 +14,12 @@ namespace NovelMind::scene {
 // SceneObjectBase Implementation
 // ============================================================================
 
+// Global generation counter for thread-safe handle validation
+// Each new object gets a unique generation number
+static std::atomic<u64> g_nextGeneration{1};
+
 SceneObjectBase::SceneObjectBase(const std::string &id, SceneObjectType type)
-    : m_id(id), m_type(type) {
+    : m_id(id), m_type(type), m_generation(g_nextGeneration.fetch_add(1)) {
   m_transform.x = 0.0f;
   m_transform.y = 0.0f;
   m_transform.scaleX = 1.0f;

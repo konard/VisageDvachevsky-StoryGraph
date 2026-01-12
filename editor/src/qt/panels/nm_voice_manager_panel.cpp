@@ -87,8 +87,8 @@ NMVoiceManagerPanel::~NMVoiceManagerPanel() {
   // Cancel all active probe tasks
   {
     std::lock_guard<std::mutex> lock(m_probeMutex);
-    for (auto& [path, cancelled] : m_activeProbeTasks) {
-      cancelled->store(true);
+    for (auto it = m_activeProbeTasks.begin(); it != m_activeProbeTasks.end(); ++it) {
+      it.value()->store(true);
     }
     m_activeProbeTasks.clear();
     m_probeQueue.clear();
@@ -114,8 +114,8 @@ void NMVoiceManagerPanel::onShutdown() {
   // Cancel all active probe tasks
   {
     std::lock_guard<std::mutex> lock(m_probeMutex);
-    for (auto& [path, cancelled] : m_activeProbeTasks) {
-      cancelled->store(true);
+    for (auto it = m_activeProbeTasks.begin(); it != m_activeProbeTasks.end(); ++it) {
+      it.value()->store(true);
     }
     m_activeProbeTasks.clear();
     m_probeQueue.clear();
