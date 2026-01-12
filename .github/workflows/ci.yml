@@ -312,6 +312,7 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
+          --gcov-ignore-errors=no_working_dir_found \
           --print-summary \
           --xml coverage.xml \
           --html coverage.html
@@ -332,6 +333,7 @@ jobs:
           --filter ../engine_core/include \
           --exclude '.*/third_party/.*' \
           --exclude '.*/tests/.*' \
+          --gcov-ignore-errors=no_working_dir_found \
           --json | python3 -c "import sys, json; data=json.load(sys.stdin); print(f\"{data['line_covered']/data['line_valid']*100:.1f}\")")
         echo "Current line coverage: ${COVERAGE}%"
         # Phase 1: Increased threshold to 35% (blocking)
@@ -343,9 +345,9 @@ jobs:
         else
           echo "✓ Coverage ${COVERAGE}% meets minimum threshold ${THRESHOLD}%"
         fi
-        lcov --capture --directory . --output-file coverage.info --ignore-errors negative,gcov
-        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info --ignore-errors negative
-        lcov --list coverage.info --ignore-errors negative
+        lcov --capture --directory . --output-file coverage.info --ignore-errors negative,gcov,source
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/*' --output-file coverage.info --ignore-errors negative,source
+        lcov --list coverage.info --ignore-errors negative,source
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
