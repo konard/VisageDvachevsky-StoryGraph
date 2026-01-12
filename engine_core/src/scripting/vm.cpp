@@ -745,6 +745,15 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
       }
       case OpCode::CHOICE: {
         const u32 count = instr.operand;
+        // Check if stack has enough elements (count + 1 for the count value itself)
+        const u32 requiredStackSize = count + 1;
+        if (m_stack.size() < requiredStackSize) {
+          NOVELMIND_LOG_ERROR("VM Error: Stack underflow in CHOICE opcode - expected " +
+                              std::to_string(requiredStackSize) + " elements but stack has " +
+                              std::to_string(m_stack.size()));
+          m_halted = true;
+          return;
+        }
         std::vector<Value> choices;
         choices.reserve(count);
         for (u32 i = 0; i < count; ++i) {
