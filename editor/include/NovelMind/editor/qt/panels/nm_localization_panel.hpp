@@ -13,6 +13,12 @@
  */
 
 #include "NovelMind/editor/qt/nm_dock_panel.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_data_model.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_dialogs.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_io.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_search.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_ui.hpp"
+#include "NovelMind/editor/qt/panels/nm_localization_ui_setup.hpp"
 #include "NovelMind/localization/localization_manager.hpp"
 
 #include <QHash>
@@ -37,22 +43,9 @@ namespace NovelMind::editor::qt {
  */
 enum class LocalizationFilter { All, MissingTranslations, Unused, Modified, NewKeys };
 
-/**
- * @brief Localization entry with status tracking
- */
-struct LocalizationEntry {
-  QString key;
-  QHash<QString, QString> translations; // locale -> translation
-  QStringList usageLocations;           // file paths where key is used
-  bool isMissing = false;               // has missing translations
-  bool isUnused = false;                // not used anywhere in project
-  bool isModified = false;              // recently modified
-  bool isNew = false;                   // newly added key
-  bool isDeleted = false;               // marked for deletion
-};
-
 class NMLocalizationPanel : public NMDockPanel {
   Q_OBJECT
+  friend class NMLocalizationUISetup;
 
 public:
   explicit NMLocalizationPanel(QWidget* parent = nullptr);
@@ -186,31 +179,13 @@ private:
   void setupFilterBar();
   void setupTable();
   void refreshLocales();
-  void loadLocale(const QString& localeCode);
   void rebuildTable();
   void applyFilters();
   void updateStatusBar();
-  void highlightMissingTranslations();
-  void exportToCsv(const QString& filePath);
-  void exportToJson(const QString& filePath);
-  void importFromCsv(const QString& filePath);
-  void importFromJson(const QString& filePath);
+  void updatePreview();
   void setDirty(bool dirty);
   bool showAddKeyDialog(QString& outKey, QString& outDefaultValue);
-  bool isValidKeyName(const QString& key) const;
-  bool isKeyUnique(const QString& key) const;
-  void syncEntriesToManager();
-  void syncEntriesFromManager();
-  void exportLocale();
-  void importLocale();
-  void exportMissingStrings();
-  void importLocaleAsync(const QString& filePath,
-                         ::NovelMind::localization::LocalizationFormat format);
-  void exportLocaleAsync(const QString& filePath,
-                         ::NovelMind::localization::LocalizationFormat format);
   bool showPluralFormsDialog(const QString& key);
-  void updatePreview();
-  void applyRTLLayout(bool rtl);
 
   // UI Elements
   QToolBar* m_toolbar = nullptr;
@@ -237,8 +212,6 @@ private:
   QHash<QString, QString> m_previewVariables;
 
   // Data
-  QHash<QString, LocalizationEntry> m_entries;
-  QSet<QString> m_deletedKeys; // Keys pending deletion
   QStringList m_availableLocales;
   QString m_defaultLocale = "en";
   QString m_currentLocale;
@@ -251,7 +224,13 @@ private:
   // This avoids O(n) linear search when updating specific rows
   mutable QHash<QString, int> m_keyToRowMap;
 
-  // Key validation regex
+  // Helper modules
+  NMLocalizationDataModel m_dataModel;
+  NMLocalizationIO m_ioHelper;
+  NMLocalizationSearch m_searchHelper;
+  NMLocalizationUI m_uiHelper;
+
+  // Key validation regex (kept for backward compatibility)
   static const QRegularExpression s_keyValidationRegex;
 };
 
