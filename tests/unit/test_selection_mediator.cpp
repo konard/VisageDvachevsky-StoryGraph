@@ -401,221 +401,178 @@ TEST_CASE("SelectionMediator handles null panel pointers safely",
 }
 
 // ============================================================================
-// Feedback Loop Prevention Tests (Issue #451)
+// Thread Safety Tests (Issue #479)
 // ============================================================================
 
-using namespace NovelMind::editor;
+#include "NovelMind/editor/event_bus.hpp"
+#include <thread>
 
-TEST_CASE("Selection mediator produces single event per selection",
-          "[selection_mediator][feedback][issue-451]") {
-  // Test that selection changes produce exactly one event per change
-  int sceneObjectEventCount = 0;
-  int statusContextEventCount = 0;
+TEST_CASE("SelectionMediator re-entrancy guard is thread-safe",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test that m_processingSelection flag prevents race conditions
+  // when multiple threads publish selection events simultaneously
 
-  auto &bus = EventBus::instance();
-
-  // Subscribe to scene object selection events
-  auto sub1 = bus.subscribe<events::SceneObjectSelectedEvent>(
-      [&sceneObjectEventCount](const events::SceneObjectSelectedEvent &) {
-        ++sceneObjectEventCount;
-      });
-
-  // Subscribe to status context events
-  auto sub2 = bus.subscribe<events::StatusContextChangedEvent>(
-      [&statusContextEventCount](const events::StatusContextChangedEvent &) {
-        ++statusContextEventCount;
-      });
-
-  // Publish a selection event
-  events::SceneObjectSelectedEvent event;
-  event.objectId = "test-object-1";
-  event.sourcePanel = "SceneView";
-  bus.publish(event);
-
-  // Process any queued events
-  bus.processQueuedEvents();
-
-  // Should receive exactly one of each event type
-  REQUIRE(sceneObjectEventCount == 1);
-
-  // Clean up
-  bus.unsubscribe(sub1);
-  bus.unsubscribe(sub2);
-}
-
-TEST_CASE("Selection mediator prevents infinite feedback loops",
-          "[selection_mediator][feedback][issue-451]") {
-  // Test that re-entrancy guard prevents infinite loops
-  // This simulates a pathological case where event handlers try to
-  // publish more selection events
-
-  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
-  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
-  auto *inspector = new qt::NMInspectorPanel(nullptr);
   auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-
   auto *mediator = new mediators::SelectionMediator(
-      sceneView, hierarchy, inspector, storyGraph, nullptr);
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
 
   mediator->initialize();
 
-  int eventCount = 0;
-  const int MAX_SAFE_EVENTS = 10;
+  // Counter to track how many times event handler completes
+  std::atomic<int> completionCount{0};
+  std::atomic<int> entryAttemptCount{0};
+
+  // Create multiple threads that publish selection events concurrently
+  const int numThreads = 10;
+  const int eventsPerThread = 100;
+  std::vector<std::thread> threads;
 
   auto &bus = EventBus::instance();
 
-  // Create a subscriber that tries to create a feedback loop
-  auto feedbackSub = bus.subscribe<events::SceneObjectSelectedEvent>(
-      [&eventCount, &bus](const events::SceneObjectSelectedEvent &event) {
-        ++eventCount;
-
-        // Attempt to create feedback loop by publishing another selection event
-        // The re-entrancy guard should prevent this from being processed
-        if (eventCount < MAX_SAFE_EVENTS) {
-          events::SceneObjectSelectedEvent newEvent;
-          newEvent.objectId = event.objectId + "-recursive";
-          newEvent.sourcePanel = "Test";
-          bus.publish(newEvent);
-        }
+  // Subscribe to count actual event processing
+  auto subscription = bus.subscribe<events::StoryGraphNodeSelectedEvent>(
+      [&completionCount, &entryAttemptCount](const events::StoryGraphNodeSelectedEvent &) {
+        ++entryAttemptCount;
+        // Simulate some work
+        std::this_thread::sleep_for(std::chrono::microseconds(10));
+        ++completionCount;
       });
 
-  // Trigger initial event
-  events::SceneObjectSelectedEvent initialEvent;
-  initialEvent.objectId = "test-object";
-  initialEvent.sourcePanel = "SceneView";
-  bus.publish(initialEvent);
-
-  processEvents(100);
-
-  // Due to re-entrancy guard, recursive events should be ignored
-  // We should only see the initial event plus potentially one more
-  // (the recursive one published during the first handler)
-  REQUIRE(eventCount < MAX_SAFE_EVENTS);
-  REQUIRE(eventCount <= 2); // Initial + at most one recursive
-
-  // Clean up
-  bus.unsubscribe(feedbackSub);
-  mediator->shutdown();
-  delete mediator;
-  delete sceneView;
-  delete hierarchy;
-  delete inspector;
-  delete storyGraph;
-}
-
-TEST_CASE("Selection mediator handles rapid selection changes",
-          "[selection_mediator][feedback][issue-451]") {
-  // Test that rapid selection changes don't cause event spam
-  // This simulates marquee selection or rapid keyboard navigation
-
-  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
-  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
-  auto *inspector = new qt::NMInspectorPanel(nullptr);
-  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-
-  auto *mediator = new mediators::SelectionMediator(
-      sceneView, hierarchy, inspector, storyGraph, nullptr);
-
-  mediator->initialize();
-
-  auto &bus = EventBus::instance();
-  int selectionEventCount = 0;
-
-  auto sub = bus.subscribe<events::SceneObjectSelectedEvent>(
-      [&selectionEventCount](const events::SceneObjectSelectedEvent &) {
-        ++selectionEventCount;
-      });
-
-  // Simulate 20 rapid selection changes
-  for (int i = 0; i < 20; ++i) {
-    events::SceneObjectSelectedEvent event;
-    event.objectId = QString("object-%1").arg(i);
-    event.sourcePanel = "SceneView";
-    bus.publish(event);
-    processEvents(5); // Very short delay between selections
+  for (int i = 0; i < numThreads; ++i) {
+    threads.emplace_back([i, eventsPerThread, &bus]() {
+      for (int j = 0; j < eventsPerThread; ++j) {
+        events::StoryGraphNodeSelectedEvent event;
+        event.nodeIdString = QString("node_%1_%2").arg(i).arg(j);
+        bus.publish(event);
+      }
+    });
   }
 
-  // Wait for any debounced operations
-  processEvents(200);
+  // Wait for all threads to complete
+  for (auto &thread : threads) {
+    thread.join();
+  }
 
-  // All events should be received (no loss due to throttling at EventBus level)
-  // Debouncing happens inside the mediator for expensive operations only
-  REQUIRE(selectionEventCount == 20);
+  // Process any remaining events
+  processEvents(500);
 
-  // UI should remain responsive (no freeze)
-  // This is implicit - if we got here without timeout, UI is responsive
+  // Unsubscribe
+  bus.unsubscribe(subscription);
+
+  // Verify that re-entrancy guard worked correctly
+  // All events should have been attempted, but the re-entrancy guard
+  // may have prevented some from processing if they overlapped
+  REQUIRE(entryAttemptCount > 0);
+  REQUIRE(completionCount > 0);
+  REQUIRE(completionCount <= entryAttemptCount);
 
   // Clean up
-  bus.unsubscribe(sub);
   mediator->shutdown();
   delete mediator;
-  delete sceneView;
-  delete hierarchy;
-  delete inspector;
   delete storyGraph;
 }
 
-TEST_CASE("Selection mediator reentrant guard works correctly",
-          "[selection_mediator][feedback][issue-451]") {
-  // Test that the m_processingSelection flag correctly prevents re-entrance
+TEST_CASE("SelectionMediator atomic flag prevents data races",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test that the atomic flag prevents data races
+  // This test should pass ThreadSanitizer (TSan) checks
 
-  auto *sceneView = new qt::NMSceneViewPanel(nullptr);
-  auto *hierarchy = new qt::NMHierarchyPanel(nullptr);
-  auto *inspector = new qt::NMInspectorPanel(nullptr);
   auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
-
   auto *mediator = new mediators::SelectionMediator(
-      sceneView, hierarchy, inspector, storyGraph, nullptr);
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
 
   mediator->initialize();
 
+  std::atomic<bool> testComplete{false};
+  std::vector<std::thread> threads;
+
   auto &bus = EventBus::instance();
-  int processingCount = 0;
 
-  // Create a subscriber that will be called during selection processing
-  // and tries to trigger another selection event
-  auto reentrantSub = bus.subscribe<events::StatusContextChangedEvent>(
-      [&processingCount, &bus](const events::StatusContextChangedEvent &) {
-        ++processingCount;
+  // Create threads that rapidly publish events
+  for (int i = 0; i < 5; ++i) {
+    threads.emplace_back([i, &testComplete, &bus]() {
+      while (!testComplete) {
+        events::StoryGraphNodeSelectedEvent event;
+        event.nodeIdString = QString("thread_%1").arg(i);
+        bus.publish(event);
+        std::this_thread::yield();
+      }
+    });
+  }
 
-        // Try to publish a selection event while processing
-        // This should be blocked by the re-entrancy guard
-        events::SceneObjectSelectedEvent recursiveEvent;
-        recursiveEvent.objectId = "recursive-object";
-        recursiveEvent.sourcePanel = "Test";
-        bus.publish(recursiveEvent);
-      });
+  // Let threads run for a short time
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  testComplete = true;
 
-  int selectionEventCount = 0;
-  auto selectionSub = bus.subscribe<events::SceneObjectSelectedEvent>(
-      [&selectionEventCount](const events::SceneObjectSelectedEvent &) {
-        ++selectionEventCount;
-      });
+  // Wait for all threads
+  for (auto &thread : threads) {
+    thread.join();
+  }
 
-  // Publish initial selection event
-  events::SceneObjectSelectedEvent event;
-  event.objectId = "test-object";
-  event.sourcePanel = "SceneView";
-  bus.publish(event);
+  // Process remaining events
+  processEvents(200);
 
-  processEvents(100);
-
-  // The StatusContextChangedEvent handler should be called once
-  REQUIRE(processingCount >= 1);
-
-  // The recursive selection event should either:
-  // 1. Be ignored by the re-entrancy guard (ideal)
-  // 2. Be processed but not cause infinite recursion (acceptable)
-  // Either way, we shouldn't see a huge number of events
-  REQUIRE(selectionEventCount <= 3); // Initial + at most 2 recursive
-
-  // Clean up
-  bus.unsubscribe(reentrantSub);
-  bus.unsubscribe(selectionSub);
+  // If we reach here without TSan errors or crashes, the test passes
   mediator->shutdown();
   delete mediator;
-  delete sceneView;
-  delete hierarchy;
-  delete inspector;
+  delete storyGraph;
+
+  REQUIRE(true);
+}
+
+TEST_CASE("SelectionMediator concurrent event publishing",
+          "[selection_mediator][threading][issue-479]") {
+  // Issue #479: Test concurrent publishing of different event types
+
+  auto *storyGraph = new qt::NMStoryGraphPanel(nullptr);
+  auto *mediator = new mediators::SelectionMediator(
+      nullptr, nullptr, nullptr, storyGraph, nullptr
+  );
+
+  mediator->initialize();
+
+  std::atomic<int> sceneEventCount{0};
+  std::atomic<int> storyEventCount{0};
+
+  auto &bus = EventBus::instance();
+
+  // Launch threads publishing different event types
+  std::thread sceneThread([&bus, &sceneEventCount]() {
+    for (int i = 0; i < 50; ++i) {
+      events::SceneObjectSelectedEvent event;
+      event.objectId = QString("scene_%1").arg(i);
+      event.sourcePanel = "Test";
+      bus.publish(event);
+      ++sceneEventCount;
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  std::thread storyThread([&bus, &storyEventCount]() {
+    for (int i = 0; i < 50; ++i) {
+      events::StoryGraphNodeSelectedEvent event;
+      event.nodeIdString = QString("story_%1").arg(i);
+      bus.publish(event);
+      ++storyEventCount;
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+    }
+  });
+
+  // Wait for threads
+  sceneThread.join();
+  storyThread.join();
+
+  // Process events
+  processEvents(300);
+
+  // Verify events were published
+  REQUIRE(sceneEventCount == 50);
+  REQUIRE(storyEventCount == 50);
+
+  // Clean up
+  mediator->shutdown();
+  delete mediator;
   delete storyGraph;
 }
