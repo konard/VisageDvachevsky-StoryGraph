@@ -40,16 +40,16 @@ jobs:
 
     - name: Generate coverage report
       run: |
-        lcov --directory build --capture --output-file coverage.info --ignore-errors negative,gcov
-        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage.info --ignore-errors negative
-        lcov --list coverage.info --ignore-errors negative
+        lcov --directory build --capture --output-file coverage.info --ignore-errors negative,gcov,source
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage.info --ignore-errors negative,source
+        lcov --list coverage.info --ignore-errors negative,source
 
     - name: Display coverage summary
       run: |
         echo "## Code Coverage Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        lcov --summary coverage.info --ignore-errors negative 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        lcov --summary coverage.info --ignore-errors negative,source 2>&1 | tee -a $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
 
     - name: Upload coverage to artifact
@@ -95,21 +95,21 @@ jobs:
 
     - name: Generate coverage report
       run: |
-        lcov --directory build --capture --output-file coverage_full.info --ignore-errors negative,gcov
-        lcov --remove coverage_full.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage_full.info --ignore-errors negative
-        lcov --list coverage_full.info --ignore-errors negative
+        lcov --directory build --capture --output-file coverage_full.info --ignore-errors negative,gcov,source
+        lcov --remove coverage_full.info '/usr/*' '*/tests/*' '*/build/_deps/*' --output-file coverage_full.info --ignore-errors negative,source
+        lcov --list coverage_full.info --ignore-errors negative,source
 
     - name: Generate separate coverage reports
       run: |
         # Coverage for engine_core
-        lcov --directory build --capture --output-file coverage_engine.info --ignore-errors negative,gcov
-        lcov --extract coverage_engine.info '*/engine_core/src/*' --output-file coverage_engine.info --ignore-errors negative
-        lcov --remove coverage_engine.info '*/tests/*' --output-file coverage_engine.info --ignore-errors negative
+        lcov --directory build --capture --output-file coverage_engine.info --ignore-errors negative,gcov,source
+        lcov --extract coverage_engine.info '*/engine_core/src/*' --output-file coverage_engine.info --ignore-errors negative,source
+        lcov --remove coverage_engine.info '*/tests/*' --output-file coverage_engine.info --ignore-errors negative,source
 
         # Coverage for editor
-        lcov --directory build --capture --output-file coverage_editor.info --ignore-errors negative,gcov
-        lcov --extract coverage_editor.info '*/editor/src/*' --output-file coverage_editor.info --ignore-errors negative
-        lcov --remove coverage_editor.info '*/tests/*' --output-file coverage_editor.info --ignore-errors negative
+        lcov --directory build --capture --output-file coverage_editor.info --ignore-errors negative,gcov,source
+        lcov --extract coverage_editor.info '*/editor/src/*' --output-file coverage_editor.info --ignore-errors negative,source
+        lcov --remove coverage_editor.info '*/tests/*' --output-file coverage_editor.info --ignore-errors negative,source
 
     - name: Display detailed coverage summary
       run: |
@@ -119,7 +119,7 @@ jobs:
         echo "### Engine Core Coverage" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         if [ -f coverage_engine.info ]; then
-          lcov --summary coverage_engine.info --ignore-errors negative 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          lcov --summary coverage_engine.info --ignore-errors negative,source 2>&1 | tee -a $GITHUB_STEP_SUMMARY
         else
           echo "No engine coverage data" >> $GITHUB_STEP_SUMMARY
         fi
@@ -129,7 +129,7 @@ jobs:
         echo "### Editor Coverage" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         if [ -f coverage_editor.info ]; then
-          lcov --summary coverage_editor.info --ignore-errors negative 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+          lcov --summary coverage_editor.info --ignore-errors negative,source 2>&1 | tee -a $GITHUB_STEP_SUMMARY
         else
           echo "No editor coverage data" >> $GITHUB_STEP_SUMMARY
         fi
@@ -138,7 +138,7 @@ jobs:
 
         echo "### Overall Coverage" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
-        lcov --summary coverage_full.info --ignore-errors negative 2>&1 | tee -a $GITHUB_STEP_SUMMARY
+        lcov --summary coverage_full.info --ignore-errors negative,source 2>&1 | tee -a $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
 
     - name: Upload coverage reports
