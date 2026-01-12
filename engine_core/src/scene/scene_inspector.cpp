@@ -93,6 +93,32 @@ std::string RemoveObjectCommand::getDescription() const {
 }
 
 // ============================================================================
+// CompositeCommand Implementation
+// ============================================================================
+
+CompositeCommand::CompositeCommand(const std::string &description)
+    : m_description(description) {}
+
+void CompositeCommand::addCommand(std::unique_ptr<ICommand> command) {
+  m_commands.push_back(std::move(command));
+}
+
+void CompositeCommand::execute() {
+  for (auto &cmd : m_commands) {
+    cmd->execute();
+  }
+}
+
+void CompositeCommand::undo() {
+  // Undo in reverse order
+  for (auto it = m_commands.rbegin(); it != m_commands.rend(); ++it) {
+    (*it)->undo();
+  }
+}
+
+std::string CompositeCommand::getDescription() const { return m_description; }
+
+// ============================================================================
 // SceneInspectorAPI Implementation
 // ============================================================================
 
@@ -498,12 +524,13 @@ Result<void> SceneInspectorAPI::moveObject(const std::string &id, f32 x, f32 y,
     auto cmdY = std::make_unique<SetPropertyCommand>(this, id, "y", oldY,
                                                      std::to_string(y));
 
-    // Execute both
-    cmdX->execute();
-    cmdY->execute();
+    // Group both commands into a composite command
+    auto composite = std::make_unique<CompositeCommand>("Move object " + id);
+    composite->addCommand(std::move(cmdX));
+    composite->addCommand(std::move(cmdY));
+    composite->execute();
 
-    // For simplicity, only push one command
-    m_undoStack.push(std::move(cmdX));
+    m_undoStack.push(std::move(composite));
     while (!m_redoStack.empty()) {
       m_redoStack.pop();
     }
@@ -527,17 +554,25 @@ Result<void> SceneInspectorAPI::scaleObject(const std::string &id, f32 scaleX,
     std::string oldScaleX = std::to_string(obj->getScaleX());
     std::string oldScaleY = std::to_string(obj->getScaleY());
 
-    auto cmd = std::make_unique<SetPropertyCommand>(
+    auto cmdScaleX = std::make_unique<SetPropertyCommand>(
         this, id, "scaleX", oldScaleX, std::to_string(scaleX));
-    cmd->execute();
-    m_undoStack.push(std::move(cmd));
+    auto cmdScaleY = std::make_unique<SetPropertyCommand>(
+        this, id, "scaleY", oldScaleY, std::to_string(scaleY));
+
+    // Group both commands into a composite command
+    auto composite = std::make_unique<CompositeCommand>("Scale object " + id);
+    composite->addCommand(std::move(cmdScaleX));
+    composite->addCommand(std::move(cmdScaleY));
+    composite->execute();
+
+    m_undoStack.push(std::move(composite));
     while (!m_redoStack.empty()) {
       m_redoStack.pop();
     }
     notifyUndoStackChanged();
+  } else {
+    obj->setScale(scaleX, scaleY);
   }
-
-  obj->setScale(scaleX, scaleY);
   notifySceneModified();
   return Result<void>::ok();
 }
@@ -665,17 +700,24 @@ void SceneInspectorAPI::executeCommand(std::unique_ptr<ICommand> command) {
       m_redoStack.pop();
     }
 
-    // Limit stack size
-    while (m_undoStack.size() > m_maxHistorySize) {
-      std::stack<std::unique_ptr<ICommand>> tempStack;
-      while (m_undoStack.size() > 1) {
-        tempStack.push(std::move(m_undoStack.top()));
+    // Limit stack size - remove oldest entries while preserving order
+    if (m_undoStack.size() > m_maxHistorySize) {
+      // Transfer all elements to a vector (this reverses the order)
+      std::vector<std::unique_ptr<ICommand>> temp;
+      while (!m_undoStack.empty()) {
+        temp.push_back(std::move(m_undoStack.top()));
         m_undoStack.pop();
       }
-      m_undoStack.pop(); // Remove oldest
-      while (!tempStack.empty()) {
-        m_undoStack.push(std::move(tempStack.top()));
-        tempStack.pop();
+
+      // temp now has [newest, ..., oldest]
+      // Remove oldest entries from the end
+      while (temp.size() > m_maxHistorySize) {
+        temp.pop_back();
+      }
+
+      // Restore to stack in reverse order to maintain correct sequence
+      for (auto it = temp.rbegin(); it != temp.rend(); ++it) {
+        m_undoStack.push(std::move(*it));
       }
     }
 

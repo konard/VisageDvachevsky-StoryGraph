@@ -5,21 +5,16 @@
 #include "NovelMind/editor/qt/nm_undo_manager.hpp"
 #include "NovelMind/editor/qt/panels/nm_story_graph_panel.hpp"
 
+#include "nm_story_graph_panel_detail.hpp"
+#include "story_graph_edge_manager.hpp"
+#include "story_graph_layout.hpp"
+#include "story_graph_node_factory.hpp"
+#include "story_graph_property_manager.hpp"
+#include "story_graph_serialization.hpp"
+
 #include <QDebug>
-#include <QDir>
-#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
-#include <QProgressDialog>
-#include <QQueue>
-#include <QSet>
-#include <QTextStream>
-#include <QThread>
-#include <algorithm>
-#include <atomic>
-#include <climits>
-
-#include "nm_story_graph_panel_detail.hpp"
 
 namespace NovelMind::editor::qt {
 
@@ -44,31 +39,17 @@ void NMStoryGraphPanel::onZoomReset() {
 
 void NMStoryGraphPanel::onFitToGraph() {
   if (m_view && m_scene && !m_scene->items().isEmpty()) {
-    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50), Qt::KeepAspectRatio);
+    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50),
+                      Qt::KeepAspectRatio);
   }
 }
 
-/**
- * @brief Improved auto-layout using Sugiyama-style hierarchical graph layout
- *
- * Issue #326: The previous implementation had several problems:
- * - Used simple BFS which doesn't consider longest path to each node
- * - Centering could push nodes to negative coordinates
- * - No edge crossing minimization
- * - Poor orphaned node placement
- *
- * This implementation uses a proper Sugiyama algorithm:
- * 1. Layer assignment using longest path from sources
- * 2. Edge crossing minimization using barycenter heuristic
- * 3. Proper coordinate assignment with all nodes in positive space
- * 4. Orphaned nodes placed in a separate region
- */
 void NMStoryGraphPanel::onAutoLayout() {
   if (!m_scene) {
     return;
   }
 
-  const auto& nodes = m_scene->nodes();
+  const auto &nodes = m_scene->nodes();
   if (nodes.isEmpty()) {
     return;
   }
@@ -85,288 +66,8 @@ void NMStoryGraphPanel::onAutoLayout() {
     return;
   }
 
-  // Layout constants - can be made configurable in the future
-  const qreal horizontalSpacing = 280.0;  // Increased for better readability
-  const qreal verticalSpacing = 160.0;    // Increased for better readability
-  const qreal startX = 100.0;             // Left margin
-  const qreal startY = 100.0;             // Top margin
-  [[maybe_unused]] const qreal orphanAreaGap = 100.0;      // Gap before orphan section
-
-  // Build adjacency lists (forward and reverse)
-  QHash<uint64_t, QList<uint64_t>> successors;   // node -> children
-  QHash<uint64_t, QList<uint64_t>> predecessors; // node -> parents
-  QHash<uint64_t, int> inDegree;
-  QHash<uint64_t, int> outDegree;
-  QSet<uint64_t> entryNodeSet;
-
-  for (auto* node : nodes) {
-    successors[node->nodeId()] = QList<uint64_t>();
-    predecessors[node->nodeId()] = QList<uint64_t>();
-    inDegree[node->nodeId()] = 0;
-    outDegree[node->nodeId()] = 0;
-  }
-
-  for (auto* conn : m_scene->connections()) {
-    uint64_t fromId = conn->startNode()->nodeId();
-    uint64_t toId = conn->endNode()->nodeId();
-    successors[fromId].append(toId);
-    predecessors[toId].append(fromId);
-    inDegree[toId]++;
-    outDegree[fromId]++;
-  }
-
-  // ===== STEP 1: Find entry nodes (sources) =====
-  // Entry nodes are either marked as entry or have no incoming edges
-  QList<uint64_t> entryNodes;
-  for (auto* node : nodes) {
-    if (inDegree[node->nodeId()] == 0 || node->isEntry()) {
-      entryNodes.append(node->nodeId());
-      entryNodeSet.insert(node->nodeId());
-    }
-  }
-
-  // Then add nodes with no incoming edges (sources)
-  for (auto *node : nodes) {
-    uint64_t id = node->nodeId();
-    if (inDegree[id] == 0 && !entryNodeSet.contains(id)) {
-      entryNodes.append(id);
-      entryNodeSet.insert(id);
-    }
-  }
-
-  // ===== STEP 2: Layer assignment using longest path =====
-  // This ensures nodes are placed at the maximum depth from any source,
-  // which creates a more visually appealing hierarchical layout
-  QHash<uint64_t, int> nodeLayers;
-  QSet<uint64_t> visited;
-
-  // Use topological sort with longest path calculation
-  // Process nodes in topological order, computing max distance from sources
-  QList<uint64_t> topoOrder;
-  QHash<uint64_t, int> tempInDegree = inDegree;
-  QQueue<uint64_t> zeroInDegreeQueue;
-
-  // Initialize queue with sources
-  for (auto *node : nodes) {
-    if (tempInDegree[node->nodeId()] == 0) {
-      zeroInDegreeQueue.enqueue(node->nodeId());
-      nodeLayers[node->nodeId()] = 0;
-    }
-  }
-
-  // Process topologically
-  while (!zeroInDegreeQueue.isEmpty()) {
-    uint64_t nodeId = zeroInDegreeQueue.dequeue();
-    topoOrder.append(nodeId);
-    visited.insert(nodeId);
-
-    for (uint64_t childId : successors[nodeId]) {
-      // Update child's layer to max(current layer, parent layer + 1)
-      int newLayer = nodeLayers[nodeId] + 1;
-      if (!nodeLayers.contains(childId) || newLayer > nodeLayers[childId]) {
-        nodeLayers[childId] = newLayer;
-      }
-
-      tempInDegree[childId]--;
-      if (tempInDegree[childId] == 0) {
-        zeroInDegreeQueue.enqueue(childId);
-      }
-    }
-  }
-
-  // Handle cycles: nodes not in topo order are part of cycles
-  // Place them based on their connections to already-placed nodes
-  for (auto *node : nodes) {
-    uint64_t id = node->nodeId();
-    if (!visited.contains(id)) {
-      // Find the minimum layer of any successor that's already placed
-      int minSuccessorLayer = INT_MAX;
-      for (uint64_t succId : successors[id]) {
-        if (nodeLayers.contains(succId)) {
-          minSuccessorLayer = qMin(minSuccessorLayer, nodeLayers[succId]);
-        }
-      }
-
-      // Find the maximum layer of any predecessor that's already placed
-      int maxPredecessorLayer = -1;
-      for (uint64_t predId : predecessors[id]) {
-        if (nodeLayers.contains(predId)) {
-          maxPredecessorLayer = qMax(maxPredecessorLayer, nodeLayers[predId]);
-        }
-      }
-
-      // Place between predecessor and successor layers if possible
-      if (maxPredecessorLayer >= 0 && minSuccessorLayer < INT_MAX) {
-        nodeLayers[id] = maxPredecessorLayer + 1;
-      } else if (maxPredecessorLayer >= 0) {
-        nodeLayers[id] = maxPredecessorLayer + 1;
-      } else if (minSuccessorLayer < INT_MAX) {
-        nodeLayers[id] = qMax(0, minSuccessorLayer - 1);
-      } else {
-        // Isolated node in cycle, place at layer 0
-        nodeLayers[id] = 0;
-      }
-      visited.insert(id);
-    }
-  }
-
-  // ===== STEP 3: Identify orphaned nodes (disconnected components) =====
-  // Orphaned nodes have no connections at all
-  QList<uint64_t> orphanedNodes;
-  QSet<uint64_t> connectedNodes;
-
-  for (auto *node : nodes) {
-    uint64_t id = node->nodeId();
-    if (inDegree[id] == 0 && outDegree[id] == 0) {
-      orphanedNodes.append(id);
-    } else {
-      connectedNodes.insert(id);
-    }
-  }
-
-  // ===== STEP 4: Build layer-to-nodes mapping for connected nodes only =====
-  QHash<int, QList<uint64_t>> layerNodes;
-  int maxLayer = 0;
-
-  for (uint64_t nodeId : connectedNodes) {
-    int layer = nodeLayers[nodeId];
-    layerNodes[layer].append(nodeId);
-    maxLayer = qMax(maxLayer, layer);
-  }
-
-  // ===== STEP 5: Edge crossing minimization using barycenter heuristic =====
-  // For each layer (except the first), order nodes to minimize crossings
-  // with the previous layer
-
-  // First, order the first layer: put entry nodes first, then by out-degree
-  if (layerNodes.contains(0)) {
-    QList<uint64_t> &layer0 = layerNodes[0];
-    std::sort(layer0.begin(), layer0.end(),
-              [&entryNodeSet, &outDegree](uint64_t a, uint64_t b) {
-                // Entry nodes come first
-                bool aIsEntry = entryNodeSet.contains(a);
-                bool bIsEntry = entryNodeSet.contains(b);
-                if (aIsEntry != bIsEntry) {
-                  return aIsEntry;
-                }
-                // Then sort by out-degree (more connections = more central)
-                return outDegree[a] > outDegree[b];
-              });
-  }
-
-  // Apply barycenter heuristic for subsequent layers
-  // Iterate multiple times for better convergence
-  const int iterations = 4;
-  for (int iter = 0; iter < iterations; ++iter) {
-    // Forward sweep (layer 1 to maxLayer)
-    for (int layer = 1; layer <= maxLayer; ++layer) {
-      if (!layerNodes.contains(layer)) {
-        continue;
-      }
-
-      QList<uint64_t> &currentLayer = layerNodes[layer];
-      QHash<uint64_t, qreal> barycenter;
-
-      // Calculate barycenter for each node based on predecessor positions
-      for (uint64_t nodeId : currentLayer) {
-        qreal sum = 0.0;
-        int count = 0;
-
-        for (uint64_t predId : predecessors[nodeId]) {
-          if (nodeLayers.contains(predId) && nodeLayers[predId] == layer - 1 &&
-              layerNodes.contains(layer - 1)) {
-            int predIndex = static_cast<int>(layerNodes[layer - 1].indexOf(predId));
-            if (predIndex >= 0) {
-              sum += predIndex;
-              ++count;
-            }
-          }
-        }
-
-        if (count > 0) {
-          barycenter[nodeId] = sum / count;
-        } else {
-          // No predecessors in previous layer, keep original position
-          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
-        }
-      }
-
-      // Sort by barycenter
-      std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
-    }
-
-    // Backward sweep (maxLayer-1 down to 0)
-    for (int layer = maxLayer - 1; layer >= 0; --layer) {
-      if (!layerNodes.contains(layer)) {
-        continue;
-      }
-
-      QList<uint64_t> &currentLayer = layerNodes[layer];
-      QHash<uint64_t, qreal> barycenter;
-
-      // Calculate barycenter for each node based on successor positions
-      for (uint64_t nodeId : currentLayer) {
-        qreal sum = 0.0;
-        int count = 0;
-
-        for (uint64_t succId : successors[nodeId]) {
-          if (nodeLayers.contains(succId) && nodeLayers[succId] == layer + 1 &&
-              layerNodes.contains(layer + 1)) {
-            int succIndex = static_cast<int>(layerNodes[layer + 1].indexOf(succId));
-            if (succIndex >= 0) {
-              sum += succIndex;
-              ++count;
-            }
-          }
-        }
-
-        if (count > 0) {
-          barycenter[nodeId] = sum / count;
-        } else {
-          // No successors in next layer, keep original position
-          barycenter[nodeId] = static_cast<qreal>(currentLayer.indexOf(nodeId));
-        }
-      }
-
-      // Sort by barycenter
-      std::sort(currentLayer.begin(), currentLayer.end(),
-                [&barycenter](uint64_t a, uint64_t b) {
-                  return barycenter[a] < barycenter[b];
-                });
-    }
-  }
-
-  for (auto* node : nodes) {
-    if (!visited.contains(node->nodeId())) {
-      maxLayer++;
-      nodeLayers[node->nodeId()] = maxLayer;
-      layerNodes[maxLayer].append(node->nodeId());
-    }
-  }
-
-  // Position nodes
-  for (int layer : layerNodes.keys()) {
-    const auto& nodesInLayer = layerNodes[layer];
-    qreal y = startY + layer * verticalSpacing;
-    qreal totalWidth = static_cast<qreal>(nodesInLayer.size() - 1) * horizontalSpacing;
-    qreal x = startX - totalWidth / 2.0;
-
-    for (int i = 0; i < nodesInLayer.size(); ++i) {
-      uint64_t nodeId = nodesInLayer[i];
-      auto* node = m_scene->findNode(nodeId);
-      if (node) {
-        node->setPos(x + i * horizontalSpacing, y);
-      }
-    }
-  }
-
-  // Update all connection paths
-  for (auto* conn : m_scene->connections()) {
-    conn->updatePath();
-  }
+  // Delegate to layout module
+  layout::applyAutoLayout(m_scene, nodes, m_scene->connections());
 
   // Fit the graph to view
   if (m_view) {
@@ -374,97 +75,41 @@ void NMStoryGraphPanel::onAutoLayout() {
   }
 }
 
-void NMStoryGraphPanel::onCurrentNodeChanged(const QString& nodeId) {
+void NMStoryGraphPanel::onCurrentNodeChanged(const QString &nodeId) {
   updateCurrentNode(nodeId);
 }
 
-void NMStoryGraphPanel::onBreakpointsChanged() {
-  updateNodeBreakpoints();
-}
+void NMStoryGraphPanel::onBreakpointsChanged() { updateNodeBreakpoints(); }
 
 void NMStoryGraphPanel::onNodeClicked(uint64_t nodeId) {
-  auto* node = findNodeById(nodeId);
-  if (!node) {
-    return;
-  }
-  m_nodeIdToString.insert(nodeId, node->nodeIdString());
-
-  emit nodeSelected(node->nodeIdString());
-
-  // Single click should only select the node, not open Script Editor
-  // Script Editor should only open on double-click (handled in
-  // onNodeDoubleClicked)
+  m_nodeIdToString.insert(nodeId, findNodeById(nodeId)->nodeIdString());
+  node_factory::handleNodeClick(this, nodeId);
 }
 
 void NMStoryGraphPanel::onNodeDoubleClicked(uint64_t nodeId) {
-  auto* node = findNodeById(nodeId);
-  if (!node) {
-    return;
-  }
-
-  if (m_scene) {
-    m_scene->clearSelection();
-  }
-  node->setSelected(true);
-  if (m_view) {
-    m_view->centerOn(node);
-  }
-
-  emit nodeSelected(node->nodeIdString());
-  emit nodeActivated(node->nodeIdString());
-
-  // Scene Node specific: emit signal to open Scene View
-  if (node->isSceneNode()) {
-    const QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
-    qDebug() << "[StoryGraph] Scene node double-clicked, emitting "
-                "sceneNodeDoubleClicked:"
-             << sceneId;
-    emit sceneNodeDoubleClicked(sceneId);
-  } else {
-    // For non-Scene nodes, double-click should open Script Editor
-    if (!node->scriptPath().isEmpty()) {
-      emit scriptNodeRequested(node->scriptPath());
-    }
-  }
+  node_factory::handleNodeDoubleClick(this, nodeId);
 }
 
-void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId, const QString& nodeIdString,
-                                    const QString& nodeType) {
-  Q_UNUSED(nodeIdString);
-  Q_UNUSED(nodeType);
+void NMStoryGraphPanel::onNodeAdded(uint64_t nodeId,
+                                    const QString &nodeIdString,
+                                    const QString &nodeType) {
   if (m_isRebuilding) {
     return;
   }
-  auto* node = findNodeById(nodeId);
-  if (!node) {
-    return;
-  }
 
-  if (m_scene) {
-    m_scene->clearSelection();
-  }
-  node->setSelected(true);
-  if (m_view) {
-    m_view->centerOn(node);
-  }
-  emit nodeSelected(node->nodeIdString());
+  node_factory::handleNodeAdded(this, nodeId, nodeIdString, nodeType);
 
-  // Creating a node should keep focus in Story Graph panel
-  // Script Editor should only open on explicit double-click
-
-  LayoutNode layout = detail::buildLayoutFromNode(node);
-  if ((nodeType.contains("Dialogue", Qt::CaseInsensitive) ||
-       nodeType.contains("Choice", Qt::CaseInsensitive)) &&
-      layout.speaker.isEmpty()) {
-    layout.speaker = "Narrator";
-    node->setDialogueSpeaker(layout.speaker);
+  // Save layout
+  auto *node = findNodeById(nodeId);
+  if (node) {
+    LayoutNode layout = detail::buildLayoutFromNode(node);
+    m_layoutNodes.insert(node->nodeIdString(), layout);
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   }
-  m_layoutNodes.insert(node->nodeIdString(), layout);
-  detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
 
   if (m_markNextNodeAsEntry) {
     m_markNextNodeAsEntry = false;
-    onEntryNodeRequested(node->nodeIdString());
+    onEntryNodeRequested(nodeIdString);
   }
 }
 
@@ -472,6 +117,7 @@ void NMStoryGraphPanel::onNodeDeleted(uint64_t nodeId) {
   if (m_isRebuilding) {
     return;
   }
+
   const QString idString = m_nodeIdToString.take(nodeId);
 
   if (!idString.isEmpty()) {
@@ -484,193 +130,48 @@ void NMStoryGraphPanel::onNodeDeleted(uint64_t nodeId) {
   }
 }
 
-void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId, uint64_t toNodeId) {
+void NMStoryGraphPanel::onConnectionAdded(uint64_t fromNodeId,
+                                          uint64_t toNodeId) {
   if (m_isRebuilding) {
     return;
   }
-  auto* from = findNodeById(fromNodeId);
-  auto* to = findNodeById(toNodeId);
-  if (!from || !to) {
-    return;
-  }
 
-  // Collect all connections from this source node
-  QList<NMGraphConnectionItem*> outgoingConns;
-  for (auto* conn : m_scene->connections()) {
-    if (!conn || !conn->startNode() || !conn->endNode()) {
-      continue;
-    }
-    if (conn->startNode()->nodeId() == fromNodeId) {
-      outgoingConns.append(conn);
-    }
-  }
-
-  // Update connection labels for Choice nodes
-  if (from->isChoiceNode()) {
-    const QStringList choices = from->choiceOptions();
-    QHash<QString, QString> newTargets;
-
-    for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto* conn = outgoingConns[i];
-      QString label;
-      if (i < choices.size()) {
-        label = choices[i];
-      } else {
-        // Issue #323: Generate default option labels when choice options are empty
-        // This ensures choiceTargets gets populated even without predefined options
-        label = QString("Option %1").arg(i + 1);
-      }
-      // Always map the label to target, regardless of whether it's a predefined
-      // choice or a generated default label
-      newTargets.insert(label, conn->endNode()->nodeIdString());
-      conn->setLabel(label);
-      conn->setBranchIndex(i);
-      conn->update();
-    }
-
-    // Update the node's choice targets mapping
-    from->setChoiceTargets(newTargets);
-  }
-
-  // Update connection labels for Condition nodes
-  if (from->isConditionNode()) {
-    QStringList outputs = from->conditionOutputs();
-    if (outputs.isEmpty()) {
-      outputs << "true" << "false"; // Default outputs
-    }
-
-    QHash<QString, QString> newTargets;
-    for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto* conn = outgoingConns[i];
-      QString label;
-      if (i < outputs.size()) {
-        label = outputs[i];
-      } else {
-        // Issue #323: Generate default branch labels when outputs exceed defined labels
-        label = QString("branch_%1").arg(i + 1);
-      }
-      // Always map the label to target, regardless of whether it's predefined
-      newTargets.insert(label, conn->endNode()->nodeIdString());
-      conn->setLabel(label);
-      conn->setBranchIndex(i);
-      conn->update();
-    }
-
-    // Update the node's condition targets mapping
-    from->setConditionTargets(newTargets);
-  }
-
-  // Build targets list for script update
-  QStringList targets;
-  for (auto* conn : outgoingConns) {
-    targets << conn->endNode()->nodeIdString();
-  }
-
-  detail::updateSceneGraphBlock(from->nodeIdString(), detail::resolveScriptPath(from), targets);
+  edge_manager::handleConnectionAdded(this, m_scene, fromNodeId, toNodeId);
 
   // Save the updated layout
-  if (!m_isRebuilding) {
+  auto *from = findNodeById(fromNodeId);
+  if (from && !m_isRebuilding) {
     LayoutNode layout = detail::buildLayoutFromNode(from);
     m_layoutNodes.insert(from->nodeIdString(), layout);
     detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   }
 }
 
-void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId, uint64_t toNodeId) {
-  Q_UNUSED(toNodeId);
+void NMStoryGraphPanel::onConnectionDeleted(uint64_t fromNodeId,
+                                            uint64_t toNodeId) {
   if (m_isRebuilding) {
     return;
   }
-  auto* from = findNodeById(fromNodeId);
-  if (!from) {
-    return;
-  }
 
-  // Collect remaining connections from this source node
-  QList<NMGraphConnectionItem*> outgoingConns;
-  for (auto* conn : m_scene->connections()) {
-    if (!conn || !conn->startNode() || !conn->endNode()) {
-      continue;
-    }
-    if (conn->startNode()->nodeId() == fromNodeId) {
-      outgoingConns.append(conn);
-    }
-  }
-
-  // Update connection labels for Choice nodes
-  if (from->isChoiceNode()) {
-    const QStringList choices = from->choiceOptions();
-    QHash<QString, QString> newTargets;
-
-    for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto* conn = outgoingConns[i];
-      QString label;
-      if (i < choices.size()) {
-        label = choices[i];
-      } else {
-        // Issue #323: Generate default option labels when choice options are empty
-        label = QString("Option %1").arg(i + 1);
-      }
-      // Always map the label to target
-      newTargets.insert(label, conn->endNode()->nodeIdString());
-      conn->setLabel(label);
-      conn->setBranchIndex(i);
-      conn->update();
-    }
-
-    from->setChoiceTargets(newTargets);
-  }
-
-  // Update connection labels for Condition nodes
-  if (from->isConditionNode()) {
-    QStringList outputs = from->conditionOutputs();
-    if (outputs.isEmpty()) {
-      outputs << "true" << "false";
-    }
-
-    QHash<QString, QString> newTargets;
-    for (int i = 0; i < outgoingConns.size(); ++i) {
-      auto* conn = outgoingConns[i];
-      QString label;
-      if (i < outputs.size()) {
-        label = outputs[i];
-      } else {
-        // Issue #323: Generate default branch labels when outputs exceed defined labels
-        label = QString("branch_%1").arg(i + 1);
-      }
-      // Always map the label to target
-      newTargets.insert(label, conn->endNode()->nodeIdString());
-      conn->setLabel(label);
-      conn->setBranchIndex(i);
-      conn->update();
-    }
-
-    from->setConditionTargets(newTargets);
-  }
-
-  // Build targets list for script update
-  QStringList targets;
-  for (auto* conn : outgoingConns) {
-    targets << conn->endNode()->nodeIdString();
-  }
-
-  detail::updateSceneGraphBlock(from->nodeIdString(), detail::resolveScriptPath(from), targets);
+  edge_manager::handleConnectionDeleted(this, m_scene, fromNodeId, toNodeId);
 
   // Save the updated layout
-  if (!m_isRebuilding) {
+  auto *from = findNodeById(fromNodeId);
+  if (from && !m_isRebuilding) {
     LayoutNode layout = detail::buildLayoutFromNode(from);
     m_layoutNodes.insert(from->nodeIdString(), layout);
     detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   }
 }
 
-NMGraphNodeItem* NMStoryGraphPanel::findNodeByIdString(const QString& id) const {
+NMGraphNodeItem *
+NMStoryGraphPanel::findNodeByIdString(const QString &id) const {
   if (!m_scene)
     return nullptr;
 
   const auto items = m_scene->items();
-  for (auto* item : items) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+  for (auto *item : items) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
       if (node->nodeIdString() == id) {
         return node;
       }
@@ -679,7 +180,7 @@ NMGraphNodeItem* NMStoryGraphPanel::findNodeByIdString(const QString& id) const 
   return nullptr;
 }
 
-NMGraphNodeItem* NMStoryGraphPanel::findNodeById(uint64_t nodeId) const {
+NMGraphNodeItem *NMStoryGraphPanel::findNodeById(uint64_t nodeId) const {
   if (!m_scene) {
     return nullptr;
   }
@@ -690,17 +191,17 @@ void NMStoryGraphPanel::updateNodeBreakpoints() {
   if (!m_scene)
     return;
 
-  auto& playController = NMPlayModeController::instance();
+  auto &playController = NMPlayModeController::instance();
   const QSet<QString> breakpoints = playController.breakpoints();
 
   // Update all nodes - make a copy of the list to avoid iterator invalidation
-  QList<QGraphicsItem*> itemsCopy = m_scene->items();
-  for (auto* item : itemsCopy) {
+  QList<QGraphicsItem *> itemsCopy = m_scene->items();
+  for (auto *item : itemsCopy) {
     // Check if item is still valid (not deleted)
     if (!item || !m_scene->items().contains(item))
       continue;
 
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
       // Extra safety: ensure node is still in scene
       if (node->scene() != m_scene)
         continue;
@@ -711,29 +212,32 @@ void NMStoryGraphPanel::updateNodeBreakpoints() {
   }
 }
 
-void NMStoryGraphPanel::updateCurrentNode(const QString& nodeId) {
+void NMStoryGraphPanel::updateCurrentNode(const QString &nodeId) {
   if (!m_scene) {
     qWarning() << "[StoryGraph] updateCurrentNode: scene is null!";
     return;
   }
 
-  qDebug() << "[StoryGraph] updateCurrentNode:" << nodeId << "(prev was" << m_currentExecutingNode
-           << ")";
+  qDebug() << "[StoryGraph] updateCurrentNode:" << nodeId << "(prev was"
+           << m_currentExecutingNode << ")";
 
   // Clear previous execution state
   if (!m_currentExecutingNode.isEmpty()) {
-    auto* prevNode = findNodeByIdString(m_currentExecutingNode);
+    auto *prevNode = findNodeByIdString(m_currentExecutingNode);
     if (prevNode) {
       // Double-check that node is still valid and in scene
-      if (prevNode->scene() == m_scene && m_scene->items().contains(prevNode)) {
-        qDebug() << "[StoryGraph] Clearing execution state on" << m_currentExecutingNode;
+      if (prevNode->scene() == m_scene &&
+          m_scene->items().contains(prevNode)) {
+        qDebug() << "[StoryGraph] Clearing execution state on"
+                 << m_currentExecutingNode;
         prevNode->setCurrentlyExecuting(false);
       } else {
         qWarning() << "[StoryGraph] Previous node" << m_currentExecutingNode
                    << "found but no longer valid in scene!";
       }
     } else {
-      qDebug() << "[StoryGraph] Warning: Previous node" << m_currentExecutingNode
+      qDebug() << "[StoryGraph] Warning: Previous node"
+               << m_currentExecutingNode
                << "not found in graph (may have been deleted)";
     }
   }
@@ -741,10 +245,11 @@ void NMStoryGraphPanel::updateCurrentNode(const QString& nodeId) {
   // Set new execution state
   m_currentExecutingNode = nodeId;
   if (!nodeId.isEmpty()) {
-    auto* currentNode = findNodeByIdString(nodeId);
+    auto *currentNode = findNodeByIdString(nodeId);
     if (currentNode) {
       // Double-check that node is still valid and in scene
-      if (currentNode->scene() == m_scene && m_scene->items().contains(currentNode)) {
+      if (currentNode->scene() == m_scene &&
+          m_scene->items().contains(currentNode)) {
         qDebug() << "[StoryGraph] Setting execution state on" << nodeId;
         currentNode->setCurrentlyExecuting(true);
 
@@ -757,7 +262,9 @@ void NMStoryGraphPanel::updateCurrentNode(const QString& nodeId) {
             m_pendingCenterNode.clear(); // Clear any pending operation
           } else {
             // View is hidden, queue the centering operation
-            qDebug() << "[StoryGraph] View is hidden, queueing center operation for" << nodeId;
+            qDebug() << "[StoryGraph] View is hidden, queueing center "
+                        "operation for"
+                     << nodeId;
             m_pendingCenterNode = nodeId;
           }
         } else {
@@ -777,7 +284,7 @@ void NMStoryGraphPanel::updateCurrentNode(const QString& nodeId) {
   }
 }
 
-void NMStoryGraphPanel::createNode(const QString& nodeType) {
+void NMStoryGraphPanel::createNode(const QString &nodeType) {
   if (!m_scene || !m_view)
     return;
 
@@ -794,11 +301,12 @@ void NMStoryGraphPanel::createNode(const QString& nodeType) {
       new CreateGraphNodeCommand(m_scene, effectiveType, centerPos));
 }
 
-void NMStoryGraphPanel::onNodeTypeSelected(const QString& nodeType) {
+void NMStoryGraphPanel::onNodeTypeSelected(const QString &nodeType) {
   createNode(nodeType);
 }
 
-void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId, uint64_t toNodeId) {
+void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId,
+                                            uint64_t toNodeId) {
   if (!m_scene || fromNodeId == 0 || toNodeId == 0 || fromNodeId == toNodeId)
     return;
 
@@ -808,19 +316,22 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId, uint64_t toNode
 
   // Check if this connection would create a cycle
   if (m_scene->wouldCreateCycle(fromNodeId, toNodeId)) {
-    auto* fromNode = findNodeById(fromNodeId);
-    auto* toNode = findNodeById(toNodeId);
+    auto *fromNode = findNodeById(fromNodeId);
+    auto *toNode = findNodeById(toNodeId);
 
-    QString fromName = fromNode ? fromNode->title() : QString::number(fromNodeId);
+    QString fromName =
+        fromNode ? fromNode->title() : QString::number(fromNodeId);
     QString toName = toNode ? toNode->title() : QString::number(toNodeId);
 
-    QString message = tr("Cannot create connection: Adding connection from "
-                         "'%1' to '%2' would create a cycle in the graph.")
-                          .arg(fromName, toName);
+    QString message =
+        tr("Cannot create connection: Adding connection from "
+           "'%1' to '%2' would create a cycle in the graph.")
+            .arg(fromName, toName);
 
     // Report to diagnostics system
     ErrorReporter::instance().reportGraphError(
-        message.toStdString(), QString("Connection: %1 -> %2").arg(fromName, toName).toStdString());
+        message.toStdString(),
+        QString("Connection: %1 -> %2").arg(fromName, toName).toStdString());
 
     // Show user feedback
     NMMessageDialog::showWarning(this, tr("Cycle Detected"), message);
@@ -831,106 +342,19 @@ void NMStoryGraphPanel::onRequestConnection(uint64_t fromNodeId, uint64_t toNode
       new ConnectGraphNodesCommand(m_scene, fromNodeId, toNodeId));
 }
 
-void NMStoryGraphPanel::applyNodePropertyChange(const QString& nodeIdString,
-                                                const QString& propertyName,
-                                                const QString& newValue) {
-  auto* node = findNodeByIdString(nodeIdString);
-  if (!node) {
-    return;
-  }
-
-  if (propertyName == "title") {
-    node->setTitle(newValue);
-  } else if (propertyName == "type") {
-    node->setNodeType(newValue);
-  } else if (propertyName == "scriptPath") {
-    node->setScriptPath(newValue);
-    QString scriptPath = newValue;
-    if (QFileInfo(newValue).isRelative()) {
-      scriptPath =
-          QString::fromStdString(ProjectManager::instance().toAbsolutePath(newValue.toStdString()));
-    }
-    QFile scriptFile(scriptPath);
-    if (!scriptPath.isEmpty() && !scriptFile.exists()) {
-      if (scriptFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QTextStream out(&scriptFile);
-        out << "// ========================================\n";
-        out << "// Generated from Story Graph\n";
-        out << "// Do not edit manually - changes may be overwritten\n";
-        out << "// ========================================\n";
-        out << "// " << node->nodeIdString() << "\n";
-        out << "scene " << node->nodeIdString() << " {\n";
-        // Condition and Scene nodes are "silent" - they only handle branching,
-        // not dialogue. Only Dialogue nodes get a default say statement.
-        // This fixes issue #76 where Condition nodes incorrectly said text.
-        if (node->isConditionNode()) {
-          out << "  // Condition node - add branching logic here\n";
-        } else if (node->isSceneNode()) {
-          out << "  // Scene node - add scene content here\n";
-        } else {
-          out << "  say Narrator \"New script node\"\n";
-        }
-        out << "}\n";
-      }
-    }
-  } else if (propertyName == "speaker") {
-    node->setDialogueSpeaker(newValue);
-    // Sync speaker change to the .nms script file
-    const QString scriptPath = detail::resolveScriptPath(node);
-    if (!scriptPath.isEmpty()) {
-      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath, newValue,
-                                      node->dialogueText());
-    }
-  } else if (propertyName == "text") {
-    node->setDialogueText(newValue);
-    // Sync text change to the .nms script file
-    const QString scriptPath = detail::resolveScriptPath(node);
-    if (!scriptPath.isEmpty()) {
-      detail::updateSceneSayStatement(node->nodeIdString(), scriptPath, node->dialogueSpeaker(),
-                                      newValue);
-    }
-  } else if (propertyName == "choices") {
-    node->setChoiceOptions(detail::splitChoiceLines(newValue));
-  } else if (propertyName == "conditionExpression") {
-    node->setConditionExpression(newValue);
-  } else if (propertyName == "conditionOutputs") {
-    node->setConditionOutputs(detail::splitChoiceLines(newValue));
-  } else if (propertyName == "choiceTargets") {
-    // Parse "OptionText=TargetNodeId" format
-    QHash<QString, QString> targets;
-    const QStringList lines = detail::splitChoiceLines(newValue);
-    for (const QString& line : lines) {
-      qsizetype eqPos = line.indexOf('=');
-      if (eqPos > 0) {
-        QString option = line.left(eqPos).trimmed();
-        QString target = line.mid(eqPos + 1).trimmed();
-        if (!option.isEmpty()) {
-          targets.insert(option, target);
-        }
-      }
-    }
-    node->setChoiceTargets(targets);
-  } else if (propertyName == "conditionTargets") {
-    // Parse "OutputLabel=TargetNodeId" format
-    QHash<QString, QString> targets;
-    const QStringList lines = detail::splitChoiceLines(newValue);
-    for (const QString& line : lines) {
-      qsizetype eqPos = line.indexOf('=');
-      if (eqPos > 0) {
-        QString output = line.left(eqPos).trimmed();
-        QString target = line.mid(eqPos + 1).trimmed();
-        if (!output.isEmpty()) {
-          targets.insert(output, target);
-        }
-      }
-    }
-    node->setConditionTargets(targets);
-  }
+void NMStoryGraphPanel::applyNodePropertyChange(const QString &nodeIdString,
+                                                const QString &propertyName,
+                                                const QString &newValue) {
+  property_manager::applyNodePropertyChange(this, nodeIdString, propertyName,
+                                            newValue);
 
   if (!m_isRebuilding) {
-    LayoutNode layout = detail::buildLayoutFromNode(node);
-    m_layoutNodes.insert(nodeIdString, layout);
-    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+    auto *node = findNodeByIdString(nodeIdString);
+    if (node) {
+      LayoutNode layout = detail::buildLayoutFromNode(node);
+      m_layoutNodes.insert(nodeIdString, layout);
+      detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
+    }
   }
 }
 
@@ -940,11 +364,11 @@ void NMStoryGraphPanel::onDeleteSelected() {
 
   const auto selected = m_scene->selectedItems();
   QSet<uint64_t> nodesToDelete;
-  QList<NMGraphConnectionItem*> connectionsToDelete;
+  QList<NMGraphConnectionItem *> connectionsToDelete;
   QHash<uint64_t, QString> scriptFilesToDelete;
 
-  for (auto* item : selected) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+  for (auto *item : selected) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
       nodesToDelete.insert(node->nodeId());
       const QString scriptPath = detail::resolveScriptPath(node);
       if (!scriptPath.isEmpty()) {
@@ -953,13 +377,13 @@ void NMStoryGraphPanel::onDeleteSelected() {
           scriptFilesToDelete.insert(node->nodeId(), info.absoluteFilePath());
         }
       }
-    } else if (auto* conn = qgraphicsitem_cast<NMGraphConnectionItem*>(item)) {
+    } else if (auto *conn = qgraphicsitem_cast<NMGraphConnectionItem *>(item)) {
       connectionsToDelete.append(conn);
     }
   }
 
   // Delete connections not covered by node deletion
-  for (auto* conn : connectionsToDelete) {
+  for (auto *conn : connectionsToDelete) {
     if (!conn || !conn->startNode() || !conn->endNode()) {
       continue;
     }
@@ -968,36 +392,40 @@ void NMStoryGraphPanel::onDeleteSelected() {
     if (nodesToDelete.contains(fromId) || nodesToDelete.contains(toId)) {
       continue; // Will be handled by node deletion
     }
-    NMUndoManager::instance().pushCommand(new DisconnectGraphNodesCommand(m_scene, fromId, toId));
+    NMUndoManager::instance().pushCommand(
+        new DisconnectGraphNodesCommand(m_scene, fromId, toId));
   }
 
   for (auto nodeId : nodesToDelete) {
-    NMUndoManager::instance().pushCommand(new DeleteGraphNodeCommand(m_scene, nodeId));
+    NMUndoManager::instance().pushCommand(
+        new DeleteGraphNodeCommand(m_scene, nodeId));
     if (scriptFilesToDelete.contains(nodeId)) {
       QFile::remove(scriptFilesToDelete.value(nodeId));
     }
   }
 }
 
-void NMStoryGraphPanel::onNodesMoved(const QVector<GraphNodeMove>& moves) {
+void NMStoryGraphPanel::onNodesMoved(const QVector<GraphNodeMove> &moves) {
   if (!m_scene || moves.isEmpty()) {
     return;
   }
-  NMUndoManager::instance().pushCommand(new MoveGraphNodesCommand(m_scene, moves));
+  NMUndoManager::instance().pushCommand(
+      new MoveGraphNodesCommand(m_scene, moves));
 
   if (m_isRebuilding) {
     return;
   }
 
-  for (const auto& move : moves) {
-    if (auto* node = findNodeById(move.nodeId)) {
-      m_layoutNodes.insert(node->nodeIdString(), detail::buildLayoutFromNode(node));
+  for (const auto &move : moves) {
+    if (auto *node = findNodeById(move.nodeId)) {
+      m_layoutNodes.insert(node->nodeIdString(),
+                           detail::buildLayoutFromNode(node));
     }
   }
   detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
 }
 
-void NMStoryGraphPanel::onEntryNodeRequested(const QString& nodeIdString) {
+void NMStoryGraphPanel::onEntryNodeRequested(const QString &nodeIdString) {
   if (!m_scene || nodeIdString.isEmpty()) {
     return;
   }
@@ -1005,9 +433,10 @@ void NMStoryGraphPanel::onEntryNodeRequested(const QString& nodeIdString) {
   m_layoutEntryScene = nodeIdString;
   ProjectManager::instance().setStartScene(nodeIdString.toStdString());
 
-  for (auto* item : m_scene->items()) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
-      node->setEntry(!m_layoutEntryScene.isEmpty() && node->nodeIdString() == m_layoutEntryScene);
+  for (auto *item : m_scene->items()) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+      node->setEntry(!m_layoutEntryScene.isEmpty() &&
+                     node->nodeIdString() == m_layoutEntryScene);
     }
   }
 
@@ -1023,8 +452,8 @@ void NMStoryGraphPanel::onLocalePreviewChanged(int index) {
   emit localePreviewChanged(m_currentPreviewLocale);
 
   // Update dialogue nodes to show translated text or highlight missing
-  for (auto* item : m_scene->items()) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
+  for (auto *item : m_scene->items()) {
+    if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
       if (node->isDialogueNode()) {
         // If source locale is selected, show original text
         if (m_currentPreviewLocale.isEmpty()) {
@@ -1043,523 +472,79 @@ void NMStoryGraphPanel::onLocalePreviewChanged(int index) {
 }
 
 void NMStoryGraphPanel::onExportDialogueClicked() {
-  if (!m_scene) {
-    return;
-  }
-
-  // Collect all dialogue nodes and their text
-  QStringList dialogueEntries;
-  for (auto* item : m_scene->items()) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
-      if (node->isDialogueNode() && !node->localizationKey().isEmpty()) {
-        // Format: key,speaker,text
-        QString line = QString("\"%1\",\"%2\",\"%3\"")
-                           .arg(node->localizationKey())
-                           .arg(node->dialogueSpeaker())
-                           .arg(node->dialogueText().replace("\"", "\"\""));
-        dialogueEntries.append(line);
-      }
-    }
-  }
-
-  if (dialogueEntries.isEmpty()) {
-    qDebug() << "[StoryGraph] No dialogue entries to export";
-    return;
-  }
-
-  // Emit signal for the localization panel to handle the actual export
+  property_manager::handleExportDialogue(this);
   emit dialogueExportRequested(m_layoutEntryScene);
-
-  qDebug() << "[StoryGraph] Exported" << dialogueEntries.size() << "dialogue entries";
 }
 
 void NMStoryGraphPanel::onGenerateLocalizationKeysClicked() {
-  if (!m_scene) {
-    return;
-  }
-
-  int keysGenerated = 0;
-
-  for (auto* item : m_scene->items()) {
-    if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
-      // Generate keys for dialogue nodes that don't have one
-      if (node->isDialogueNode() && node->localizationKey().isEmpty()) {
-        // Generate key in format: scene.{sceneId}.dialogue.{nodeId}
-        QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
-        QString key = QString("scene.%1.dialogue.%2").arg(sceneId).arg(node->nodeId());
-        node->setLocalizationKey(key);
-        ++keysGenerated;
-      }
-
-      // Generate keys for choice nodes
-      if (node->nodeType().compare("Choice", Qt::CaseInsensitive) == 0) {
-        QString sceneId = node->sceneId().isEmpty() ? node->nodeIdString() : node->sceneId();
-        const QStringList& options = node->choiceOptions();
-        for (int i = 0; i < options.size(); ++i) {
-          // Each choice option gets its own key
-          // Keys are stored as a property on the node
-          QString key = QString("scene.%1.choice.%2.%3").arg(sceneId).arg(node->nodeId()).arg(i);
-          // Store choice keys - would need to extend node to store multiple
-          // keys
-          ++keysGenerated;
-        }
-      }
-
-      node->update();
-    }
-  }
-
-  qDebug() << "[StoryGraph] Generated" << keysGenerated << "localization keys";
+  property_manager::handleGenerateLocalizationKeys(this);
 
   if (!m_isRebuilding) {
     // Save layout with new keys
-    for (auto* item : m_scene->items()) {
-      if (auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item)) {
-        m_layoutNodes.insert(node->nodeIdString(), detail::buildLayoutFromNode(node));
+    for (auto *item : m_scene->items()) {
+      if (auto *node = qgraphicsitem_cast<NMGraphNodeItem *>(item)) {
+        m_layoutNodes.insert(node->nodeIdString(),
+                             detail::buildLayoutFromNode(node));
       }
     }
     detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   }
 }
 
-// Helper struct for sync item data (Issue #96: async sync)
-struct SyncItem {
-  QString sceneId;
-  QString scriptPath;
-  QString speaker;
-  QString dialogueText;
-};
-
-// Result struct for async sync operation
-struct SyncResult {
-  int nodesSynced = 0;
-  int nodesSkipped = 0;
-  QStringList syncErrors;
-};
-
-/**
- * @brief Worker class for async sync operation (Issue #96)
- *
- * This worker runs in a separate thread to perform file I/O operations
- * without blocking the UI thread.
- */
-class SyncToScriptWorker : public QObject {
-  Q_OBJECT
-
-public:
-  SyncToScriptWorker(QList<SyncItem> items, std::shared_ptr<std::atomic<bool>> cancelled)
-      : m_items(std::move(items)), m_cancelled(std::move(cancelled)) {}
-
-public slots:
-  void process() {
-    SyncResult result;
-
-    for (int i = 0; i < m_items.size(); ++i) {
-      // Check for cancellation
-      if (m_cancelled->load()) {
-        result.syncErrors << tr("Operation cancelled by user");
-        break;
-      }
-
-      const auto& item = m_items.at(i);
-
-      // Perform the actual sync (file I/O in background thread)
-      bool success = detail::updateSceneSayStatement(item.sceneId, item.scriptPath, item.speaker,
-                                                     item.dialogueText);
-
-      if (success) {
-        ++result.nodesSynced;
-      } else {
-        result.syncErrors
-            << tr("Failed to sync node '%1' to '%2'").arg(item.sceneId, item.scriptPath);
-      }
-
-      // Report progress
-      emit progressUpdated(i + 1, static_cast<int>(m_items.size()));
-    }
-
-    emit finished(result);
-  }
-
-signals:
-  void progressUpdated(int current, int total);
-  void finished(const SyncResult& result);
-
-private:
-  QList<SyncItem> m_items;
-  std::shared_ptr<std::atomic<bool>> m_cancelled;
-};
-
 void NMStoryGraphPanel::onSyncGraphToScript() {
-  // Issue #82: Sync Story Graph data to NMScript files
-  // Issue #96: Run sync asynchronously to prevent UI freeze
-  // This ensures that visual edits made in the Story Graph are persisted
-  // to the authoritative NMScript source files without blocking the UI.
-
-  if (!m_scene) {
-    return;
-  }
-
-  // Collect sync items from UI thread (fast operation)
-  QList<SyncItem> syncItems;
-  int nodesSkipped = 0;
-
-  for (auto* item : m_scene->items()) {
-    auto* node = qgraphicsitem_cast<NMGraphNodeItem*>(item);
-    if (!node) {
-      continue;
-    }
-
-    const QString sceneId = node->nodeIdString();
-    const QString scriptPath = detail::resolveScriptPath(node);
-
-    if (scriptPath.isEmpty()) {
-      // Node has no associated script file - skip
-      ++nodesSkipped;
-      continue;
-    }
-
-    // Sync speaker and dialogue text to script
-    const QString speaker = node->dialogueSpeaker();
-    const QString dialogueText = node->dialogueText();
-
-    // Only sync if we have meaningful content (not default placeholder)
-    if (dialogueText.isEmpty() || dialogueText.trimmed() == "New scene") {
-      ++nodesSkipped;
-      continue;
-    }
-
-    syncItems.append({sceneId, scriptPath, speaker, dialogueText});
-  }
-
-  // If nothing to sync, show message immediately
-  if (syncItems.isEmpty()) {
-    QString message = tr("No nodes needed synchronization.\n"
-                         "(%1 node(s) skipped - no script or empty content)")
-                          .arg(nodesSkipped);
-    NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
-    return;
-  }
-
-  // Create progress dialog (Issue #96: keep UI responsive)
-  auto* progressDialog = new QProgressDialog(tr("Synchronizing nodes to scripts..."), tr("Cancel"),
-                                             0, static_cast<int>(syncItems.size()), this);
-  progressDialog->setWindowModality(Qt::WindowModal);
-  progressDialog->setMinimumDuration(0); // Show immediately
-  progressDialog->setValue(0);
-  progressDialog->setAutoClose(false);
-  progressDialog->setAutoReset(false);
-
-  // Capture initial skip count for final message
-  const int initialSkipped = nodesSkipped;
-
-  // Create cancellation flag (shared with worker thread)
-  auto cancelled = std::make_shared<std::atomic<bool>>(false);
-
-  // Create worker thread
-  auto* workerThread = new QThread(this);
-  auto* worker = new SyncToScriptWorker(syncItems, cancelled);
-  worker->moveToThread(workerThread);
-
-  // Connect cancel button to set cancellation flag
-  connect(progressDialog, &QProgressDialog::canceled, this, [cancelled, progressDialog]() {
-    cancelled->store(true);
-    progressDialog->setLabelText(tr("Cancelling..."));
-  });
-
-  // Connect signals for progress updates
-  connect(worker, &SyncToScriptWorker::progressUpdated, progressDialog,
-          [progressDialog](int current, int total) {
-            progressDialog->setValue(current);
-            progressDialog->setLabelText(
-                QObject::tr("Synchronizing node %1 of %2...").arg(current).arg(total));
-          });
-
-  // Connect finished signal to handle results
-  connect(worker, &SyncToScriptWorker::finished, this,
-          [this, progressDialog, workerThread, worker, initialSkipped](const SyncResult& result) {
-            progressDialog->close();
-            progressDialog->deleteLater();
-
-            // Clean up worker and thread
-            workerThread->quit();
-            workerThread->wait();
-            worker->deleteLater();
-            workerThread->deleteLater();
-
-            // Report results to user
-            QString message;
-            const int totalSkipped = initialSkipped + result.nodesSkipped;
-
-            if (result.syncErrors.isEmpty()) {
-              if (result.nodesSynced > 0) {
-                message = tr("Successfully synchronized %1 node(s) to NMScript "
-                             "files.\n"
-                             "(%2 node(s) skipped - no script or empty content)")
-                              .arg(result.nodesSynced)
-                              .arg(totalSkipped);
-                qDebug() << "[StoryGraph] Sync to Script:" << result.nodesSynced << "synced,"
-                         << totalSkipped << "skipped";
-              } else {
-                message = tr("No nodes needed synchronization.\n"
-                             "(%1 node(s) skipped - no script or empty content)")
-                              .arg(totalSkipped);
-              }
-            } else {
-              message = tr("Synchronization completed with errors:\n\n%1\n\n"
-                           "(%2 node(s) synced, %3 failed)")
-                            .arg(result.syncErrors.join("\n"))
-                            .arg(result.nodesSynced)
-                            .arg(result.syncErrors.size());
-              ErrorReporter::instance().reportWarning(message.toStdString());
-            }
-
-            // Show notification (non-blocking info dialog)
-            NMMessageDialog::showInfo(this, tr("Sync Graph to Script"), message);
-          });
-
-  // Connect thread started signal to start worker
-  connect(workerThread, &QThread::started, worker, &SyncToScriptWorker::process);
-
-  // Start the worker thread
-  workerThread->start();
+  serialization::syncGraphToScript(this, this);
 }
 
 void NMStoryGraphPanel::onSyncScriptToGraph() {
-  // Issue #127: Sync NMScript files to Story Graph
-  // This parses .nms script files and creates/updates graph nodes
-
-  if (!m_scene) {
-    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"),
-                                 tr("Story Graph scene is not initialized."));
-    return;
-  }
-
-  // Get the scripts folder path
-  const auto& pm = ProjectManager::instance();
-  if (!pm.hasOpenProject()) {
-    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"),
-                                 tr("No project is currently open."));
-    return;
-  }
-
-  const QString scriptsPath = QString::fromStdString(pm.getFolderPath(ProjectFolder::Scripts));
-
-  if (scriptsPath.isEmpty()) {
-    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"),
-                                 tr("Could not find scripts folder in project."));
-    return;
-  }
-
-  // Check if scripts directory exists
-  QDir scriptsDir(scriptsPath);
-  if (!scriptsDir.exists()) {
-    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"),
-                                 tr("Scripts folder does not exist:\n%1").arg(scriptsPath));
-    return;
-  }
-
-  // Find all .nms files recursively
-  QStringList nmsFiles;
-  QDirIterator it(scriptsPath, QStringList() << "*.nms", QDir::Files | QDir::Readable,
-                  QDirIterator::Subdirectories);
-  while (it.hasNext()) {
-    nmsFiles.append(it.next());
-  }
-
-  if (nmsFiles.isEmpty()) {
-    NMMessageDialog::showInfo(this, tr("Sync Script to Graph"),
-                              tr("No .nms script files found in:\n%1").arg(scriptsPath));
-    return;
-  }
-
-  // Confirm with user before replacing nodes
-  auto result = NMMessageDialog::showQuestion(
-      this, tr("Sync Script to Graph"),
-      tr("This will parse %1 script file(s) and update the Story Graph.\n\n"
-         "Existing graph content will be replaced.\n\n"
-         "Do you want to continue?")
-          .arg(nmsFiles.size()),
-      {NMDialogButton::Yes, NMDialogButton::No}, NMDialogButton::No);
-
-  if (result != NMDialogButton::Yes) {
-    return;
-  }
-
-  // Parse all script files
-  QList<detail::ParsedNode> allNodes;
-  QList<QPair<QString, QString>> allEdges;
-  QString entryPoint;
-  int filesProcessed = 0;
-  int parseErrors = 0;
-  QStringList errorMessages;
-
-  for (const QString& filePath : nmsFiles) {
-    detail::ParseResult parseResult = detail::parseNMScriptFile(filePath);
-
-    if (!parseResult.success) {
-      ++parseErrors;
-      errorMessages.append(
-          QString("%1: %2").arg(QFileInfo(filePath).fileName(), parseResult.errorMessage));
-      continue;
-    }
-
-    allNodes.append(parseResult.nodes);
-    allEdges.append(parseResult.edges);
-
-    // Use first file's entry point if not set
-    if (entryPoint.isEmpty() && !parseResult.entryPoint.isEmpty()) {
-      entryPoint = parseResult.entryPoint;
-    }
-
-    ++filesProcessed;
-  }
-
-  if (allNodes.isEmpty()) {
-    QString message = tr("No scenes found in script files.");
-    if (!errorMessages.isEmpty()) {
-      message += tr("\n\nParse errors:\n") + errorMessages.join("\n");
-    }
-    NMMessageDialog::showWarning(this, tr("Sync Script to Graph"), message);
-    return;
-  }
-
-  // Clear existing graph
+  // Set rebuilding flag before delegating to serialization module
   m_isRebuilding = true;
-  m_scene->clearGraph();
   m_layoutNodes.clear();
   m_nodeIdToString.clear();
 
-  // Create nodes from parsed data
-  QHash<QString, NMGraphNodeItem*> nodeMap;
-  int col = 0;
-  int row = 0;
-  const qreal horizontalSpacing = 260.0;
-  const qreal verticalSpacing = 140.0;
+  serialization::syncScriptToGraph(this, this);
 
-  for (const detail::ParsedNode& parsedNode : allNodes) {
-    // Calculate default position (grid layout)
-    const QPointF defaultPos(col * horizontalSpacing, row * verticalSpacing);
-    ++col;
-    if (col >= 4) {
-      col = 0;
-      ++row;
+  // Update internal state after sync
+  if (m_scene) {
+    for (auto *node : m_scene->nodes()) {
+      m_nodeIdToString.insert(node->nodeId(), node->nodeIdString());
+      m_layoutNodes.insert(node->nodeIdString(),
+                           detail::buildLayoutFromNode(node));
     }
 
-    // Create node in the scene
-    QString nodeType = parsedNode.type;
-    if (nodeType.isEmpty()) {
-      nodeType = "Scene";
-    }
-
-    NMGraphNodeItem* node = m_scene->addNode(parsedNode.id, nodeType, defaultPos, 0, parsedNode.id);
-
-    if (!node) {
-      continue;
-    }
-
-    // Set node properties
-    node->setSceneId(parsedNode.id);
-
-    if (!parsedNode.speaker.isEmpty()) {
-      node->setDialogueSpeaker(parsedNode.speaker);
-    }
-    if (!parsedNode.text.isEmpty()) {
-      node->setDialogueText(parsedNode.text);
-    }
-    if (!parsedNode.choices.isEmpty()) {
-      node->setChoiceOptions(parsedNode.choices);
-
-      // Build choice targets mapping
-      QHash<QString, QString> choiceTargets;
-      for (int i = 0; i < parsedNode.choices.size() && i < parsedNode.targets.size(); ++i) {
-        choiceTargets.insert(parsedNode.choices[i], parsedNode.targets[i]);
-      }
-      node->setChoiceTargets(choiceTargets);
-    }
-    if (!parsedNode.conditionExpr.isEmpty()) {
-      node->setConditionExpression(parsedNode.conditionExpr);
-      node->setConditionOutputs(parsedNode.conditionOutputs);
-    }
-
-    // Mark entry node
-    if (parsedNode.id == entryPoint) {
-      node->setEntry(true);
-    }
-
-    nodeMap.insert(parsedNode.id, node);
-    m_nodeIdToString.insert(node->nodeId(), node->nodeIdString());
-
-    // Save layout node
-    m_layoutNodes.insert(parsedNode.id, detail::buildLayoutFromNode(node));
-  }
-
-  // Create connections from edges
-  int connectionsCreated = 0;
-  for (const auto& edge : allEdges) {
-    NMGraphNodeItem* fromNode = nodeMap.value(edge.first);
-    NMGraphNodeItem* toNode = nodeMap.value(edge.second);
-
-    if (fromNode && toNode) {
-      // Check if connection already exists
-      if (!m_scene->hasConnection(fromNode->nodeId(), toNode->nodeId())) {
-        m_scene->addConnection(fromNode, toNode);
-        ++connectionsCreated;
+    // Find entry scene
+    for (auto *node : m_scene->nodes()) {
+      if (node->isEntry()) {
+        m_layoutEntryScene = node->nodeIdString();
+        ProjectManager::instance().setStartScene(
+            m_layoutEntryScene.toStdString());
+        break;
       }
     }
-  }
 
-  // Set entry scene
-  m_layoutEntryScene = entryPoint;
-  if (!entryPoint.isEmpty()) {
-    ProjectManager::instance().setStartScene(entryPoint.toStdString());
+    detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
   }
-
-  // Save layout
-  detail::saveGraphLayout(m_layoutNodes, m_layoutEntryScene);
 
   m_isRebuilding = false;
-
-  // Fit view to content
-  if (m_view && !m_scene->nodes().isEmpty()) {
-    m_view->fitInView(m_scene->itemsBoundingRect().adjusted(-50, -50, 50, 50), Qt::KeepAspectRatio);
-  }
-
-  // Show result
-  QString message = tr("Successfully imported %1 node(s) with %2 connection(s) from %3 "
-                       "file(s).")
-                        .arg(allNodes.size())
-                        .arg(connectionsCreated)
-                        .arg(filesProcessed);
-
-  if (parseErrors > 0) {
-    message +=
-        tr("\n\n%1 file(s) had parse errors:\n%2").arg(parseErrors).arg(errorMessages.join("\n"));
-  }
-
-  qDebug() << "[StoryGraph] Sync Script to Graph completed:" << allNodes.size() << "nodes,"
-           << connectionsCreated << "connections from" << filesProcessed << "files";
-
-  NMMessageDialog::showInfo(this, tr("Sync Script to Graph"), message);
 }
 
-void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId,
-                                                    const QString &nodeIdString,
-                                                    const QString &errorMessage) {
+void NMStoryGraphPanel::onScriptFileCreationFailed(
+    uint64_t nodeId, const QString &nodeIdString,
+    const QString &errorMessage) {
   // Show error dialog to notify the user
   const QString title = tr("Script File Creation Failed");
-  const QString message = tr("Failed to create script file for node '%1' (ID: %2).\n\n"
-                             "Error: %3\n\n"
-                             "Possible causes:\n"
-                             "• Insufficient disk space\n"
-                             "• Permission denied for the Scripts folder\n"
-                             "• Invalid characters in node name\n"
-                             "• Directory does not exist\n\n"
-                             "The node has been marked with an error indicator. "
-                             "You can hover over it to see the error details.")
-                              .arg(nodeIdString)
-                              .arg(nodeId)
-                              .arg(errorMessage);
+  const QString message =
+      tr("Failed to create script file for node '%1' (ID: %2).\n\n"
+         "Error: %3\n\n"
+         "Possible causes:\n"
+         "• Insufficient disk space\n"
+         "• Permission denied for the Scripts folder\n"
+         "• Invalid characters in node name\n"
+         "• Directory does not exist\n\n"
+         "The node has been marked with an error indicator. "
+         "You can hover over it to see the error details.")
+          .arg(nodeIdString)
+          .arg(nodeId)
+          .arg(errorMessage);
 
   qWarning() << "[StoryGraphPanel] Script file creation failed for node"
              << nodeIdString << ":" << errorMessage;
@@ -1568,6 +553,3 @@ void NMStoryGraphPanel::onScriptFileCreationFailed(uint64_t nodeId,
 }
 
 } // namespace NovelMind::editor::qt
-
-// Include MOC for Q_OBJECT class defined in this file
-#include "nm_story_graph_panel_handlers.moc"

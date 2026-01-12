@@ -143,7 +143,12 @@ bool NMSceneGraphicsScene::setObjectPosition(const QString& objectId, const QPoi
 
 bool NMSceneGraphicsScene::setObjectRotation(const QString& objectId, qreal degrees) {
   if (auto* obj = findSceneObject(objectId)) {
-    obj->setRotation(degrees);
+    // Normalize rotation to 0-360 range to prevent accumulation issues
+    qreal normalizedDegrees = std::fmod(degrees, 360.0);
+    if (normalizedDegrees < 0.0) {
+      normalizedDegrees += 360.0;
+    }
+    obj->setRotation(normalizedDegrees);
     updateGizmo();
     return true;
   }

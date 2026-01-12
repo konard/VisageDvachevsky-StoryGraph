@@ -67,6 +67,43 @@ void EventBus::processQueuedEvents() {
 }
 
 void EventBus::dispatchEvent(const EditorEvent &event) {
+  // Check for duplicate events if deduplication is enabled
+  if (m_deduplicationEnabled) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    std::string eventKey = event.getEventKey();
+    u64 currentTime = event.timestamp;
+
+    // Clean up old entries outside the time window
+    auto it = m_recentEvents.begin();
+    while (it != m_recentEvents.end()) {
+      u64 eventAge = currentTime - it->second;
+      // Convert milliseconds to nanoseconds for comparison with timestamp
+      u64 windowNs = m_deduplicationWindowMs * 1000000;
+
+      if (eventAge > windowNs) {
+        it = m_recentEvents.erase(it);
+      } else {
+        ++it;
+      }
+    }
+
+    // Check if this event is a duplicate
+    auto found = m_recentEvents.find(eventKey);
+    if (found != m_recentEvents.end()) {
+      u64 timeSinceLastEvent = currentTime - found->second;
+      u64 windowNs = m_deduplicationWindowMs * 1000000;
+
+      if (timeSinceLastEvent <= windowNs) {
+        // This is a duplicate event within the time window - skip it
+        return;
+      }
+    }
+
+    // Record this event
+    m_recentEvents[eventKey] = currentTime;
+  }
+
   // Record in history if enabled
   if (m_historyEnabled) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -320,5 +357,29 @@ void EventBus::clearHistory() {
 void EventBus::setSynchronous(bool sync) { m_synchronous = sync; }
 
 bool EventBus::isSynchronous() const { return m_synchronous; }
+
+void EventBus::setDeduplicationEnabled(bool enabled) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_deduplicationEnabled = enabled;
+  if (!enabled) {
+    // Clear deduplication cache when disabled
+    m_recentEvents.clear();
+  }
+}
+
+bool EventBus::isDeduplicationEnabled() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_deduplicationEnabled;
+}
+
+void EventBus::setDeduplicationWindow(u64 windowMs) {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  m_deduplicationWindowMs = windowMs;
+}
+
+u64 EventBus::getDeduplicationWindow() const {
+  std::lock_guard<std::mutex> lock(m_mutex);
+  return m_deduplicationWindowMs;
+}
 
 } // namespace NovelMind::editor

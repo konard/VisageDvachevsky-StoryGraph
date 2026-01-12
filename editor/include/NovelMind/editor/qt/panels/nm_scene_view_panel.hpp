@@ -141,6 +141,7 @@ private:
   void clearGizmo();
   class NMSceneObject* resolveTarget() const;
   qreal getDpiScale() const;
+  qreal screenPixelsToSceneUnits(qreal screenPixels) const;
 
   GizmoMode m_mode = GizmoMode::Move;
   QString m_targetObjectId;
@@ -303,9 +304,12 @@ protected:
   void contextMenuEvent(QContextMenuEvent* event) override;
 
 private:
+  void updateCursor(const QCursor& newCursor);
+
   qreal m_zoomLevel = 1.0;
   bool m_isPanning = false;
   QPoint m_lastPanPoint;
+  QCursor m_currentCursor = Qt::ArrowCursor;
 };
 
 /**

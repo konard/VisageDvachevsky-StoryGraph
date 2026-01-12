@@ -19,8 +19,9 @@
 #include "NovelMind/scene/scene_graph.hpp"
 #include "NovelMind/vfs/memory_fs.hpp"
 #include "NovelMind/renderer/renderer.hpp"
-#include <vector>
+#include <cstdlib>
 #include <random>
+#include <vector>
 
 using namespace NovelMind::scene;
 using namespace NovelMind::vfs;
@@ -131,6 +132,14 @@ TEST_CASE("Benchmark: Object search by tag", "[benchmark][scene]")
 
 TEST_CASE("Benchmark: Object creation and destruction", "[benchmark][scene]")
 {
+    // Issue #494: Skip benchmark tests in CI environments.
+    // Catch2 BENCHMARK runs many iterations to get stable measurements,
+    // which causes timeouts in CI with Debug builds and coverage instrumentation.
+    const char* ciEnv = std::getenv("CI");
+    if (ciEnv && std::string(ciEnv) == "true") {
+        SKIP("Skipping benchmark in CI environment - too slow with coverage/debug");
+    }
+
     SceneGraph graph;
 
     BENCHMARK("Create and add 100 objects") {
