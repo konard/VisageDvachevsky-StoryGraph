@@ -1,0 +1,55 @@
+name: Semgrep Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  semgrep:
+    name: Semgrep SAST Scan
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Required for semgrep to upload results
+      security-events: write
+      actions: read
+      contents: read
+
+    container:
+      image: semgrep/semgrep
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run Semgrep
+      run: |
+        semgrep scan \
+          --config auto \
+          --config "p/cwe-top-25" \
+          --config "p/owasp-top-ten" \
+          --config "p/security-audit" \
+          --config "p/cpp" \
+          --sarif \
+          --output semgrep-results.sarif \
+          --error \
+          --severity ERROR \
+          --severity WARNING
+      env:
+        SEMGREP_RULES: auto
+
+    - name: Upload Semgrep results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: semgrep-results.sarif
+        category: semgrep
+
+    - name: Upload Semgrep results as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: semgrep-results
+        path: semgrep-results.sarif

@@ -12,14 +12,18 @@ using namespace NovelMind::scene;
 // Mock window for renderer initialization
 class MockWindow : public platform::IWindow {
 public:
-  Result<void> create(const std::string &, i32, i32, u32) override { return Result<void>(); }
+  Result<void> create(const platform::WindowConfig &) override { return Result<void>(); }
   void destroy() override {}
-  void pollEvents() override {}
-  bool shouldClose() const override { return false; }
-  void swapBuffers() override {}
-  void *getNativeHandle() override { return nullptr; }
+  void setTitle(const std::string &) override {}
+  void setSize(i32, i32) override {}
+  void setFullscreen(bool) override {}
   i32 getWidth() const override { return 800; }
   i32 getHeight() const override { return 600; }
+  bool isFullscreen() const override { return false; }
+  bool shouldClose() const override { return false; }
+  void pollEvents() override {}
+  void swapBuffers() override {}
+  void *getNativeHandle() const override { return nullptr; }
 };
 
 // Mock renderer for testing
