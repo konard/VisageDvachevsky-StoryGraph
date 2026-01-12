@@ -3,7 +3,7 @@
 #include "NovelMind/resource/resource_manager.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
-#include <cstring>
+#include <bit>
 
 namespace NovelMind::scripting {
 
@@ -542,10 +542,9 @@ void ScriptRuntime::onWait(const std::vector<Value> &args) {
     return;
   }
 
-  // Duration is stored as raw bits
+  // Duration is stored as raw bits, deserialize using bit_cast
   u32 durBits = static_cast<u32>(asInt(args[0]));
-  f32 duration;
-  std::memcpy(&duration, &durBits, sizeof(f32));
+  f32 duration = std::bit_cast<f32>(durBits);
 
   m_waitTimer = duration;
   m_state = RuntimeState::WaitingTimer;
@@ -584,7 +583,7 @@ void ScriptRuntime::onStopMusic(const std::vector<Value> &args) {
 
   if (!args.empty()) {
     u32 durBits = static_cast<u32>(asInt(args[0]));
-    std::memcpy(&fadeOut, &durBits, sizeof(f32));
+    fadeOut = std::bit_cast<f32>(durBits);
   }
 
   if (m_audioManager) {
@@ -601,8 +600,7 @@ void ScriptRuntime::onTransition(const std::vector<Value> &args) {
 
   std::string type = asString(args[0]);
   u32 durBits = static_cast<u32>(asInt(args[1]));
-  f32 duration;
-  std::memcpy(&duration, &durBits, sizeof(f32));
+  f32 duration = std::bit_cast<f32>(durBits);
 
   m_activeTransition = createTransition(type, duration);
   if (m_activeTransition) {
@@ -640,11 +638,11 @@ void ScriptRuntime::onMoveCharacter(const std::vector<Value> &args) {
     durationIdx = 4;
   }
 
-  // Extract duration from raw bits
+  // Extract duration from raw bits using bit_cast
   f32 duration = 0.5f;
   if (durationIdx < args.size()) {
     u32 durBits = static_cast<u32>(asInt(args[durationIdx]));
-    std::memcpy(&duration, &durBits, sizeof(f32));
+    duration = std::bit_cast<f32>(durBits);
   }
 
   // Verify character is visible
