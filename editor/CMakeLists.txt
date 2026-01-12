@@ -62,6 +62,13 @@ add_library(novelmind_editor STATIC
     src/error_reporter.cpp
     src/hotkeys_manager.cpp
     src/project_integrity.cpp
+    src/project_graph_analyzer.cpp
+    src/project_graph_cycles.cpp
+    src/project_asset_tracker.cpp
+    src/project_validators.cpp
+    src/project_repair.cpp
+    src/project_quickfixes.cpp
+    src/project_report.cpp
     src/project_json.cpp
     src/scene_registry.cpp
     src/scene_template_manager.cpp
