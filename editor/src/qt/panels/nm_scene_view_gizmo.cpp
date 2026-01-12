@@ -78,6 +78,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
@@ -96,6 +97,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mouseReleaseEvent(event);
   }
 
@@ -132,6 +134,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsRectItem::mousePressEvent(event);
   }
 
@@ -150,6 +153,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsRectItem::mouseReleaseEvent(event);
   }
 
@@ -174,7 +178,8 @@ public:
     setAcceptedMouseButtons(Qt::LeftButton);
     setCursor(Qt::CrossCursor);
 
-    // Calculate DPI-aware hit tolerance
+    // COORDINATE SYSTEM: Screen space (device pixels)
+    // Calculate DPI-aware hit tolerance in device pixels
     // Base tolerance: 10 pixels, scaled by device pixel ratio
     qreal devicePixelRatio = 1.0;
     if (auto *scenePtr = scene()) {
@@ -186,10 +191,12 @@ public:
 
     // Increase base hit tolerance from typical 2-3px to 10px minimum
     // Scale with DPI for high-resolution displays
-    m_hitTolerance = 10.0 * std::max(1.0, devicePixelRatio);
+    // This is in SCREEN SPACE (device pixels)
+    m_hitToleranceScreenPixels = 10.0 * std::max(1.0, devicePixelRatio);
   }
 
   void updateHitTolerance() {
+    // COORDINATE SYSTEM: Screen space (device pixels)
     // Update tolerance when view/DPI changes
     qreal devicePixelRatio = 1.0;
     if (auto *scenePtr = scene()) {
@@ -198,26 +205,39 @@ public:
         devicePixelRatio = view->devicePixelRatioF();
       }
     }
-    m_hitTolerance = 10.0 * std::max(1.0, devicePixelRatio);
+    // Update tolerance in SCREEN SPACE (device pixels)
+    m_hitToleranceScreenPixels = 10.0 * std::max(1.0, devicePixelRatio);
   }
 
   bool contains(const QPointF &point) const override {
-    // Calculate distance from center
+    // COORDINATE SYSTEM: Item coordinates (local to this rotation ring)
+    // 'point' parameter is in item-local coordinates
+    // Calculate distance from center in item coordinates
     const qreal distance = std::sqrt(point.x() * point.x() + point.y() * point.y());
+
+    // Convert screen-pixel tolerance to scene/item coordinates
+    const qreal hitToleranceSceneUnits = screenPixelsToSceneUnits();
 
     // Hit test: point must be within tolerance of the ring radius
     // This creates an annular (ring-shaped) hit area
-    const qreal innerRadius = m_radius - m_hitTolerance;
-    const qreal outerRadius = m_radius + m_hitTolerance;
+    // All calculations now in consistent ITEM COORDINATES
+    const qreal innerRadius = m_radius - hitToleranceSceneUnits;
+    const qreal outerRadius = m_radius + hitToleranceSceneUnits;
 
     return distance >= innerRadius && distance <= outerRadius;
   }
 
   QPainterPath shape() const override {
+    // COORDINATE SYSTEM: Item coordinates (local to this rotation ring)
     // Define the shape as an annular region for better hit testing
     QPainterPath path;
-    const qreal outerRadius = m_radius + m_hitTolerance;
-    const qreal innerRadius = std::max(0.0, m_radius - m_hitTolerance);
+
+    // Convert screen-pixel tolerance to scene/item coordinates
+    const qreal hitToleranceSceneUnits = screenPixelsToSceneUnits();
+
+    // Calculate annular region in ITEM COORDINATES
+    const qreal outerRadius = m_radius + hitToleranceSceneUnits;
+    const qreal innerRadius = std::max(0.0, m_radius - hitToleranceSceneUnits);
 
     path.addEllipse(QPointF(0, 0), outerRadius, outerRadius);
     if (innerRadius > 0) {
@@ -228,6 +248,31 @@ public:
 
     return path;
   }
+
+private:
+  // Helper method to convert screen pixels to scene/item coordinate units
+  qreal screenPixelsToSceneUnits() const {
+    // COORDINATE SYSTEM CONVERSION: Screen pixels -> Scene units
+    qreal hitToleranceSceneUnits = m_hitToleranceScreenPixels;
+    if (auto *scenePtr = scene()) {
+      if (auto *view = scenePtr->views().isEmpty() ? nullptr
+                                                    : scenePtr->views().first()) {
+        // Convert screen pixels to scene coordinates using the view transform
+        QPointF screenVector(m_hitToleranceScreenPixels, 0);
+        QPointF sceneVector = view->mapToScene(screenVector.toPoint()) -
+                              view->mapToScene(QPoint(0, 0));
+        hitToleranceSceneUnits = std::sqrt(sceneVector.x() * sceneVector.x() +
+                                           sceneVector.y() * sceneVector.y());
+      }
+    }
+    return hitToleranceSceneUnits;
+  }
+
+  qreal m_radius;
+  // Hit tolerance stored in SCREEN SPACE (device pixels)
+  // Must be converted to scene/item coordinates before use in geometric calculations
+  qreal m_hitToleranceScreenPixels = 10.0;
+  bool m_isHovered = false;
 
 protected:
   void hoverEnterEvent(QGraphicsSceneHoverEvent *event) override {
@@ -266,6 +311,7 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mousePressEvent(event);
   }
 
@@ -284,13 +330,9 @@ protected:
       event->accept();
       return;
     }
+    event->ignore();
     QGraphicsEllipseItem::mouseReleaseEvent(event);
   }
-
-private:
-  qreal m_radius;
-  qreal m_hitTolerance = 10.0;
-  bool m_isHovered = false;
 };
 
 // ============================================================================
@@ -390,17 +432,30 @@ void NMTransformGizmo::beginHandleDrag(HandleType type,
 
   m_isDragging = true;
   m_activeHandle = type;
+  // COORDINATE SYSTEM: Scene coordinates
   m_dragStartScenePos = scenePos;
   m_dragStartTargetPos = target->pos();
-  m_dragStartRotation = target->rotation();
+
+  // Normalize rotation to [0, 360) range to prevent drift from accumulated rotations
+  qreal rotation = target->rotation();
+  rotation = std::fmod(rotation, 360.0);
+  if (rotation < 0.0) {
+    rotation += 360.0;
+  }
+  m_dragStartRotation = rotation;
+
   m_dragStartScaleX = target->scaleX();
   m_dragStartScaleY = target->scaleY();
 
+  // Convert minimum gizmo radius from screen pixels to scene coordinates
   const qreal dpiScale = getDpiScale();
-  const qreal kMinGizmoRadius = 40.0 * dpiScale;
+  const qreal kMinGizmoRadiusScreenPixels = 40.0 * dpiScale;
+  const qreal kMinGizmoRadiusSceneUnits = screenPixelsToSceneUnits(kMinGizmoRadiusScreenPixels);
+
+  // Calculate drag start distance in SCENE COORDINATES
   const QPointF center = target->sceneBoundingRect().center();
   m_dragStartDistance =
-      std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
+      std::max(kMinGizmoRadiusSceneUnits, QLineF(center, scenePos).length());
 }
 
 void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
@@ -413,6 +468,8 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     return;
   }
 
+  // COORDINATE SYSTEM: Scene coordinates
+  // All position calculations use scene coordinate space
   const QPointF delta = scenePos - m_dragStartScenePos;
 
   if (m_mode == GizmoMode::Move) {
@@ -431,13 +488,17 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     }
     target->setPos(newPos);
   } else if (m_mode == GizmoMode::Rotate) {
+    // Convert minimum gizmo radius from screen pixels to scene coordinates
     const QPointF center = target->sceneBoundingRect().center();
     const qreal dpiScale = getDpiScale();
-    const qreal kMinGizmoRadius = 40.0 * dpiScale;
+    const qreal kMinGizmoRadiusScreenPixels = 40.0 * dpiScale;
+    const qreal kMinGizmoRadiusSceneUnits = screenPixelsToSceneUnits(kMinGizmoRadiusScreenPixels);
+
+    // Clamp radius to minimum in SCENE COORDINATES
     auto clampRadius = [&](const QPointF &point) {
       QLineF line(center, point);
-      if (line.length() < kMinGizmoRadius) {
-        line.setLength(kMinGizmoRadius);
+      if (line.length() < kMinGizmoRadiusSceneUnits) {
+        line.setLength(kMinGizmoRadiusSceneUnits);
         return line.p2();
       }
       return point;
@@ -447,17 +508,28 @@ void NMTransformGizmo::updateHandleDrag(const QPointF &scenePos) {
     const qreal startAngle = QLineF(center, startPoint).angle();
     const qreal currentAngle = QLineF(center, currentPoint).angle();
     const qreal deltaAngle = startAngle - currentAngle;
-    target->setRotation(m_dragStartRotation + deltaAngle);
+
+    // Calculate new rotation and normalize to 0-360 range to prevent accumulation
+    qreal newRotation = m_dragStartRotation + deltaAngle;
+    newRotation = std::fmod(newRotation, 360.0);
+    if (newRotation < 0.0) {
+      newRotation += 360.0;
+    }
+
+    target->setRotation(newRotation);
     updatePosition();
   } else if (m_mode == GizmoMode::Scale) {
+    // Convert minimum gizmo radius from screen pixels to scene coordinates
     const QPointF center = target->sceneBoundingRect().center();
     const qreal dpiScale = getDpiScale();
     const qreal kMinGizmoRadius = 40.0 * dpiScale;
-    constexpr qreal kMinScale = 0.1;
-    constexpr qreal kMaxScale = 10.0;
+    constexpr qreal kMinScale = 0.001;
+    constexpr qreal kMaxScale = 10000.0;
     constexpr qreal kEpsilon = 0.0001;
+
+    // Calculate current distance in SCENE COORDINATES
     const qreal currentDistance =
-        std::max(kMinGizmoRadius, QLineF(center, scenePos).length());
+        std::max(kMinGizmoRadiusSceneUnits, QLineF(center, scenePos).length());
 
     // Safe division with epsilon check to prevent division by zero
     if (m_dragStartDistance < kEpsilon) {
@@ -522,8 +594,34 @@ qreal NMTransformGizmo::getDpiScale() const {
   return window->screen()->devicePixelRatio();
 }
 
+qreal NMTransformGizmo::screenPixelsToSceneUnits(qreal screenPixels) const {
+  // COORDINATE SYSTEM CONVERSION: Screen pixels -> Scene units
+  // Converts a measurement in screen pixels to scene coordinate units
+  // This accounts for zoom level and view transformations
+  auto *scenePtr = scene();
+  if (!scenePtr || scenePtr->views().isEmpty()) {
+    return screenPixels; // Fallback: assume 1:1 mapping
+  }
+
+  auto *view = scenePtr->views().first();
+  if (!view) {
+    return screenPixels; // Fallback: assume 1:1 mapping
+  }
+
+  // Map a screen-pixel vector to scene coordinates
+  // Use a horizontal vector for simplicity (assumes uniform scaling)
+  QPointF screenVector(screenPixels, 0);
+  QPointF sceneVector = view->mapToScene(screenVector.toPoint()) -
+                        view->mapToScene(QPoint(0, 0));
+  return std::sqrt(sceneVector.x() * sceneVector.x() +
+                   sceneVector.y() * sceneVector.y());
+}
+
 void NMTransformGizmo::createMoveGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
+  // COORDINATE SYSTEM: Item/Scene coordinates
+  // Visual sizes are scaled by DPI for consistent screen appearance,
+  // but all geometric calculations remain in scene coordinate space
   const qreal dpiScale = getDpiScale();
   qreal arrowLength = 60 * dpiScale;
   qreal arrowHeadSize = 12 * dpiScale;
@@ -610,6 +708,8 @@ void NMTransformGizmo::createMoveGizmo() {
 
 void NMTransformGizmo::createRotateGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
+  // COORDINATE SYSTEM: Item/Scene coordinates
+  // Visual sizes are scaled by DPI for consistent screen appearance
   const qreal dpiScale = getDpiScale();
   qreal radius = 60 * dpiScale;
 
@@ -630,6 +730,8 @@ void NMTransformGizmo::createRotateGizmo() {
 
 void NMTransformGizmo::createScaleGizmo() {
   const auto &palette = NMStyleManager::instance().palette();
+  // COORDINATE SYSTEM: Item/Scene coordinates
+  // Visual sizes are scaled by DPI for consistent screen appearance
   const qreal uiScale = NMStyleManager::instance().uiScale();
   const qreal dpiScale = getDpiScale();
   qreal size = 50 * dpiScale;
