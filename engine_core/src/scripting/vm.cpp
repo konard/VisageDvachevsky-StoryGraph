@@ -196,6 +196,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::JUMP_IF:
+    if (!ensureStack(1)) {
+      return;
+    }
     if (asBool(pop())) {
       // Validate jump target is within program bounds
       if (instr.operand >= m_program.size()) {
@@ -215,6 +218,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::JUMP_IF_NOT:
+    if (!ensureStack(1)) {
+      return;
+    }
     if (!asBool(pop())) {
       // Validate jump target is within program bounds
       if (instr.operand >= m_program.size()) {
@@ -257,6 +263,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::POP:
+    if (!ensureStack(1)) {
+      return;
+    }
     pop();
     break;
 
@@ -273,12 +282,18 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::STORE_VAR: {
+    if (!ensureStack(1)) {
+      return;
+    }
     const std::string &name = getString(instr.operand);
     setVariable(name, pop());
     break;
   }
 
   case OpCode::ADD: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::String ||
@@ -294,6 +309,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::SUB: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::Float ||
@@ -306,6 +324,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::MUL: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     if (getValueType(a) == ValueType::Float ||
@@ -318,6 +339,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::DIV: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
 
@@ -351,6 +375,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::EQ: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware equality comparison
@@ -373,6 +400,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::NE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware inequality comparison
@@ -395,6 +425,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::LT: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware less-than comparison
@@ -416,6 +449,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::LE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware less-than-or-equal comparison (same coercion rules as LT)
@@ -432,6 +468,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::GT: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware greater-than comparison (same coercion rules as LT)
@@ -448,6 +487,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::GE: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     // Type-aware greater-than-or-equal comparison (same coercion rules as LT)
@@ -464,6 +506,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::AND: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     push(asBool(a) && asBool(b));
@@ -471,6 +516,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::OR: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
     push(asBool(a) || asBool(b));
@@ -478,12 +526,18 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::NOT: {
+    if (!ensureStack(1)) {
+      return;
+    }
     Value a = pop();
     push(!asBool(a));
     break;
   }
 
   case OpCode::MOD: {
+    if (!ensureStack(2)) {
+      return;
+    }
     Value b = pop();
     Value a = pop();
 
@@ -501,6 +555,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::NEG: {
+    if (!ensureStack(1)) {
+      return;
+    }
     Value a = pop();
     if (getValueType(a) == ValueType::Float) {
       push(-asFloat(a));
@@ -517,6 +574,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::STORE_GLOBAL: {
+    if (!ensureStack(1)) {
+      return;
+    }
     const std::string &name = getString(instr.operand);
     setVariable(name, pop());
     break;
@@ -549,6 +609,9 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
   }
 
   case OpCode::SET_FLAG: {
+    if (!ensureStack(1)) {
+      return;
+    }
     bool value = asBool(pop());
     const std::string &name = getString(instr.operand);
     setFlag(name, value);
@@ -759,6 +822,18 @@ Value VirtualMachine::pop() {
   Value val = std::move(m_stack.back());
   m_stack.pop_back();
   return val;
+}
+
+bool VirtualMachine::ensureStack(size_t required) {
+  if (m_stack.size() < required) {
+    NOVELMIND_LOG_ERROR("VM Runtime Error: Stack underflow - required " +
+                        std::to_string(required) + " elements, but stack has " +
+                        std::to_string(m_stack.size()) + " at instruction " +
+                        std::to_string(m_ip));
+    m_halted = true;
+    return false;
+  }
+  return true;
 }
 
 const std::string &VirtualMachine::getString(u32 index) const {
