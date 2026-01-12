@@ -835,19 +835,7 @@ Value VirtualMachine::pop() {
   return val;
 }
 
-bool VirtualMachine::ensureStack(size_t required) {
-  if (m_stack.size() < required) {
-    NOVELMIND_LOG_ERROR("VM Runtime Error: Stack underflow - required " +
-                        std::to_string(required) + " elements, but stack has " +
-                        std::to_string(m_stack.size()) + " at instruction " +
-                        std::to_string(m_ip));
-    m_halted = true;
-    return false;
-  }
-  return true;
-}
-
-const std::string &VirtualMachine::getString(u32 index) const {
+const std::string &VirtualMachine::getString(u32 index) {
   static const std::string empty;
   if (index < m_stringTable.size()) {
     return m_stringTable[index];

@@ -131,8 +131,7 @@ private:
   void executeInstruction(const Instruction &instr);
   void push(Value value);
   Value pop();
-  [[nodiscard]] bool ensureStack(size_t required);
-  [[nodiscard]] const std::string &getString(u32 index) const;
+  [[nodiscard]] const std::string &getString(u32 index);
 
   std::vector<Instruction> m_program;
   std::vector<std::string> m_stringTable;
@@ -147,7 +146,7 @@ private:
   bool m_running;
   bool m_paused;
   bool m_waiting;
-  mutable bool m_halted;  // mutable to allow setting in const getString() on error
+  bool m_halted;
   bool m_skipNextIncrement; // Used for JUMP to address 0
   i32 m_choiceResult;
 
