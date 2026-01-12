@@ -1,8 +1,17 @@
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
-#include <cstring>
+#include <bit>
+#include <limits>
 
 namespace NovelMind::scripting {
+
+// Float serialization assumptions:
+// - f32 (float) is exactly 4 bytes (32 bits), matching u32
+// - IEEE 754 single-precision format is used (ubiquitous on modern platforms)
+// - std::bit_cast provides well-defined, portable conversion without UB
+// - Endianness is preserved through bit_cast (no conversion needed within same system)
+static_assert(sizeof(f32) == sizeof(u32), "Float size must match u32 for bit_cast serialization");
+static_assert(std::numeric_limits<f32>::is_iec559, "IEEE 754 (IEC 559) float format required");
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
@@ -272,11 +281,12 @@ void Compiler::compileShowStmt(const ShowStmt &stmt, const SourceLocation &loc) 
   // Handle transition if specified
   if (stmt.transition.has_value()) {
     u32 transIndex = addString(stmt.transition.value());
-    // Push duration (convert float to int representation)
+    // Push duration (convert float to int representation using bit_cast)
+    // This is portable and well-defined (C++20), avoiding strict aliasing issues
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      std::memcpy(&durInt, &dur, sizeof(f32));
+      durInt = std::bit_cast<u32>(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
@@ -293,7 +303,7 @@ void Compiler::compileHideStmt(const HideStmt &stmt, const SourceLocation &loc) 
     u32 durInt = 0;
     if (stmt.duration.has_value()) {
       f32 dur = stmt.duration.value();
-      std::memcpy(&durInt, &dur, sizeof(f32));
+      durInt = std::bit_cast<u32>(dur);
     }
     emitOp(OpCode::PUSH_INT, durInt);
     emitOp(OpCode::TRANSITION, transIndex);
@@ -431,9 +441,8 @@ void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) 
 }
 
 void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
-  // Convert float duration to int representation
-  u32 durInt = 0;
-  std::memcpy(&durInt, &stmt.duration, sizeof(f32));
+  // Convert float duration to int representation using bit_cast
+  u32 durInt = std::bit_cast<u32>(stmt.duration);
   emitOp(OpCode::WAIT, durInt, loc);
 }
 
@@ -449,9 +458,8 @@ void Compiler::compilePlayStmt(const PlayStmt &stmt, const SourceLocation &loc) 
 
 void Compiler::compileStopStmt(const StopStmt &stmt, const SourceLocation &loc) {
   if (stmt.fadeOut.has_value()) {
-    u32 durInt = 0;
     f32 dur = stmt.fadeOut.value();
-    std::memcpy(&durInt, &dur, sizeof(f32));
+    u32 durInt = std::bit_cast<u32>(dur);
     emitOp(OpCode::PUSH_INT, durInt);
   }
 
@@ -476,8 +484,7 @@ void Compiler::compileSetStmt(const SetStmt &stmt, const SourceLocation &loc) {
 
 void Compiler::compileTransitionStmt(const TransitionStmt &stmt, [[maybe_unused]] const SourceLocation &loc) {
   u32 typeIndex = addString(stmt.type);
-  u32 durInt = 0;
-  std::memcpy(&durInt, &stmt.duration, sizeof(f32));
+  u32 durInt = std::bit_cast<u32>(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
   emitOp(OpCode::TRANSITION, typeIndex);
 }
@@ -509,17 +516,14 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const Sour
   if (stmt.position == Position::Custom) {
     f32 x = stmt.customX.value_or(0.5f);
     f32 y = stmt.customY.value_or(0.5f);
-    u32 xInt = 0;
-    u32 yInt = 0;
-    std::memcpy(&xInt, &x, sizeof(f32));
-    std::memcpy(&yInt, &y, sizeof(f32));
+    u32 xInt = std::bit_cast<u32>(x);
+    u32 yInt = std::bit_cast<u32>(y);
     emitOp(OpCode::PUSH_FLOAT, xInt);
     emitOp(OpCode::PUSH_FLOAT, yInt);
   }
 
-  // Push duration (convert float to int representation)
-  u32 durInt = 0;
-  std::memcpy(&durInt, &stmt.duration, sizeof(f32));
+  // Push duration (convert float to int representation using bit_cast)
+  u32 durInt = std::bit_cast<u32>(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
 
   // Emit the MOVE_CHARACTER opcode with character string index
@@ -553,8 +557,7 @@ void Compiler::compileLiteral(const LiteralExpr &expr) {
         } else if constexpr (std::is_same_v<T, i32>) {
           emitOp(OpCode::PUSH_INT, static_cast<u32>(val));
         } else if constexpr (std::is_same_v<T, f32>) {
-          u32 intRep = 0;
-          std::memcpy(&intRep, &val, sizeof(f32));
+          u32 intRep = std::bit_cast<u32>(val);
           emitOp(OpCode::PUSH_FLOAT, intRep);
         } else if constexpr (std::is_same_v<T, bool>) {
           emitOp(OpCode::PUSH_BOOL, val ? 1 : 0);

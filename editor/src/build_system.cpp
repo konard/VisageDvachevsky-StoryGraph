@@ -461,26 +461,26 @@ Result<Core::SecureVector<u8>> BuildSystem::loadEncryptionKeyFromEnv() {
     // Validate hex characters before parsing
     for (char c : hexStr) {
       if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
-        return Result<std::vector<u8>>::error(
+        return Result<Core::SecureVector<u8>>::error(
             "NOVELMIND_PACK_AES_KEY_HEX contains invalid hex characters. Only 0-9, a-f, A-F are "
             "allowed");
       }
     }
 
-    std::vector<u8> key(32);
+    Core::SecureVector<u8> key(32);
     for (usize i = 0; i < 32; ++i) {
       std::string byteStr = hexStr.substr(i * 2, 2);
       try {
         unsigned long val = std::stoul(byteStr, nullptr, 16);
         key[i] = static_cast<u8>(val);
       } catch (const std::invalid_argument& e) {
-        return Result<std::vector<u8>>::error("Invalid hex format in encryption key at byte " +
+        return Result<Core::SecureVector<u8>>::error("Invalid hex format in encryption key at byte " +
                                               std::to_string(i) + ": " + e.what());
       } catch (const std::out_of_range& e) {
-        return Result<std::vector<u8>>::error("Hex value out of range in encryption key at byte " +
+        return Result<Core::SecureVector<u8>>::error("Hex value out of range in encryption key at byte " +
                                               std::to_string(i) + ": " + e.what());
       } catch (...) {
-        return Result<std::vector<u8>>::error("Unknown error parsing encryption key at byte " +
+        return Result<Core::SecureVector<u8>>::error("Unknown error parsing encryption key at byte " +
                                               std::to_string(i));
       }
     }

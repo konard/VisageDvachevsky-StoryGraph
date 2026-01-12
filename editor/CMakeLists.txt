@@ -90,6 +90,7 @@ add_library(novelmind_editor STATIC
     src/qt/lazy_thumbnail_loader.cpp
     src/qt/timeline_render_cache.cpp
     src/qt/performance_metrics.cpp
+    src/qt/debouncer.cpp
 
     # Qt6 GUI implementation
     src/qt/qt_event_bus.cpp
@@ -191,6 +192,7 @@ add_library(novelmind_editor STATIC
     include/NovelMind/editor/qt/lazy_thumbnail_loader.hpp
     include/NovelMind/editor/qt/timeline_render_cache.hpp
     include/NovelMind/editor/qt/performance_metrics.hpp
+    include/NovelMind/editor/qt/debouncer.hpp
 
     # Qt6 Headers (required for AUTOMOC to work)
     include/NovelMind/editor/qt/qt_event_bus.hpp
