@@ -17,6 +17,14 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 
+// Forward declarations for refactored modules
+namespace NovelMind::editor::qt {
+class InspectorPropertyEditor;
+class InspectorComponentList;
+class InspectorValidators;
+class InspectorUI;
+}
+
 namespace NovelMind::editor {
 class SceneRegistry;
 }
@@ -182,6 +190,11 @@ public:
   void showNoSelection();
 
   /**
+   * @brief Track a property widget for updates
+   */
+  void trackPropertyWidget(const QString& propertyName, QWidget* widget);
+
+  /**
    * @brief Enable or disable edit mode
    */
   void setEditMode(bool enabled) { m_editMode = enabled; }
@@ -221,7 +234,6 @@ private slots:
 
 private:
   void setupContent();
-  void trackPropertyWidget(const QString& propertyName, QWidget* widget);
 
   QScrollArea* m_scrollArea = nullptr;
   QWidget* m_scrollContent = nullptr;
@@ -256,6 +268,12 @@ private:
   void flushPendingUpdates();
   // Update flag for preventing circular updates
   bool m_updating = false;
+
+  // Refactored module instances
+  InspectorPropertyEditor* m_propertyEditor = nullptr;
+  InspectorComponentList* m_componentList = nullptr;
+  InspectorValidators* m_validators = nullptr;
+  InspectorUI* m_uiManager = nullptr;
 };
 
 } // namespace NovelMind::editor::qt

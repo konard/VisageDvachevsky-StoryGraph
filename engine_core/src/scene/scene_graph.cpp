@@ -82,6 +82,15 @@ SceneObjectBase *SceneGraph::findObject(const std::string &id) {
   return nullptr;
 }
 
+SceneObjectBase *SceneGraph::findObjectWithGeneration(const std::string &id,
+                                                       u64 generation) {
+  auto *obj = findObject(id);
+  if (obj && obj->getGeneration() == generation) {
+    return obj;
+  }
+  return nullptr;
+}
+
 std::vector<SceneObjectBase *>
 SceneGraph::findObjectsByTag(const std::string &tag) {
   std::vector<SceneObjectBase *> result;
