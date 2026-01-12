@@ -314,7 +314,20 @@ AudioHandle AudioManager::playSound(const std::string &id,
     return {};
   }
 
-  // Check source limit (need unique lock for potential modification)
+  // Fix for Issue #558: Check source limit and create source atomically
+  //
+  // BEFORE (had TOCTOU race):
+  //   1. Lock, check limit, remove low-priority source if needed, unlock
+  //   2. Call createSource() which locks again and adds the new source
+  //   Problem: Another thread could add sources between steps 1 and 2
+  //
+  // AFTER (atomic operation):
+  //   1. Lock once, check limit, remove if needed, create and add source
+  //   2. No window for other threads to interfere
+  //
+  // This ensures the maximum sound limit is never exceeded even under
+  // heavy concurrent load from multiple threads.
+  AudioHandle handle;
   {
     std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
     if (m_sources.size() >= m_maxSounds.load(std::memory_order_relaxed)) {
@@ -330,9 +343,15 @@ AudioHandle AudioManager::playSound(const std::string &id,
         return {}; // Can't play
       }
     }
+
+    // Create source inside the lock to ensure atomicity with the limit check
+    handle = createSourceLocked(id, config.channel);
   }
 
-  AudioHandle handle = createSource(id, config.channel);
+  // Early return if source creation failed
+  if (!handle.isValid()) {
+    return {};
+  }
   auto *source = getSource(handle);
   if (!source) {
     return {};
@@ -833,8 +852,11 @@ void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
   m_duckFadeDuration.store(clampedFadeDuration, std::memory_order_relaxed);
 }
 
-AudioHandle AudioManager::createSource(const std::string &trackId,
-                                       AudioChannel channel) {
+AudioHandle AudioManager::createSourceLocked(const std::string &trackId,
+                                             AudioChannel channel) {
+  // IMPORTANT: Caller must hold m_sourcesMutex (unique_lock)
+  // This function is thread-safe only when called with the lock held
+
   if (!m_engineInitialized || !m_engine) {
     return {};
   }
@@ -920,11 +942,15 @@ AudioHandle AudioManager::createSource(const std::string &trackId,
   ma_sound_get_length_in_seconds(source->m_sound.get(), &lengthSeconds);
   source->m_duration = lengthSeconds;
 
-  {
-    std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
-    m_sources.push_back(std::move(source));
-  }
+  // Add source to the vector - lock is already held by caller
+  m_sources.push_back(std::move(source));
   return handle;
+}
+
+AudioHandle AudioManager::createSource(const std::string &trackId,
+                                       AudioChannel channel) {
+  std::unique_lock<std::shared_mutex> lock(m_sourcesMutex);
+  return createSourceLocked(trackId, channel);
 }
 
 void AudioManager::releaseSource(AudioHandle handle) {

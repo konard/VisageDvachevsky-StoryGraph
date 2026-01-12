@@ -272,6 +272,13 @@ public:
 
   /**
    * @brief Play a sound effect
+   *
+   * Thread Safety: This function is fully thread-safe. The limit check and
+   * source creation are performed atomically within a single lock, preventing
+   * TOCTOU race conditions. Multiple threads can safely call this function
+   * concurrently without exceeding the maximum sound limit (set by setMaxSounds).
+   *
+   * @see Issue #558 for details on the TOCTOU race condition that was fixed
    */
   AudioHandle playSound(const std::string &id,
                         const PlaybackConfig &config = {});
@@ -489,6 +496,7 @@ public:
 
 private:
   AudioHandle createSource(const std::string &trackId, AudioChannel channel);
+  AudioHandle createSourceLocked(const std::string &trackId, AudioChannel channel);
   void releaseSource(AudioHandle handle);
   void fireEvent(AudioEvent::Type type, AudioHandle handle,
                  const std::string &trackId = "");
