@@ -199,7 +199,7 @@ SceneDecl Parser::parseSceneDecl() {
   const Token &name = consume(TokenType::Identifier, "Expected scene name");
   decl.name = name.lexeme;
 
-  consume(TokenType::LeftBrace, "Expected '{' before scene body");
+  const Token &openBrace = consume(TokenType::LeftBrace, "Expected '{' before scene body");
 
   while (!check(TokenType::RightBrace) && !isAtEnd()) {
     skipNewlines();
@@ -212,7 +212,16 @@ SceneDecl Parser::parseSceneDecl() {
     }
   }
 
-  consume(TokenType::RightBrace, "Expected '}' after scene body");
+  // Check if we reached EOF without finding closing brace
+  if (isAtEnd() && !check(TokenType::RightBrace)) {
+    std::string errorMsg = "Incomplete scene block '" + decl.name +
+                          "' - missing closing brace '}'. Scene started at line " +
+                          std::to_string(openBrace.location.line) +
+                          ". Add '}' to close the scene block.";
+    error(errorMsg);
+  } else {
+    consume(TokenType::RightBrace, "Expected '}' after scene body");
+  }
 
   return decl;
 }

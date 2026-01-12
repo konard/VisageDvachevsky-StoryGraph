@@ -792,6 +792,59 @@ TEST_CASE("Parser error recovery", "[parser]")
             REQUIRE(program.globalStatements.size() >= 1);
         }
     }
+
+    SECTION("reports clear error for incomplete scene block")
+    {
+        // Test that parser reports a clear, helpful error for scene without closing brace
+        auto tokens = lexer.tokenize(R"(
+            scene incomplete {
+                show Hero at center
+                say "Hello"
+        )");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        // Should have at least one error
+        REQUIRE(errors.size() > 0);
+
+        // Error message should be clear and mention the incomplete scene
+        bool foundIncompleteSceneError = false;
+        for (const auto& err : errors) {
+            if (err.message.find("Incomplete scene block") != std::string::npos &&
+                err.message.find("incomplete") != std::string::npos &&
+                err.message.find("missing closing brace") != std::string::npos) {
+                foundIncompleteSceneError = true;
+                // Error should include line number where scene started
+                REQUIRE(err.message.find("line") != std::string::npos);
+                // Error should suggest fix
+                REQUIRE(err.message.find("Add '}'") != std::string::npos);
+            }
+        }
+        REQUIRE(foundIncompleteSceneError);
+    }
+
+    SECTION("reports error with scene name and line number")
+    {
+        // Test that error includes scene name and starting line
+        auto tokens = lexer.tokenize("scene test_scene {\n    say \"No close brace\"");
+        REQUIRE(tokens.isOk());
+
+        auto result = parser.parse(tokens.value());
+        const auto& errors = parser.getErrors();
+
+        REQUIRE(errors.size() > 0);
+
+        // Error should mention the scene name
+        bool foundNamedSceneError = false;
+        for (const auto& err : errors) {
+            if (err.message.find("test_scene") != std::string::npos) {
+                foundNamedSceneError = true;
+            }
+        }
+        REQUIRE(foundNamedSceneError);
+    }
 }
 
 TEST_CASE("Parser handles bounds checking edge cases", "[parser][bounds]")
