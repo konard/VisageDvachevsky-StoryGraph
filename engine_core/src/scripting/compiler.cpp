@@ -1,18 +1,13 @@
 #include "NovelMind/scripting/compiler.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <bit>
-#include <limits>
 
 namespace NovelMind::scripting {
 
-/**
- * @brief Maximum number of choices allowed in a single choice statement
- *
- * This limit prevents resource exhaustion from scripts with excessive choices.
- * A limit of 256 is reasonable for visual novel gameplay while preventing
- * potential memory issues from malformed or malicious scripts.
- */
-static constexpr u32 MAX_CHOICE_COUNT = 256;
+// Static assertions to ensure type punning with bit_cast is safe
+static_assert(sizeof(f32) == sizeof(u32), "f32 and u32 must have the same size for bit_cast");
+static_assert(std::is_trivially_copyable_v<f32>, "f32 must be trivially copyable for bit_cast");
+static_assert(std::is_trivially_copyable_v<u32>, "u32 must be trivially copyable for bit_cast");
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
@@ -450,7 +445,7 @@ void Compiler::compileGotoStmt(const GotoStmt &stmt, const SourceLocation &loc) 
 }
 
 void Compiler::compileWaitStmt(const WaitStmt &stmt, const SourceLocation &loc) {
-  // Convert float duration to int representation using bit_cast
+  // Convert float duration to int representation
   u32 durInt = std::bit_cast<u32>(stmt.duration);
   emitOp(OpCode::WAIT, durInt, loc);
 }
@@ -531,7 +526,7 @@ void Compiler::compileMoveStmt(const MoveStmt &stmt, [[maybe_unused]] const Sour
     emitOp(OpCode::PUSH_FLOAT, yInt);
   }
 
-  // Push duration (convert float to int representation using bit_cast)
+  // Push duration (convert float to int representation)
   u32 durInt = std::bit_cast<u32>(stmt.duration);
   emitOp(OpCode::PUSH_INT, durInt);
 
