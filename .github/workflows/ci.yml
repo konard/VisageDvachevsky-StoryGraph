@@ -243,12 +243,19 @@ jobs:
         sanitizer:
           - name: asan
             cmake_flag: NOVELMIND_ENABLE_ASAN
+            compiler: clang
           - name: tsan
             cmake_flag: NOVELMIND_ENABLE_TSAN
+            compiler: clang
           - name: ubsan
             cmake_flag: NOVELMIND_ENABLE_UBSAN
+            compiler: clang
           - name: lsan
             cmake_flag: NOVELMIND_ENABLE_LSAN
+            compiler: clang
+          - name: msan
+            cmake_flag: NOVELMIND_ENABLE_MSAN
+            compiler: clang
 
     steps:
     - uses: actions/checkout@v4
@@ -259,6 +266,9 @@ jobs:
         sudo apt-get install -y cmake ninja-build libsdl2-dev
 
     - name: Configure CMake with ${{ matrix.sanitizer.name }}
+      env:
+        CC: ${{ matrix.sanitizer.compiler }}
+        CXX: ${{ matrix.sanitizer.compiler }}++
       run: |
         cmake -B build -G Ninja \
           -DCMAKE_BUILD_TYPE=Debug \

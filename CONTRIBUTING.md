@@ -81,6 +81,7 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_ENABLE_TSAN` | OFF | Enable ThreadSanitizer |
 | `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
 | `NOVELMIND_ENABLE_LSAN` | OFF | Enable LeakSanitizer |
+| `NOVELMIND_ENABLE_MSAN` | OFF | Enable MemorySanitizer |
 
 ### Build Types
 
@@ -256,7 +257,14 @@ cd build && ctest --output-on-failure
 cmake -B build -DNOVELMIND_ENABLE_UBSAN=ON
 cmake --build build
 cd build && ctest --output-on-failure
+
+# MemorySanitizer (detects uninitialized memory reads, requires Clang)
+CC=clang CXX=clang++ cmake -B build -DNOVELMIND_ENABLE_MSAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
 ```
+
+**Note**: MemorySanitizer requires Clang and all dependencies to be MSan-instrumented. This may result in false positives if system libraries are not instrumented.
 
 ### Writing Tests
 
