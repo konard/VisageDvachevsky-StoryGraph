@@ -116,55 +116,301 @@ inline uint32_t decodeUtf8(std::string_view source, size_t& pos) {
 
 // Checks if a Unicode code point is a valid identifier start character
 // Supports Latin, Cyrillic, Greek, and other common alphabets
+// Based on UAX #31 Unicode Identifier and Pattern Syntax
 inline bool isUnicodeIdentifierStart(uint32_t codePoint) {
   // ASCII letters
   if ((codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z')) {
     return true;
   }
+
   // Latin Extended-A, Extended-B, Extended Additional
   if (codePoint >= 0x00C0 && codePoint <= 0x024F)
     return true;
+  // Latin Extended Additional
+  if (codePoint >= 0x1E00 && codePoint <= 0x1EFF)
+    return true;
+
+  // Greek and Coptic
+  if (codePoint >= 0x0370 && codePoint <= 0x03FF)
+    return true;
+  // Greek Extended
+  if (codePoint >= 0x1F00 && codePoint <= 0x1FFF)
+    return true;
+
   // Cyrillic (Russian, Ukrainian, etc.)
   if (codePoint >= 0x0400 && codePoint <= 0x04FF)
     return true;
   // Cyrillic Supplement
   if (codePoint >= 0x0500 && codePoint <= 0x052F)
     return true;
-  // Greek
-  if (codePoint >= 0x0370 && codePoint <= 0x03FF)
+  // Cyrillic Extended-A
+  if (codePoint >= 0x2DE0 && codePoint <= 0x2DFF)
     return true;
-  // CJK Unified Ideographs (Chinese, Japanese Kanji)
-  if (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+  // Cyrillic Extended-B
+  if (codePoint >= 0xA640 && codePoint <= 0xA69F)
     return true;
+
+  // Armenian
+  if (codePoint >= 0x0530 && codePoint <= 0x058F)
+    return true;
+
+  // Hebrew
+  if (codePoint >= 0x0590 && codePoint <= 0x05FF)
+    return true;
+
+  // Arabic
+  if (codePoint >= 0x0600 && codePoint <= 0x06FF)
+    return true;
+  // Arabic Supplement
+  if (codePoint >= 0x0750 && codePoint <= 0x077F)
+    return true;
+  // Arabic Extended-A
+  if (codePoint >= 0x08A0 && codePoint <= 0x08FF)
+    return true;
+
+  // Devanagari (Hindi, Sanskrit, etc.)
+  if (codePoint >= 0x0900 && codePoint <= 0x097F)
+    return true;
+  // Bengali
+  if (codePoint >= 0x0980 && codePoint <= 0x09FF)
+    return true;
+  // Gurmukhi (Punjabi)
+  if (codePoint >= 0x0A00 && codePoint <= 0x0A7F)
+    return true;
+  // Gujarati
+  if (codePoint >= 0x0A80 && codePoint <= 0x0AFF)
+    return true;
+  // Oriya
+  if (codePoint >= 0x0B00 && codePoint <= 0x0B7F)
+    return true;
+  // Tamil
+  if (codePoint >= 0x0B80 && codePoint <= 0x0BFF)
+    return true;
+  // Telugu
+  if (codePoint >= 0x0C00 && codePoint <= 0x0C7F)
+    return true;
+  // Kannada
+  if (codePoint >= 0x0C80 && codePoint <= 0x0CFF)
+    return true;
+  // Malayalam
+  if (codePoint >= 0x0D00 && codePoint <= 0x0D7F)
+    return true;
+  // Sinhala
+  if (codePoint >= 0x0D80 && codePoint <= 0x0DFF)
+    return true;
+  // Thai
+  if (codePoint >= 0x0E00 && codePoint <= 0x0E7F)
+    return true;
+  // Lao
+  if (codePoint >= 0x0E80 && codePoint <= 0x0EFF)
+    return true;
+  // Tibetan
+  if (codePoint >= 0x0F00 && codePoint <= 0x0FFF)
+    return true;
+
+  // Georgian
+  if (codePoint >= 0x10A0 && codePoint <= 0x10FF)
+    return true;
+  // Hangul Jamo (Korean alphabet components)
+  if (codePoint >= 0x1100 && codePoint <= 0x11FF)
+    return true;
+  // Ethiopic
+  if (codePoint >= 0x1200 && codePoint <= 0x137F)
+    return true;
+  // Cherokee
+  if (codePoint >= 0x13A0 && codePoint <= 0x13FF)
+    return true;
+  // Unified Canadian Aboriginal Syllabics
+  if (codePoint >= 0x1400 && codePoint <= 0x167F)
+    return true;
+  // Ogham
+  if (codePoint >= 0x1680 && codePoint <= 0x169F)
+    return true;
+  // Runic
+  if (codePoint >= 0x16A0 && codePoint <= 0x16FF)
+    return true;
+  // Tagalog (Baybayin)
+  if (codePoint >= 0x1700 && codePoint <= 0x171F)
+    return true;
+  // Hanunoo
+  if (codePoint >= 0x1720 && codePoint <= 0x173F)
+    return true;
+  // Buhid
+  if (codePoint >= 0x1740 && codePoint <= 0x175F)
+    return true;
+  // Tagbanwa
+  if (codePoint >= 0x1760 && codePoint <= 0x177F)
+    return true;
+  // Khmer
+  if (codePoint >= 0x1780 && codePoint <= 0x17FF)
+    return true;
+  // Mongolian
+  if (codePoint >= 0x1800 && codePoint <= 0x18AF)
+    return true;
+
+  // Bopomofo (Chinese phonetic symbols)
+  if (codePoint >= 0x3100 && codePoint <= 0x312F)
+    return true;
+  // Hangul Compatibility Jamo
+  if (codePoint >= 0x3130 && codePoint <= 0x318F)
+    return true;
+  // Bopomofo Extended
+  if (codePoint >= 0x31A0 && codePoint <= 0x31BF)
+    return true;
+
   // Hiragana
   if (codePoint >= 0x3040 && codePoint <= 0x309F)
     return true;
   // Katakana
   if (codePoint >= 0x30A0 && codePoint <= 0x30FF)
     return true;
-  // Korean Hangul
+
+  // CJK Unified Ideographs Extension A
+  if (codePoint >= 0x3400 && codePoint <= 0x4DBF)
+    return true;
+  // CJK Unified Ideographs (Chinese, Japanese Kanji)
+  if (codePoint >= 0x4E00 && codePoint <= 0x9FFF)
+    return true;
+
+  // Yi Syllables
+  if (codePoint >= 0xA000 && codePoint <= 0xA48F)
+    return true;
+  // Yi Radicals
+  if (codePoint >= 0xA490 && codePoint <= 0xA4CF)
+    return true;
+
+  // Hangul Jamo Extended-A
+  if (codePoint >= 0xA960 && codePoint <= 0xA97F)
+    return true;
+
+  // Hangul Syllables (Korean)
   if (codePoint >= 0xAC00 && codePoint <= 0xD7AF)
     return true;
-  // Arabic
-  if (codePoint >= 0x0600 && codePoint <= 0x06FF)
+  // Hangul Jamo Extended-B
+  if (codePoint >= 0xD7B0 && codePoint <= 0xD7FF)
     return true;
-  // Hebrew
-  if (codePoint >= 0x0590 && codePoint <= 0x05FF)
+
+  // CJK Compatibility Ideographs
+  if (codePoint >= 0xF900 && codePoint <= 0xFAFF)
     return true;
 
   return false;
 }
 
 // Checks if a Unicode code point is valid within an identifier (after start)
+// Based on UAX #31 ID_Continue property
 inline bool isUnicodeIdentifierPart(uint32_t codePoint) {
   // All identifier start chars are also valid parts
   if (isUnicodeIdentifierStart(codePoint))
     return true;
+
   // ASCII digits
   if (codePoint >= '0' && codePoint <= '9')
     return true;
-  // Unicode combining marks (accents, etc.)
+
+  // Combining Diacritical Marks (accents, etc.)
   if (codePoint >= 0x0300 && codePoint <= 0x036F)
+    return true;
+
+  // Arabic combining marks
+  if (codePoint >= 0x0610 && codePoint <= 0x061A)
+    return true;
+  if (codePoint >= 0x064B && codePoint <= 0x065F)
+    return true;
+  if (codePoint >= 0x0670 && codePoint <= 0x0670)
+    return true;
+
+  // Devanagari combining marks
+  if (codePoint >= 0x0900 && codePoint <= 0x0903)
+    return true;
+  if (codePoint >= 0x093A && codePoint <= 0x093C)
+    return true;
+  if (codePoint >= 0x093E && codePoint <= 0x094F)
+    return true;
+  if (codePoint >= 0x0951 && codePoint <= 0x0957)
+    return true;
+
+  // Bengali combining marks
+  if (codePoint >= 0x0981 && codePoint <= 0x0983)
+    return true;
+  if (codePoint >= 0x09BC && codePoint <= 0x09BC)
+    return true;
+  if (codePoint >= 0x09BE && codePoint <= 0x09C4)
+    return true;
+  if (codePoint >= 0x09C7 && codePoint <= 0x09C8)
+    return true;
+  if (codePoint >= 0x09CB && codePoint <= 0x09CD)
+    return true;
+
+  // Thai combining marks
+  if (codePoint >= 0x0E31 && codePoint <= 0x0E31)
+    return true;
+  if (codePoint >= 0x0E34 && codePoint <= 0x0E3A)
+    return true;
+  if (codePoint >= 0x0E47 && codePoint <= 0x0E4E)
+    return true;
+
+  // Connector punctuation (Pc category)
+  // Underscore is already handled in ASCII check
+  if (codePoint == 0x203F || codePoint == 0x2040)  // undertie, character tie
+    return true;
+  if (codePoint == 0x2054)  // inverted undertie
+    return true;
+  if (codePoint >= 0xFE33 && codePoint <= 0xFE34)  // presentation form for vertical low line
+    return true;
+  if (codePoint >= 0xFE4D && codePoint <= 0xFE4F)  // dashed low line
+    return true;
+  if (codePoint == 0xFF3F)  // fullwidth low line
+    return true;
+
+  // Non-ASCII decimal digits (Nd category)
+  // Arabic-Indic digits
+  if (codePoint >= 0x0660 && codePoint <= 0x0669)
+    return true;
+  // Extended Arabic-Indic digits
+  if (codePoint >= 0x06F0 && codePoint <= 0x06F9)
+    return true;
+  // Devanagari digits
+  if (codePoint >= 0x0966 && codePoint <= 0x096F)
+    return true;
+  // Bengali digits
+  if (codePoint >= 0x09E6 && codePoint <= 0x09EF)
+    return true;
+  // Gurmukhi digits
+  if (codePoint >= 0x0A66 && codePoint <= 0x0A6F)
+    return true;
+  // Gujarati digits
+  if (codePoint >= 0x0AE6 && codePoint <= 0x0AEF)
+    return true;
+  // Oriya digits
+  if (codePoint >= 0x0B66 && codePoint <= 0x0B6F)
+    return true;
+  // Tamil digits
+  if (codePoint >= 0x0BE6 && codePoint <= 0x0BEF)
+    return true;
+  // Telugu digits
+  if (codePoint >= 0x0C66 && codePoint <= 0x0C6F)
+    return true;
+  // Kannada digits
+  if (codePoint >= 0x0CE6 && codePoint <= 0x0CEF)
+    return true;
+  // Malayalam digits
+  if (codePoint >= 0x0D66 && codePoint <= 0x0D6F)
+    return true;
+  // Thai digits
+  if (codePoint >= 0x0E50 && codePoint <= 0x0E59)
+    return true;
+  // Lao digits
+  if (codePoint >= 0x0ED0 && codePoint <= 0x0ED9)
+    return true;
+  // Tibetan digits
+  if (codePoint >= 0x0F20 && codePoint <= 0x0F29)
+    return true;
+  // Mongolian digits
+  if (codePoint >= 0x1810 && codePoint <= 0x1819)
+    return true;
+  // Khmer digits
+  if (codePoint >= 0x17E0 && codePoint <= 0x17E9)
     return true;
 
   return false;
