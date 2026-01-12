@@ -33,9 +33,23 @@ const std::vector<ParseError> &Parser::getErrors() const { return m_errors; }
 
 bool Parser::isAtEnd() const { return peek().type == TokenType::EndOfFile; }
 
-const Token &Parser::peek() const { return (*m_tokens)[m_current]; }
+const Token &Parser::peek() const {
+  // Bounds check: return error token if current index is out of bounds
+  if (!m_tokens || m_current >= m_tokens->size()) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
+  return (*m_tokens)[m_current];
+}
 
-const Token &Parser::previous() const { return (*m_tokens)[m_current - 1]; }
+const Token &Parser::previous() const {
+  // Bounds check: return error token if trying to access before start
+  if (!m_tokens || m_current == 0) {
+    static const Token errorToken{TokenType::Error, "", SourceLocation{}};
+    return errorToken;
+  }
+  return (*m_tokens)[m_current - 1];
+}
 
 const Token &Parser::advance() {
   if (!isAtEnd()) {
