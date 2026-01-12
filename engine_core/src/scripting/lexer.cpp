@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <stdexcept>
 
 namespace NovelMind::scripting {
 
@@ -822,10 +823,16 @@ Token Lexer::scanNumber() {
   Token token(isFloat ? TokenType::Float : TokenType::Integer, lexeme,
               SourceLocation(m_line, m_startColumn));
 
-  if (isFloat) {
-    token.floatValue = std::stof(lexeme);
-  } else {
-    token.intValue = std::stoi(lexeme);
+  try {
+    if (isFloat) {
+      token.floatValue = std::stof(lexeme);
+    } else {
+      token.intValue = std::stoi(lexeme);
+    }
+  } catch (const std::out_of_range& e) {
+    return errorToken("Number literal out of range: " + lexeme);
+  } catch (const std::invalid_argument& e) {
+    return errorToken("Invalid number literal: " + lexeme);
   }
 
   return token;
