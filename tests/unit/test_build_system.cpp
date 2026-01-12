@@ -1016,9 +1016,9 @@ TEST_CASE("signExecutableForPlatform validates certificate path",
     auto result = BuildSystemTestHelper::signExecutableForPlatform(buildSystem,exePath);
     REQUIRE(result.isError());
     // Error should mention certificate not found
-    REQUIRE(result.error().find("certificate") != std::string::npos ||
+    REQUIRE((result.error().find("certificate") != std::string::npos ||
             result.error().find("Certificate") != std::string::npos ||
-            result.error().find("not found") != std::string::npos);
+            result.error().find("not found") != std::string::npos));
   }
 
   SECTION("Returns error when executable doesn't exist") {
@@ -1100,8 +1100,8 @@ TEST_CASE("signWindowsExecutable validates timestamp URL format",
 
     auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem,exePath);
     REQUIRE(result.isError());
-    REQUIRE(result.error().find("timestamp") != std::string::npos ||
-            result.error().find("URL") != std::string::npos);
+    REQUIRE((result.error().find("timestamp") != std::string::npos ||
+            result.error().find("URL") != std::string::npos));
   }
 
   SECTION("Accepts valid HTTP timestamp URL") {
@@ -1128,8 +1128,8 @@ TEST_CASE("signWindowsExecutable validates timestamp URL format",
     auto result = BuildSystemTestHelper::signWindowsExecutable(buildSystem,exePath);
     // Should fail on tool validation, not URL validation
     if (result.isError()) {
-      REQUIRE(result.error().find("tool") != std::string::npos ||
-              result.error().find("command") != std::string::npos);
+      REQUIRE((result.error().find("tool") != std::string::npos ||
+              result.error().find("command") != std::string::npos));
     }
   }
 
@@ -1204,8 +1204,8 @@ TEST_CASE("signMacOSBundle validates entitlements file",
 
     auto result = BuildSystemTestHelper::signMacOSBundle(buildSystem,bundlePath);
     REQUIRE(result.isError());
-    REQUIRE(result.error().find("Entitlements") != std::string::npos ||
-            result.error().find("not found") != std::string::npos);
+    REQUIRE((result.error().find("Entitlements") != std::string::npos ||
+            result.error().find("not found") != std::string::npos));
   }
 
   cleanupTempDir(tempDir);
