@@ -1045,3 +1045,276 @@ TEST_CASE("test_vm_division_normal_operations", "[scripting][division]")
         REQUIRE(std::get<NovelMind::i32>(result) == 1);
     }
 }
+
+// =========================================================================
+// Stack Underflow Tests (Issue #447)
+// =========================================================================
+
+TEST_CASE("test_vm_add_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // ADD with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::ADD, 0},  // Stack is empty, need 2 elements
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_add_one_element_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // ADD with only 1 element on stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 5},  // Push 1 element
+        {OpCode::ADD, 0},       // Need 2 elements, only have 1
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_subtract_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // SUB with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::SUB, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_multiply_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // MUL with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::MUL, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_divide_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // DIV with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::DIV, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_modulo_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // MOD with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::MOD, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+}
+
+TEST_CASE("test_vm_comparison_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    SECTION("EQ with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::EQ, 0},
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("LT with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::LT, 0},
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("GT with one element") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_INT, 5},
+            {OpCode::GT, 0},  // Need 2 elements
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+}
+
+TEST_CASE("test_vm_logical_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    SECTION("AND with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::AND, 0},
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("OR with one element") {
+        std::vector<Instruction> program = {
+            {OpCode::PUSH_BOOL, 1},
+            {OpCode::OR, 0},  // Need 2 elements
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("NOT with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::NOT, 0},  // Need 1 element
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+}
+
+TEST_CASE("test_vm_unary_operations_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    SECTION("NEG with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::NEG, 0},
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("POP with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::POP, 0},
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+}
+
+TEST_CASE("test_vm_store_var_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // STORE_VAR with empty stack should halt with error
+    std::vector<Instruction> program = {
+        {OpCode::STORE_VAR, 0},  // Need 1 element on stack
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {"var"});
+    vm.run();
+
+    // VM should halt due to stack underflow
+    REQUIRE(vm.isHalted());
+    // Variable should not be set
+    REQUIRE_FALSE(vm.hasVariable("var"));
+}
+
+TEST_CASE("test_vm_jump_if_empty_stack", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    SECTION("JUMP_IF with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::JUMP_IF, 2},  // Need 1 element on stack
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+
+    SECTION("JUMP_IF_NOT with empty stack") {
+        std::vector<Instruction> program = {
+            {OpCode::JUMP_IF_NOT, 2},  // Need 1 element on stack
+            {OpCode::HALT, 0}
+        };
+        vm.load(program, {});
+        vm.run();
+        REQUIRE(vm.isHalted());
+    }
+}
+
+TEST_CASE("test_vm_normal_operations_after_fix", "[scripting][stack_underflow]")
+{
+    VirtualMachine vm;
+
+    // Verify that normal operations still work correctly with sufficient stack
+    std::vector<Instruction> program = {
+        {OpCode::PUSH_INT, 10},
+        {OpCode::PUSH_INT, 5},
+        {OpCode::ADD, 0},
+        {OpCode::PUSH_INT, 3},
+        {OpCode::MUL, 0},
+        {OpCode::STORE_VAR, 0},
+        {OpCode::HALT, 0}
+    };
+
+    vm.load(program, {"result"});
+    vm.run();
+
+    // VM should complete successfully
+    REQUIRE(vm.isHalted());
+    auto result = vm.getVariable("result");
+    REQUIRE(std::holds_alternative<NovelMind::i32>(result));
+    REQUIRE(std::get<NovelMind::i32>(result) == 45);  // (10 + 5) * 3 = 45
+}

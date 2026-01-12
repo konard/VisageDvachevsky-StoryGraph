@@ -263,6 +263,13 @@ Result<void> VoiceManifest::addTake(const std::string &lineId,
     return Result<void>::error("Voice line not found: " + lineId);
   }
 
+  // Security: Validate path before storing it
+  if (!take.filePath.empty() && !isValidRelativePath(take.filePath)) {
+    return Result<void>::error(
+        "Invalid file path in take: contains path traversal sequences, "
+        "absolute path, or special characters");
+  }
+
   auto &file = line->getOrCreateFile(locale);
   file.takes.push_back(take);
 
@@ -411,6 +418,13 @@ Result<void> VoiceManifest::markAsRecorded(const std::string &lineId,
     return Result<void>::error("Voice line not found: " + lineId);
   }
 
+  // Security: Validate path before storing it
+  if (!isValidRelativePath(filePath)) {
+    return Result<void>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
+  }
+
   auto &file = line->getOrCreateFile(locale);
   file.filePath = filePath;
   file.status = VoiceLineStatus::Recorded;
@@ -425,6 +439,13 @@ Result<void> VoiceManifest::markAsImported(const std::string &lineId,
   auto *line = getLineMutable(lineId);
   if (!line) {
     return Result<void>::error("Voice line not found: " + lineId);
+  }
+
+  // Security: Validate path before storing it
+  if (!isValidRelativePath(filePath)) {
+    return Result<void>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
   }
 
   auto &file = line->getOrCreateFile(locale);
@@ -477,6 +498,15 @@ VoiceManifest::validate(bool checkFiles) const {
 
       // Check for path conflicts
       if (!file.filePath.empty()) {
+        // Security: Validate path before using it
+        if (!isValidRelativePath(file.filePath)) {
+          errors.push_back({ManifestValidationError::Type::InvalidFilePath,
+                            line.id, "files." + locale,
+                            "Invalid file path: contains path traversal "
+                            "sequences or special characters"});
+          continue; // Skip further checks for this invalid path
+        }
+
         if (seenPaths.count(file.filePath) > 0) {
           errors.push_back(
               {ManifestValidationError::Type::PathConflict, line.id,
@@ -487,11 +517,19 @@ VoiceManifest::validate(bool checkFiles) const {
 
         // Check if file exists
         if (checkFiles && file.status != VoiceLineStatus::Missing) {
-          std::string fullPath = m_basePath + "/" + file.filePath;
-          if (!fs::exists(fullPath)) {
-            errors.push_back({ManifestValidationError::Type::FileNotFound,
+          // Security: Use sanitized path resolution
+          auto resolvedPathResult = sanitizeAndResolvePath(file.filePath);
+          if (resolvedPathResult.isError()) {
+            errors.push_back({ManifestValidationError::Type::InvalidFilePath,
                               line.id, "files." + locale,
-                              "File not found: " + fullPath});
+                              resolvedPathResult.error()});
+          } else {
+            std::string fullPath = resolvedPathResult.value();
+            if (!fs::exists(fullPath)) {
+              errors.push_back({ManifestValidationError::Type::FileNotFound,
+                                line.id, "files." + locale,
+                                "File not found: " + fullPath});
+            }
           }
         }
       }
@@ -833,9 +871,18 @@ Result<void> VoiceManifest::loadFromString(const std::string &jsonContent) {
               std::regex locRe(locPattern);
               std::smatch locMatch;
               if (std::regex_search(filesJson, locMatch, locRe)) {
+                std::string filePath = locMatch[1].str();
+
+                // Security: Validate path before storing it
+                if (!filePath.empty() && !isValidRelativePath(filePath)) {
+                  // Skip invalid paths - don't add them to the manifest
+                  // This prevents path traversal attacks from malicious manifests
+                  continue;
+                }
+
                 VoiceLocaleFile locFile;
                 locFile.locale = locale;
-                locFile.filePath = locMatch[1].str();
+                locFile.filePath = filePath;
                 locFile.status = locFile.filePath.empty()
                                      ? VoiceLineStatus::Missing
                                      : VoiceLineStatus::Imported;
@@ -988,9 +1035,13 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
       if (existingLine) {
         // Update existing line with file path
         if (fields.size() >= 4 && !fields[3].empty()) {
-          auto &locFile = existingLine->getOrCreateFile(locale);
-          locFile.filePath = fields[3];
-          locFile.status = VoiceLineStatus::Imported;
+          // Security: Validate path before storing it
+          if (isValidRelativePath(fields[3])) {
+            auto &locFile = existingLine->getOrCreateFile(locale);
+            locFile.filePath = fields[3];
+            locFile.status = VoiceLineStatus::Imported;
+          }
+          // Silently skip invalid paths to prevent injection
         }
       } else {
         // Create new line
@@ -1000,11 +1051,15 @@ Result<void> VoiceManifest::importFromCsv(const std::string &csvPath,
         newLine.textKey = fields.size() > 2 ? fields[2] : id;
 
         if (fields.size() >= 4 && !fields[3].empty()) {
-          VoiceLocaleFile locFile;
-          locFile.locale = locale;
-          locFile.filePath = fields[3];
-          locFile.status = VoiceLineStatus::Imported;
-          newLine.files[locale] = locFile;
+          // Security: Validate path before storing it
+          if (isValidRelativePath(fields[3])) {
+            VoiceLocaleFile locFile;
+            locFile.locale = locale;
+            locFile.filePath = fields[3];
+            locFile.status = VoiceLineStatus::Imported;
+            newLine.files[locale] = locFile;
+          }
+          // Silently skip invalid paths to prevent injection
         }
 
         newLine.scene = fields.size() > 4 ? fields[4] : "";
@@ -1177,6 +1232,103 @@ void VoiceManifest::fireStatusChanged(const std::string &lineId,
                                       VoiceLineStatus status) {
   if (m_onStatusChanged) {
     m_onStatusChanged(lineId, locale, status);
+  }
+}
+
+// ============================================================================
+// Security: Path Validation
+// ============================================================================
+
+bool VoiceManifest::isValidRelativePath(const std::string &path) const {
+  if (path.empty()) {
+    return false;
+  }
+
+  // Reject absolute paths (Unix and Windows)
+  if (path[0] == '/' || path[0] == '\\') {
+    return false;
+  }
+
+  // Reject Windows absolute paths (C:, D:, etc.)
+  if (path.length() >= 2 && path[1] == ':') {
+    return false;
+  }
+
+  // Reject null bytes (null byte injection attack)
+  if (path.find('\0') != std::string::npos) {
+    return false;
+  }
+
+  // Reject paths containing ".." (path traversal)
+  // Check for "../", "..\\" and ".." at the end
+  if (path.find("..") != std::string::npos) {
+    return false;
+  }
+
+  // Reject special device names on Windows
+  static const std::vector<std::string> windowsDevices = {
+      "CON",  "PRN",  "AUX",  "NUL",  "COM1", "COM2", "COM3",
+      "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1",
+      "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8",
+      "LPT9"};
+
+  std::string upperPath = path;
+  std::transform(upperPath.begin(), upperPath.end(), upperPath.begin(),
+                 ::toupper);
+
+  for (const auto &device : windowsDevices) {
+    if (upperPath == device || upperPath.find(device + ".") == 0 ||
+        upperPath.find("/" + device) != std::string::npos ||
+        upperPath.find("\\" + device) != std::string::npos) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+Result<std::string>
+VoiceManifest::sanitizeAndResolvePath(const std::string &relativePath) const {
+  // First, check for obviously invalid paths
+  if (!isValidRelativePath(relativePath)) {
+    return Result<std::string>::error(
+        "Invalid file path: contains path traversal sequences, absolute path, "
+        "or special characters");
+  }
+
+  try {
+    // Canonicalize the base path
+    fs::path basePath = fs::weakly_canonical(fs::path(m_basePath));
+
+    // Combine with the relative path
+    fs::path combined = basePath / relativePath;
+
+    // Canonicalize the combined path
+    // Use weakly_canonical to handle non-existent paths
+    fs::path canonical = fs::weakly_canonical(combined);
+
+    // Check if the canonical path is within the base directory
+    // We need to ensure the resolved path starts with the base path
+    auto baseStr = basePath.lexically_normal().string();
+    auto canonicalStr = canonical.lexically_normal().string();
+
+    // Ensure both paths end consistently for comparison
+    if (!baseStr.empty() && baseStr.back() != '/' && baseStr.back() != '\\') {
+      baseStr += '/';
+    }
+
+    // Check if canonical path starts with base path
+    if (canonicalStr.find(baseStr) != 0) {
+      return Result<std::string>::error(
+          "Path traversal detected: resolved path '" + canonicalStr +
+          "' is outside allowed directory '" + baseStr + "'");
+    }
+
+    return Result<std::string>::ok(canonical.string());
+
+  } catch (const fs::filesystem_error &e) {
+    return Result<std::string>::error(std::string("Filesystem error: ") +
+                                      e.what());
   }
 }
 

@@ -116,6 +116,13 @@ void NMLocalizationPanel::rebuildTable() {
   m_uiHelper.highlightMissingTranslations(m_stringsTable);
 }
 
+/**
+ * @brief Apply filters, highlighting, and update status in a single pass
+ *
+ * PERF optimization (issue #481): Combines filtering, styling, and statistics
+ * collection into a single iteration instead of three separate passes over the data.
+ * This significantly improves performance, especially for large datasets.
+ */
 void NMLocalizationPanel::applyFilters() {
   if (!m_stringsTable || !m_searchEdit || !m_showMissingOnly) {
     return;
@@ -130,6 +137,35 @@ void NMLocalizationPanel::applyFilters() {
 
 void NMLocalizationPanel::updateStatusBar() {
   m_uiHelper.updateStatusBar(m_statusLabel, m_stringsTable, m_dirty);
+}
+
+/**
+ * @brief Legacy updateStatusBar that iterates to compute counts
+ *
+ * PERF note: This method iterates through all rows to compute statistics.
+ * Prefer using updateStatusBarWithCounts() when counts are already available.
+ */
+void NMLocalizationPanel::updateStatusBar() {
+  if (!m_statusLabel || !m_stringsTable) {
+    return;
+  }
+
+  int totalCount = 0;
+  int visibleCount = 0;
+  int missingCount = 0;
+
+  for (int row = 0; row < m_stringsTable->rowCount(); ++row) {
+    totalCount++;
+    if (!m_stringsTable->isRowHidden(row)) {
+      visibleCount++;
+    }
+    auto* translationItem = m_stringsTable->item(row, 2);
+    if (translationItem && translationItem->text().isEmpty()) {
+      missingCount++;
+    }
+  }
+
+  updateStatusBarWithCounts(totalCount, visibleCount, missingCount);
 }
 
 void NMLocalizationPanel::onSearchTextChanged(const QString& text) {
