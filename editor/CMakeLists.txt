@@ -90,6 +90,7 @@ add_library(novelmind_editor STATIC
     src/qt/lazy_thumbnail_loader.cpp
     src/qt/timeline_render_cache.cpp
     src/qt/performance_metrics.cpp
+    src/qt/debouncer.cpp
 
     # Qt6 GUI implementation
     src/qt/qt_event_bus.cpp
