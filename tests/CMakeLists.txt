@@ -31,6 +31,7 @@ add_executable(unit_tests
     unit/test_animation.cpp
     unit/test_snapshot.cpp
     unit/test_fuzzing.cpp
+    unit/test_compiler.cpp
     unit/test_texture_loading.cpp
     unit/test_voice_manifest.cpp
     unit/test_script_runtime_transition.cpp
