@@ -51,11 +51,10 @@ add_executable(unit_tests
     # Issue #465 - Recording panel thread safety tests
     unit/test_recording_panel_thread_safety.cpp
     unit/test_recording_callback_marshaling.cpp
-    # Issue #572 - Build system path traversal security tests
-    unit/test_build_system.cpp
     # Issue #574 - Secure memory for encryption keys
     unit/test_secure_memory.cpp
 )
+# Note: test_build_system.cpp requires editor library, included only in integration_tests
 
 target_link_libraries(unit_tests
     PRIVATE
