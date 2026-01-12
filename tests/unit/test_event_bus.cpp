@@ -504,3 +504,225 @@ TEST_CASE("EventBus: Basic functionality still works",
     bus.unsubscribe(sub3);
   }
 }
+
+// ============================================================================
+// Event Deduplication Tests (Issue #480)
+// ============================================================================
+
+TEST_CASE("EventBus: Event deduplication",
+          "[unit][editor][eventbus][deduplication]") {
+  EventBus bus;
+
+  SECTION("Duplicate events deduplicated within time window") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    // Enable deduplication with 100ms window
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(100);
+
+    // Publish same event type multiple times rapidly
+    for (int i = 0; i < 10; i++) {
+      TestEvent event;
+      event.value = 42; // Same value
+      bus.publish(event);
+    }
+
+    // Only first event should be processed (all others are duplicates)
+    REQUIRE(eventCount == 1);
+
+    // Wait for window to expire
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+
+    // Now a new event should be processed
+    TestEvent event2;
+    event2.value = 42;
+    bus.publish(event2);
+
+    REQUIRE(eventCount == 2);
+
+    bus.unsubscribe(sub);
+  }
+
+  SECTION("Deduplication can be disabled") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    // Deduplication is disabled by default
+    REQUIRE_FALSE(bus.isDeduplicationEnabled());
+
+    // Publish same event type multiple times
+    for (int i = 0; i < 10; i++) {
+      TestEvent event;
+      bus.publish(event);
+    }
+
+    // All events should be processed
+    REQUIRE(eventCount == 10);
+
+    bus.unsubscribe(sub);
+  }
+
+  SECTION("Time window is configurable") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    // Set custom deduplication window
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(50); // 50ms window
+
+    REQUIRE(bus.getDeduplicationWindow() == 50);
+
+    // Publish duplicate events
+    TestEvent event1;
+    bus.publish(event1);
+    REQUIRE(eventCount == 1);
+
+    // Immediate duplicate - should be ignored
+    TestEvent event2;
+    bus.publish(event2);
+    REQUIRE(eventCount == 1);
+
+    // Wait for window to expire
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+
+    // New event should be processed
+    TestEvent event3;
+    bus.publish(event3);
+    REQUIRE(eventCount == 2);
+
+    bus.unsubscribe(sub);
+  }
+
+  SECTION("No event loss - events after window are processed") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(50);
+
+    // Publish first event
+    TestEvent event1;
+    bus.publish(event1);
+    REQUIRE(eventCount == 1);
+
+    // Wait and publish again - should be processed
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    TestEvent event2;
+    bus.publish(event2);
+    REQUIRE(eventCount == 2);
+
+    // Another wait and publish
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    TestEvent event3;
+    bus.publish(event3);
+    REQUIRE(eventCount == 3);
+
+    bus.unsubscribe(sub);
+  }
+}
+
+TEST_CASE("EventBus: Rapid duplicate events",
+          "[unit][editor][eventbus][deduplication]") {
+  EventBus bus;
+
+  SECTION("Rapid duplicates within window are ignored") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(100);
+
+    // Rapid fire 100 identical events
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < 100; i++) {
+      TestEvent event;
+      bus.publish(event);
+    }
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+    // Should complete very quickly (all duplicates ignored)
+    REQUIRE(duration.count() < 100);
+
+    // Only first event should be processed
+    REQUIRE(eventCount == 1);
+
+    bus.unsubscribe(sub);
+  }
+
+  SECTION("Different event types are not deduplicated against each other") {
+    std::atomic<int> selectionCount{0};
+    std::atomic<int> propertyCount{0};
+
+    auto sub1 = bus.subscribe(EditorEventType::SelectionChanged,
+                              [&selectionCount](const EditorEvent &) {
+                                selectionCount++;
+                              });
+
+    auto sub2 = bus.subscribe(EditorEventType::PropertyChanged,
+                              [&propertyCount](const EditorEvent &) {
+                                propertyCount++;
+                              });
+
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(100);
+
+    // Publish different event types
+    for (int i = 0; i < 5; i++) {
+      SelectionChangedEvent selEvent;
+      bus.publish(selEvent);
+
+      PropertyChangedEvent propEvent;
+      bus.publish(propEvent);
+    }
+
+    // First of each type should be processed (different types, not duplicates)
+    REQUIRE(selectionCount == 1);
+    REQUIRE(propertyCount == 1);
+
+    bus.unsubscribe(sub1);
+    bus.unsubscribe(sub2);
+  }
+
+  SECTION("Deduplication clears cache when disabled") {
+    std::atomic<int> eventCount{0};
+
+    auto sub = bus.subscribe([&eventCount](const EditorEvent &) {
+      eventCount++;
+    });
+
+    bus.setDeduplicationEnabled(true);
+    bus.setDeduplicationWindow(1000); // Long window
+
+    // Publish event
+    TestEvent event1;
+    bus.publish(event1);
+    REQUIRE(eventCount == 1);
+
+    // Disable deduplication - should clear cache
+    bus.setDeduplicationEnabled(false);
+
+    // Publish same event - should be processed (cache cleared)
+    TestEvent event2;
+    bus.publish(event2);
+    REQUIRE(eventCount == 2);
+
+    bus.unsubscribe(sub);
+  }
+}

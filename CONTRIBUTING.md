@@ -82,6 +82,7 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
 | `NOVELMIND_ENABLE_LSAN` | OFF | Enable LeakSanitizer |
 | `NOVELMIND_ENABLE_VALGRIND` | OFF | Build with Valgrind-friendly flags |
+| `NOVELMIND_ENABLE_MSAN` | OFF | Enable MemorySanitizer |
 
 ### Build Types
 
@@ -272,7 +273,13 @@ sudo apt-get install valgrind
 
 # Install on macOS (limited support)
 brew install valgrind
+# MemorySanitizer (detects uninitialized memory reads, requires Clang)
+CC=clang CXX=clang++ cmake -B build -DNOVELMIND_ENABLE_MSAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
 ```
+
+**Note**: MemorySanitizer requires Clang and all dependencies to be MSan-instrumented. This may result in false positives if system libraries are not instrumented.
 
 ### Writing Tests
 
