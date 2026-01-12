@@ -2,7 +2,7 @@
 #include "NovelMind/core/logger.hpp"
 #include "NovelMind/scripting/vm_debugger.hpp"
 #include <algorithm>
-#include <cstring>
+#include <bit>
 
 namespace NovelMind::scripting {
 
@@ -238,8 +238,8 @@ void VirtualMachine::executeInstruction(const Instruction &instr) {
     break;
 
   case OpCode::PUSH_FLOAT: {
-    f32 val;
-    std::memcpy(&val, &instr.operand, sizeof(f32));
+    // Deserialize float from bytecode using bit_cast (well-defined, no UB)
+    f32 val = std::bit_cast<f32>(instr.operand);
     push(val);
     break;
   }
