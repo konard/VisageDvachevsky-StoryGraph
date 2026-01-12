@@ -160,16 +160,17 @@ public:
     // Check for images
     if (isImageExtension(ext)) {
       // Try to get from panel's cache
-      if (m_panel && m_panel->m_thumbnailCache.contains(path)) {
-        auto *entry = m_panel->m_thumbnailCache.object(path);
-        if (entry && m_panel->isThumbnailValid(path, *entry)) {
-          return QIcon(entry->pixmap);
-        }
-      }
-
-      // PERF-3: Request async loading via lazy loader instead of blocking
-      // Return a placeholder icon while the real thumbnail loads
+      // Defensive: check panel validity before accessing members
       if (m_panel) {
+        if (m_panel->m_thumbnailCache.contains(path)) {
+          auto *entry = m_panel->m_thumbnailCache.object(path);
+          if (entry && m_panel->isThumbnailValid(path, *entry)) {
+            return QIcon(entry->pixmap);
+          }
+        }
+
+        // PERF-3: Request async loading via lazy loader instead of blocking
+        // Return a placeholder icon while the real thumbnail loads
         // Request thumbnail with normal priority (visible items get high priority)
         m_panel->requestAsyncThumbnail(path, m_iconSize, 5);
       }
@@ -180,11 +181,14 @@ public:
 
     // Check for audio files
     if (isAudioExtension(ext)) {
-      if (m_panel) {
-        QPixmap waveform = m_panel->generateAudioWaveform(path, m_iconSize);
-        if (!waveform.isNull()) {
-          return QIcon(waveform);
-        }
+      // Defensive null check for panel pointer
+      if (!m_panel) {
+        return QFileIconProvider::icon(info);
+      }
+
+      QPixmap waveform = m_panel->generateAudioWaveform(path, m_iconSize);
+      if (!waveform.isNull()) {
+        return QIcon(waveform);
       }
     }
 
