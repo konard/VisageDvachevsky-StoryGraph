@@ -9,8 +9,11 @@
  */
 
 #include "NovelMind/audio/audio_recorder.hpp"
-#include "NovelMind/editor/qt/panels/nm_scene_view_panel.hpp"
 #include "NovelMind/renderer/camera.hpp"
+// Note: nm_scene_view_panel.hpp is not included because:
+// 1. It requires Qt and editor library which unit_tests don't link against
+// 2. The Gizmo tests below only verify the division safety concepts using
+//    constants, not the actual NMTransformGizmo class
 #include <catch2/catch_approx.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <cmath>
@@ -198,25 +201,25 @@ TEST_CASE("Gizmo scale - near-zero distance protection",
   // NMTransformGizmo requires Qt graphics scene infrastructure. The actual
   // implementation must ensure m_dragStartDistance >= kEpsilon before division.
 
-  constexpr qreal kEpsilon = 0.0001;
-  constexpr qreal kMinGizmoRadius = 40.0;
+  constexpr double kEpsilon = 0.0001;
+  constexpr double kMinGizmoRadius = 40.0;
 
   // Test case 1: Very small drag start distance (should be rejected)
-  qreal dragStartDistance = 0.00005; // Less than epsilon
+  double dragStartDistance = 0.00005; // Less than epsilon
   CHECK(dragStartDistance < kEpsilon);
 
   // Test case 2: Distance at epsilon boundary (should be allowed)
-  qreal validDistance = kEpsilon;
+  double validDistance = kEpsilon;
   CHECK(validDistance >= kEpsilon);
 
   // Test case 3: Normal distance (should work fine)
-  qreal normalDistance = kMinGizmoRadius;
+  double normalDistance = kMinGizmoRadius;
   CHECK(normalDistance >= kEpsilon);
 
   // Test case 4: Division should be safe when distance >= epsilon
   if (validDistance >= kEpsilon) {
-    qreal currentDistance = 50.0;
-    qreal rawFactor = currentDistance / validDistance;
+    double currentDistance = 50.0;
+    double rawFactor = currentDistance / validDistance;
     CHECK(!std::isnan(rawFactor));
     CHECK(!std::isinf(rawFactor));
     CHECK(rawFactor > 0.0);
@@ -227,16 +230,16 @@ TEST_CASE("Gizmo scale - minimum scale enforcement", "[gizmo][safety][editor]") 
   // This test verifies that the scale gizmo enforces minimum and maximum scale
   // values as defined in nm_scene_view_gizmo.cpp:306-307
   //
-  // constexpr qreal kMinScale = 0.1;
-  // constexpr qreal kMaxScale = 10.0;
+  // constexpr double kMinScale = 0.1;
+  // constexpr double kMaxScale = 10.0;
 
-  constexpr qreal kMinScale = 0.1;
-  constexpr qreal kMaxScale = 10.0;
+  constexpr double kMinScale = 0.1;
+  constexpr double kMaxScale = 10.0;
 
   // Test case 1: Scale below minimum should be clamped
-  qreal dragStartScaleX = 0.5;
-  qreal scaleFactor = 0.1; // Would result in 0.05
-  qreal newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale,
+  double dragStartScaleX = 0.5;
+  double scaleFactor = 0.1; // Would result in 0.05
+  double newScaleX = std::clamp(dragStartScaleX * scaleFactor, kMinScale,
                                 kMaxScale);
   CHECK(newScaleX == Catch::Approx(kMinScale));
   CHECK(newScaleX >= kMinScale);

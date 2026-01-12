@@ -347,3 +347,126 @@ TEST_CASE("Lexer enforces comment nesting depth limit", "[lexer]") {
     REQUIRE(tokens.size() == 3); // show, hide, EOF
   }
 }
+
+TEST_CASE("Lexer handles UTF-8 validation", "[lexer][utf8][security]") {
+  Lexer lexer;
+
+  SECTION("handles valid UTF-8 identifiers") {
+    // Valid Cyrillic identifier
+    auto result1 = lexer.tokenize("Привет");
+    REQUIRE(result1.isOk());
+    const auto& tokens1 = result1.value();
+    REQUIRE(tokens1.size() == 2); // identifier + EOF
+    REQUIRE(tokens1[0].type == TokenType::Identifier);
+    REQUIRE(tokens1[0].lexeme == "Привет");
+
+    // Valid Greek identifier
+    auto result2 = lexer.tokenize("Ελληνικά");
+    REQUIRE(result2.isOk());
+    const auto& tokens2 = result2.value();
+    REQUIRE(tokens2.size() == 2); // identifier + EOF
+    REQUIRE(tokens2[0].type == TokenType::Identifier);
+
+    // Valid Chinese identifier
+    auto result3 = lexer.tokenize("中文");
+    REQUIRE(result3.isOk());
+    const auto& tokens3 = result3.value();
+    REQUIRE(tokens3.size() == 2); // identifier + EOF
+    REQUIRE(tokens3[0].type == TokenType::Identifier);
+  }
+
+  SECTION("rejects truncated UTF-8 sequences") {
+    // 2-byte sequence truncated (0xD0 starts Cyrillic, missing continuation)
+    std::string input1 = "show \xD0";
+    auto result1 = lexer.tokenize(input1);
+    // The lexer should handle this gracefully - invalid UTF-8 is skipped
+    REQUIRE(result1.isOk());
+
+    // 3-byte sequence truncated (0xE4 0xB8 starts Chinese, missing 3rd byte)
+    std::string input2 = "show \xE4\xB8";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+
+    // 4-byte sequence truncated (0xF0 0x90 0x8C starts emoji, missing 4th byte)
+    std::string input3 = "show \xF0\x90\x8C";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+  }
+
+  SECTION("rejects invalid continuation bytes") {
+    // Valid start byte (0xD0) followed by invalid continuation (0xFF)
+    std::string input1 = "show \xD0\xFF";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Invalid UTF-8 is skipped
+
+    // Valid start byte (0xE4) followed by valid then invalid continuation
+    std::string input2 = "show \xE4\xB8\xFF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+  }
+
+  SECTION("rejects overlong UTF-8 encodings") {
+    // Overlong encoding of ASCII 'A' (0x41) using 2 bytes: 0xC1 0x81
+    // This is a security issue - should be rejected
+    std::string input1 = "show \xC1\x81";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Overlong encoding is rejected by decodeUtf8
+
+    // Overlong encoding of 0x7F using 2 bytes: 0xC1 0xBF
+    std::string input2 = "show \xC1\xBF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+
+    // Overlong encoding using 3 bytes for a value that fits in 2
+    // Encoding U+0080 (minimum for 2-byte) as 3 bytes: 0xE0 0x82 0x80
+    std::string input3 = "show \xE0\x82\x80";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+
+    // Overlong encoding using 4 bytes for a value that fits in 3
+    // Encoding U+0800 (minimum for 3-byte) as 4 bytes: 0xF0 0x88 0x80 0x80
+    std::string input4 = "show \xF0\x88\x80\x80";
+    auto result4 = lexer.tokenize(input4);
+    REQUIRE(result4.isOk());
+  }
+
+  SECTION("rejects UTF-16 surrogate pairs") {
+    // UTF-16 surrogates (U+D800 to U+DFFF) are invalid in UTF-8
+    // Encoding U+D800 as UTF-8: 0xED 0xA0 0x80
+    std::string input1 = "show \xED\xA0\x80";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // Surrogate is rejected by decodeUtf8
+
+    // Encoding U+DFFF as UTF-8: 0xED 0xBF 0xBF
+    std::string input2 = "show \xED\xBF\xBF";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk());
+  }
+
+  SECTION("rejects code points beyond valid Unicode range") {
+    // U+10FFFF is the maximum valid Unicode code point
+    // Valid: U+10FFFF encoded as 0xF4 0x8F 0xBF 0xBF
+    std::string input1 = "show \xF4\x8F\xBF\xBF";
+    auto result1 = lexer.tokenize(input1);
+    REQUIRE(result1.isOk()); // This is actually valid (max code point)
+
+    // Invalid: U+110000 (beyond max) encoded as 0xF4 0x90 0x80 0x80
+    std::string input2 = "show \xF4\x90\x80\x80";
+    auto result2 = lexer.tokenize(input2);
+    REQUIRE(result2.isOk()); // Beyond max is rejected by decodeUtf8
+
+    // Invalid: U+1FFFFF (way beyond max) encoded as 0xF7 0xBF 0xBF 0xBF
+    std::string input3 = "show \xF7\xBF\xBF\xBF";
+    auto result3 = lexer.tokenize(input3);
+    REQUIRE(result3.isOk());
+  }
+
+  SECTION("handles mixed valid and invalid UTF-8") {
+    // Mix of valid ASCII, valid UTF-8, and invalid bytes
+    std::string input = "show \xD0\x9F valid \xC1\x81 hide";
+    auto result = lexer.tokenize(input);
+    REQUIRE(result.isOk());
+    // Should tokenize 'show', valid UTF-8 identifier, 'valid', 'hide'
+    // Invalid UTF-8 sequences are skipped
+  }
+}

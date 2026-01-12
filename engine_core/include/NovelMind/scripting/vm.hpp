@@ -131,6 +131,7 @@ private:
   void executeInstruction(const Instruction &instr);
   void push(Value value);
   Value pop();
+  [[nodiscard]] bool ensureStack(size_t required);
   [[nodiscard]] const std::string &getString(u32 index) const;
 
   std::vector<Instruction> m_program;
