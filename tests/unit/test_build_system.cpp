@@ -684,6 +684,9 @@ TEST_CASE("Encryption key parsing handles invalid hex gracefully",
     unsetenv("NOVELMIND_PACK_AES_KEY_FILE");
   }
 #endif
+}
+
+// =============================================================================
 // Path Traversal Security Tests (Issue #572)
 // =============================================================================
 
