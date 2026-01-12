@@ -253,7 +253,13 @@ private:
 
     JsonValue result;
     result.type = "number";
-    result.numberValue = std::stod(m_json.substr(start, m_pos - start));
+    try {
+      result.numberValue = std::stod(m_json.substr(start, m_pos - start));
+    } catch (const std::invalid_argument&) {
+      return Result<JsonValue>::error("Invalid number format");
+    } catch (const std::out_of_range&) {
+      return Result<JsonValue>::error("Number out of range");
+    }
     return Result<JsonValue>::ok(std::move(result));
   }
 

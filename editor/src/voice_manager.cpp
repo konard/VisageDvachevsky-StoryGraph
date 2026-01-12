@@ -573,6 +573,10 @@ bool VoiceManager::matchPattern(const std::string& filename, const VoiceMappingP
     }
   } catch (const std::regex_error&) {
     // Invalid regex pattern
+  } catch (const std::invalid_argument&) {
+    // Invalid characterGroup or lineIdGroup (not a valid integer)
+  } catch (const std::out_of_range&) {
+    // characterGroup or lineIdGroup number out of range
   }
   return false;
 }

@@ -127,7 +127,11 @@ void CharacterObject::loadState(const SceneObjectState& state) {
 
   it = state.properties.find("slotPosition");
   if (it != state.properties.end()) {
-    m_slotPosition = static_cast<Position>(std::stoi(it->second));
+    try {
+      m_slotPosition = static_cast<Position>(std::stoi(it->second));
+    } catch (...) {
+      m_slotPosition = Position::Center; // Default on parse error
+    }
   }
 
   it = state.properties.find("highlighted");

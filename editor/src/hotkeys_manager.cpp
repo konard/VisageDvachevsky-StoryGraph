@@ -927,10 +927,16 @@ Shortcut Shortcut::fromString(const std::string& str) {
       } else if (lower == "right") {
         result.key = KeyCode::Right;
       } else if (lower.length() >= 2 && lower[0] == 'f') {
-        // F keys
-        i32 fNum = std::stoi(lower.substr(1));
-        if (fNum >= 1 && fNum <= 12) {
-          result.key = static_cast<KeyCode>(static_cast<i32>(KeyCode::F1) + fNum - 1);
+        // F keys - parse F1-F12
+        try {
+          i32 fNum = std::stoi(lower.substr(1));
+          if (fNum >= 1 && fNum <= 12) {
+            result.key = static_cast<KeyCode>(static_cast<i32>(KeyCode::F1) + fNum - 1);
+          }
+        } catch (const std::invalid_argument&) {
+          // Invalid F-key format, ignore
+        } catch (const std::out_of_range&) {
+          // F-key number out of range, ignore
         }
       }
     }

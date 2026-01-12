@@ -112,14 +112,22 @@ std::optional<InlineCommand> RichTextParser::parseCommand(const std::string& com
   // Wait command: {w=0.5} or {wait=0.5}
   if (key == "w" || key == "wait") {
     WaitCommand cmd;
-    cmd.duration = value.empty() ? 0.5f : std::stof(value);
+    try {
+      cmd.duration = value.empty() ? 0.5f : std::stof(value);
+    } catch (...) {
+      cmd.duration = 0.5f; // Default on parse error
+    }
     return cmd;
   }
 
   // Speed command: {speed=50} or {s=50}
   if (key == "speed" || key == "s") {
     SpeedCommand cmd;
-    cmd.charsPerSecond = value.empty() ? 30.0f : std::stof(value);
+    try {
+      cmd.charsPerSecond = value.empty() ? 30.0f : std::stof(value);
+    } catch (...) {
+      cmd.charsPerSecond = 30.0f; // Default on parse error
+    }
     return cmd;
   }
 
@@ -143,12 +151,17 @@ std::optional<InlineCommand> RichTextParser::parseCommand(const std::string& com
   // Shake command: {shake=2.0,0.5}
   if (key == "shake") {
     ShakeCommand cmd;
-    size_t commaPos = value.find(',');
-    if (commaPos != std::string::npos) {
-      cmd.intensity = std::stof(value.substr(0, commaPos));
-      cmd.duration = std::stof(value.substr(commaPos + 1));
-    } else {
-      cmd.intensity = value.empty() ? 2.0f : std::stof(value);
+    try {
+      size_t commaPos = value.find(',');
+      if (commaPos != std::string::npos) {
+        cmd.intensity = std::stof(value.substr(0, commaPos));
+        cmd.duration = std::stof(value.substr(commaPos + 1));
+      } else {
+        cmd.intensity = value.empty() ? 2.0f : std::stof(value);
+        cmd.duration = 0.5f;
+      }
+    } catch (...) {
+      cmd.intensity = 2.0f; // Default on parse error
       cmd.duration = 0.5f;
     }
     return cmd;
@@ -157,12 +170,17 @@ std::optional<InlineCommand> RichTextParser::parseCommand(const std::string& com
   // Wave command: {wave=2.0,1.5}
   if (key == "wave") {
     WaveCommand cmd;
-    size_t commaPos = value.find(',');
-    if (commaPos != std::string::npos) {
-      cmd.amplitude = std::stof(value.substr(0, commaPos));
-      cmd.frequency = std::stof(value.substr(commaPos + 1));
-    } else {
-      cmd.amplitude = value.empty() ? 2.0f : std::stof(value);
+    try {
+      size_t commaPos = value.find(',');
+      if (commaPos != std::string::npos) {
+        cmd.amplitude = std::stof(value.substr(0, commaPos));
+        cmd.frequency = std::stof(value.substr(commaPos + 1));
+      } else {
+        cmd.amplitude = value.empty() ? 2.0f : std::stof(value);
+        cmd.frequency = 1.5f;
+      }
+    } catch (...) {
+      cmd.amplitude = 2.0f; // Default on parse error
       cmd.frequency = 1.5f;
     }
     return cmd;
