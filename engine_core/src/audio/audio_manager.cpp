@@ -1,4 +1,5 @@
 #include "NovelMind/audio/audio_manager.hpp"
+#include "NovelMind/core/logger.hpp"
 #include "miniaudio/miniaudio.h"
 #include <algorithm>
 #include <cmath>
@@ -86,9 +87,17 @@ void AudioSource::update(f64 deltaTime) {
         m_state = PlaybackState::Playing;
       }
     } else {
-      f32 t = m_fadeTimer / m_fadeDuration;
-      m_volume =
-          m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      // Protect against division by zero
+      if (m_fadeDuration > 0.0f) {
+        f32 t = m_fadeTimer / m_fadeDuration;
+        m_volume =
+            m_fadeStartVolume + (m_fadeTargetVolume - m_fadeStartVolume) * t;
+      } else {
+        // Invalid fade duration - complete fade immediately
+        NOVELMIND_LOG_WARN("AudioSource: Invalid fade duration ({}), completing fade immediately", m_fadeDuration);
+        m_volume = m_fadeTargetVolume;
+        m_state = PlaybackState::Playing;
+      }
     }
   }
 
@@ -597,11 +606,25 @@ AudioHandle AudioManager::playVoice(const std::string &id,
   }
   m_voicePlaying.store(true, std::memory_order_release);
 
-  // Apply ducking
+  // Apply ducking with validation
   if (config.duckMusic && m_autoDuckingEnabled.load(std::memory_order_relaxed)) {
-    m_duckVolume.store(config.duckAmount, std::memory_order_relaxed);
-    m_duckFadeDuration.store(config.duckFadeDuration, std::memory_order_relaxed);
-    m_targetDuckLevel.store(config.duckAmount, std::memory_order_release);
+    // Validate and clamp duck parameters to prevent division by zero
+    constexpr f32 MIN_FADE_DURATION = 0.001f;
+    f32 duckAmount = std::max(0.0f, std::min(1.0f, config.duckAmount));
+    f32 duckFadeDuration = config.duckFadeDuration;
+
+    if (duckFadeDuration < 0.0f) {
+      NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration in VoiceConfig ({}), using 0", duckFadeDuration);
+      duckFadeDuration = 0.0f;
+    } else if (duckFadeDuration > 0.0f && duckFadeDuration < MIN_FADE_DURATION) {
+      NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small in VoiceConfig ({}), clamping to minimum ({})",
+                         duckFadeDuration, MIN_FADE_DURATION);
+      duckFadeDuration = MIN_FADE_DURATION;
+    }
+
+    m_duckVolume.store(duckAmount, std::memory_order_relaxed);
+    m_duckFadeDuration.store(duckFadeDuration, std::memory_order_relaxed);
+    m_targetDuckLevel.store(duckAmount, std::memory_order_release);
   }
 
   fireEvent(AudioEvent::Type::Started, handle, id);
@@ -789,10 +812,25 @@ void AudioManager::setAutoDuckingEnabled(bool enabled) {
 }
 
 void AudioManager::setDuckingParams(f32 duckVolume, f32 fadeDuration) {
-  m_duckVolume.store(std::max(0.0f, std::min(1.0f, duckVolume)),
-                     std::memory_order_relaxed);
-  m_duckFadeDuration.store(std::max(0.0f, fadeDuration),
-                           std::memory_order_relaxed);
+  // Clamp duck volume to valid range [0, 1]
+  f32 clampedDuckVolume = std::max(0.0f, std::min(1.0f, duckVolume));
+
+  // Validate and clamp fade duration - must be positive or zero
+  // Use minimum threshold to prevent division by zero
+  constexpr f32 MIN_FADE_DURATION = 0.001f;
+  f32 clampedFadeDuration = fadeDuration;
+
+  if (fadeDuration < 0.0f) {
+    NOVELMIND_LOG_WARN("AudioManager: Invalid negative duck fade duration ({}), clamping to 0", fadeDuration);
+    clampedFadeDuration = 0.0f;
+  } else if (fadeDuration > 0.0f && fadeDuration < MIN_FADE_DURATION) {
+    NOVELMIND_LOG_WARN("AudioManager: Duck fade duration too small ({}), clamping to minimum ({})",
+                       fadeDuration, MIN_FADE_DURATION);
+    clampedFadeDuration = MIN_FADE_DURATION;
+  }
+
+  m_duckVolume.store(clampedDuckVolume, std::memory_order_relaxed);
+  m_duckFadeDuration.store(clampedFadeDuration, std::memory_order_relaxed);
 }
 
 AudioHandle AudioManager::createSource(const std::string &trackId,

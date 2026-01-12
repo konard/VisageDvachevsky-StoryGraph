@@ -8,7 +8,6 @@
  * - Handling of negative rotation values
  * - Handling of rotation values > 360 degrees
  *
- * Related to Issue #478 - Missing rotation normalization in beginHandleDrag
  */
 
 #include <catch2/catch_test_macros.hpp>
