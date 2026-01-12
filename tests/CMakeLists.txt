@@ -120,6 +120,10 @@ if(NOVELMIND_BUILD_EDITOR)
         # Issue #570 - Build size analyzer hash security tests
         unit/test_build_size_analyzer.cpp
         unit/test_build_system.cpp
+        # Issue #451 - SelectionMediator feedback loop prevention
+        unit/test_selection_mediator.cpp
+        # Issue #453 - PropertyMediator feedback loop prevention
+        unit/test_property_mediator.cpp
     )
 
     target_link_libraries(integration_tests
