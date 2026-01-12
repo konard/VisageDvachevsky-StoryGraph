@@ -5,13 +5,14 @@
 
 namespace NovelMind::scripting {
 
-// Float serialization assumptions:
-// - f32 (float) is exactly 4 bytes (32 bits), matching u32
-// - IEEE 754 single-precision format is used (ubiquitous on modern platforms)
-// - std::bit_cast provides well-defined, portable conversion without UB
-// - Endianness is preserved through bit_cast (no conversion needed within same system)
-static_assert(sizeof(f32) == sizeof(u32), "Float size must match u32 for bit_cast serialization");
-static_assert(std::numeric_limits<f32>::is_iec559, "IEEE 754 (IEC 559) float format required");
+/**
+ * @brief Maximum number of choices allowed in a single choice statement
+ *
+ * This limit prevents resource exhaustion from scripts with excessive choices.
+ * A limit of 256 is reasonable for visual novel gameplay while preventing
+ * potential memory issues from malformed or malicious scripts.
+ */
+static constexpr u32 MAX_CHOICE_COUNT = 256;
 
 Compiler::Compiler() = default;
 Compiler::~Compiler() = default;
@@ -324,6 +325,14 @@ void Compiler::compileSayStmt(const SayStmt &stmt, const SourceLocation &loc) {
 }
 
 void Compiler::compileChoiceStmt(const ChoiceStmt &stmt, const SourceLocation &loc) {
+  // Validate choice count limit
+  if (stmt.options.size() > MAX_CHOICE_COUNT) {
+    error("Too many choices in choice statement: " +
+          std::to_string(stmt.options.size()) + " (maximum allowed: " +
+          std::to_string(MAX_CHOICE_COUNT) + ")", loc);
+    return;
+  }
+
   // Emit choice count
   emitOp(OpCode::PUSH_INT, static_cast<u32>(stmt.options.size()));
 
