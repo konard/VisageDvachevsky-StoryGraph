@@ -137,6 +137,21 @@ struct EditorEvent {
   [[nodiscard]] virtual std::string getDescription() const {
     return "EditorEvent";
   }
+
+  /**
+   * @brief Generate a key for event deduplication
+   *
+   * Returns a string key that uniquely identifies this event for deduplication
+   * purposes. Events with the same key within the deduplication window will be
+   * considered duplicates. Override this in derived classes to customize
+   * deduplication behavior.
+   *
+   * @return String key representing the event's identity
+   */
+  [[nodiscard]] virtual std::string getEventKey() const {
+    // Default: deduplicate only by event type
+    return std::to_string(static_cast<u32>(type));
+  }
 };
 
 // ============================================================================
@@ -607,6 +622,32 @@ public:
    */
   [[nodiscard]] bool isSynchronous() const;
 
+  /**
+   * @brief Enable or disable event deduplication
+   * @param enabled Whether to deduplicate identical events
+   */
+  void setDeduplicationEnabled(bool enabled);
+
+  /**
+   * @brief Check if event deduplication is enabled
+   */
+  [[nodiscard]] bool isDeduplicationEnabled() const;
+
+  /**
+   * @brief Set the deduplication time window in milliseconds
+   *
+   * Events with the same key within this time window will be deduplicated.
+   * Default is 100ms.
+   *
+   * @param windowMs Time window in milliseconds
+   */
+  void setDeduplicationWindow(u64 windowMs);
+
+  /**
+   * @brief Get the deduplication time window in milliseconds
+   */
+  [[nodiscard]] u64 getDeduplicationWindow() const;
+
 private:
   struct Subscriber {
     u64 id;
@@ -638,6 +679,11 @@ private:
   bool m_historyEnabled = false;
   std::vector<std::string> m_eventHistory;
   static constexpr size_t MAX_HISTORY_SIZE = 100;
+
+  // Deduplication support
+  bool m_deduplicationEnabled = false;
+  u64 m_deduplicationWindowMs = 100; // Default: 100ms window
+  std::unordered_map<std::string, u64> m_recentEvents; // event key -> timestamp
 
   mutable std::mutex m_mutex;
 };
