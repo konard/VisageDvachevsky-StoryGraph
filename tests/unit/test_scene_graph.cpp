@@ -205,6 +205,113 @@ TEST_CASE("SceneObjectBase deep hierarchy limits", "[scene_graph][object][hierar
     REQUIRE(root->findChild("child_50") != nullptr);
 }
 
+// NOTE: The following tests define the EXPECTED behavior for cycle detection.
+// Cycle detection is NOT yet implemented in SceneObjectBase::setParent() and addChild().
+// These tests will FAIL until cycle detection is implemented.
+// This is intentional - the tests serve as:
+//   1. Documentation of required behavior
+//   2. TDD specification for future implementation
+//   3. Regression prevention once implemented
+TEST_CASE("SceneObjectBase cyclic assignment detection", "[scene_graph][object][hierarchy][cycles]")
+{
+    SECTION("Direct cycle (A->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto* objAPtr = objA.get();
+
+        // Attempting to set an object as its own parent should be detected and rejected
+        // Current behavior: This would create a cycle, which should be prevented
+        objA->setParent(objAPtr);
+
+        // Verify the parent was not set (cycle was rejected)
+        REQUIRE(objA->getParent() == nullptr);
+    }
+
+    SECTION("Indirect cycle (A->B->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+
+        // Set up hierarchy: A is parent of B
+        objA->addChild(std::move(objB));
+        REQUIRE(objBPtr->getParent() == objAPtr);
+
+        // Attempting to make B the parent of A would create a cycle
+        // This should be detected and rejected
+        objAPtr->setParent(objBPtr);
+
+        // Verify the cycle was rejected - A should have no parent
+        REQUIRE(objAPtr->getParent() == nullptr);
+        // Verify B is still a child of A
+        REQUIRE(objBPtr->getParent() == objAPtr);
+    }
+
+    SECTION("Deep cycle (A->B->C->A)") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto objC = std::make_unique<TestSceneObject>("objC");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+        auto* objCPtr = objC.get();
+
+        // Set up hierarchy: A -> B -> C
+        objA->addChild(std::move(objB));
+        objBPtr->addChild(std::move(objC));
+
+        REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == objBPtr);
+
+        // Attempting to make C the parent of A would create a deep cycle
+        // This should be detected and rejected
+        objAPtr->setParent(objCPtr);
+
+        // Verify the cycle was rejected - A should have no parent
+        REQUIRE(objAPtr->getParent() == nullptr);
+        // Verify the existing hierarchy is intact
+        REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == objBPtr);
+    }
+
+    SECTION("Valid reparenting without cycles") {
+        auto objA = std::make_unique<TestSceneObject>("objA");
+        auto objB = std::make_unique<TestSceneObject>("objB");
+        auto objC = std::make_unique<TestSceneObject>("objC");
+        auto objD = std::make_unique<TestSceneObject>("objD");
+        auto* objAPtr = objA.get();
+        auto* objBPtr = objB.get();
+        auto* objCPtr = objC.get();
+        auto* objDPtr = objD.get();
+
+        // Initial hierarchy: A -> B and C exists separately
+        objA->addChild(std::move(objB));
+        REQUIRE(objBPtr->getParent() == objAPtr);
+        REQUIRE(objCPtr->getParent() == nullptr);
+
+        // Valid reparenting: Move C under B (no cycle, C is independent)
+        objBPtr->addChild(std::move(objC));
+        REQUIRE(objCPtr->getParent() == objBPtr);
+        REQUIRE(objAPtr->findChild("objC") != nullptr); // Can find through recursion
+
+        // Valid reparenting: Move D under C (no cycle)
+        objCPtr->addChild(std::move(objD));
+        REQUIRE(objDPtr->getParent() == objCPtr);
+
+        // Valid reparenting: Move C from B to A directly (no cycle)
+        auto removedC = objBPtr->removeChild("objC");
+        REQUIRE(removedC != nullptr);
+        REQUIRE(objCPtr->getParent() == nullptr); // Parent cleared after removal
+
+        objAPtr->addChild(std::move(removedC));
+        REQUIRE(objCPtr->getParent() == objAPtr);
+        REQUIRE(objDPtr->getParent() == objCPtr); // D still child of C
+
+        // Verify all valid reparenting operations succeeded
+        REQUIRE(objAPtr->findChild("objB") != nullptr);
+        REQUIRE(objAPtr->findChild("objC") != nullptr);
+        REQUIRE(objCPtr->findChild("objD") != nullptr);
+    }
+}
+
 TEST_CASE("SceneObjectBase tags", "[scene_graph][object][tags]")
 {
     auto obj = std::make_unique<TestSceneObject>("obj");
