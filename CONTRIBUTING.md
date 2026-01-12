@@ -81,6 +81,8 @@ cd build && ctest --output-on-failure
 | `NOVELMIND_ENABLE_TSAN` | OFF | Enable ThreadSanitizer |
 | `NOVELMIND_ENABLE_UBSAN` | OFF | Enable UndefinedBehaviorSanitizer |
 | `NOVELMIND_ENABLE_LSAN` | OFF | Enable LeakSanitizer |
+| `NOVELMIND_ENABLE_VALGRIND` | OFF | Build with Valgrind-friendly flags |
+| `NOVELMIND_ENABLE_MSAN` | OFF | Enable MemorySanitizer |
 
 ### Build Types
 
@@ -334,9 +336,36 @@ cd build && ctest --output-on-failure
 cmake -B build -DNOVELMIND_ENABLE_UBSAN=ON
 cmake --build build
 cd build && ctest --output-on-failure
+
+# Valgrind (comprehensive memory analysis)
+cmake -B build -DNOVELMIND_ENABLE_VALGRIND=ON
+cmake --build build
+cd build && valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-origins=yes ctest --output-on-failure
+```
+
+Note: Valgrind is a runtime tool, so the `NOVELMIND_ENABLE_VALGRIND` option only adds compiler flags to improve Valgrind's stack trace quality. You need to have Valgrind installed separately:
+
+```bash
+# Install Valgrind on Linux
+sudo apt-get install valgrind
+
+# Install on macOS (limited support)
+brew install valgrind
+# MemorySanitizer (detects uninitialized memory reads, requires Clang)
+CC=clang CXX=clang++ cmake -B build -DNOVELMIND_ENABLE_MSAN=ON
+cmake --build build
+cd build && ctest --output-on-failure
 ```
 
 For more comprehensive testing documentation including test organization, coverage requirements, mocking strategies, and best practices, see [docs/TESTING.md](docs/TESTING.md).
+**Note**: MemorySanitizer requires Clang and all dependencies to be MSan-instrumented. This may result in false positives if system libraries are not instrumented.
+
+### Writing Tests
+
+- Use Catch2 for unit tests
+- Place unit tests in `tests/unit/`
+- Name test files `test_<component>.cpp`
+- Cover edge cases and error conditions
 
 ## Questions?
 
